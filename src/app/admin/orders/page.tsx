@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import { OrderLineItemEditor } from "@/components/admin/order-line-item-editor";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminOrders } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
@@ -58,24 +59,16 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="p-4 text-muted">
                     {order.line_items_json.length > 0
-                      ? order.line_items_json.map((item) => (
-                          <div key={`${item.productId}-${item.optionId ?? "base"}`} className="mb-3 last:mb-0">
+                      ? order.line_items_json.map((item, index) => (
+                          <div key={`${item.productId}-${item.optionId ?? "base"}-${index}`} className="mb-3 last:mb-0">
                             <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
                             {item.optionLabel ? <p>{item.optionLabel}</p> : null}
                             {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
                             {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
                             {item.setup && typeof item.setup.headline === "string" ? <p>Headline: {item.setup.headline}</p> : null}
                             {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
-                            <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
-                              <p><strong>Logo required:</strong> {item.logoRequired ? "Yes" : "No"}</p>
-                              <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Collect manually after checkout" : "Not required"}</p>
-                              <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
-                              <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
-                              <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
-                              {item.logoRequired || item.proofRequired ? (
-                                <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
-                              ) : null}
-                            </div>
+                            <p className="mt-1 text-xs"><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
+                            <OrderLineItemEditor stripeCheckoutSessionId={order.stripe_checkout_session_id} lineItemIndex={index} item={item} />
                           </div>
                         ))
                       : "-"}

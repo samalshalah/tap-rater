@@ -1,26 +1,12 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow } from "@/lib/checkout";
+import { canMarkLineItemReadyForPrint, type OrderLineItem } from "@/lib/order-line-items";
+
+export type { OrderLineItem } from "@/lib/order-line-items";
+export { canMarkLineItemReadyForPrint } from "@/lib/order-line-items";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
-};
-
-export type OrderLineItem = {
-  productId: string;
-  optionId?: string;
-  optionLabel?: string;
-  title: string;
-  sku: string;
-  quantity: number;
-  unitAmountCents: number;
-  lineSubtotalCents: number;
-  setup?: Record<string, unknown>;
-  logoRequired?: boolean;
-  logoStatus?: "not_required" | "manual_collection_required";
-  logoReference?: string | null;
-  proofRequired?: boolean;
-  proofApproved?: boolean;
-  productionStatus?: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
 };
 
 export type OrderRecord = {
@@ -174,6 +160,87 @@ export async function savePaidOrderFromCheckoutSessionWithClient(client: OrdersD
   const { error } = await client.from("orders").upsert(payload, { onConflict: "stripe_checkout_session_id" });
 
   return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function updateOrderLineItem({
+  stripeCheckoutSessionId,
+  lineItemIndex,
+  logoReference,
+  proofApproved,
+  readyForPrint
+}: {
+  stripeCheckoutSessionId: string;
+  lineItemIndex: number;
+  logoReference?: string;
+  proofApproved?: boolean;
+  readyForPrint?: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false, error: "Database persistence is not configured." };
+  }
+
+  return updateOrderLineItemWithClient(getSupabaseAdmin() as OrdersDbClient, {
+    stripeCheckoutSessionId,
+    lineItemIndex,
+    logoReference,
+    proofApproved,
+    readyForPrint
+  });
+}
+
+export async function updateOrderLineItemWithClient(
+  client: OrdersDbClient,
+  {
+    stripeCheckoutSessionId,
+    lineItemIndex,
+    logoReference,
+    proofApproved,
+    readyForPrint
+  }: {
+    stripeCheckoutSessionId: string;
+    lineItemIndex: number;
+    logoReference?: string;
+    proofApproved?: boolean;
+    readyForPrint?: boolean;
+  }
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data, error: selectError } = await client.from("orders").select("*").eq("stripe_checkout_session_id", stripeCheckoutSessionId).single();
+
+  if (selectError || !data) {
+    return { ok: false, error: "Order not found." };
+  }
+
+  const order = normalizeOrderRecord(data);
+  const items = [...order.line_items_json];
+  const existingItem = items[lineItemIndex];
+
+  if (!existingItem) {
+    return { ok: false, error: "Line item not found on this order." };
+  }
+
+  const updatedItem: OrderLineItem = {
+    ...existingItem,
+    logoReference: logoReference !== undefined ? logoReference : existingItem.logoReference,
+    proofApproved: proofApproved !== undefined ? proofApproved : existingItem.proofApproved
+  };
+
+  // Server-side enforcement, independent of whatever the client sent --
+  // readyForPrint can only ever be set to true if the data actually
+  // required for THIS item is actually present, using the freshly-updated
+  // logo/proof values above, not stale ones from before this same request.
+  if (readyForPrint === true && !canMarkLineItemReadyForPrint(updatedItem)) {
+    return { ok: false, error: "Cannot mark ready for print until required logo/proof data is complete." };
+  }
+
+  updatedItem.readyForPrint = readyForPrint !== undefined ? readyForPrint : existingItem.readyForPrint;
+  items[lineItemIndex] = updatedItem;
+
+  const { error: updateError } = await client
+    .from("orders")
+    .update({ line_items_json: items, updated_at: new Date().toISOString() })
+    .eq("stripe_checkout_session_id", stripeCheckoutSessionId);
+
+  return updateError ? { ok: false, error: updateError.message } : { ok: true };
 }
 
 export async function getAdminOrders(): Promise<{ configured: boolean; orders: OrderRecord[] }> {

@@ -225,6 +225,14 @@ export const adminDeviceUpdateSchema = z.object({
 });
 
 export type AdminDeviceCreateInput = z.infer<typeof adminDeviceCreateSchema>;
+
+export const orderLineItemUpdateSchema = z.object({
+  stripeCheckoutSessionId: z.string().trim().min(1).max(300),
+  lineItemIndex: z.number().int().min(0),
+  logoReference: z.string().trim().max(500).optional(),
+  proofApproved: z.boolean().optional(),
+  readyForPrint: z.boolean().optional()
+});
 export type AdminDeviceUpdateInput = z.infer<typeof adminDeviceUpdateSchema>;
 
 export const accountLoginRequestSchema = z.object({
