@@ -147,6 +147,84 @@ describe("Stripe checkout helpers", () => {
     expect(isStripeTestSecretKey("")).toBe(false);
   });
 
+  it("uses price_data (computed from the real product's price) by default when no Stripe Price ID env var is set", () => {
+    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const [lineItem] = buildStripeCheckoutLineItems(result.rows);
+    expect(lineItem).toHaveProperty("price_data");
+    expect(lineItem).not.toHaveProperty("price");
+  });
+
+  it("uses a real Stripe Price ID when its env var is set (the actual 'final step' prep) -- falls back to price_data again once unset", () => {
+    const original = process.env.STRIPE_PRICE_STANDARD_DIRECT_3900;
+    process.env.STRIPE_PRICE_STANDARD_DIRECT_3900 = "price_1TestStandardDirect";
+
+    try {
+      const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      const [lineItem] = buildStripeCheckoutLineItems(result.rows);
+      expect(lineItem).toEqual({ quantity: 1, price: "price_1TestStandardDirect" });
+    } finally {
+      // process.env.X = undefined would coerce to the STRING "undefined",
+      // not actually unset the variable -- must delete it explicitly when
+      // it wasn't set before this test ran.
+      if (original === undefined) {
+        delete process.env.STRIPE_PRICE_STANDARD_DIRECT_3900;
+      } else {
+        process.env.STRIPE_PRICE_STANDARD_DIRECT_3900 = original;
+      }
+    }
+
+    // Confirm cleanup actually restored default behavior -- not just that
+    // the env var looks unset, but that the resulting line item shape
+    // reverts too.
+    const resultAfter = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    expect(resultAfter.ok).toBe(true);
+    if (!resultAfter.ok) return;
+    expect(buildStripeCheckoutLineItems(resultAfter.rows)[0]).toHaveProperty("price_data");
+  });
+
+  it("does not use a Standard Direct Price ID for a Branded + QR line item -- each tier's env var is independent", () => {
+    const original = process.env.STRIPE_PRICE_STANDARD_DIRECT_3900;
+    process.env.STRIPE_PRICE_STANDARD_DIRECT_3900 = "price_1TestStandardDirect";
+
+    try {
+      const result = validateCheckoutCart(
+        [
+          {
+            productId: "google-review-stand-branded-qr",
+            optionId: "branded_qr_direct",
+            quantity: 1,
+            setup: {
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Nova Implant",
+              manualCollectionAcknowledged: true
+            }
+          }
+        ],
+        migratedProducts
+      );
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+
+      const [lineItem] = buildStripeCheckoutLineItems(result.rows);
+      // Only the branded env var (unset here) should apply -- must NOT
+      // pick up the standard tier's Price ID.
+      expect(lineItem).toHaveProperty("price_data");
+      expect(lineItem).not.toHaveProperty("price");
+    } finally {
+      if (original === undefined) {
+        delete process.env.STRIPE_PRICE_STANDARD_DIRECT_3900;
+      } else {
+        process.env.STRIPE_PRICE_STANDARD_DIRECT_3900 = original;
+      }
+    }
+  });
+
   it("builds Stripe line items from validated cart rows", () => {
     const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
 

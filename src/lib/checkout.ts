@@ -110,23 +110,59 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
   };
 }
 
+// Maps a pricing tier to its Stripe Price ID env var name. When that env
+// var is set (a real Price ID created in the Stripe dashboard -- see
+// docs/stripe-price-ids.md), checkout uses it directly. When it's not set
+// (the current default, since Stripe hasn't gone live yet), checkout falls
+// back to price_data (computed inline from the product's own price) --
+// exactly the existing behavior, unchanged. This is the actual "prepare
+// the system so Stripe price IDs can be added at the final step" --
+// setting the env var later requires no code change.
+//
+// Hosted Multi-Link's subscription price ID
+// (STRIPE_PRICE_HOSTED_MULTI_LINK_SUBSCRIPTION) is intentionally NOT wired
+// here: a checkout session mixing a one-time setup fee with a recurring
+// subscription line item needs mode: "subscription" and different Checkout
+// Session construction than the current one-time "payment" mode flow. That
+// is real, separate work for the final Stripe stage, not something to bolt
+// on silently here -- see docs/stripe-price-ids.md for the plan.
+function getStripePriceIdForOption(optionId: PurchaseOptionId): string | undefined {
+  const envVarByOptionId: Record<PurchaseOptionId, string | undefined> = {
+    standard_direct: process.env.STRIPE_PRICE_STANDARD_DIRECT_3900,
+    branded_qr_direct: process.env.STRIPE_PRICE_BRANDED_QR_DIRECT_4900,
+    custom_direct: process.env.STRIPE_PRICE_CUSTOM_DIRECT_4900,
+    hosted_multi_link: process.env.STRIPE_PRICE_HOSTED_MULTI_LINK_SETUP
+  };
+
+  const value = envVarByOptionId[optionId];
+  return value && value.trim() ? value.trim() : undefined;
+}
+
 export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  return rows.map((row) => ({
-    quantity: row.quantity,
-    price_data: {
-      currency: "usd",
-      product_data: {
-        name: row.title,
-        description: row.shortDescription,
-        metadata: {
-          product_id: row.productId,
-          option_id: row.optionId,
-          sku: row.sku
-        }
-      },
-      unit_amount: row.unitAmountCents
+  return rows.map((row) => {
+    const priceId = getStripePriceIdForOption(row.optionId);
+
+    if (priceId) {
+      return { quantity: row.quantity, price: priceId };
     }
-  }));
+
+    return {
+      quantity: row.quantity,
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: row.title,
+          description: row.shortDescription,
+          metadata: {
+            product_id: row.productId,
+            option_id: row.optionId,
+            sku: row.sku
+          }
+        },
+        unit_amount: row.unitAmountCents
+      }
+    };
+  });
 }
 
 export function createCheckoutSessionParams({
