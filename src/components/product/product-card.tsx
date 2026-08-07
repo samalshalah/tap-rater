@@ -2,8 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getProductServiceBadges, getReviewDestination } from "@/lib/product-page-content";
-import { formatPrice, getCategoryBySlug } from "@/lib/products";
-import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
+import { formatPrice, getCategoryBySlug, getProductPriceCents } from "@/lib/products";
 
 export function ProductCard({ product }: { product: MigratedProduct }) {
   const image = product.images[0];
@@ -61,5 +60,5 @@ function getPurchaseLabel(product: MigratedProduct) {
     return "Subscription setup";
   }
 
-  return `From ${formatPrice(getLowestPurchasePriceCents(product))}`;
+  return formatPrice(getProductPriceCents(product));
 }

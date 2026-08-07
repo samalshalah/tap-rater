@@ -274,7 +274,7 @@ export const checkoutCartSchema = z.object({
     .array(
       z.object({
         productId: z.string().trim().min(2).max(160),
-        optionId: z.enum(["standard_direct", "branded_qr_direct", "custom_direct"]).optional(),
+        optionId: z.enum(["standard_direct", "branded_qr_direct", "hosted_multi_link", "custom_direct"]).optional(),
         quantity: z.number().int().min(1).max(99),
         setup: z
           .object({

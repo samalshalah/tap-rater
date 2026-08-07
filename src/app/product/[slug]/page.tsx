@@ -113,7 +113,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <div className="mt-5">
-              <ProductSetupChooser product={product} />
+              <ProductSetupChooser product={product} allProducts={products} />
             </div>
 
             <div className="mt-5 grid gap-2 rounded-md border border-line bg-white p-5 text-sm text-muted shadow-sm sm:grid-cols-2 md:p-7">

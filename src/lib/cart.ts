@@ -1,5 +1,5 @@
 import { getActiveProducts, getProductBySlug, getProductPriceCents } from "@/lib/products";
-import { getProductPurchaseOptions, getPurchaseOption, standardDirectOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getPurchaseOptionForProduct, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export const cartStorageKey = "taprater:cart";
 
@@ -22,7 +22,7 @@ export type CartItem = {
 export type CartRow = {
   item: CartItem;
   product: NonNullable<ReturnType<typeof getProductBySlug>>;
-  option: NonNullable<ReturnType<typeof getPurchaseOption>>;
+  option: ReturnType<typeof getPurchaseOptionForProduct>;
   unitPriceCents: number;
   lineSubtotalCents: number;
 };
@@ -49,9 +49,11 @@ export function normalizeCartItems(value: unknown): CartItem[] {
       continue;
     }
 
-    const requestedOption = typeof entry?.optionId === "string" ? getPurchaseOption(entry.optionId) : undefined;
-    const productOptions = getProductPurchaseOptions(product);
-    const option = requestedOption && productOptions.some((item) => item.id === requestedOption.id) ? requestedOption : productOptions[0] ?? standardDirectOption;
+    // The option is always derived from the actual product, never trusted
+    // from client input -- this removes an entire category of bugs where a
+    // stored optionId could mismatch the product it's attached to (e.g. a
+    // Standard product's line item claiming Branded + QR pricing).
+    const option = getPurchaseOptionForProduct(product);
     const setup = normalizeSetup(entry?.setup);
     const key = getCartItemKey({ productId, optionId: option.id, setup });
     const existing = normalized.get(key);
@@ -98,13 +100,13 @@ export function removeCartItem(items: CartItem[], productId: string): CartItem[]
 export function getCartRows(items: CartItem[]): CartRow[] {
   return normalizeCartItems(items).flatMap((item) => {
     const product = getProductBySlug(item.productId);
-    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
 
-    if (!product || !option) {
+    if (!product) {
       return [];
     }
 
-    const unitPriceCents = option.priceCents ?? getProductPriceCents(product);
+    const option = getPurchaseOptionForProduct(product);
+    const unitPriceCents = getProductPriceCents(product);
 
     return [
       {
@@ -122,7 +124,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
   const setup = item.setup ?? {};
   return [
     item.productId,
-    item.optionId ?? standardDirectOption.id,
+    item.optionId ?? "standard_direct",
     setup.destinationUrl ?? "",
     setup.businessName ?? "",
     setup.headline ?? "",

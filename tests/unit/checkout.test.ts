@@ -34,7 +34,7 @@ describe("Stripe checkout helpers", () => {
     expect(result.rows[0]).toMatchObject({
       productId: "google-review-stand",
       optionId: "standard_direct",
-      optionLabel: "Standard Direct Stand",
+      optionLabel: "Google Review Stand",
       quantity: 2,
       unitAmountCents: 3900,
       lineSubtotalCents: 7800
@@ -62,7 +62,7 @@ describe("Stripe checkout helpers", () => {
       validateCheckoutCart(
         [
           {
-            productId: "google-review-stand",
+            productId: "google-review-stand-branded-qr",
             optionId: "branded_qr_direct",
             quantity: 1,
             setup: {
@@ -79,7 +79,7 @@ describe("Stripe checkout helpers", () => {
     const result = validateCheckoutCart(
       [
         {
-          productId: "google-review-stand",
+          productId: "google-review-stand-branded-qr",
           optionId: "branded_qr_direct",
           quantity: 1,
           setup: {
@@ -159,7 +159,7 @@ describe("Stripe checkout helpers", () => {
           currency: "usd",
           product_data: {
             name: "Google Review Stand",
-            description: "Standard Direct Stand - Countertop NFC stand that opens your Google review link with one tap or scan.",
+            description: "Countertop NFC stand that opens your Google review link with one tap or scan.",
             metadata: {
               product_id: "google-review-stand",
               option_id: "standard_direct",

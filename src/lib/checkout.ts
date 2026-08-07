@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
-import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getPurchaseOptionForProduct, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export type CheckoutCartRow = {
   productId: string;
@@ -45,31 +45,38 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
   for (const item of items) {
     const product = productById.get(item.productId);
-    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
 
-    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !product || !option) {
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !product) {
       continue;
     }
 
-    if (!getProductPurchaseOptions(product).some((purchaseOption) => purchaseOption.id === option.id)) {
-      continue;
-    }
+    // The option is always derived from the actual product, never trusted
+    // from client input -- see the identical fix and rationale in
+    // src/lib/cart.ts. A stored optionId that doesn't match its product
+    // (e.g. through tampering) can no longer cause the wrong price or
+    // requirements to be applied at checkout.
+    const option = getPurchaseOptionForProduct(product);
 
     const setup = normalizeCheckoutSetup(item.setup);
 
-    if (!isValidCheckoutSetup(option.id, setup)) {
+    if (!isValidCheckoutSetup(option, setup)) {
       continue;
     }
 
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? false : setup.proofApproved === true;
-    const productionStatus =
-      option.id === "custom_direct"
+    // Derived from requiresManualCollection (which already correctly covers
+    // all 4 pricing tiers via the product's own activationType) rather than
+    // checking each option.id explicitly -- the previous version only
+    // checked for "custom_direct"/"branded_qr_direct" and would have
+    // silently fallen through to "ready_for_direct_activation" for Hosted
+    // Multi-Link Stand, which also needs manual logo/proof collection.
+    const productionStatus = !option.requiresManualCollection
+      ? "ready_for_direct_activation"
+      : option.id === "custom_direct"
         ? "pending_manual_design_and_proof"
-        : option.id === "branded_qr_direct"
-          ? "pending_manual_logo_and_proof"
-          : "ready_for_direct_activation";
+        : "pending_manual_logo_and_proof";
 
     rows.push({
       productId: product.slug,
@@ -110,7 +117,7 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Ch
       currency: "usd",
       product_data: {
         name: row.title,
-        description: `${row.optionLabel} - ${row.shortDescription}`,
+        description: row.shortDescription,
         metadata: {
           product_id: row.productId,
           option_id: row.optionId,
@@ -164,24 +171,32 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
   };
 }
 
-function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<CartItem["setup"]>) {
+function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {
   if (!isHttpUrl(setup.destinationUrl)) {
     return false;
   }
 
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && !setup.businessName) {
+  if (option.requiresBusinessName && !setup.businessName) {
     return false;
   }
 
-  if (optionId === "custom_direct" && !setup.headline) {
+  if (option.requiresCustomText && !setup.headline) {
     return false;
   }
 
-  if (optionId === "standard_direct" && setup.proofApproved !== true) {
+  // Every tier requires exactly one of these two confirmations: the ones
+  // needing manual logo/design collection (branded, hosted, custom) need
+  // manualCollectionAcknowledged; the direct, no-collection tier
+  // (standard) needs proofApproved instead. Deriving this from the
+  // option's own requiresManualCollection flag (rather than checking each
+  // optionId string) means every current AND future pricing tier is
+  // covered automatically -- this is exactly the gap that let Hosted
+  // Multi-Link Stand skip both checks entirely before this fix.
+  if (option.requiresManualCollection && !setup.manualCollectionAcknowledged) {
     return false;
   }
 
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && setup.manualCollectionAcknowledged !== true) {
+  if (!option.requiresManualCollection && setup.proofApproved !== true) {
     return false;
   }
 

@@ -8,8 +8,8 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 
-export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
-  const options = useMemo(() => getProductPurchaseOptions(product), [product]);
+export function ProductSetupChooser({ product, allProducts }: { product: MigratedProduct; allProducts: MigratedProduct[] }) {
+  const options = useMemo(() => getProductPurchaseOptions(product, allProducts), [product, allProducts]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [error, setError] = useState("");
   const cart = useCart();
@@ -55,7 +55,13 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
     }
 
     cart.addItem({
-      productId: product.slug,
+      // The real product for whichever tier was selected in the chooser --
+      // NOT always product.slug. If the customer picked "Branded + QR" as
+      // an upsell while browsing the Standard product's page, the cart
+      // needs to add the actual Branded + QR product (its own real slug,
+      // price, and copy), not a hardcoded price tacked onto the page they
+      // started on.
+      productId: selectedOption.productSlug,
       optionId: selectedOption.id,
       quantity: 1,
       setup: {
