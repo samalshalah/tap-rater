@@ -36,25 +36,13 @@ After DNS is added, return to Resend and verify the domain.
 
 Create a production API key in Resend after the domain is verified.
 
-Store it as a secret in:
-
-- Cloudflare Worker: `RESEND_API_KEY`
-- Railway backend: `RESEND_API_KEY`
+Store it as a secret in the Cloudflare Worker: `RESEND_API_KEY`.
 
 Do not commit the key. Do not expose it as `NEXT_PUBLIC_*`.
 
 ## Environment Variables
 
 Cloudflare Worker:
-
-```text
-RESEND_API_KEY
-RESEND_FROM_EMAIL
-ORDER_NOTIFICATION_EMAIL
-ADMIN_NOTIFICATION_EMAIL
-```
-
-Railway backend:
 
 ```text
 RESEND_API_KEY
@@ -74,19 +62,10 @@ The shared app helper in `src/lib/email.ts` supports:
 - link change request
 - scheduled report placeholder
 
-The backend package also has a minimal Resend helper for operational jobs and a safe test command.
-
 ## Testing
 
-Run:
-
-```bash
-npm run backend:email-test
-```
-
-The command sends only when `RESEND_API_KEY` and either `EMAIL_TEST_TO` or `ADMIN_NOTIFICATION_EMAIL` are configured. Otherwise it exits with a skip message.
-
-Send test emails only to an address controlled by Tap Rater.
+Send test emails only to an address controlled by Tap Rater, using the app's own email flows
+(e.g. the contact form, or a customer login link) once `RESEND_API_KEY` is configured.
 
 ## Safety
 

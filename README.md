@@ -30,8 +30,6 @@ npm test
 npm run smoke
 npm run check:platform-schema
 npm run cf:build
-npm run backend:build
-npm run backend:db-check
 ```
 
 Local dev usually runs at:
@@ -257,55 +255,16 @@ npm run start
 npm run smoke
 ```
 
-## Railway Backend Jobs
+## Background Jobs
 
-The production website, admin, activation flow, and redirect engine stay on Cloudflare Workers/OpenNext.
-Railway is reserved for future backend jobs and operational tasks only.
+There is no separate backend service. The Cloudflare Worker (Next.js/OpenNext) is the entire application --
+storefront, admin, checkout, activation, redirects, and CMS all run there.
 
-Backend package:
-
-```text
-apps/backend
-```
-
-Backend commands:
-
-```bash
-npm run backend:dev
-npm run backend:build
-npm run backend:start
-npm run backend:db-check
-npm run backend:email-test
-```
-
-Railway project target:
-
-```text
-tap-rater-backend
-```
-
-Railway environment variables:
-
-```text
-DATABASE_URL
-RESEND_API_KEY
-RESEND_FROM_EMAIL
-ORDER_NOTIFICATION_EMAIL
-ADMIN_NOTIFICATION_EMAIL
-CRON_SECRET
-NEXT_PUBLIC_SITE_URL
-NODE_ENV=production
-```
-
-Do not add live Stripe variables to Railway until live checkout is explicitly approved.
-
-More details:
-
-```text
-docs/backend.md
-docs/railway.md
-docs/resend.md
-```
+A previous `apps/backend` scaffold (a small Node HTTP service intended for future cron-style jobs -- daily
+reports, review monitoring, billing reminders) was removed. Every job in it was an unimplemented stub
+(`status: "skipped", reason: "not_enabled"`) with zero real functionality, and nothing in the app depended
+on it. If a real background job is needed later, add it when there's an actual job to run, scoped to what
+that job needs -- not as standing infrastructure ahead of time.
 
 ## Device Activation
 

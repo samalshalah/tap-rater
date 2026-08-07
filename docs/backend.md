@@ -1,9 +1,7 @@
 # Tap Rater Backend
 
-Tap Rater uses two backend surfaces:
-
-- Cloudflare Workers/OpenNext runs the production website, API routes, admin, activation flow, redirect engine, and customer portal.
-- Railway is reserved for future background jobs and operational tasks that should not replace the Cloudflare frontend.
+Tap Rater has a single backend surface: the Cloudflare Worker (Next.js/OpenNext) that runs the
+production website, API routes, admin, activation flow, redirect engine, and customer portal.
 
 Live Stripe payments are intentionally disabled until final approval.
 
@@ -37,58 +35,13 @@ NEXT_PUBLIC_SITE_URL
 
 Do not expose `DATABASE_URL` or `RESEND_API_KEY` to browser code.
 
-## Railway Backend
+## Background jobs
 
-The Railway backend package lives in:
-
-```text
-apps/backend
-```
-
-It is a small Node service for future background work:
-
-- `GET /healthz`
-- `POST /jobs/daily-report`
-- `POST /jobs/review-monitoring`
-- `POST /jobs/billing-reminder`
-
-Job routes require:
-
-```text
-Authorization: Bearer {CRON_SECRET}
-```
-
-The current job handlers are safe placeholders. They return skipped statuses until the business logic is built.
-
-## Commands
-
-```bash
-npm run backend:dev
-npm run backend:build
-npm run backend:start
-npm run backend:db-check
-npm run backend:email-test
-```
-
-`backend:db-check` runs `select 1` against `DATABASE_URL`.
-
-`backend:email-test` sends only when `RESEND_API_KEY` and either `EMAIL_TEST_TO` or `ADMIN_NOTIFICATION_EMAIL` are configured. If not configured, it exits with a skip message instead of failing.
-
-## Local Environment
-
-Use `apps/backend/.env.example` as the safe template. Do not commit real values.
-
-```text
-DATABASE_URL
-RESEND_API_KEY
-RESEND_FROM_EMAIL
-ORDER_NOTIFICATION_EMAIL
-ADMIN_NOTIFICATION_EMAIL
-CRON_SECRET
-NEXT_PUBLIC_SITE_URL
-NODE_ENV
-PORT
-```
+There is no separate background-job service. A prior scaffold (`apps/backend`, intended for future
+Railway-hosted cron jobs) was removed -- every job handler in it was an unimplemented stub with zero
+real functionality, and nothing in the app depended on it. If a real recurring job is needed later
+(e.g. a daily report), add it scoped to what that job actually needs, not as standing infrastructure
+ahead of time.
 
 ## Email Utility
 
@@ -117,13 +70,9 @@ Run:
 npm run build
 npm test
 npm run cf:build
-npm run backend:build
-npm run backend:db-check
 ```
 
 For production, verify:
 
 - Cloudflare Worker still serves `/`, `/shop`, `/activate`, `/admin/login`, and `/r/TR-DEMO-GOOGLE`.
-- Railway `/healthz` returns `{ "ok": true, "service": "tap-rater-backend" }`.
-- Railway can connect to Neon through `DATABASE_URL`.
 - Resend domain is verified before production emails are enabled.
