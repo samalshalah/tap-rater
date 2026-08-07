@@ -18,9 +18,10 @@ describe("cms repository", () => {
   it("provides default homepage content", () => {
     const content = getDefaultHomepageContent();
 
-    expect(content.heroTitle).toContain("NFC review stands");
+    expect(content.heroTitle).toContain("NFC & QR stands");
     expect(content.primaryButtonHref).toBe("/shop");
-    expect(content.secondaryButtonHref).toBe("#platform-preview");
+    expect(content.secondaryButtonHref).toBe("/custom-stands");
+    expect(content.featuredLabel).toBe("Physical stands");
   });
 
   it("stores homepage content in site_content", async () => {

@@ -1,15 +1,26 @@
 import { getActiveProducts, getProductBySlug, getProductPriceCents } from "@/lib/products";
+import { getProductPurchaseOptions, getPurchaseOption, standardDirectOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export const cartStorageKey = "taprater:cart";
 
 export type CartItem = {
   productId: string;
+  optionId?: PurchaseOptionId;
   quantity: number;
+  setup?: {
+    destinationUrl?: string;
+    businessName?: string;
+    headline?: string;
+    cta?: string;
+    logoFileName?: string;
+    proofApproved?: boolean;
+  };
 };
 
 export type CartRow = {
   item: CartItem;
   product: NonNullable<ReturnType<typeof getProductBySlug>>;
+  option: NonNullable<ReturnType<typeof getPurchaseOption>>;
   unitPriceCents: number;
   lineSubtotalCents: number;
 };
@@ -24,20 +35,34 @@ export function normalizeCartItems(value: unknown): CartItem[] {
   }
 
   const activeProductIds = new Set(getActiveProducts().map((product) => product.slug));
-  const normalized = new Map<string, number>();
+  const productById = new Map(getActiveProducts().map((product) => [product.slug, product]));
+  const normalized = new Map<string, CartItem>();
 
   for (const entry of value) {
     const productId = typeof entry?.productId === "string" ? entry.productId : "";
     const quantity = entry?.quantity;
+    const product = productById.get(productId);
 
-    if (!activeProductIds.has(productId) || !isPositiveQuantity(quantity)) {
+    if (!activeProductIds.has(productId) || !product || !isPositiveQuantity(quantity)) {
       continue;
     }
 
-    normalized.set(productId, (normalized.get(productId) ?? 0) + quantity);
+    const requestedOption = typeof entry?.optionId === "string" ? getPurchaseOption(entry.optionId) : undefined;
+    const productOptions = getProductPurchaseOptions(product);
+    const option = requestedOption && productOptions.some((item) => item.id === requestedOption.id) ? requestedOption : productOptions[0] ?? standardDirectOption;
+    const setup = normalizeSetup(entry?.setup);
+    const key = getCartItemKey({ productId, optionId: option.id, setup });
+    const existing = normalized.get(key);
+
+    normalized.set(key, {
+      productId,
+      optionId: option.id,
+      quantity: (existing?.quantity ?? 0) + quantity,
+      setup
+    });
   }
 
-  return Array.from(normalized, ([productId, quantity]) => ({ productId, quantity }));
+  return Array.from(normalized.values());
 }
 
 export function parseStoredCart(value: string | null): CartItem[] {
@@ -59,34 +84,65 @@ export function mergeCartItem(items: CartItem[], item: CartItem): CartItem[] {
 export function updateCartQuantity(items: CartItem[], productId: string, delta: number): CartItem[] {
   return normalizeCartItems(
     items.map((item) =>
-      item.productId === productId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
+      getCartItemKey(item) === productId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
     )
   );
 }
 
 export function removeCartItem(items: CartItem[], productId: string): CartItem[] {
-  return items.filter((item) => item.productId !== productId);
+  return items.filter((item) => getCartItemKey(item) !== productId);
 }
 
 export function getCartRows(items: CartItem[]): CartRow[] {
   return normalizeCartItems(items).flatMap((item) => {
     const product = getProductBySlug(item.productId);
+    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
 
-    if (!product) {
+    if (!product || !option) {
       return [];
     }
 
-    const unitPriceCents = getProductPriceCents(product);
+    const unitPriceCents = option.priceCents ?? getProductPriceCents(product);
 
     return [
       {
         item,
         product,
+        option,
         unitPriceCents,
         lineSubtotalCents: unitPriceCents * item.quantity
       }
     ];
   });
+}
+
+export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "setup">): string {
+  const setup = item.setup ?? {};
+  return [
+    item.productId,
+    item.optionId ?? standardDirectOption.id,
+    setup.destinationUrl ?? "",
+    setup.businessName ?? "",
+    setup.headline ?? "",
+    setup.cta ?? "",
+    setup.logoFileName ?? ""
+  ].join("|");
+}
+
+function normalizeSetup(value: unknown): CartItem["setup"] {
+  const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  return {
+    destinationUrl: readString(row.destinationUrl),
+    businessName: readString(row.businessName),
+    headline: readString(row.headline),
+    cta: readString(row.cta),
+    logoFileName: readString(row.logoFileName),
+    proofApproved: row.proofApproved === true
+  };
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 export function calculateCartTotalCents(items: CartItem[]): number {

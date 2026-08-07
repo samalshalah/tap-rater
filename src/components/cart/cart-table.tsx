@@ -5,7 +5,7 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice } from "@/lib/products";
-import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
+import { calculateCartTotalCents, getCartItemKey, getCartRows } from "@/lib/cart";
 
 export function CartTable() {
   const { decreaseItem, increaseItem, items, removeItem } = useCart();
@@ -53,11 +53,20 @@ export function CartTable() {
 
   return (
     <div className="grid gap-5">
-      {rows.map((row) => (
-        <div key={row.product.slug} className="grid gap-4 border-b border-line py-4 md:grid-cols-[1fr_auto_auto] md:items-center">
+      {rows.map((row) => {
+        const cartKey = getCartItemKey(row.item);
+        return (
+        <div key={cartKey} className="grid gap-4 border-b border-line py-4 md:grid-cols-[1fr_auto_auto] md:items-center">
           <div>
             <p className="font-semibold text-ink">{row.product.title}</p>
+            <p className="text-sm font-semibold text-brand">{row.option.label}</p>
             <p className="text-sm text-muted">{formatPrice(row.unitPriceCents)} each</p>
+            <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
+              {row.item.setup?.businessName ? <p><strong className="text-ink">Business:</strong> {row.item.setup.businessName}</p> : null}
+              {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Link:</strong> {row.item.setup.destinationUrl}</p> : null}
+              {row.item.setup?.headline ? <p><strong className="text-ink">Headline:</strong> {row.item.setup.headline}</p> : null}
+              {row.item.setup?.logoFileName ? <p><strong className="text-ink">Logo:</strong> {row.item.setup.logoFileName}</p> : null}
+            </div>
           </div>
           <div className="flex h-11 w-fit items-center overflow-hidden rounded-md border border-line">
             <button
@@ -65,7 +74,7 @@ export function CartTable() {
               aria-label={`Decrease ${row.product.title} quantity`}
               className="grid h-11 w-11 place-items-center text-ink hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-muted"
               disabled={row.item.quantity <= 1}
-              onClick={() => decreaseItem(row.product.slug)}
+              onClick={() => decreaseItem(cartKey)}
             >
               <Minus size={16} />
             </button>
@@ -76,7 +85,7 @@ export function CartTable() {
               type="button"
               aria-label={`Increase ${row.product.title} quantity`}
               className="grid h-11 w-11 place-items-center text-ink hover:bg-gray-50"
-              onClick={() => increaseItem(row.product.slug)}
+              onClick={() => increaseItem(cartKey)}
             >
               <Plus size={16} />
             </button>
@@ -90,13 +99,14 @@ export function CartTable() {
               type="button"
               aria-label={`Remove ${row.product.title}`}
               className="grid h-10 w-10 place-items-center rounded-md border border-line text-brand hover:bg-gray-50"
-              onClick={() => removeItem(row.product.slug)}
+              onClick={() => removeItem(cartKey)}
             >
               <Trash2 size={17} />
             </button>
           </div>
         </div>
-      ))}
+        );
+      })}
       <div className="flex items-center justify-between text-xl font-bold">
         <span>Total</span>
         <span>{formatPrice(total)}</span>

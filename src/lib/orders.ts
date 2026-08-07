@@ -7,11 +7,14 @@ export type OrdersDbClient = {
 
 export type OrderLineItem = {
   productId: string;
+  optionId?: string;
+  optionLabel?: string;
   title: string;
   sku: string;
   quantity: number;
   unitAmountCents: number;
   lineSubtotalCents: number;
+  setup?: Record<string, unknown>;
 };
 
 export type OrderRecord = {
@@ -51,11 +54,14 @@ export type StripeCheckoutSessionLike = {
 export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderLineItem[] {
   return rows.map((row) => ({
     productId: row.productId,
+    optionId: row.optionId,
+    optionLabel: row.optionLabel,
     title: row.title,
     sku: row.sku,
     quantity: row.quantity,
     unitAmountCents: row.unitAmountCents,
-    lineSubtotalCents: row.lineSubtotalCents
+    lineSubtotalCents: row.lineSubtotalCents,
+    setup: row.setup
   }));
 }
 
@@ -200,7 +206,12 @@ function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] 
             Number.isInteger(row.quantity) &&
             Number.isInteger(row.unitAmountCents) &&
             Number.isInteger(row.lineSubtotalCents)
-            ? [row as OrderLineItem]
+            ? [
+                {
+                  ...row,
+                  setup: row.setup && typeof row.setup === "object" ? row.setup : undefined
+                } as OrderLineItem
+              ]
             : [];
         })
       : [];

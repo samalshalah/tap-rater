@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateCartTotalCents, mergeCartItem, normalizeCartItems, parseStoredCart, updateCartQuantity } from "@/lib/cart";
+import { calculateCartTotalCents, getCartItemKey, mergeCartItem, normalizeCartItems, parseStoredCart, updateCartQuantity } from "@/lib/cart";
 
 describe("cart utilities", () => {
   it("merges matching products and counts only positive quantities", () => {
@@ -8,13 +8,15 @@ describe("cart utilities", () => {
       quantity: 2
     });
 
-    expect(items).toEqual([{ productId: "google-review-stand", quantity: 3 }]);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 3 });
   });
 
   it("prevents quantity updates from going below one", () => {
-    const items = updateCartQuantity([{ productId: "google-review-stand", quantity: 1 }], "google-review-stand", -4);
+    const item = normalizeCartItems([{ productId: "google-review-stand", quantity: 1 }])[0];
+    const items = updateCartQuantity([item], getCartItemKey(item), -4);
 
-    expect(items).toEqual([{ productId: "google-review-stand", quantity: 1 }]);
+    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 1 });
   });
 
   it("removes stale product ids and invalid quantities from stored carts", () => {
@@ -25,7 +27,8 @@ describe("cart utilities", () => {
       { productId: "", quantity: 3 }
     ]);
 
-    expect(items).toEqual([{ productId: "google-review-stand", quantity: 2 }]);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 2 });
   });
 
   it("restores only valid items from localStorage JSON", () => {
@@ -36,7 +39,8 @@ describe("cart utilities", () => {
       ])
     );
 
-    expect(items).toEqual([{ productId: "google-review-stand", quantity: 1 }]);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 1 });
   });
 
   it("returns an empty cart when stored JSON is corrupted", () => {
@@ -49,6 +53,6 @@ describe("cart utilities", () => {
       { productId: "stale-bundle-product", quantity: 1 }
     ]);
 
-    expect(total).toBe(9800);
+    expect(total).toBe(7800);
   });
 });

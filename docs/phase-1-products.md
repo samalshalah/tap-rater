@@ -1,10 +1,8 @@
 # Phase 1 Products
 
-Phase 1 sells only physical tabletop NFC stands and flat NFC plates. Cards, employee name tags, badges, staff cards, and other card/tag products are postponed until printing and fulfillment are ready.
+Phase 1 sells physical tabletop NFC/QR stands only. Flat plates, cards, employee name tags, badges, staff cards, and hosted multi-link subscriptions are postponed until fulfillment and billing are approved.
 
 ## Active Storefront Products
-
-### Stands
 
 - Google Review Stand
 - Yelp Review Stand
@@ -14,85 +12,54 @@ Phase 1 sells only physical tabletop NFC stands and flat NFC plates. Cards, empl
 - Follow Us on Social Media Stand
 - Book Your Next Visit Stand
 - View Our Menu Stand
+- Visit Our Website Stand
+- Custom Direct Stand
 
-### Plates
+## Purchase Options
 
-- Google Review Plate
-- Yelp Review Plate
-- Facebook Review Plate
-- TripAdvisor Review Plate
-- Rate Your Experience Plate
-- Follow Us on Social Media Plate
-- Book Your Next Visit Plate
-- View Our Menu Plate
+Regular action stands support two customer-facing purchase options:
 
-## Shared Phase 1 Product Model
+- Standard Direct Stand: `$39`, one-time, ready-made stand art with one direct NFC/QR destination.
+- Branded + QR Direct Stand: `$49`, one-time, customer business logo/name plus QR for one direct destination.
 
-Phase 1 physical products use:
+Custom Direct Stand is a separate product:
 
-- `productType = physical_redirect`
-- `serviceMode = basic_redirect`
-- `checkoutMode = buy_now` while checkout remains test/preview
-- `format = stand` or `format = plate`
+- Custom Direct Stand: `$49`, one-time, customer logo/business name/custom headline or center direction plus one direct destination.
+
+Hosted Multi-Link is request-only/coming soon in this branch. Do not enable public subscription checkout until pricing, Stripe recurring billing, fulfillment, and hosted-page operations are approved.
+
+## Shared Product Model
+
+Active launch products use:
+
+- `format = stand`
 - `requiresAccount = false`
 - `requiresLandingPage = false`
 - `requiresSubscription = false`
-- `activationType = free_basic_activation`
-- `includedServiceLabel = Free basic activation`
+- `checkoutMode = buy_now` while Stripe remains test mode
+- `activationType = free_basic_activation` for regular action stands
+- `activationType = managed_setup` for the Custom Direct Stand
 
 Each product supports direct redirect activation. The physical NFC chip or QR code can point to a permanent Tap Rater URL, then redirect to one configured destination URL.
-
-## Design Customization Options
-
-Every active Phase 1 stand and plate supports:
-
-- Standard Design (`standard_design`): uses the Tap Rater template and is the fastest setup path.
-- Add Your Logo (`add_logo`): adds the customer's business logo to the Tap Rater design. Logo setup is required and logo files are collected after request.
-- Custom Design (`custom_design`): supports custom colors, layout, wording, and logo placement. Custom design requires approval before production.
-
-The product model also stores:
-
-- `allowsLogoUpload = true`
-- `allowsCustomDesign = true`
-- `designMode = standard` by default
-
-Customization must stay inside each product page. Do not create separate custom-design categories. Do not imply that logo upload, automated proofs, or custom production approval are live. Use wording such as "Logo and custom design details are collected after request."
 
 ## Storefront Categories
 
 Categories are based on customer use case:
 
-- Review Products (`reviews`)
-- Social Media Products (`social-media`)
-- Appointment Products (`appointments`)
-- Menu Products (`menu`)
-- Feedback Products (`feedback`)
-- Business Bundles (`business-bundles`)
-
-The format field describes the physical item. For example, Google Review Stand uses `categorySlug = reviews` and `format = stand`; Google Review Plate uses `categorySlug = reviews` and `format = plate`.
+- Review Stands (`reviews`)
+- Social Media Stands (`social-media`)
+- Appointment & Reservation Stands (`appointments`)
+- Menu & Info Stands (`menu`)
+- Feedback Stands (`feedback`)
+- Website & Link Stands (`website-links`)
+- Custom Stands (`custom-stands`)
 
 ## Product Copy Rules
 
-- Physical products must say "No monthly fee required for basic activation."
+- Physical products must say "No monthly fee required" where appropriate.
 - Physical products must say "Connects to one destination URL."
 - Physical products must say "Tap or scan ready."
-- Plate products should not be described as stands.
+- Do not mention flat plates in public launch paths.
 - View Our Menu products are menu-only. Do not mention Wi-Fi in customer-facing menu product copy.
-- Follow Us on Social Media products should mention Facebook, X, Instagram, and YouTube.
+- Follow Us on Social Media products should mention common social destinations without promising unavailable integrations.
 - Avoid review-gating language.
-
-## Image Status
-
-Real stand renders exist for all eight stand products.
-
-Real plate renders are currently missing for:
-
-- Yelp Review Plate
-- Facebook Review Plate
-- TripAdvisor Review Plate
-- Rate Your Experience Plate
-- Follow Us on Social Media Plate
-- Book Your Next Visit Plate
-- View Our Menu Plate
-
-The storefront uses clear branded "Plate image coming soon" placeholders for those products until real plate renders are created. Google Review Plate uses the existing plate image.

@@ -1,0 +1,177 @@
+"use client";
+
+import { type FormEvent, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
+import { useCart } from "@/components/cart/cart-provider";
+import type { MigratedProduct } from "@/data/migrated-products";
+import { formatPrice } from "@/lib/products";
+import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
+
+export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
+  const options = useMemo(() => getProductPurchaseOptions(product), [product]);
+  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
+  const [error, setError] = useState("");
+  const cart = useCart();
+  const router = useRouter();
+  const selectedOption = options.find((option) => option.id === selectedOptionId) ?? options[0];
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+
+    const form = new FormData(event.currentTarget);
+    const destinationUrl = String(form.get("destinationUrl") ?? "").trim();
+    const businessName = String(form.get("businessName") ?? "").trim();
+    const headline = String(form.get("headline") ?? "").trim();
+    const cta = String(form.get("cta") ?? "").trim();
+    const logo = form.get("logo");
+    const logoFileName = logo instanceof File && logo.name ? logo.name : "";
+    const proofApproved = form.get("proofApproved") === "on";
+
+    if (!isHttpUrl(destinationUrl)) {
+      setError("Enter a valid destination link starting with http or https.");
+      return;
+    }
+
+    if (selectedOption.requiresBusinessName && !businessName) {
+      setError("Business name is required for this setup.");
+      return;
+    }
+
+    if (selectedOption.requiresLogo && !logoFileName) {
+      setError("Logo file name is required for this setup.");
+      return;
+    }
+
+    if (selectedOption.requiresCustomText && !headline) {
+      setError("Headline or main stand text is required for this setup.");
+      return;
+    }
+
+    if (!proofApproved) {
+      setError("Approve the front proof before adding this configured stand to cart.");
+      return;
+    }
+
+    cart.addItem({
+      productId: product.slug,
+      optionId: selectedOption.id,
+      quantity: 1,
+      setup: {
+        destinationUrl,
+        businessName,
+        headline,
+        cta,
+        logoFileName,
+        proofApproved
+      }
+    });
+    router.push("/cart");
+  }
+
+  return (
+    <form className="grid gap-5 rounded-md border border-line bg-white p-5 shadow-sm md:p-7" onSubmit={submit}>
+      <div>
+        <p className="text-sm font-semibold uppercase text-brand">Choose setup</p>
+        <h2 className="mt-2 text-2xl font-black text-ink">Configure this stand</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          Your NFC and QR code connect directly to the link you provide. If the link changes after production, replacement or reprogramming may be required.
+        </p>
+      </div>
+
+      <div className="grid gap-3">
+        {options.map((option) => (
+          <label
+            key={option.id}
+            className={selectedOptionId === option.id ? "grid cursor-pointer gap-2 rounded-md border border-brand bg-teal-50 p-4" : "grid cursor-pointer gap-2 rounded-md border border-line bg-gray-50 p-4"}
+          >
+            <span className="flex items-start justify-between gap-4">
+              <span className="flex items-start gap-3">
+                <input
+                  className="mt-1"
+                  type="radio"
+                  name="setupOption"
+                  value={option.id}
+                  checked={selectedOptionId === option.id}
+                  onChange={() => setSelectedOptionId(option.id)}
+                />
+                <span>
+                  <span className="block font-black text-ink">{option.label}</span>
+                  <span className="mt-1 block text-sm leading-6 text-muted">{option.summary}</span>
+                </span>
+              </span>
+              <span className="shrink-0 text-lg font-black text-ink">{formatPrice(option.priceCents)}</span>
+            </span>
+          </label>
+        ))}
+        {product.categorySlug === "custom-stands" ? (
+          <div className="rounded-md border border-dashed border-line bg-gray-50 p-4">
+            <p className="text-sm font-black text-ink">Hosted Multi-Link Page</p>
+            <p className="mt-1 text-sm leading-6 text-muted">Coming soon. Use support for hosted multi-link or subscription setup requests.</p>
+          </div>
+        ) : null}
+      </div>
+
+      <label className="grid gap-2 text-sm font-bold text-ink">
+        Destination link
+        <input className="rounded-md border border-line px-4 py-3 font-normal" name="destinationUrl" type="url" placeholder="https://example.com/review" required />
+      </label>
+
+      {selectedOption.requiresBusinessName ? (
+        <label className="grid gap-2 text-sm font-bold text-ink">
+          Business name
+          <input className="rounded-md border border-line px-4 py-3 font-normal" name="businessName" placeholder="Your business name" required />
+        </label>
+      ) : null}
+
+      {selectedOption.requiresLogo ? (
+        <label className="grid gap-2 text-sm font-bold text-ink">
+          Business logo
+          <input className="rounded-md border border-line px-4 py-3 font-normal" name="logo" type="file" accept="image/png,image/jpeg" required />
+          <span className="text-xs font-normal text-muted">The order stores the file name today. Production logo upload/storage still needs final backend wiring.</span>
+        </label>
+      ) : null}
+
+      {selectedOption.requiresCustomText ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            Headline or main stand text
+            <input className="rounded-md border border-line px-4 py-3 font-normal" name="headline" placeholder="Tap to connect" required />
+          </label>
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            CTA sentence
+            <input className="rounded-md border border-line px-4 py-3 font-normal" name="cta" placeholder="Scan or tap below" />
+          </label>
+        </div>
+      ) : null}
+
+      <div className="rounded-md border border-line bg-gray-50 p-4">
+        <p className="text-sm font-black text-ink">Front proof check</p>
+        <p className="mt-1 text-sm leading-6 text-muted">
+          This MVP records your approval before checkout. Final production artwork is confirmed by Tap Rater before printing.
+        </p>
+        <label className="mt-3 flex items-start gap-3 text-sm font-bold text-ink">
+          <input className="mt-1" type="checkbox" name="proofApproved" required />
+          I approve the setup details for this stand.
+        </label>
+      </div>
+
+      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+
+      <button className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-5 py-3 text-sm font-black text-white transition hover:bg-ink">
+        <CheckCircle2 className="h-4 w-4" />
+        Add configured stand to cart
+      </button>
+    </form>
+  );
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}

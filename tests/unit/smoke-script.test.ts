@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 
+const smokeScriptPath = "../../scripts/smoke.mjs";
+
 describe("smoke test script", () => {
   it("checks the critical public launch routes without requiring Stripe", async () => {
-    const { createSmokeChecks } = await import("../../scripts/smoke.mjs");
+    const { createSmokeChecks } = (await import(smokeScriptPath)) as {
+      createSmokeChecks: (baseUrl: string) => Array<{ path: string; acceptableStatuses?: number[] }>;
+    };
     const checks = createSmokeChecks("http://127.0.0.1:3000");
 
     expect(checks.map((check) => check.path)).toEqual([
@@ -16,7 +20,9 @@ describe("smoke test script", () => {
   });
 
   it("classifies status codes for strict and redirect-tolerant checks", async () => {
-    const { isAcceptableStatus } = await import("../../scripts/smoke.mjs");
+    const { isAcceptableStatus } = (await import(smokeScriptPath)) as {
+      isAcceptableStatus: (status: number, acceptableStatuses: number[]) => boolean;
+    };
 
     expect(isAcceptableStatus(200, [200])).toBe(true);
     expect(isAcceptableStatus(307, [200])).toBe(false);

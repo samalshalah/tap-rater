@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Tap Rater FAQs",
-  description: "Answers about Tap Rater NFC review stands, Google review plates, setup, link changes, and review destinations.",
+  description: "Answers about Tap Rater NFC and QR stands, setup, link changes, and review destinations.",
   alternates: {
     canonical: "/faqs"
   }
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const faqs = [
   {
     question: "What can a Tap Rater product open?",
-    answer: "A Tap Rater product can open a Google review link, Facebook recommendation page, Yelp listing, survey, or custom feedback URL."
+    answer: "A Tap Rater stand can open a Google review link, Facebook recommendation page, Yelp listing, menu, booking page, survey, website, or custom URL."
   },
   {
     question: "Can I change the link later?",
@@ -22,8 +22,8 @@ const faqs = [
     answer: "Place it where customers finish a positive interaction: checkout, front desk, pickup counter, reception, table service, or service desk."
   },
   {
-    question: "Is payment active in this preview?",
-    answer: "No. Stripe checkout is intentionally deferred until the final launch stage."
+    question: "Is checkout live?",
+    answer: "Stripe checkout remains test-mode only in this branch. Live payments must be approved separately before launch."
   }
 ];
 

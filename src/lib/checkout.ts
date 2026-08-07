@@ -1,16 +1,19 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
-import { getProductPriceCents } from "@/lib/products";
 import type { CartItem } from "@/lib/cart";
+import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export type CheckoutCartRow = {
   productId: string;
+  optionId: PurchaseOptionId;
+  optionLabel: string;
   title: string;
   sku: string;
   quantity: number;
   unitAmountCents: number;
   lineSubtotalCents: number;
   shortDescription: string;
+  setup: NonNullable<CartItem["setup"]>;
 };
 
 export type ValidatedCheckoutCart =
@@ -32,30 +35,39 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       .filter((product) => product.isActive && product.stockStatus === "instock" && product.checkoutMode === "buy_now")
       .map((product) => [product.slug, product])
   );
-  const quantityByProductId = new Map<string, number>();
+  const rows: CheckoutCartRow[] = [];
 
   for (const item of items) {
-    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !productById.has(item.productId)) {
+    const product = productById.get(item.productId);
+    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
+
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !product || !option) {
       continue;
     }
 
-    quantityByProductId.set(item.productId, (quantityByProductId.get(item.productId) ?? 0) + item.quantity);
-  }
+    if (!getProductPurchaseOptions(product).some((purchaseOption) => purchaseOption.id === option.id)) {
+      continue;
+    }
 
-  const rows = Array.from(quantityByProductId.entries()).map(([productId, quantity]) => {
-    const product = productById.get(productId)!;
-    const unitAmountCents = getProductPriceCents(product);
+    const setup = normalizeCheckoutSetup(item.setup);
 
-    return {
-      productId,
+    if (!isValidCheckoutSetup(option.id, setup)) {
+      continue;
+    }
+
+    rows.push({
+      productId: product.slug,
+      optionId: option.id,
+      optionLabel: option.label,
       title: product.title,
       sku: product.sku,
-      quantity,
-      unitAmountCents,
-      lineSubtotalCents: unitAmountCents * quantity,
-      shortDescription: product.shortDescription
-    };
-  });
+      quantity: item.quantity,
+      unitAmountCents: option.priceCents,
+      lineSubtotalCents: option.priceCents * item.quantity,
+      shortDescription: product.shortDescription,
+      setup
+    });
+  }
 
   if (rows.length === 0) {
     return { ok: false, reason: "empty_cart", message: "Your cart is empty or contains unavailable products." };
@@ -76,9 +88,10 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Ch
       currency: "usd",
       product_data: {
         name: row.title,
-        description: row.shortDescription,
+        description: `${row.optionLabel} - ${row.shortDescription}`,
         metadata: {
           product_id: row.productId,
+          option_id: row.optionId,
           sku: row.sku
         }
       },
@@ -111,9 +124,51 @@ export function createCheckoutSessionParams({
     },
     metadata: {
       test_mode_only: "true",
-      total_cents: String(cart.totalCents)
+      total_cents: String(cart.totalCents),
+      configured_items: String(cart.rows.length)
     }
   };
+}
+
+function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {
+  return {
+    destinationUrl: setup?.destinationUrl?.trim(),
+    businessName: setup?.businessName?.trim(),
+    headline: setup?.headline?.trim(),
+    cta: setup?.cta?.trim(),
+    logoFileName: setup?.logoFileName?.trim(),
+    proofApproved: setup?.proofApproved === true
+  };
+}
+
+function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<CartItem["setup"]>) {
+  if (!isHttpUrl(setup.destinationUrl) || setup.proofApproved !== true) {
+    return false;
+  }
+
+  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && !setup.businessName) {
+    return false;
+  }
+
+  if (optionId === "branded_qr_direct" && !setup.logoFileName) {
+    return false;
+  }
+
+  if (optionId === "custom_direct" && !setup.headline) {
+    return false;
+  }
+
+  return true;
+}
+
+function isHttpUrl(value: string | undefined) {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 export function isStripeTestSecretKey(value: string | undefined) {

@@ -2,14 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getProductServiceBadges, getReviewDestination } from "@/lib/product-page-content";
-import { formatPrice, getCategoryBySlug, getProductPriceCents } from "@/lib/products";
+import { formatPrice, getCategoryBySlug } from "@/lib/products";
+import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 
 export function ProductCard({ product }: { product: MigratedProduct }) {
   const image = product.images[0];
   const category = getCategoryBySlug(product.categorySlug);
   const serviceBadges = getProductServiceBadges(product);
   const purchaseLabel = getPurchaseLabel(product);
-  const formatLabel = product.format === "stand" ? "Stand" : product.format === "plate" ? "Plate" : product.format;
+  const formatLabel = product.format === "stand" ? "Stand" : product.format;
   const destination = getReviewDestination(product);
 
   return (
@@ -37,10 +38,11 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
         </div>
         {product.customizationOptions.length > 1 ? (
           <p className="mt-3 text-xs font-black uppercase tracking-wide text-brand">
-            Standard, logo, or custom design available
+            Standard or branded setup available
           </p>
         ) : null}
         <p className="mt-2 text-lg font-bold text-brand">{purchaseLabel}</p>
+        <p className="mt-3 text-sm font-black text-ink">View options</p>
       </div>
     </Link>
   );
@@ -59,5 +61,5 @@ function getPurchaseLabel(product: MigratedProduct) {
     return "Subscription setup";
   }
 
-  return formatPrice(getProductPriceCents(product));
+  return `From ${formatPrice(getLowestPurchasePriceCents(product))}`;
 }

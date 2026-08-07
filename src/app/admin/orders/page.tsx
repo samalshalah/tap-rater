@@ -58,7 +58,14 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="p-4 text-muted">
                     {order.line_items_json.length > 0
-                      ? order.line_items_json.map((item) => `${item.quantity} x ${item.title}`).join(", ")
+                      ? order.line_items_json.map((item) => (
+                          <div key={`${item.productId}-${item.optionId ?? "base"}`} className="mb-3 last:mb-0">
+                            <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
+                            {item.optionLabel ? <p>{item.optionLabel}</p> : null}
+                            {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
+                            {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
+                          </div>
+                        ))
                       : "-"}
                   </td>
                   <td className="p-4 font-black text-ink">{formatPrice(order.total_cents)}</td>

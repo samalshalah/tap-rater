@@ -15,7 +15,8 @@ export function getProductBySlug(slug: string): MigratedProduct | undefined {
 }
 
 export function getCatalogCategories(): CatalogCategory[] {
-  return catalogCategories;
+  const activeCategorySlugs = new Set(getActiveProducts().map((product) => product.categorySlug));
+  return catalogCategories.filter((category) => activeCategorySlugs.has(category.slug));
 }
 
 export function getCategoryBySlug(slug: string): CatalogCategory | undefined {

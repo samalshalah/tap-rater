@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { CircleUserRound, DollarSign, Globe2, Search, ShoppingBag } from "lucide-react";
+import { CircleUserRound, ShoppingBag } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 
 const navItems = [
   { href: "/shop", label: "Shop" },
-  { href: "/setup-new-taprater", label: "Setup" },
-  { href: "/faqs", label: "FAQs" },
-  { href: "/contact-us", label: "Contact" }
+  { href: "/solutions", label: "Solutions" },
+  { href: "/custom-stands", label: "Custom Stands" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/support", label: "Support" }
 ];
 
 export function Header() {
@@ -18,7 +20,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 bg-white/95 shadow-[0_10px_40px_rgba(17,24,39,0.06)] backdrop-blur">
       <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
-        <div className="grid min-h-20 grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[220px_1fr_420px]">
+        <div className="grid min-h-20 grid-cols-[1fr_auto] items-center gap-4 lg:grid-cols-[180px_1fr_180px]">
           <Link href="/" className="inline-flex items-center">
             <Image
               src="/uploads/brand/tap-rater-logo.png"
@@ -29,7 +31,7 @@ export function Header() {
               className="h-12 w-auto object-contain md:h-14"
             />
           </Link>
-          <nav className="hidden justify-center gap-10 text-sm font-black uppercase text-ink lg:flex">
+          <nav className="hidden justify-center gap-8 text-sm font-black uppercase text-ink lg:flex">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className="hover:text-brand">
                 {item.label}
@@ -37,20 +39,9 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center justify-end gap-4 text-sm font-black uppercase text-ink">
-            <button aria-label="Search" className="hidden rounded-sm p-2 hover:text-brand sm:inline-flex">
-              <Search size={20} />
-            </button>
-            <span className="hidden items-center gap-1 md:inline-flex">
-              <Globe2 size={18} />
-              Eng
-            </span>
-            <span className="hidden items-center gap-1 md:inline-flex">
-              <DollarSign size={16} />
-              USD
-            </span>
             <Link href="/admin" className="hidden items-center gap-1 hover:text-brand md:inline-flex">
               <CircleUserRound size={18} />
-              Account
+              Admin
             </Link>
             <Link href="/cart" aria-label="Cart" className="relative rounded-sm p-2 hover:text-brand">
               <ShoppingBag size={24} />

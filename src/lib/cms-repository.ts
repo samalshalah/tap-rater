@@ -19,15 +19,15 @@ export type CmsDbClient = {
 export function getDefaultHomepageContent(): HomepageContentInput {
   return {
     eyebrow: "Tap Rater for local businesses",
-    heroTitle: "NFC review stands and smart reputation pages for local businesses.",
+    heroTitle: "NFC & QR stands for reviews, menus, booking, social media and more.",
     heroDescription:
-      "Help customers tap or scan to open reviews, social links, menus, booking pages, feedback forms, or hosted Tap Rater pages with setup and tracking options built in.",
-    primaryButtonLabel: "Shop NFC Products",
+      "Sell today with printed tabletop stands that open one direct link by tap or scan. Choose a standard stand, branded stand, or custom direct stand.",
+    primaryButtonLabel: "Shop Stands",
     primaryButtonHref: "/shop",
-    secondaryButtonLabel: "Explore Platform Options",
-    secondaryButtonHref: "#platform-preview",
-    featuredBadge: "Phase 1 products",
-    featuredLabel: "Stands and plates"
+    secondaryButtonLabel: "Create Custom Stand",
+    secondaryButtonHref: "/custom-stands",
+    featuredBadge: "Launch products",
+    featuredLabel: "Physical stands"
   };
 }
 

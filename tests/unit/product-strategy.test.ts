@@ -2,27 +2,29 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("Tap Rater product strategy", () => {
-  it("documents Tap Rater as both a product store and reputation platform", () => {
+  it("documents Tap Rater as a physical stand store first with platform features later", () => {
     const doc = readFileSync("docs/product-strategy.md", "utf8");
 
-    expect(doc).toContain("Tap Rater is both a product store and a reputation platform");
-    expect(doc).toContain("standalone NFC products");
+    expect(doc).toContain("physical NFC/QR tabletop stand store first");
+    expect(doc).toContain("public launch storefront should sell only products Tap Rater can fulfill now");
+    expect(doc).toContain("Standard Direct Stand");
+    expect(doc).toContain("Branded + QR Direct Stand");
+    expect(doc).toContain("Custom Direct Stand");
     expect(doc).toContain("managed setup");
     expect(doc).toContain("hosted landing pages");
-    expect(doc).toContain("customer account");
-    expect(doc).toContain("bundles");
+    expect(doc).toContain("public subscription checkout");
     expect(doc).toContain("Do not block unhappy customers");
     expect(doc).toContain("Phase 1");
     expect(doc).toContain("Phase 2");
     expect(doc).toContain("Phase 3");
   });
 
-  it("positions the homepage around NFC products and hosted reputation pages", () => {
+  it("positions the homepage around launch-ready ecommerce stand sales", () => {
     const homepage = readFileSync("src/app/page.tsx", "utf8");
 
-    expect(homepage).toContain("NFC review stands and smart reputation pages for local businesses.");
-    expect(homepage).toContain("Start simple. Grow into the platform.");
-    expect(homepage).toContain("More than a sign. A reputation platform.");
+    expect(homepage).toContain("NFC & QR Stands for Reviews, Menus, Booking, Social Media and More");
+    expect(homepage).toContain("Shop Stands");
+    expect(homepage).toContain("No subscription");
   });
 
   it("documents the platform domain split, redirect engine, and database entities", () => {

@@ -227,7 +227,18 @@ export const checkoutCartSchema = z.object({
     .array(
       z.object({
         productId: z.string().trim().min(2).max(160),
-        quantity: z.number().int().min(1).max(99)
+        optionId: z.enum(["standard_direct", "branded_qr_direct", "custom_direct"]).optional(),
+        quantity: z.number().int().min(1).max(99),
+        setup: z
+          .object({
+            destinationUrl: z.string().trim().max(500).optional(),
+            businessName: z.string().trim().max(160).optional(),
+            headline: z.string().trim().max(160).optional(),
+            cta: z.string().trim().max(160).optional(),
+            logoFileName: z.string().trim().max(240).optional(),
+            proofApproved: z.boolean().optional()
+          })
+          .optional()
       })
     )
     .max(50)

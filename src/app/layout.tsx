@@ -6,16 +6,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com"),
   title: {
-    default: "Tap Rater | NFC Review Products for Local Businesses",
+    default: "Tap Rater | NFC and QR Stands for Local Businesses",
     template: "%s | Tap Rater"
   },
   description:
-    "Tap Rater sells NFC review stands and plates that help customers tap or scan to open Google, Facebook, Yelp, TripAdvisor, social, booking, menu, or feedback links.",
+    "Tap Rater sells custom printed NFC and QR tabletop stands that help customers tap or scan to open review, menu, booking, social, feedback, website, or custom links.",
   keywords: [
     "Google review stand",
     "NFC review stand",
     "review us on Google sign",
-    "NFC review plate",
     "NFC menu stand",
     "customer feedback NFC stand"
   ],
@@ -23,9 +22,9 @@ export const metadata: Metadata = {
     canonical: "/"
   },
   openGraph: {
-    title: "Tap Rater | NFC Review Products for Local Businesses",
+    title: "Tap Rater | NFC and QR Stands for Local Businesses",
     description:
-      "NFC review stands and plates that help customers open your review link with one tap.",
+      "Custom printed NFC and QR tabletop stands that help customers open your important link with one tap or scan.",
     url: "/",
     siteName: "Tap Rater",
     type: "website"

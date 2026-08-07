@@ -1,12 +1,10 @@
 # Tap Rater Product Strategy
 
-Tap Rater is both a product store and a reputation platform. The public storefront sells physical NFC products first, while the platform layer powers permanent device URLs, activation, business profiles, hosted landing pages, tap tracking, forms, and future customer dashboards. In the long-term model, some products are standalone NFC products, some require managed setup, some require hosted landing pages, and some require a customer account.
+Tap Rater is a physical NFC/QR tabletop stand store first. The platform layer can support permanent device URLs, activation, business profiles, hosted pages, tracking, forms, and future customer dashboards, but the public launch storefront should sell only products Tap Rater can fulfill now.
 
-The current storefront strategy is intentionally narrower than the long-term platform strategy. Phase 1 sells only products Tap Rater can fulfill now: tabletop NFC stands and flat NFC plates.
+## Current Launch Scope
 
-## Phase 1 Fulfillment Scope
-
-Phase 1 active storefront products:
+Active storefront products:
 
 - Google Review Stand
 - Yelp Review Stand
@@ -16,75 +14,55 @@ Phase 1 active storefront products:
 - Follow Us on Social Media Stand
 - Book Your Next Visit Stand
 - View Our Menu Stand
-- Google Review Plate
-- Yelp Review Plate
-- Facebook Review Plate
-- TripAdvisor Review Plate
-- Rate Your Experience Plate
-- Follow Us on Social Media Plate
-- Book Your Next Visit Plate
-- View Our Menu Plate
+- Visit Our Website Stand
+- Custom Direct Stand
 
-Cards, employee name tags, badges, staff cards, and other card/tag products are postponed until Tap Rater has card or badge printing ready. They should not appear as active storefront products.
+Flat plates, cards, employee name tags, badges, staff cards, bundles, and hosted multi-link subscription products are postponed.
 
-## Phase 1 Design Customization
+## Purchase Model
 
-Every active Phase 1 stand and plate can be sold in three design modes:
+Regular action stands are sold with two setup options:
 
-- Standard Design: uses the Tap Rater template and is the fastest setup path.
-- Add Your Logo: adds the customer business logo to the Tap Rater design. Logo setup is required and logo files are collected after the order or setup request.
-- Custom Design: supports custom colors, layout, wording, and logo placement. Custom designs require approval before production.
+- Standard Direct Stand: `$39` one-time. Ready-made printed stand art, one direct destination URL, no logo/name customization.
+- Branded + QR Direct Stand: `$49` one-time. Customer logo/name plus QR, one direct destination URL.
 
-The product model supports this with:
+Custom Direct Stand is sold as a separate product:
 
-- `customizationOptions = standard_design | add_logo | custom_design`
-- `allowsLogoUpload = true` for stand and plate products
-- `allowsCustomDesign = true` for stand and plate products
-- `designMode = standard | logo | custom`
+- Custom Direct Stand: `$49` one-time. Customer logo, business name, custom headline or center graphic direction, CTA sentence, and one direct destination URL.
 
-Customization is an option inside each product, not a storefront category. The categories remain based on customer use case: Reviews, Social Media, Appointments, Menu, Feedback, and Business Bundles.
-
-Logo upload, automated proofing, and custom approval workflows are not live in Phase 1. Product pages and admin copy must use request-based wording such as "Logo and custom design details are collected after request."
+Hosted Multi-Link is not public subscription checkout in this branch. It can be described as coming soon or request-only until recurring Stripe billing, hosted-page operations, and fulfillment rules are approved.
 
 ## Product Families
 
-### Standalone Physical Redirect Products
-
-Standalone NFC products are simple physical products that open one destination URL. Phase 1 stands and plates use this model.
+### Standard/Branded Direct Stands
 
 These products use:
 
 - `productType = physical_redirect`
 - `serviceMode = basic_redirect`
-- `checkoutMode = buy_now` while checkout remains test/preview
+- `checkoutMode = buy_now`
 - `requiresAccount = false`
 - `requiresLandingPage = false`
 - `requiresSubscription = false`
 - `activationType = free_basic_activation`
 - `includedServiceLabel = Free basic activation`
 
-Basic activation can work with only a destination URL. The device can still point to a permanent Tap Rater route such as `/r/{deviceCode}`, but the behavior is a direct redirect after activation.
+### Custom Direct Stand
 
-### Managed Setup and Bundles
+Custom Direct Stand uses managed setup:
 
-Managed setup and bundles remain quote-based while Phase 1 focuses on individual stands and plates.
-
-These products should use:
-
-- `productType = physical_managed` or `bundle`
+- `productType = physical_managed`
 - `serviceMode = managed_redirect`
-- `checkoutMode = request_quote`
-- `requiresAccount = false` for now
+- `checkoutMode = buy_now`
+- `requiresAccount = false`
 - `requiresLandingPage = false`
 - `requiresSubscription = false`
 - `activationType = managed_setup`
-- `includedServiceLabel = Managed setup included`
+- `includedServiceLabel = Managed custom stand setup`
 
-Bundles may create multiple devices during fulfillment or setup, but they are not the main Phase 1 shop grid.
+### Future Platform Products
 
-### Platform Products
-
-Hosted landing page products remain part of the long-term Tap Rater platform strategy, not the main Phase 1 physical product grid. They require Tap Rater platform setup, a customer account, business profile, device or public URL, landing page, and usually tracking or form storage.
+Future hosted landing pages, multi-location dashboards, analytics subscriptions, and multi-link pages remain part of the long-term Tap Rater platform strategy. They should not be the default customer checkout path until live billing, support, and operations are approved.
 
 Future platform products should use:
 
@@ -95,24 +73,21 @@ Future platform products should use:
 - `requiresLandingPage = true`
 - `requiresSubscription = true` only where hosted features require recurring service
 
-## Phase 1 Categories
+## Storefront Categories
 
-Phase 1 categories are based on customer use case, not physical format. The physical format is stored separately as `format = stand | plate | bundle | platform`.
+Categories are based on customer use case:
 
-The storefront categories are:
-
-- Review Products (`reviews`)
-- Social Media Products (`social-media`)
-- Appointment Products (`appointments`)
-- Menu Products (`menu`)
-- Feedback Products (`feedback`)
-- Business Bundles (`business-bundles`)
-
-The first five categories contain the active Phase 1 stand and plate products. Each use-case category can show both physical formats. Business Bundles remains quote-based and optional while Phase 1 focuses on individual sellable products.
+- Review Stands (`reviews`)
+- Social Media Stands (`social-media`)
+- Appointment & Reservation Stands (`appointments`)
+- Menu & Info Stands (`menu`)
+- Feedback Stands (`feedback`)
+- Website & Link Stands (`website-links`)
+- Custom Stands (`custom-stands`)
 
 ## Supported Destinations
 
-The product model still supports these destinations for current and future products:
+The product model supports these destinations for current and future products:
 
 - `google`
 - `facebook`
@@ -128,7 +103,7 @@ The product model still supports these destinations for current and future produ
 - `referral`
 - `custom`
 
-Phase 1 menu products are menu-only in customer-facing copy and should not be marketed as Wi-Fi products.
+Launch customer copy should focus on the actual action: reviews, social, menu, booking, feedback, website, or one custom link.
 
 ## Compliance Language
 
@@ -139,33 +114,29 @@ Acceptable language focuses on reducing friction:
 - "Tap or scan to open your review link."
 - "Make it easier for customers to share their experience."
 - "Open the right review, booking, social, menu, feedback, or business link."
-- "Hosted pages can include public review links and private feedback options without steering customers based on sentiment."
 
 ## Checkout Direction
 
-Live Stripe payments are not enabled. Current one-time Stripe test checkout is only for `checkoutMode = buy_now` products. Platform products, managed setup, and bundles should use `request_quote` or `contact_sales` until pricing, subscription billing, tax, shipping, and fulfillment are intentionally approved.
+Stripe must remain sandbox/test mode until explicit approval. Current checkout can create one-time payment sessions for configured buy-now stands. Do not commit Stripe secrets, do not switch to live mode, and do not deploy live billing without approval.
 
 ## Launch Phases
 
-### Phase 1: Physical Stands and Plates
+### Phase 1: Physical Tabletop Stands
 
-- Publish SEO-focused marketing pages and product discovery pages.
-- Sell only tabletop NFC stands and flat NFC plates.
-- Keep card, badge, and name-tag products postponed.
-- Support device activation for simple redirect devices with a destination URL.
-- Support basic customer, business, location, and device records for platform growth.
-- Track basic tap analytics without storing raw IP addresses.
+- Sell launch-ready tabletop NFC/QR stands.
+- Keep postponed physical formats and hosted subscriptions out of the public checkout path.
+- Collect destination URL and required branding details before checkout.
+- Create orders with enough setup detail for fulfillment review.
 
-### Phase 2: Hosted Reputation Pages
+### Phase 2: Fulfillment and Admin Control
 
-- Add hosted landing pages for multi-platform review, feedback, referral, social hub, and reputation hub products.
-- Connect hosted pages to customer accounts, businesses, locations, devices, and analytics.
-- Store feedback and referral submissions in a compliance-safe way.
-- Keep review links available without steering customers based on sentiment.
+- Add durable logo upload/storage.
+- Add admin product/category editing backed by the database.
+- Add production proof and print-file review flows.
+- Add fulfillment status and customer notification controls.
 
-### Phase 3: Quotes, Bundles, Billing, and Subscriptions
+### Phase 3: Hosted Pages, Billing, and Subscriptions
 
-- Add quote requests for bundles, custom setup, and multi-location platform products.
-- Add bundle fulfillment flows that can create multiple devices.
-- Add subscription plans for hosted pages, analytics, and dashboards only after pricing is approved.
+- Add hosted multi-link pages after operations are ready.
 - Add Stripe live checkout only after explicit approval, bank account readiness, tax/shipping decisions, and webhook verification.
+- Add subscription plans only after pricing and cancellation/support workflows are approved.

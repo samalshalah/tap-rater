@@ -38,6 +38,10 @@ describe("product repository", () => {
       is_active: true
     });
 
+    if (!product) {
+      throw new Error("Expected Supabase product row to normalize");
+    }
+
     expect(product).toMatchObject({
       slug: "google-review-stand",
       title: "Supabase Google Stand",

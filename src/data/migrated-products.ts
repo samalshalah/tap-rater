@@ -66,7 +66,8 @@ export type CatalogCategorySlug =
   | "appointments"
   | "menu"
   | "feedback"
-  | "business-bundles";
+  | "website-links"
+  | "custom-stands";
 
 export type CatalogCategory = {
   slug: CatalogCategorySlug;
@@ -83,23 +84,23 @@ export type CatalogCategory = {
 export const catalogCategories: CatalogCategory[] = [
   {
     slug: "reviews",
-    title: "Review Products",
+    title: "Review Stands",
     eyebrow: "Reviews",
-    description: "NFC stands and plates that open Google, Yelp, Facebook, TripAdvisor, or other review destinations.",
-    seoTitle: "NFC Review Products | Tap Rater",
-    seoDescription: "Shop NFC review stands and plates for Google, Yelp, Facebook, TripAdvisor, and other review destinations.",
+    description: "NFC and QR tabletop stands that open Google, Yelp, Facebook, TripAdvisor, or other review destinations.",
+    seoTitle: "NFC Review Stands | Tap Rater",
+    seoDescription: "Shop NFC review stands for Google, Yelp, Facebook, TripAdvisor, and other review destinations.",
     buyerIntent: "For businesses that want customers to tap or scan and open a public review destination.",
     aliases: ["review-stands", "review-plates", "google-review-products", "review-platform-products", "google-review-stands", "review-platform-stands", "google-review-plates"],
     seoCopy:
-      "Review products focus on the review use case first, then let the customer choose the physical format: tabletop stand or low-profile plate."
+      "Review stands focus on one clear customer action: tap or scan to open the review destination."
   },
   {
     slug: "social-media",
-    title: "Social Media Products",
+    title: "Social Media Stands",
     eyebrow: "Social",
-    description: "NFC stands and plates that open social profiles or a social media hub for Facebook, X, Instagram, and YouTube.",
-    seoTitle: "NFC Social Media Products | Tap Rater",
-    seoDescription: "Shop NFC social media stands and plates that open social profiles or a social media hub.",
+    description: "NFC and QR tabletop stands that open social profiles or a social media link.",
+    seoTitle: "NFC Social Media Stands | Tap Rater",
+    seoDescription: "Shop NFC social media stands that open social profiles or a social media link.",
     buyerIntent: "For businesses that want customers to follow or visit social profiles after an in-person interaction.",
     aliases: ["social-booking-products", "social-booking-stands", "social-booking-plates", "social-follow-products", "social-media-products"],
     seoCopy:
@@ -107,11 +108,11 @@ export const catalogCategories: CatalogCategory[] = [
   },
   {
     slug: "appointments",
-    title: "Appointment Products",
+    title: "Appointment & Reservation Stands",
     eyebrow: "Booking",
-    description: "NFC stands and plates that open booking pages, appointment forms, calendars, or scheduling URLs.",
-    seoTitle: "Appointment NFC Products | Tap Rater",
-    seoDescription: "Shop NFC appointment stands and plates that open booking pages, appointment forms, calendars, or scheduling URLs.",
+    description: "NFC and QR tabletop stands that open booking pages, reservation forms, calendars, or scheduling URLs.",
+    seoTitle: "Appointment and Reservation NFC Stands | Tap Rater",
+    seoDescription: "Shop NFC appointment and reservation stands that open booking pages, forms, calendars, or scheduling URLs.",
     buyerIntent: "For salons, clinics, consultants, service businesses, and teams that want customers to book the next visit.",
     aliases: ["appointment-products", "booking-products"],
     seoCopy:
@@ -119,11 +120,11 @@ export const catalogCategories: CatalogCategory[] = [
   },
   {
     slug: "menu",
-    title: "Menu Products",
+    title: "Menu & Info Stands",
     eyebrow: "Menu",
-    description: "NFC stands and plates that open a restaurant, cafe, or service menu.",
-    seoTitle: "NFC Menu Products | Tap Rater",
-    seoDescription: "Shop NFC menu stands and plates that open a restaurant, cafe, or service menu.",
+    description: "NFC and QR tabletop stands that open a restaurant menu, cafe menu, service list, or information page.",
+    seoTitle: "NFC Menu and Info Stands | Tap Rater",
+    seoDescription: "Shop NFC menu and information stands that open a restaurant menu, cafe menu, service list, or information page.",
     buyerIntent: "For restaurants, cafes, counters, tables, and service businesses that need customers to open a menu.",
     aliases: ["menu-products"],
     seoCopy:
@@ -131,27 +132,39 @@ export const catalogCategories: CatalogCategory[] = [
   },
   {
     slug: "feedback",
-    title: "Feedback Products",
+    title: "Feedback Stands",
     eyebrow: "Feedback",
-    description: "NFC stands and plates that open customer feedback or experience forms.",
-    seoTitle: "NFC Feedback Products | Tap Rater",
-    seoDescription: "Shop NFC feedback stands and plates that open customer feedback or experience forms.",
+    description: "NFC and QR tabletop stands that open customer feedback or experience forms.",
+    seoTitle: "NFC Feedback Stands | Tap Rater",
+    seoDescription: "Shop NFC feedback stands that open customer feedback or experience forms.",
     buyerIntent: "For businesses that want customers to tap or scan and share experience feedback.",
     aliases: ["experience-feedback-products", "feedback-referral-products", "feedback-referral-stands", "feedback-stands"],
     seoCopy:
       "Feedback products open customer feedback or experience forms without review-gating language."
   },
   {
-    slug: "business-bundles",
-    title: "Business Bundles",
-    eyebrow: "Managed",
-    description: "Managed setup packages and multi-product kits for businesses that need several tap points.",
-    seoTitle: "Business Bundles and Managed Setup | Tap Rater",
-    seoDescription: "Tap Rater business bundles and managed setup options for future multi-device launches.",
-    buyerIntent: "For businesses that want Tap Rater to configure several physical products together.",
-    aliases: ["hosted-landing-page-products"],
+    slug: "website-links",
+    title: "Website & Link Stands",
+    eyebrow: "Links",
+    description: "NFC and QR tabletop stands that open a website, landing page, app download, offer, or custom link.",
+    seoTitle: "Website and Link NFC Stands | Tap Rater",
+    seoDescription: "Shop NFC website and link stands that open a business website, landing page, app download, offer, or custom link.",
+    buyerIntent: "For businesses that want customers to open one important link instantly.",
+    aliases: ["website-link-stands", "link-stands"],
     seoCopy:
-      "Business bundles and managed setup remain quote-based while Phase 1 focuses on sellable tabletop stands and flat plates."
+      "Website and link stands are direct-link products for one clear destination."
+  },
+  {
+    slug: "custom-stands",
+    title: "Custom Stands",
+    eyebrow: "Custom",
+    description: "Custom printed NFC and QR tabletop stands for one direct destination link.",
+    seoTitle: "Custom NFC Stands | Tap Rater",
+    seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, custom headline, and one destination link.",
+    buyerIntent: "For businesses that want a branded stand with custom wording or a custom center graphic.",
+    aliases: ["custom-nfc-stands", "custom-qr-stands"],
+    seoCopy:
+      "Custom stands use a locked production template so the customer can personalize the stand without breaking print layout."
   }
 ];
 
@@ -172,9 +185,9 @@ const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", 
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
 const menuPlateImage = { src: "/uploads/products/view-menu-plate.png", alt: "Tap Rater View Our Menu Plate placeholder" };
 
-const standPriceCents = 4900;
+const standPriceCents = 3900;
 const platePriceCents = 3900;
-const defaultPhysicalCustomizationOptions: ProductCustomizationOption[] = ["standard_design", "add_logo", "custom_design"];
+const defaultPhysicalCustomizationOptions: ProductCustomizationOption[] = ["standard_design", "add_logo"];
 
 const colors = [
   { id: "white", label: "White", suffix: "W" },
@@ -206,7 +219,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     basePriceCents: input.basePriceCents,
     stockStatus: "instock",
     shortDescription: input.shortDescription,
-    description: `${input.description} Available as standard design, with your logo, or with a custom layout.`,
+    description: `${input.description} Available as a Standard Direct stand or a Branded + QR Direct stand.`,
     productType: "physical_redirect",
     serviceMode: "basic_redirect",
     checkoutMode: "buy_now",
@@ -219,7 +232,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     format: input.title.includes("Plate") ? "plate" : "stand",
     customizationOptions: [...defaultPhysicalCustomizationOptions],
     allowsLogoUpload: true,
-    allowsCustomDesign: true,
+    allowsCustomDesign: false,
     designMode: "standard",
     displayText: input.displayText,
     images: [input.image],
@@ -229,7 +242,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
       sku: `${input.sku}-${color.suffix}`,
       stockStatus: "instock"
     })),
-    isActive: true,
+    isActive: !input.title.includes("Plate"),
     seoTitle: input.seoTitle,
     seoDescription: input.seoDescription,
     searchKeywords: input.searchKeywords
@@ -492,5 +505,58 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "View Our Menu Plate | Low-Profile NFC Menu Product",
     seoDescription: "Low-profile NFC plate that opens a restaurant, cafe, or service menu.",
     searchKeywords: ["view our menu plate", "nfc menu plate", "restaurant menu nfc plate"]
-  })
+  }),
+  phaseOneProduct({
+    slug: "visit-our-website-stand",
+    title: "Visit Our Website Stand",
+    sku: "TR-WEBSITE-STAND",
+    categorySlug: "website-links",
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your website, landing page, offer, or custom link.",
+    description:
+      "Visit Our Website Stand is a tabletop NFC and QR display for one important business link. It opens your website, landing page, offer, app download, or custom URL with one tap or scan.",
+    supportedDestinations: ["website", "custom"],
+    displayText: "Visit Our Website",
+    image: socialStandImage,
+    seoTitle: "Visit Our Website Stand | NFC Website Link Stand",
+    seoDescription: "Buy a website link NFC stand that opens your business website, landing page, offer, app download, or custom URL.",
+    searchKeywords: ["website nfc stand", "visit website stand", "custom link nfc stand"]
+  }),
+  {
+    slug: "custom-direct-stand",
+    title: "Custom Direct Stand",
+    sku: "TR-CUSTOM-STAND",
+    categorySlug: "custom-stands",
+    basePriceCents: 4900,
+    stockStatus: "instock",
+    shortDescription: "Custom printed tabletop NFC and QR stand with your logo, business name, headline, and one destination link.",
+    description:
+      "Custom Direct Stand is a custom printed tabletop NFC and QR stand for one direct destination link. Add your logo, business name, custom headline or center graphic direction, and CTA sentence before approving the front proof.",
+    productType: "physical_managed",
+    serviceMode: "managed_redirect",
+    checkoutMode: "buy_now",
+    requiresAccount: false,
+    requiresSubscription: false,
+    requiresLandingPage: false,
+    supportedDestinations: ["website", "custom", "google", "facebook", "yelp", "tripadvisor", "booking", "menu", "feedback"],
+    activationType: "managed_setup",
+    includedServiceLabel: "Managed custom stand setup",
+    format: "stand",
+    customizationOptions: ["custom_design"],
+    allowsLogoUpload: true,
+    allowsCustomDesign: true,
+    designMode: "custom",
+    displayText: "Your message here",
+    images: [{ src: "/uploads/products/business-google-white-stand.jpg", alt: "Custom Tap Rater tabletop stand" }],
+    variants: colors.map((color) => ({
+      id: color.id,
+      label: color.label,
+      sku: `TR-CUSTOM-STAND-${color.suffix}`,
+      stockStatus: "instock"
+    })),
+    isActive: true,
+    seoTitle: "Custom Direct Stand | Custom NFC and QR Tabletop Stand",
+    seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, headline, CTA, and one direct destination link.",
+    searchKeywords: ["custom nfc stand", "custom qr stand", "custom review stand"]
+  }
 ];

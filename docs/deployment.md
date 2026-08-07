@@ -147,8 +147,9 @@ Check these paths before any cutover:
 - `/category/appointments`
 - `/category/menu`
 - `/category/feedback`
+- `/category/custom-stands`
 - `/product/google-review-stand`
-- `/product/google-review-plate`
+- `/product/custom-direct-stand`
 - `/activate`
 - `/admin/login`
 - `/r/TR-DEMO-GOOGLE`

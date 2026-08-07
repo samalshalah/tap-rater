@@ -6,7 +6,7 @@ export type ProductPageContentItem = {
 };
 
 export type ProductComparisonRow = {
-  label: "Stand" | "Plate" | "Bundle" | "Social/Booking" | "Feedback/Referral" | "Custom";
+  label: "Stand" | "Branded" | "Custom" | "Direct link";
   bestFor: string;
   fit: string;
   active: boolean;
@@ -46,26 +46,18 @@ export function getProductServiceBadges(product: MigratedProduct): string[] {
 }
 
 export function getProductActivationCopy(product: MigratedProduct): ProductActivationCopy {
-  if (product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
-    return {
-      title: "Hosted platform experience",
-      body:
-        "This product uses a hosted Tap Rater landing page for forms, multiple buttons, or platform-powered customer flows. Account setup is required. Subscription is required only where listed, while basic direct-link products remain available without a monthly fee."
-    };
-  }
-
   if (product.serviceMode === "managed_redirect") {
     return {
-      title: "Managed direct redirect",
+      title: "Managed direct stand setup",
       body:
-        "This one-time product redirects directly to the destination you choose after Tap Rater setup. No monthly fee is required for the basic redirect, and premium dashboard features are optional later."
+        "This one-time product connects directly to the destination you choose after Tap Rater confirms your setup and production artwork."
     };
   }
 
   return {
-    title: "Free basic activation",
+    title: "Direct link setup",
     body:
-      "This one-time product redirects directly to your review, booking, social, menu, feedback, or business link after basic activation. No monthly fee is required, and premium features are optional later."
+      "This one-time product connects directly to your review, booking, social, menu, feedback, or business link. No monthly fee is required."
   };
 }
 
@@ -79,17 +71,12 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
       body: `Customers tap or scan and open your ${destination} destination without searching.`
     },
     {
-      title: product.requiresLandingPage ? "Hosted landing page" : "Connects to one destination URL",
-      body: product.requiresLandingPage
-        ? "Use a hosted Tap Rater page for feedback forms, multiple buttons, or future analytics."
-        : "Use your business review page, recommendation page, booking page, menu, feedback form, or custom URL."
+      title: "Connects to one destination URL",
+      body: "Use your business review page, recommendation page, booking page, menu, feedback form, website, or custom URL."
     },
     {
-      title: format === "plate" ? "Low-profile physical product" : "Countertop physical product",
-      body:
-        format === "plate"
-          ? "Built for desks, tables, reception areas, checkout counters, and compact customer touchpoints."
-          : "Built for checkout counters, reception desks, host stands, pickup areas, and service desks."
+      title: "Countertop physical product",
+      body: "Built for checkout counters, reception desks, host stands, pickup areas, and service desks."
     },
     {
       title: "Simple customer prompt",
@@ -120,8 +107,6 @@ export function getProductPageUseCases(_product: MigratedProduct): ProductPageCo
 }
 
 export function getProductComparisonRows(product: MigratedProduct): ProductComparisonRow[] {
-  const title = product.title.toLowerCase();
-
   return [
     {
       label: "Stand",
@@ -130,34 +115,22 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
       active: product.format === "stand"
     },
     {
-      label: "Plate",
-      bestFor: "Tables, desks, compact counters",
-      fit: "Low-profile review prompt",
-      active: product.format === "plate"
+      label: "Branded",
+      bestFor: "Business name, logo, and QR code",
+      fit: "Best for a polished counter display",
+      active: product.allowsLogoUpload
     },
     {
-      label: "Bundle",
-      bestFor: "Multiple rooms, counters, or teams",
-      fit: "Best value for several touchpoints",
-      active: product.format === "bundle" || product.productType === "bundle" || title.includes("bundle") || title.includes("kit")
-    },
-    {
-      label: "Social/Booking",
-      bestFor: "Social media, booking pages, menu links",
-      fit: "Best for direct non-Google destinations",
-      active: product.categorySlug === "social-media" || product.categorySlug === "appointments" || product.categorySlug === "menu"
-    },
-    {
-      label: "Feedback/Referral",
-      bestFor: "Hosted forms and platform-powered flows",
-      fit: "Best when a landing page is needed",
-      active: product.categorySlug === "feedback"
+      label: "Direct link",
+      bestFor: "One approved URL",
+      fit: "No subscription required",
+      active: product.serviceMode === "basic_redirect" || product.serviceMode === "managed_redirect"
     },
     {
       label: "Custom",
       bestFor: "Custom UV printing and direct custom URLs",
       fit: "Best for branded prompts",
-      active: product.supportedDestinations.includes("custom") && ["social-media", "appointments", "menu"].includes(product.categorySlug)
+      active: product.categorySlug === "custom-stands"
     }
   ];
 }

@@ -18,8 +18,8 @@ export default async function AdminCategoriesPage() {
           primaryLabel: "Default category strategy",
           secondaryLabel: "Featured category",
           notesLabel: "Category notes",
-          primaryPlaceholder: "Google review stands first, then plates and bundles",
-          secondaryPlaceholder: "Review Products",
+          primaryPlaceholder: "Review stands first, then menu, booking, feedback, links, and custom stands",
+          secondaryPlaceholder: "Review Stands",
           notesPlaceholder: "Category ordering, SEO ideas, or launch notes"
         }}
       />

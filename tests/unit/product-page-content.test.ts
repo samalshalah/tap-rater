@@ -30,10 +30,10 @@ describe("product page content", () => {
 
   it("marks the active product type in comparison rows", () => {
     const stand = getProductBySlug("google-review-stand");
-    const plate = getProductBySlug("google-review-plate");
+    const custom = getProductBySlug("custom-direct-stand");
 
     expect(getProductComparisonRows(stand!).find((row) => row.label === "Stand")?.active).toBe(true);
-    expect(getProductComparisonRows(plate!).find((row) => row.label === "Plate")?.active).toBe(true);
+    expect(getProductComparisonRows(custom!).find((row) => row.label === "Custom")?.active).toBe(true);
   });
 
   it("builds customer-facing service badges from product strategy metadata", () => {
@@ -48,9 +48,8 @@ describe("product page content", () => {
     const stand = getProductBySlug("google-review-stand");
     const feedback = getProductBySlug("rate-your-experience-stand");
 
-    expect(getProductActivationCopy(stand!).body).toContain("redirects directly");
-    expect(getProductActivationCopy(stand!).body).toContain("optional");
-    expect(getProductActivationCopy(feedback!).body).toContain("redirects directly");
+    expect(getProductActivationCopy(stand!).body).toContain("connects directly");
+    expect(getProductActivationCopy(feedback!).body).toContain("connects directly");
     expect(getProductActivationCopy(feedback!).body).toContain("No monthly fee");
   });
 });

@@ -53,7 +53,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <section className="border-b border-line bg-gray-50">
         <div className="mx-auto max-w-7xl px-4 py-12">
           <Link href="/shop" className="text-sm font-bold text-brand">
-            Shop all products
+            Shop all stands
           </Link>
           <p className="mt-6 text-sm font-semibold uppercase text-brand">{category.eyebrow}</p>
           <h1 className="mt-3 max-w-4xl text-4xl font-black leading-tight text-ink md:text-5xl">{category.title}</h1>
@@ -72,11 +72,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       <section className="mx-auto max-w-7xl px-4 py-12">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-brand">{products.length} products</p>
+            <p className="text-sm font-semibold uppercase text-brand">{products.length} stands</p>
             <h2 className="mt-2 text-3xl font-black text-ink">Shop {category.title.toLowerCase()}</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">
-            These products are selected for the same customer action first. Choose the stand format for a more visible tabletop display, or the plate format for counters, desks, tables, and reception areas.
+            These stands are selected for the same customer action first. Choose Standard Direct for a fast one-link setup, or Branded + QR Direct when you need your logo and business name on the stand.
           </p>
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
