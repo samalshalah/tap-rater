@@ -128,7 +128,11 @@ describe("cms repository", () => {
       variants: [{ id: "white", label: "White", sku: "TRATER01-WHITE", stockStatus: "instock" }],
       seoTitle: "SEO title",
       seoDescription: "SEO description",
-      isActive: true
+      isActive: true,
+      designLogic: "standard_platform_locked",
+      pricingTier: "standard_direct",
+      useCaseSlugs: ["restaurants-cafes"],
+      platformSlug: "google"
     });
 
     expect(db.from).toHaveBeenCalledWith("products");
@@ -160,7 +164,14 @@ describe("cms repository", () => {
       variants: [{ id: "white", label: "White", sku: "TRATER01-WHITE", stockStatus: "instock" }],
       seo_title: "SEO title",
       seo_description: "SEO description",
-      is_active: true
+      is_active: true,
+      design_logic: "standard_platform_locked",
+      pricing_tier: "standard_direct",
+      use_case_slugs: ["restaurants-cafes"],
+      platform_slug: "google",
+      color_options: null,
+      template_images: null,
+      provider_options: null
     });
   });
 });

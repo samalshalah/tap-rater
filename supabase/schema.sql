@@ -209,8 +209,19 @@ create table if not exists products (
   seo_description text,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  design_logic text not null default 'standard_platform_locked' check (design_logic in ('standard_platform_locked', 'branded_platform_template', 'text_action_locked', 'text_action_branded', 'fully_custom_design')),
+  pricing_tier text not null default 'standard_direct' check (pricing_tier in ('standard_direct', 'branded_qr_direct', 'hosted_multi_link', 'custom')),
+  use_case_slugs text[] not null default array[]::text[],
+  platform_slug text,
+  color_options text[],
+  template_images jsonb,
+  provider_options jsonb
 );
+
+create index if not exists products_design_logic_idx on products(design_logic);
+create index if not exists products_pricing_tier_idx on products(pricing_tier);
+create index if not exists products_use_case_slugs_idx on products using gin(use_case_slugs);
 
 alter table products add column if not exists product_type text not null default 'physical_redirect' check (product_type in ('physical_redirect', 'physical_managed', 'platform_landing_page', 'bundle'));
 alter table products add column if not exists service_mode text not null default 'basic_redirect';

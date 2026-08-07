@@ -103,7 +103,14 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     variants: input.variants,
     seo_title: input.seoTitle ?? null,
     seo_description: input.seoDescription ?? null,
-    is_active: input.isActive
+    is_active: input.isActive,
+    design_logic: input.designLogic,
+    pricing_tier: input.pricingTier,
+    use_case_slugs: input.useCaseSlugs,
+    platform_slug: input.platformSlug ?? null,
+    color_options: input.colorOptions ?? null,
+    template_images: input.templateImages ?? null,
+    provider_options: input.providerOptions ?? null
   });
 }
 

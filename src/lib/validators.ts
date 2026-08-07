@@ -146,7 +146,31 @@ export const productContentSchema = z.object({
     .default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
-  isActive: z.boolean()
+  isActive: z.boolean(),
+  designLogic: z
+    .enum(["standard_platform_locked", "branded_platform_template", "text_action_locked", "text_action_branded", "fully_custom_design"])
+    .default("standard_platform_locked"),
+  pricingTier: z.enum(["standard_direct", "branded_qr_direct", "hosted_multi_link", "custom"]).default("standard_direct"),
+  useCaseSlugs: z.array(z.string().trim().min(1).max(80)).max(20).default([]),
+  platformSlug: z.string().trim().max(80).optional(),
+  colorOptions: z.array(z.string().trim().min(1).max(60)).max(12).optional(),
+  templateImages: z
+    .object({
+      standard: z.object({ src: z.string().trim().min(1).max(500), alt: z.string().trim().max(180).default("") }).optional(),
+      branded: z.object({ src: z.string().trim().min(1).max(500), alt: z.string().trim().max(180).default("") }).optional(),
+      brandedWithQr: z.object({ src: z.string().trim().min(1).max(500), alt: z.string().trim().max(180).default("") }).optional()
+    })
+    .optional(),
+  providerOptions: z
+    .array(
+      z.object({
+        slug: z.string().trim().min(1).max(80),
+        label: z.string().trim().min(1).max(120),
+        destinationUrlHint: z.string().trim().max(300).optional()
+      })
+    )
+    .max(30)
+    .optional()
 });
 
 export type HomepageContentInput = z.infer<typeof homepageContentSchema>;

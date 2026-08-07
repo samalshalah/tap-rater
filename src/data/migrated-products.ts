@@ -45,6 +45,95 @@ export type MigratedProduct = {
   seoTitle?: string;
   seoDescription?: string;
   searchKeywords?: string[];
+  // Design logic (2026-08-07): which printed-design template rules govern the
+  // physical stand. Distinct from productType/serviceMode/checkoutMode, which
+  // are about fulfillment and checkout mechanics -- this is specifically
+  // about what gets printed and what the customer is asked to provide.
+  designLogic: DesignLogicType;
+  // Business-model pricing tier this product belongs to. Informational/
+  // classification -- basePriceCents remains the actual editable price, this
+  // field is what lets admin (and future Stripe price ID wiring) group
+  // products by which of the 4 core offerings they represent.
+  pricingTier: PricingTier;
+  // Which business types this product is recommended for (Shop by Use).
+  // A product can belong to many use cases without being duplicated as a
+  // separate SKU -- see src/data/use-cases.ts.
+  useCaseSlugs: string[];
+  // Which review/booking/social platform this product represents, if any
+  // (e.g. "google", "yelp", "vagaro"). Used to pick the correct branded
+  // template and to group provider options under a generic action.
+  platformSlug?: string;
+  // For branded_platform_template and text_action_branded products: the set
+  // of template images (standard vs branded vs branded+QR variants), keyed
+  // so new platform templates can be added purely as data (new image paths),
+  // without a code change.
+  templateImages?: ProductTemplateImages;
+  // For text_action_locked / text_action_branded products backed by a
+  // generic action (e.g. "Book Appointment") that maps to many possible
+  // third-party providers (Vagaro, Calendly, etc.) -- these are NOT
+  // separate products/SKUs, they're selectable options under this one
+  // product. Per the product cleanup rules: branded booking tools and form
+  // tools must never be standalone products.
+  providerOptions?: ProductProviderOption[];
+  // Color/finish variations, distinct from `variants` (which are structured
+  // for stock/SKU tracking). This is a simple display list of available
+  // colors/finishes for the admin color picker and storefront swatch UI.
+  colorOptions?: string[];
+};
+
+export type DesignLogicType =
+  // Example: Standard Google Review Stand. Platform logo/design locked.
+  // Customer only enters a destination link. No logo upload.
+  | "standard_platform_locked"
+  // Example: Google Review Stand with business logo/name added. Platform
+  // logo and CTA stay locked; customer can add business logo + name and
+  // adjust their size. Gets a QR area when the Branded + QR tier is
+  // selected. Must support future platform templates (Yelp, TripAdvisor,
+  // Facebook, etc.) via templateImages, not new code.
+  | "branded_platform_template"
+  // Example: Book Appointment, View Menu, Order Online. No platform logo --
+  // the printed middle area is text/action based. Customer enters a
+  // destination link, and optionally a business name depending on the
+  // product's own setting.
+  | "text_action_locked"
+  // Example: branded Book Appointment, or Hosted Multi-Link. Customer adds
+  // logo/business name; the printed text/action itself is controlled by the
+  // product/template. Hosted Multi-Link always uses this, since the
+  // physical stand points to one hosted page with many links rather than a
+  // single destination.
+  | "text_action_branded"
+  // Custom Stand only. Customer submits business name, link, notes, and a
+  // design request. If durable file upload isn't wired up yet, the product
+  // page must say logo/design files are collected after checkout -- never
+  // imply a file was stored unless that's actually true.
+  | "fully_custom_design";
+
+export type PricingTier =
+  | "standard_direct" // Standard Direct Stand -- $39 one-time
+  | "branded_qr_direct" // Branded + QR Direct Stand -- $49 one-time
+  | "hosted_multi_link" // Hosted Multi-Link Stand -- $49 setup + $9.90/month
+  | "custom"; // Custom Stand -- price confirmed per existing intended pricing, not assumed
+
+export type ProductTemplateImageVariant = {
+  src: string;
+  alt: string;
+};
+
+export type ProductTemplateImages = {
+  // Platform logo/CTA locked, no customer branding.
+  standard?: ProductTemplateImageVariant;
+  // Customer logo + business name added, platform logo/CTA still locked.
+  branded?: ProductTemplateImageVariant;
+  // Branded, plus a QR code area.
+  brandedWithQr?: ProductTemplateImageVariant;
+};
+
+export type ProductProviderOption = {
+  slug: string;
+  label: string;
+  // Optional hint shown to the customer/admin for what a destination URL
+  // from this provider typically looks like -- never a stored credential.
+  destinationUrlHint?: string;
 };
 
 export type ProductCommerceType = "physical_redirect" | "physical_managed" | "platform_landing_page" | "bundle";
@@ -209,6 +298,9 @@ type PhaseOneProductInput = {
   seoTitle: string;
   seoDescription: string;
   searchKeywords: string[];
+  designLogic: DesignLogicType;
+  useCaseSlugs: string[];
+  platformSlug?: string;
 };
 
 function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
@@ -237,6 +329,12 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     designMode: "standard",
     displayText: input.displayText,
     images: [input.image],
+    // Every product built via this factory is priced at standPriceCents
+    // ($39), which is the Standard Direct Stand tier by definition.
+    pricingTier: "standard_direct",
+    designLogic: input.designLogic,
+    useCaseSlugs: input.useCaseSlugs,
+    platformSlug: input.platformSlug,
     variants: colors.map((color) => ({
       id: color.id,
       label: color.label,
@@ -256,6 +354,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Google Review Stand",
     sku: "TR-GOOGLE-STAND",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "healthcare-dental", "salons-spas-wellness"],
+    platformSlug: "google",
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens your Google review link with one tap or scan.",
     description:
@@ -272,6 +373,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Google Review Plate",
     sku: "TR-GOOGLE-PLATE",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "healthcare-dental", "salons-spas-wellness"],
+    platformSlug: "google",
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for counters, desks, tables, and reception areas.",
     description:
@@ -288,6 +392,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Yelp Review Stand",
     sku: "TR-YELP-STAND",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery"],
+    platformSlug: "yelp",
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens your Yelp review or business profile destination.",
     description:
@@ -304,6 +411,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Yelp Review Plate",
     sku: "TR-YELP-PLATE",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery"],
+    platformSlug: "yelp",
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that helps customers open your Yelp destination.",
     description:
@@ -320,6 +430,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Facebook Review Stand",
     sku: "TR-FACEBOOK-STAND",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "events-popups"],
+    platformSlug: "facebook",
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens your Facebook review, recommendation, or business profile destination.",
     description:
@@ -336,6 +449,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Facebook Review Plate",
     sku: "TR-FACEBOOK-PLATE",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "events-popups"],
+    platformSlug: "facebook",
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for Facebook reviews, recommendations, or profile visits.",
     description:
@@ -352,6 +468,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "TripAdvisor Review Stand",
     sku: "TR-TRIPADVISOR-STAND",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "hotels-hospitality"],
+    platformSlug: "tripadvisor",
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand for hotels, restaurants, attractions, and visitor-facing businesses.",
     description:
@@ -368,6 +487,9 @@ export const migratedProducts: MigratedProduct[] = [
     title: "TripAdvisor Review Plate",
     sku: "TR-TRIPADVISOR-PLATE",
     categorySlug: "reviews",
+    designLogic: "standard_platform_locked",
+    useCaseSlugs: ["restaurants-cafes", "hotels-hospitality"],
+    platformSlug: "tripadvisor",
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for hospitality, restaurants, tourism, and visitor-facing businesses.",
     description:
@@ -384,6 +506,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Rate Your Experience Stand",
     sku: "TR-EXPERIENCE-STAND",
     categorySlug: "feedback",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["healthcare-dental", "home-services", "auto-dealer-repair", "front-desk-reception"],
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand for collecting customer experience feedback through a Tap Rater destination.",
     description:
@@ -400,6 +524,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Rate Your Experience Plate",
     sku: "TR-EXPERIENCE-PLATE",
     categorySlug: "feedback",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["healthcare-dental", "home-services", "auto-dealer-repair", "front-desk-reception"],
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for customer experience feedback and follow-up flows.",
     description:
@@ -416,6 +542,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Follow Us on Social Media Stand",
     sku: "TR-SOCIAL-STAND",
     categorySlug: "social-media",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["restaurants-cafes", "salons-spas-wellness", "events-popups"],
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a social media hub or direct social profile.",
     description:
@@ -432,6 +560,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Follow Us on Social Media Plate",
     sku: "TR-SOCIAL-PLATE",
     categorySlug: "social-media",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["restaurants-cafes", "salons-spas-wellness", "events-popups"],
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that opens a social media hub or direct social profile.",
     description:
@@ -448,6 +578,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Book Your Next Visit Stand",
     sku: "TR-BOOKING-STAND",
     categorySlug: "appointments",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["healthcare-dental", "salons-spas-wellness", "auto-dealer-repair"],
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a booking page, appointment form, calendar, or scheduling URL.",
     description:
@@ -464,6 +596,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Book Your Next Visit Plate",
     sku: "TR-BOOKING-PLATE",
     categorySlug: "appointments",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["healthcare-dental", "salons-spas-wellness", "auto-dealer-repair"],
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that opens a booking page, appointment form, calendar, or scheduling URL.",
     description:
@@ -480,6 +614,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "View Our Menu Stand",
     sku: "TR-MENU-STAND",
     categorySlug: "menu",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["restaurants-cafes"],
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a restaurant, cafe, or service menu.",
     description:
@@ -496,6 +632,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "View Our Menu Plate",
     sku: "TR-MENU-PLATE",
     categorySlug: "menu",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["restaurants-cafes"],
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that opens a restaurant, cafe, or service menu.",
     description:
@@ -512,6 +650,8 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Visit Our Website Stand",
     sku: "TR-WEBSITE-STAND",
     categorySlug: "website-links",
+    designLogic: "text_action_locked",
+    useCaseSlugs: ["real-estate", "retail-grocery", "restaurants-cafes"],
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC and QR stand that opens your website, landing page, offer, or custom link.",
     description:
@@ -547,6 +687,11 @@ export const migratedProducts: MigratedProduct[] = [
     allowsLogoUpload: true,
     allowsCustomDesign: true,
     designMode: "custom",
+    designLogic: "fully_custom_design",
+    pricingTier: "custom",
+    // Existing intended price ($49) confirmed, not changed, per instruction
+    // to confirm before touching Custom Stand pricing.
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "healthcare-dental", "real-estate", "events-popups"],
     displayText: "Your message here",
     images: [{ src: "/uploads/products/business-google-white-stand.jpg", alt: "Custom Tap Rater tabletop stand" }],
     variants: colors.map((color) => ({

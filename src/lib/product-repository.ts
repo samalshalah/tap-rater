@@ -139,6 +139,15 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     customizationOptions.includes("custom_design");
   const designMode = readDesignMode(productRow.design_mode) ?? readDesignMode(productRow.designMode) ?? staticProduct?.designMode ?? "standard";
   const displayText = readString(productRow.display_text) ?? readString(productRow.displayText) ?? staticProduct?.displayText;
+  const designLogic =
+    readDesignLogic(productRow.design_logic) ?? readDesignLogic(productRow.designLogic) ?? staticProduct?.designLogic ?? "standard_platform_locked";
+  const pricingTier =
+    readPricingTier(productRow.pricing_tier) ?? readPricingTier(productRow.pricingTier) ?? staticProduct?.pricingTier ?? "standard_direct";
+  const useCaseSlugs =
+    readStringArray(productRow.use_case_slugs) ?? readStringArray(productRow.useCaseSlugs) ?? staticProduct?.useCaseSlugs ?? [];
+  const platformSlug = readString(productRow.platform_slug) ?? readString(productRow.platformSlug) ?? staticProduct?.platformSlug;
+  const colorOptions =
+    readStringArray(productRow.color_options) ?? readStringArray(productRow.colorOptions) ?? staticProduct?.colorOptions;
 
   if (
     !slug ||
@@ -198,7 +207,15 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     seoTitle: readString(productRow.seo_title) ?? readString(productRow.seoTitle) ?? staticProduct?.seoTitle,
     seoDescription: readString(productRow.seo_description) ?? readString(productRow.seoDescription) ?? staticProduct?.seoDescription,
     searchKeywords:
-      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords
+      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
+    designLogic,
+    pricingTier,
+    useCaseSlugs,
+    platformSlug,
+    templateImages: readTemplateImages(productRow.template_images) ?? readTemplateImages(productRow.templateImages) ?? staticProduct?.templateImages,
+    providerOptions:
+      readProviderOptions(productRow.provider_options) ?? readProviderOptions(productRow.providerOptions) ?? staticProduct?.providerOptions,
+    colorOptions
   };
 }
 
@@ -288,6 +305,58 @@ function readCustomizationOptions(value: unknown): MigratedProduct["customizatio
 
 function readDesignMode(value: unknown): MigratedProduct["designMode"] | undefined {
   return value === "standard" || value === "logo" || value === "custom" ? value : undefined;
+}
+
+const validDesignLogicTypes = [
+  "standard_platform_locked",
+  "branded_platform_template",
+  "text_action_locked",
+  "text_action_branded",
+  "fully_custom_design"
+];
+
+function readDesignLogic(value: unknown): MigratedProduct["designLogic"] | undefined {
+  return typeof value === "string" && validDesignLogicTypes.includes(value) ? (value as MigratedProduct["designLogic"]) : undefined;
+}
+
+const validPricingTiers = ["standard_direct", "branded_qr_direct", "hosted_multi_link", "custom"];
+
+function readPricingTier(value: unknown): MigratedProduct["pricingTier"] | undefined {
+  return typeof value === "string" && validPricingTiers.includes(value) ? (value as MigratedProduct["pricingTier"]) : undefined;
+}
+
+function readTemplateImages(value: unknown): MigratedProduct["templateImages"] | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+
+  function readVariant(v: unknown) {
+    if (!v || typeof v !== "object") return undefined;
+    const src = readString((v as Record<string, unknown>).src);
+    if (!src) return undefined;
+    return { src, alt: readString((v as Record<string, unknown>).alt) ?? "" };
+  }
+
+  const standard = readVariant(record.standard);
+  const branded = readVariant(record.branded);
+  const brandedWithQr = readVariant(record.brandedWithQr ?? record.branded_with_qr);
+
+  if (!standard && !branded && !brandedWithQr) return undefined;
+  return { standard, branded, brandedWithQr };
+}
+
+function readProviderOptions(value: unknown): MigratedProduct["providerOptions"] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const options = value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const record = entry as Record<string, unknown>;
+    const slug = readString(record.slug);
+    const label = readString(record.label);
+    if (!slug || !label) return [];
+    return [{ slug, label, destinationUrlHint: readString(record.destinationUrlHint ?? record.destination_url_hint) }];
+  });
+
+  return options.length > 0 ? options : undefined;
 }
 
 function inferProductFormatFromTitle(title: string | undefined): MigratedProduct["format"] | undefined {
