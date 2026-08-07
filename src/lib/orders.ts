@@ -15,6 +15,12 @@ export type OrderLineItem = {
   unitAmountCents: number;
   lineSubtotalCents: number;
   setup?: Record<string, unknown>;
+  logoRequired?: boolean;
+  logoStatus?: "not_required" | "manual_collection_required";
+  logoReference?: string | null;
+  proofRequired?: boolean;
+  proofApproved?: boolean;
+  productionStatus?: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
 };
 
 export type OrderRecord = {
@@ -61,7 +67,13 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
     quantity: row.quantity,
     unitAmountCents: row.unitAmountCents,
     lineSubtotalCents: row.lineSubtotalCents,
-    setup: row.setup
+    setup: row.setup,
+    logoRequired: row.logoRequired,
+    logoStatus: row.logoStatus,
+    logoReference: row.logoReference ?? null,
+    proofRequired: row.proofRequired,
+    proofApproved: row.proofApproved,
+    productionStatus: row.productionStatus
   }));
 }
 

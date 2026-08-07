@@ -24,11 +24,11 @@ Flat plates, cards, employee name tags, badges, staff cards, bundles, and hosted
 Regular action stands are sold with two setup options:
 
 - Standard Direct Stand: `$39` one-time. Ready-made printed stand art, one direct destination URL, no logo/name customization.
-- Branded + QR Direct Stand: `$49` one-time. Customer logo/name plus QR, one direct destination URL.
+- Branded + QR Direct Stand: `$49` one-time. Customer business name plus QR, one direct destination URL. Logo is collected manually after checkout until durable storage is implemented.
 
 Custom Direct Stand is sold as a separate product:
 
-- Custom Direct Stand: `$49` one-time. Customer logo, business name, custom headline or center graphic direction, CTA sentence, and one direct destination URL.
+- Custom Direct Stand: `$49` one-time. Customer business name, custom headline or center graphic direction, CTA sentence, design notes, and one direct destination URL. Logo/design files are collected manually after checkout until durable storage is implemented.
 
 Hosted Multi-Link is not public subscription checkout in this branch. It can be described as coming soon or request-only until recurring Stripe billing, hosted-page operations, and fulfillment rules are approved.
 
@@ -126,6 +126,7 @@ Stripe must remain sandbox/test mode until explicit approval. Current checkout c
 - Sell launch-ready tabletop NFC/QR stands.
 - Keep postponed physical formats and hosted subscriptions out of the public checkout path.
 - Collect destination URL and required branding details before checkout.
+- For branded/custom orders, collect logo/design files manually after checkout and do not mark ready for print until final proof is approved.
 - Create orders with enough setup detail for fulfillment review.
 
 ### Phase 2: Fulfillment and Admin Control

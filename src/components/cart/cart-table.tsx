@@ -65,7 +65,9 @@ export function CartTable() {
               {row.item.setup?.businessName ? <p><strong className="text-ink">Business:</strong> {row.item.setup.businessName}</p> : null}
               {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Link:</strong> {row.item.setup.destinationUrl}</p> : null}
               {row.item.setup?.headline ? <p><strong className="text-ink">Headline:</strong> {row.item.setup.headline}</p> : null}
-              {row.item.setup?.logoFileName ? <p><strong className="text-ink">Logo:</strong> {row.item.setup.logoFileName}</p> : null}
+              {row.item.setup?.designNotes ? <p><strong className="text-ink">Design notes:</strong> {row.item.setup.designNotes}</p> : null}
+              {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> collect manually after checkout</p> : null}
+              {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> required before printing</p> : null}
             </div>
           </div>
           <div className="flex h-11 w-fit items-center overflow-hidden rounded-md border border-line">

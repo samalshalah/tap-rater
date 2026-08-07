@@ -76,7 +76,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <h2 className="mt-2 text-3xl font-black text-ink">Shop {category.title.toLowerCase()}</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">
-            These stands are selected for the same customer action first. Choose Standard Direct for a fast one-link setup, or Branded + QR Direct when you need your logo and business name on the stand.
+            These stands are selected for the same customer action first. Choose Standard Direct for a fast one-link setup, or Branded + QR Direct when you need business-name branding with logo collection and final proof after checkout.
           </p>
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

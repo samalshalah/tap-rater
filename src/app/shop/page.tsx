@@ -76,7 +76,7 @@ export default async function ShopPage() {
             <p className="text-xs font-black uppercase text-brand">Configured before cart</p>
             <h2 className="mt-2 text-xl font-black text-ink">Add the link and required branding first</h2>
             <p className="mt-3 text-sm leading-6 text-muted">
-              Branded and custom stands require setup details and proof approval before checkout.
+              Standard stands confirm the direct link before checkout. Branded and custom stands collect setup details now, then Tap Rater collects logo/design files and sends the final proof before printing.
             </p>
           </article>
           <article className="rounded-md border border-line bg-white p-5">

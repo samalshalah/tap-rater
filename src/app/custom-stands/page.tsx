@@ -14,7 +14,7 @@ export default function CustomStandsPage() {
           <p className="text-sm font-black uppercase tracking-[0.18em] text-brand">Custom stands</p>
           <h1 className="mt-4 max-w-4xl text-5xl font-black leading-tight text-ink">Custom printed NFC and QR stands from $49.</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">
-            Add your logo, business name, custom headline or center content, CTA sentence, and one direct destination link. The stand uses locked production zones so the proof stays printable.
+            Add your business name, custom headline or center content, CTA sentence, design notes, and one direct destination link. After checkout, we collect your logo/design details and send a final proof before printing.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/product/custom-direct-stand" className="inline-flex items-center justify-center rounded-md bg-ink px-6 py-4 text-sm font-black text-white transition hover:bg-brand">

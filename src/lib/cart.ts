@@ -10,11 +10,13 @@ export type CartItem = {
   setup?: {
     destinationUrl?: string;
     businessName?: string;
-    headline?: string;
-    cta?: string;
-    logoFileName?: string;
-    proofApproved?: boolean;
-  };
+      headline?: string;
+      cta?: string;
+      logoFileName?: string;
+      designNotes?: string;
+      proofApproved?: boolean;
+      manualCollectionAcknowledged?: boolean;
+    };
 };
 
 export type CartRow = {
@@ -125,6 +127,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.businessName ?? "",
     setup.headline ?? "",
     setup.cta ?? "",
+    setup.designNotes ?? "",
     setup.logoFileName ?? ""
   ].join("|");
 }
@@ -137,7 +140,9 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     headline: readString(row.headline),
     cta: readString(row.cta),
     logoFileName: readString(row.logoFileName),
-    proofApproved: row.proofApproved === true
+    designNotes: readString(row.designNotes),
+    proofApproved: row.proofApproved === true,
+    manualCollectionAcknowledged: row.manualCollectionAcknowledged === true
   };
 }
 

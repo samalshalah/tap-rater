@@ -37,7 +37,7 @@ export default async function AdminOrdersPage() {
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
-          <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
                 <th className="p-4">Stripe session</th>
@@ -64,6 +64,18 @@ export default async function AdminOrdersPage() {
                             {item.optionLabel ? <p>{item.optionLabel}</p> : null}
                             {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
                             {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
+                            {item.setup && typeof item.setup.headline === "string" ? <p>Headline: {item.setup.headline}</p> : null}
+                            {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
+                            <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
+                              <p><strong>Logo required:</strong> {item.logoRequired ? "Yes" : "No"}</p>
+                              <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Collect manually after checkout" : "Not required"}</p>
+                              <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
+                              <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
+                              <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
+                              {item.logoRequired || item.proofRequired ? (
+                                <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
+                              ) : null}
+                            </div>
                           </div>
                         ))
                       : "-"}
@@ -90,6 +102,13 @@ export default async function AdminOrdersPage() {
       </section>
     </AdminShell>
   );
+}
+
+function formatProductionStatus(status: string | undefined) {
+  if (status === "ready_for_direct_activation") return "Ready for direct activation";
+  if (status === "pending_manual_logo_and_proof") return "Pending manual logo collection and proof approval";
+  if (status === "pending_manual_design_and_proof") return "Pending manual design collection and proof approval";
+  return "Pending review";
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {

@@ -236,6 +236,8 @@ export const checkoutCartSchema = z.object({
             headline: z.string().trim().max(160).optional(),
             cta: z.string().trim().max(160).optional(),
             logoFileName: z.string().trim().max(240).optional(),
+            designNotes: z.string().trim().max(1000).optional(),
+            manualCollectionAcknowledged: z.boolean().optional(),
             proofApproved: z.boolean().optional()
           })
           .optional()

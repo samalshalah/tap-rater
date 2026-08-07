@@ -14,6 +14,12 @@ export type CheckoutCartRow = {
   lineSubtotalCents: number;
   shortDescription: string;
   setup: NonNullable<CartItem["setup"]>;
+  logoRequired: boolean;
+  logoStatus: "not_required" | "manual_collection_required";
+  logoReference?: string | null;
+  proofRequired: boolean;
+  proofApproved: boolean;
+  productionStatus: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
 };
 
 export type ValidatedCheckoutCart =
@@ -55,6 +61,16 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       continue;
     }
 
+    const logoRequired = option.requiresLogo;
+    const proofRequired = option.requiresFinalProof;
+    const proofApproved = proofRequired ? false : setup.proofApproved === true;
+    const productionStatus =
+      option.id === "custom_direct"
+        ? "pending_manual_design_and_proof"
+        : option.id === "branded_qr_direct"
+          ? "pending_manual_logo_and_proof"
+          : "ready_for_direct_activation";
+
     rows.push({
       productId: product.slug,
       optionId: option.id,
@@ -65,7 +81,13 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       unitAmountCents: option.priceCents,
       lineSubtotalCents: option.priceCents * item.quantity,
       shortDescription: product.shortDescription,
-      setup
+      setup,
+      logoRequired,
+      logoStatus: logoRequired ? "manual_collection_required" : "not_required",
+      logoReference: null,
+      proofRequired,
+      proofApproved,
+      productionStatus
     });
   }
 
@@ -136,13 +158,14 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     businessName: setup?.businessName?.trim(),
     headline: setup?.headline?.trim(),
     cta: setup?.cta?.trim(),
-    logoFileName: setup?.logoFileName?.trim(),
-    proofApproved: setup?.proofApproved === true
+    designNotes: setup?.designNotes?.trim(),
+    proofApproved: setup?.proofApproved === true,
+    manualCollectionAcknowledged: setup?.manualCollectionAcknowledged === true
   };
 }
 
 function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<CartItem["setup"]>) {
-  if (!isHttpUrl(setup.destinationUrl) || setup.proofApproved !== true) {
+  if (!isHttpUrl(setup.destinationUrl)) {
     return false;
   }
 
@@ -150,11 +173,15 @@ function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<Car
     return false;
   }
 
-  if (optionId === "branded_qr_direct" && !setup.logoFileName) {
+  if (optionId === "custom_direct" && !setup.headline) {
     return false;
   }
 
-  if (optionId === "custom_direct" && !setup.headline) {
+  if (optionId === "standard_direct" && setup.proofApproved !== true) {
+    return false;
+  }
+
+  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && setup.manualCollectionAcknowledged !== true) {
     return false;
   }
 

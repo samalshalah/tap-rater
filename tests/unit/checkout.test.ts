@@ -57,6 +57,90 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
+  it("allows branded checkout only with manual logo collection acknowledged and no fake logo reference", () => {
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            productId: "google-review-stand",
+            optionId: "branded_qr_direct",
+            quantity: 1,
+            setup: {
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Nova Implant",
+              logoFileName: "fake-local-logo.png"
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
+
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            destinationUrl: "https://g.page/example/review",
+            businessName: "Nova Implant",
+            logoFileName: "fake-local-logo.png",
+            manualCollectionAcknowledged: true
+          }
+        }
+      ],
+      migratedProducts
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toMatchObject({
+      optionId: "branded_qr_direct",
+      logoRequired: true,
+      logoStatus: "manual_collection_required",
+      logoReference: null,
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_logo_and_proof"
+    });
+    expect(result.rows[0].setup).not.toHaveProperty("logoFileName");
+  });
+
+  it("records custom design notes while keeping custom orders pending manual proof", () => {
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "custom-direct-stand",
+          optionId: "custom_direct",
+          quantity: 1,
+          setup: {
+            destinationUrl: "https://example.com",
+            businessName: "Nova Implant",
+            headline: "Scan to connect",
+            cta: "Tap below",
+            designNotes: "Use white stand with logo at top.",
+            manualCollectionAcknowledged: true
+          }
+        }
+      ],
+      migratedProducts
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toMatchObject({
+      optionId: "custom_direct",
+      logoRequired: true,
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_design_and_proof",
+      setup: {
+        designNotes: "Use white stand with logo at top."
+      }
+    });
+  });
+
   it("only accepts Stripe test secret keys", () => {
     expect(isStripeTestSecretKey("sk_test_123")).toBe(true);
     expect(isStripeTestSecretKey("sk_live_123")).toBe(false);

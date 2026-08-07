@@ -1,11 +1,49 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  mapCheckoutRowsToOrderLineItems,
   mapCheckoutSessionToOrderInput,
   savePaidOrderFromCheckoutSessionWithClient,
   type OrdersDbClient
 } from "@/lib/orders";
 
 describe("orders repository", () => {
+  it("preserves manual logo and proof status in order line items", () => {
+    const items = mapCheckoutRowsToOrderLineItems([
+      {
+        productId: "google-review-stand",
+        optionId: "branded_qr_direct",
+        optionLabel: "Branded + QR Direct Stand",
+        title: "Google Review Stand",
+        sku: "TR-GOOGLE-STAND",
+        quantity: 1,
+        unitAmountCents: 4900,
+        lineSubtotalCents: 4900,
+        shortDescription: "Google review stand",
+        setup: {
+          destinationUrl: "https://g.page/example/review",
+          businessName: "Nova Implant",
+          manualCollectionAcknowledged: true
+        },
+        logoRequired: true,
+        logoStatus: "manual_collection_required",
+        logoReference: null,
+        proofRequired: true,
+        proofApproved: false,
+        productionStatus: "pending_manual_logo_and_proof"
+      }
+    ]);
+
+    expect(items[0]).toMatchObject({
+      optionLabel: "Branded + QR Direct Stand",
+      logoRequired: true,
+      logoStatus: "manual_collection_required",
+      logoReference: null,
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_logo_and_proof"
+    });
+  });
+
   it("maps a paid Stripe Checkout Session into a Supabase order payload", () => {
     const order = mapCheckoutSessionToOrderInput({
       id: "cs_test_123",

@@ -25,9 +25,9 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
     const businessName = String(form.get("businessName") ?? "").trim();
     const headline = String(form.get("headline") ?? "").trim();
     const cta = String(form.get("cta") ?? "").trim();
-    const logo = form.get("logo");
-    const logoFileName = logo instanceof File && logo.name ? logo.name : "";
-    const proofApproved = form.get("proofApproved") === "on";
+    const designNotes = String(form.get("designNotes") ?? "").trim();
+    const proofApproved = selectedOption.requiresFinalProof ? false : form.get("proofApproved") === "on";
+    const manualCollectionAcknowledged = selectedOption.requiresManualCollection ? form.get("manualCollectionAcknowledged") === "on" : false;
 
     if (!isHttpUrl(destinationUrl)) {
       setError("Enter a valid destination link starting with http or https.");
@@ -39,18 +39,18 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
       return;
     }
 
-    if (selectedOption.requiresLogo && !logoFileName) {
-      setError("Logo file name is required for this setup.");
-      return;
-    }
-
     if (selectedOption.requiresCustomText && !headline) {
       setError("Headline or main stand text is required for this setup.");
       return;
     }
 
-    if (!proofApproved) {
-      setError("Approve the front proof before adding this configured stand to cart.");
+    if (selectedOption.requiresManualCollection && !manualCollectionAcknowledged) {
+      setError("Confirm that Tap Rater will collect logo/design details and send a final proof before printing.");
+      return;
+    }
+
+    if (!selectedOption.requiresFinalProof && !proofApproved) {
+      setError("Confirm the direct setup details before adding this stand to cart.");
       return;
     }
 
@@ -63,8 +63,9 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
         businessName,
         headline,
         cta,
-        logoFileName,
-        proofApproved
+        designNotes,
+        proofApproved,
+        manualCollectionAcknowledged
       }
     });
     router.push("/cart");
@@ -126,11 +127,12 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
       ) : null}
 
       {selectedOption.requiresLogo ? (
-        <label className="grid gap-2 text-sm font-bold text-ink">
-          Business logo
-          <input className="rounded-md border border-line px-4 py-3 font-normal" name="logo" type="file" accept="image/png,image/jpeg" required />
-          <span className="text-xs font-normal text-muted">The order stores the file name today. Production logo upload/storage still needs final backend wiring.</span>
-        </label>
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-black text-ink">Logo collection</p>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            After checkout, we will contact you to collect your logo and confirm the final proof before printing. No logo file is uploaded or stored in this checkout.
+          </p>
+        </div>
       ) : null}
 
       {selectedOption.requiresCustomText ? (
@@ -143,18 +145,40 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
             CTA sentence
             <input className="rounded-md border border-line px-4 py-3 font-normal" name="cta" placeholder="Scan or tap below" />
           </label>
+          <label className="grid gap-2 text-sm font-bold text-ink md:col-span-2">
+            Design notes
+            <textarea
+              className="min-h-28 rounded-md border border-line px-4 py-3 font-normal"
+              name="designNotes"
+              placeholder="Describe logo placement, center graphic, color requests, or anything Tap Rater should confirm before printing."
+            />
+          </label>
         </div>
       ) : null}
 
       <div className="rounded-md border border-line bg-gray-50 p-4">
-        <p className="text-sm font-black text-ink">Front proof check</p>
-        <p className="mt-1 text-sm leading-6 text-muted">
-          This MVP records your approval before checkout. Final production artwork is confirmed by Tap Rater before printing.
-        </p>
-        <label className="mt-3 flex items-start gap-3 text-sm font-bold text-ink">
-          <input className="mt-1" type="checkbox" name="proofApproved" required />
-          I approve the setup details for this stand.
-        </label>
+        <p className="text-sm font-black text-ink">{selectedOption.requiresFinalProof ? "Manual proof required" : "Direct setup confirmation"}</p>
+        {selectedOption.requiresFinalProof ? (
+          <>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              After checkout, Tap Rater will collect your logo/design details by email and send a final proof. Do not print until the logo/design is collected and the proof is approved.
+            </p>
+            <label className="mt-3 flex items-start gap-3 text-sm font-bold text-ink">
+              <input className="mt-1" type="checkbox" name="manualCollectionAcknowledged" required />
+              I understand Tap Rater will contact me for logo/design confirmation before printing.
+            </label>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-sm leading-6 text-muted">
+              Confirm the destination link for this standard direct stand before adding it to cart.
+            </p>
+            <label className="mt-3 flex items-start gap-3 text-sm font-bold text-ink">
+              <input className="mt-1" type="checkbox" name="proofApproved" required />
+              I confirm the direct setup details for this stand.
+            </label>
+          </>
+        )}
       </div>
 
       {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
