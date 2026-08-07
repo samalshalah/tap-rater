@@ -10,7 +10,6 @@ import { getStorefrontProducts, getStorefrontRelatedProducts } from "@/lib/produ
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
-import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -58,7 +57,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const relatedProducts = getStorefrontRelatedProducts(product, products);
   const highlights = getProductPageHighlights(product);
   const destination = getReviewDestination(product);
-  const fromPrice = formatPrice(getLowestPurchasePriceCents(product));
+  // This product's own real price, not a hardcoded lookup -- the old
+  // getLowestPurchasePriceCents() always returned $39 or $49 regardless of
+  // which specific product/tier this page is actually for (e.g. it would
+  // show "$39" on the Branded + QR Direct product page, which is wrong).
+  const displayPrice = formatPrice(product.salePriceCents ?? product.basePriceCents);
   const productFaqs = [
     {
       question: `How does ${product.title} work?`,
@@ -104,19 +107,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
               <h1 className="mt-5 text-4xl font-black leading-tight text-ink md:text-5xl">{product.title}</h1>
               <p className="mt-5 text-lg leading-8 text-muted">{product.shortDescription}</p>
               <div className="mt-6 border-y border-line py-5">
-                <p className="text-sm font-bold uppercase text-muted">Price from</p>
-                <p className="mt-1 text-4xl font-black text-brand">{fromPrice}</p>
-              </div>
-              <div className="mt-5 grid gap-2 text-sm text-muted sm:grid-cols-2">
-                <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> One direct destination link</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> NFC and QR ready</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> No subscription required</p>
-                <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> Proof approval before cart</p>
+                <p className="text-sm font-bold uppercase text-muted">Price</p>
+                <p className="mt-1 text-4xl font-black text-brand">{displayPrice}</p>
               </div>
             </div>
 
             <div className="mt-5">
               <ProductSetupChooser product={product} />
+            </div>
+
+            <div className="mt-5 grid gap-2 rounded-md border border-line bg-white p-5 text-sm text-muted shadow-sm sm:grid-cols-2 md:p-7">
+              <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> One direct destination link</p>
+              <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> NFC and QR ready</p>
+              <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> No subscription required</p>
+              <p className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-brand" /> Proof approval before cart</p>
             </div>
           </div>
         </div>

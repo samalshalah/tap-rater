@@ -106,12 +106,6 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
             </span>
           </label>
         ))}
-        {product.categorySlug === "custom-stands" ? (
-          <div className="rounded-md border border-dashed border-line bg-gray-50 p-4">
-            <p className="text-sm font-black text-ink">Hosted Multi-Link Page</p>
-            <p className="mt-1 text-sm leading-6 text-muted">Coming soon. Use support for hosted multi-link or subscription setup requests.</p>
-          </div>
-        ) : null}
       </div>
 
       <label className="grid gap-2 text-sm font-bold text-ink">
