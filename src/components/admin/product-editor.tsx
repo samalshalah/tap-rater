@@ -1,7 +1,9 @@
 "use client";
 
 import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
-import type { CatalogCategory, MigratedProduct, ProductCustomizationOption } from "@/data/migrated-products";
+import type { CatalogCategory, MigratedProduct, ProductCustomizationOption, ProductProviderOption } from "@/data/migrated-products";
+import { useCases } from "@/data/use-cases";
+import { collectProviderOptions, collectTemplateImages, maxEditableProviderOptions } from "@/lib/admin-product-form-helpers";
 
 const supportedDestinationOptions = [
   "google",
@@ -87,7 +89,17 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
           variants: collectVariants(form),
           seoTitle: form.get("seoTitle"),
           seoDescription: form.get("seoDescription"),
-          isActive: form.get("isActive") === "true"
+          isActive: form.get("isActive") === "true",
+          designLogic: form.get("designLogic"),
+          pricingTier: form.get("pricingTier"),
+          useCaseSlugs: form.getAll("useCaseSlugs"),
+          platformSlug: String(form.get("platformSlug") ?? "").trim() || undefined,
+          colorOptions: String(form.get("colorOptions") ?? "")
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+          templateImages: collectTemplateImages(form),
+          providerOptions: collectProviderOptions(form)
         })
       });
       const body = await response.json().catch(() => ({}));
@@ -232,6 +244,67 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
       </section>
 
       <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+        <SectionIntro
+          title="Design logic"
+          description="Which printed-design template rules govern this stand, its pricing tier, which business types it's recommended for, and (for branded platform products) which real-world platform it represents."
+        />
+        <div className="grid gap-3 md:grid-cols-3">
+          <Select
+            name="designLogic"
+            label="Design logic"
+            defaultValue={product.designLogic}
+            options={[
+              ["standard_platform_locked", "Standard, platform locked"],
+              ["branded_platform_template", "Branded platform template"],
+              ["text_action_locked", "Text/action, locked"],
+              ["text_action_branded", "Text/action, branded"],
+              ["fully_custom_design", "Fully custom design"]
+            ]}
+          />
+          <Select
+            name="pricingTier"
+            label="Pricing tier"
+            defaultValue={product.pricingTier}
+            options={[
+              ["standard_direct", "Standard Direct ($39)"],
+              ["branded_qr_direct", "Branded + QR Direct ($49)"],
+              ["hosted_multi_link", "Hosted Multi-Link ($49 + $9.90/mo)"],
+              ["custom", "Custom"]
+            ]}
+          />
+          <Input name="platformSlug" label="Platform (optional)" defaultValue={product.platformSlug ?? ""} required={false} placeholder="google, yelp, cars-com..." />
+        </div>
+        <Input
+          name="colorOptions"
+          label="Color options (comma-separated, optional)"
+          defaultValue={(product.colorOptions ?? []).join(", ")}
+          required={false}
+          placeholder="White, Black"
+        />
+        <fieldset className="grid gap-2">
+          <legend className="text-xs font-bold text-ink">Use cases (Shop by Use)</legend>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {useCases.map((useCase) => (
+              <label key={useCase.slug} className="flex items-center gap-2 rounded-md border border-line bg-gray-50 px-3 py-2 text-xs font-semibold text-ink">
+                <input type="checkbox" name="useCaseSlugs" value={useCase.slug} defaultChecked={product.useCaseSlugs.includes(useCase.slug)} />
+                {useCase.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <div className="grid gap-2">
+          <p className="text-xs font-bold text-ink">Template images (optional -- for branded/platform products)</p>
+          <div className="grid gap-2 md:grid-cols-3">
+            <TemplateImageRow prefix="templateStandard" label="Standard variant" image={product.templateImages?.standard} />
+            <TemplateImageRow prefix="templateBranded" label="Branded variant" image={product.templateImages?.branded} />
+            <TemplateImageRow prefix="templateBrandedWithQr" label="Branded + QR variant" image={product.templateImages?.brandedWithQr} />
+          </div>
+        </div>
+      </section>
+
+      <ProductProviderOptionsEditor providerOptions={product.providerOptions ?? []} />
+
+      <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
         <SectionIntro title="SEO" description="Optional public metadata." />
         <div className="grid gap-3 lg:grid-cols-2">
           <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} placeholder="Google Review Stand for Businesses" />
@@ -308,6 +381,48 @@ function ImageRow({
       <Input name={srcName} label={label} defaultValue={image.src} required={false} placeholder="/uploads/products/example.jpg" onChange={setSrc} />
       {altName ? <Input name={altName} label="Alt text" defaultValue={image.alt} required={false} placeholder="White stand product photo" /> : null}
     </div>
+  );
+}
+
+function TemplateImageRow({ prefix, label, image }: { prefix: string; label: string; image?: { src: string; alt: string } }) {
+  const [src, setSrc] = useState(image?.src ?? "");
+
+  return (
+    <div className="grid gap-2 rounded-md border border-line bg-gray-50 p-2">
+      <div className="flex h-16 w-full items-center justify-center overflow-hidden rounded-md border border-line bg-white">
+        {src ? <img src={src} alt="" className="h-full w-full object-contain" /> : <span className="text-[10px] font-bold uppercase text-muted">No image</span>}
+      </div>
+      <Input name={`${prefix}Src`} label={label} defaultValue={image?.src ?? ""} required={false} placeholder="/uploads/templates/example.png" onChange={setSrc} />
+      <Input name={`${prefix}Alt`} label="Alt text" defaultValue={image?.alt ?? ""} required={false} placeholder="Google branded template preview" />
+    </div>
+  );
+}
+
+function ProductProviderOptionsEditor({ providerOptions }: { providerOptions: ProductProviderOption[] }) {
+  const rows = Array.from({ length: maxEditableProviderOptions }, (_, index) => providerOptions[index] ?? { slug: "", label: "", destinationUrlHint: "" });
+
+  return (
+    <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+      <SectionIntro
+        title="Provider options"
+        description="For generic actions backed by many possible third-party providers (Book Your Next Visit's Vagaro/Calendly/etc., Rate Your Experience's Google Forms/Typeform/etc.). These are NOT separate products -- leave blank if this product doesn't need provider options."
+      />
+      <div className="grid gap-2">
+        {rows.map((option, index) => (
+          <div key={index} className="grid gap-2 rounded-md border border-line bg-gray-50 p-2 md:grid-cols-3">
+            <Input name={`providerSlug${index}`} label="Slug" defaultValue={option.slug} required={false} placeholder="vagaro" />
+            <Input name={`providerLabel${index}`} label="Label" defaultValue={option.label} required={false} placeholder="Vagaro" />
+            <Input
+              name={`providerHint${index}`}
+              label="Destination URL hint (optional)"
+              defaultValue={option.destinationUrlHint ?? ""}
+              required={false}
+              placeholder="https://www.vagaro.com/your-business"
+            />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

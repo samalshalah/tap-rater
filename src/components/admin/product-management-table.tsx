@@ -166,6 +166,13 @@ function buildProductSavePayload(product: MigratedProduct, patch: ProductPatch) 
     variants: nextProduct.variants,
     seoTitle: nextProduct.seoTitle,
     seoDescription: nextProduct.seoDescription,
-    isActive: nextProduct.isActive
+    isActive: nextProduct.isActive,
+    designLogic: nextProduct.designLogic,
+    pricingTier: nextProduct.pricingTier,
+    useCaseSlugs: nextProduct.useCaseSlugs,
+    platformSlug: nextProduct.platformSlug,
+    colorOptions: nextProduct.colorOptions,
+    templateImages: nextProduct.templateImages,
+    providerOptions: nextProduct.providerOptions
   };
 }
