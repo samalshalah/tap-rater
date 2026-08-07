@@ -37,9 +37,10 @@ export type MigratedProduct = {
   allowsLogoUpload: boolean;
   allowsCustomDesign: boolean;
   designMode: ProductDesignMode;
+  featured?: boolean;
   displayText?: string;
   images: { src: string; alt: string }[];
-  variants: { id: string; label: string; sku: string; stockStatus: "instock" | "outofstock" }[];
+  variants: { id: string; label: string; sku: string; stockStatus: "instock" | "outofstock"; imageSrc?: string }[];
   isActive: boolean;
   seoTitle?: string;
   seoDescription?: string;

@@ -1,9 +1,9 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminProducts } from "@/lib/admin-products";
 import { hasSupabaseAdminConfig } from "@/lib/db";
-import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { ProductManagementTable } from "@/components/admin/product-management-table";
 
 export default async function AdminProductsPage() {
   await requireAdmin();
@@ -34,45 +34,8 @@ export default async function AdminProductsPage() {
         <SummaryCard label="Drafts" value={String(products.filter((product) => !product.isActive).length)} />
         <SummaryCard label="Out of stock" value={String(products.filter((product) => product.stockStatus === "outofstock").length)} />
       </div>
-      <div className="mt-6 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
-        <table className="w-full min-w-[980px] border-collapse text-left text-sm">
-          <thead>
-            <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
-              <th className="p-4">Product</th>
-              <th className="p-4">SKU</th>
-              <th className="p-4">Category</th>
-              <th className="p-4">Base price</th>
-              <th className="p-4">Sale price</th>
-              <th className="p-4">Stock</th>
-              <th className="p-4">Visibility</th>
-              <th className="p-4">Edit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr className="border-b border-line last:border-b-0" key={product.slug}>
-                <td className="p-4 font-bold text-ink">{product.title}</td>
-                <td className="p-4 text-muted">{product.sku}</td>
-                <td className="p-4 text-muted">{getCategoryBySlug(product.categorySlug)?.title ?? product.categorySlug}</td>
-                <td className="p-4 text-muted">{formatPrice(product.basePriceCents)}</td>
-                <td className="p-4 text-muted">{product.salePriceCents ? formatPrice(product.salePriceCents) : "-"}</td>
-                <td className="p-4">
-                  <span className={product.stockStatus === "instock" ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand" : "rounded-full bg-gray-100 px-3 py-1 text-xs font-black uppercase text-muted"}>
-                    {product.stockStatus === "instock" ? "In stock" : "Out of stock"}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={product.isActive ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand" : "rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase text-ink"}>
-                    {product.isActive ? "Active" : "Inactive"}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <Link className="font-bold text-brand" href={`/admin/products/${product.slug}`}>Edit</Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-6">
+        <ProductManagementTable products={products} canSave={canSave} />
       </div>
     </section>
     </AdminShell>

@@ -94,13 +94,20 @@ describe("Neon Supabase adapter", () => {
       customization_options: ["standard_design", "add_logo", "custom_design"],
       allows_logo_upload: true,
       allows_custom_design: true,
-      design_mode: "standard"
+      design_mode: "standard",
+      featured: true,
+      images: [{ src: "/uploads/products/google.jpg", alt: "Google review stand" }],
+      variants: [{ id: "white", label: "White", sku: "TR-GOOGLE-WHITE", stockStatus: "instock" }]
     });
 
     expect(result.error).toBeNull();
     expect(query.mock.calls[0][0]).toContain("on conflict (slug) do update");
     expect(query.mock.calls[0][0]).toContain("customization_options");
+    expect(query.mock.calls[0][0]).toContain("featured");
+    expect(query.mock.calls[0][0]).toContain("images");
+    expect(query.mock.calls[0][0]).toContain("variants");
     expect(query.mock.calls[0][0]).toContain("::text[]");
+    expect(query.mock.calls[0][0]).toContain("::jsonb");
   });
 
   it("returns Supabase-style errors for unsupported table or column names", async () => {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
+const productStockStatuses = ["instock", "outofstock"] as const;
 
 export const contactFormSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -86,7 +87,7 @@ export const productContentSchema = z.object({
   categorySlug: z.string().trim().min(2).max(120),
   basePriceCents: z.number().int().min(0),
   salePriceCents: z.number().int().min(0).optional(),
-  stockStatus: z.enum(["instock", "outofstock"]),
+  stockStatus: z.enum(productStockStatuses),
   shortDescription: z.string().trim().min(5).max(500),
   description: z.string().trim().min(10).max(4000),
   productType: z.enum(["physical_redirect", "physical_managed", "platform_landing_page", "bundle"]).default("physical_redirect"),
@@ -121,6 +122,28 @@ export const productContentSchema = z.object({
   allowsLogoUpload: z.boolean().default(false),
   allowsCustomDesign: z.boolean().default(false),
   designMode: z.enum(["standard", "logo", "custom"]).default("standard"),
+  featured: z.boolean().default(false),
+  images: z
+    .array(
+      z.object({
+        src: z.string().trim().min(1).max(500),
+        alt: z.string().trim().max(180).default("")
+      })
+    )
+    .max(8)
+    .default([]),
+  variants: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(80),
+        label: z.string().trim().min(1).max(120),
+        sku: z.string().trim().min(1).max(80),
+        stockStatus: z.enum(productStockStatuses),
+        imageSrc: z.string().trim().max(500).optional()
+      })
+    )
+    .max(12)
+    .default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
   isActive: z.boolean()

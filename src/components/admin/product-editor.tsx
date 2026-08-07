@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type ChangeEvent, type FormEvent, useMemo, useState } from "react";
 import type { CatalogCategory, MigratedProduct, ProductCustomizationOption } from "@/data/migrated-products";
 
 const supportedDestinationOptions = [
@@ -17,25 +17,16 @@ const supportedDestinationOptions = [
   "feedback",
   "referral",
   "custom"
+] as const;
+
+const customizationOptionLabels: { value: ProductCustomizationOption; label: string }[] = [
+  { value: "standard_design", label: "Standard" },
+  { value: "add_logo", label: "Logo" },
+  { value: "custom_design", label: "Custom" }
 ];
 
-const customizationOptionLabels: { value: ProductCustomizationOption; label: string; description: string }[] = [
-  {
-    value: "standard_design",
-    label: "Standard Design",
-    description: "Uses the Tap Rater template."
-  },
-  {
-    value: "add_logo",
-    label: "Add Your Logo",
-    description: "Logo details are collected after request."
-  },
-  {
-    value: "custom_design",
-    label: "Custom Design",
-    description: "Custom layout requires design approval."
-  }
-];
+const maxEditableImages = 4;
+const maxEditableVariants = 4;
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -51,6 +42,9 @@ type SaveStatus = {
 export function ProductEditor({ product, categories, mode }: ProductEditorProps) {
   const [status, setStatus] = useState<SaveStatus>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [title, setTitle] = useState(product.title);
+  const slug = useMemo(() => (mode === "create" || !product.slug ? slugifyTitle(title) : product.slug), [mode, product.slug, title]);
+  const sku = useMemo(() => (mode === "create" || !product.sku ? generateSku(title) : product.sku), [mode, product.sku, title]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,6 +53,7 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
 
     const form = new FormData(event.currentTarget);
     const salePrice = String(form.get("salePriceCents") ?? "");
+    const supportedDestinations = form.getAll("supportedDestinations").map(String);
 
     try {
       const response = await fetch("/api/admin/products", {
@@ -80,13 +75,16 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
           requiresAccount: form.get("requiresAccount") === "true",
           requiresSubscription: form.get("requiresSubscription") === "true",
           requiresLandingPage: form.get("requiresLandingPage") === "true",
-          supportedDestinations: form.getAll("supportedDestinations"),
+          supportedDestinations: supportedDestinations.length > 0 ? supportedDestinations : ["custom"],
           activationType: form.get("activationType"),
           includedServiceLabel: form.get("includedServiceLabel"),
           customizationOptions: form.getAll("customizationOptions"),
           allowsLogoUpload: form.get("allowsLogoUpload") === "true",
           allowsCustomDesign: form.get("allowsCustomDesign") === "true",
           designMode: form.get("designMode"),
+          featured: form.get("featured") === "true",
+          images: collectImages(form),
+          variants: collectVariants(form),
           seoTitle: form.get("seoTitle"),
           seoDescription: form.get("seoDescription"),
           isActive: form.get("isActive") === "true"
@@ -95,11 +93,7 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
       const body = await response.json().catch(() => ({}));
       setStatus({
         tone: response.ok ? "success" : "error",
-        message: response.ok
-          ? mode === "create"
-            ? "Product created."
-            : "Product saved."
-          : body.error ?? "Product save failed."
+        message: response.ok ? (mode === "create" ? "Product created." : "Product saved.") : body.error ?? "Product save failed."
       });
     } catch {
       setStatus({ tone: "error", message: "Product save failed." });
@@ -109,281 +103,329 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
   }
 
   return (
-    <form className="grid gap-4" onSubmit={submit}>
-      <div className="grid gap-5">
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Product identity</h2>
-            <p className="mt-1 text-sm text-muted">Core catalog data used by product cards, product pages, and admin lists.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input name="title" label="Title" defaultValue={product.title} placeholder="White Stand - Google Review" />
-            <Input name="slug" label="Slug" defaultValue={product.slug} placeholder="google-review-white-stand" />
-            <Input name="sku" label="SKU" defaultValue={product.sku} placeholder="TRATER01" />
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Category
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="categorySlug" defaultValue={product.categorySlug}>
-                {categories.map((category) => (
-                  <option key={category.slug} value={category.slug}>
-                    {category.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </section>
+    <form className="mx-auto grid max-w-6xl gap-3" onSubmit={submit}>
+      <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+        <SectionIntro title="Product identity" description="Title is editable. Slug and SKU are generated and locked for stable storefront URLs." />
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.9fr]">
+          <Input name="title" label="Title" value={title} onChange={setTitle} placeholder="Google Review Stand" />
+          <Input name="slug" label="Slug" defaultValue={slug} readOnly />
+          <Input name="sku" label="SKU" defaultValue={sku} readOnly />
+          <label className="grid gap-1 text-xs font-bold text-ink">
+            Use / category
+            <select className="rounded-md border border-line bg-white px-3 py-2 font-normal" name="categorySlug" defaultValue={product.categorySlug}>
+              {categories.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="grid gap-3 md:grid-cols-4">
+          <Select name="stockStatus" label="Stock" defaultValue={product.stockStatus} options={[["instock", "In stock"], ["outofstock", "Out of stock"]]} />
+          <Select name="isActive" label="Visibility" defaultValue={product.isActive ? "true" : "false"} options={[["true", "Active"], ["false", "Draft"]]} />
+          <Select name="featured" label="Featured" defaultValue={product.featured ? "true" : "false"} options={[["false", "No"], ["true", "Yes"]]} />
+          <Input name="basePriceCents" label="Base price cents" defaultValue={String(product.basePriceCents)} inputMode="numeric" placeholder="4900" />
+        </div>
+      </section>
 
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Pricing and availability</h2>
-            <p className="mt-1 text-sm text-muted">Prices are stored in cents so $49.00 is entered as 4900.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input name="basePriceCents" label="Base price cents" defaultValue={String(product.basePriceCents)} inputMode="numeric" placeholder="4900" />
-            <Input
-              name="salePriceCents"
-              label="Sale price cents"
-              defaultValue={product.salePriceCents === undefined ? "" : String(product.salePriceCents)}
-              inputMode="numeric"
-              placeholder="Optional"
-              required={false}
-            />
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Stock status
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="stockStatus" defaultValue={product.stockStatus}>
-                <option value="instock">In stock</option>
-                <option value="outofstock">Out of stock</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Visibility
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="isActive" defaultValue={product.isActive ? "true" : "false"}>
-                <option value="true">Active on storefront</option>
-                <option value="false">Inactive draft</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Product copy</h2>
-            <p className="mt-1 text-sm text-muted">Short copy appears on cards; full copy appears on product pages.</p>
-          </div>
+      <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+        <SectionIntro title="Product copy" description="Short card text and product-page description." />
+        <div className="grid gap-3 lg:grid-cols-2">
           <Textarea name="shortDescription" label="Short description" defaultValue={product.shortDescription} />
-          <Textarea name="description" label="Full description" defaultValue={product.description} tall />
-        </section>
+          <Textarea name="description" label="Full description" defaultValue={product.description} />
+        </div>
+        <Input
+          name="salePriceCents"
+          label="Sale price cents"
+          defaultValue={product.salePriceCents === undefined ? "" : String(product.salePriceCents)}
+          inputMode="numeric"
+          placeholder="Optional"
+          required={false}
+        />
+      </section>
 
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Service strategy</h2>
-            <p className="mt-1 text-sm text-muted">Controls storefront badges and the activation expectations shown to customers.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Product type
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="productType" defaultValue={product.productType}>
-                <option value="physical_redirect">Physical direct redirect</option>
-                <option value="physical_managed">Physical managed setup</option>
-                <option value="platform_landing_page">Platform landing page</option>
-                <option value="bundle">Bundle</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Service mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="serviceMode" defaultValue={product.serviceMode}>
-                <option value="basic_redirect">Basic redirect</option>
-                <option value="managed_redirect">Managed redirect</option>
-                <option value="hosted_landing_page">Hosted landing page</option>
-                <option value="multi_location_platform">Multi-location platform</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Checkout mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="checkoutMode" defaultValue={product.checkoutMode}>
-                <option value="buy_now">Buy now</option>
-                <option value="request_quote">Request quote</option>
-                <option value="subscription">Subscription</option>
-                <option value="contact_sales">Contact sales</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Activation type
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="activationType" defaultValue={product.activationType}>
-                <option value="free_basic_activation">Free basic activation</option>
-                <option value="managed_setup">Managed setup</option>
-                <option value="premium_hosted_activation">Premium hosted activation</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Account requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresAccount"
-                defaultValue={product.requiresAccount ? "true" : "false"}
-              >
-                <option value="false">No customer account required</option>
-                <option value="true">Customer account required</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Subscription requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresSubscription"
-                defaultValue={product.requiresSubscription ? "true" : "false"}
-              >
-                <option value="false">No subscription required</option>
-                <option value="true">Subscription required for hosted features</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Landing page requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresLandingPage"
-                defaultValue={product.requiresLandingPage ? "true" : "false"}
-              >
-                <option value="false">Direct link redirect</option>
-                <option value="true">Hosted landing page required</option>
-              </select>
-            </label>
-            <Input
-              name="includedServiceLabel"
-              label="Included service label"
-              defaultValue={product.includedServiceLabel}
-              placeholder="Free basic activation"
-            />
-          </div>
-          <fieldset className="grid gap-3">
-            <legend className="text-sm font-bold text-ink">Supported destinations</legend>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {supportedDestinationOptions.map((destination) => (
-                <label key={destination} className="flex items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink">
-                  <input
-                    type="checkbox"
-                    name="supportedDestinations"
-                    value={destination}
-                    defaultChecked={product.supportedDestinations.includes(destination as MigratedProduct["supportedDestinations"][number])}
-                  />
-                  {destination}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="grid gap-3">
-            <legend className="text-sm font-bold text-ink">Customization options</legend>
-            <p className="text-sm text-muted">Logo and custom design details are collected after request. This does not enable automated uploads.</p>
-            <div className="grid gap-2 md:grid-cols-3">
-              {customizationOptionLabels.map((option) => (
-                <label key={option.value} className="grid gap-1 rounded-md border border-line bg-white px-3 py-3 text-sm text-ink">
-                  <span className="flex items-center gap-2 font-semibold">
-                    <input
-                      type="checkbox"
-                      name="customizationOptions"
-                      value={option.value}
-                      defaultChecked={product.customizationOptions.includes(option.value)}
-                    />
-                    {option.label}
-                  </span>
-                  <span className="text-xs leading-5 text-muted">{option.description}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Logo option
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="allowsLogoUpload"
-                defaultValue={product.allowsLogoUpload ? "true" : "false"}
-              >
-                <option value="true">Logo setup available</option>
-                <option value="false">No logo setup</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Custom design option
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="allowsCustomDesign"
-                defaultValue={product.allowsCustomDesign ? "true" : "false"}
-              >
-                <option value="true">Custom design available</option>
-                <option value="false">No custom design</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Default design mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="designMode" defaultValue={product.designMode}>
-                <option value="standard">Standard</option>
-                <option value="logo">Logo</option>
-                <option value="custom">Custom</option>
-              </select>
-            </label>
-          </div>
-        </section>
+      <ProductImagesEditor images={product.images} />
+      <ProductVariantsEditor variants={product.variants} />
 
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">SEO</h2>
-            <p className="mt-1 text-sm text-muted">Used by public product metadata when this product is published.</p>
+      <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+        <SectionIntro title="Product logic" description="Controls checkout behavior and what the customer can configure." />
+        <div className="grid gap-3 md:grid-cols-3">
+          <Select
+            name="productType"
+            label="Product type"
+            defaultValue={product.productType}
+            options={[
+              ["physical_redirect", "Physical direct"],
+              ["physical_managed", "Managed physical"],
+              ["platform_landing_page", "Hosted page"],
+              ["bundle", "Bundle"]
+            ]}
+          />
+          <Select
+            name="serviceMode"
+            label="Service mode"
+            defaultValue={product.serviceMode}
+            options={[
+              ["basic_redirect", "Basic redirect"],
+              ["managed_redirect", "Managed redirect"],
+              ["hosted_landing_page", "Hosted page"],
+              ["multi_location_platform", "Multi-location"]
+            ]}
+          />
+          <Select
+            name="checkoutMode"
+            label="Checkout"
+            defaultValue={product.checkoutMode}
+            options={[
+              ["buy_now", "Buy now"],
+              ["request_quote", "Request quote"],
+              ["subscription", "Subscription"],
+              ["contact_sales", "Contact sales"]
+            ]}
+          />
+          <Select name="requiresAccount" label="Account" defaultValue={product.requiresAccount ? "true" : "false"} options={[["false", "Not required"], ["true", "Required"]]} />
+          <Select name="requiresSubscription" label="Subscription" defaultValue={product.requiresSubscription ? "true" : "false"} options={[["false", "No"], ["true", "Required"]]} />
+          <Select name="requiresLandingPage" label="Landing page" defaultValue={product.requiresLandingPage ? "true" : "false"} options={[["false", "Direct link"], ["true", "Hosted page"]]} />
+          <Select
+            name="activationType"
+            label="Activation"
+            defaultValue={product.activationType}
+            options={[
+              ["free_basic_activation", "Free basic"],
+              ["managed_setup", "Managed setup"],
+              ["premium_hosted_activation", "Premium hosted"]
+            ]}
+          />
+          <Select name="allowsLogoUpload" label="Logo" defaultValue={product.allowsLogoUpload ? "true" : "false"} options={[["true", "Available"], ["false", "No logo"]]} />
+          <Select name="allowsCustomDesign" label="Custom design" defaultValue={product.allowsCustomDesign ? "true" : "false"} options={[["true", "Available"], ["false", "Not available"]]} />
+          <Select name="designMode" label="Design mode" defaultValue={product.designMode} options={[["standard", "Standard"], ["logo", "Logo"], ["custom", "Custom"]]} />
+          <Input name="includedServiceLabel" label="Service label" defaultValue={product.includedServiceLabel} placeholder="Free basic activation" />
+        </div>
+        <fieldset className="grid gap-2">
+          <legend className="text-xs font-bold text-ink">Customer destination types</legend>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {supportedDestinationOptions.map((destination) => (
+              <label key={destination} className="flex items-center gap-2 rounded-md border border-line bg-gray-50 px-3 py-2 text-xs font-semibold text-ink">
+                <input
+                  type="checkbox"
+                  name="supportedDestinations"
+                  value={destination}
+                  defaultChecked={product.supportedDestinations.includes(destination)}
+                />
+                {destination}
+              </label>
+            ))}
           </div>
+        </fieldset>
+        <fieldset className="grid gap-2">
+          <legend className="text-xs font-bold text-ink">Customization choices</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {customizationOptionLabels.map((option) => (
+              <label key={option.value} className="flex items-center gap-2 rounded-md border border-line bg-gray-50 px-3 py-2 text-xs font-semibold text-ink">
+                <input type="checkbox" name="customizationOptions" value={option.value} defaultChecked={product.customizationOptions.includes(option.value)} />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      </section>
+
+      <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+        <SectionIntro title="SEO" description="Optional public metadata." />
+        <div className="grid gap-3 lg:grid-cols-2">
           <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} placeholder="Google Review Stand for Businesses" />
           <Textarea name="seoDescription" label="SEO description" defaultValue={product.seoDescription ?? ""} required={false} />
-        </section>
-      </div>
+        </div>
+      </section>
 
-      <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky bottom-3 z-10 flex flex-col gap-3 rounded-xl border border-line bg-white/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <button className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300" disabled={isSaving}>
           {isSaving ? "Saving..." : mode === "create" ? "Create product" : "Save product"}
         </button>
-        {status ? (
-          <p className={status.tone === "success" ? "text-sm font-bold text-brand" : "text-sm font-bold text-red-600"}>
-            {status.message}
-          </p>
-        ) : null}
+        {status ? <p className={status.tone === "success" ? "text-sm font-bold text-brand" : "text-sm font-bold text-red-600"}>{status.message}</p> : null}
       </div>
     </form>
+  );
+}
+
+function ProductImagesEditor({ images }: { images: MigratedProduct["images"] }) {
+  const rows = Array.from({ length: maxEditableImages }, (_, index) => images[index] ?? { src: "", alt: "" });
+
+  return (
+    <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+      <SectionIntro title="Product images" description="The first image is the product thumbnail and main storefront image." />
+      <div className="grid gap-2">
+        {rows.map((image, index) => (
+          <ImageRow key={index} srcName={`imageSrc${index}`} altName={`imageAlt${index}`} image={image} label={index === 0 ? "Main thumbnail" : `Image ${index + 1}`} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductVariantsEditor({ variants }: { variants: MigratedProduct["variants"] }) {
+  const rows = Array.from({ length: maxEditableVariants }, (_, index) => variants[index] ?? { id: "", label: "", sku: "", stockStatus: "instock" as const, imageSrc: "" });
+
+  return (
+    <section className="grid gap-3 rounded-xl border border-line bg-white p-3 shadow-sm">
+      <SectionIntro title="Color variations" description="Use one row per stand color or variant. The variant image is optional." />
+      <div className="grid gap-2">
+        {rows.map((variant, index) => (
+          <div key={index} className="grid gap-2 rounded-md border border-line bg-gray-50 p-2 lg:grid-cols-[0.7fr_1fr_1fr_0.8fr_1.2fr]">
+            <Input name={`variantId${index}`} label="Color ID" defaultValue={variant.id} required={false} placeholder="white" />
+            <Input name={`variantLabel${index}`} label="Color name" defaultValue={variant.label} required={false} placeholder="White" />
+            <Input name={`variantSku${index}`} label="Variant SKU" defaultValue={variant.sku} required={false} placeholder="TR-GOOGLE-WHITE" />
+            <Select name={`variantStockStatus${index}`} label="Stock" defaultValue={variant.stockStatus} options={[["instock", "In stock"], ["outofstock", "Out of stock"]]} />
+            <ImageRow srcName={`variantImageSrc${index}`} image={{ src: variant.imageSrc ?? "", alt: "" }} label="Variant image" compact />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ImageRow({
+  srcName,
+  altName,
+  image,
+  label,
+  compact = false
+}: {
+  srcName: string;
+  altName?: string;
+  image: { src: string; alt: string };
+  label: string;
+  compact?: boolean;
+}) {
+  const [src, setSrc] = useState(image.src);
+
+  return (
+    <div className={`grid gap-2 rounded-md border border-line bg-gray-50 p-2 ${compact ? "" : "md:grid-cols-[84px_1fr_1fr]"}`}>
+      <div className="flex h-16 w-20 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
+        {src ? <img src={src} alt="" className="h-full w-full object-contain" /> : <span className="text-[10px] font-bold uppercase text-muted">No image</span>}
+      </div>
+      <Input name={srcName} label={label} defaultValue={image.src} required={false} placeholder="/uploads/products/example.jpg" onChange={setSrc} />
+      {altName ? <Input name={altName} label="Alt text" defaultValue={image.alt} required={false} placeholder="White stand product photo" /> : null}
+    </div>
+  );
+}
+
+function SectionIntro({ title, description }: { title: string; description: string }) {
+  return (
+    <div>
+      <h2 className="text-base font-black text-ink">{title}</h2>
+      <p className="mt-1 text-xs leading-5 text-muted">{description}</p>
+    </div>
   );
 }
 
 function Input({
   name,
   label,
+  value,
   defaultValue,
   inputMode,
   placeholder,
-  required = true
+  required = true,
+  readOnly = false,
+  onChange
 }: {
   name: string;
   label: string;
-  defaultValue: string;
+  value?: string;
+  defaultValue?: string;
   inputMode?: "numeric";
   placeholder?: string;
   required?: boolean;
+  readOnly?: boolean;
+  onChange?: (value: string) => void;
 }) {
+  const controlledProps =
+    value === undefined
+      ? { defaultValue, onChange: onChange ? (event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value) : undefined }
+      : { value, onChange: (event: ChangeEvent<HTMLInputElement>) => onChange?.(event.target.value) };
+
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-1 text-xs font-bold text-ink">
       {label}
       <input
-        className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
+        className="rounded-md border border-line bg-white px-3 py-2 font-normal text-ink read-only:bg-gray-100"
         name={name}
-        defaultValue={defaultValue}
         inputMode={inputMode}
         placeholder={placeholder}
         required={required}
+        readOnly={readOnly}
+        {...controlledProps}
       />
     </label>
   );
 }
 
-function Textarea({ name, label, defaultValue, tall = false, required = true }: { name: string; label: string; defaultValue: string; tall?: boolean; required?: boolean }) {
+function Select({ name, label, defaultValue, options }: { name: string; label: string; defaultValue: string; options: [string, string][] }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-1 text-xs font-bold text-ink">
       {label}
-      <textarea className={`${tall ? "min-h-44" : "min-h-24"} rounded-md border border-line bg-white px-4 py-3 font-normal text-ink`} name={name} defaultValue={defaultValue} required={required} />
+      <select className="rounded-md border border-line bg-white px-3 py-2 font-normal" name={name} defaultValue={defaultValue}>
+        {options.map(([value, labelText]) => (
+          <option key={value} value={value}>
+            {labelText}
+          </option>
+        ))}
+      </select>
     </label>
   );
+}
+
+function Textarea({ name, label, defaultValue, required = true }: { name: string; label: string; defaultValue: string; required?: boolean }) {
+  return (
+    <label className="grid gap-1 text-xs font-bold text-ink">
+      {label}
+      <textarea className="min-h-24 rounded-md border border-line bg-white px-3 py-2 font-normal text-ink" name={name} defaultValue={defaultValue} required={required} />
+    </label>
+  );
+}
+
+function collectImages(form: FormData): MigratedProduct["images"] {
+  return Array.from({ length: maxEditableImages }, (_, index) => {
+    const src = String(form.get(`imageSrc${index}`) ?? "").trim();
+    const alt = String(form.get(`imageAlt${index}`) ?? "").trim();
+    return src ? { src, alt } : null;
+  }).filter((image): image is MigratedProduct["images"][number] => Boolean(image));
+}
+
+function collectVariants(form: FormData): MigratedProduct["variants"] {
+  return Array.from({ length: maxEditableVariants }, (_, index) => {
+    const id = String(form.get(`variantId${index}`) ?? "").trim();
+    const label = String(form.get(`variantLabel${index}`) ?? "").trim();
+    const sku = String(form.get(`variantSku${index}`) ?? "").trim();
+    const stockStatus = String(form.get(`variantStockStatus${index}`) ?? "instock");
+    const imageSrc = String(form.get(`variantImageSrc${index}`) ?? "").trim();
+
+    if (!id || !label || !sku || (stockStatus !== "instock" && stockStatus !== "outofstock")) {
+      return null;
+    }
+
+    return { id, label, sku, stockStatus, ...(imageSrc ? { imageSrc } : {}) };
+  }).filter((variant): variant is MigratedProduct["variants"][number] => Boolean(variant));
+}
+
+function slugifyTitle(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+function generateSku(value: string) {
+  const base = slugifyTitle(value)
+    .split("-")
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((part) => part.slice(0, 4).toUpperCase())
+    .join("-");
+
+  return base ? `TR-${base}` : "";
 }

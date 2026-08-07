@@ -123,6 +123,9 @@ describe("cms repository", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "standard",
+      featured: true,
+      images: [{ src: "/uploads/products/google.jpg", alt: "Google review stand" }],
+      variants: [{ id: "white", label: "White", sku: "TRATER01-WHITE", stockStatus: "instock" }],
       seoTitle: "SEO title",
       seoDescription: "SEO description",
       isActive: true
@@ -152,6 +155,9 @@ describe("cms repository", () => {
       allows_logo_upload: true,
       allows_custom_design: true,
       design_mode: "standard",
+      featured: true,
+      images: [{ src: "/uploads/products/google.jpg", alt: "Google review stand" }],
+      variants: [{ id: "white", label: "White", sku: "TRATER01-WHITE", stockStatus: "instock" }],
       seo_title: "SEO title",
       seo_description: "SEO description",
       is_active: true

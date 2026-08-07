@@ -27,6 +27,7 @@ describe("admin products", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "standard",
+      featured: false,
       images: [],
       variants: [],
       isActive: false

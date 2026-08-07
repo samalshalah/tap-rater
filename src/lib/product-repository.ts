@@ -179,6 +179,7 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     allowsLogoUpload,
     allowsCustomDesign,
     designMode,
+    featured: readBoolean(productRow.featured) ?? staticProduct?.featured ?? false,
     displayText,
     images: readImages(productRow.images) ?? staticProduct?.images ?? [],
     variants: readVariants(productRow.variants) ?? staticProduct?.variants ?? [],
@@ -321,13 +322,14 @@ function readVariants(value: unknown): MigratedProduct["variants"] | undefined {
       return [];
     }
 
-    const variant = item as { id?: unknown; label?: unknown; sku?: unknown; stockStatus?: unknown; stock_status?: unknown };
+    const variant = item as { id?: unknown; label?: unknown; sku?: unknown; stockStatus?: unknown; stock_status?: unknown; imageSrc?: unknown; image_src?: unknown };
     const id = readString(variant.id);
     const label = readString(variant.label);
     const sku = readString(variant.sku);
     const stockStatus = readStockStatus(variant.stockStatus ?? variant.stock_status);
+    const imageSrc = readString(variant.imageSrc ?? variant.image_src);
 
-    return id && label && sku && stockStatus ? [{ id, label, sku, stockStatus }] : [];
+    return id && label && sku && stockStatus ? [{ id, label, sku, stockStatus, ...(imageSrc ? { imageSrc } : {}) }] : [];
   });
 
   return variants.length > 0 ? variants : undefined;

@@ -202,6 +202,9 @@ create table if not exists products (
   allows_logo_upload boolean not null default true,
   allows_custom_design boolean not null default true,
   design_mode text not null default 'standard' check (design_mode in ('standard', 'logo', 'custom')),
+  featured boolean not null default false,
+  images jsonb not null default '[]'::jsonb,
+  variants jsonb not null default '[]'::jsonb,
   seo_title text,
   seo_description text,
   is_active boolean not null default true,
@@ -222,6 +225,9 @@ alter table products add column if not exists customization_options text[] not n
 alter table products add column if not exists allows_logo_upload boolean not null default true;
 alter table products add column if not exists allows_custom_design boolean not null default true;
 alter table products add column if not exists design_mode text not null default 'standard';
+alter table products add column if not exists featured boolean not null default false;
+alter table products add column if not exists images jsonb not null default '[]'::jsonb;
+alter table products add column if not exists variants jsonb not null default '[]'::jsonb;
 
 do $$
 begin

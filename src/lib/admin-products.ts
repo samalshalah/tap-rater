@@ -35,6 +35,7 @@ export function createBlankAdminProduct(): MigratedProduct {
     allowsLogoUpload: true,
     allowsCustomDesign: true,
     designMode: "standard",
+    featured: false,
     images: [],
     variants: [],
     isActive: false,

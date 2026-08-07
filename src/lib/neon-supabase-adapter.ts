@@ -114,6 +114,9 @@ const tableColumns = {
     "allows_logo_upload",
     "allows_custom_design",
     "design_mode",
+    "featured",
+    "images",
+    "variants",
     "seo_title",
     "seo_description",
     "is_active",
@@ -144,7 +147,7 @@ const tableColumns = {
 
 type TableName = keyof typeof tableColumns;
 
-const jsonbColumns = new Set(["payload", "buttons_json", "form_config_json", "payload_json", "line_items_json", "customer_details_json"]);
+const jsonbColumns = new Set(["payload", "buttons_json", "form_config_json", "payload_json", "line_items_json", "customer_details_json", "images", "variants"]);
 const textArrayColumns = new Set(["supported_destinations", "customization_options"]);
 const defaultConflictTargets: Partial<Record<TableName, string>> = {
   orders: "stripe_checkout_session_id",
