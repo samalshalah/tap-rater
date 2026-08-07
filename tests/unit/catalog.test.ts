@@ -117,14 +117,14 @@ describe("catalog categories", () => {
     const websiteProducts = getProductsByCategory("website-links");
     const customProducts = getProductsByCategory("custom-stands");
 
-    expect(reviewProducts).toHaveLength(4);
-    expect(socialProducts).toHaveLength(1);
-    expect(appointmentProducts).toHaveLength(1);
-    expect(menuProducts).toHaveLength(1);
-    expect(feedbackProducts).toHaveLength(1);
-    expect(websiteProducts).toHaveLength(2);
+    expect(reviewProducts).toHaveLength(8);
+    expect(socialProducts).toHaveLength(2);
+    expect(appointmentProducts).toHaveLength(2);
+    expect(menuProducts).toHaveLength(2);
+    expect(feedbackProducts).toHaveLength(2);
+    expect(websiteProducts).toHaveLength(3);
     expect(customProducts).toHaveLength(1);
-    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(4);
+    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(8);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
 
@@ -132,7 +132,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(11);
+    expect(products).toHaveLength(20);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -145,7 +145,16 @@ describe("catalog categories", () => {
         "View Our Menu Stand",
         "Visit Our Website Stand",
         "Custom Direct Stand",
-        "Hosted Multi-Link Stand"
+        "Hosted Multi-Link Stand",
+        "Google Review Stand - Branded + QR",
+        "Yelp Review Stand - Branded + QR",
+        "Facebook Review Stand - Branded + QR",
+        "TripAdvisor Review Stand - Branded + QR",
+        "Rate Your Experience Stand - Branded + QR",
+        "Follow Us on Social Media Stand - Branded + QR",
+        "Book Your Next Visit Stand - Branded + QR",
+        "View Our Menu Stand - Branded + QR",
+        "Visit Our Website Stand - Branded + QR"
       ])
     );
     expect(titles.some((title) => title.includes("Plate"))).toBe(false);
@@ -158,7 +167,7 @@ describe("catalog categories", () => {
   it("keeps menu products menu-only", () => {
     const menuProducts = getActiveProducts().filter((product) => product.slug.includes("menu"));
 
-    expect(menuProducts).toHaveLength(1);
+    expect(menuProducts).toHaveLength(2);
     expect(JSON.stringify(menuProducts)).not.toMatch(/wifi/i);
   });
 

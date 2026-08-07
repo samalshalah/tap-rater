@@ -277,6 +277,7 @@ const menuPlateImage = { src: "/uploads/products/view-menu-plate.png", alt: "Tap
 
 const standPriceCents = 3900;
 const platePriceCents = 3900;
+const brandedQrPriceCents = 4900;
 const defaultPhysicalCustomizationOptions: ProductCustomizationOption[] = ["standard_design", "add_logo"];
 
 const colors = [
@@ -350,7 +351,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
   };
 }
 
-export const migratedProducts: MigratedProduct[] = [
+const phaseOneAndCoreProducts: MigratedProduct[] = [
   phaseOneProduct({
     slug: "google-review-stand",
     title: "Google Review Stand",
@@ -769,3 +770,59 @@ export const migratedProducts: MigratedProduct[] = [
     searchKeywords: ["multi link nfc stand", "hosted link page stand", "link in bio nfc stand", "linktree nfc alternative"]
   }
 ];
+
+// Which base (Standard Direct) actions get a Branded + QR Direct tier
+// variant. Custom Direct Stand and Hosted Multi-Link Stand are excluded --
+// neither has a "standard, platform-locked" version to derive a branded
+// twin from (Custom is fully custom by definition, Hosted Multi-Link is
+// always branded).
+const brandedQrEligibleSlugs = [
+  "google-review-stand",
+  "yelp-review-stand",
+  "facebook-review-stand",
+  "tripadvisor-review-stand",
+  "rate-your-experience-stand",
+  "follow-us-social-media-stand",
+  "book-your-next-visit-stand",
+  "view-our-menu-stand",
+  "visit-our-website-stand"
+];
+
+function deriveBrandedQrVariant(standard: MigratedProduct): MigratedProduct {
+  const brandedDesignLogic: DesignLogicType = standard.platformSlug ? "branded_platform_template" : "text_action_branded";
+
+  return {
+    ...standard,
+    slug: `${standard.slug}-branded-qr`,
+    title: `${standard.title} - Branded + QR`,
+    sku: `${standard.sku}-BQR`,
+    basePriceCents: brandedQrPriceCents,
+    shortDescription: `${standard.shortDescription} Includes your logo, business name, and a QR code area on the printed design.`,
+    description: `${standard.description.replace(" Available as a Standard Direct stand or a Branded + QR Direct stand.", "").replace("free basic activation", "managed setup")} This Branded + QR Direct tier adds your logo and business name to the printed design (sized to your preference) alongside a QR code area, while keeping the core destination locked in during setup.`,
+    productType: "physical_managed",
+    serviceMode: "managed_redirect",
+    activationType: "managed_setup",
+    includedServiceLabel: "Managed setup with logo placement",
+    customizationOptions: ["standard_design", "add_logo"],
+    allowsLogoUpload: true,
+    allowsCustomDesign: false,
+    designMode: "logo",
+    designLogic: brandedDesignLogic,
+    pricingTier: "branded_qr_direct",
+    variants: colors.map((color) => ({
+      id: color.id,
+      label: color.label,
+      sku: `${standard.sku}-BQR-${color.suffix}`,
+      stockStatus: "instock" as const
+    })),
+    seoTitle: `${standard.title} Branded + QR | Custom Logo NFC Stand`,
+    seoDescription: `${standard.seoDescription ?? standard.shortDescription} Add your logo, business name, and a QR code area.`,
+    searchKeywords: [...(standard.searchKeywords ?? []), "branded qr stand", `${standard.title.toLowerCase()} branded`]
+  };
+}
+
+const brandedQrVariants: MigratedProduct[] = phaseOneAndCoreProducts
+  .filter((product) => brandedQrEligibleSlugs.includes(product.slug))
+  .map(deriveBrandedQrVariant);
+
+export const migratedProducts: MigratedProduct[] = [...phaseOneAndCoreProducts, ...brandedQrVariants];

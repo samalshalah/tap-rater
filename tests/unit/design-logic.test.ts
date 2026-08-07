@@ -36,12 +36,18 @@ describe("design logic model", () => {
     }
   });
 
-  it("platform-branded review products (google/yelp/facebook/tripadvisor) use standard_platform_locked and carry a platformSlug", () => {
+  it("platform-branded review products (google/yelp/facebook/tripadvisor) use standard_platform_locked at the standard tier, and branded_platform_template at the Branded + QR tier", () => {
     const platformProducts = getActiveProducts().filter((p) => ["google", "yelp", "facebook", "tripadvisor"].includes(p.platformSlug ?? ""));
 
     expect(platformProducts.length).toBeGreaterThan(0);
     for (const product of platformProducts) {
-      expect(product.designLogic).toBe("standard_platform_locked");
+      if (product.pricingTier === "standard_direct") {
+        expect(product.designLogic).toBe("standard_platform_locked");
+      } else if (product.pricingTier === "branded_qr_direct") {
+        expect(product.designLogic).toBe("branded_platform_template");
+      } else {
+        throw new Error(`Unexpected pricing tier for a platform product: ${product.slug} (${product.pricingTier})`);
+      }
     }
   });
 
@@ -75,6 +81,32 @@ describe("design logic model", () => {
     expect(standardTierProducts.length).toBeGreaterThan(0);
     for (const product of standardTierProducts) {
       expect(product.basePriceCents).toBe(3900);
+    }
+  });
+
+  it("every branded_qr_direct product is a real, correctly-derived twin of a standard_direct product -- $49, distinct slug/sku, no leftover 'free basic activation' claim", () => {
+    const brandedProducts = migratedProducts.filter((p) => p.pricingTier === "branded_qr_direct");
+
+    expect(brandedProducts.length).toBe(9);
+    for (const product of brandedProducts) {
+      expect(product.basePriceCents).toBe(4900);
+      expect(product.slug).toMatch(/-branded-qr$/);
+      expect(product.sku).toMatch(/-BQR$/);
+      expect(product.allowsLogoUpload).toBe(true);
+      // "free basic activation" would be factually wrong for this tier
+      // (it's a managed setup, not the free/basic tier) -- but base product
+      // descriptions aren't perfectly uniform in phrasing (e.g. Yelp's says
+      // "does not require a monthly fee" instead), so this only checks the
+      // misleading claim is genuinely absent, not that one exact
+      // replacement phrase was substituted in.
+      expect(product.description).not.toContain("free basic activation");
+      // Every branded twin has a corresponding standard product it was
+      // derived from -- confirms this isn't orphaned/fabricated data.
+      const standardSlug = product.slug.replace("-branded-qr", "");
+      const standardTwin = migratedProducts.find((p) => p.slug === standardSlug);
+      expect(standardTwin, `No standard product found for ${product.slug}`).toBeDefined();
+      expect(standardTwin?.pricingTier).toBe("standard_direct");
+      expect(product.useCaseSlugs).toEqual(standardTwin?.useCaseSlugs);
     }
   });
 
