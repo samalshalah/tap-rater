@@ -19,8 +19,6 @@ export function staticStorefrontProducts(): MigratedProduct[] {
   return migratedProducts.filter((product) => product.isActive);
 }
 
-const staticStorefrontProductSlugs = new Set(staticStorefrontProducts().map((product) => product.slug));
-
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   noStore();
 
@@ -56,17 +54,30 @@ export function getStorefrontRelatedProducts(product: MigratedProduct, products:
 }
 
 export async function getStorefrontProductsFromClient(client: ProductRepositoryClient): Promise<MigratedProduct[]> {
+  const staticProducts = staticStorefrontProducts();
   const { data, error } = await client.from("products").select("*").eq("is_active", true);
 
   if (error || !data) {
-    return staticStorefrontProducts();
+    return staticProducts;
   }
 
-  const products = data
+  const dbProducts = data
     .map((row) => normalizeStorefrontProductRow(row))
-    .filter((product): product is MigratedProduct => Boolean(product?.isActive && staticStorefrontProductSlugs.has(product.slug)));
+    .filter((product): product is MigratedProduct => Boolean(product?.isActive));
 
-  return products.length > 0 ? products : staticStorefrontProducts();
+  // Merge, don't replace: a product edited or created via the admin/database
+  // overrides the static entry for that slug; every other product keeps
+  // showing its static data untouched. Without this merge, saving a single
+  // product edit would replace the ENTIRE storefront catalog with just
+  // whatever rows happen to exist in the database, and a genuinely new
+  // product added only via admin would never appear at all (it was
+  // previously filtered out for not existing in the static file).
+  const merged = new Map(staticProducts.map((product) => [product.slug, product]));
+  for (const product of dbProducts) {
+    merged.set(product.slug, product);
+  }
+
+  return Array.from(merged.values());
 }
 
 export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | null {

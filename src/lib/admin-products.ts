@@ -51,20 +51,32 @@ export async function getAdminProducts(): Promise<MigratedProduct[]> {
   }
 
   try {
-    const { data, error } = await (getSupabaseAdmin() as AdminProductClient).from("products").select("*");
-
-    if (error || !data) {
-      return migratedProducts;
-    }
-
-    const products = data
-      .map((row) => normalizeStorefrontProductRow(row))
-      .filter((product): product is MigratedProduct => Boolean(product));
-
-    return products.length > 0 ? products : migratedProducts;
+    return await getAdminProductsFromClient(getSupabaseAdmin() as AdminProductClient);
   } catch {
     return migratedProducts;
   }
+}
+
+export async function getAdminProductsFromClient(client: AdminProductClient): Promise<MigratedProduct[]> {
+  const { data, error } = await client.from("products").select("*");
+
+  if (error || !data) {
+    return migratedProducts;
+  }
+
+  const dbProducts = data
+    .map((row) => normalizeStorefrontProductRow(row))
+    .filter((product): product is MigratedProduct => Boolean(product));
+
+  // Merge, don't replace -- see the identical fix and rationale in
+  // src/lib/product-repository.ts. Admin should see every product (static
+  // + DB-edited + newly created), not just whatever rows exist in the DB.
+  const merged = new Map(migratedProducts.map((product) => [product.slug, product]));
+  for (const product of dbProducts) {
+    merged.set(product.slug, product);
+  }
+
+  return Array.from(merged.values());
 }
 
 export async function getAdminProductBySlug(slug: string): Promise<MigratedProduct | undefined> {
