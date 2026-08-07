@@ -87,7 +87,7 @@ describe("design logic model", () => {
   it("every branded_qr_direct product is a real, correctly-derived twin of a standard_direct product -- $49, distinct slug/sku, no leftover 'free basic activation' claim", () => {
     const brandedProducts = migratedProducts.filter((p) => p.pricingTier === "branded_qr_direct");
 
-    expect(brandedProducts.length).toBe(9);
+    expect(brandedProducts.length).toBe(17);
     for (const product of brandedProducts) {
       expect(product.basePriceCents).toBe(4900);
       expect(product.slug).toMatch(/-branded-qr$/);
