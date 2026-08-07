@@ -93,7 +93,12 @@ describe("catalog categories", () => {
 
   it("keeps regular launch products in standard/branded setup and reserves custom design for the custom stand", () => {
     const products = getActiveProducts();
-    const regularProducts = products.filter((product) => product.slug !== "custom-direct-stand");
+    // Hosted Multi-Link Stand is excluded from the "regular" assumption for
+    // the same reason Custom Direct Stand is: it doesn't have a standard/
+    // platform-locked version at all -- it always shows the customer's own
+    // hosted page, so it's branded by definition (text_action_branded), not
+    // a standard+branded pair like the review/action stands.
+    const regularProducts = products.filter((product) => !["custom-direct-stand", "hosted-multi-link-stand"].includes(product.slug));
     const customProduct = getProductBySlug("custom-direct-stand");
 
     expect(regularProducts.every((product) => product.customizationOptions.includes("standard_design"))).toBe(true);
@@ -117,7 +122,7 @@ describe("catalog categories", () => {
     expect(appointmentProducts).toHaveLength(1);
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
-    expect(websiteProducts).toHaveLength(1);
+    expect(websiteProducts).toHaveLength(2);
     expect(customProducts).toHaveLength(1);
     expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(4);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
@@ -127,7 +132,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(10);
+    expect(products).toHaveLength(11);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -139,7 +144,8 @@ describe("catalog categories", () => {
         "Book Your Next Visit Stand",
         "View Our Menu Stand",
         "Visit Our Website Stand",
-        "Custom Direct Stand"
+        "Custom Direct Stand",
+        "Hosted Multi-Link Stand"
       ])
     );
     expect(titles.some((title) => title.includes("Plate"))).toBe(false);

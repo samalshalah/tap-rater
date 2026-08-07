@@ -301,6 +301,7 @@ type PhaseOneProductInput = {
   designLogic: DesignLogicType;
   useCaseSlugs: string[];
   platformSlug?: string;
+  providerOptions?: ProductProviderOption[];
 };
 
 function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
@@ -335,6 +336,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     designLogic: input.designLogic,
     useCaseSlugs: input.useCaseSlugs,
     platformSlug: input.platformSlug,
+    providerOptions: input.providerOptions,
     variants: colors.map((color) => ({
       id: color.id,
       label: color.label,
@@ -517,7 +519,14 @@ export const migratedProducts: MigratedProduct[] = [
     image: experienceStandImage,
     seoTitle: "Rate Your Experience Stand | NFC Feedback Stand",
     seoDescription: "Countertop NFC stand for collecting customer experience feedback through a Tap Rater destination.",
-    searchKeywords: ["rate your experience stand", "feedback nfc stand", "customer experience stand"]
+    searchKeywords: ["rate your experience stand", "feedback nfc stand", "customer experience stand"],
+    providerOptions: [
+      { slug: "google-forms", label: "Google Forms", destinationUrlHint: "https://forms.gle/your-form" },
+      { slug: "jotform", label: "Jotform", destinationUrlHint: "https://form.jotform.com/your-form" },
+      { slug: "surveymonkey", label: "SurveyMonkey", destinationUrlHint: "https://www.surveymonkey.com/r/your-survey" },
+      { slug: "typeform", label: "Typeform", destinationUrlHint: "https://your-business.typeform.com/to/your-form" },
+      { slug: "custom", label: "Other / custom link" }
+    ]
   }),
   phaseOneProduct({
     slug: "rate-your-experience-plate",
@@ -589,7 +598,20 @@ export const migratedProducts: MigratedProduct[] = [
     image: bookingStandImage,
     seoTitle: "Book Your Next Visit Stand | Appointment Booking NFC Stand",
     seoDescription: "Countertop NFC stand that opens a booking page, appointment form, calendar, or scheduling URL.",
-    searchKeywords: ["book your next visit stand", "appointment booking nfc stand", "booking nfc stand"]
+    searchKeywords: ["book your next visit stand", "appointment booking nfc stand", "booking nfc stand"],
+    providerOptions: [
+      { slug: "vagaro", label: "Vagaro", destinationUrlHint: "https://www.vagaro.com/your-business" },
+      { slug: "fresha", label: "Fresha", destinationUrlHint: "https://www.fresha.com/a/your-business" },
+      { slug: "booksy", label: "Booksy", destinationUrlHint: "https://booksy.com/en-us/your-business" },
+      { slug: "mindbody", label: "Mindbody", destinationUrlHint: "https://www.mindbodyonline.com/explore/your-business" },
+      { slug: "zocdoc", label: "Zocdoc", destinationUrlHint: "https://www.zocdoc.com/practice/your-business" },
+      { slug: "calendly", label: "Calendly", destinationUrlHint: "https://calendly.com/your-business" },
+      { slug: "acuity", label: "Acuity Scheduling", destinationUrlHint: "https://app.acuityscheduling.com/schedule.php?owner=your-id" },
+      { slug: "square-appointments", label: "Square Appointments", destinationUrlHint: "https://your-business.square.site" },
+      { slug: "opentable", label: "OpenTable", destinationUrlHint: "https://www.opentable.com/r/your-business" },
+      { slug: "resy", label: "Resy", destinationUrlHint: "https://resy.com/cities/your-city/your-business" },
+      { slug: "custom", label: "Other / custom link" }
+    ]
   }),
   phaseOneProduct({
     slug: "book-your-next-visit-plate",
@@ -704,5 +726,46 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "Custom Direct Stand | Custom NFC and QR Tabletop Stand",
     seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, headline, CTA, and one direct destination link.",
     searchKeywords: ["custom nfc stand", "custom qr stand", "custom review stand"]
+  },
+  {
+    slug: "hosted-multi-link-stand",
+    title: "Hosted Multi-Link Stand",
+    sku: "TR-HOSTED-MULTILINK",
+    categorySlug: "website-links",
+    basePriceCents: 4900,
+    stockStatus: "instock",
+    shortDescription:
+      "One NFC and QR stand that opens a hosted Tap Rater page with all your links -- reviews, booking, menu, social, and more.",
+    description:
+      "Hosted Multi-Link Stand points to one hosted Tap Rater page instead of a single destination link. Add and reorder as many links as you need -- Google review, booking, menu, social profiles, website -- without ever reprinting the stand. Includes your logo and business name on the printed design and the hosted page. $49 one-time setup, then $9.90/month for hosting and unlimited link edits.",
+    productType: "platform_landing_page",
+    serviceMode: "hosted_landing_page",
+    checkoutMode: "subscription",
+    requiresAccount: true,
+    requiresSubscription: true,
+    requiresLandingPage: true,
+    supportedDestinations: ["custom"],
+    activationType: "premium_hosted_activation",
+    includedServiceLabel: "Hosted page setup + unlimited link edits",
+    format: "stand",
+    customizationOptions: ["add_logo"],
+    allowsLogoUpload: true,
+    allowsCustomDesign: false,
+    designMode: "logo",
+    designLogic: "text_action_branded",
+    pricingTier: "hosted_multi_link",
+    useCaseSlugs: ["restaurants-cafes", "retail-grocery", "real-estate", "events-popups", "home-services"],
+    displayText: "Tap for everything",
+    images: [{ src: "/uploads/products/social-media-stand.png", alt: "Tap Rater Hosted Multi-Link Stand" }],
+    variants: colors.map((color) => ({
+      id: color.id,
+      label: color.label,
+      sku: `TR-HOSTED-MULTILINK-${color.suffix}`,
+      stockStatus: "instock"
+    })),
+    isActive: true,
+    seoTitle: "Hosted Multi-Link Stand | One NFC Stand, All Your Links",
+    seoDescription: "One NFC and QR stand that opens a hosted page with all your business links -- reviews, booking, menu, social, and more.",
+    searchKeywords: ["multi link nfc stand", "hosted link page stand", "link in bio nfc stand", "linktree nfc alternative"]
   }
 ];

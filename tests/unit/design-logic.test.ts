@@ -92,6 +92,51 @@ describe("design logic model", () => {
       expect(useCases.map((u) => u.slug)).toContain(slug);
     }
   });
+
+  it("Hosted Multi-Link Stand exists as its own product (previously entirely missing) with the correct design logic and pricing tier", () => {
+    const product = migratedProducts.find((p) => p.slug === "hosted-multi-link-stand");
+
+    expect(product).toBeDefined();
+    expect(product?.isActive).toBe(true);
+    expect(product?.designLogic).toBe("text_action_branded");
+    expect(product?.pricingTier).toBe("hosted_multi_link");
+    expect(product?.requiresSubscription).toBe(true);
+    expect(product?.requiresLandingPage).toBe(true);
+    expect(product?.checkoutMode).toBe("subscription");
+    // $49 one-time setup fee -- the $9.90/month recurring component isn't
+    // representable by basePriceCents alone; that's Stripe subscription
+    // price ID territory, prepared but not wired to live billing yet.
+    expect(product?.basePriceCents).toBe(4900);
+  });
+
+  it("booking tools (Vagaro, Fresha, Booksy, etc.) are provider options under Book Your Next Visit Stand, never standalone products", () => {
+    const bookingProduct = migratedProducts.find((p) => p.slug === "book-your-next-visit-stand");
+    const providerSlugs = bookingProduct?.providerOptions?.map((p) => p.slug) ?? [];
+
+    expect(providerSlugs).toEqual(
+      expect.arrayContaining(["vagaro", "fresha", "booksy", "mindbody", "zocdoc", "calendly", "acuity", "square-appointments", "opentable", "resy"])
+    );
+
+    // None of these providers exist as their own product slug anywhere in
+    // the catalog -- this is the actual enforcement of the "not standalone
+    // products" rule, not just a check that the options list looks right.
+    const bookingProviderSlugs = ["vagaro", "fresha", "booksy", "mindbody", "zocdoc", "calendly", "acuity", "square-appointments", "opentable", "resy"];
+    for (const providerSlug of bookingProviderSlugs) {
+      expect(migratedProducts.some((p) => p.slug.includes(providerSlug))).toBe(false);
+    }
+  });
+
+  it("form tools (Google Forms, Jotform, SurveyMonkey, Typeform) are provider options under Rate Your Experience Stand, never standalone products", () => {
+    const feedbackProduct = migratedProducts.find((p) => p.slug === "rate-your-experience-stand");
+    const providerSlugs = feedbackProduct?.providerOptions?.map((p) => p.slug) ?? [];
+
+    expect(providerSlugs).toEqual(expect.arrayContaining(["google-forms", "jotform", "surveymonkey", "typeform"]));
+
+    const formProviderSlugs = ["google-forms", "jotform", "surveymonkey", "typeform"];
+    for (const providerSlug of formProviderSlugs) {
+      expect(migratedProducts.some((p) => p.slug.includes(providerSlug))).toBe(false);
+    }
+  });
 });
 
 describe("normalizeStorefrontProductRow -- design logic fields", () => {
