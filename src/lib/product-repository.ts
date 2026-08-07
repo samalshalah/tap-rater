@@ -46,6 +46,12 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
   return products.filter((product) => product.categorySlug === categorySlug && product.isActive);
 }
 
+export async function getStorefrontProductsByUseCase(useCaseSlug: string): Promise<MigratedProduct[]> {
+  const products = await getStorefrontProducts();
+
+  return products.filter((product) => product.useCaseSlugs.includes(useCaseSlug) && product.isActive);
+}
+
 export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3): MigratedProduct[] {
   const sameCategory = products.filter((item) => item.slug !== product.slug && item.categorySlug === product.categorySlug);
   const fallback = products.filter((item) => item.slug !== product.slug && item.categorySlug !== product.categorySlug);

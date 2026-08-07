@@ -37,6 +37,14 @@ export function getRelatedProducts(product: MigratedProduct, limit = 3): Migrate
   return [...sameCategory, ...fallback].slice(0, limit);
 }
 
+export function getProductsByUseCase(useCaseSlug: string): MigratedProduct[] {
+  return getActiveProducts().filter((product) => product.useCaseSlugs.includes(useCaseSlug));
+}
+
+export function getActiveUseCaseSlugs(): Set<string> {
+  return new Set(getActiveProducts().flatMap((product) => product.useCaseSlugs));
+}
+
 export function getProductPriceCents(product: MigratedProduct): number {
   return product.salePriceCents ?? product.basePriceCents;
 }

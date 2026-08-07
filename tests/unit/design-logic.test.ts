@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getActiveProducts } from "@/lib/products";
+import { getActiveProducts, getActiveUseCaseSlugs, getProductsByUseCase } from "@/lib/products";
 import { migratedProducts } from "@/data/migrated-products";
 import { useCases, getUseCaseBySlug } from "@/data/use-cases";
 import { createBlankAdminProduct } from "@/lib/admin-products";
@@ -122,6 +122,29 @@ describe("design logic model", () => {
     const referencedSlugs = new Set(migratedProducts.flatMap((p) => p.useCaseSlugs));
     for (const slug of referencedSlugs) {
       expect(useCases.map((u) => u.slug)).toContain(slug);
+    }
+  });
+
+  it("getProductsByUseCase returns only active products actually tagged with that use case", () => {
+    const restaurantProducts = getProductsByUseCase("restaurants-cafes");
+
+    expect(restaurantProducts.length).toBeGreaterThan(0);
+    expect(restaurantProducts.every((p) => p.useCaseSlugs.includes("restaurants-cafes"))).toBe(true);
+    expect(restaurantProducts.every((p) => p.isActive)).toBe(true);
+    // A product genuinely unrelated to restaurants (Zillow real estate
+    // review) must not leak into this list.
+    expect(restaurantProducts.some((p) => p.slug.startsWith("zillow"))).toBe(false);
+  });
+
+  it("getActiveUseCaseSlugs matches the real, verified per-use-case coverage documented in docs/catalog-scope-decision.md", () => {
+    const activeSlugs = getActiveUseCaseSlugs();
+
+    // Every use case in this project currently has real product coverage --
+    // if this ever becomes false for a use case, /solutions would silently
+    // stop showing it (by design, via getActiveUseCaseSlugs), which is
+    // correct behavior but worth being deliberate about, not accidental.
+    for (const useCase of useCases) {
+      expect(activeSlugs.has(useCase.slug), `${useCase.slug} has zero active products`).toBe(true);
     }
   });
 
