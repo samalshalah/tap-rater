@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-const smokeScriptPath = "../../scripts/smoke.mjs";
+const smokeScriptPath = new URL("../../scripts/smoke.mjs", import.meta.url).href;
 
 describe("smoke test script", () => {
   it("checks the critical public launch routes without requiring Stripe", async () => {
