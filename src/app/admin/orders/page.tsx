@@ -72,6 +72,15 @@ export default async function AdminOrdersPage() {
                               <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
                               <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
                               <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
+                              {item.manualProductionRequired ? (
+                                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-amber-800">
+                                  <p className="font-black">Manual production review required</p>
+                                  <p>Private asset storage was not used for this order. Collect/confirm the logo or design details manually.</p>
+                                  {item.productionWarningCodes?.length ? (
+                                    <p className="mt-1 font-mono text-[11px]">{item.productionWarningCodes.join(", ")}</p>
+                                  ) : null}
+                                </div>
+                              ) : null}
                               {item.logoRequired || item.proofRequired ? (
                                 <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
                               ) : null}

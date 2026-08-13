@@ -29,7 +29,13 @@ describe("orders repository", () => {
         logoReference: null,
         proofRequired: true,
         proofApproved: false,
-        productionStatus: "pending_manual_logo_and_proof"
+        productionStatus: "pending_manual_logo_and_proof",
+        manualProductionRequired: true,
+        productionWarningCodes: [
+          "pending_manual_proof",
+          "asset_storage_not_configured",
+          "do_not_print_until_manual_review"
+        ]
       }
     ]);
 
@@ -40,7 +46,13 @@ describe("orders repository", () => {
       logoReference: null,
       proofRequired: true,
       proofApproved: false,
-      productionStatus: "pending_manual_logo_and_proof"
+      productionStatus: "pending_manual_logo_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: [
+        "pending_manual_proof",
+        "asset_storage_not_configured",
+        "do_not_print_until_manual_review"
+      ]
     });
   });
 

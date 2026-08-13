@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import type { CheckoutCartRow } from "@/lib/checkout";
+import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
@@ -21,6 +21,8 @@ export type OrderLineItem = {
   proofRequired?: boolean;
   proofApproved?: boolean;
   productionStatus?: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  manualProductionRequired?: boolean;
+  productionWarningCodes?: ManualProductionWarningCode[];
 };
 
 export type OrderRecord = {
@@ -73,7 +75,9 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
     logoReference: row.logoReference ?? null,
     proofRequired: row.proofRequired,
     proofApproved: row.proofApproved,
-    productionStatus: row.productionStatus
+    productionStatus: row.productionStatus,
+    manualProductionRequired: row.manualProductionRequired,
+    productionWarningCodes: row.productionWarningCodes
   }));
 }
 
