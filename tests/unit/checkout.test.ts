@@ -35,6 +35,8 @@ describe("Stripe checkout helpers", () => {
       productId: "google-review-stand",
       optionId: "standard_direct",
       optionLabel: "Standard Direct Stand",
+      manualProductionRequired: false,
+      productionWarningCodes: [],
       quantity: 2,
       unitAmountCents: 3900,
       lineSubtotalCents: 7800
@@ -102,7 +104,13 @@ describe("Stripe checkout helpers", () => {
       logoReference: null,
       proofRequired: true,
       proofApproved: false,
-      productionStatus: "pending_manual_logo_and_proof"
+      productionStatus: "pending_manual_logo_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: [
+        "pending_manual_proof",
+        "asset_storage_not_configured",
+        "do_not_print_until_manual_review"
+      ]
     });
     expect(result.rows[0].setup).not.toHaveProperty("logoFileName");
   });
@@ -135,6 +143,12 @@ describe("Stripe checkout helpers", () => {
       proofRequired: true,
       proofApproved: false,
       productionStatus: "pending_manual_design_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: [
+        "pending_manual_proof",
+        "asset_storage_not_configured",
+        "do_not_print_until_manual_review"
+      ],
       setup: {
         designNotes: "Use white stand with logo at top."
       }

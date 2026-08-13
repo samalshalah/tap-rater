@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createBlankAdminProduct } from "@/lib/admin-products";
+import { createBlankAdminProduct, getAdminProductsFromClient } from "@/lib/admin-products";
 
 describe("admin products", () => {
   it("creates a blank product draft for the admin create form", () => {
@@ -31,5 +31,20 @@ describe("admin products", () => {
       variants: [],
       isActive: false
     });
+  });
+
+  it("keeps the admin catalog empty when the configured database has no products", async () => {
+    const products = await getAdminProductsFromClient({
+      from(table: string) {
+        expect(table).toBe("products");
+        return {
+          select() {
+            return Promise.resolve({ data: [], error: null });
+          }
+        };
+      }
+    });
+
+    expect(products).toEqual([]);
   });
 });

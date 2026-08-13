@@ -2,15 +2,17 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, PackageCheck, Truck } from "lucide-react";
-import { migratedProducts } from "@/data/migrated-products";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
-import { getStorefrontProducts, getStorefrontRelatedProducts } from "@/lib/product-repository";
+import { getStorefrontProductBySlug, getStorefrontProducts, getStorefrontRelatedProducts } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -18,7 +20,7 @@ type ProductPageProps = {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = (await getStorefrontProducts()).find((item) => item.slug === slug && item.isActive);
+  const product = await getStorefrontProductBySlug(slug);
 
   if (!product) {
     return { title: "Product Not Found" };
@@ -39,10 +41,6 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       images: product.images.map((image) => ({ url: absoluteUrl(image.src), alt: image.alt }))
     }
   };
-}
-
-export function generateStaticParams() {
-  return migratedProducts.filter((product) => product.isActive).map((product) => ({ slug: product.slug }));
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

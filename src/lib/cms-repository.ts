@@ -94,10 +94,12 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     supported_destinations: input.supportedDestinations,
     activation_type: input.activationType,
     included_service_label: input.includedServiceLabel,
+    format: input.format,
     customization_options: input.customizationOptions,
     allows_logo_upload: input.allowsLogoUpload,
     allows_custom_design: input.allowsCustomDesign,
     design_mode: input.designMode,
+    images: input.images,
     seo_title: input.seoTitle ?? null,
     seo_description: input.seoDescription ?? null,
     is_active: input.isActive

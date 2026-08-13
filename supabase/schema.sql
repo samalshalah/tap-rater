@@ -198,10 +198,12 @@ create table if not exists products (
   supported_destinations text[] not null default array['custom']::text[],
   activation_type text not null default 'free_basic_activation' check (activation_type in ('free_basic_activation', 'managed_setup', 'premium_hosted_activation')),
   included_service_label text not null default 'Free basic activation',
+  format text not null default 'stand' check (format in ('stand', 'plate', 'bundle', 'platform')),
   customization_options text[] not null default array['standard_design', 'add_logo', 'custom_design']::text[],
   allows_logo_upload boolean not null default true,
   allows_custom_design boolean not null default true,
   design_mode text not null default 'standard' check (design_mode in ('standard', 'logo', 'custom')),
+  images jsonb not null default '[]'::jsonb,
   seo_title text,
   seo_description text,
   is_active boolean not null default true,
@@ -218,16 +220,20 @@ alter table products add column if not exists requires_landing_page boolean not 
 alter table products add column if not exists supported_destinations text[] not null default array['custom']::text[];
 alter table products add column if not exists activation_type text not null default 'free_basic_activation' check (activation_type in ('free_basic_activation', 'managed_setup', 'premium_hosted_activation'));
 alter table products add column if not exists included_service_label text not null default 'Free basic activation';
+alter table products add column if not exists format text not null default 'stand';
 alter table products add column if not exists customization_options text[] not null default array['standard_design', 'add_logo', 'custom_design']::text[];
 alter table products add column if not exists allows_logo_upload boolean not null default true;
 alter table products add column if not exists allows_custom_design boolean not null default true;
 alter table products add column if not exists design_mode text not null default 'standard';
+alter table products add column if not exists images jsonb not null default '[]'::jsonb;
 
 do $$
 begin
   alter table products drop constraint if exists products_service_mode_check;
+  alter table products drop constraint if exists products_format_check;
   update products set service_mode = 'hosted_landing_page' where service_mode = 'premium_landing_page';
   alter table products add constraint products_service_mode_check check (service_mode in ('basic_redirect', 'managed_redirect', 'hosted_landing_page', 'multi_location_platform'));
+  alter table products add constraint products_format_check check (format in ('stand', 'plate', 'bundle', 'platform'));
   alter table products drop constraint if exists products_supported_destinations_check;
   alter table products add constraint products_supported_destinations_check check (
     supported_destinations <@ array[

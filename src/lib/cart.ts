@@ -1,5 +1,11 @@
-import { getActiveProducts, getProductBySlug, getProductPriceCents } from "@/lib/products";
+import { getActiveProducts, getProductBySlug } from "@/lib/products";
 import { getProductPurchaseOptions, getPurchaseOption, standardDirectOption, type PurchaseOptionId } from "@/lib/purchase-options";
+
+export type CartProductSnapshot = {
+  title: string;
+  sku: string;
+  shortDescription: string;
+};
 
 export const cartStorageKey = "taprater:cart";
 
@@ -7,21 +13,22 @@ export type CartItem = {
   productId: string;
   optionId?: PurchaseOptionId;
   quantity: number;
+  productSnapshot?: CartProductSnapshot;
   setup?: {
     destinationUrl?: string;
     businessName?: string;
-      headline?: string;
-      cta?: string;
-      logoFileName?: string;
-      designNotes?: string;
-      proofApproved?: boolean;
-      manualCollectionAcknowledged?: boolean;
-    };
+    headline?: string;
+    cta?: string;
+    logoFileName?: string;
+    designNotes?: string;
+    proofApproved?: boolean;
+    manualCollectionAcknowledged?: boolean;
+  };
 };
 
 export type CartRow = {
   item: CartItem;
-  product: NonNullable<ReturnType<typeof getProductBySlug>>;
+  product: CartProductSnapshot;
   option: NonNullable<ReturnType<typeof getPurchaseOption>>;
   unitPriceCents: number;
   lineSubtotalCents: number;
@@ -44,22 +51,31 @@ export function normalizeCartItems(value: unknown): CartItem[] {
     const productId = typeof entry?.productId === "string" ? entry.productId : "";
     const quantity = entry?.quantity;
     const product = productById.get(productId);
+    const productSnapshot = normalizeProductSnapshot(entry?.productSnapshot);
 
-    if (!activeProductIds.has(productId) || !product || !isPositiveQuantity(quantity)) {
+    if (!productId || !isPositiveQuantity(quantity) || (!activeProductIds.has(productId) && !productSnapshot)) {
       continue;
     }
 
     const requestedOption = typeof entry?.optionId === "string" ? getPurchaseOption(entry.optionId) : undefined;
-    const productOptions = getProductPurchaseOptions(product);
-    const option = requestedOption && productOptions.some((item) => item.id === requestedOption.id) ? requestedOption : productOptions[0] ?? standardDirectOption;
+    const productOptions = product ? getProductPurchaseOptions(product) : [];
+    const option =
+      requestedOption && (productOptions.length === 0 || productOptions.some((item) => item.id === requestedOption.id))
+        ? requestedOption
+        : productOptions[0] ?? standardDirectOption;
     const setup = normalizeSetup(entry?.setup);
     const key = getCartItemKey({ productId, optionId: option.id, setup });
     const existing = normalized.get(key);
+    const snapshot = productSnapshot ?? (product ? productToSnapshot(product) : undefined);
+    if (!snapshot) {
+      continue;
+    }
 
     normalized.set(key, {
       productId,
       optionId: option.id,
       quantity: (existing?.quantity ?? 0) + quantity,
+      productSnapshot: snapshot,
       setup
     });
   }
@@ -98,24 +114,60 @@ export function removeCartItem(items: CartItem[], productId: string): CartItem[]
 export function getCartRows(items: CartItem[]): CartRow[] {
   return normalizeCartItems(items).flatMap((item) => {
     const product = getProductBySlug(item.productId);
-    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
+    const option = (item.optionId ? getPurchaseOption(item.optionId) : undefined) ?? standardDirectOption;
 
-    if (!product || !option) {
-      return [];
+    if (!product) {
+      const productSnapshot = item.productSnapshot;
+      if (!productSnapshot) {
+        return [];
+      }
+
+      return [
+        {
+          item,
+          product: productSnapshot,
+          option,
+          unitPriceCents: option.priceCents,
+          lineSubtotalCents: option.priceCents * item.quantity
+        }
+      ];
     }
 
-    const unitPriceCents = option.priceCents ?? getProductPriceCents(product);
+    const unitPriceCents = option.priceCents;
 
     return [
       {
         item,
-        product,
+        product: productToSnapshot(product),
         option,
         unitPriceCents,
         lineSubtotalCents: unitPriceCents * item.quantity
       }
     ];
   });
+}
+
+function productToSnapshot(product: NonNullable<ReturnType<typeof getProductBySlug>>): CartProductSnapshot {
+  return {
+    title: product.title,
+    sku: product.sku,
+    shortDescription: product.shortDescription
+  };
+}
+
+function normalizeProductSnapshot(value: unknown): CartProductSnapshot | undefined {
+  const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const title = readString(row.title);
+  const sku = readString(row.sku);
+  const shortDescription = readString(row.shortDescription);
+
+  return title && sku && shortDescription
+    ? {
+        title,
+        sku,
+        shortDescription
+      }
+    : undefined;
 }
 
 export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "setup">): string {

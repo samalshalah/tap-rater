@@ -1,8 +1,13 @@
 import Image from "next/image";
 import type { MigratedProduct } from "@/data/migrated-products";
 
+const productImageFallback = {
+  src: "/uploads/products/no-photo-available.png",
+  alt: "Product image coming soon"
+};
+
 export function ProductGallery({ product }: { product: MigratedProduct }) {
-  const image = product.images[0];
+  const image = product.images[0] ?? { ...productImageFallback, alt: product.title };
 
   return (
     <div className="lg:sticky lg:top-28">

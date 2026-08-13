@@ -38,6 +38,7 @@ export default async function AdminProductsPage() {
         <table className="w-full min-w-[980px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
+              <th className="p-4">Image</th>
               <th className="p-4">Product</th>
               <th className="p-4">SKU</th>
               <th className="p-4">Category</th>
@@ -51,6 +52,9 @@ export default async function AdminProductsPage() {
           <tbody>
             {products.map((product) => (
               <tr className="border-b border-line last:border-b-0" key={product.slug}>
+                <td className="p-4">
+                  <ProductThumbnail product={product} />
+                </td>
                 <td className="p-4 font-bold text-ink">{product.title}</td>
                 <td className="p-4 text-muted">{product.sku}</td>
                 <td className="p-4 text-muted">{getCategoryBySlug(product.categorySlug)?.title ?? product.categorySlug}</td>
@@ -76,6 +80,18 @@ export default async function AdminProductsPage() {
       </div>
     </section>
     </AdminShell>
+  );
+}
+
+function ProductThumbnail({ product }: { product: Awaited<ReturnType<typeof getAdminProducts>>[number] }) {
+  const image = product.images[0];
+
+  return image ? (
+    <img src={image.src} alt={image.alt || product.title} className="h-14 w-14 rounded-md border border-line bg-white object-contain" loading="lazy" />
+  ) : (
+    <div className="grid h-14 w-14 place-items-center rounded-md border border-dashed border-line bg-white text-[10px] font-bold uppercase text-muted">
+      No image
+    </div>
   );
 }
 

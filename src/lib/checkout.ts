@@ -20,7 +20,20 @@ export type CheckoutCartRow = {
   proofRequired: boolean;
   proofApproved: boolean;
   productionStatus: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  manualProductionRequired: boolean;
+  productionWarningCodes: ManualProductionWarningCode[];
 };
+
+export type ManualProductionWarningCode =
+  | "pending_manual_proof"
+  | "asset_storage_not_configured"
+  | "do_not_print_until_manual_review";
+
+const manualProductionWarningCodes: ManualProductionWarningCode[] = [
+  "pending_manual_proof",
+  "asset_storage_not_configured",
+  "do_not_print_until_manual_review"
+];
 
 export type ValidatedCheckoutCart =
   | {
@@ -64,6 +77,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? false : setup.proofApproved === true;
+    const manualProductionRequired = option.id === "branded_qr_direct" || option.id === "custom_direct";
     const productionStatus =
       option.id === "custom_direct"
         ? "pending_manual_design_and_proof"
@@ -87,7 +101,9 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       logoReference: null,
       proofRequired,
       proofApproved,
-      productionStatus
+      productionStatus,
+      manualProductionRequired,
+      productionWarningCodes: manualProductionRequired ? manualProductionWarningCodes : []
     });
   }
 
