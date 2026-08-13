@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
+const productFormats = ["stand", "plate", "bundle", "platform"] as const;
+const productImageSchema = z.object({
+  src: z.string().trim().min(1).max(2048),
+  alt: z.string().trim().max(300).default("")
+});
 
 export const contactFormSchema = z.object({
   name: z.string().trim().min(2).max(120),
@@ -117,10 +122,12 @@ export const productContentSchema = z.object({
     .default(["custom"]),
   activationType: z.enum(["free_basic_activation", "managed_setup", "premium_hosted_activation"]).default("free_basic_activation"),
   includedServiceLabel: z.string().trim().min(2).max(120).default("Free basic activation"),
+  format: z.enum(productFormats).default("stand"),
   customizationOptions: z.array(z.enum(productCustomizationOptions)).min(1).default(["standard_design"]),
   allowsLogoUpload: z.boolean().default(false),
   allowsCustomDesign: z.boolean().default(false),
   designMode: z.enum(["standard", "logo", "custom"]).default("standard"),
+  images: z.array(productImageSchema).max(8).default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
   isActive: z.boolean()

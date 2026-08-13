@@ -91,6 +91,7 @@ describe("Neon Supabase adapter", () => {
       stock_status: "instock",
       short_description: "Short text",
       description: "Long text",
+      format: "stand",
       customization_options: ["standard_design", "add_logo", "custom_design"],
       allows_logo_upload: true,
       allows_custom_design: true,
@@ -99,6 +100,7 @@ describe("Neon Supabase adapter", () => {
 
     expect(result.error).toBeNull();
     expect(query.mock.calls[0][0]).toContain("on conflict (slug) do update");
+    expect(query.mock.calls[0][0]).toContain("format");
     expect(query.mock.calls[0][0]).toContain("customization_options");
     expect(query.mock.calls[0][0]).toContain("::text[]");
   });

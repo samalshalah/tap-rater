@@ -34,6 +34,11 @@ const steps = [
   "We print and ship"
 ];
 
+const productImageFallback = {
+  src: "/uploads/products/no-photo-available.png",
+  alt: "Product image coming soon"
+};
+
 export default async function HomePage() {
   const products = await getStorefrontProducts();
   const categories = getCatalogCategories();
@@ -42,6 +47,7 @@ export default async function HomePage() {
     return product ? [product] : [];
   });
   const heroProduct = products.find((product) => product.slug === "google-review-stand") ?? products[0];
+  const heroProductImage = heroProduct?.images[0] ?? (heroProduct ? { ...productImageFallback, alt: heroProduct.title } : undefined);
 
   return (
     <main className="bg-white text-ink">
@@ -78,8 +84,8 @@ export default async function HomePage() {
 
           <div className="relative min-h-[500px]">
             <div className="absolute inset-x-12 bottom-8 h-12 rounded-full bg-gray-300/80 blur-2xl" />
-            {heroProduct ? (
-              <Image src={heroProduct.images[0].src} alt={heroProduct.images[0].alt} fill priority className="object-contain" />
+            {heroProductImage ? (
+              <Image src={heroProductImage.src} alt={heroProductImage.alt} fill priority className="object-contain" />
             ) : null}
             <div className="absolute right-0 top-8 rounded-md border border-line bg-white p-5 shadow-xl">
               <p className="text-xs font-black uppercase text-muted">Starting at</p>

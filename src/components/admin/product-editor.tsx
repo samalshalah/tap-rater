@@ -19,6 +19,8 @@ const supportedDestinationOptions = [
   "custom"
 ];
 
+const maxEditableImages = 4;
+
 const customizationOptionLabels: { value: ProductCustomizationOption; label: string; description: string }[] = [
   {
     value: "standard_design",
@@ -83,12 +85,14 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
           supportedDestinations: form.getAll("supportedDestinations"),
           activationType: form.get("activationType"),
           includedServiceLabel: form.get("includedServiceLabel"),
+          format: form.get("format"),
           customizationOptions: form.getAll("customizationOptions"),
           allowsLogoUpload: form.get("allowsLogoUpload") === "true",
           allowsCustomDesign: form.get("allowsCustomDesign") === "true",
           designMode: form.get("designMode"),
           seoTitle: form.get("seoTitle"),
           seoDescription: form.get("seoDescription"),
+          images: collectImages(form),
           isActive: form.get("isActive") === "true"
         })
       });
@@ -176,6 +180,14 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
 
         <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
           <div>
+            <h2 className="text-lg font-black text-ink">Product images</h2>
+            <p className="mt-1 text-sm text-muted">Add, replace, reorder, or remove storefront product images. Save the product to apply changes.</p>
+          </div>
+          <ProductImagesEditor images={product.images} productTitle={product.title || "Tap Rater product"} />
+        </section>
+
+        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
+          <div>
             <h2 className="text-lg font-black text-ink">Service strategy</h2>
             <p className="mt-1 text-sm text-muted">Controls storefront badges and the activation expectations shown to customers.</p>
           </div>
@@ -254,6 +266,15 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
               defaultValue={product.includedServiceLabel}
               placeholder="Free basic activation"
             />
+            <label className="grid gap-2 text-sm font-bold text-ink">
+              Product format
+              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="format" defaultValue={product.format}>
+                <option value="stand">Stand</option>
+                <option value="plate">Plate</option>
+                <option value="bundle">Bundle</option>
+                <option value="platform">Platform</option>
+              </select>
+            </label>
           </div>
           <fieldset className="grid gap-3">
             <legend className="text-sm font-bold text-ink">Supported destinations</legend>
@@ -349,6 +370,78 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
   );
 }
 
+function ProductImagesEditor({
+  images,
+  productTitle
+}: {
+  images: MigratedProduct["images"];
+  productTitle: string;
+}) {
+  const [editableImages, setEditableImages] = useState(() =>
+    Array.from({ length: maxEditableImages }, (_, index) => ({
+      src: images[index]?.src ?? "",
+      alt: images[index]?.alt ?? ""
+    }))
+  );
+
+  function updateImage(index: number, patch: Partial<{ src: string; alt: string }>) {
+    setEditableImages((current) => current.map((image, itemIndex) => (itemIndex === index ? { ...image, ...patch } : image)));
+  }
+
+  function removeImage(index: number) {
+    updateImage(index, { src: "", alt: "" });
+  }
+
+  return (
+    <div className="grid gap-3">
+      {editableImages.map((image, index) => (
+        <div key={index} className="grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[112px_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+          <div className="grid h-24 w-full place-items-center overflow-hidden rounded-md border border-line bg-white md:w-28">
+            {image.src ? (
+              <img
+                src={image.src}
+                alt={image.alt || productTitle}
+                className="h-full w-full object-contain"
+                loading="lazy"
+              />
+            ) : (
+              <span className="px-2 text-center text-xs font-bold uppercase text-muted">No image</span>
+            )}
+          </div>
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            {index === 0 ? "Primary image URL" : `Gallery image ${index + 1} URL`}
+            <input
+              className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
+              name={`image.${index}.src`}
+              value={image.src}
+              onChange={(event) => updateImage(index, { src: event.target.value })}
+              placeholder="/uploads/products/example.png"
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            Alt text
+            <input
+              className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
+              name={`image.${index}.alt`}
+              value={image.alt}
+              onChange={(event) => updateImage(index, { alt: event.target.value })}
+              placeholder={productTitle}
+            />
+          </label>
+          <button
+            type="button"
+            className="rounded-md border border-line px-4 py-3 text-sm font-bold text-ink hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:text-muted"
+            disabled={!image.src && !image.alt}
+            onClick={() => removeImage(index)}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Input({
   name,
   label,
@@ -377,6 +470,18 @@ function Input({
       />
     </label>
   );
+}
+
+function collectImages(form: FormData): MigratedProduct["images"] {
+  return Array.from({ length: maxEditableImages }, (_, index) => {
+    const src = readOptionalText(form.get(`image.${index}.src`));
+    const alt = readOptionalText(form.get(`image.${index}.alt`)) ?? "";
+    return src ? { src, alt } : null;
+  }).filter((image): image is MigratedProduct["images"][number] => Boolean(image));
+}
+
+function readOptionalText(value: FormDataEntryValue | null) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function Textarea({ name, label, defaultValue, tall = false, required = true }: { name: string; label: string; defaultValue: string; tall?: boolean; required?: boolean }) {

@@ -19,8 +19,6 @@ export function staticStorefrontProducts(): MigratedProduct[] {
   return migratedProducts.filter((product) => product.isActive);
 }
 
-const staticStorefrontProductSlugs = new Set(staticStorefrontProducts().map((product) => product.slug));
-
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   noStore();
 
@@ -64,9 +62,9 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
 
   const products = data
     .map((row) => normalizeStorefrontProductRow(row))
-    .filter((product): product is MigratedProduct => Boolean(product?.isActive && staticStorefrontProductSlugs.has(product.slug)));
+    .filter((product): product is MigratedProduct => Boolean(product?.isActive));
 
-  return products.length > 0 ? products : staticStorefrontProducts();
+  return products;
 }
 
 export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | null {
@@ -308,7 +306,7 @@ function readImages(value: unknown): MigratedProduct["images"] | undefined {
     );
   });
 
-  return images.length > 0 ? images : undefined;
+  return images;
 }
 
 function readVariants(value: unknown): MigratedProduct["variants"] | undefined {

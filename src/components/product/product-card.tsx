@@ -5,8 +5,13 @@ import { getProductServiceBadges, getReviewDestination } from "@/lib/product-pag
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 
+const productImageFallback = {
+  src: "/uploads/products/no-photo-available.png",
+  alt: "Product image coming soon"
+};
+
 export function ProductCard({ product }: { product: MigratedProduct }) {
-  const image = product.images[0];
+  const image = product.images[0] ?? { ...productImageFallback, alt: product.title };
   const category = getCategoryBySlug(product.categorySlug);
   const serviceBadges = getProductServiceBadges(product);
   const purchaseLabel = getPurchaseLabel(product);

@@ -58,6 +58,11 @@ export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
       productId: product.slug,
       optionId: selectedOption.id,
       quantity: 1,
+      productSnapshot: {
+        title: product.title,
+        sku: product.sku,
+        shortDescription: product.shortDescription
+      },
       setup: {
         destinationUrl,
         businessName,

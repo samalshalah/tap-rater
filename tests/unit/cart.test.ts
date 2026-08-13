@@ -31,6 +31,31 @@ describe("cart utilities", () => {
     expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 2 });
   });
 
+  it("keeps database-created product items when a product snapshot is present", () => {
+    const items = normalizeCartItems([
+      {
+        productId: "new-database-stand",
+        optionId: "branded_qr_direct",
+        quantity: 1,
+        productSnapshot: {
+          title: "New Database Stand",
+          sku: "TR-NEW-DATABASE-STAND",
+          shortDescription: "Backend-created product"
+        }
+      }
+    ]);
+
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      productId: "new-database-stand",
+      optionId: "branded_qr_direct",
+      productSnapshot: {
+        title: "New Database Stand",
+        sku: "TR-NEW-DATABASE-STAND"
+      }
+    });
+  });
+
   it("restores only valid items from localStorage JSON", () => {
     const items = parseStoredCart(
       JSON.stringify([
