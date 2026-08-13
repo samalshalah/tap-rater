@@ -3,6 +3,37 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
 import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
+export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
+
+export class CheckoutTimeoutError extends Error {
+  constructor(
+    public readonly label: string,
+    public readonly timeoutMs: number
+  ) {
+    super(`${label} timed out after ${timeoutMs}ms.`);
+    this.name = "CheckoutTimeoutError";
+  }
+}
+
+export function isCheckoutTimeoutError(value: unknown): value is CheckoutTimeoutError {
+  return Boolean(value instanceof CheckoutTimeoutError || (value && typeof value === "object" && (value as Error).name === "CheckoutTimeoutError"));
+}
+
+export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new CheckoutTimeoutError(label, timeoutMs)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
 export type CheckoutCartRow = {
   productId: string;
   optionId: PurchaseOptionId;
@@ -229,7 +260,10 @@ export function getStripeSecretKey() {
 }
 
 export function getStripeClient() {
-  return new Stripe(getStripeSecretKey());
+  return new Stripe(getStripeSecretKey(), {
+    httpClient: Stripe.createFetchHttpClient(),
+    maxNetworkRetries: 0
+  });
 }
 
 export function getCheckoutSiteUrl() {

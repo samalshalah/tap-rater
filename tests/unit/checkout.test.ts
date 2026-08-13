@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import Stripe from "stripe";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import {
   buildStripeCheckoutLineItems,
   createCheckoutSessionParams,
+  getStripeClient,
   isStripeTestSecretKey,
-  validateCheckoutCart
+  validateCheckoutCart,
+  withTimeout
 } from "@/lib/checkout";
 
 const configuredStandardItem = {
@@ -18,6 +21,11 @@ const configuredStandardItem = {
 };
 
 describe("Stripe checkout helpers", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.STRIPE_SECRET_KEY;
+  });
+
   it("validates cart items server-side against active in-stock products", () => {
     const result = validateCheckoutCart(
       [
@@ -159,6 +167,28 @@ describe("Stripe checkout helpers", () => {
     expect(isStripeTestSecretKey("sk_test_123")).toBe(true);
     expect(isStripeTestSecretKey("sk_live_123")).toBe(false);
     expect(isStripeTestSecretKey("")).toBe(false);
+  });
+
+  it("constructs Stripe with the fetch HTTP client for Cloudflare Workers", () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    const fetchClientSpy = vi.spyOn(Stripe, "createFetchHttpClient");
+
+    const client = getStripeClient();
+
+    expect(client).toBeInstanceOf(Stripe);
+    expect(fetchClientSpy).toHaveBeenCalledOnce();
+  });
+
+  it("fails fast when a checkout dependency times out", async () => {
+    await expect(withTimeout(new Promise(() => undefined), 1, "Stripe Checkout Session creation")).rejects.toMatchObject({
+      label: "Stripe Checkout Session creation",
+      name: "CheckoutTimeoutError",
+      timeoutMs: 1
+    });
+  });
+
+  it("returns a completed dependency result before the timeout", async () => {
+    await expect(withTimeout(Promise.resolve("ok"), 50, "fast dependency")).resolves.toBe("ok");
   });
 
   it("builds Stripe line items from validated cart rows", () => {
