@@ -8,7 +8,9 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 
-export function ProductSetupChooser({ product }: { product: MigratedProduct }) {
+type ProductSetupChooserProduct = Pick<MigratedProduct, "slug" | "title" | "sku" | "shortDescription" | "categorySlug" | "allowsCustomDesign">;
+
+export function ProductSetupChooser({ product }: { product: ProductSetupChooserProduct }) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [error, setError] = useState("");

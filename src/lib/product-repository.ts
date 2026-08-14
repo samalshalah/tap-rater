@@ -1,19 +1,62 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
+type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
+type ProductQueryBuilder = ProductQueryResult & {
+  eq: (column: string, value: unknown) => ProductQueryBuilder;
+  limit: (limit: number) => ProductQueryBuilder;
+  maybeSingle: <T = unknown>() => ProductSingleQueryResult<T>;
+};
 
 export type ProductRepositoryClient = {
   from: (table: string) => {
-    select: (columns?: string) => {
-      eq: (column: string, value: boolean) => ProductQueryResult;
-    };
+    select: (columns?: string) => ProductQueryBuilder;
   };
 };
 
 type ProductRow = Record<string, unknown>;
+const STOREFRONT_PRODUCT_CACHE_MS = 60_000;
+
+type StorefrontCacheEntry<T> = {
+  expiresAt: number;
+  value: T;
+};
+
+const productBySlugCache = new Map<string, StorefrontCacheEntry<MigratedProduct | undefined>>();
+const categoryProductsCache = new Map<string, StorefrontCacheEntry<MigratedProduct[]>>();
+const STOREFRONT_PRODUCT_COLUMNS = [
+  "slug",
+  "title",
+  "sku",
+  "category_slug",
+  "format",
+  "base_price_cents",
+  "sale_price_cents",
+  "stock_status",
+  "short_description",
+  "description",
+  "product_type",
+  "service_mode",
+  "checkout_mode",
+  "requires_account",
+  "requires_subscription",
+  "requires_landing_page",
+  "supported_destinations",
+  "activation_type",
+  "included_service_label",
+  "customization_options",
+  "allows_logo_upload",
+  "allows_custom_design",
+  "design_mode",
+  "images",
+  "is_active",
+  "seo_title",
+  "seo_description"
+].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
   return migratedProducts.filter((product) => product.isActive);
@@ -33,11 +76,24 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   }
 }
 
-export async function getStorefrontProductBySlug(slug: string): Promise<MigratedProduct | undefined> {
-  const products = await getStorefrontProducts();
+export const getStorefrontProductBySlug = cache(async (slug: string): Promise<MigratedProduct | undefined> => {
+  if (!hasSupabaseAdminConfig()) {
+    return getStaticStorefrontProductBySlug(slug);
+  }
 
-  return products.find((product) => product.slug === slug && product.isActive);
-}
+  try {
+    const cachedProduct = readCache(productBySlugCache, slug);
+    if (cachedProduct !== undefined) {
+      return cachedProduct;
+    }
+
+    const product = await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
+    writeCache(productBySlugCache, slug, product);
+    return product;
+  } catch {
+    return getStaticStorefrontProductBySlug(slug);
+  }
+});
 
 export async function getStorefrontProductsByCategory(slug: string): Promise<MigratedProduct[]> {
   const products = await getStorefrontProducts();
@@ -47,14 +103,91 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
 }
 
 export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3): MigratedProduct[] {
-  const sameCategory = products.filter((item) => item.slug !== product.slug && item.categorySlug === product.categorySlug);
-  const fallback = products.filter((item) => item.slug !== product.slug && item.categorySlug !== product.categorySlug);
+  const sameCategory = products.filter(
+    (item) => item.slug !== product.slug && item.categorySlug === product.categorySlug && item.isActive && item.stockStatus === "instock"
+  );
 
-  return [...sameCategory, ...fallback].slice(0, limit);
+  return sameCategory.slice(0, limit);
+}
+
+export async function getStorefrontProductBySlugFromClient(
+  client: ProductRepositoryClient,
+  slug: string
+): Promise<MigratedProduct | undefined> {
+  const { data, error } = await client
+    .from("products")
+    .select(STOREFRONT_PRODUCT_COLUMNS)
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle<ProductRow>();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const product = normalizeStorefrontProductRow(data);
+
+  return product?.isActive ? product : undefined;
+}
+
+export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3): Promise<MigratedProduct[]> {
+  if (!hasSupabaseAdminConfig()) {
+    return getStorefrontRelatedProducts(product, staticStorefrontProducts(), limit);
+  }
+
+  try {
+    const fetchLimit = Math.max(limit + 4, 8);
+    const cacheKey = `${product.categorySlug}:${fetchLimit}`;
+    const cachedCategoryProducts = readCache(categoryProductsCache, cacheKey);
+    const categoryProducts =
+      cachedCategoryProducts ??
+      (await getStorefrontProductsByCategoryFromClient(getSupabaseAdmin() as ProductRepositoryClient, product.categorySlug, fetchLimit));
+
+    if (!cachedCategoryProducts) {
+      writeCache(categoryProductsCache, cacheKey, categoryProducts);
+    }
+
+    return getStorefrontRelatedProducts(product, categoryProducts, limit);
+  } catch {
+    return getStorefrontRelatedProducts(product, staticStorefrontProducts(), limit);
+  }
+}
+
+export async function getStorefrontRelatedProductsFromClient(
+  client: ProductRepositoryClient,
+  product: MigratedProduct,
+  limit = 3
+): Promise<MigratedProduct[]> {
+  const categoryProducts = await getStorefrontProductsByCategoryFromClient(client, product.categorySlug, limit + 4);
+
+  return getStorefrontRelatedProducts(product, categoryProducts, limit);
+}
+
+export async function getStorefrontProductsByCategoryFromClient(
+  client: ProductRepositoryClient,
+  categorySlug: string,
+  limit = 8
+): Promise<MigratedProduct[]> {
+  const { data, error } = await client
+    .from("products")
+    .select(STOREFRONT_PRODUCT_COLUMNS)
+    .eq("is_active", true)
+    .eq("category_slug", categorySlug)
+    .eq("stock_status", "instock")
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? [])
+    .map((row) => normalizeStorefrontProductRow(row))
+    .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock"))
+    .slice(0, limit);
 }
 
 export async function getStorefrontProductsFromClient(client: ProductRepositoryClient): Promise<MigratedProduct[]> {
-  const { data, error } = await client.from("products").select("*").eq("is_active", true);
+  const { data, error } = await client.from("products").select(STOREFRONT_PRODUCT_COLUMNS).eq("is_active", true);
 
   if (error || !data) {
     return staticStorefrontProducts();
@@ -64,7 +197,60 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
     .map((row) => normalizeStorefrontProductRow(row))
     .filter((product): product is MigratedProduct => Boolean(product?.isActive));
 
+  primeStorefrontProductCaches(products);
+
   return products;
+}
+
+function getStaticStorefrontProductBySlug(slug: string) {
+  const product = getProductBySlug(slug);
+
+  return product?.isActive ? product : undefined;
+}
+
+function readCache<T>(cacheStore: Map<string, StorefrontCacheEntry<T>>, key: string): T | undefined {
+  const entry = cacheStore.get(key);
+  if (!entry) {
+    return undefined;
+  }
+
+  if (entry.expiresAt <= Date.now()) {
+    cacheStore.delete(key);
+    return undefined;
+  }
+
+  return entry.value;
+}
+
+function writeCache<T>(cacheStore: Map<string, StorefrontCacheEntry<T>>, key: string, value: T) {
+  if (cacheStore.size > 256) {
+    cacheStore.clear();
+  }
+
+  cacheStore.set(key, {
+    expiresAt: Date.now() + STOREFRONT_PRODUCT_CACHE_MS,
+    value
+  });
+}
+
+function primeStorefrontProductCaches(products: MigratedProduct[]) {
+  const byCategory = new Map<string, MigratedProduct[]>();
+
+  for (const product of products) {
+    writeCache(productBySlugCache, product.slug, product);
+
+    if (product.stockStatus !== "instock") {
+      continue;
+    }
+
+    const categoryProducts = byCategory.get(product.categorySlug) ?? [];
+    categoryProducts.push(product);
+    byCategory.set(product.categorySlug, categoryProducts);
+  }
+
+  for (const [categorySlug, categoryProducts] of byCategory) {
+    writeCache(categoryProductsCache, `${categorySlug}:8`, categoryProducts);
+  }
 }
 
 export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | null {
@@ -76,34 +262,39 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
   const slug = readString(productRow.slug);
   const staticProduct = slug ? getProductBySlug(slug) : undefined;
   const title = readString(productRow.title) ?? staticProduct?.title;
-  const sku = readString(productRow.sku) ?? staticProduct?.sku;
-  const rawCategorySlug = readString(productRow.category_slug) ?? readString(productRow.categorySlug) ?? staticProduct?.categorySlug;
+  const sku = readString(productRow.sku) ?? staticProduct?.sku ?? slug?.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
+  const rawCategorySlug =
+    readString(productRow.category_slug) ??
+    readString(productRow.categorySlug) ??
+    readString(productRow.stand_category_slug) ??
+    readString(productRow.standCategorySlug) ??
+    staticProduct?.categorySlug;
   const matchedCategory = rawCategorySlug ? getCategoryBySlug(rawCategorySlug) : undefined;
   const categorySlug = matchedCategory?.slug === rawCategorySlug ? rawCategorySlug : staticProduct?.categorySlug ?? matchedCategory?.slug ?? rawCategorySlug;
-  const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents;
-  const stockStatus = readStockStatus(productRow.stock_status) ?? readStockStatus(productRow.stockStatus) ?? staticProduct?.stockStatus;
+  const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents ?? 3900;
+  const stockStatus = readStockStatus(productRow.stock_status) ?? readStockStatus(productRow.stockStatus) ?? staticProduct?.stockStatus ?? "instock";
   const shortDescription =
-    readString(productRow.short_description) ?? readString(productRow.shortDescription) ?? staticProduct?.shortDescription;
-  const description = readString(productRow.description) ?? staticProduct?.description;
+    readString(productRow.short_description) ?? readString(productRow.shortDescription) ?? staticProduct?.shortDescription ?? `${title} NFC and QR stand.`;
+  const description = readString(productRow.description) ?? staticProduct?.description ?? shortDescription;
   const productType =
     readProductType(productRow.product_type) ?? readProductType(productRow.productType) ?? staticProduct?.productType ?? "physical_redirect";
-  const serviceMode = readServiceMode(productRow.service_mode) ?? readServiceMode(productRow.serviceMode) ?? staticProduct?.serviceMode;
+  const serviceMode = readServiceMode(productRow.service_mode) ?? readServiceMode(productRow.serviceMode) ?? staticProduct?.serviceMode ?? "basic_redirect";
   const checkoutMode = readCheckoutMode(productRow.checkout_mode) ?? readCheckoutMode(productRow.checkoutMode) ?? staticProduct?.checkoutMode ?? "buy_now";
   const requiresAccount =
     readBoolean(productRow.requires_account) ?? readBoolean(productRow.requiresAccount) ?? staticProduct?.requiresAccount ?? false;
   const requiresSubscription =
-    readBoolean(productRow.requires_subscription) ?? readBoolean(productRow.requiresSubscription) ?? staticProduct?.requiresSubscription;
+    readBoolean(productRow.requires_subscription) ?? readBoolean(productRow.requiresSubscription) ?? staticProduct?.requiresSubscription ?? false;
   const requiresLandingPage =
-    readBoolean(productRow.requires_landing_page) ?? readBoolean(productRow.requiresLandingPage) ?? staticProduct?.requiresLandingPage;
+    readBoolean(productRow.requires_landing_page) ?? readBoolean(productRow.requiresLandingPage) ?? staticProduct?.requiresLandingPage ?? false;
   const supportedDestinations =
     readSupportedDestinations(productRow.supported_destinations) ??
     readSupportedDestinations(productRow.supportedDestinations) ??
     staticProduct?.supportedDestinations ??
     ["custom"];
   const activationType =
-    readActivationType(productRow.activation_type) ?? readActivationType(productRow.activationType) ?? staticProduct?.activationType;
+    readActivationType(productRow.activation_type) ?? readActivationType(productRow.activationType) ?? staticProduct?.activationType ?? "free_basic_activation";
   const includedServiceLabel =
-    readString(productRow.included_service_label) ?? readString(productRow.includedServiceLabel) ?? staticProduct?.includedServiceLabel;
+    readString(productRow.included_service_label) ?? readString(productRow.includedServiceLabel) ?? staticProduct?.includedServiceLabel ?? "Free basic activation";
   const format =
     readProductFormat(productRow.format) ??
     readProductFormat(productRow.product_format) ??
@@ -136,18 +327,8 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     !stockStatus ||
     !shortDescription ||
     !description ||
-    !productType ||
-    !serviceMode ||
-    !checkoutMode ||
-    requiresAccount === undefined ||
-    requiresSubscription === undefined ||
-    requiresLandingPage === undefined ||
-    !activationType ||
-    !includedServiceLabel ||
     !format ||
     customizationOptions.length === 0 ||
-    allowsLogoUpload === undefined ||
-    allowsCustomDesign === undefined ||
     !designMode
   ) {
     return null;

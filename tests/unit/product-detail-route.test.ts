@@ -7,6 +7,8 @@ describe("product detail route", () => {
 
   it("does not statically limit product detail slugs to the legacy catalog", () => {
     expect(source).toContain('export const dynamic = "force-dynamic"');
+    expect(source).toContain("export const dynamicParams = true");
+    expect(source).toContain("export const revalidate = 0");
     expect(source).not.toMatch(/export\s+(async\s+)?function\s+generateStaticParams/);
     expect(source).not.toContain("@/data/migrated-products");
   });

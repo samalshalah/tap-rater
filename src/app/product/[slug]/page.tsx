@@ -5,13 +5,14 @@ import { CheckCircle2, PackageCheck, Truck } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
-import { getStorefrontProductBySlug, getStorefrontProducts, getStorefrontRelatedProducts } from "@/lib/product-repository";
+import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 export const revalidate = 0;
 
 type ProductPageProps = {
@@ -45,18 +46,25 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const products = await getStorefrontProducts();
-  const product = products.find((item) => item.slug === slug && item.isActive);
+  const product = await getStorefrontProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
   const category = getCategoryBySlug(product.categorySlug);
-  const relatedProducts = getStorefrontRelatedProducts(product, products);
+  const relatedProducts = await getRelatedStorefrontProductsForProduct(product);
   const highlights = getProductPageHighlights(product);
   const destination = getReviewDestination(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product));
+  const setupProduct = {
+    slug: product.slug,
+    title: product.title,
+    sku: product.sku,
+    shortDescription: product.shortDescription,
+    categorySlug: product.categorySlug,
+    allowsCustomDesign: product.allowsCustomDesign
+  };
   const productFaqs = [
     {
       question: `How does ${product.title} work?`,
@@ -114,7 +122,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
 
             <div className="mt-5">
-              <ProductSetupChooser product={product} />
+              <ProductSetupChooser product={setupProduct} />
             </div>
           </div>
         </div>
