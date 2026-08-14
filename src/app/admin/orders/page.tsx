@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getAdminOrders } from "@/lib/orders";
+import { getAdminOrders, getOrderLineItemFulfillmentKind, type OrderLineItem } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
 export default async function AdminOrdersPage() {
@@ -59,33 +59,7 @@ export default async function AdminOrdersPage() {
                   <td className="p-4 text-muted">
                     {order.line_items_json.length > 0
                       ? order.line_items_json.map((item) => (
-                          <div key={`${item.productId}-${item.optionId ?? "base"}`} className="mb-3 last:mb-0">
-                            <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
-                            {item.optionLabel ? <p>{item.optionLabel}</p> : null}
-                            {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
-                            {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
-                            {item.setup && typeof item.setup.headline === "string" ? <p>Headline: {item.setup.headline}</p> : null}
-                            {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
-                            <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
-                              <p><strong>Logo required:</strong> {item.logoRequired ? "Yes" : "No"}</p>
-                              <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Collect manually after checkout" : "Not required"}</p>
-                              <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
-                              <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
-                              <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
-                              {item.manualProductionRequired ? (
-                                <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-amber-800">
-                                  <p className="font-black">Manual production review required</p>
-                                  <p>Private asset storage was not used for this order. Collect/confirm the logo or design details manually.</p>
-                                  {item.productionWarningCodes?.length ? (
-                                    <p className="mt-1 font-mono text-[11px]">{item.productionWarningCodes.join(", ")}</p>
-                                  ) : null}
-                                </div>
-                              ) : null}
-                              {item.logoRequired || item.proofRequired ? (
-                                <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
-                              ) : null}
-                            </div>
-                          </div>
+                          <OrderLineItemSummary key={`${item.productId}-${item.optionId ?? "base"}`} item={item} />
                         ))
                       : "-"}
                   </td>
@@ -118,6 +92,57 @@ function formatProductionStatus(status: string | undefined) {
   if (status === "pending_manual_logo_and_proof") return "Pending manual logo collection and proof approval";
   if (status === "pending_manual_design_and_proof") return "Pending manual design collection and proof approval";
   return "Pending review";
+}
+
+function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
+  const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
+  const isManualProduction = fulfillmentKind === "branded" || fulfillmentKind === "custom" || item.manualProductionRequired === true;
+  const requirementLabel = fulfillmentKind === "custom" ? "Logo/design required" : "Logo required";
+  const requirementValue = formatManualRequirement(item, fulfillmentKind);
+
+  return (
+    <div className="mb-3 last:mb-0">
+      <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
+      {item.optionLabel ? <p>{item.optionLabel}</p> : null}
+      {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
+      {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
+      {item.setup && typeof item.setup.headline === "string" ? <p>Headline: {item.setup.headline}</p> : null}
+      {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
+      <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
+        <p><strong>{requirementLabel}:</strong> {requirementValue}</p>
+        <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Collect manually after checkout" : "Not required"}</p>
+        <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
+        <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
+        <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
+        {isManualProduction ? (
+          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-amber-800">
+            <p className="font-black">Manual production review required</p>
+            <p>{formatManualProductionWarning(fulfillmentKind)}</p>
+            {item.productionWarningCodes?.length ? (
+              <p className="mt-1 font-mono text-[11px]">{item.productionWarningCodes.join(", ")}</p>
+            ) : null}
+          </div>
+        ) : null}
+        {item.logoRequired || item.proofRequired || isManualProduction ? (
+          <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function formatManualRequirement(item: OrderLineItem, fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
+  if (fulfillmentKind === "custom") return "Manual design collection required";
+  if (fulfillmentKind === "branded") return "Manual logo collection required";
+  return item.logoRequired ? "Yes" : "No";
+}
+
+function formatManualProductionWarning(fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
+  if (fulfillmentKind === "custom") {
+    return "Collect/confirm custom design details before printing. Do not print until proof is approved.";
+  }
+
+  return "Collect/confirm logo and business details before printing. Do not print until proof is approved.";
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {

@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  applyOrderLineItemFulfillmentInference,
+  getOrderLineItemFulfillmentKind,
   mapCheckoutRowsToOrderLineItems,
   mapCheckoutSessionToOrderInput,
   savePaidOrderFromCheckoutSessionWithClient,
@@ -53,6 +55,110 @@ describe("orders repository", () => {
         "asset_storage_not_configured",
         "do_not_print_until_manual_review"
       ]
+    });
+  });
+
+  it("infers manual logo and proof requirements for legacy branded orders with weak booleans", () => {
+    const item = applyOrderLineItemFulfillmentInference({
+      productId: "google-review-stand",
+      optionId: "branded_qr_direct",
+      optionLabel: "Branded + QR Direct Stand",
+      title: "Google Review Stand",
+      sku: "TR-GOOGLE-STAND",
+      quantity: 1,
+      unitAmountCents: 4900,
+      lineSubtotalCents: 4900,
+      setup: {
+        destinationUrl: "https://g.page/example/review",
+        businessName: "Nova Implant"
+      },
+      logoRequired: false,
+      proofRequired: false,
+      proofApproved: false,
+      productionStatus: "ready_for_direct_activation",
+      manualProductionRequired: false,
+      productionWarningCodes: []
+    });
+
+    expect(getOrderLineItemFulfillmentKind(item)).toBe("branded");
+    expect(item).toMatchObject({
+      logoRequired: true,
+      logoStatus: "manual_collection_required",
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_logo_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: [
+        "pending_manual_proof",
+        "asset_storage_not_configured",
+        "do_not_print_until_manual_review"
+      ]
+    });
+  });
+
+  it("infers manual design and proof requirements for legacy custom orders", () => {
+    const item = applyOrderLineItemFulfillmentInference({
+      productId: "custom-direct-stand",
+      optionId: "custom_direct",
+      optionLabel: "Custom Direct Stand",
+      title: "Custom Direct Stand",
+      sku: "TR-CUSTOM-DIRECT",
+      quantity: 1,
+      unitAmountCents: 4900,
+      lineSubtotalCents: 4900,
+      setup: {
+        destinationUrl: "https://example.com",
+        businessName: "Nova Implant",
+        headline: "Scan to connect"
+      },
+      logoRequired: false,
+      proofRequired: false,
+      proofApproved: false,
+      manualProductionRequired: false,
+      productionWarningCodes: []
+    });
+
+    expect(getOrderLineItemFulfillmentKind(item)).toBe("custom");
+    expect(item).toMatchObject({
+      logoRequired: true,
+      logoStatus: "manual_collection_required",
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_design_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: [
+        "pending_manual_proof",
+        "asset_storage_not_configured",
+        "do_not_print_until_manual_review"
+      ]
+    });
+  });
+
+  it("keeps standard direct orders clean when no manual proof is needed", () => {
+    const item = applyOrderLineItemFulfillmentInference({
+      productId: "google-review-stand",
+      optionId: "standard_direct",
+      optionLabel: "Standard Direct Stand",
+      title: "Google Review Stand",
+      sku: "TR-GOOGLE-STAND",
+      quantity: 1,
+      unitAmountCents: 3900,
+      lineSubtotalCents: 3900,
+      setup: {
+        destinationUrl: "https://g.page/example/review",
+        proofApproved: true
+      }
+    });
+
+    expect(getOrderLineItemFulfillmentKind(item)).toBe("standard");
+    expect(item).toMatchObject({
+      logoRequired: false,
+      logoStatus: "not_required",
+      proofRequired: false,
+      proofApproved: false,
+      productionStatus: "ready_for_direct_activation",
+      manualProductionRequired: false,
+      productionWarningCodes: []
     });
   });
 

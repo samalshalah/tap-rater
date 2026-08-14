@@ -25,6 +25,8 @@ export type OrderLineItem = {
   productionWarningCodes?: ManualProductionWarningCode[];
 };
 
+export type OrderLineItemFulfillmentKind = "standard" | "branded" | "custom";
+
 export type OrderRecord = {
   id?: string;
   stripe_checkout_session_id: string;
@@ -60,25 +62,93 @@ export type StripeCheckoutSessionLike = {
 };
 
 export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderLineItem[] {
-  return rows.map((row) => ({
-    productId: row.productId,
-    optionId: row.optionId,
-    optionLabel: row.optionLabel,
-    title: row.title,
-    sku: row.sku,
-    quantity: row.quantity,
-    unitAmountCents: row.unitAmountCents,
-    lineSubtotalCents: row.lineSubtotalCents,
-    setup: row.setup,
-    logoRequired: row.logoRequired,
-    logoStatus: row.logoStatus,
-    logoReference: row.logoReference ?? null,
-    proofRequired: row.proofRequired,
-    proofApproved: row.proofApproved,
-    productionStatus: row.productionStatus,
-    manualProductionRequired: row.manualProductionRequired,
-    productionWarningCodes: row.productionWarningCodes
-  }));
+  return rows.map((row) =>
+    applyOrderLineItemFulfillmentInference({
+      productId: row.productId,
+      optionId: row.optionId,
+      optionLabel: row.optionLabel,
+      title: row.title,
+      sku: row.sku,
+      quantity: row.quantity,
+      unitAmountCents: row.unitAmountCents,
+      lineSubtotalCents: row.lineSubtotalCents,
+      setup: row.setup,
+      logoRequired: row.logoRequired,
+      logoStatus: row.logoStatus,
+      logoReference: row.logoReference ?? null,
+      proofRequired: row.proofRequired,
+      proofApproved: row.proofApproved,
+      productionStatus: row.productionStatus,
+      manualProductionRequired: row.manualProductionRequired,
+      productionWarningCodes: row.productionWarningCodes
+    })
+  );
+}
+
+export function applyOrderLineItemFulfillmentInference(item: OrderLineItem): OrderLineItem {
+  const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
+
+  if (fulfillmentKind === "standard") {
+    return {
+      ...item,
+      logoRequired: item.logoRequired === true,
+      logoStatus: item.logoRequired ? item.logoStatus ?? "manual_collection_required" : "not_required",
+      logoReference: item.logoReference ?? null,
+      proofRequired: item.proofRequired === true,
+      proofApproved: item.proofApproved === true,
+      productionStatus: item.productionStatus ?? "ready_for_direct_activation",
+      manualProductionRequired: item.manualProductionRequired === true,
+      productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes)
+    };
+  }
+
+  const productionStatus =
+    fulfillmentKind === "custom" ? "pending_manual_design_and_proof" : "pending_manual_logo_and_proof";
+
+  return {
+    ...item,
+    logoRequired: true,
+    logoStatus: item.logoReference ? item.logoStatus ?? "manual_collection_required" : "manual_collection_required",
+    logoReference: item.logoReference ?? null,
+    proofRequired: true,
+    proofApproved: item.proofApproved === true,
+    productionStatus,
+    manualProductionRequired: true,
+    productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes, [
+      "pending_manual_proof",
+      "asset_storage_not_configured",
+      "do_not_print_until_manual_review"
+    ])
+  };
+}
+
+export function getOrderLineItemFulfillmentKind(item: OrderLineItem): OrderLineItemFulfillmentKind {
+  const optionId = item.optionId?.toLowerCase() ?? "";
+  const optionLabel = item.optionLabel?.toLowerCase() ?? "";
+  const productionStatus = item.productionStatus?.toLowerCase() ?? "";
+  const warningCodes = Array.isArray(item.productionWarningCodes) ? item.productionWarningCodes : [];
+
+  if (
+    optionId === "custom_direct" ||
+    optionLabel.includes("custom direct") ||
+    productionStatus === "pending_manual_design_and_proof"
+  ) {
+    return "custom";
+  }
+
+  if (
+    optionId === "branded_qr_direct" ||
+    optionLabel.includes("branded + qr") ||
+    productionStatus === "pending_manual_logo_and_proof"
+  ) {
+    return "branded";
+  }
+
+  if (item.manualProductionRequired || warningCodes.includes("pending_manual_proof")) {
+    return "branded";
+  }
+
+  return "standard";
 }
 
 export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLike): OrderRecord {
@@ -223,10 +293,10 @@ function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] 
             Number.isInteger(row.unitAmountCents) &&
             Number.isInteger(row.lineSubtotalCents)
             ? [
-                {
+                applyOrderLineItemFulfillmentInference({
                   ...row,
                   setup: row.setup && typeof row.setup === "object" ? row.setup : undefined
-                } as OrderLineItem
+                } as OrderLineItem)
               ]
             : [];
         })
@@ -250,11 +320,25 @@ function normalizeOrderRecord(value: unknown): OrderRecord {
     subtotal_cents: readNumber(row.subtotal_cents) ?? 0,
     total_cents: readNumber(row.total_cents) ?? 0,
     currency: readString(row.currency) ?? "usd",
-    line_items_json: Array.isArray(row.line_items_json) ? (row.line_items_json as OrderLineItem[]) : [],
+    line_items_json: Array.isArray(row.line_items_json)
+      ? (row.line_items_json as OrderLineItem[]).map(applyOrderLineItemFulfillmentInference)
+      : [],
     customer_details_json: row.customer_details_json && typeof row.customer_details_json === "object" ? (row.customer_details_json as Record<string, unknown>) : null,
     created_at: readString(row.created_at),
     updated_at: readString(row.updated_at)
   };
+}
+
+function normalizeProductionWarningCodes(
+  current: ManualProductionWarningCode[] | undefined,
+  required: ManualProductionWarningCode[] = []
+): ManualProductionWarningCode[] {
+  const currentCodes = Array.isArray(current) ? current.filter(isManualProductionWarningCode) : [];
+  return Array.from(new Set([...currentCodes, ...required]));
+}
+
+function isManualProductionWarningCode(value: unknown): value is ManualProductionWarningCode {
+  return value === "pending_manual_proof" || value === "asset_storage_not_configured" || value === "do_not_print_until_manual_review";
 }
 
 function readString(value: unknown) {
