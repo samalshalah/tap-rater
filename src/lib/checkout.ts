@@ -1,6 +1,13 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
+import {
+  getProductionStatusForPurchaseOption,
+  isManualProductionOptionId,
+  manualProductionWarningCodes,
+  type ManualProductionWarningCode,
+  type ProductionStatus
+} from "@/lib/fulfillment";
 import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
@@ -50,15 +57,10 @@ export type CheckoutCartRow = {
   logoReference?: string | null;
   proofRequired: boolean;
   proofApproved: boolean;
-  productionStatus: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus: ProductionStatus;
   manualProductionRequired: boolean;
   productionWarningCodes: ManualProductionWarningCode[];
 };
-
-export type ManualProductionWarningCode =
-  | "pending_manual_proof"
-  | "asset_storage_not_configured"
-  | "do_not_print_until_manual_review";
 
 export type StripeMode = "test" | "live";
 
@@ -75,12 +77,6 @@ export type StripeRuntimeConfig =
       mode: StripeMode | "invalid";
       error: string;
     };
-
-const manualProductionWarningCodes: ManualProductionWarningCode[] = [
-  "pending_manual_proof",
-  "asset_storage_not_configured",
-  "do_not_print_until_manual_review"
-];
 
 export type ValidatedCheckoutCart =
   | {
@@ -124,13 +120,8 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? false : setup.proofApproved === true;
-    const manualProductionRequired = option.id === "branded_qr_direct" || option.id === "custom_direct";
-    const productionStatus =
-      option.id === "custom_direct"
-        ? "pending_manual_design_and_proof"
-        : option.id === "branded_qr_direct"
-          ? "pending_manual_logo_and_proof"
-          : "ready_for_direct_activation";
+    const manualProductionRequired = isManualProductionOptionId(option.id);
+    const productionStatus = getProductionStatusForPurchaseOption(option.id);
 
     rows.push({
       productId: product.slug,
@@ -234,7 +225,7 @@ function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<Car
     return false;
   }
 
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && !setup.businessName) {
+  if (isManualProductionOptionId(optionId) && !setup.businessName) {
     return false;
   }
 
@@ -246,7 +237,7 @@ function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<Car
     return false;
   }
 
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && setup.manualCollectionAcknowledged !== true) {
+  if (isManualProductionOptionId(optionId) && setup.manualCollectionAcknowledged !== true) {
     return false;
   }
 

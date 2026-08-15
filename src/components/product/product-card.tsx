@@ -1,17 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
+import { getPrimaryProductImage } from "@/lib/product-images";
 import { getProductServiceBadges, getReviewDestination } from "@/lib/product-page-content";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 
-const productImageFallback = {
-  src: "/uploads/products/no-photo-available.png",
-  alt: "Product image coming soon"
-};
-
 export function ProductCard({ product }: { product: MigratedProduct }) {
-  const image = product.images[0] ?? { ...productImageFallback, alt: product.title };
+  const image = getPrimaryProductImage(product);
   const category = getCategoryBySlug(product.categorySlug);
   const serviceBadges = getProductServiceBadges(product);
   const purchaseLabel = getPurchaseLabel(product);
