@@ -12,6 +12,6 @@
     "enabled": true
   },
   "vars": {
-    "NEXT_PUBLIC_SITE_URL": "https://tap-rater-app-git.sam-alshalah1.workers.dev"
+    "NEXT_PUBLIC_SITE_URL": "https://taprater.com"
   }
 }
