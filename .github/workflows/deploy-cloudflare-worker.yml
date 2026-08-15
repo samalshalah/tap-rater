@@ -1,33 +1,24 @@
-name: Manual Deploy Old Cloudflare Worker
+name: Manual Cloudflare Worker Validation
 
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
-  deployments: write
 
 concurrency:
   group: cloudflare-worker-nextjs-commerce
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    name: Build, test, and manually deploy old Worker
+  validate:
+    name: Build and test active Worker bundle
     runs-on: ubuntu-latest
-    environment:
-      name: cloudflare-worker
-      url: https://tap-rater-app.sam-alshalah1.workers.dev/
 
     env:
       NEXT_PUBLIC_SITE_URL: https://taprater.com
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
     steps:
-      # Git-linked Cloudflare Workers Builds deploys the primary preview Worker:
-      # tap-rater-app-git from the nextjs-commerce branch.
-      # Keep this workflow as a manual fallback for the old tap-rater-app Worker only.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -40,29 +31,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate Cloudflare deploy secrets
-        shell: bash
-        run: |
-          if [ -z "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
-            echo "::error title=Missing Cloudflare account secret::CLOUDFLARE_ACCOUNT_ID is not configured in GitHub Actions secrets."
-            exit 1
-          fi
-          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            echo "::error title=Missing Cloudflare API token secret::CLOUDFLARE_API_TOKEN is not configured in GitHub Actions secrets."
-            exit 1
-          fi
-
       - name: Run tests
         run: npm test
 
       - name: Build Cloudflare Worker bundle
         run: npm run cf:build
-
-      - name: Verify Cloudflare authentication
-        run: npx wrangler whoami
-
-      - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy
-
-      - name: Show latest Cloudflare deployments
-        run: npx wrangler deployments list --name tap-rater-app

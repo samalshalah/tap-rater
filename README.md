@@ -384,20 +384,19 @@ npm run cf:build
 npm run deploy
 ```
 
-GitHub-to-Cloudflare deployment is configured in:
+The active Cloudflare Worker is:
+
+```text
+tap-rater-app-git
+```
+
+The production domains `https://taprater.com` and `https://www.taprater.com` are routed to that Worker. Cloudflare Workers Git integration is the source-of-truth deployment path for the `nextjs-commerce` branch. The repository also keeps a manual GitHub Actions validation workflow for tests and bundle generation only:
 
 ```text
 .github/workflows/deploy-cloudflare-worker.yml
 ```
 
-It runs on every push to `nextjs-commerce` and can also be started manually from GitHub Actions. Add these GitHub repository secrets before relying on automatic deploys:
-
-```text
-CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_API_TOKEN
-```
-
-The API token should be scoped to deploy the `tap-rater-app` Worker. Do not use the normal Cloudflare password or commit token values to the repo.
+Do not add Cloudflare API tokens to GitHub Actions unless a new deployment workflow is intentionally approved. The active Worker deployment config is `wrangler.cloudflare-git.jsonc`; `wrangler.jsonc` is kept aligned to the same Worker name for local Wrangler commands.
 
 Set production secrets in Cloudflare Workers, not in Git:
 

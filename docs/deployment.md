@@ -1,117 +1,74 @@
 # Tap Rater Deployment
 
-Tap Rater currently has two Cloudflare Worker deployments:
+Tap Rater has one active Cloudflare Worker target:
 
-- Manual rollback Worker: `tap-rater-app`
-- Git-linked Worker: `tap-rater-app-git`
-
-Do not delete or retire `tap-rater-app` until `tap-rater-app-git` is approved for final custom-domain cutover.
-
-## Manual Rollback Worker
-
-- Worker name: `tap-rater-app`
-- URL: `https://tap-rater-app.sam-alshalah1.workers.dev/`
-- Source today: manual GitHub Actions workflow runs `npx wrangler deploy`
+- Worker name: `tap-rater-app-git`
+- Production domains: `https://taprater.com` and `https://www.taprater.com`
 - Repo: `samalshalah/tap-rater`
 - Branch: `nextjs-commerce`
-- Wrangler config: `wrangler.jsonc`
-- Compatibility date: `2026-07-09`
-- Compatibility flags: `nodejs_compat`
-- Assets binding: `ASSETS`
-- Public variable in config: `NEXT_PUBLIC_SITE_URL=https://taprater.com`
-- Custom domains: none
-- Routes: none
+- Database: Neon project `tap-rater`, production branch
+- Primary Wrangler config: `wrangler.cloudflare-git.jsonc`
+- Default local Wrangler config: `wrangler.jsonc`
 
-Required Worker secret names:
+Both Wrangler configs must stay pointed at `tap-rater-app-git`. Do not reintroduce old Worker names or duplicate deployment targets.
 
-- `DATABASE_URL`
-- `ADMIN_EMAIL`
-- `ADMIN_PASSWORD`
-- `ADMIN_SESSION_SECRET`
-- `CUSTOMER_SESSION_SECRET`
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- `ORDER_NOTIFICATION_EMAIL`
-- `ADMIN_NOTIFICATION_EMAIL`
+## Deployment Path
 
-Secret values must not be committed or printed in logs.
+Cloudflare Workers Git integration is the source-of-truth deployment path for the `nextjs-commerce` branch. The expected build command is:
+
+```bash
+npm ci && npm test && npm run cf:build
+```
+
+The Worker deploy command, when explicitly approved, is:
+
+```bash
+npx wrangler deploy -c wrangler.cloudflare-git.jsonc
+```
+
+Do not manually deploy, change routing, or enable live Stripe without explicit owner approval.
+
+## Manual Validation Workflow
+
+The repository includes:
+
+```text
+.github/workflows/deploy-cloudflare-worker.yml
+```
+
+That workflow is manual-only and validates the active Worker bundle by running tests and `npm run cf:build`. It does not deploy.
 
 ## Runtime Variable Inventory
 
-Required for the current Worker runtime:
+Required Worker variables and secrets:
 
-| Variable | Type | Required for | Current status |
-| --- | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Public variable | Absolute URLs, SEO metadata, customer login links | Present in both Wrangler configs. Use the active Worker URL before custom domain cutover. |
-| `DATABASE_URL` | Secret | Neon persistence for products, requests, devices, activations, tap events, orders | Present on both Workers. |
-| `ADMIN_EMAIL` | Secret | Admin login | Present on both Workers. |
-| `ADMIN_PASSWORD` | Secret | Admin login | Present on both Workers. |
-| `ADMIN_SESSION_SECRET` | Secret | Signed admin session cookie | Present on both Workers. |
-| `CUSTOMER_SESSION_SECRET` | Secret | Signed customer session cookie and login links | Present on both Workers. |
-| `ORDER_NOTIFICATION_EMAIL` | Secret | Contact/setup/link-change notification recipient | Present on both Workers. |
-| `RESEND_API_KEY` | Secret | Email sending through Resend | Present on both Workers. |
-| `RESEND_FROM_EMAIL` | Secret | Verified sender address for Resend | Present on both Workers. Resend currently shows `taprater.com` as not started, so live sending may fail until DNS verification is finished. |
+| Variable | Type | Required for |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Public variable | Absolute URLs, SEO metadata, checkout return URLs |
+| `DATABASE_URL` | Secret | Neon persistence for products, requests, activations, orders |
+| `ADMIN_EMAIL` | Secret | Admin login |
+| `ADMIN_PASSWORD` | Secret | Admin login |
+| `ADMIN_SESSION_SECRET` | Secret | Signed admin session cookie |
+| `CUSTOMER_SESSION_SECRET` | Secret | Signed customer session and customer links |
+| `RESEND_API_KEY` | Secret | Email sending through Resend |
+| `RESEND_FROM_EMAIL` | Secret | Verified sender address |
+| `ORDER_NOTIFICATION_EMAIL` | Secret | Order/request notification recipient |
+| `STRIPE_MODE` | Variable | `test` or `live`; defaults to `test` if missing |
+| `STRIPE_SECRET_KEY` | Secret | Stripe Checkout |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Public variable | Stripe Checkout |
+| `STRIPE_WEBHOOK_SECRET` | Secret | Stripe webhook verification |
 
-Optional or feature-specific variables:
+Optional variables:
 
-| Variable | Type | Used for | Cutover note |
-| --- | --- | --- | --- |
-| `ADMIN_NOTIFICATION_EMAIL` | Secret | Backend email test recipient | Present on both Workers, but not required for the main Next.js Worker runtime. |
-| `NEON_DATABASE_URL` | Secret | Alternative alias for `DATABASE_URL` in the adapter | Not needed if `DATABASE_URL` is set. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Public/server variable | Alternative Supabase persistence mode | Not needed for the Neon deployment. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Secret | Alternative Supabase persistence mode | Not needed for the Neon deployment. |
-| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Public variable | Google Places search in activation | Optional; manual URL entry works without it. |
-| `ADMIN_SESSION_TTL_HOURS` | Variable | Override admin session expiry | Optional; defaults to 7 days. |
-| `STRIPE_SECRET_KEY` | Secret | Stripe test checkout only | Optional and intentionally deferred. Do not add live Stripe keys. |
-| `STRIPE_WEBHOOK_SECRET` | Secret | Stripe test webhook only | Optional and intentionally deferred. Do not add live Stripe keys. |
-| `CRON_SECRET` | Secret | Separate backend job service | Not required for the Cloudflare Worker storefront. |
+| Variable | Type | Used for |
+| --- | --- | --- |
+| `ADMIN_NOTIFICATION_EMAIL` | Secret | Backend email test recipient |
+| `NEON_DATABASE_URL` | Secret | Alternative alias for `DATABASE_URL` |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Public variable | Google Places search in activation |
+| `ADMIN_SESSION_TTL_HOURS` | Variable | Override admin session expiry |
+| `CRON_SECRET` | Secret | Separate backend job service |
 
-Current Worker variable comparison:
-
-| Variable | `tap-rater-app` | `tap-rater-app-git` | Source for value | Action |
-| --- | --- | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Yes | Yes | Wrangler config | Set to Worker URL on test Worker; switch to `https://taprater.com` at custom-domain cutover. |
-| `DATABASE_URL` | Yes | Yes | Neon dashboard or secure deployment vault | Done. |
-| `ADMIN_EMAIL` | Yes | Yes | Local secure env / owner setting | Done. |
-| `ADMIN_PASSWORD` | Yes | Yes | Local secure env / owner setting | Done. |
-| `ADMIN_SESSION_SECRET` | Yes | Yes | Local secure env / generated secret | Done. |
-| `CUSTOMER_SESSION_SECRET` | Yes | Yes | Generated secret | Done. |
-| `ORDER_NOTIFICATION_EMAIL` | Yes | Yes | Admin/owner recipient | Done. |
-| `ADMIN_NOTIFICATION_EMAIL` | Yes | Yes | Admin/owner recipient | Done. |
-| `RESEND_API_KEY` | Yes | Yes | Resend dashboard | Done with a dedicated sending-only key for `tap-rater-app-git`. |
-| `RESEND_FROM_EMAIL` | Yes | Yes | Verified Resend sender/domain | Done, but Resend domain verification for `taprater.com` is still required before relying on live email delivery. |
-
-## Git-Linked Worker Build
-
-Cloudflare Workers Builds was connected to GitHub with:
-
-- Build project / Worker name: `tap-rater-app-git`
-- URL: `https://tap-rater-app-git.sam-alshalah1.workers.dev/`
-- Repo: `samalshalah/tap-rater`
-- Production branch: `nextjs-commerce`
-- Root directory: `/`
-- Wrangler config for this test Worker: `wrangler.cloudflare-git.jsonc`
-- Build command: `npm ci && npm test && npm run cf:build`
-- Deploy command: `npx wrangler deploy -c wrangler.cloudflare-git.jsonc`
-- Temporary public URL variable: `NEXT_PUBLIC_SITE_URL=https://tap-rater-app-git.sam-alshalah1.workers.dev`
-
-Important: Cloudflare Workers Builds is the source-of-truth deployment path for the `nextjs-commerce` branch. It deploys `tap-rater-app-git` and does not inherit secrets from `tap-rater-app`.
-
-Current cutover notes:
-
-- `tap-rater-app-git` now has the required Worker secret names configured.
-- Public/static smoke routes, admin auth, and Neon-backed admin API reads passed after the Git-linked deployment.
-- Active tap-event logging still needs a real active redirect device or a safe temporary test-data script before it can be marked fully verified.
-- Resend is configured, but `taprater.com` is not verified in Resend yet, so email delivery is not production-ready until DNS verification is finished.
-- Change `NEXT_PUBLIC_SITE_URL` back to `https://taprater.com` only when the custom domain is attached to the final Worker.
-
-## Manual GitHub Actions Fallback
-
-The repository still contains `.github/workflows/deploy-cloudflare-worker.yml`.
-
-That workflow is manual-only and deploys `nextjs-commerce` to the rollback `tap-rater-app` Worker using GitHub Actions and Wrangler. Use it only if the Git-linked Worker fails and you intentionally need to restore the old Worker.
-
-The default `wrangler.jsonc` stays pointed at `tap-rater-app` so the manual rollback workflow still targets the old Worker. The Git-linked Worker uses `wrangler.cloudflare-git.jsonc`.
+Secret values must not be committed, printed in logs, or pasted into issue comments.
 
 ## Local Verification
 
@@ -119,61 +76,30 @@ Run from the repo root:
 
 ```bash
 npm ci
-npm run build
+npx tsc --noEmit
 npm test
+npm run build
 npm run cf:build
 ```
 
-Smoke test the manual rollback Worker:
+Smoke test production only when explicitly approved:
 
 ```bash
-SMOKE_BASE_URL=https://tap-rater-app.sam-alshalah1.workers.dev npm run smoke
+SMOKE_BASE_URL=https://taprater.com npm run smoke
 ```
 
-Smoke test the Git-linked Worker:
+## Cutover And Stripe Rules
 
-```bash
-SMOKE_BASE_URL=https://tap-rater-app-git.sam-alshalah1.workers.dev npm run smoke
-```
-
-## Manual Route Checks
-
-Check these paths before any cutover:
-
-- `/`
-- `/shop`
-- `/category/reviews`
-- `/category/social-media`
-- `/category/appointments`
-- `/category/menu`
-- `/category/feedback`
-- `/category/custom-stands`
-- `/product/google-review-stand`
-- `/product/custom-direct-stand`
-- `/activate`
-- `/admin/login`
-- `/r/TR-DEMO-GOOGLE`
-
-## Cutover Rules
-
-Do not attach the final custom domain to `tap-rater-app-git` until:
-
-1. All required Worker secrets are added to `tap-rater-app-git`.
-2. `NEXT_PUBLIC_SITE_URL` is set to the active public URL for the Worker being verified.
-3. Admin login works.
-4. Neon-backed product/device/activation flows work.
-5. Resend notifications are tested or explicitly deferred.
-6. Cloudflare logs show no runtime errors during smoke tests.
-7. A push to `nextjs-commerce` automatically starts and completes a Cloudflare Workers Build.
-8. The deployed commit SHA matches the latest pushed commit.
-
-After custom-domain cutover, remove the older manual deploy path only after the Git-linked Worker is proven stable and rollback is no longer needed.
+- `NEXT_PUBLIC_SITE_URL` should be `https://taprater.com` for production.
+- Keep Stripe in `test` mode until live sales are explicitly approved.
+- Live Stripe requires `STRIPE_MODE=live`, an `sk_live_` secret key, a `pk_live_` publishable key, and the live webhook signing secret for `https://taprater.com/api/webhooks/stripe`.
+- Never mix test keys with `STRIPE_MODE=live`, or live keys with `STRIPE_MODE=test`.
 
 ## Rollback
 
-If the Git-linked Worker fails:
+If production fails after a future deployment:
 
-1. Keep using `tap-rater-app`.
-2. Re-run the GitHub Actions workflow `Manual Deploy Old Cloudflare Worker` from GitHub Actions.
-3. Confirm `https://tap-rater-app.sam-alshalah1.workers.dev/` passes smoke tests.
-4. Do not delete any Worker, secret, domain, or route until a replacement has passed verification.
+1. Do not delete any Worker, secret, database, route, or domain.
+2. Identify the last known good `nextjs-commerce` commit.
+3. Revert or redeploy only the approved last known good commit to `tap-rater-app-git`.
+4. Verify `/`, `/shop`, `/cart`, `/admin/login`, checkout, webhook, and admin orders before resuming sales.
