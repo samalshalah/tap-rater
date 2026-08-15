@@ -45,11 +45,27 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
 
 describe("checkout route reliability", () => {
   afterEach(() => {
+    delete process.env.STRIPE_MODE;
     delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  });
+
+  it("returns invalid payloads quickly before checking Stripe configuration", async () => {
+    const dependencies = createDependencies();
+
+    const response = await handleCheckoutPost(createCheckoutRequest({ items: "not-a-cart" }), dependencies);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toEqual({ error: "Cart payload is invalid." });
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+    expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
   });
 
   it("returns invalid carts quickly before creating a Stripe session", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const dependencies = createDependencies();
 
     const response = await handleCheckoutPost(
@@ -78,6 +94,7 @@ describe("checkout route reliability", () => {
 
   it("returns a clean timeout response and does not create an order when Stripe hangs", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const createPendingOrder = vi.fn().mockResolvedValue({ ok: true });
     const dependencies = createDependencies({
       createPendingOrder,
@@ -95,6 +112,7 @@ describe("checkout route reliability", () => {
 
   it("does not create an order when Stripe session creation fails", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const createPendingOrder = vi.fn().mockResolvedValue({ ok: true });
     const dependencies = createDependencies({
       createPendingOrder,
@@ -111,6 +129,7 @@ describe("checkout route reliability", () => {
 
   it("creates a pending order only after Stripe returns a checkout session", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const dependencies = createDependencies();
 
     const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
@@ -119,6 +138,63 @@ describe("checkout route reliability", () => {
     expect(response.status).toBe(200);
     expect(body).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_123" });
     expect(dependencies.createStripeSession).toHaveBeenCalledOnce();
+    expect(dependencies.createStripeSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stripeMode: "test"
+      })
+    );
     expect(dependencies.createPendingOrder).toHaveBeenCalledOnce();
+  });
+
+  it("rejects mismatched live keys while Stripe mode is test", async () => {
+    process.env.STRIPE_MODE = "test";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+    const dependencies = createDependencies();
+
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({ error: "Stripe test mode is not configured. Use sk_test_ and pk_test_ keys only." });
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+    expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
+  });
+
+  it("allows live mode only with live keys and a webhook secret", async () => {
+    process.env.STRIPE_MODE = "live";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_live_unit";
+    const dependencies = createDependencies({
+      createStripeSession: vi.fn().mockResolvedValue({ id: "cs_live_123", url: "https://checkout.stripe.com/c/pay/cs_live_123" })
+    });
+
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_live_123" });
+    expect(dependencies.createStripeSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stripeMode: "live"
+      })
+    );
+    expect(dependencies.createPendingOrder).toHaveBeenCalledOnce();
+  });
+
+  it("rejects live mode when the webhook secret is missing", async () => {
+    process.env.STRIPE_MODE = "live";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+    const dependencies = createDependencies();
+
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+    const body = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(body).toEqual({ error: "Stripe live webhook is not configured." });
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+    expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
   });
 });

@@ -60,6 +60,22 @@ export type ManualProductionWarningCode =
   | "asset_storage_not_configured"
   | "do_not_print_until_manual_review";
 
+export type StripeMode = "test" | "live";
+
+export type StripeRuntimeConfig =
+  | {
+      ok: true;
+      mode: StripeMode;
+      secretKey: string;
+      publishableKey: string;
+      webhookSecret?: string;
+    }
+  | {
+      ok: false;
+      mode: StripeMode | "invalid";
+      error: string;
+    };
+
 const manualProductionWarningCodes: ManualProductionWarningCode[] = [
   "pending_manual_proof",
   "asset_storage_not_configured",
@@ -171,10 +187,12 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Ch
 
 export function createCheckoutSessionParams({
   cart,
-  siteUrl
+  siteUrl,
+  stripeMode = getStripeMode()
 }: {
   cart: Extract<ValidatedCheckoutCart, { ok: true }>;
   siteUrl: string;
+  stripeMode?: StripeMode;
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
 
@@ -192,7 +210,7 @@ export function createCheckoutSessionParams({
       enabled: true
     },
     metadata: {
-      test_mode_only: "true",
+      stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
       configured_items: String(cart.rows.length)
     }
@@ -249,14 +267,132 @@ export function isStripeTestSecretKey(value: string | undefined) {
   return Boolean(value?.startsWith("sk_test_"));
 }
 
-export function getStripeSecretKey() {
-  const key = process.env.STRIPE_SECRET_KEY;
+export function isStripeLiveSecretKey(value: string | undefined) {
+  return Boolean(value?.startsWith("sk_live_"));
+}
 
-  if (!isStripeTestSecretKey(key)) {
-    throw new Error("Stripe test mode is not configured. Use a sk_test_ key only.");
+export function isStripeTestPublishableKey(value: string | undefined) {
+  return Boolean(value?.startsWith("pk_test_"));
+}
+
+export function isStripeLivePublishableKey(value: string | undefined) {
+  return Boolean(value?.startsWith("pk_live_"));
+}
+
+export function getStripeMode(value = process.env.STRIPE_MODE): StripeMode {
+  if (!value) {
+    return "test";
   }
 
-  return key!;
+  if (value === "test" || value === "live") {
+    return value;
+  }
+
+  throw new Error("STRIPE_MODE must be either test or live.");
+}
+
+export function getStripeModeSafe(value = process.env.STRIPE_MODE): StripeMode | "invalid" {
+  try {
+    return getStripeMode(value);
+  } catch {
+    return "invalid";
+  }
+}
+
+export function validateStripeRuntimeConfig(env: NodeJS.ProcessEnv = process.env): StripeRuntimeConfig {
+  const mode = getStripeModeSafe(env.STRIPE_MODE);
+
+  if (mode === "invalid") {
+    return {
+      ok: false,
+      mode,
+      error: "Stripe mode is invalid. Set STRIPE_MODE to test or live."
+    };
+  }
+
+  const secretKey = env.STRIPE_SECRET_KEY;
+  const publishableKey = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
+
+  if (mode === "test") {
+    if (!isStripeTestSecretKey(secretKey)) {
+      return {
+        ok: false,
+        mode,
+        error: "Stripe test mode is not configured. Use sk_test_ and pk_test_ keys only."
+      };
+    }
+
+    if (!isStripeTestPublishableKey(publishableKey)) {
+      return {
+        ok: false,
+        mode,
+        error: "Stripe test mode is not configured. Use sk_test_ and pk_test_ keys only."
+      };
+    }
+  }
+
+  if (mode === "live") {
+    if (!isStripeLiveSecretKey(secretKey)) {
+      return {
+        ok: false,
+        mode,
+        error: "Stripe live mode is not configured. Use sk_live_ and pk_live_ keys only."
+      };
+    }
+
+    if (!isStripeLivePublishableKey(publishableKey)) {
+      return {
+        ok: false,
+        mode,
+        error: "Stripe live mode is not configured. Use sk_live_ and pk_live_ keys only."
+      };
+    }
+
+    if (!webhookSecret) {
+      return {
+        ok: false,
+        mode,
+        error: "Stripe live webhook is not configured."
+      };
+    }
+  }
+
+  return {
+    ok: true,
+    mode,
+    secretKey: secretKey!,
+    publishableKey: publishableKey!,
+    webhookSecret
+  };
+}
+
+export function validateStripeWebhookConfig(env: NodeJS.ProcessEnv = process.env): StripeRuntimeConfig {
+  const config = validateStripeRuntimeConfig(env);
+
+  if (!config.ok) {
+    return config;
+  }
+
+  if (!config.webhookSecret) {
+    return {
+      ok: false,
+      mode: config.mode,
+      error: config.mode === "live" ? "Stripe live webhook is not configured." : "Stripe test webhook is not configured."
+    };
+  }
+
+  return config;
+}
+
+export function getStripeSecretKey() {
+  const config = validateStripeRuntimeConfig();
+
+  if (!config.ok) {
+    throw new Error(config.error);
+  }
+
+  return config.secretKey;
 }
 
 export function getStripeClient() {

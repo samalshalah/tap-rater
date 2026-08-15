@@ -15,7 +15,7 @@ export default async function AdminOrdersPage() {
           <div>
             <h1 className="text-4xl font-black text-ink">Orders</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-              Stripe test checkout creates pending orders, and the Stripe webhook marks them paid after checkout completes.
+              Stripe checkout creates pending orders, and the Stripe webhook marks them paid after checkout completes.
             </p>
           </div>
           <div className="rounded-md border border-line bg-white px-4 py-3 text-sm font-bold text-ink">
@@ -75,7 +75,7 @@ export default async function AdminOrdersPage() {
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-muted">
-                    No Stripe test orders yet.
+                    No Stripe orders yet.
                   </td>
                 </tr>
               ) : null}

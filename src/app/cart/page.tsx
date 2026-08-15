@@ -1,6 +1,11 @@
 import { CartTable } from "@/components/cart/cart-table";
+import { getStripeModeSafe } from "@/lib/checkout";
+
+export const dynamic = "force-dynamic";
 
 export default function CartPage() {
+  const stripeMode = getStripeModeSafe() === "live" ? "live" : "test";
+
   return (
     <section className="mx-auto max-w-5xl px-4 py-12">
       <p className="text-sm font-semibold uppercase text-brand">Checkout</p>
@@ -9,7 +14,7 @@ export default function CartPage() {
         Quantity duplicates the exact same configured stand. Use a separate product page setup when you need a different design, business name, or link.
       </p>
       <div className="mt-8">
-        <CartTable />
+        <CartTable stripeMode={stripeMode} />
       </div>
     </section>
   );

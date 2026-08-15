@@ -4,9 +4,15 @@ import { migratedProducts } from "@/data/migrated-products";
 import {
   buildStripeCheckoutLineItems,
   createCheckoutSessionParams,
+  getStripeMode,
   getStripeClient,
+  isStripeLivePublishableKey,
+  isStripeLiveSecretKey,
+  isStripeTestPublishableKey,
   isStripeTestSecretKey,
   validateCheckoutCart,
+  validateStripeRuntimeConfig,
+  validateStripeWebhookConfig,
   withTimeout
 } from "@/lib/checkout";
 
@@ -23,7 +29,10 @@ const configuredStandardItem = {
 describe("Stripe checkout helpers", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    delete process.env.STRIPE_MODE;
     delete process.env.STRIPE_SECRET_KEY;
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    delete process.env.STRIPE_WEBHOOK_SECRET;
   });
 
   it("validates cart items server-side against active in-stock products", () => {
@@ -163,14 +172,90 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("only accepts Stripe test secret keys", () => {
+  it("classifies Stripe key prefixes without exposing key values", () => {
     expect(isStripeTestSecretKey("sk_test_123")).toBe(true);
     expect(isStripeTestSecretKey("sk_live_123")).toBe(false);
+    expect(isStripeLiveSecretKey("sk_live_123")).toBe(true);
+    expect(isStripeLiveSecretKey("sk_test_123")).toBe(false);
+    expect(isStripeTestPublishableKey("pk_test_123")).toBe(true);
+    expect(isStripeTestPublishableKey("pk_live_123")).toBe(false);
+    expect(isStripeLivePublishableKey("pk_live_123")).toBe(true);
+    expect(isStripeLivePublishableKey("pk_test_123")).toBe(false);
     expect(isStripeTestSecretKey("")).toBe(false);
+  });
+
+  it("defaults Stripe mode to test when STRIPE_MODE is missing", () => {
+    expect(getStripeMode()).toBe("test");
+  });
+
+  it("accepts matching Stripe test keys in test mode", () => {
+    process.env.STRIPE_MODE = "test";
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+
+    expect(validateStripeRuntimeConfig()).toMatchObject({
+      ok: true,
+      mode: "test"
+    });
+  });
+
+  it("rejects live keys in Stripe test mode", () => {
+    process.env.STRIPE_MODE = "test";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+
+    expect(validateStripeRuntimeConfig()).toMatchObject({
+      ok: false,
+      mode: "test",
+      error: "Stripe test mode is not configured. Use sk_test_ and pk_test_ keys only."
+    });
+  });
+
+  it("accepts matching Stripe live keys and webhook secret in live mode", () => {
+    process.env.STRIPE_MODE = "live";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_live_unit";
+
+    expect(validateStripeRuntimeConfig()).toMatchObject({
+      ok: true,
+      mode: "live"
+    });
+  });
+
+  it("rejects test keys in Stripe live mode", () => {
+    process.env.STRIPE_MODE = "live";
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    process.env.STRIPE_WEBHOOK_SECRET = "whsec_live_unit";
+
+    expect(validateStripeRuntimeConfig()).toMatchObject({
+      ok: false,
+      mode: "live",
+      error: "Stripe live mode is not configured. Use sk_live_ and pk_live_ keys only."
+    });
+  });
+
+  it("requires a webhook secret for live Stripe mode", () => {
+    process.env.STRIPE_MODE = "live";
+    process.env.STRIPE_SECRET_KEY = "sk_live_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
+
+    expect(validateStripeRuntimeConfig()).toMatchObject({
+      ok: false,
+      mode: "live",
+      error: "Stripe live webhook is not configured."
+    });
+    expect(validateStripeWebhookConfig()).toMatchObject({
+      ok: false,
+      mode: "live",
+      error: "Stripe live webhook is not configured."
+    });
   });
 
   it("constructs Stripe with the fetch HTTP client for Cloudflare Workers", () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const fetchClientSpy = vi.spyOn(Stripe, "createFetchHttpClient");
 
     const client = getStripeClient();
@@ -216,7 +301,7 @@ describe("Stripe checkout helpers", () => {
     ]);
   });
 
-  it("creates test-mode Checkout Session params with success and cancel URLs", () => {
+  it("creates Checkout Session params with dynamic price_data and mode metadata", () => {
     const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
 
     expect(result.ok).toBe(true);
@@ -230,9 +315,32 @@ describe("Stripe checkout helpers", () => {
     expect(params.success_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
     expect(params.cancel_url).toBe("https://taprater.com/checkout/cancel");
     expect(params.payment_method_types).toEqual(["card"]);
-    expect(params.metadata?.test_mode_only).toBe("true");
+    expect(params.line_items?.[0]).toMatchObject({
+      price_data: {
+        currency: "usd",
+        unit_amount: 3900,
+        product_data: {
+          name: "Google Review Stand"
+        }
+      }
+    });
+    expect(params.metadata?.stripe_mode).toBe("test");
     expect(params.metadata?.total_cents).toBe("3900");
     expect(params.metadata?.configured_items).toBe("1");
     expect(params.metadata).not.toHaveProperty("order_items");
+  });
+
+  it("records live mode metadata when live checkout is enabled", () => {
+    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = createCheckoutSessionParams({
+      cart: result,
+      siteUrl: "https://taprater.com",
+      stripeMode: "live"
+    });
+
+    expect(params.metadata?.stripe_mode).toBe("live");
   });
 });

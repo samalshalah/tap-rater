@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { getStripeClient, isStripeTestSecretKey } from "@/lib/checkout";
+import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { savePaidOrderFromCheckoutSession } from "@/lib/orders";
 
 export async function POST(request: Request) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const stripeConfig = validateStripeWebhookConfig();
   const signature = request.headers.get("stripe-signature");
 
-  if (!isStripeTestSecretKey(process.env.STRIPE_SECRET_KEY) || !webhookSecret) {
-    return NextResponse.json({ error: "Stripe test webhook is not configured." }, { status: 503 });
+  if (!stripeConfig.ok) {
+    return NextResponse.json({ error: stripeConfig.error }, { status: 503 });
   }
 
   if (!signature) {
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const payload = await request.text();
 
   try {
-    const event = getStripeClient().webhooks.constructEvent(payload, signature, webhookSecret);
+    const event = getStripeClient().webhooks.constructEvent(payload, signature, stripeConfig.webhookSecret!);
 
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object;

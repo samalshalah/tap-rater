@@ -6,8 +6,8 @@ import {
   getCheckoutSiteUrl,
   getStripeClient,
   isCheckoutTimeoutError,
-  isStripeTestSecretKey,
   validateCheckoutCart,
+  validateStripeRuntimeConfig,
   withTimeout,
   type CheckoutCartRow,
   type ValidatedCheckoutCart
@@ -38,6 +38,7 @@ export type CheckoutRouteDependencies = {
   createStripeSession: (input: {
     cart: Extract<ValidatedCheckoutCart, { ok: true }>;
     siteUrl: string;
+    stripeMode: "test" | "live";
   }) => Promise<StripeCheckoutSessionResult>;
   getProducts: () => Promise<MigratedProduct[]>;
   getSiteUrl: () => string;
@@ -65,12 +66,19 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     }))
   });
   logCheckout(dependencies.logger, "info", requestId, "stripe_key_check", {
-    keyPrefix: process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") ? "sk_test_" : "missing_or_not_test"
+    mode: process.env.STRIPE_MODE || "test",
+    secretKeyPrefix: getSafeStripeKeyPrefix(process.env.STRIPE_SECRET_KEY),
+    publishableKeyPrefix: getSafeStripeKeyPrefix(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
+    hasWebhookSecret: Boolean(process.env.STRIPE_WEBHOOK_SECRET)
   });
 
-  if (!isStripeTestSecretKey(process.env.STRIPE_SECRET_KEY)) {
-    logCheckout(dependencies.logger, "warn", requestId, "stripe_test_key_missing");
-    return NextResponse.json({ error: "Stripe test mode is not configured yet." }, { status: 503 });
+  const stripeConfig = validateStripeRuntimeConfig();
+
+  if (!stripeConfig.ok) {
+    logCheckout(dependencies.logger, "warn", requestId, "stripe_config_invalid", {
+      mode: stripeConfig.mode
+    });
+    return NextResponse.json({ error: stripeConfig.error }, { status: 503 });
   }
 
   if (!dependencies.hasOrderPersistence()) {
@@ -97,7 +105,8 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     const session = await withTimeout(
       dependencies.createStripeSession({
         cart,
-        siteUrl: dependencies.getSiteUrl()
+        siteUrl: dependencies.getSiteUrl(),
+        stripeMode: stripeConfig.mode
       }),
       dependencies.stripeTimeoutMs,
       "Stripe Checkout Session creation"
@@ -156,12 +165,13 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
 const checkoutRouteDependencies: CheckoutRouteDependencies = {
   createPendingOrder: createPendingOrderForCheckout,
   createRequestId: createCheckoutRequestId,
-  createStripeSession: async ({ cart, siteUrl }) => {
+  createStripeSession: async ({ cart, siteUrl, stripeMode }) => {
     const stripe = getStripeClient();
     return stripe.checkout.sessions.create(
       createCheckoutSessionParams({
         cart,
-        siteUrl
+        siteUrl,
+        stripeMode
       })
     );
   },
@@ -193,4 +203,12 @@ function logCheckout(
     stage,
     ...details
   });
+}
+
+function getSafeStripeKeyPrefix(value: string | undefined) {
+  if (value?.startsWith("sk_test_")) return "sk_test_";
+  if (value?.startsWith("sk_live_")) return "sk_live_";
+  if (value?.startsWith("pk_test_")) return "pk_test_";
+  if (value?.startsWith("pk_live_")) return "pk_live_";
+  return "missing_or_invalid";
 }

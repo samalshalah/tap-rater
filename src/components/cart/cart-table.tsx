@@ -7,10 +7,11 @@ import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice } from "@/lib/products";
 import { calculateCartTotalCents, getCartItemKey, getCartRows } from "@/lib/cart";
 
-export function CartTable() {
+export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live" }) {
   const { decreaseItem, increaseItem, items, removeItem } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const isLiveStripe = stripeMode === "live";
 
   const rows = getCartRows(items);
   const total = calculateCartTotalCents(items);
@@ -28,13 +29,13 @@ export function CartTable() {
       const body = await response.json().catch(() => ({}));
 
       if (!response.ok || typeof body.url !== "string") {
-        setCheckoutError(body.error ?? "Stripe test checkout is not available yet.");
+        setCheckoutError(body.error ?? "Stripe Checkout is not available yet.");
         return;
       }
 
       window.location.href = body.url;
     } catch {
-      setCheckoutError("Stripe test checkout is not available yet.");
+      setCheckoutError("Stripe Checkout is not available yet.");
     } finally {
       setIsCheckingOut(false);
     }
@@ -119,10 +120,12 @@ export function CartTable() {
         className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
         onClick={startCheckout}
       >
-        {isCheckingOut ? "Starting Stripe test checkout..." : "Checkout with Stripe test mode"}
+        {isCheckingOut ? "Starting Stripe Checkout..." : isLiveStripe ? "Checkout with Stripe" : "Checkout with Stripe test mode"}
       </button>
       <p className="text-sm leading-6 text-muted">
-        Test mode only. Use Stripe test cards; live payments stay disabled until explicitly approved.
+        {isLiveStripe
+          ? "Secure payment through Stripe. Branded and custom stands still receive manual proof review before printing."
+          : "Test mode only. Use Stripe test cards; live payments stay disabled until explicitly approved."}
       </p>
       {checkoutError ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-ink">{checkoutError}</p>

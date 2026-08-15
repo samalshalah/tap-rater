@@ -23,7 +23,7 @@ const faqs = [
   },
   {
     question: "Is checkout live?",
-    answer: "Stripe checkout remains test-mode only in this branch. Live payments must be approved separately before launch."
+    answer: "Tap Rater uses Stripe Checkout. Test mode remains the default until live Stripe keys, a live webhook, and STRIPE_MODE=live are explicitly enabled."
   }
 ];
 
