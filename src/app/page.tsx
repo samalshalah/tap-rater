@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { getPrimaryProductImage } from "@/lib/product-images";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCatalogCategories } from "@/lib/products";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -34,11 +35,6 @@ const steps = [
   "We print and ship"
 ];
 
-const productImageFallback = {
-  src: "/uploads/products/no-photo-available.png",
-  alt: "Product image coming soon"
-};
-
 export default async function HomePage() {
   const products = await getStorefrontProducts();
   const categories = getCatalogCategories();
@@ -47,7 +43,7 @@ export default async function HomePage() {
     return product ? [product] : [];
   });
   const heroProduct = products.find((product) => product.slug === "google-review-stand") ?? products[0];
-  const heroProductImage = heroProduct?.images[0] ?? (heroProduct ? { ...productImageFallback, alt: heroProduct.title } : undefined);
+  const heroProductImage = heroProduct ? getPrimaryProductImage(heroProduct) : undefined;
 
   return (
     <main className="bg-white text-ink">

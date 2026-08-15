@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/admin-auth";
+import { formatManualProductionWarning, formatManualRequirement, formatProductionStatus } from "@/lib/fulfillment";
 import { getAdminOrders, getOrderLineItemFulfillmentKind, type OrderLineItem } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
@@ -87,18 +88,11 @@ export default async function AdminOrdersPage() {
   );
 }
 
-function formatProductionStatus(status: string | undefined) {
-  if (status === "ready_for_direct_activation") return "Ready for direct activation";
-  if (status === "pending_manual_logo_and_proof") return "Pending manual logo collection and proof approval";
-  if (status === "pending_manual_design_and_proof") return "Pending manual design collection and proof approval";
-  return "Pending review";
-}
-
 function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
   const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
   const isManualProduction = fulfillmentKind === "branded" || fulfillmentKind === "custom" || item.manualProductionRequired === true;
   const requirementLabel = fulfillmentKind === "custom" ? "Logo/design required" : "Logo required";
-  const requirementValue = formatManualRequirement(item, fulfillmentKind);
+  const requirementValue = formatManualRequirement(fulfillmentKind, item.logoRequired);
 
   return (
     <div className="mb-3 last:mb-0">
@@ -129,20 +123,6 @@ function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
       </div>
     </div>
   );
-}
-
-function formatManualRequirement(item: OrderLineItem, fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
-  if (fulfillmentKind === "custom") return "Manual design collection required";
-  if (fulfillmentKind === "branded") return "Manual logo collection required";
-  return item.logoRequired ? "Yes" : "No";
-}
-
-function formatManualProductionWarning(fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
-  if (fulfillmentKind === "custom") {
-    return "Collect/confirm custom design details before printing. Do not print until proof is approved.";
-  }
-
-  return "Collect/confirm logo and business details before printing. Do not print until proof is approved.";
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {

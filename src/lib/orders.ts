@@ -1,5 +1,12 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
+import type { CheckoutCartRow } from "@/lib/checkout";
+import {
+  manualProductionWarningCodes,
+  normalizeProductionWarningCodes,
+  type ManualProductionWarningCode,
+  type OrderLineItemFulfillmentKind,
+  type ProductionStatus
+} from "@/lib/fulfillment";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
@@ -20,12 +27,10 @@ export type OrderLineItem = {
   logoReference?: string | null;
   proofRequired?: boolean;
   proofApproved?: boolean;
-  productionStatus?: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus?: ProductionStatus;
   manualProductionRequired?: boolean;
   productionWarningCodes?: ManualProductionWarningCode[];
 };
-
-export type OrderLineItemFulfillmentKind = "standard" | "branded" | "custom";
 
 export type OrderRecord = {
   id?: string;
@@ -114,11 +119,7 @@ export function applyOrderLineItemFulfillmentInference(item: OrderLineItem): Ord
     proofApproved: item.proofApproved === true,
     productionStatus,
     manualProductionRequired: true,
-    productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes, [
-      "pending_manual_proof",
-      "asset_storage_not_configured",
-      "do_not_print_until_manual_review"
-    ])
+    productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes, manualProductionWarningCodes)
   };
 }
 
@@ -327,18 +328,6 @@ function normalizeOrderRecord(value: unknown): OrderRecord {
     created_at: readString(row.created_at),
     updated_at: readString(row.updated_at)
   };
-}
-
-function normalizeProductionWarningCodes(
-  current: ManualProductionWarningCode[] | undefined,
-  required: ManualProductionWarningCode[] = []
-): ManualProductionWarningCode[] {
-  const currentCodes = Array.isArray(current) ? current.filter(isManualProductionWarningCode) : [];
-  return Array.from(new Set([...currentCodes, ...required]));
-}
-
-function isManualProductionWarningCode(value: unknown): value is ManualProductionWarningCode {
-  return value === "pending_manual_proof" || value === "asset_storage_not_configured" || value === "do_not_print_until_manual_review";
 }
 
 function readString(value: unknown) {
