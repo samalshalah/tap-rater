@@ -4,10 +4,16 @@ import type { AdminConfigInput, HomepageContentInput, PageContentInput, ProductC
 
 type UpsertResult = PromiseLike<{ error: null | { message: string } }>;
 type SelectSingleResult<T> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
+type DeleteResult<T> = PromiseLike<{ data: T[] | null; error: null | { message: string } }>;
 
 export type CmsDbClient = {
   from: (table: string) => {
     upsert: (values: Record<string, unknown>) => UpsertResult;
+    delete: () => {
+      in: (column: string, values: string[]) => {
+        select: <T = unknown>(columns?: string) => DeleteResult<T>;
+      };
+    };
     select: (columns?: string) => {
       eq: (column: string, value: string) => {
         maybeSingle: <T = { payload?: unknown }>() => SelectSingleResult<T>;
@@ -104,6 +110,20 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     seo_description: input.seoDescription ?? null,
     is_active: input.isActive
   });
+}
+
+export async function deleteProductContentBySlugs(client: CmsDbClient, slugs: string[]) {
+  const { data, error } = await client
+    .from("products")
+    .delete()
+    .in("slug", slugs)
+    .select<{ slug: string }>("slug");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).map((row) => row.slug);
 }
 
 async function upsertOrThrow(client: CmsDbClient, table: string, values: Record<string, unknown>) {

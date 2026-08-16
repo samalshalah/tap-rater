@@ -7,7 +7,7 @@ type SupabaseResult<T = unknown[]> = {
   error: null | { message: string };
 };
 
-type FilterOperator = "eq" | "gte";
+type FilterOperator = "eq" | "gte" | "in";
 
 type QueryFilter = {
   column: string;
@@ -15,7 +15,7 @@ type QueryFilter = {
   value: unknown;
 };
 
-type QueryAction = "select" | "insert" | "update" | "upsert";
+type QueryAction = "select" | "insert" | "update" | "upsert" | "delete";
 
 type QueryOptions = {
   onConflict?: string;
@@ -205,6 +205,11 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
     return this;
   }
 
+  delete() {
+    this.action = "delete";
+    return this;
+  }
+
   upsert(values: Record<string, unknown> | Record<string, unknown>[], options?: QueryOptions) {
     this.action = "upsert";
     this.values = values;
@@ -219,6 +224,11 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
 
   gte(column: string, value: unknown) {
     this.filters.push({ column, operator: "gte", value });
+    return this;
+  }
+
+  in(column: string, value: unknown[]) {
+    this.filters.push({ column, operator: "in", value });
     return this;
   }
 
@@ -277,6 +287,8 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
         return this.buildUpdateSql(table);
       case "upsert":
         return this.buildInsertSql(table, true);
+      case "delete":
+        return this.buildDeleteSql(table);
     }
   }
 
@@ -341,6 +353,22 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
     };
   }
 
+  private buildDeleteSql(table: TableName) {
+    if (this.filters.length === 0) {
+      throw new Error("Delete requires at least one filter.");
+    }
+
+    const params: unknown[] = [];
+    const where = this.buildWhereClause(table, params);
+    const returning = this.selectedColumns ? ` returning ${buildSelectClause(table, this.selectedColumns, { forReturning: true })}` : "";
+
+    return {
+      query: `delete from ${table}${where}${returning}`,
+      params,
+      returnsRows: Boolean(returning)
+    };
+  }
+
   private buildUpsertConflict(table: TableName, columns: string[]) {
     const conflictTarget = this.options?.onConflict ?? defaultConflictTargets[table];
     if (!conflictTarget) {
@@ -367,6 +395,15 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
 
       if (filter.operator === "eq" && filter.value === null) {
         return `${column} is null`;
+      }
+
+      if (filter.operator === "in") {
+        if (!Array.isArray(filter.value) || filter.value.length === 0) {
+          throw new Error("In filter requires at least one value.");
+        }
+
+        params.push(filter.value);
+        return `${column} = any($${params.length}::text[])`;
       }
 
       const placeholder = addParam(params, filter.column, filter.value);

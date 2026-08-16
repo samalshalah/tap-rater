@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  deleteProductContentBySlugs,
   getDefaultHomepageContent,
   saveAdminConfig,
   saveHomepageContent,
@@ -12,6 +13,14 @@ function createDbClient() {
   const upsert = vi.fn().mockResolvedValue({ error: null });
   const from = vi.fn(() => ({ upsert }));
   return { client: { from } as unknown as CmsDbClient, from, upsert };
+}
+
+function createDeleteDbClient() {
+  const select = vi.fn().mockResolvedValue({ data: [{ slug: "google-review-stand" }], error: null });
+  const inFilter = vi.fn(() => ({ select }));
+  const deleteAction = vi.fn(() => ({ in: inFilter }));
+  const from = vi.fn(() => ({ delete: deleteAction }));
+  return { client: { from } as unknown as CmsDbClient, from, deleteAction, inFilter, select };
 }
 
 describe("cms repository", () => {
@@ -160,5 +169,17 @@ describe("cms repository", () => {
       seo_description: "SEO description",
       is_active: true
     });
+  });
+
+  it("deletes products by slug through a filtered products-table delete", async () => {
+    const db = createDeleteDbClient();
+
+    const deletedSlugs = await deleteProductContentBySlugs(db.client, ["google-review-stand"]);
+
+    expect(deletedSlugs).toEqual(["google-review-stand"]);
+    expect(db.from).toHaveBeenCalledWith("products");
+    expect(db.deleteAction).toHaveBeenCalled();
+    expect(db.inFilter).toHaveBeenCalledWith("slug", ["google-review-stand"]);
+    expect(db.select).toHaveBeenCalledWith("slug");
   });
 });

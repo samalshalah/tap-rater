@@ -133,6 +133,13 @@ export const productContentSchema = z.object({
   isActive: z.boolean()
 });
 
+export const adminProductDeleteSchema = z.object({
+  slugs: z
+    .array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/))
+    .min(1)
+    .max(250)
+});
+
 export type HomepageContentInput = z.infer<typeof homepageContentSchema>;
 export type PageContentInput = z.infer<typeof pageContentSchema>;
 export type ProductContentInput = z.infer<typeof productContentSchema>;

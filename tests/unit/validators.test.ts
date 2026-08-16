@@ -4,6 +4,7 @@ import {
   accountLoginRequestSchema,
   accountLoginVerifySchema,
   activationFormSchema,
+  adminProductDeleteSchema,
   changeLinkFormSchema,
   contactFormSchema,
   setupFormSchema
@@ -136,5 +137,15 @@ describe("backend validators", () => {
     expect(product.customizationOptions).toEqual(["standard_design", "custom_design"]);
     expect(product.allowsCustomDesign).toBe(true);
     expect(product.designMode).toBe("custom");
+  });
+
+  it("validates admin product bulk delete payloads by slug only", () => {
+    expect(adminProductDeleteSchema.parse({ slugs: ["google-review-stand", "yelp-review-stand"] }).slugs).toEqual([
+      "google-review-stand",
+      "yelp-review-stand"
+    ]);
+
+    expect(() => adminProductDeleteSchema.parse({ slugs: [] })).toThrow();
+    expect(() => adminProductDeleteSchema.parse({ slugs: ["../../products"] })).toThrow();
   });
 });

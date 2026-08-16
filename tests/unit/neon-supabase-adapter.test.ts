@@ -105,6 +105,24 @@ describe("Neon Supabase adapter", () => {
     expect(query.mock.calls[0][0]).toContain("::text[]");
   });
 
+  it("builds one filtered delete query for product slugs", async () => {
+    const query = vi.fn().mockResolvedValue([{ slug: "google-review-stand" }]);
+    const client = createNeonSupabaseAdapter(query);
+
+    const result = await client
+      .from("products")
+      .delete()
+      .in("slug", ["google-review-stand", "yelp-review-stand"])
+      .select("slug");
+
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual([{ slug: "google-review-stand" }]);
+    expect(query).toHaveBeenCalledWith(
+      "delete from products where products.slug = any($1::text[]) returning products.slug",
+      [["google-review-stand", "yelp-review-stand"]]
+    );
+  });
+
   it("returns Supabase-style errors for unsupported table or column names", async () => {
     const query = vi.fn().mockResolvedValue([]);
     const client = createNeonSupabaseAdapter(query);
