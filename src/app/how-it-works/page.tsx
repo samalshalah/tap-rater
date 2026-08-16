@@ -8,29 +8,39 @@ export const metadata: Metadata = {
 
 const steps = [
   ["Choose your stand", "Pick a review, menu, booking, social, feedback, website, or custom stand."],
-  ["Add your link or branding", "Standard stands need one link. Branded and custom stands collect the required business details."],
-  ["Approve your design", "Configured stands require approval before checkout."],
-  ["We print and ship", "Tap Rater confirms production artwork and prepares the physical stand."]
+  ["Add your link or branding", "Standard stands need one link. Branded and custom stands collect business details before checkout."],
+  ["Confirm the setup", "Direct stands require link confirmation. Branded/custom stands use manual proof review before printing."],
+  ["We prepare the stand", "Tap Rater confirms production details, then prints and ships the physical stand."]
 ];
 
 export default function HowItWorksPage() {
   return (
-    <main className="bg-white">
-      <section className="mx-auto max-w-6xl px-4 py-14">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-brand">How it works</p>
-        <h1 className="mt-4 max-w-4xl text-5xl font-black leading-tight text-ink">From product page to printed stand.</h1>
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
+    <main className="bg-white text-ink">
+      <section className="border-b border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">How it works</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">From product page to printed stand.</h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
+            The flow is built for fast direct-link purchases while keeping branded and custom production safe.
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-[#f7f8fa]">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
           {steps.map(([title, body], index) => (
-            <article key={title} className="rounded-md border border-line bg-[#f5f5f7] p-6">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-ink text-sm font-black text-white">{index + 1}</span>
-              <h2 className="mt-5 text-xl font-black text-ink">{title}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted">{body}</p>
+            <article key={title} className="rounded-[18px] border border-line bg-white p-5">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-black text-white">{index + 1}</span>
+              <h2 className="mt-5 text-lg font-black text-ink">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">{body}</p>
             </article>
           ))}
         </div>
-        <Link href="/shop" className="mt-8 inline-flex rounded-md bg-ink px-6 py-4 text-sm font-black text-white transition hover:bg-brand">
-          Start shopping
-        </Link>
+        <div className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
+          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-6 text-sm font-black text-white transition hover:bg-brand">
+            Start shopping
+          </Link>
+        </div>
       </section>
     </main>
   );

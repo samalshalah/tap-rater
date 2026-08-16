@@ -2,7 +2,6 @@
 
 import { type FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
@@ -79,42 +78,42 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
   }
 
   return (
-    <form className="grid gap-5 rounded-md border border-line bg-white p-5 shadow-sm md:p-7" onSubmit={submit}>
+    <form className="grid gap-4 rounded-[18px] border border-line bg-white p-4 shadow-sm sm:p-5" onSubmit={submit}>
       <div>
-        <p className="text-sm font-semibold uppercase text-brand">Choose setup</p>
-        <h2 className="mt-2 text-2xl font-black text-ink">Configure this stand</h2>
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-brand">Choose setup</p>
+        <h2 className="mt-2 text-xl font-extrabold text-ink">Configure this stand</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           Your NFC and QR code connect directly to the link you provide. If the link changes after production, replacement or reprogramming may be required.
         </p>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:grid-cols-2">
         {options.map((option) => (
           <label
             key={option.id}
-            className={selectedOptionId === option.id ? "grid cursor-pointer gap-2 rounded-md border border-brand bg-teal-50 p-4" : "grid cursor-pointer gap-2 rounded-md border border-line bg-gray-50 p-4"}
+            className={
+              selectedOptionId === option.id
+                ? "grid cursor-pointer gap-3 rounded-[14px] border border-brand bg-white p-4 shadow-sm"
+                : "grid cursor-pointer gap-3 rounded-[14px] border border-line bg-white p-4 hover:border-ink"
+            }
           >
-            <span className="flex items-start justify-between gap-4">
-              <span className="flex items-start gap-3">
+            <span className="grid gap-3">
                 <input
-                  className="mt-1"
+                  className="sr-only"
                   type="radio"
                   name="setupOption"
                   value={option.id}
                   checked={selectedOptionId === option.id}
                   onChange={() => setSelectedOptionId(option.id)}
                 />
-                <span>
-                  <span className="block font-black text-ink">{option.label}</span>
-                  <span className="mt-1 block text-sm leading-6 text-muted">{option.summary}</span>
-                </span>
-              </span>
-              <span className="shrink-0 text-lg font-black text-ink">{formatPrice(option.priceCents)}</span>
+                <span className="block font-black text-ink">{option.label}</span>
+                <span className="block text-sm leading-5 text-muted">{option.summary}</span>
+              <span className="text-sm font-black text-ink">{formatPrice(option.priceCents)}</span>
             </span>
           </label>
         ))}
         {product.categorySlug === "custom-stands" ? (
-          <div className="rounded-md border border-dashed border-line bg-gray-50 p-4">
+          <div className="rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4 md:col-span-2">
             <p className="text-sm font-black text-ink">Hosted Multi-Link Page</p>
             <p className="mt-1 text-sm leading-6 text-muted">Coming soon. Use support for hosted multi-link or subscription setup requests.</p>
           </div>
@@ -123,18 +122,18 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
 
       <label className="grid gap-2 text-sm font-bold text-ink">
         Destination link
-        <input className="rounded-md border border-line px-4 py-3 font-normal" name="destinationUrl" type="url" placeholder="https://example.com/review" required />
+        <input className="rounded-full border border-line px-4 py-3 font-normal outline-none focus:border-brand" name="destinationUrl" type="url" placeholder="https://example.com/review" required />
       </label>
 
       {selectedOption.requiresBusinessName ? (
         <label className="grid gap-2 text-sm font-bold text-ink">
           Business name
-          <input className="rounded-md border border-line px-4 py-3 font-normal" name="businessName" placeholder="Your business name" required />
+          <input className="rounded-full border border-line px-4 py-3 font-normal outline-none focus:border-brand" name="businessName" placeholder="Your business name" required />
         </label>
       ) : null}
 
       {selectedOption.requiresLogo ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
+        <div className="rounded-[14px] border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-black text-ink">Logo collection</p>
           <p className="mt-1 text-sm leading-6 text-muted">
             After checkout, we will contact you to collect your logo and confirm the final proof before printing. No logo file is uploaded or stored in this checkout.
@@ -146,16 +145,16 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
         <div className="grid gap-4 md:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-ink">
             Headline or main stand text
-            <input className="rounded-md border border-line px-4 py-3 font-normal" name="headline" placeholder="Tap to connect" required />
+            <input className="rounded-full border border-line px-4 py-3 font-normal outline-none focus:border-brand" name="headline" placeholder="Tap to connect" required />
           </label>
           <label className="grid gap-2 text-sm font-bold text-ink">
             CTA sentence
-            <input className="rounded-md border border-line px-4 py-3 font-normal" name="cta" placeholder="Scan or tap below" />
+            <input className="rounded-full border border-line px-4 py-3 font-normal outline-none focus:border-brand" name="cta" placeholder="Scan or tap below" />
           </label>
           <label className="grid gap-2 text-sm font-bold text-ink md:col-span-2">
             Design notes
             <textarea
-              className="min-h-28 rounded-md border border-line px-4 py-3 font-normal"
+              className="min-h-24 rounded-[14px] border border-line px-4 py-3 font-normal outline-none focus:border-brand"
               name="designNotes"
               placeholder="Describe logo placement, center graphic, color requests, or anything Tap Rater should confirm before printing."
             />
@@ -163,7 +162,7 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
         </div>
       ) : null}
 
-      <div className="rounded-md border border-line bg-gray-50 p-4">
+      <div className="rounded-[14px] border border-line bg-[#f7f8fa] p-4">
         <p className="text-sm font-black text-ink">{selectedOption.requiresFinalProof ? "Manual proof required" : "Direct setup confirmation"}</p>
         {selectedOption.requiresFinalProof ? (
           <>
@@ -188,10 +187,9 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
         )}
       </div>
 
-      {error ? <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+      {error ? <p className="rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
 
-      <button className="inline-flex items-center justify-center gap-2 rounded-md bg-brand px-5 py-3 text-sm font-black text-white transition hover:bg-ink">
-        <CheckCircle2 className="h-4 w-4" />
+      <button className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-5 text-sm font-black text-white transition hover:bg-brand">
         Add configured stand to cart
       </button>
     </form>

@@ -6,19 +6,34 @@ export const metadata: Metadata = {
   description: "Get help with Tap Rater stand setup, custom orders, bulk orders, link changes, and hosted multi-link requests."
 };
 
+const supportLinks = [
+  ["Contact Tap Rater", "Ask about orders, custom work, and launch questions.", "/contact-us"],
+  ["Change a link", "Request an update for an existing Tap Rater stand.", "/change-taprater-link"],
+  ["Read FAQs", "Quick answers about setup, checkout, proofing, and production.", "/faqs"]
+];
+
 export default function SupportPage() {
   return (
-    <main className="bg-[#f5f5f7]">
-      <section className="mx-auto max-w-5xl px-4 py-14">
-        <p className="text-sm font-black uppercase tracking-[0.18em] text-brand">Support</p>
-        <h1 className="mt-4 max-w-4xl text-5xl font-black leading-tight text-ink">Need help with a stand order?</h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">
-          Use support for complex custom work, bulk orders, hosted multi-link requests, or link-change help.
-        </p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Link href="/contact-us" className="rounded-md border border-line bg-white p-6 font-black text-ink transition hover:shadow-lg">Contact Tap Rater</Link>
-          <Link href="/change-taprater-link" className="rounded-md border border-line bg-white p-6 font-black text-ink transition hover:shadow-lg">Change a link</Link>
-          <Link href="/faqs" className="rounded-md border border-line bg-white p-6 font-black text-ink transition hover:shadow-lg">Read FAQs</Link>
+    <main className="bg-white text-ink">
+      <section className="border-b border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Support</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Need help with a stand order?</h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
+            Use support for complex custom work, bulk orders, hosted multi-link requests, or link-change help.
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-[#f7f8fa]">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
+          {supportLinks.map(([title, body, href]) => (
+            <Link key={title} href={href} className="flex min-h-[180px] flex-col rounded-[18px] border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]">
+              <h2 className="text-lg font-black text-ink">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">{body}</p>
+              <span className="mt-auto text-sm font-black text-brand">Open</span>
+            </Link>
+          ))}
         </div>
       </section>
     </main>

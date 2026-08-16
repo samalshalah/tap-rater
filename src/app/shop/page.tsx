@@ -1,8 +1,10 @@
-import { ProductCard } from "@/components/product/product-card";
-import { getStorefrontProducts } from "@/lib/product-repository";
-import { getCatalogCategories } from "@/lib/products";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ProductCard } from "@/components/product/product-card";
+import { VisualCard } from "@/components/storefront/visual-card";
+import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCatalogCategories } from "@/lib/products";
+import { getCategoryVisual } from "@/lib/storefront-visuals";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -16,95 +18,67 @@ export default async function ShopPage() {
   const categories = getCatalogCategories();
 
   return (
-    <>
-      <section className="border-b border-line bg-[#f5f5f7]">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
-          <div>
-            <p className="text-sm font-semibold uppercase text-brand">Tap Rater shop</p>
-            <h1 className="mt-3 max-w-4xl text-4xl font-black leading-tight text-ink md:text-5xl">
-              Shop NFC and QR stands by customer action
-            </h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">
-              Choose a ready-made platform stand from $39, add logo and QR branding from $49, or create a custom direct stand for $49.
-            </p>
-          </div>
-          <div className="grid gap-3 rounded-md border border-line bg-white p-5">
-            <p className="text-sm font-bold uppercase text-ink">Launch pricing</p>
-            <div className="grid gap-2 text-sm text-muted">
-              <p><strong className="text-ink">Standard Direct:</strong> $39 one-time</p>
-              <p><strong className="text-ink">Branded + QR Direct:</strong> $49 one-time</p>
-              <p><strong className="text-ink">Custom Direct:</strong> $49 one-time</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-12">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase text-brand">Shop by category</p>
-            <h2 className="mt-2 text-3xl font-black text-ink">Find the right stand faster</h2>
-          </div>
-          <p className="max-w-xl text-sm leading-6 text-muted">
-            Categories are organized around what customers are trying to do at the counter, table, desk, or reception area.
+    <main className="bg-white text-ink">
+      <section className="border-b border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Tap Rater shop</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Shop NFC and QR stands.</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
+            Pick the action first, then choose Standard Direct, Branded + QR, or Custom Direct on the product page.
           </p>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
-            <Link key={category.slug} href={`/category/${category.slug}`} className="rounded-md border border-line bg-white p-5 transition hover:-translate-y-1 hover:shadow-lg">
-              <p className="text-xs font-bold uppercase text-brand">{category.eyebrow}</p>
-              <h3 className="mt-2 text-lg font-black text-ink">{category.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-muted">{category.buyerIntent}</p>
-              <p className="mt-4 text-sm font-bold text-ink">
-                {products.filter((product) => product.categorySlug === category.slug).length} stands
-              </p>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link href="#all-stands" className="inline-flex min-h-10 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
+              View all stands
             </Link>
-          ))}
+            <Link href="/solutions" className="inline-flex min-h-10 items-center rounded-full border border-line bg-white px-5 text-sm font-black text-ink hover:border-ink">
+              Shop by use
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-line bg-[#f5f5f7]">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-12 md:grid-cols-3">
-          <article className="rounded-md border border-line bg-white p-5">
-            <p className="text-xs font-black uppercase text-brand">Simple pricing</p>
-            <h2 className="mt-2 text-xl font-black text-ink">One-time physical stand purchases</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              Today&apos;s saleable products are direct-link NFC and QR tabletop stands. No subscription is required.
+      <section className="bg-[#f7f8fa]">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Stand categories</p>
+              <h2 className="mt-3 text-3xl font-extrabold text-ink">Browse by stand type.</h2>
+            </div>
+            <p className="max-w-xl text-sm leading-6 text-muted">
+              Every category card uses a real stand image so customers know what they are buying before they open a product.
             </p>
-          </article>
-          <article className="rounded-md border border-line bg-white p-5">
-            <p className="text-xs font-black uppercase text-brand">Configured before cart</p>
-            <h2 className="mt-2 text-xl font-black text-ink">Add the link and required branding first</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              Standard stands confirm the direct link before checkout. Branded and custom stands collect setup details now, then Tap Rater collects logo/design files and sends the final proof before printing.
-            </p>
-          </article>
-          <article className="rounded-md border border-line bg-white p-5">
-            <p className="text-xs font-black uppercase text-brand">Hosted pages later</p>
-            <h2 className="mt-2 text-xl font-black text-ink">Multi-Link is request-only for now</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              Hosted multi-link subscriptions are not shown as a main checkout product until the full lifecycle is approved.
-            </p>
-          </article>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {categories.map((category) => (
+              <VisualCard
+                key={category.slug}
+                href={`/category/${category.slug}`}
+                eyebrow={`${products.filter((product) => product.categorySlug === category.slug).length} stands`}
+                title={category.title}
+                description={category.buyerIntent}
+                image={getCategoryVisual(category)}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-line bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12">
+      <section id="all-stands" className="border-t border-line bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase text-brand">All stands</p>
-              <h2 className="mt-2 text-3xl font-black text-ink">Tap Rater catalog</h2>
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">All stands</p>
+              <h2 className="mt-3 text-3xl font-extrabold text-ink">Tap Rater catalog</h2>
             </div>
             <p className="text-sm font-semibold text-muted">{products.length} stands available</p>
           </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

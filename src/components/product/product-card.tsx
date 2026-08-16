@@ -4,50 +4,37 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { getProductServiceBadges, getReviewDestination } from "@/lib/product-page-content";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
-
-const productImageFallback = {
-  src: "/uploads/products/no-photo-available.png",
-  alt: "Product image coming soon"
-};
+import { getProductVisual } from "@/lib/storefront-visuals";
 
 export function ProductCard({ product }: { product: MigratedProduct }) {
-  const image = product.images[0] ?? { ...productImageFallback, alt: product.title };
+  const image = getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
   const serviceBadges = getProductServiceBadges(product);
   const purchaseLabel = getPurchaseLabel(product);
-  const formatLabel = product.format === "stand" ? "Stand" : product.format;
   const destination = getReviewDestination(product);
+  const setupLabel = getSetupLabel(product);
 
   return (
-    <Link href={`/product/${product.slug}`} className="group block rounded-md border border-line bg-white p-4 transition hover:-translate-y-1 hover:shadow-lg">
-      <div className="relative aspect-square overflow-hidden rounded-md bg-gray-50">
-        <Image src={image.src} alt={image.alt} fill className="object-contain p-4 transition group-hover:scale-105" />
+    <Link
+      href={`/product/${product.slug}`}
+      className="group flex h-full flex-col rounded-[18px] border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]"
+    >
+      <div className="relative h-52 overflow-hidden rounded-[14px] bg-white">
+        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-200 group-hover:scale-[1.03]" />
       </div>
-      <div className="mt-4">
-        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase">
-          <span className={product.stockStatus === "instock" ? "text-brand" : "text-muted"}>
-            {product.stockStatus === "instock" ? "In stock" : "Out of stock"}
-          </span>
-          {category ? <span className="text-muted">{category.title}</span> : null}
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-muted">{formatLabel}</span>
-          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-muted">{destination}</span>
-        </div>
-        <h2 className="mt-1 text-base font-semibold text-ink">{product.title}</h2>
-        <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{product.shortDescription}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {serviceBadges.slice(0, 2).map((badge) => (
-            <span key={badge} className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black uppercase text-muted">
-              {badge}
-            </span>
-          ))}
-        </div>
-        {product.customizationOptions.length > 1 ? (
-          <p className="mt-3 text-xs font-black uppercase tracking-wide text-brand">
-            Standard or branded setup available
-          </p>
+      <div className="flex flex-1 flex-col pt-4">
+        <p className="text-[13px] font-black text-brand">{category?.title ?? destination}</p>
+        <h2 className="mt-2 text-lg font-black leading-snug text-ink">{product.title}</h2>
+        <p className="mt-3 text-sm leading-5 text-muted">{setupLabel}</p>
+        {serviceBadges.length > 0 ? (
+          <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-muted">{serviceBadges[0]}</p>
         ) : null}
-        <p className="mt-2 text-lg font-bold text-brand">{purchaseLabel}</p>
-        <p className="mt-3 text-sm font-black text-ink">View options</p>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
+          <span className="text-sm font-black text-ink">{purchaseLabel}</span>
+          <span className="inline-flex min-h-9 min-w-[104px] items-center justify-center rounded-full bg-ink px-5 text-sm font-black text-white transition group-hover:bg-brand">
+            View
+          </span>
+        </div>
       </div>
     </Link>
   );
@@ -66,5 +53,25 @@ function getPurchaseLabel(product: MigratedProduct) {
     return "Subscription setup";
   }
 
-  return `From ${formatPrice(getLowestPurchasePriceCents(product))}`;
+  return `From ${formatCompactPrice(getLowestPurchasePriceCents(product))}`;
+}
+
+function getSetupLabel(product: MigratedProduct) {
+  if (product.checkoutMode === "request_quote") {
+    return "Request quote setup";
+  }
+
+  if (product.slug === "custom-direct-stand" || product.allowsCustomDesign) {
+    return "Custom Direct Stand";
+  }
+
+  if (product.customizationOptions.includes("add_logo")) {
+    return "Standard or Branded + QR";
+  }
+
+  return "Standard Direct Stand";
+}
+
+function formatCompactPrice(cents: number) {
+  return formatPrice(cents).replace(".00", "");
 }

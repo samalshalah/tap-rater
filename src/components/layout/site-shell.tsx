@@ -1,7 +1,16 @@
+"use client";
+
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
+import { usePathname } from "next/navigation";
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  if (pathname.startsWith("/admin")) {
+    return <div className="min-h-screen bg-[#f7f8fa]">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />

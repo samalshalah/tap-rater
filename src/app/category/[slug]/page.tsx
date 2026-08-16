@@ -1,10 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
 import { catalogCategories } from "@/data/migrated-products";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
-import { getCategoryBySlug } from "@/lib/products";
+import { getCatalogCategories, getCategoryBySlug } from "@/lib/products";
+import { getCategoryVisual } from "@/lib/storefront-visuals";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -47,44 +49,69 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   const products = await getStorefrontProductsByCategory(category.slug);
+  const categories = getCatalogCategories();
+  const visual = getCategoryVisual(category);
 
   return (
-    <>
-      <section className="border-b border-line bg-gray-50">
-        <div className="mx-auto max-w-7xl px-4 py-12">
-          <Link href="/shop" className="text-sm font-bold text-brand">
-            Shop all stands
-          </Link>
-          <p className="mt-6 text-sm font-semibold uppercase text-brand">{category.eyebrow}</p>
-          <h1 className="mt-3 max-w-4xl text-4xl font-black leading-tight text-ink md:text-5xl">{category.title}</h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-muted">{category.description}</p>
-          <div className="mt-6 grid gap-3 rounded-md border border-line bg-white p-5 md:grid-cols-[0.7fr_1.3fr]">
-            <p className="text-sm font-bold uppercase text-ink">Best for</p>
-            <p className="text-sm leading-6 text-muted">{category.buyerIntent}</p>
+    <main className="bg-white text-ink">
+      <section className="border-b border-line bg-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.55fr] lg:items-end lg:px-8">
+          <div>
+            <Link href="/shop" className="text-sm font-black text-brand">
+              Shop all stands
+            </Link>
+            <p className="mt-7 text-xs font-black uppercase tracking-[0.14em] text-brand">{category.eyebrow}</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">{category.title}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-muted">{category.description}</p>
           </div>
-          <div className="mt-4 grid gap-3 rounded-md border border-line bg-white p-5 md:grid-cols-[0.7fr_1.3fr]">
-            <p className="text-sm font-bold uppercase text-ink">Service expectation</p>
-            <p className="text-sm leading-6 text-muted">{category.seoCopy}</p>
+          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[22px] border border-line bg-white lg:block">
+            <Image src={visual.src} alt={visual.alt} fill unoptimized className="object-contain p-7" />
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-12">
+      <section className="border-b border-line bg-[#f7f8fa]">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <Link
+              href="/shop"
+              className="inline-flex min-h-9 shrink-0 items-center rounded-full border border-line bg-white px-4 text-sm font-black text-ink hover:border-ink"
+            >
+              All stands
+            </Link>
+            {categories.map((item) => (
+              <Link
+                key={item.slug}
+                href={`/category/${item.slug}`}
+                className={
+                  item.slug === category.slug
+                    ? "inline-flex min-h-9 shrink-0 items-center rounded-full bg-brand px-4 text-sm font-black text-white"
+                    : "inline-flex min-h-9 shrink-0 items-center rounded-full border border-line bg-white px-4 text-sm font-black text-ink hover:border-ink"
+                }
+              >
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-brand">{products.length} stands</p>
-            <h2 className="mt-2 text-3xl font-black text-ink">Shop {category.title.toLowerCase()}</h2>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">{products.length} stands</p>
+            <h2 className="mt-3 text-3xl font-extrabold text-ink">Shop {category.title.toLowerCase()}</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">
-            These stands are selected for the same customer action first. Choose Standard Direct for a fast one-link setup, or Branded + QR Direct when you need business-name branding with logo collection and final proof after checkout.
+            Choose Standard Direct for one clean link, or Branded + QR when you want logo/business-name proofing before printing.
           </p>
         </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((product) => (
             <ProductCard key={product.slug} product={product} />
           ))}
         </div>
       </section>
-    </>
+    </main>
   );
 }

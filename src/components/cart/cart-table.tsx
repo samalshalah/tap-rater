@@ -43,9 +43,9 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-md border border-line p-8 text-center">
+      <div className="rounded-[18px] border border-line bg-white p-8 text-center shadow-sm">
         <p className="text-muted">Your cart is empty.</p>
-        <Link href="/shop" className="mt-5 inline-block rounded-md bg-brand px-5 py-3 text-sm font-bold text-white">
+        <Link href="/shop" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
           Shop products
         </Link>
       </div>
@@ -53,14 +53,14 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
   }
 
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-5 rounded-[22px] border border-line bg-white p-4 shadow-sm sm:p-6">
       {rows.map((row) => {
         const cartKey = getCartItemKey(row.item);
         return (
-        <div key={cartKey} className="grid gap-4 border-b border-line py-4 md:grid-cols-[1fr_auto_auto] md:items-center">
+        <div key={cartKey} className="grid gap-4 border-b border-line py-4 last:border-b-0 md:grid-cols-[1fr_auto_auto] md:items-center">
           <div>
-            <p className="font-semibold text-ink">{row.product.title}</p>
-            <p className="text-sm font-semibold text-brand">{row.option.label}</p>
+            <p className="font-black text-ink">{row.product.title}</p>
+            <p className="mt-1 text-sm font-black text-brand">{row.option.label}</p>
             <p className="text-sm text-muted">{formatPrice(row.unitPriceCents)} each</p>
             <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
               {row.item.setup?.businessName ? <p><strong className="text-ink">Business:</strong> {row.item.setup.businessName}</p> : null}
@@ -71,23 +71,23 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
               {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> required before printing</p> : null}
             </div>
           </div>
-          <div className="flex h-11 w-fit items-center overflow-hidden rounded-md border border-line">
+          <div className="flex h-10 w-fit items-center overflow-hidden rounded-full border border-line">
             <button
               type="button"
               aria-label={`Decrease ${row.product.title} quantity`}
-              className="grid h-11 w-11 place-items-center text-ink hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-muted"
+              className="grid h-10 w-10 place-items-center text-ink hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-muted"
               disabled={row.item.quantity <= 1}
               onClick={() => decreaseItem(cartKey)}
             >
               <Minus size={16} />
             </button>
-            <span className="grid h-11 min-w-12 place-items-center border-x border-line px-3 text-sm font-black text-ink">
+            <span className="grid h-10 min-w-12 place-items-center border-x border-line px-3 text-sm font-black text-ink">
               {row.item.quantity}
             </span>
             <button
               type="button"
               aria-label={`Increase ${row.product.title} quantity`}
-              className="grid h-11 w-11 place-items-center text-ink hover:bg-gray-50"
+              className="grid h-10 w-10 place-items-center text-ink hover:bg-gray-50"
               onClick={() => increaseItem(cartKey)}
             >
               <Plus size={16} />
@@ -101,7 +101,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
             <button
               type="button"
               aria-label={`Remove ${row.product.title}`}
-              className="grid h-10 w-10 place-items-center rounded-md border border-line text-brand hover:bg-gray-50"
+              className="grid h-10 w-10 place-items-center rounded-full border border-line text-brand hover:bg-gray-50"
               onClick={() => removeItem(cartKey)}
             >
               <Trash2 size={17} />
@@ -110,14 +110,14 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
         </div>
         );
       })}
-      <div className="flex items-center justify-between text-xl font-bold">
+      <div className="flex items-center justify-between border-t border-line pt-5 text-xl font-black">
         <span>Total</span>
         <span>{formatPrice(total)}</span>
       </div>
       <button
         type="button"
         disabled={isCheckingOut}
-        className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+        className="min-h-12 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand disabled:cursor-not-allowed disabled:bg-gray-300"
         onClick={startCheckout}
       >
         {isCheckingOut ? "Starting Stripe Checkout..." : isLiveStripe ? "Checkout with Stripe" : "Checkout with Stripe test mode"}

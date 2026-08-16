@@ -85,9 +85,13 @@ export default async function AdminProductsPage() {
 
 function ProductThumbnail({ product }: { product: Awaited<ReturnType<typeof getAdminProducts>>[number] }) {
   const image = product.images[0];
+  const thumbnailSrc =
+    image?.src === "/uploads/products/business-google-white-stand.jpg"
+      ? "/uploads/products/business-google-white-stands-bundle.jpg"
+      : image?.src;
 
-  return image ? (
-    <img src={image.src} alt={image.alt || product.title} className="h-14 w-14 rounded-md border border-line bg-white object-contain" loading="lazy" />
+  return thumbnailSrc ? (
+    <img src={thumbnailSrc} alt={image?.alt || product.title} className="h-14 w-14 rounded-md border border-line bg-white object-contain" loading="lazy" />
   ) : (
     <div className="grid h-14 w-14 place-items-center rounded-md border border-dashed border-line bg-white text-[10px] font-bold uppercase text-muted">
       No image
