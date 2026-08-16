@@ -21,8 +21,7 @@ const configuredStandardItem = {
   optionId: "standard_direct" as const,
   quantity: 1,
   setup: {
-    destinationUrl: "https://g.page/example/review",
-    proofApproved: true
+    destinationUrl: "https://g.page/example/review"
   }
 };
 
@@ -132,19 +131,15 @@ describe("Stripe checkout helpers", () => {
     expect(result.rows[0].setup).not.toHaveProperty("logoFileName");
   });
 
-  it("records custom design notes while keeping custom orders pending manual proof", () => {
+  it("does not accept Hosted Multi-Link in the current one-time checkout", () => {
     const result = validateCheckoutCart(
       [
         {
           productId: "custom-direct-stand",
-          optionId: "custom_direct",
+          optionId: "hosted_multilink",
           quantity: 1,
           setup: {
-            destinationUrl: "https://example.com",
             businessName: "Nova Implant",
-            headline: "Scan to connect",
-            cta: "Tap below",
-            designNotes: "Use white stand with logo at top.",
             manualCollectionAcknowledged: true
           }
         }
@@ -152,24 +147,7 @@ describe("Stripe checkout helpers", () => {
       migratedProducts
     );
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.rows[0]).toMatchObject({
-      optionId: "custom_direct",
-      logoRequired: true,
-      proofRequired: true,
-      proofApproved: false,
-      productionStatus: "pending_manual_design_and_proof",
-      manualProductionRequired: true,
-      productionWarningCodes: [
-        "pending_manual_proof",
-        "asset_storage_not_configured",
-        "do_not_print_until_manual_review"
-      ],
-      setup: {
-        designNotes: "Use white stand with logo at top."
-      }
-    });
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("classifies Stripe key prefixes without exposing key values", () => {

@@ -123,6 +123,29 @@ describe("Neon Supabase adapter", () => {
     );
   });
 
+  it("allows catalog architecture tables and product asset columns", async () => {
+    const query = vi.fn().mockResolvedValue([
+      {
+        slug: "review-stands",
+        title: "Review Stands",
+        image_url: "/uploads/products/google-review-stand.png"
+      }
+    ]);
+    const client = createNeonSupabaseAdapter(query);
+
+    const result = await client.from("stand_types").select("slug,title,image_url").eq("is_active", true).order("sort_order", { ascending: true });
+
+    expect(result.error).toBeNull();
+    expect(query.mock.calls[0][0]).toContain("select stand_types.slug, stand_types.title, stand_types.image_url");
+    expect(query.mock.calls[0][0]).toContain("order by stand_types.sort_order asc");
+
+    await client.from("products").select("stand_type_slug,primary_platform_slug,multilink_angled_image_url,multilink_front_template_url,asset_readiness_status,landing_page_preview_config");
+    expect(query.mock.calls[1][0]).toContain("products.asset_readiness_status");
+
+    await client.from("product_option_templates").select("option_code,max_links,supports_reorderable_links,supports_link_visibility,landing_page_url_pattern,footer_label");
+    expect(query.mock.calls[2][0]).toContain("product_option_templates.max_links");
+  });
+
   it("returns Supabase-style errors for unsupported table or column names", async () => {
     const query = vi.fn().mockResolvedValue([]);
     const client = createNeonSupabaseAdapter(query);

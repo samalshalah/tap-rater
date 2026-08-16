@@ -107,9 +107,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </p>
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard key={product.slug} product={product} />
-          ))}
+          {products.length > 0 ? (
+            products.map((product) => <ProductCard key={product.slug} product={product} />)
+          ) : (
+            <div className="rounded-[18px] border border-line bg-[#f7f8fa] p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
+              Products are being prepared.
+            </div>
+          )}
         </div>
       </section>
     </main>

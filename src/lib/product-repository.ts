@@ -33,6 +33,12 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "title",
   "sku",
   "category_slug",
+  "stand_type_slug",
+  "primary_platform_slug",
+  "destination_type",
+  "is_special_solution",
+  "product_kind",
+  "status",
   "format",
   "base_price_cents",
   "sale_price_cents",
@@ -53,6 +59,17 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "allows_custom_design",
   "design_mode",
   "images",
+  "standard_angled_image_url",
+  "branded_angled_image_url",
+  "multilink_angled_image_url",
+  "standard_front_template_url",
+  "branded_front_template_url",
+  "multilink_front_template_url",
+  "center_asset_url",
+  "default_cta_text",
+  "cta_editable",
+  "landing_page_preview_config",
+  "asset_readiness_status",
   "is_active",
   "seo_title",
   "seo_description"
@@ -269,6 +286,16 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     readString(productRow.stand_category_slug) ??
     readString(productRow.standCategorySlug) ??
     staticProduct?.categorySlug;
+  const standTypeSlug = readString(productRow.stand_type_slug) ?? readString(productRow.standTypeSlug) ?? staticProduct?.standTypeSlug;
+  const primaryPlatformSlug =
+    readString(productRow.primary_platform_slug) ?? readString(productRow.primaryPlatformSlug) ?? staticProduct?.primaryPlatformSlug;
+  const destinationType = readString(productRow.destination_type) ?? readString(productRow.destinationType) ?? staticProduct?.destinationType;
+  const businessUseSlugs =
+    readStringArray(productRow.business_use_slugs) ?? readStringArray(productRow.businessUseSlugs) ?? staticProduct?.businessUseSlugs;
+  const isSpecialSolution =
+    readBoolean(productRow.is_special_solution) ?? readBoolean(productRow.isSpecialSolution) ?? staticProduct?.isSpecialSolution ?? false;
+  const productKind = readProductKind(productRow.product_kind) ?? readProductKind(productRow.productKind) ?? staticProduct?.productKind;
+  const status = readProductStatus(productRow.status) ?? staticProduct?.status;
   const matchedCategory = rawCategorySlug ? getCategoryBySlug(rawCategorySlug) : undefined;
   const categorySlug = matchedCategory?.slug === rawCategorySlug ? rawCategorySlug : staticProduct?.categorySlug ?? matchedCategory?.slug ?? rawCategorySlug;
   const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents ?? 3900;
@@ -317,6 +344,35 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     customizationOptions.includes("custom_design");
   const designMode = readDesignMode(productRow.design_mode) ?? readDesignMode(productRow.designMode) ?? staticProduct?.designMode ?? "standard";
   const displayText = readString(productRow.display_text) ?? readString(productRow.displayText) ?? staticProduct?.displayText;
+  const assetSet = {
+    standardAngledImageUrl:
+      readString(productRow.standard_angled_image_url) ?? readString(productRow.standardAngledImageUrl) ?? staticProduct?.assetSet?.standardAngledImageUrl,
+    brandedAngledImageUrl:
+      readString(productRow.branded_angled_image_url) ?? readString(productRow.brandedAngledImageUrl) ?? staticProduct?.assetSet?.brandedAngledImageUrl,
+    multiLinkAngledImageUrl:
+      readString(productRow.multilink_angled_image_url) ??
+      readString(productRow.multiLinkAngledImageUrl) ??
+      staticProduct?.assetSet?.multiLinkAngledImageUrl,
+    standardFrontTemplateUrl:
+      readString(productRow.standard_front_template_url) ?? readString(productRow.standardFrontTemplateUrl) ?? staticProduct?.assetSet?.standardFrontTemplateUrl,
+    brandedFrontTemplateUrl:
+      readString(productRow.branded_front_template_url) ?? readString(productRow.brandedFrontTemplateUrl) ?? staticProduct?.assetSet?.brandedFrontTemplateUrl,
+    multiLinkFrontTemplateUrl:
+      readString(productRow.multilink_front_template_url) ??
+      readString(productRow.multiLinkFrontTemplateUrl) ??
+      staticProduct?.assetSet?.multiLinkFrontTemplateUrl,
+    centerAssetUrl: readString(productRow.center_asset_url) ?? readString(productRow.centerAssetUrl) ?? staticProduct?.assetSet?.centerAssetUrl,
+    landingPagePreviewConfig:
+      readRecord(productRow.landing_page_preview_config) ??
+      readRecord(productRow.landingPagePreviewConfig) ??
+      staticProduct?.assetSet?.landingPagePreviewConfig
+  };
+  const defaultCtaText = readString(productRow.default_cta_text) ?? readString(productRow.defaultCtaText) ?? staticProduct?.defaultCtaText;
+  const ctaEditable = readBoolean(productRow.cta_editable) ?? readBoolean(productRow.ctaEditable) ?? staticProduct?.ctaEditable;
+  const assetReadinessStatus =
+    readAssetReadinessStatus(productRow.asset_readiness_status) ??
+    readAssetReadinessStatus(productRow.assetReadinessStatus) ??
+    staticProduct?.assetReadinessStatus;
 
   if (
     !slug ||
@@ -339,6 +395,13 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     title,
     sku,
     categorySlug: categorySlug as MigratedProduct["categorySlug"],
+    standTypeSlug,
+    primaryPlatformSlug,
+    destinationType,
+    businessUseSlugs,
+    isSpecialSolution,
+    productKind,
+    status,
     basePriceCents,
     salePriceCents: readNumber(productRow.sale_price_cents) ?? readNumber(productRow.salePriceCents),
     stockStatus,
@@ -359,13 +422,18 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     allowsCustomDesign,
     designMode,
     displayText,
+    assetSet,
+    defaultCtaText,
+    ctaEditable,
+    assetReadinessStatus,
     images: readImages(productRow.images) ?? staticProduct?.images ?? [],
     variants: readVariants(productRow.variants) ?? staticProduct?.variants ?? [],
     isActive: readBoolean(productRow.is_active) ?? readBoolean(productRow.isActive) ?? true,
     seoTitle: readString(productRow.seo_title) ?? readString(productRow.seoTitle) ?? staticProduct?.seoTitle,
     seoDescription: readString(productRow.seo_description) ?? readString(productRow.seoDescription) ?? staticProduct?.seoDescription,
     searchKeywords:
-      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords
+      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
+    updatedAt: readString(productRow.updated_at) ?? readString(productRow.updatedAt) ?? staticProduct?.updatedAt
   };
 }
 
@@ -411,14 +479,38 @@ function readSupportedDestinations(value: unknown): MigratedProduct["supportedDe
     "facebook",
     "yelp",
     "tripadvisor",
+    "trustpilot",
+    "bbb",
+    "nextdoor",
     "instagram",
     "tiktok",
+    "linkedin",
+    "x",
+    "youtube",
+    "vagaro",
+    "booksy",
+    "fresha",
+    "zocdoc",
+    "calendly",
+    "acuity",
+    "square-appointments",
+    "custom-booking-url",
     "booking",
+    "toast",
+    "doordash",
+    "ubereats",
+    "grubhub",
+    "opentable",
+    "resy",
+    "custom-menu-url",
     "website",
     "menu",
     "wifi",
     "feedback",
     "referral",
+    "payment-url",
+    "loyalty-url",
+    "custom-url",
     "custom"
   ];
 
@@ -438,6 +530,18 @@ function readActivationType(value: unknown): MigratedProduct["activationType"] |
 
 function readProductFormat(value: unknown): MigratedProduct["format"] | undefined {
   return value === "stand" || value === "plate" || value === "bundle" || value === "platform" ? value : undefined;
+}
+
+function readProductKind(value: unknown): MigratedProduct["productKind"] | undefined {
+  return value === "normal_direct" || value === "custom_direct" || value === "hosted_multilink" || value === "bundle" ? value : undefined;
+}
+
+function readProductStatus(value: unknown): MigratedProduct["status"] | undefined {
+  return value === "draft" || value === "active" || value === "archived" ? value : undefined;
+}
+
+function readAssetReadinessStatus(value: unknown): MigratedProduct["assetReadinessStatus"] | undefined {
+  return value === "draft_missing_assets" || value === "ready" || value === "blocked" ? value : undefined;
 }
 
 function readCustomizationOptions(value: unknown): MigratedProduct["customizationOptions"] | undefined {
@@ -471,6 +575,10 @@ function inferProductFormatFromTitle(title: string | undefined): MigratedProduct
 
 function readStringArray(value: unknown) {
   return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : undefined;
+}
+
+function readRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }
 
 function readImages(value: unknown): MigratedProduct["images"] | undefined {

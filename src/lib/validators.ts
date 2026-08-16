@@ -2,9 +2,98 @@ import { z } from "zod";
 
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
 const productFormats = ["stand", "plate", "bundle", "platform"] as const;
+const productStatuses = ["draft", "active", "archived"] as const;
+const productKinds = ["normal_direct", "custom_direct", "hosted_multilink", "bundle"] as const;
+const destinationTypes = [
+  "review",
+  "review_social",
+  "booking",
+  "menu",
+  "menu_order",
+  "order",
+  "reservation",
+  "website",
+  "social",
+  "payment",
+  "loyalty",
+  "custom"
+] as const;
+const productOptionCodes = ["standard_direct", "branded_qr_direct", "hosted_multilink"] as const;
+const productAssetReadinessStatuses = ["draft_missing_assets", "ready", "blocked"] as const;
+const supportedDestinationValues = [
+  "google",
+  "facebook",
+  "yelp",
+  "tripadvisor",
+  "trustpilot",
+  "bbb",
+  "nextdoor",
+  "instagram",
+  "tiktok",
+  "linkedin",
+  "x",
+  "youtube",
+  "vagaro",
+  "booksy",
+  "fresha",
+  "zocdoc",
+  "calendly",
+  "acuity",
+  "square-appointments",
+  "custom-booking-url",
+  "booking",
+  "toast",
+  "doordash",
+  "ubereats",
+  "grubhub",
+  "opentable",
+  "resy",
+  "custom-menu-url",
+  "website",
+  "menu",
+  "wifi",
+  "feedback",
+  "referral",
+  "payment-url",
+  "loyalty-url",
+  "custom-url",
+  "custom"
+] as const;
 const productImageSchema = z.object({
   src: z.string().trim().min(1).max(2048),
   alt: z.string().trim().max(300).default("")
+});
+const productOptionSchema = z.object({
+  optionCode: z.enum(productOptionCodes),
+  title: z.string().trim().min(2).max(120),
+  description: z.string().trim().max(500).default(""),
+  priceCents: z.number().int().min(0),
+  monthlyPriceCents: z.number().int().min(0).optional(),
+  maxLinks: z.number().int().min(1).optional(),
+  requiresDestinationUrl: z.boolean().default(true),
+  hasQr: z.boolean().default(false),
+  requiresLogo: z.boolean().default(false),
+  requiresBusinessName: z.boolean().default(false),
+  requiresDesignStep: z.boolean().default(false),
+  requiresFrontProof: z.boolean().default(false),
+  requiresSubscription: z.boolean().default(false),
+  accountRequired: z.boolean().default(false),
+  supportsReorderableLinks: z.boolean().default(false),
+  supportsLinkVisibility: z.boolean().default(false),
+  landingPageUrlPattern: z.string().trim().max(120).optional(),
+  footerLabel: z.string().trim().max(120).optional(),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().min(0).default(0)
+});
+const productAssetSetSchema = z.object({
+  standardAngledImageUrl: z.string().trim().max(2048).optional(),
+  brandedAngledImageUrl: z.string().trim().max(2048).optional(),
+  multiLinkAngledImageUrl: z.string().trim().max(2048).optional(),
+  standardFrontTemplateUrl: z.string().trim().max(2048).optional(),
+  brandedFrontTemplateUrl: z.string().trim().max(2048).optional(),
+  multiLinkFrontTemplateUrl: z.string().trim().max(2048).optional(),
+  centerAssetUrl: z.string().trim().max(2048).optional(),
+  landingPagePreviewConfig: z.record(z.string(), z.unknown()).optional()
 });
 
 export const contactFormSchema = z.object({
@@ -89,11 +178,18 @@ export const productContentSchema = z.object({
   title: z.string().trim().min(2).max(180),
   sku: z.string().trim().min(2).max(80),
   categorySlug: z.string().trim().min(2).max(120),
+  standTypeSlug: z.string().trim().min(2).max(120).optional(),
+  primaryPlatformSlug: z.string().trim().min(2).max(120).optional(),
+  destinationType: z.enum(destinationTypes).optional(),
+  businessUseSlugs: z.array(z.string().trim().min(2).max(120)).default([]),
+  isSpecialSolution: z.boolean().default(false),
+  productKind: z.enum(productKinds).default("normal_direct"),
+  status: z.enum(productStatuses).default("draft"),
   basePriceCents: z.number().int().min(0),
   salePriceCents: z.number().int().min(0).optional(),
   stockStatus: z.enum(["instock", "outofstock"]),
-  shortDescription: z.string().trim().min(5).max(500),
-  description: z.string().trim().min(10).max(4000),
+  shortDescription: z.string().trim().max(500).default(""),
+  description: z.string().trim().max(4000).default(""),
   productType: z.enum(["physical_redirect", "physical_managed", "platform_landing_page", "bundle"]).default("physical_redirect"),
   serviceMode: z.enum(["basic_redirect", "managed_redirect", "hosted_landing_page", "multi_location_platform"]).default("basic_redirect"),
   checkoutMode: z.enum(["buy_now", "request_quote", "subscription", "contact_sales"]).default("buy_now"),
@@ -101,23 +197,7 @@ export const productContentSchema = z.object({
   requiresSubscription: z.boolean().default(false),
   requiresLandingPage: z.boolean().default(false),
   supportedDestinations: z
-    .array(
-      z.enum([
-        "google",
-        "facebook",
-        "yelp",
-        "tripadvisor",
-        "instagram",
-        "tiktok",
-        "booking",
-        "website",
-        "menu",
-        "wifi",
-        "feedback",
-        "referral",
-        "custom"
-      ])
-    )
+    .array(z.enum(supportedDestinationValues))
     .min(1)
     .default(["custom"]),
   activationType: z.enum(["free_basic_activation", "managed_setup", "premium_hosted_activation"]).default("free_basic_activation"),
@@ -127,6 +207,12 @@ export const productContentSchema = z.object({
   allowsLogoUpload: z.boolean().default(false),
   allowsCustomDesign: z.boolean().default(false),
   designMode: z.enum(["standard", "logo", "custom"]).default("standard"),
+  displayText: z.string().trim().max(160).optional(),
+  assetSet: productAssetSetSchema.default({}),
+  defaultCtaText: z.string().trim().max(120).optional(),
+  ctaEditable: z.boolean().default(false),
+  assetReadinessStatus: z.enum(productAssetReadinessStatuses).default("draft_missing_assets"),
+  productOptions: z.array(productOptionSchema).default([]),
   images: z.array(productImageSchema).max(8).default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
@@ -241,7 +327,7 @@ export const checkoutCartSchema = z.object({
     .array(
       z.object({
         productId: z.string().trim().min(2).max(160),
-        optionId: z.enum(["standard_direct", "branded_qr_direct", "custom_direct"]).optional(),
+        optionId: z.enum(["standard_direct", "branded_qr_direct", "hosted_multilink"]).optional(),
         quantity: z.number().int().min(1).max(99),
         setup: z
           .object({

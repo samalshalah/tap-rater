@@ -17,7 +17,14 @@ export function createBlankAdminProduct(): MigratedProduct {
     title: "",
     sku: "",
     categorySlug: "reviews",
-    basePriceCents: 0,
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "custom-url",
+    destinationType: "custom",
+    businessUseSlugs: [],
+    isSpecialSolution: false,
+    productKind: "normal_direct",
+    status: "draft",
+    basePriceCents: 3900,
     stockStatus: "instock",
     shortDescription: "",
     description: "",
@@ -31,10 +38,14 @@ export function createBlankAdminProduct(): MigratedProduct {
     activationType: "free_basic_activation",
     includedServiceLabel: "Free basic activation",
     format: "stand",
-    customizationOptions: ["standard_design", "add_logo", "custom_design"],
+    customizationOptions: ["standard_design", "add_logo"],
     allowsLogoUpload: true,
-    allowsCustomDesign: true,
+    allowsCustomDesign: false,
     designMode: "standard",
+    assetSet: {},
+    defaultCtaText: "",
+    ctaEditable: true,
+    assetReadinessStatus: "draft_missing_assets",
     images: [],
     variants: [],
     isActive: false,
@@ -63,13 +74,52 @@ export async function getAdminProductsFromClient(client: AdminProductClient): Pr
     return migratedProducts;
   }
 
+  const businessUseSlugsByProductSlug = await getProductBusinessUseSlugsByProductSlug(client);
+
   return data
     .map((row) => normalizeStorefrontProductRow(row))
-    .filter((product): product is MigratedProduct => Boolean(product));
+    .filter((product): product is MigratedProduct => Boolean(product))
+    .map((product) => ({
+      ...product,
+      businessUseSlugs: businessUseSlugsByProductSlug.get(product.slug) ?? product.businessUseSlugs ?? []
+    }));
 }
 
 export async function getAdminProductBySlug(slug: string): Promise<MigratedProduct | undefined> {
   const products = await getAdminProducts();
 
   return products.find((product) => product.slug === slug);
+}
+
+async function getProductBusinessUseSlugsByProductSlug(client: AdminProductClient) {
+  const slugsByProductSlug = new Map<string, string[]>();
+
+  try {
+    const { data, error } = await client.from("product_business_uses").select("product_slug,business_use_slug,sort_order");
+    if (error || !data) {
+      return slugsByProductSlug;
+    }
+
+    for (const row of data) {
+      if (!row || typeof row !== "object") {
+        continue;
+      }
+
+      const record = row as Record<string, unknown>;
+      const productSlug = typeof record.product_slug === "string" ? record.product_slug : undefined;
+      const businessUseSlug = typeof record.business_use_slug === "string" ? record.business_use_slug : undefined;
+
+      if (!productSlug || !businessUseSlug) {
+        continue;
+      }
+
+      const current = slugsByProductSlug.get(productSlug) ?? [];
+      current.push(businessUseSlug);
+      slugsByProductSlug.set(productSlug, current);
+    }
+  } catch {
+    return slugsByProductSlug;
+  }
+
+  return slugsByProductSlug;
 }

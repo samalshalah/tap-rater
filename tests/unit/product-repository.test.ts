@@ -176,6 +176,67 @@ describe("product repository", () => {
     });
   });
 
+  it("normalizes locked catalog organization and asset fields", () => {
+    const product = normalizeStorefrontProductRow({
+      slug: "database-google-review-stand",
+      title: "Database Google Review Stand",
+      sku: "DB-GOOGLE-ARCH",
+      category_slug: "reviews",
+      stand_type_slug: "review-stands",
+      primary_platform_slug: "google",
+      destination_type: "review",
+      is_special_solution: false,
+      product_kind: "normal_direct",
+      status: "draft",
+      format: "stand",
+      base_price_cents: 3900,
+      stock_status: "instock",
+      short_description: "Database Google review stand",
+      description: "A canonical Google Review Stand with architecture metadata.",
+      product_type: "physical_redirect",
+      service_mode: "basic_redirect",
+      checkout_mode: "buy_now",
+      requires_account: false,
+      requires_subscription: false,
+      requires_landing_page: false,
+      supported_destinations: ["google"],
+      activation_type: "free_basic_activation",
+      included_service_label: "Free basic activation",
+      customization_options: ["standard_design", "add_logo"],
+      allows_logo_upload: true,
+      allows_custom_design: false,
+      design_mode: "standard",
+      standard_angled_image_url: "/uploads/products/google-review-stand.png",
+      branded_angled_image_url: "/uploads/products/google-review-stand-branded.png",
+      multilink_angled_image_url: null,
+      branded_front_template_url: "/uploads/templates/google-branded-front.png",
+      multilink_front_template_url: null,
+      default_cta_text: "Review us on Google",
+      cta_editable: false,
+      asset_readiness_status: "draft_missing_assets",
+      landing_page_preview_config: {},
+      images: [{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }],
+      is_active: true
+    });
+
+    expect(product).toMatchObject({
+      standTypeSlug: "review-stands",
+      primaryPlatformSlug: "google",
+      destinationType: "review",
+      isSpecialSolution: false,
+      productKind: "normal_direct",
+      status: "draft",
+      assetSet: {
+        standardAngledImageUrl: "/uploads/products/google-review-stand.png",
+        brandedAngledImageUrl: "/uploads/products/google-review-stand-branded.png",
+        brandedFrontTemplateUrl: "/uploads/templates/google-branded-front.png"
+      },
+      defaultCtaText: "Review us on Google",
+      ctaEditable: false,
+      assetReadinessStatus: "draft_missing_assets"
+    });
+  });
+
   it("keeps sparse database-only products visible with launch-safe defaults", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient([
       {

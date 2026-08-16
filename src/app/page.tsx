@@ -138,9 +138,13 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => <ProductCard key={product.slug} product={product} />)
+            ) : (
+              <div className="rounded-[18px] border border-line bg-white p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-4">
+                Products are being prepared.
+              </div>
+            )}
           </div>
         </div>
       </section>

@@ -11,8 +11,11 @@ import {
 
 function createDbClient() {
   const upsert = vi.fn().mockResolvedValue({ error: null });
-  const from = vi.fn(() => ({ upsert }));
-  return { client: { from } as unknown as CmsDbClient, from, upsert };
+  const insert = vi.fn().mockResolvedValue({ error: null });
+  const deleteEq = vi.fn().mockResolvedValue({ error: null });
+  const deleteAction = vi.fn(() => ({ eq: deleteEq }));
+  const from = vi.fn(() => ({ upsert, insert, delete: deleteAction }));
+  return { client: { from } as unknown as CmsDbClient, from, upsert, insert, deleteAction, deleteEq };
 }
 
 function createDeleteDbClient() {
@@ -114,6 +117,13 @@ describe("cms repository", () => {
       title: "White Stand - Google Review",
       sku: "TRATER01",
       categorySlug: "google-review-stands",
+      standTypeSlug: "review-stands",
+      primaryPlatformSlug: "google",
+      destinationType: "review",
+      businessUseSlugs: ["retail-local-business"],
+      isSpecialSolution: false,
+      productKind: "normal_direct",
+      status: "draft",
       basePriceCents: 4900,
       salePriceCents: undefined,
       stockStatus: "instock",
@@ -133,6 +143,34 @@ describe("cms repository", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "standard",
+      assetSet: {
+        standardAngledImageUrl: "/uploads/products/google-review-stand.png",
+        brandedAngledImageUrl: "/uploads/products/google-review-stand-branded.png",
+        brandedFrontTemplateUrl: "/uploads/products/google-review-front-template.png"
+      },
+      defaultCtaText: "Review us on Google",
+      ctaEditable: true,
+      assetReadinessStatus: "ready",
+      productOptions: [
+        {
+          optionCode: "standard_direct",
+          title: "Standard Direct",
+          description: "NFC only",
+          priceCents: 3900,
+          requiresDestinationUrl: true,
+          hasQr: false,
+          requiresLogo: false,
+          requiresBusinessName: false,
+          requiresDesignStep: false,
+          requiresFrontProof: false,
+          requiresSubscription: false,
+          accountRequired: false,
+          supportsReorderableLinks: false,
+          supportsLinkVisibility: false,
+          isActive: true,
+          sortOrder: 10
+        }
+      ],
       images: [{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }],
       seoTitle: "SEO title",
       seoDescription: "SEO description",
@@ -140,11 +178,17 @@ describe("cms repository", () => {
     });
 
     expect(db.from).toHaveBeenCalledWith("products");
-    expect(db.upsert).toHaveBeenCalledWith({
+    expect(db.upsert).toHaveBeenCalledWith(expect.objectContaining({
       slug: "google-review-white-stand",
       title: "White Stand - Google Review",
       sku: "TRATER01",
       category_slug: "google-review-stands",
+      stand_type_slug: "review-stands",
+      primary_platform_slug: "google",
+      destination_type: "review",
+      is_special_solution: false,
+      product_kind: "normal_direct",
+      status: "draft",
       base_price_cents: 4900,
       sale_price_cents: null,
       stock_status: "instock",
@@ -164,11 +208,39 @@ describe("cms repository", () => {
       allows_logo_upload: true,
       allows_custom_design: true,
       design_mode: "standard",
+      standard_angled_image_url: "/uploads/products/google-review-stand.png",
+      branded_angled_image_url: "/uploads/products/google-review-stand-branded.png",
+      branded_front_template_url: "/uploads/products/google-review-front-template.png",
+      default_cta_text: "Review us on Google",
+      cta_editable: true,
+      landing_page_preview_config: {},
+      asset_readiness_status: "ready",
       images: [{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }],
       seo_title: "SEO title",
       seo_description: "SEO description",
       is_active: true
-    });
+    }));
+    expect(db.from).toHaveBeenCalledWith("product_business_uses");
+    expect(db.deleteEq).toHaveBeenCalledWith("product_slug", "google-review-white-stand");
+    expect(db.insert).toHaveBeenCalledWith([
+      {
+        product_slug: "google-review-white-stand",
+        business_use_slug: "retail-local-business",
+        sort_order: 10
+      }
+    ]);
+    expect(db.from).toHaveBeenCalledWith("product_options");
+    expect(db.upsert).toHaveBeenCalledWith(
+      [
+        expect.objectContaining({
+          product_slug: "google-review-white-stand",
+          option_code: "standard_direct",
+          price_cents: 3900,
+          is_active: true
+        })
+      ],
+      { onConflict: "product_slug,option_code" }
+    );
   });
 
   it("deletes products by slug through a filtered products-table delete", async () => {

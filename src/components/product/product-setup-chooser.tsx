@@ -7,7 +7,19 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 
-type ProductSetupChooserProduct = Pick<MigratedProduct, "slug" | "title" | "sku" | "shortDescription" | "categorySlug" | "allowsCustomDesign">;
+type ProductSetupChooserProduct = Pick<
+  MigratedProduct,
+  | "slug"
+  | "title"
+  | "sku"
+  | "shortDescription"
+  | "categorySlug"
+  | "allowsCustomDesign"
+  | "isSpecialSolution"
+  | "productKind"
+  | "requiresLandingPage"
+  | "requiresSubscription"
+>;
 
 export function ProductSetupChooser({ product }: { product: ProductSetupChooserProduct }) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
@@ -30,7 +42,7 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
     const proofApproved = selectedOption.requiresFinalProof ? false : form.get("proofApproved") === "on";
     const manualCollectionAcknowledged = selectedOption.requiresManualCollection ? form.get("manualCollectionAcknowledged") === "on" : false;
 
-    if (!isHttpUrl(destinationUrl)) {
+    if (selectedOption.requiresDestinationUrl && !isHttpUrl(destinationUrl)) {
       setError("Enter a valid destination link starting with http or https.");
       return;
     }
@@ -83,7 +95,10 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
         <p className="text-xs font-black uppercase tracking-[0.12em] text-brand">Choose setup</p>
         <h2 className="mt-2 text-xl font-extrabold text-ink">Configure this stand</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          Your NFC and QR code connect directly to the link you provide. If the link changes after production, replacement or reprogramming may be required.
+          {selectedOption.hasQr
+            ? "Your NFC and printed QR code connect directly to the link you provide."
+            : "Your NFC stand connects directly to the link you provide. Standard Direct does not include a printed QR code."}{" "}
+          If the link changes after production, replacement or reprogramming may be required.
         </p>
       </div>
 

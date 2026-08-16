@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
-import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -117,18 +117,16 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
     const setup = normalizeCheckoutSetup(item.setup);
 
-    if (!isValidCheckoutSetup(option.id, setup)) {
+    if (option.requiresSubscription || !isValidCheckoutSetup(option, setup)) {
       continue;
     }
 
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? false : setup.proofApproved === true;
-    const manualProductionRequired = option.id === "branded_qr_direct" || option.id === "custom_direct";
+    const manualProductionRequired = option.requiresManualCollection;
     const productionStatus =
-      option.id === "custom_direct"
-        ? "pending_manual_design_and_proof"
-        : option.id === "branded_qr_direct"
+      option.id === "branded_qr_direct"
           ? "pending_manual_logo_and_proof"
           : "ready_for_direct_activation";
 
@@ -229,24 +227,20 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
   };
 }
 
-function isValidCheckoutSetup(optionId: PurchaseOptionId, setup: NonNullable<CartItem["setup"]>) {
-  if (!isHttpUrl(setup.destinationUrl)) {
+function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {
+  if (option.requiresDestinationUrl && !isHttpUrl(setup.destinationUrl)) {
     return false;
   }
 
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && !setup.businessName) {
+  if (option.requiresBusinessName && !setup.businessName) {
     return false;
   }
 
-  if (optionId === "custom_direct" && !setup.headline) {
+  if (option.requiresCustomText && !setup.headline) {
     return false;
   }
 
-  if (optionId === "standard_direct" && setup.proofApproved !== true) {
-    return false;
-  }
-
-  if ((optionId === "branded_qr_direct" || optionId === "custom_direct") && setup.manualCollectionAcknowledged !== true) {
+  if (option.requiresManualCollection && setup.manualCollectionAcknowledged !== true) {
     return false;
   }
 

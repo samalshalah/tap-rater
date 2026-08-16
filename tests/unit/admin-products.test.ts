@@ -10,8 +10,15 @@ describe("admin products", () => {
       title: "",
       sku: "",
       categorySlug: "reviews",
+      standTypeSlug: "review-stands",
+      primaryPlatformSlug: "custom-url",
+      destinationType: "custom",
+      businessUseSlugs: [],
+      isSpecialSolution: false,
+      productKind: "normal_direct",
+      status: "draft",
       format: "stand",
-      basePriceCents: 0,
+      basePriceCents: 3900,
       stockStatus: "instock",
       shortDescription: "",
       description: "",
@@ -23,10 +30,14 @@ describe("admin products", () => {
       requiresLandingPage: false,
       activationType: "free_basic_activation",
       includedServiceLabel: "Free basic activation",
-      customizationOptions: ["standard_design", "add_logo", "custom_design"],
+      customizationOptions: ["standard_design", "add_logo"],
       allowsLogoUpload: true,
-      allowsCustomDesign: true,
+      allowsCustomDesign: false,
       designMode: "standard",
+      assetSet: {},
+      defaultCtaText: "",
+      ctaEditable: true,
+      assetReadinessStatus: "draft_missing_assets",
       images: [],
       variants: [],
       isActive: false
@@ -36,9 +47,9 @@ describe("admin products", () => {
   it("keeps the admin catalog empty when the configured database has no products", async () => {
     const products = await getAdminProductsFromClient({
       from(table: string) {
-        expect(table).toBe("products");
         return {
           select() {
+            expect(["products", "product_business_uses"]).toContain(table);
             return Promise.resolve({ data: [], error: null });
           }
         };

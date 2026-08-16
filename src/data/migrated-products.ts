@@ -3,14 +3,38 @@ export type SupportedDestination =
   | "facebook"
   | "yelp"
   | "tripadvisor"
+  | "trustpilot"
+  | "bbb"
+  | "nextdoor"
   | "instagram"
   | "tiktok"
+  | "linkedin"
+  | "x"
+  | "youtube"
+  | "vagaro"
+  | "booksy"
+  | "fresha"
+  | "zocdoc"
+  | "calendly"
+  | "acuity"
+  | "square-appointments"
+  | "custom-booking-url"
   | "booking"
+  | "toast"
+  | "doordash"
+  | "ubereats"
+  | "grubhub"
+  | "opentable"
+  | "resy"
+  | "custom-menu-url"
   | "website"
   | "menu"
   | "wifi"
   | "feedback"
   | "referral"
+  | "payment-url"
+  | "loyalty-url"
+  | "custom-url"
   | "custom";
 
 export type MigratedProduct = {
@@ -18,6 +42,13 @@ export type MigratedProduct = {
   title: string;
   sku: string;
   categorySlug: CatalogCategorySlug;
+  standTypeSlug?: string;
+  primaryPlatformSlug?: string;
+  destinationType?: string;
+  businessUseSlugs?: string[];
+  isSpecialSolution?: boolean;
+  productKind?: ProductKind;
+  status?: ProductStatus;
   basePriceCents: number;
   salePriceCents?: number;
   stockStatus: "instock" | "outofstock";
@@ -38,12 +69,17 @@ export type MigratedProduct = {
   allowsCustomDesign: boolean;
   designMode: ProductDesignMode;
   displayText?: string;
+  assetSet?: ProductAssetSet;
+  defaultCtaText?: string;
+  ctaEditable?: boolean;
+  assetReadinessStatus?: ProductAssetReadinessStatus;
   images: { src: string; alt: string }[];
   variants: { id: string; label: string; sku: string; stockStatus: "instock" | "outofstock" }[];
   isActive: boolean;
   seoTitle?: string;
   seoDescription?: string;
   searchKeywords?: string[];
+  updatedAt?: string;
 };
 
 export type ProductCommerceType = "physical_redirect" | "physical_managed" | "platform_landing_page" | "bundle";
@@ -59,6 +95,23 @@ export type ProductFormat = "stand" | "plate" | "bundle" | "platform";
 export type ProductCustomizationOption = "standard_design" | "add_logo" | "custom_design";
 
 export type ProductDesignMode = "standard" | "logo" | "custom";
+
+export type ProductKind = "normal_direct" | "custom_direct" | "hosted_multilink" | "bundle";
+
+export type ProductStatus = "draft" | "active" | "archived";
+
+export type ProductAssetReadinessStatus = "draft_missing_assets" | "ready" | "blocked";
+
+export type ProductAssetSet = {
+  standardAngledImageUrl?: string;
+  brandedAngledImageUrl?: string;
+  multiLinkAngledImageUrl?: string;
+  standardFrontTemplateUrl?: string;
+  brandedFrontTemplateUrl?: string;
+  multiLinkFrontTemplateUrl?: string;
+  centerAssetUrl?: string;
+  landingPagePreviewConfig?: Record<string, unknown>;
+};
 
 export type CatalogCategorySlug =
   | "reviews"

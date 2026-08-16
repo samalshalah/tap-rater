@@ -74,7 +74,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     sku: product.sku,
     shortDescription: product.shortDescription,
     categorySlug: product.categorySlug,
-    allowsCustomDesign: product.allowsCustomDesign
+    allowsCustomDesign: product.allowsCustomDesign,
+    isSpecialSolution: product.isSpecialSolution,
+    productKind: product.productKind,
+    requiresLandingPage: product.requiresLandingPage,
+    requiresSubscription: product.requiresSubscription
   };
   const productFaqs = [
     {
@@ -135,11 +139,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <div className="grid gap-1 text-sm text-muted">
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-brand" />
-                    NFC and QR ready
+                    NFC included
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-brand" />
-                    Proof before printing
+                    QR on branded option
                   </p>
                 </div>
               </div>

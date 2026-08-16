@@ -1,47 +1,26 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
-import type { CatalogCategory, MigratedProduct, ProductCustomizationOption } from "@/data/migrated-products";
-
-const supportedDestinationOptions = [
-  "google",
-  "facebook",
-  "yelp",
-  "tripadvisor",
-  "instagram",
-  "tiktok",
-  "booking",
-  "website",
-  "menu",
-  "wifi",
-  "feedback",
-  "referral",
-  "custom"
-];
-
-const maxEditableImages = 4;
-
-const customizationOptionLabels: { value: ProductCustomizationOption; label: string; description: string }[] = [
-  {
-    value: "standard_design",
-    label: "Standard Design",
-    description: "Uses the Tap Rater template."
-  },
-  {
-    value: "add_logo",
-    label: "Add Your Logo",
-    description: "Logo details are collected after request."
-  },
-  {
-    value: "custom_design",
-    label: "Custom Design",
-    description: "Custom layout requires design approval."
-  }
-];
+import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import Link from "next/link";
+import { CheckCircle2, Image as ImageIcon, Save, XCircle } from "lucide-react";
+import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
+import type {
+  BusinessUse,
+  PlatformDestination,
+  ProductOption,
+  ProductOptionCode,
+  StandType
+} from "@/lib/catalog-architecture";
+import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
+import { formatPrice } from "@/lib/products";
 
 type ProductEditorProps = {
   product: MigratedProduct;
-  categories: CatalogCategory[];
+  standTypes: StandType[];
+  businessUses: BusinessUse[];
+  platforms: PlatformDestination[];
+  optionTemplates: ProductOption[];
+  productOptions: ProductOption[];
   mode: "create" | "edit";
 };
 
@@ -50,9 +29,114 @@ type SaveStatus = {
   message: string;
 } | null;
 
-export function ProductEditor({ product, categories, mode }: ProductEditorProps) {
+type AssetKey =
+  | "standardAngledImageUrl"
+  | "brandedAngledImageUrl"
+  | "multiLinkAngledImageUrl"
+  | "standardFrontTemplateUrl"
+  | "brandedFrontTemplateUrl"
+  | "multiLinkFrontTemplateUrl"
+  | "centerAssetUrl";
+
+type AssetSetState = Record<AssetKey, string> & {
+  landingPagePreviewReady: boolean;
+};
+
+const normalOptionCodes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
+const hostedOptionCodes: ProductOptionCode[] = ["hosted_multilink"];
+
+export function ProductEditor({
+  product,
+  standTypes,
+  businessUses,
+  platforms,
+  optionTemplates,
+  productOptions,
+  mode
+}: ProductEditorProps) {
+  const initialKind = product.productKind ?? inferProductKind(product);
   const [status, setStatus] = useState<SaveStatus>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [productKind, setProductKind] = useState<ProductKind>(initialKind);
+  const [standTypeSlug, setStandTypeSlug] = useState(product.standTypeSlug ?? standTypes[0]?.slug ?? "");
+  const [primaryPlatformSlug, setPrimaryPlatformSlug] = useState(product.primaryPlatformSlug ?? "custom-url");
+  const [destinationType, setDestinationType] = useState(product.destinationType ?? selectedPlatformDestinationType(platforms, primaryPlatformSlug));
+  const [businessUseSlugs, setBusinessUseSlugs] = useState<string[]>(product.businessUseSlugs ?? []);
+  const [isSpecialSolution, setIsSpecialSolution] = useState(product.isSpecialSolution ?? productKind === "hosted_multilink");
+  const [publishStatus, setPublishStatus] = useState(product.status ?? (product.isActive ? "active" : "draft"));
+  const [assetSet, setAssetSet] = useState<AssetSetState>(() => ({
+    standardAngledImageUrl: product.assetSet?.standardAngledImageUrl ?? product.images[0]?.src ?? "",
+    brandedAngledImageUrl: product.assetSet?.brandedAngledImageUrl ?? product.images[1]?.src ?? product.assetSet?.standardAngledImageUrl ?? "",
+    multiLinkAngledImageUrl: product.assetSet?.multiLinkAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl ?? "",
+    standardFrontTemplateUrl: product.assetSet?.standardFrontTemplateUrl ?? "",
+    brandedFrontTemplateUrl: product.assetSet?.brandedFrontTemplateUrl ?? "",
+    multiLinkFrontTemplateUrl: product.assetSet?.multiLinkFrontTemplateUrl ?? product.assetSet?.brandedFrontTemplateUrl ?? "",
+    centerAssetUrl: product.assetSet?.centerAssetUrl ?? "",
+    landingPagePreviewReady: Boolean(product.assetSet?.landingPagePreviewConfig && Object.keys(product.assetSet.landingPagePreviewConfig).length > 0)
+  }));
+  const [optionStates, setOptionStates] = useState<ProductOption[]>(() =>
+    buildInitialOptions(productKind, productOptions, optionTemplates)
+  );
+  const [ctaEditable, setCtaEditable] = useState(product.ctaEditable ?? true);
+
+  const isHostedProduct = productKind === "hosted_multilink";
+  const visibleOptions = useMemo(
+    () => optionStates.filter((option) => (isHostedProduct ? hostedOptionCodes : normalOptionCodes).includes(option.optionCode)),
+    [isHostedProduct, optionStates]
+  );
+  const activeVisibleOptions = visibleOptions.filter((option) => option.isActive);
+  const readiness = getProductAssetReadiness(
+    {
+      productKind,
+      isSpecialSolution,
+      assetSet: {
+        standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl),
+        brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
+        multiLinkAngledImageUrl: readOptionalString(assetSet.multiLinkAngledImageUrl),
+        standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
+        brandedFrontTemplateUrl: readOptionalString(assetSet.brandedFrontTemplateUrl),
+        multiLinkFrontTemplateUrl: readOptionalString(assetSet.multiLinkFrontTemplateUrl),
+        centerAssetUrl: readOptionalString(assetSet.centerAssetUrl),
+        landingPagePreviewConfig: assetSet.landingPagePreviewReady ? { ready: true } : undefined
+      }
+    },
+    activeVisibleOptions
+  );
+  const activationIssues = [
+    ...readiness.missing,
+    ...getOrganizationIssues({
+      productKind,
+      standTypeSlug,
+      primaryPlatformSlug,
+      destinationType,
+      businessUseSlugs,
+      isSpecialSolution
+    })
+  ];
+  const canActivate = activationIssues.length === 0;
+  const primaryPlatform = platforms.find((platform) => platform.slug === primaryPlatformSlug);
+  const pricingSummary = formatOptionPricing(activeVisibleOptions);
+
+  function updateAsset(key: AssetKey, value: string) {
+    setAssetSet((current) => ({ ...current, [key]: value }));
+  }
+
+  function updateOption(optionCode: ProductOptionCode, patch: Partial<ProductOption>) {
+    setOptionStates((current) => current.map((option) => (option.optionCode === optionCode ? { ...option, ...patch } : option)));
+  }
+
+  function updateProductKind(nextProductKind: ProductKind) {
+    setProductKind(nextProductKind);
+    if (nextProductKind === "hosted_multilink") {
+      setIsSpecialSolution(true);
+      setDestinationType("custom");
+      setPrimaryPlatformSlug("custom-url");
+    }
+  }
+
+  function toggleBusinessUse(slug: string) {
+    setBusinessUseSlugs((current) => (current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug]));
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,40 +144,63 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
     setStatus(null);
 
     const form = new FormData(event.currentTarget);
-    const salePrice = String(form.get("salePriceCents") ?? "");
+    const title = readRequiredText(form.get("title"));
+    const slug = slugify(readRequiredText(form.get("slug")) || title);
+    const finalSku = readOptionalString(String(form.get("sku") ?? "")) ?? generateSku(slug);
+    const finalStatus = publishStatus === "active" && canActivate ? "active" : publishStatus === "archived" ? "archived" : "draft";
+    const finalIsActive = finalStatus === "active";
+    const finalOptions = visibleOptions.map((option) => ({ ...option, priceCents: Math.max(0, Math.round(option.priceCents)) }));
+    const finalActiveOptions = finalOptions.filter((option) => option.isActive);
+    const basePriceCents = finalActiveOptions.length > 0 ? Math.min(...finalActiveOptions.map((option) => option.priceCents)) : 3900;
+    const supportedDestinations = getSupportedDestinations(primaryPlatformSlug);
+    const shortDescription = readOptionalString(String(form.get("shortDescription") ?? "")) ?? `${title} NFC stand.`;
+    const description = readOptionalString(String(form.get("description") ?? "")) ?? shortDescription;
+    const defaultCtaText = readOptionalString(String(form.get("defaultCtaText") ?? "")) ?? defaultCtaForProduct(productKind);
 
     try {
       const response = await fetch("/api/admin/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug: form.get("slug"),
-          title: form.get("title"),
-          sku: form.get("sku"),
-          categorySlug: form.get("categorySlug"),
-          basePriceCents: Number(form.get("basePriceCents")),
-          salePriceCents: salePrice ? Number(salePrice) : undefined,
+          slug,
+          title,
+          sku: finalSku,
+          categorySlug: categorySlugForStandType(standTypeSlug),
+          standTypeSlug,
+          primaryPlatformSlug,
+          destinationType,
+          businessUseSlugs,
+          isSpecialSolution: isSpecialSolution || productKind === "hosted_multilink",
+          productKind,
+          status: finalStatus,
+          basePriceCents,
+          salePriceCents: undefined,
           stockStatus: form.get("stockStatus"),
-          shortDescription: form.get("shortDescription"),
-          description: form.get("description"),
-          productType: form.get("productType"),
-          serviceMode: form.get("serviceMode"),
-          checkoutMode: form.get("checkoutMode"),
-          requiresAccount: form.get("requiresAccount") === "true",
-          requiresSubscription: form.get("requiresSubscription") === "true",
-          requiresLandingPage: form.get("requiresLandingPage") === "true",
-          supportedDestinations: form.getAll("supportedDestinations"),
-          activationType: form.get("activationType"),
-          includedServiceLabel: form.get("includedServiceLabel"),
-          format: form.get("format"),
-          customizationOptions: form.getAll("customizationOptions"),
-          allowsLogoUpload: form.get("allowsLogoUpload") === "true",
-          allowsCustomDesign: form.get("allowsCustomDesign") === "true",
-          designMode: form.get("designMode"),
-          seoTitle: form.get("seoTitle"),
-          seoDescription: form.get("seoDescription"),
-          images: collectImages(form),
-          isActive: form.get("isActive") === "true"
+          shortDescription,
+          description,
+          productType: productKind === "hosted_multilink" ? "platform_landing_page" : "physical_redirect",
+          serviceMode: productKind === "hosted_multilink" ? "hosted_landing_page" : "basic_redirect",
+          checkoutMode: productKind === "hosted_multilink" ? "subscription" : "buy_now",
+          requiresAccount: productKind === "hosted_multilink",
+          requiresSubscription: productKind === "hosted_multilink",
+          requiresLandingPage: productKind === "hosted_multilink",
+          supportedDestinations,
+          activationType: productKind === "hosted_multilink" ? "premium_hosted_activation" : "free_basic_activation",
+          includedServiceLabel: productKind === "hosted_multilink" ? "Hosted Tap Rater page" : "Free basic activation",
+          format: "stand",
+          customizationOptions: productKind === "hosted_multilink" ? ["standard_design", "add_logo"] : ["standard_design", "add_logo"],
+          allowsLogoUpload: finalActiveOptions.some((option) => option.requiresLogo),
+          allowsCustomDesign: false,
+          designMode: finalActiveOptions.some((option) => option.requiresLogo) ? "logo" : "standard",
+          assetSet: cleanAssetSet(assetSet),
+          defaultCtaText,
+          ctaEditable,
+          assetReadinessStatus: readiness.status,
+          productOptions: finalOptions,
+          images: collectImagesFromAssets(assetSet, title),
+          seoTitle: readOptionalString(String(form.get("seoTitle") ?? "")),
+          seoDescription: readOptionalString(String(form.get("seoDescription") ?? "")),
+          isActive: finalIsActive
         })
       });
       const body = await response.json().catch(() => ({}));
@@ -101,8 +208,12 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
         tone: response.ok ? "success" : "error",
         message: response.ok
           ? mode === "create"
-            ? "Product created."
-            : "Product saved."
+            ? finalIsActive
+              ? "Product created and published."
+              : "Draft product created."
+            : finalIsActive
+              ? "Product saved and published."
+              : "Product saved as draft."
           : body.error ?? "Product save failed."
       });
     } catch {
@@ -113,331 +224,481 @@ export function ProductEditor({ product, categories, mode }: ProductEditorProps)
   }
 
   return (
-    <form className="grid gap-4" onSubmit={submit}>
+    <form className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]" onSubmit={submit}>
       <div className="grid gap-5">
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Product identity</h2>
-            <p className="mt-1 text-sm text-muted">Core catalog data used by product cards, product pages, and admin lists.</p>
+        <EditorCard title="Product Identity" description="The public name, URL handle, and product copy for this canonical stand product.">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input name="title" label="Title" defaultValue={product.title} placeholder="Google Review Stand" />
+            <Input name="slug" label="Slug / URL handle" defaultValue={product.slug} placeholder="google-review-stand" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Input name="title" label="Title" defaultValue={product.title} placeholder="White Stand - Google Review" />
-            <Input name="slug" label="Slug" defaultValue={product.slug} placeholder="google-review-white-stand" />
-            <Input name="sku" label="SKU" defaultValue={product.sku} placeholder="TRATER01" />
+            <Input name="sku" label="SKU" defaultValue={product.sku} placeholder="Generated from slug if empty" required={false} />
             <label className="grid gap-2 text-sm font-bold text-ink">
-              Category
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="categorySlug" defaultValue={product.categorySlug}>
-                {categories.map((category) => (
-                  <option key={category.slug} value={category.slug}>
-                    {category.title}
+              Stock
+              <select className="rounded-md border border-line bg-white px-3 py-2.5 font-normal" name="stockStatus" defaultValue={product.stockStatus}>
+                <option value="instock">In stock</option>
+                <option value="outofstock">Out of stock</option>
+              </select>
+            </label>
+          </div>
+          <Textarea name="shortDescription" label="Short description" defaultValue={product.shortDescription} required={false} />
+          <Textarea name="description" label="Full description" defaultValue={product.description} required={false} tall />
+          <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs font-semibold text-muted">
+            Current status: <span className="font-black text-ink">{publishStatus}</span>
+          </div>
+        </EditorCard>
+
+        <EditorCard title="Media / Product Assets" description="These assets control product cards, product pages, proofs, and production templates.">
+          {isHostedProduct ? (
+            <div className="grid gap-3">
+              <AssetRow
+                label="Multi-Link angled image"
+                description="Used for the hosted product card and product detail page."
+                value={assetSet.multiLinkAngledImageUrl}
+                required
+                onChange={(value) => updateAsset("multiLinkAngledImageUrl", value)}
+                onRemove={() => updateAsset("multiLinkAngledImageUrl", "")}
+              />
+              <AssetRow
+                label="Multi-Link front template"
+                description="Used for the branded front proof and print template."
+                value={assetSet.multiLinkFrontTemplateUrl}
+                required
+                onChange={(value) => updateAsset("multiLinkFrontTemplateUrl", value)}
+                onRemove={() => updateAsset("multiLinkFrontTemplateUrl", "")}
+              />
+              <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
+                <span>
+                  Landing page preview configuration
+                  <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
+                </span>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-line accent-brand"
+                  checked={assetSet.landingPagePreviewReady}
+                  onChange={(event) => setAssetSet((current) => ({ ...current, landingPagePreviewReady: event.target.checked }))}
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              <AssetRow
+                label="Standard Direct angled image"
+                description="Used for the standard stand product card and detail image."
+                value={assetSet.standardAngledImageUrl}
+                required
+                onChange={(value) => updateAsset("standardAngledImageUrl", value)}
+                onRemove={() => updateAsset("standardAngledImageUrl", "")}
+              />
+              <AssetRow
+                label="Branded + QR angled image"
+                description="Used when showing the branded purchase option."
+                value={assetSet.brandedAngledImageUrl}
+                required
+                onChange={(value) => updateAsset("brandedAngledImageUrl", value)}
+                onRemove={() => updateAsset("brandedAngledImageUrl", "")}
+              />
+              <AssetRow
+                label="Branded front template"
+                description="Used for the customer front proof and print-ready template."
+                value={assetSet.brandedFrontTemplateUrl}
+                required
+                onChange={(value) => updateAsset("brandedFrontTemplateUrl", value)}
+                onRemove={() => updateAsset("brandedFrontTemplateUrl", "")}
+              />
+              <AssetRow
+                label="Standard front template"
+                description="Optional reference template for standard locked stands."
+                value={assetSet.standardFrontTemplateUrl}
+                onChange={(value) => updateAsset("standardFrontTemplateUrl", value)}
+                onRemove={() => updateAsset("standardFrontTemplateUrl", "")}
+              />
+              <AssetRow
+                label="Center platform/icon asset"
+                description="Optional platform mark or center art used by proof generation."
+                value={assetSet.centerAssetUrl}
+                onChange={(value) => updateAsset("centerAssetUrl", value)}
+                onRemove={() => updateAsset("centerAssetUrl", "")}
+              />
+            </div>
+          )}
+        </EditorCard>
+
+        <EditorCard title="Setup / Purchase Options" description="Customer purchase options live inside one canonical product. They are not separate products.">
+          <div className="grid gap-3">
+            {visibleOptions.map((option) => (
+              <SetupOptionEditor
+                key={option.optionCode}
+                option={option}
+                onChange={(patch) => updateOption(option.optionCode, patch)}
+              />
+            ))}
+          </div>
+        </EditorCard>
+
+        <EditorCard title="Destination / Platform" description="Stand type is what the stand does. Platform is where the customer is sent.">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="grid gap-2 text-sm font-bold text-ink">
+              Destination type
+              <select
+                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+                value={destinationType}
+                onChange={(event) => setDestinationType(event.target.value)}
+              >
+                <option value="review">Review</option>
+                <option value="review_social">Review or social</option>
+                <option value="booking">Booking</option>
+                <option value="menu">Menu</option>
+                <option value="menu_order">Menu/order</option>
+                <option value="order">Order</option>
+                <option value="reservation">Reservation</option>
+                <option value="website">Website</option>
+                <option value="social">Social</option>
+                <option value="payment">Payment</option>
+                <option value="loyalty">Loyalty</option>
+                <option value="custom">Custom URL</option>
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-bold text-ink">
+              Platform / destination
+              <select
+                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+                value={primaryPlatformSlug}
+                onChange={(event) => {
+                  setPrimaryPlatformSlug(event.target.value);
+                  setDestinationType(selectedPlatformDestinationType(platforms, event.target.value));
+                }}
+              >
+                {platforms.map((platform) => (
+                  <option key={platform.slug} value={platform.slug}>
+                    {platform.title}
                   </option>
                 ))}
               </select>
             </label>
           </div>
-        </section>
-
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Pricing and availability</h2>
-            <p className="mt-1 text-sm text-muted">Prices are stored in cents so $49.00 is entered as 4900.</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <InfoPill label="Google Places" value={primaryPlatform?.googlePlacesEnabled ? "Enabled" : "Not used"} />
+            <InfoPill label="Manual fallback" value={primaryPlatform?.manualUrlAllowed ? "Allowed" : "Blocked"} />
           </div>
+        </EditorCard>
+
+        <EditorCard title="Template / Proof Settings" description="Controls the default stand wording and production proof expectations.">
           <div className="grid gap-4 md:grid-cols-2">
-            <Input name="basePriceCents" label="Base price cents" defaultValue={String(product.basePriceCents)} inputMode="numeric" placeholder="4900" />
             <Input
-              name="salePriceCents"
-              label="Sale price cents"
-              defaultValue={product.salePriceCents === undefined ? "" : String(product.salePriceCents)}
-              inputMode="numeric"
-              placeholder="Optional"
+              name="defaultCtaText"
+              label="Default CTA text"
+              defaultValue={product.defaultCtaText ?? defaultCtaForProduct(productKind)}
               required={false}
             />
             <label className="grid gap-2 text-sm font-bold text-ink">
-              Stock status
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="stockStatus" defaultValue={product.stockStatus}>
-                <option value="instock">In stock</option>
-                <option value="outofstock">Out of stock</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Visibility
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="isActive" defaultValue={product.isActive ? "true" : "false"}>
-                <option value="true">Active on storefront</option>
-                <option value="false">Inactive draft</option>
+              CTA editable
+              <select
+                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+                value={ctaEditable ? "true" : "false"}
+                onChange={(event) => setCtaEditable(event.target.value === "true")}
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
               </select>
             </label>
           </div>
-        </section>
+          <div className="grid gap-2 text-sm text-muted">
+            <RuleRow label="Standard Direct" value="NFC only. No logo zone, business name zone, QR zone, or design step." />
+            <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and front proof required." />
+            <RuleRow label="Hosted Multi-Link" value="Logo, business name, QR, hosted page preview, account, and subscription readiness required." />
+          </div>
+        </EditorCard>
 
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Product copy</h2>
-            <p className="mt-1 text-sm text-muted">Short copy appears on cards; full copy appears on product pages.</p>
+        <EditorCard title="SEO" description="Metadata used when this product is published.">
+          <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} />
+          <Textarea name="seoDescription" label="Meta description" defaultValue={product.seoDescription ?? ""} required={false} />
+          <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs text-muted">
+            URL preview: /product/{product.slug || "product-handle"}
           </div>
-          <Textarea name="shortDescription" label="Short description" defaultValue={product.shortDescription} />
-          <Textarea name="description" label="Full description" defaultValue={product.description} tall />
-        </section>
-
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Product images</h2>
-            <p className="mt-1 text-sm text-muted">Add, replace, reorder, or remove storefront product images. Save the product to apply changes.</p>
-          </div>
-          <ProductImagesEditor images={product.images} productTitle={product.title || "Tap Rater product"} />
-        </section>
-
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">Service strategy</h2>
-            <p className="mt-1 text-sm text-muted">Controls storefront badges and the activation expectations shown to customers.</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Product type
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="productType" defaultValue={product.productType}>
-                <option value="physical_redirect">Physical direct redirect</option>
-                <option value="physical_managed">Physical managed setup</option>
-                <option value="platform_landing_page">Platform landing page</option>
-                <option value="bundle">Bundle</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Service mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="serviceMode" defaultValue={product.serviceMode}>
-                <option value="basic_redirect">Basic redirect</option>
-                <option value="managed_redirect">Managed redirect</option>
-                <option value="hosted_landing_page">Hosted landing page</option>
-                <option value="multi_location_platform">Multi-location platform</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Checkout mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="checkoutMode" defaultValue={product.checkoutMode}>
-                <option value="buy_now">Buy now</option>
-                <option value="request_quote">Request quote</option>
-                <option value="subscription">Subscription</option>
-                <option value="contact_sales">Contact sales</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Activation type
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="activationType" defaultValue={product.activationType}>
-                <option value="free_basic_activation">Free basic activation</option>
-                <option value="managed_setup">Managed setup</option>
-                <option value="premium_hosted_activation">Premium hosted activation</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Account requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresAccount"
-                defaultValue={product.requiresAccount ? "true" : "false"}
-              >
-                <option value="false">No customer account required</option>
-                <option value="true">Customer account required</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Subscription requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresSubscription"
-                defaultValue={product.requiresSubscription ? "true" : "false"}
-              >
-                <option value="false">No subscription required</option>
-                <option value="true">Subscription required for hosted features</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Landing page requirement
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="requiresLandingPage"
-                defaultValue={product.requiresLandingPage ? "true" : "false"}
-              >
-                <option value="false">Direct link redirect</option>
-                <option value="true">Hosted landing page required</option>
-              </select>
-            </label>
-            <Input
-              name="includedServiceLabel"
-              label="Included service label"
-              defaultValue={product.includedServiceLabel}
-              placeholder="Free basic activation"
-            />
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Product format
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="format" defaultValue={product.format}>
-                <option value="stand">Stand</option>
-                <option value="plate">Plate</option>
-                <option value="bundle">Bundle</option>
-                <option value="platform">Platform</option>
-              </select>
-            </label>
-          </div>
-          <fieldset className="grid gap-3">
-            <legend className="text-sm font-bold text-ink">Supported destinations</legend>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {supportedDestinationOptions.map((destination) => (
-                <label key={destination} className="flex items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink">
-                  <input
-                    type="checkbox"
-                    name="supportedDestinations"
-                    value={destination}
-                    defaultChecked={product.supportedDestinations.includes(destination as MigratedProduct["supportedDestinations"][number])}
-                  />
-                  {destination}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="grid gap-3">
-            <legend className="text-sm font-bold text-ink">Customization options</legend>
-            <p className="text-sm text-muted">Logo and custom design details are collected after request. This does not enable automated uploads.</p>
-            <div className="grid gap-2 md:grid-cols-3">
-              {customizationOptionLabels.map((option) => (
-                <label key={option.value} className="grid gap-1 rounded-md border border-line bg-white px-3 py-3 text-sm text-ink">
-                  <span className="flex items-center gap-2 font-semibold">
-                    <input
-                      type="checkbox"
-                      name="customizationOptions"
-                      value={option.value}
-                      defaultChecked={product.customizationOptions.includes(option.value)}
-                    />
-                    {option.label}
-                  </span>
-                  <span className="text-xs leading-5 text-muted">{option.description}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="grid gap-4 md:grid-cols-3">
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Logo option
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="allowsLogoUpload"
-                defaultValue={product.allowsLogoUpload ? "true" : "false"}
-              >
-                <option value="true">Logo setup available</option>
-                <option value="false">No logo setup</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Custom design option
-              <select
-                className="rounded-md border border-line bg-white px-4 py-3 font-normal"
-                name="allowsCustomDesign"
-                defaultValue={product.allowsCustomDesign ? "true" : "false"}
-              >
-                <option value="true">Custom design available</option>
-                <option value="false">No custom design</option>
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
-              Default design mode
-              <select className="rounded-md border border-line bg-white px-4 py-3 font-normal" name="designMode" defaultValue={product.designMode}>
-                <option value="standard">Standard</option>
-                <option value="logo">Logo</option>
-                <option value="custom">Custom</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="grid gap-4 rounded-md border border-line bg-gray-50 p-4">
-          <div>
-            <h2 className="text-lg font-black text-ink">SEO</h2>
-            <p className="mt-1 text-sm text-muted">Used by public product metadata when this product is published.</p>
-          </div>
-          <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} placeholder="Google Review Stand for Businesses" />
-          <Textarea name="seoDescription" label="SEO description" defaultValue={product.seoDescription ?? ""} required={false} />
-        </section>
+        </EditorCard>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <button className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300" disabled={isSaving}>
-          {isSaving ? "Saving..." : mode === "create" ? "Create product" : "Save product"}
+      <aside className="grid content-start gap-5">
+        <SidebarCard title="Status">
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            Product status
+            <select
+              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              value={publishStatus}
+              onChange={(event) => setPublishStatus(event.target.value as "draft" | "active" | "archived")}
+            >
+              <option value="draft">Draft</option>
+              <option value="active" disabled={!canActivate}>
+                Active
+              </option>
+              <option value="archived">Archived</option>
+            </select>
+          </label>
+          {!canActivate ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-ink">
+              <p className="font-black">Required assets are missing. This product cannot be activated yet.</p>
+              <ul className="mt-2 list-disc space-y-1 pl-4">
+                {activationIssues.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-md border border-teal-100 bg-teal-50 p-3 text-xs font-bold text-brand">
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              Ready to publish.
+            </div>
+          )}
+        </SidebarCard>
+
+        <SidebarCard title="Publishing">
+          <div className="grid gap-2 text-sm">
+            <InfoPill label="Storefront" value={publishStatus === "active" && canActivate ? "Visible" : "Hidden"} />
+            <InfoPill label="Admin" value="Editable" />
+          </div>
+        </SidebarCard>
+
+        <SidebarCard title="Product Organization">
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            Product kind
+            <select
+              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              value={productKind}
+              onChange={(event) => updateProductKind(event.target.value as ProductKind)}
+            >
+              <option value="normal_direct">Direct stand</option>
+              <option value="custom_direct">Custom stand product</option>
+              <option value="hosted_multilink">Hosted Multi-Link</option>
+              <option value="bundle">Bundle</option>
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-bold text-ink">
+            Stand Type
+            <select
+              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              value={standTypeSlug}
+              onChange={(event) => setStandTypeSlug(event.target.value)}
+            >
+              {standTypes.map((standType) => (
+                <option key={standType.slug} value={standType.slug}>
+                  {standType.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <fieldset className="grid gap-2">
+            <legend className="text-sm font-bold text-ink">Business Uses</legend>
+            <div className="grid max-h-56 gap-2 overflow-auto rounded-md border border-line bg-white p-2">
+              {businessUses.map((businessUse) => (
+                <label key={businessUse.slug} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-ink hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-line accent-brand"
+                    checked={businessUseSlugs.includes(businessUse.slug)}
+                    onChange={() => toggleBusinessUse(businessUse.slug)}
+                  />
+                  {businessUse.title}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-ink">
+            Special solution
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-line accent-brand"
+              checked={isSpecialSolution}
+              onChange={(event) => setIsSpecialSolution(event.target.checked)}
+            />
+          </label>
+        </SidebarCard>
+
+        <SidebarCard title="Pricing Summary">
+          <p className="text-2xl font-black text-ink">{pricingSummary || formatPrice(product.basePriceCents)}</p>
+          <div className="mt-3 grid gap-2 text-sm text-muted">
+            {activeVisibleOptions.map((option) => (
+              <div className="flex justify-between gap-3" key={option.optionCode}>
+                <span>{option.title}</span>
+                <span className="font-bold text-ink">
+                  {formatPrice(option.priceCents)}
+                  {option.monthlyPriceCents ? ` + ${formatPrice(option.monthlyPriceCents)}/mo` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </SidebarCard>
+
+        <SidebarCard title="Asset Readiness">
+          <ReadinessLine label="Standard image" ready={Boolean(assetSet.standardAngledImageUrl)} />
+          <ReadinessLine label="Branded image" ready={Boolean(assetSet.brandedAngledImageUrl)} />
+          <ReadinessLine label="Branded front template" ready={Boolean(assetSet.brandedFrontTemplateUrl)} />
+          {isHostedProduct ? (
+            <>
+              <ReadinessLine label="Multi-Link image" ready={Boolean(assetSet.multiLinkAngledImageUrl)} />
+              <ReadinessLine label="Multi-Link template" ready={Boolean(assetSet.multiLinkFrontTemplateUrl)} />
+              <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
+            </>
+          ) : null}
+          <div className="mt-2 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs font-bold text-ink">
+            Can publish: {canActivate ? "Yes" : "No"}
+          </div>
+        </SidebarCard>
+
+        <SidebarCard title="Production Notes">
+          <ul className="grid gap-2 text-xs leading-5 text-muted">
+            <li>Standard Direct is NFC only and does not include a printed QR code.</li>
+            <li>Branded + QR requires logo collection, business name, QR generation, and front proof.</li>
+            <li>Hosted Multi-Link requires account, hosted page, subscription readiness, and landing page preview.</li>
+          </ul>
+        </SidebarCard>
+
+        <button
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+          disabled={isSaving}
+        >
+          <Save className="h-4 w-4" aria-hidden="true" />
+          {isSaving ? "Saving..." : mode === "create" ? "Save draft" : "Save product"}
         </button>
         {status ? (
           <p className={status.tone === "success" ? "text-sm font-bold text-brand" : "text-sm font-bold text-red-600"}>
             {status.message}
           </p>
         ) : null}
-      </div>
+        <Link className="text-center text-sm font-bold text-muted hover:text-ink" href="/admin/products">
+          Back to products
+        </Link>
+      </aside>
     </form>
   );
 }
 
-function ProductImagesEditor({
-  images,
-  productTitle
-}: {
-  images: MigratedProduct["images"];
-  productTitle: string;
-}) {
-  const [editableImages, setEditableImages] = useState(() =>
-    Array.from({ length: maxEditableImages }, (_, index) => ({
-      src: images[index]?.src ?? "",
-      alt: images[index]?.alt ?? ""
-    }))
+function EditorCard({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-4 rounded-lg border border-line bg-white p-4 shadow-sm md:p-5">
+      <div>
+        <h2 className="text-base font-black text-ink">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
+      </div>
+      {children}
+    </section>
   );
+}
 
-  function updateImage(index: number, patch: Partial<{ src: string; alt: string }>) {
-    setEditableImages((current) => current.map((image, itemIndex) => (itemIndex === index ? { ...image, ...patch } : image)));
-  }
+function SidebarCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-sm">
+      <h2 className="text-sm font-black text-ink">{title}</h2>
+      {children}
+    </section>
+  );
+}
 
-  function removeImage(index: number) {
-    updateImage(index, { src: "", alt: "" });
-  }
+function SetupOptionEditor({ option, onChange }: { option: ProductOption; onChange: (patch: Partial<ProductOption>) => void }) {
+  return (
+    <div className="rounded-md border border-line bg-[#f7f8fa] p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-black text-ink">{option.title}</h3>
+            <code className="rounded bg-white px-2 py-1 text-xs font-bold text-muted">{option.optionCode}</code>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-muted">{option.description}</p>
+        </div>
+        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+          Enabled
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-line accent-brand"
+            checked={option.isActive}
+            onChange={(event) => onChange({ isActive: event.target.checked })}
+          />
+        </label>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
+        {option.optionCode === "hosted_multilink" ? (
+          <>
+            <NumberInput
+              label="Monthly cents"
+              value={option.monthlyPriceCents ?? 990}
+              onChange={(monthlyPriceCents) => onChange({ monthlyPriceCents })}
+            />
+            <NumberInput label="Max links" value={option.maxLinks ?? 10} onChange={(maxLinks) => onChange({ maxLinks })} />
+          </>
+        ) : null}
+      </div>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <RulePill active={option.requiresDestinationUrl} label="Requires destination link" />
+        <RulePill active={option.hasQr} label="Printed QR" />
+        <RulePill active={option.requiresLogo} label="Logo required" />
+        <RulePill active={option.requiresBusinessName} label="Business name required" />
+        <RulePill active={option.requiresDesignStep} label="Design step" />
+        <RulePill active={option.requiresFrontProof} label="Front proof" />
+        <RulePill active={option.accountRequired} label="Account required" />
+        <RulePill active={option.requiresSubscription} label="Subscription" />
+        {option.optionCode === "hosted_multilink" ? (
+          <>
+            <RulePill active={option.supportsReorderableLinks} label="Reorder links" />
+            <RulePill active={option.supportsLinkVisibility} label="Show/hide links" />
+            <RulePill active={Boolean(option.landingPageUrlPattern)} label={option.landingPageUrlPattern ?? "/l/:client-name"} />
+            <RulePill active={Boolean(option.footerLabel)} label={option.footerLabel ?? "Powered by Tap Rater"} />
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function AssetRow({
+  label,
+  description,
+  value,
+  required = false,
+  onChange,
+  onRemove
+}: {
+  label: string;
+  description: string;
+  value: string;
+  required?: boolean;
+  onChange: (value: string) => void;
+  onRemove: () => void;
+}) {
+  const ready = Boolean(value);
 
   return (
-    <div className="grid gap-3">
-      {editableImages.map((image, index) => (
-        <div key={index} className="grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[112px_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-          <div className="grid h-24 w-full place-items-center overflow-hidden rounded-md border border-line bg-white md:w-28">
-            {image.src ? (
-              <img
-                src={image.src}
-                alt={image.alt || productTitle}
-                className="h-full w-full object-contain"
-                loading="lazy"
-              />
-            ) : (
-              <span className="px-2 text-center text-xs font-bold uppercase text-muted">No image</span>
-            )}
-          </div>
-          <label className="grid gap-2 text-sm font-bold text-ink">
-            {index === 0 ? "Primary image URL" : `Gallery image ${index + 1} URL`}
-            <input
-              className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
-              name={`image.${index}.src`}
-              value={image.src}
-              onChange={(event) => updateImage(index, { src: event.target.value })}
-              placeholder="/uploads/products/example.png"
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-bold text-ink">
-            Alt text
-            <input
-              className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
-              name={`image.${index}.alt`}
-              value={image.alt}
-              onChange={(event) => updateImage(index, { alt: event.target.value })}
-              placeholder={productTitle}
-            />
-          </label>
-          <button
-            type="button"
-            className="rounded-md border border-line px-4 py-3 text-sm font-bold text-ink hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:text-muted"
-            disabled={!image.src && !image.alt}
-            onClick={() => removeImage(index)}
-          >
-            Remove
-          </button>
+    <div className="grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
+      <div className="grid h-20 w-full place-items-center overflow-hidden rounded-md border border-line bg-[#f7f8fa] md:w-20">
+        {ready ? (
+          <img src={value} alt="" className="h-full w-full object-contain" loading="lazy" />
+        ) : (
+          <ImageIcon className="h-5 w-5 text-muted" aria-hidden="true" />
+        )}
+      </div>
+      <div className="grid gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-black text-ink">{label}</p>
+          <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-black text-brand" : "rounded-full bg-red-50 px-2 py-1 text-xs font-black text-red-700"}>
+            {ready ? "Ready" : required ? "Missing" : "Optional"}
+          </span>
         </div>
-      ))}
+        <p className="text-xs leading-5 text-muted">{description}</p>
+        <input
+          className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="/uploads/products/example.png"
+        />
+      </div>
+      <button
+        type="button"
+        className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-red-200 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+        disabled={!ready}
+        onClick={onRemove}
+      >
+        Remove
+      </button>
     </div>
   );
 }
@@ -446,14 +707,12 @@ function Input({
   name,
   label,
   defaultValue,
-  inputMode,
   placeholder,
   required = true
 }: {
   name: string;
   label: string;
   defaultValue: string;
-  inputMode?: "numeric";
   placeholder?: string;
   required?: boolean;
 }) {
@@ -461,10 +720,9 @@ function Input({
     <label className="grid gap-2 text-sm font-bold text-ink">
       {label}
       <input
-        className="rounded-md border border-line bg-white px-4 py-3 font-normal text-ink"
+        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
         name={name}
         defaultValue={defaultValue}
-        inputMode={inputMode}
         placeholder={placeholder}
         required={required}
       />
@@ -472,23 +730,243 @@ function Input({
   );
 }
 
-function collectImages(form: FormData): MigratedProduct["images"] {
-  return Array.from({ length: maxEditableImages }, (_, index) => {
-    const src = readOptionalText(form.get(`image.${index}.src`));
-    const alt = readOptionalText(form.get(`image.${index}.alt`)) ?? "";
-    return src ? { src, alt } : null;
-  }).filter((image): image is MigratedProduct["images"][number] => Boolean(image));
-}
-
-function readOptionalText(value: FormDataEntryValue | null) {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function Textarea({ name, label, defaultValue, tall = false, required = true }: { name: string; label: string; defaultValue: string; tall?: boolean; required?: boolean }) {
+function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
     <label className="grid gap-2 text-sm font-bold text-ink">
       {label}
-      <textarea className={`${tall ? "min-h-44" : "min-h-24"} rounded-md border border-line bg-white px-4 py-3 font-normal text-ink`} name={name} defaultValue={defaultValue} required={required} />
+      <input
+        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
+        inputMode="numeric"
+        value={String(value)}
+        onChange={(event) => onChange(Number(event.target.value) || 0)}
+      />
     </label>
   );
+}
+
+function Textarea({
+  name,
+  label,
+  defaultValue,
+  tall = false,
+  required = true
+}: {
+  name: string;
+  label: string;
+  defaultValue: string;
+  tall?: boolean;
+  required?: boolean;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-bold text-ink">
+      {label}
+      <textarea
+        className={`${tall ? "min-h-36" : "min-h-20"} rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink`}
+        name={name}
+        defaultValue={defaultValue}
+        required={required}
+      />
+    </label>
+  );
+}
+
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2">
+      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
+      <p className="mt-1 text-sm font-bold text-ink">{value}</p>
+    </div>
+  );
+}
+
+function RuleRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3 rounded-md border border-line bg-white px-3 py-2">
+      <span className="min-w-32 text-xs font-black uppercase text-ink">{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
+function RulePill({ active, label }: { active: boolean; label: string }) {
+  return (
+    <span className={active ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black text-brand" : "rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-muted"}>
+      {label}
+    </span>
+  );
+}
+
+function ReadinessLine({ label, ready }: { label: string; ready: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 text-sm">
+      <span className="text-muted">{label}</span>
+      {ready ? <CheckCircle2 className="h-4 w-4 text-brand" aria-label="Ready" /> : <XCircle className="h-4 w-4 text-red-600" aria-label="Missing" />}
+    </div>
+  );
+}
+
+function buildInitialOptions(productKind: ProductKind, productOptions: ProductOption[], optionTemplates: ProductOption[]) {
+  const templateMap = new Map([...getDefaultOptionsForProductKind(productKind), ...optionTemplates].map((option) => [option.optionCode, option]));
+  const savedOptionMap = new Map(productOptions.map((option) => [option.optionCode, option]));
+  const codes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct", "hosted_multilink"];
+
+  return codes.map((code) => ({
+    ...(templateMap.get(code) ?? getDefaultOptionsForProductKind(code === "hosted_multilink" ? "hosted_multilink" : "normal_direct").find((option) => option.optionCode === code)!),
+    ...(savedOptionMap.get(code) ?? {})
+  }));
+}
+
+function getOrganizationIssues({
+  productKind,
+  standTypeSlug,
+  primaryPlatformSlug,
+  destinationType,
+  businessUseSlugs,
+  isSpecialSolution
+}: {
+  productKind: ProductKind;
+  standTypeSlug: string;
+  primaryPlatformSlug: string;
+  destinationType: string;
+  businessUseSlugs: string[];
+  isSpecialSolution: boolean;
+}) {
+  const issues: string[] = [];
+
+  if (!standTypeSlug) issues.push("Missing stand type");
+  if (!destinationType) issues.push("Missing destination type");
+  if (!primaryPlatformSlug) issues.push("Missing platform / destination");
+  if (productKind !== "hosted_multilink" && !isSpecialSolution && businessUseSlugs.length === 0) {
+    issues.push("Missing business use");
+  }
+
+  return issues;
+}
+
+function cleanAssetSet(assetSet: AssetSetState) {
+  return {
+    standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl),
+    brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
+    multiLinkAngledImageUrl: readOptionalString(assetSet.multiLinkAngledImageUrl),
+    standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
+    brandedFrontTemplateUrl: readOptionalString(assetSet.brandedFrontTemplateUrl),
+    multiLinkFrontTemplateUrl: readOptionalString(assetSet.multiLinkFrontTemplateUrl),
+    centerAssetUrl: readOptionalString(assetSet.centerAssetUrl),
+    landingPagePreviewConfig: assetSet.landingPagePreviewReady ? { ready: true } : undefined
+  };
+}
+
+function collectImagesFromAssets(assetSet: AssetSetState, title: string): MigratedProduct["images"] {
+  const sources = [
+    assetSet.standardAngledImageUrl,
+    assetSet.brandedAngledImageUrl,
+    assetSet.multiLinkAngledImageUrl,
+    assetSet.standardFrontTemplateUrl,
+    assetSet.brandedFrontTemplateUrl,
+    assetSet.multiLinkFrontTemplateUrl
+  ];
+
+  return sources
+    .map(readOptionalString)
+    .filter((source): source is string => Boolean(source))
+    .map((src) => ({ src, alt: title }));
+}
+
+function categorySlugForStandType(standTypeSlug: string): MigratedProduct["categorySlug"] {
+  const map: Record<string, MigratedProduct["categorySlug"]> = {
+    "review-stands": "reviews",
+    "social-media-stands": "social-media",
+    "appointment-reservation-stands": "appointments",
+    "feedback-survey-stands": "feedback",
+    "menu-info-stands": "menu",
+    "website-link-stands": "website-links",
+    "payment-tip-donation-stands": "website-links",
+    "loyalty-rewards-stands": "website-links",
+    "custom-stands": "custom-stands"
+  };
+
+  return map[standTypeSlug] ?? "website-links";
+}
+
+function selectedPlatformDestinationType(platforms: PlatformDestination[], platformSlug: string) {
+  return platforms.find((platform) => platform.slug === platformSlug)?.destinationType ?? "custom";
+}
+
+function getSupportedDestinations(platformSlug: string): SupportedDestination[] {
+  const supported = new Set<SupportedDestination>([
+    "google",
+    "facebook",
+    "yelp",
+    "tripadvisor",
+    "trustpilot",
+    "bbb",
+    "nextdoor",
+    "instagram",
+    "tiktok",
+    "linkedin",
+    "x",
+    "youtube",
+    "vagaro",
+    "booksy",
+    "fresha",
+    "zocdoc",
+    "calendly",
+    "acuity",
+    "square-appointments",
+    "custom-booking-url",
+    "booking",
+    "toast",
+    "doordash",
+    "ubereats",
+    "grubhub",
+    "opentable",
+    "resy",
+    "custom-menu-url",
+    "website",
+    "menu",
+    "wifi",
+    "feedback",
+    "referral",
+    "payment-url",
+    "loyalty-url",
+    "custom-url",
+    "custom"
+  ]);
+
+  return supported.has(platformSlug as SupportedDestination) ? [platformSlug as SupportedDestination] : ["custom"];
+}
+
+function formatOptionPricing(options: ProductOption[]) {
+  if (options.length === 0) return "";
+  if (options.length === 1) {
+    const option = options[0];
+    return option.monthlyPriceCents ? `${formatPrice(option.priceCents)} + ${formatPrice(option.monthlyPriceCents)}/mo` : formatPrice(option.priceCents);
+  }
+
+  const prices = options.map((option) => option.priceCents).sort((first, second) => first - second);
+  return `${formatPrice(prices[0])}-${formatPrice(prices[prices.length - 1])}`;
+}
+
+function defaultCtaForProduct(productKind: ProductKind) {
+  return productKind === "hosted_multilink" ? "CONNECT WITH US" : "Tap to connect";
+}
+
+function generateSku(slug: string) {
+  return `TR-${slug.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "PRODUCT"}`;
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function readRequiredText(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readOptionalString(value?: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }

@@ -4,10 +4,16 @@ import { hasSupabaseAdminConfig } from "@/lib/db";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminProductsTable } from "@/components/admin/admin-products-table";
+import { getBusinessUses, getPlatforms, getStandTypes } from "@/lib/catalog-architecture-repository";
 
 export default async function AdminProductsPage() {
   await requireAdmin();
-  const products = await getAdminProducts();
+  const [products, standTypes, businessUses, platforms] = await Promise.all([
+    getAdminProducts(),
+    getStandTypes(),
+    getBusinessUses(),
+    getPlatforms()
+  ]);
   const canSave = hasSupabaseAdminConfig();
 
   return (
@@ -34,7 +40,13 @@ export default async function AdminProductsPage() {
         <SummaryCard label="Drafts" value={String(products.filter((product) => !product.isActive).length)} />
         <SummaryCard label="Out of stock" value={String(products.filter((product) => product.stockStatus === "outofstock").length)} />
       </div>
-      <AdminProductsTable products={products} canDelete={canSave} />
+      <AdminProductsTable
+        products={products}
+        standTypes={standTypes}
+        businessUses={businessUses}
+        platforms={platforms}
+        canDelete={canSave}
+      />
     </section>
     </AdminShell>
   );
