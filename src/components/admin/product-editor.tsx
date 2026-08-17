@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Copy, ExternalLink, Loader2, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Loader2, MoreHorizontal, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
 import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
 import type {
   BusinessUse,
@@ -400,9 +400,10 @@ export function ProductEditor({
             mediaErrors={mediaErrors}
             onUploadMain={uploadMainImage}
             onUploadGallery={uploadGalleryImage}
-            onRemoveMain={() => setMainImage({ src: "", alt: title })}
-            onRemoveGallery={(index) => setGalleryImages((current) => current.filter((_, currentIndex) => currentIndex !== index))}
-            onSetMainFromGallery={(image) => setMainImage({ src: image.src, alt: image.alt || title })}
+            onReplaceMedia={(nextMainImage, nextGalleryImages) => {
+              setMainImage(nextMainImage);
+              setGalleryImages(nextGalleryImages);
+            }}
           />
         </EditorCard>
 
@@ -708,9 +709,7 @@ function ProductMediaGrid({
   mediaErrors,
   onUploadMain,
   onUploadGallery,
-  onRemoveMain,
-  onRemoveGallery,
-  onSetMainFromGallery
+  onReplaceMedia
 }: {
   title: string;
   mainImage: MediaItemState;
@@ -720,67 +719,132 @@ function ProductMediaGrid({
   mediaErrors: Record<string, string>;
   onUploadMain: (file: File) => void | Promise<void>;
   onUploadGallery: (file: File, index?: number) => void | Promise<void>;
-  onRemoveMain: () => void;
-  onRemoveGallery: (index: number) => void;
-  onSetMainFromGallery: (image: MediaItemState) => void;
+  onReplaceMedia: (mainImage: MediaItemState, galleryImages: MediaItemState[]) => void;
 }) {
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
+  const selectedCount = selectedKeys.length;
+  const selectedGalleryIndexes = selectedKeys
+    .filter((key) => key.startsWith("gallery-"))
+    .map((key) => Number(key.replace("gallery-", "")))
+    .filter((index) => Number.isInteger(index));
+  const selectedGalleryIndex = selectedGalleryIndexes.length === 1 ? selectedGalleryIndexes[0] : undefined;
+  const canSetAsMain = selectedCount === 1 && typeof selectedGalleryIndex === "number" && Boolean(galleryImages[selectedGalleryIndex]?.src);
+  const filledGalleryCount = galleryImages.filter((image) => Boolean(image.src)).length;
+
+  function isSelected(key: string) {
+    return selectedKeys.includes(key);
+  }
+
+  function toggleSelected(key: string) {
+    setSelectedKeys((current) => (current.includes(key) ? current.filter((item) => item !== key) : [...current, key]));
+  }
+
+  function clearSelection() {
+    setSelectedKeys([]);
+  }
+
+  function setSelectedGalleryAsMain() {
+    if (!canSetAsMain || typeof selectedGalleryIndex !== "number") return;
+
+    const selectedImage = galleryImages[selectedGalleryIndex];
+    const nextGalleryImages = [...galleryImages];
+    if (mainImage.src) {
+      nextGalleryImages[selectedGalleryIndex] = { src: mainImage.src, alt: mainImage.alt || title };
+    } else {
+      nextGalleryImages.splice(selectedGalleryIndex, 1);
+    }
+
+    onReplaceMedia({ src: selectedImage.src, alt: selectedImage.alt || title }, nextGalleryImages.slice(0, 5));
+    clearSelection();
+  }
+
+  function deleteSelectedMedia() {
+    if (selectedCount === 0) return;
+
+    const deleteMain = selectedKeys.includes("main");
+    const selectedGallerySet = new Set(selectedGalleryIndexes);
+    let nextGalleryImages = galleryImages.filter((_, index) => !selectedGallerySet.has(index));
+    let nextMainImage = mainImage;
+
+    if (deleteMain) {
+      const promotedImage = nextGalleryImages[0];
+      nextMainImage = promotedImage ? { src: promotedImage.src, alt: promotedImage.alt || title } : { src: "", alt: title };
+      nextGalleryImages = promotedImage ? nextGalleryImages.slice(1) : nextGalleryImages;
+    }
+
+    onReplaceMedia(nextMainImage, nextGalleryImages.slice(0, 5));
+    clearSelection();
+  }
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
-      <MediaUploadCard
-        label="Primary media"
-        description="Shown first on product cards and product detail pages."
-        value={mainImage.src}
-        required={requiredMain}
-        role="main"
-        size="hero"
-        isUploading={Boolean(uploadingRoles.main)}
-        error={mediaErrors.main}
-        onUpload={onUploadMain}
-        onRemove={onRemoveMain}
-      />
-      <div className="grid gap-3">
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-black text-ink">Gallery</h3>
-            <p className="mt-1 text-xs leading-5 text-muted">Add up to five secondary product images.</p>
+    <div className="grid gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs leading-5 text-muted">
+          <span className="font-bold text-ink">Main image:</span> {mainImage.src ? "Ready" : requiredMain ? "Missing" : "Optional"}
+          <span className="mx-2 text-line">/</span>
+          <span className="font-bold text-ink">Gallery:</span> {filledGalleryCount}/5
+        </div>
+        {selectedCount > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-[#f7f8fa] px-2 py-1.5 text-xs font-bold text-ink">
+            <span>{selectedCount} selected</span>
+            <button
+              type="button"
+              className="rounded-md border border-line bg-white px-2 py-1 disabled:cursor-not-allowed disabled:text-muted"
+              disabled={!canSetAsMain}
+              onClick={setSelectedGalleryAsMain}
+            >
+              Set as main
+            </button>
+            <button type="button" className="rounded-md border border-red-100 bg-white px-2 py-1 text-red-700" onClick={deleteSelectedMedia}>
+              Delete
+            </button>
+            <button type="button" className="rounded-md border border-line bg-white px-2 py-1" onClick={clearSelection}>
+              Clear
+            </button>
           </div>
-          <span className="rounded-full bg-[#f7f8fa] px-2.5 py-1 text-xs font-black text-muted">{galleryImages.length}/5</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {galleryImages.map((image, index) => (
-            <MediaUploadCard
-              key={`${image.src}-${index}`}
-              label={`Gallery ${index + 1}`}
-              description="Secondary image."
-              value={image.src}
-              role="gallery"
-              size="thumbnail"
-              isUploading={Boolean(uploadingRoles.gallery)}
-              error={mediaErrors.gallery}
-              onUpload={(file) => onUploadGallery(file, index)}
-              onRemove={() => onRemoveGallery(index)}
-              secondaryAction={{ label: "Set as main", onClick: () => onSetMainFromGallery(image) }}
-            />
-          ))}
-          {galleryImages.length < 5 ? (
-            <MediaUploadCard
-              label="Add media"
-              description="Drop a product image."
-              value=""
-              role="gallery"
-              size="thumbnail"
-              isUploading={Boolean(uploadingRoles.gallery)}
-              error={mediaErrors.gallery}
-              onUpload={(file) => onUploadGallery(file)}
-              onRemove={() => undefined}
-            />
-          ) : null}
-        </div>
-        <p className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-muted">
-          Stored media URLs are kept in product data. Use Advanced on a filled tile only when you need to view or copy the media URL.
-        </p>
-        <input type="hidden" name="product-media-title" value={title} readOnly />
+        ) : null}
       </div>
+
+      <div className="grid auto-rows-[120px] grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <ProductMediaTile
+          label="Main"
+          value={mainImage.src}
+          required={requiredMain}
+          isMain
+          isSelected={isSelected("main")}
+          isUploading={Boolean(uploadingRoles.main)}
+          error={mediaErrors.main}
+          onToggleSelected={() => toggleSelected("main")}
+          onUpload={onUploadMain}
+        />
+        {galleryImages.map((image, index) => (
+          <ProductMediaTile
+            key={`${image.src}-${index}`}
+            label={`Gallery ${index + 1}`}
+            value={image.src}
+            isSelected={isSelected(`gallery-${index}`)}
+            isUploading={Boolean(uploadingRoles.gallery)}
+            error={mediaErrors.gallery}
+            onToggleSelected={() => toggleSelected(`gallery-${index}`)}
+            onUpload={(file) => onUploadGallery(file, index)}
+          />
+        ))}
+        {galleryImages.length < 5 ? (
+          <ProductMediaTile
+            label="Add media"
+            value=""
+            isUploading={Boolean(uploadingRoles.gallery)}
+            error={mediaErrors.gallery}
+            onToggleSelected={() => undefined}
+            onUpload={(file) => (mainImage.src ? onUploadGallery(file) : onUploadMain(file))}
+          />
+        ) : null}
+      </div>
+
+      <p className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-muted">
+        Stored URLs stay in product data but are hidden from the normal editor. Use the tile menu only when you need to view or copy a URL.
+      </p>
+      <input type="hidden" name="product-media-title" value={title} readOnly />
     </div>
   );
 }
@@ -917,6 +981,114 @@ function SetupOptionEditor({
   );
 }
 
+function ProductMediaTile({
+  label,
+  value,
+  isMain = false,
+  required = false,
+  isSelected = false,
+  isUploading,
+  error,
+  onToggleSelected,
+  onUpload
+}: {
+  label: string;
+  value: string;
+  isMain?: boolean;
+  required?: boolean;
+  isSelected?: boolean;
+  isUploading: boolean;
+  error?: string;
+  onToggleSelected: () => void;
+  onUpload: (file: File) => void | Promise<void>;
+}) {
+  const ready = Boolean(value);
+
+  function handleFile(file?: File) {
+    if (file) {
+      void onUpload(file);
+    }
+  }
+
+  return (
+    <div
+      className={`group relative ${isMain ? "col-span-2 row-span-2" : ""} overflow-hidden rounded-lg border bg-white ${
+        isSelected ? "border-brand ring-2 ring-brand/20" : "border-line"
+      }`}
+    >
+      {ready ? (
+        <button
+          type="button"
+          className="absolute left-2 top-2 z-10 grid h-6 w-6 place-items-center rounded-md border border-line bg-white/95 shadow-sm"
+          aria-label={`${isSelected ? "Unselect" : "Select"} ${label}`}
+          onClick={onToggleSelected}
+        >
+          <input className="pointer-events-none h-3.5 w-3.5 accent-brand" type="checkbox" checked={isSelected} readOnly />
+        </button>
+      ) : null}
+
+      {ready ? (
+        <details className="absolute right-2 top-2 z-10">
+          <summary className="grid h-7 w-7 cursor-pointer list-none place-items-center rounded-md border border-line bg-white/95 text-muted shadow-sm hover:text-ink">
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </summary>
+          <div className="absolute right-0 z-20 mt-2 grid w-40 gap-1 rounded-md border border-line bg-white p-2 text-xs font-bold shadow-lg">
+            <a className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-ink hover:bg-[#f7f8fa]" href={value} target="_blank" rel="noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+              View image
+            </a>
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-left text-ink hover:bg-[#f7f8fa]"
+              onClick={() => {
+                void navigator.clipboard?.writeText(value);
+              }}
+            >
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+              Copy URL
+            </button>
+          </div>
+        </details>
+      ) : null}
+
+      <label
+        className={`grid h-full min-h-0 cursor-pointer place-items-center bg-[#fbfbfc] p-2 text-center ${ready ? "" : "border border-dashed border-transparent hover:border-brand"}`}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          handleFile(event.dataTransfer.files?.[0]);
+        }}
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={isUploading}
+          onChange={(event) => handleFile(event.target.files?.[0])}
+        />
+        {ready ? (
+          <img src={value} alt="" className="h-full max-h-full w-full object-contain" loading="lazy" />
+        ) : (
+          <span className="grid justify-items-center gap-2 px-2 text-xs font-bold text-muted">
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden="true" /> : <UploadCloud className="h-5 w-5 text-muted group-hover:text-brand" aria-hidden="true" />}
+            <span>{isMain ? "Add main image" : "Add media"}</span>
+            <span className="text-[11px] font-normal">PNG, JPG, WEBP</span>
+          </span>
+        )}
+      </label>
+
+      <div className="pointer-events-none absolute bottom-2 left-2 right-2 flex items-center justify-between gap-2">
+        <span className="rounded-full bg-white/95 px-2 py-1 text-[11px] font-black text-ink shadow-sm">{label}</span>
+        <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-[11px] font-black text-brand shadow-sm" : "rounded-full bg-white/95 px-2 py-1 text-[11px] font-black text-muted shadow-sm"}>
+          {ready ? "Ready" : required ? "Missing" : "Optional"}
+        </span>
+      </div>
+      {error ? <p className="absolute bottom-10 left-2 right-2 rounded-md border border-red-100 bg-red-50 px-2 py-1 text-[11px] font-bold text-red-700">{error}</p> : null}
+      <input type="hidden" name={`product-media-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} value={value} readOnly />
+    </div>
+  );
+}
+
 function MediaUploadCard({
   label,
   description,
@@ -943,15 +1115,7 @@ function MediaUploadCard({
   onRemove: () => void;
 }) {
   const ready = Boolean(value);
-  const mediaBoxClass =
-    size === "hero"
-      ? "min-h-[320px]"
-      : size === "thumbnail"
-        ? "min-h-40"
-        : size === "compact"
-          ? "min-h-36"
-          : "min-h-48";
-  const imageClass = size === "hero" ? "max-h-[300px]" : size === "thumbnail" ? "max-h-36" : "max-h-32";
+  const tileHeight = size === "hero" ? "h-52" : size === "thumbnail" ? "h-36" : size === "compact" ? "h-32" : "h-40";
 
   function handleFile(file?: File) {
     if (file) {
@@ -960,56 +1124,31 @@ function MediaUploadCard({
   }
 
   return (
-    <div className="grid gap-3 rounded-md border border-line bg-white p-3">
-      <div className="grid gap-2">
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="grid gap-2 rounded-md border border-line bg-white p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-black text-ink">{label}</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{description}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
           <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-black text-brand" : "rounded-full bg-red-50 px-2 py-1 text-xs font-black text-red-700"}>
             {ready ? "Ready" : required ? "Missing" : "Optional"}
           </span>
-        </div>
-        <p className="text-xs leading-5 text-muted">{description}</p>
-      </div>
-      <label
-        className={`group grid ${mediaBoxClass} cursor-pointer place-items-center overflow-hidden rounded-md border border-dashed border-line bg-white p-3 text-center hover:border-brand`}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault();
-          handleFile(event.dataTransfer.files?.[0]);
-        }}
-      >
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="sr-only"
-          disabled={isUploading}
-          onChange={(event) => handleFile(event.target.files?.[0])}
-        />
-        {ready ? (
-          <img src={value} alt="" className={`${imageClass} h-full w-full object-contain`} loading="lazy" />
-        ) : (
-          <span className="grid justify-items-center gap-2 text-xs font-bold text-muted">
-            {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden="true" /> : <UploadCloud className="h-5 w-5 text-muted group-hover:text-brand" aria-hidden="true" />}
-            Drop image here or click to upload
-            <span className="font-normal">PNG, JPG, or WEBP up to 10 MB</span>
-          </span>
-        )}
-      </label>
-      {ready ? (
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            {secondaryAction ? (
-              <button
-                type="button"
-                className="rounded-md border border-line px-2 py-1.5 text-xs font-bold text-ink hover:border-brand hover:text-brand"
-                onClick={secondaryAction.onClick}
-              >
-                {secondaryAction.label}
-              </button>
-            ) : null}
-            <details className="relative text-xs font-bold text-muted">
-              <summary className="cursor-pointer rounded-md border border-line px-2 py-1.5 hover:border-brand hover:text-brand">Advanced</summary>
-              <div className="absolute left-0 z-20 mt-2 grid w-44 gap-1 rounded-md border border-line bg-white p-2 shadow-lg">
+          {ready ? (
+            <details className="relative">
+              <summary className="grid h-7 w-7 cursor-pointer list-none place-items-center rounded-md border border-line text-muted hover:text-ink">
+                <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+              </summary>
+              <div className="absolute right-0 z-20 mt-2 grid w-40 gap-1 rounded-md border border-line bg-white p-2 text-xs font-bold shadow-lg">
+                {secondaryAction ? (
+                  <button
+                    type="button"
+                    className="rounded px-2 py-1.5 text-left text-ink hover:bg-[#f7f8fa]"
+                    onClick={secondaryAction.onClick}
+                  >
+                    {secondaryAction.label}
+                  </button>
+                ) : null}
                 <a className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-ink hover:bg-[#f7f8fa]" href={value} target="_blank" rel="noreferrer">
                   <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                   View image
@@ -1024,19 +1163,48 @@ function MediaUploadCard({
                   <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                   Copy URL
                 </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-left text-red-700 hover:bg-red-50"
+                  onClick={() => {
+                    if (window.confirm(`Clear ${label}?`)) {
+                      onRemove();
+                    }
+                  }}
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Clear
+                </button>
               </div>
             </details>
-          </div>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1.5 text-xs font-bold text-ink hover:border-red-200 hover:text-red-700"
-            onClick={onRemove}
-          >
-            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-            Remove
-          </button>
+          ) : null}
         </div>
-      ) : null}
+      </div>
+      <label
+        className={`group grid ${tileHeight} cursor-pointer place-items-center overflow-hidden rounded-md border border-dashed border-line bg-[#fbfbfc] p-2 text-center hover:border-brand`}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          handleFile(event.dataTransfer.files?.[0]);
+        }}
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={isUploading}
+          onChange={(event) => handleFile(event.target.files?.[0])}
+        />
+        {ready ? (
+          <img src={value} alt="" className="h-full max-h-full w-full object-contain" loading="lazy" />
+        ) : (
+          <span className="grid justify-items-center gap-2 text-xs font-bold text-muted">
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden="true" /> : <UploadCloud className="h-5 w-5 text-muted group-hover:text-brand" aria-hidden="true" />}
+            Add image
+            <span className="font-normal">PNG, JPG, WEBP up to 10 MB</span>
+          </span>
+        )}
+      </label>
       {error ? <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</p> : null}
       {isUploading && ready ? <p className="text-xs font-bold text-brand">Uploading replacement...</p> : null}
       <input type="hidden" name={`media-${role}`} value={value} readOnly />
