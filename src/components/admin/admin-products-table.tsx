@@ -453,13 +453,29 @@ function ReadinessBadge({ status, missing }: { status: string; missing: string[]
     return <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand">Ready</span>;
   }
 
-  const label = missing.length === 1 ? `Missing ${missing[0]}` : missing.length > 1 ? `${missing.length} missing` : "Blocked";
+  const label =
+    missing.length === 1
+      ? `Missing ${shortMissingLabel(missing[0])}`
+      : missing.length > 1
+        ? `${missing.length} option assets missing`
+        : "Blocked";
 
   return (
     <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700" title={missing.join(", ")}>
       {label}
     </span>
   );
+}
+
+function shortMissingLabel(value: string) {
+  return value
+    .replace("Standard Direct angled image", "standard image")
+    .replace("Branded + QR angled image", "branded image")
+    .replace("Branded + QR front template", "branded template")
+    .replace("Multi-Link angled image", "multi-link image")
+    .replace("Multi-Link front template", "multi-link template")
+    .replace("Landing page preview configuration", "landing preview")
+    .toLowerCase();
 }
 
 function getProductKind(product: MigratedProduct): ProductKind {

@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Loader2, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
+import { CheckCircle2, Copy, ExternalLink, Loader2, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
 import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
 import type {
   BusinessUse,
@@ -141,6 +141,17 @@ export function ProductEditor({
   const canActivate = activationIssues.length === 0;
   const primaryPlatform = platforms.find((platform) => platform.slug === primaryPlatformSlug);
   const pricingSummary = formatOptionPricing(activeVisibleOptions);
+  const productMediaReady = Boolean(readOptionalString(mainImage.src));
+  const optionReadinessRows = activeVisibleOptions.flatMap((option) =>
+    getOptionMediaRequirements(option.optionCode, assetSet)
+      .filter((requirement) => requirement.required)
+      .map((requirement) => ({
+        optionTitle: option.title,
+        label: requirement.label,
+        ready: Boolean(requirement.value)
+      }))
+  );
+  const missingOptionMedia = optionReadinessRows.filter((row) => !row.ready);
 
   function updateAsset(key: AssetKey, value: string) {
     setAssetSet((current) => ({ ...current, [key]: value }));
@@ -379,47 +390,20 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="Product Media" description="Main image and gallery shown on product cards and product pages. Uploads require the product media R2 binding.">
-          <div className="grid gap-3">
-            <MediaUploadCard
-              label="Main product image"
-              description="Primary storefront image used on cards and product detail pages."
-              value={mainImage.src}
-              required={publishStatus === "active"}
-              role="main"
-              isUploading={Boolean(uploadingRoles.main)}
-              error={mediaErrors.main}
-              onUpload={uploadMainImage}
-              onRemove={() => setMainImage({ src: "", alt: title })}
-            />
-            <div className="grid gap-3 md:grid-cols-2">
-              {galleryImages.map((image, index) => (
-                <MediaUploadCard
-                  key={`${image.src}-${index}`}
-                  label={`Gallery image ${index + 1}`}
-                  description="Optional secondary storefront image."
-                  value={image.src}
-                  role="gallery"
-                  isUploading={Boolean(uploadingRoles.gallery)}
-                  error={mediaErrors.gallery}
-                  onUpload={(file) => uploadGalleryImage(file, index)}
-                  onRemove={() => setGalleryImages((current) => current.filter((_, currentIndex) => currentIndex !== index))}
-                />
-              ))}
-              {galleryImages.length < 5 ? (
-                <MediaUploadCard
-                  label="Add gallery image"
-                  description="Optional image for product gallery."
-                  value=""
-                  role="gallery"
-                  isUploading={Boolean(uploadingRoles.gallery)}
-                  error={mediaErrors.gallery}
-                  onUpload={uploadGalleryImage}
-                  onRemove={() => undefined}
-                />
-              ) : null}
-            </div>
-          </div>
+        <EditorCard title="Product Media" description="Storefront media for product cards and product pages. Drag images onto a tile or click to upload.">
+          <ProductMediaGrid
+            title={title}
+            mainImage={mainImage}
+            galleryImages={galleryImages}
+            requiredMain={publishStatus === "active"}
+            uploadingRoles={uploadingRoles}
+            mediaErrors={mediaErrors}
+            onUploadMain={uploadMainImage}
+            onUploadGallery={uploadGalleryImage}
+            onRemoveMain={() => setMainImage({ src: "", alt: title })}
+            onRemoveGallery={(index) => setGalleryImages((current) => current.filter((_, currentIndex) => currentIndex !== index))}
+            onSetMainFromGallery={(image) => setMainImage({ src: image.src, alt: image.alt || title })}
+          />
         </EditorCard>
 
         <EditorCard title="Setup / Purchase Options" description="Customer purchase options live inside one canonical product. They are not separate products.">
@@ -635,17 +619,29 @@ export function ProductEditor({
         </SidebarCard>
 
         <SidebarCard title="Asset Readiness">
-          {activeVisibleOptions.length > 0 ? (
-            activeVisibleOptions.flatMap((option) =>
-              getOptionMediaRequirements(option.optionCode, assetSet)
-                .filter((requirement) => requirement.required)
-                .map((requirement) => (
-                  <ReadinessLine key={`${option.optionCode}-${requirement.assetKey}`} label={requirement.label} ready={Boolean(requirement.value)} />
-                ))
-            )
-          ) : (
-            <ReadinessLine label="Active product option" ready={false} />
-          )}
+          <div className="grid gap-3">
+            <div className="rounded-md border border-line bg-[#f7f8fa] p-3">
+              <p className="text-[11px] font-black uppercase text-muted">Product media</p>
+              <ReadinessLine label="Primary product image" ready={productMediaReady} />
+            </div>
+            <div className="rounded-md border border-line bg-[#f7f8fa] p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[11px] font-black uppercase text-muted">Setup option media</p>
+                <span className={missingOptionMedia.length === 0 ? "text-xs font-black text-brand" : "text-xs font-black text-red-700"}>
+                  {missingOptionMedia.length === 0 ? "Ready" : `${missingOptionMedia.length} missing`}
+                </span>
+              </div>
+              <div className="mt-2 grid gap-2">
+                {optionReadinessRows.length > 0 ? (
+                  optionReadinessRows.map((row) => (
+                    <ReadinessLine key={`${row.optionTitle}-${row.label}`} label={`${row.optionTitle}: ${row.label}`} ready={row.ready} />
+                  ))
+                ) : (
+                  <ReadinessLine label="Active product option" ready={false} />
+                )}
+              </div>
+            </div>
+          </div>
           {activeVisibleOptions.some((option) => option.optionCode === "hosted_multilink") ? (
             <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
           ) : null}
@@ -703,6 +699,92 @@ function SidebarCard({ title, children }: { title: string; children: ReactNode }
   );
 }
 
+function ProductMediaGrid({
+  title,
+  mainImage,
+  galleryImages,
+  requiredMain,
+  uploadingRoles,
+  mediaErrors,
+  onUploadMain,
+  onUploadGallery,
+  onRemoveMain,
+  onRemoveGallery,
+  onSetMainFromGallery
+}: {
+  title: string;
+  mainImage: MediaItemState;
+  galleryImages: MediaItemState[];
+  requiredMain: boolean;
+  uploadingRoles: Record<string, boolean>;
+  mediaErrors: Record<string, string>;
+  onUploadMain: (file: File) => void | Promise<void>;
+  onUploadGallery: (file: File, index?: number) => void | Promise<void>;
+  onRemoveMain: () => void;
+  onRemoveGallery: (index: number) => void;
+  onSetMainFromGallery: (image: MediaItemState) => void;
+}) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+      <MediaUploadCard
+        label="Primary media"
+        description="Shown first on product cards and product detail pages."
+        value={mainImage.src}
+        required={requiredMain}
+        role="main"
+        size="hero"
+        isUploading={Boolean(uploadingRoles.main)}
+        error={mediaErrors.main}
+        onUpload={onUploadMain}
+        onRemove={onRemoveMain}
+      />
+      <div className="grid gap-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-black text-ink">Gallery</h3>
+            <p className="mt-1 text-xs leading-5 text-muted">Add up to five secondary product images.</p>
+          </div>
+          <span className="rounded-full bg-[#f7f8fa] px-2.5 py-1 text-xs font-black text-muted">{galleryImages.length}/5</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {galleryImages.map((image, index) => (
+            <MediaUploadCard
+              key={`${image.src}-${index}`}
+              label={`Gallery ${index + 1}`}
+              description="Secondary image."
+              value={image.src}
+              role="gallery"
+              size="thumbnail"
+              isUploading={Boolean(uploadingRoles.gallery)}
+              error={mediaErrors.gallery}
+              onUpload={(file) => onUploadGallery(file, index)}
+              onRemove={() => onRemoveGallery(index)}
+              secondaryAction={{ label: "Set as main", onClick: () => onSetMainFromGallery(image) }}
+            />
+          ))}
+          {galleryImages.length < 5 ? (
+            <MediaUploadCard
+              label="Add media"
+              description="Drop a product image."
+              value=""
+              role="gallery"
+              size="thumbnail"
+              isUploading={Boolean(uploadingRoles.gallery)}
+              error={mediaErrors.gallery}
+              onUpload={(file) => onUploadGallery(file)}
+              onRemove={() => undefined}
+            />
+          ) : null}
+        </div>
+        <p className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-muted">
+          Stored media URLs are kept in product data. Use Advanced on a filled tile only when you need to view or copy the media URL.
+        </p>
+        <input type="hidden" name="product-media-title" value={title} readOnly />
+      </div>
+    </div>
+  );
+}
+
 function SetupOptionEditor({
   option,
   skuBase,
@@ -728,29 +810,37 @@ function SetupOptionEditor({
   const missingRequiredMedia = mediaRequirements.filter((requirement) => requirement.required && !requirement.value);
   const optionReady = !option.isActive || missingRequiredMedia.length === 0;
   const optionSku = `${skuBase || "PRODUCT"}-${optionSkuSuffix(option.optionCode)}`;
+  const optionMeta = getOptionDisplayMeta(option);
+  const optionPrice = option.monthlyPriceCents
+    ? `${formatPrice(option.priceCents)} + ${formatPrice(option.monthlyPriceCents)}/mo`
+    : formatPrice(option.priceCents);
 
   return (
-    <div className="rounded-md border border-line bg-[#f7f8fa] p-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
+    <details className="group rounded-md border border-line bg-white shadow-sm">
+      <summary className="grid cursor-pointer list-none gap-3 p-3 md:grid-cols-[minmax(0,1fr)_140px_150px_120px] md:items-center">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-black text-ink">{option.title}</h3>
-            <code className="rounded bg-white px-2 py-1 text-xs font-bold text-muted">{option.optionCode}</code>
-            <code className="rounded bg-white px-2 py-1 text-xs font-bold text-muted">{optionSku}</code>
+            <span className="rounded-full bg-[#f7f8fa] px-2 py-1 text-[11px] font-black uppercase text-muted">{optionMeta.badge}</span>
             <OptionReadinessBadge ready={optionReady} missingCount={missingRequiredMedia.length} />
           </div>
-          <p className="mt-1 text-sm leading-6 text-muted">{option.description}</p>
-          {option.optionCode === "standard_direct" ? (
-            <p className="mt-2 text-xs font-bold text-brand">NFC only. No printed QR code.</p>
-          ) : null}
-          {option.optionCode === "branded_qr_direct" ? (
-            <p className="mt-2 text-xs font-bold text-brand">NFC + QR. Requires logo, business name, QR zone, and proof.</p>
-          ) : null}
-          {option.optionCode === "hosted_multilink" ? (
-            <p className="mt-2 text-xs font-bold text-brand">Hosted page. Requires QR, account, landing preview, and monthly service.</p>
-          ) : null}
+          <p className="mt-1 text-xs leading-5 text-muted">{optionMeta.summary}</p>
+          <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold text-muted">
+            <code className="rounded bg-[#f7f8fa] px-2 py-1">{option.optionCode}</code>
+            <code className="rounded bg-[#f7f8fa] px-2 py-1">{optionSku}</code>
+          </div>
         </div>
-        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+        <div>
+          <p className="text-[11px] font-black uppercase text-muted">Price</p>
+          <p className="mt-1 text-sm font-black text-ink">{optionPrice}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-black uppercase text-muted">Media</p>
+          <p className={optionReady ? "mt-1 text-sm font-black text-brand" : "mt-1 text-sm font-black text-red-700"}>
+            {optionReady ? "Ready" : missingRequiredMedia.map((item) => item.label).join(", ")}
+          </p>
+        </div>
+        <label className="flex items-center justify-between gap-3 rounded-md border border-line px-3 py-2 text-sm font-bold text-ink" onClick={(event) => event.stopPropagation()}>
           Enabled
           <input
             type="checkbox"
@@ -759,72 +849,71 @@ function SetupOptionEditor({
             onChange={(event) => onChange({ isActive: event.target.checked })}
           />
         </label>
-      </div>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {mediaRequirements.map((requirement) => (
-          <MediaUploadCard
-            key={`${option.optionCode}-${requirement.assetKey}`}
-            label={requirement.label}
-            description={requirement.description}
-            value={requirement.value}
-            required={requirement.required && option.isActive}
-            role={requirement.role}
-            isUploading={Boolean(uploadingRoles[requirement.role])}
-            error={mediaErrors[requirement.role]}
-            onUpload={(file) => onUploadAsset(file, requirement.assetKey, requirement.role)}
-            onRemove={() => onUpdateAsset(requirement.assetKey, "")}
-          />
-        ))}
-      </div>
-      {option.optionCode === "hosted_multilink" ? (
-        <label className="mt-4 flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
-          <span>
-            Landing page preview configuration
-            <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
-          </span>
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-line accent-brand"
-            checked={assetSet.landingPagePreviewReady}
-            onChange={(event) => {
-              onSetLandingPreview(event.target.checked);
-              onChange({ landingPageUrlPattern: event.target.checked ? option.landingPageUrlPattern ?? "/l/:client-name" : undefined });
-            }}
-          />
-        </label>
-      ) : null}
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
-        {option.optionCode === "hosted_multilink" ? (
-          <>
-            <NumberInput
-              label="Monthly cents"
-              value={option.monthlyPriceCents ?? 990}
-              onChange={(monthlyPriceCents) => onChange({ monthlyPriceCents })}
+      </summary>
+
+      <div className="grid gap-4 border-t border-line bg-[#fbfbfc] p-4">
+        <div className="grid gap-3 md:grid-cols-3">
+          <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
+          {option.optionCode === "hosted_multilink" ? (
+            <>
+              <NumberInput
+                label="Monthly cents"
+                value={option.monthlyPriceCents ?? 990}
+                onChange={(monthlyPriceCents) => onChange({ monthlyPriceCents })}
+              />
+              <NumberInput label="Max links" value={option.maxLinks ?? 10} onChange={(maxLinks) => onChange({ maxLinks })} />
+            </>
+          ) : null}
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {mediaRequirements.map((requirement) => (
+            <MediaUploadCard
+              key={`${option.optionCode}-${requirement.assetKey}`}
+              label={requirement.label}
+              description={requirement.description}
+              value={requirement.value}
+              required={requirement.required && option.isActive}
+              role={requirement.role}
+              size="compact"
+              isUploading={Boolean(uploadingRoles[requirement.role])}
+              error={mediaErrors[requirement.role]}
+              onUpload={(file) => onUploadAsset(file, requirement.assetKey, requirement.role)}
+              onRemove={() => onUpdateAsset(requirement.assetKey, "")}
             />
-            <NumberInput label="Max links" value={option.maxLinks ?? 10} onChange={(maxLinks) => onChange({ maxLinks })} />
-          </>
-        ) : null}
-      </div>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        <RulePill active={option.requiresDestinationUrl} label="Requires destination link" />
-        <RulePill active={option.hasQr} label="Printed QR" />
-        <RulePill active={option.requiresLogo} label="Logo required" />
-        <RulePill active={option.requiresBusinessName} label="Business name required" />
-        <RulePill active={option.requiresDesignStep} label="Design step" />
-        <RulePill active={option.requiresFrontProof} label="Front proof" />
-        <RulePill active={option.accountRequired} label="Account required" />
-        <RulePill active={option.requiresSubscription} label="Subscription" />
+          ))}
+        </div>
+
         {option.optionCode === "hosted_multilink" ? (
-          <>
-            <RulePill active={option.supportsReorderableLinks} label="Reorder links" />
-            <RulePill active={option.supportsLinkVisibility} label="Show/hide links" />
-            <RulePill active={Boolean(option.landingPageUrlPattern)} label={option.landingPageUrlPattern ?? "/l/:client-name"} />
-            <RulePill active={Boolean(option.footerLabel)} label={option.footerLabel ?? "Powered by Tap Rater"} />
-          </>
+          <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
+            <span>
+              Landing page preview configuration
+              <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
+            </span>
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-line accent-brand"
+              checked={assetSet.landingPagePreviewReady}
+              onChange={(event) => {
+                onSetLandingPreview(event.target.checked);
+                onChange({ landingPageUrlPattern: event.target.checked ? option.landingPageUrlPattern ?? "/l/:client-name" : undefined });
+              }}
+            />
+          </label>
         ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          <RulePill active={option.requiresDestinationUrl} label="Destination link" />
+          <RulePill active={option.hasQr} label="Printed QR" />
+          <RulePill active={option.requiresLogo} label="Logo" />
+          <RulePill active={option.requiresBusinessName} label="Business name" />
+          <RulePill active={option.requiresDesignStep} label="Design step" />
+          <RulePill active={option.requiresFrontProof} label="Front proof" />
+          <RulePill active={option.accountRequired} label="Account" />
+          <RulePill active={option.requiresSubscription} label="Subscription" />
+        </div>
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -836,6 +925,8 @@ function MediaUploadCard({
   isUploading,
   error,
   required = false,
+  size = "regular",
+  secondaryAction,
   onUpload,
   onRemove
 }: {
@@ -846,10 +937,21 @@ function MediaUploadCard({
   isUploading: boolean;
   error?: string;
   required?: boolean;
+  size?: "hero" | "regular" | "thumbnail" | "compact";
+  secondaryAction?: { label: string; onClick: () => void };
   onUpload: (file: File) => void | Promise<void>;
   onRemove: () => void;
 }) {
   const ready = Boolean(value);
+  const mediaBoxClass =
+    size === "hero"
+      ? "min-h-[320px]"
+      : size === "thumbnail"
+        ? "min-h-40"
+        : size === "compact"
+          ? "min-h-36"
+          : "min-h-48";
+  const imageClass = size === "hero" ? "max-h-[300px]" : size === "thumbnail" ? "max-h-36" : "max-h-32";
 
   function handleFile(file?: File) {
     if (file) {
@@ -869,7 +971,7 @@ function MediaUploadCard({
         <p className="text-xs leading-5 text-muted">{description}</p>
       </div>
       <label
-        className="group grid min-h-44 cursor-pointer place-items-center overflow-hidden rounded-md border border-dashed border-line bg-[#f7f8fa] p-3 text-center hover:border-brand"
+        className={`group grid ${mediaBoxClass} cursor-pointer place-items-center overflow-hidden rounded-md border border-dashed border-line bg-white p-3 text-center hover:border-brand`}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
@@ -884,7 +986,7 @@ function MediaUploadCard({
           onChange={(event) => handleFile(event.target.files?.[0])}
         />
         {ready ? (
-          <img src={value} alt="" className="max-h-36 w-full object-contain" loading="lazy" />
+          <img src={value} alt="" className={`${imageClass} h-full w-full object-contain`} loading="lazy" />
         ) : (
           <span className="grid justify-items-center gap-2 text-xs font-bold text-muted">
             {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden="true" /> : <UploadCloud className="h-5 w-5 text-muted group-hover:text-brand" aria-hidden="true" />}
@@ -894,10 +996,37 @@ function MediaUploadCard({
         )}
       </label>
       {ready ? (
-        <div className="flex items-center justify-between gap-3">
-          <code className="truncate rounded bg-[#f7f8fa] px-2 py-1 text-[11px] font-bold text-muted" title={value}>
-            {value}
-          </code>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {secondaryAction ? (
+              <button
+                type="button"
+                className="rounded-md border border-line px-2 py-1.5 text-xs font-bold text-ink hover:border-brand hover:text-brand"
+                onClick={secondaryAction.onClick}
+              >
+                {secondaryAction.label}
+              </button>
+            ) : null}
+            <details className="relative text-xs font-bold text-muted">
+              <summary className="cursor-pointer rounded-md border border-line px-2 py-1.5 hover:border-brand hover:text-brand">Advanced</summary>
+              <div className="absolute left-0 z-20 mt-2 grid w-44 gap-1 rounded-md border border-line bg-white p-2 shadow-lg">
+                <a className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-ink hover:bg-[#f7f8fa]" href={value} target="_blank" rel="noreferrer">
+                  <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                  View image
+                </a>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-left text-ink hover:bg-[#f7f8fa]"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(value);
+                  }}
+                >
+                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                  Copy URL
+                </button>
+              </div>
+            </details>
+          </div>
           <button
             type="button"
             className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1.5 text-xs font-bold text-ink hover:border-red-200 hover:text-red-700"
@@ -1297,6 +1426,25 @@ function generateProductSku(title: string) {
 
   const acronym = words.map((word) => word[0]).join("").toUpperCase();
   return formatSku(acronym || "PRODUCT");
+}
+
+function getOptionDisplayMeta(option: ProductOption) {
+  const map: Record<ProductOptionCode, { badge: string; summary: string }> = {
+    standard_direct: {
+      badge: "STD / NFC only",
+      summary: "Standard Direct uses the ready-made angled stand image, NFC only, no printed QR."
+    },
+    branded_qr_direct: {
+      badge: "BQR / NFC + QR",
+      summary: "Branded + QR uses its own angled image plus a front template with logo, business-name, and QR zones."
+    },
+    hosted_multilink: {
+      badge: "HML / hosted page",
+      summary: "Hosted Multi-Link uses branded stand media, a hosted Tap Rater page, and monthly service."
+    }
+  };
+
+  return map[option.optionCode];
 }
 
 function optionSkuSuffix(optionCode: ProductOptionCode) {
