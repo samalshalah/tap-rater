@@ -86,8 +86,30 @@ describe("catalog architecture", () => {
   it("keeps products in draft when required assets or options are missing", () => {
     expect(getProductAssetReadiness({ productKind: "normal_direct", assetSet: {} }, [])).toEqual({
       status: "draft_missing_assets",
-      missing: ["Standard angled image", "Branded + QR angled image", "Branded front template", "At least one active product option"]
+      missing: ["At least one active product option"]
     });
+
+    expect(getProductAssetReadiness({ productKind: "normal_direct", assetSet: {} }, [standardDirectProductOption])).toEqual({
+      status: "draft_missing_assets",
+      missing: ["Standard Direct angled image"]
+    });
+
+    expect(getProductAssetReadiness({ productKind: "normal_direct", assetSet: {} }, [brandedQrDirectProductOption])).toEqual({
+      status: "draft_missing_assets",
+      missing: ["Branded + QR angled image", "Branded + QR front template"]
+    });
+
+    expect(
+      getProductAssetReadiness(
+        {
+          productKind: "normal_direct",
+          assetSet: {
+            standardAngledImageUrl: "/standard.png"
+          }
+        },
+        [standardDirectProductOption]
+      )
+    ).toEqual({ status: "ready", missing: [] });
 
     expect(
       getProductAssetReadiness(

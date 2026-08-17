@@ -2,7 +2,7 @@
 
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Image as ImageIcon, Save, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
 import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
 import type {
   BusinessUse,
@@ -42,6 +42,22 @@ type AssetSetState = Record<AssetKey, string> & {
   landingPagePreviewReady: boolean;
 };
 
+type MediaItemState = {
+  src: string;
+  alt: string;
+};
+
+type MediaUploadRole =
+  | "main"
+  | "gallery"
+  | "standard_angled"
+  | "standard_front"
+  | "branded_angled"
+  | "branded_front_template"
+  | "multilink_angled"
+  | "multilink_front_template"
+  | "center_asset";
+
 const normalOptionCodes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
 const hostedOptionCodes: ProductOptionCode[] = ["hosted_multilink"];
 
@@ -57,6 +73,11 @@ export function ProductEditor({
   const initialKind = product.productKind ?? inferProductKind(product);
   const [status, setStatus] = useState<SaveStatus>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [title, setTitle] = useState(product.title);
+  const [slug, setSlug] = useState(product.slug);
+  const [slugEdited, setSlugEdited] = useState(mode === "edit" && Boolean(product.slug));
+  const [sku, setSku] = useState(product.sku || generateProductSku(product.title));
+  const [skuEdited, setSkuEdited] = useState(mode === "edit" && Boolean(product.sku));
   const [productKind, setProductKind] = useState<ProductKind>(initialKind);
   const [standTypeSlug, setStandTypeSlug] = useState(product.standTypeSlug ?? standTypes[0]?.slug ?? "");
   const [primaryPlatformSlug, setPrimaryPlatformSlug] = useState(product.primaryPlatformSlug ?? "custom-url");
@@ -74,6 +95,10 @@ export function ProductEditor({
     centerAssetUrl: product.assetSet?.centerAssetUrl ?? "",
     landingPagePreviewReady: Boolean(product.assetSet?.landingPagePreviewConfig && Object.keys(product.assetSet.landingPagePreviewConfig).length > 0)
   }));
+  const [mainImage, setMainImage] = useState<MediaItemState>(() => product.images[0] ?? { src: product.assetSet?.standardAngledImageUrl ?? "", alt: product.title });
+  const [galleryImages, setGalleryImages] = useState<MediaItemState[]>(() => product.images.slice(1, 5));
+  const [uploadingRoles, setUploadingRoles] = useState<Record<string, boolean>>({});
+  const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const [optionStates, setOptionStates] = useState<ProductOption[]>(() =>
     buildInitialOptions(productKind, productOptions, optionTemplates)
   );
@@ -121,6 +146,91 @@ export function ProductEditor({
     setAssetSet((current) => ({ ...current, [key]: value }));
   }
 
+  function updateTitle(value: string) {
+    setTitle(value);
+    if (!slugEdited) {
+      setSlug(slugify(value));
+    }
+    if (!skuEdited) {
+      setSku(generateProductSku(value));
+    }
+  }
+
+  function updateSlug(value: string) {
+    setSlugEdited(true);
+    setSlug(slugify(value));
+  }
+
+  function updateSku(value: string) {
+    setSkuEdited(true);
+    setSku(formatSku(value));
+  }
+
+  async function uploadMedia(file: File, role: MediaUploadRole) {
+    const uploadKey = role;
+    setUploadingRoles((current) => ({ ...current, [uploadKey]: true }));
+    setMediaErrors((current) => ({ ...current, [uploadKey]: "" }));
+
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("role", role);
+      form.append("productSlug", slug || slugify(title) || "draft-product");
+
+      const response = await fetch("/api/admin/media/upload", {
+        method: "POST",
+        body: form
+      });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(body.error ?? "Image upload failed.");
+      }
+
+      const uploadedUrl = readOptionalString(body.asset?.url);
+      if (!uploadedUrl) {
+        throw new Error("Image upload did not return a usable media URL.");
+      }
+
+      return uploadedUrl;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Image upload failed.";
+      setMediaErrors((current) => ({ ...current, [uploadKey]: message }));
+      return null;
+    } finally {
+      setUploadingRoles((current) => ({ ...current, [uploadKey]: false }));
+    }
+  }
+
+  async function uploadMainImage(file: File) {
+    const uploadedUrl = await uploadMedia(file, "main");
+    if (uploadedUrl) {
+      setMainImage({ src: uploadedUrl, alt: title });
+    }
+  }
+
+  async function uploadGalleryImage(file: File, index?: number) {
+    const uploadedUrl = await uploadMedia(file, "gallery");
+    if (!uploadedUrl) return;
+
+    setGalleryImages((current) => {
+      const next = [...current];
+      if (typeof index === "number") {
+        next[index] = { src: uploadedUrl, alt: title };
+      } else {
+        next.push({ src: uploadedUrl, alt: title });
+      }
+      return next.slice(0, 5);
+    });
+  }
+
+  async function uploadAssetImage(file: File, key: AssetKey, role: MediaUploadRole) {
+    const uploadedUrl = await uploadMedia(file, role);
+    if (uploadedUrl) {
+      updateAsset(key, uploadedUrl);
+    }
+  }
+
   function updateOption(optionCode: ProductOptionCode, patch: Partial<ProductOption>) {
     setOptionStates((current) => current.map((option) => (option.optionCode === optionCode ? { ...option, ...patch } : option)));
   }
@@ -144,16 +254,16 @@ export function ProductEditor({
     setStatus(null);
 
     const form = new FormData(event.currentTarget);
-    const title = readRequiredText(form.get("title"));
-    const slug = slugify(readRequiredText(form.get("slug")) || title);
-    const finalSku = readOptionalString(String(form.get("sku") ?? "")) ?? generateSku(slug);
+    const finalTitle = readRequiredText(title);
+    const finalSlug = slugify(slug || finalTitle);
+    const finalSku = readOptionalString(sku) ?? generateProductSku(finalTitle);
     const finalStatus = publishStatus === "active" && canActivate ? "active" : publishStatus === "archived" ? "archived" : "draft";
     const finalIsActive = finalStatus === "active";
     const finalOptions = visibleOptions.map((option) => ({ ...option, priceCents: Math.max(0, Math.round(option.priceCents)) }));
     const finalActiveOptions = finalOptions.filter((option) => option.isActive);
     const basePriceCents = finalActiveOptions.length > 0 ? Math.min(...finalActiveOptions.map((option) => option.priceCents)) : 3900;
     const supportedDestinations = getSupportedDestinations(primaryPlatformSlug);
-    const shortDescription = readOptionalString(String(form.get("shortDescription") ?? "")) ?? `${title} NFC stand.`;
+    const shortDescription = readOptionalString(String(form.get("shortDescription") ?? "")) ?? `${finalTitle} NFC stand.`;
     const description = readOptionalString(String(form.get("description") ?? "")) ?? shortDescription;
     const defaultCtaText = readOptionalString(String(form.get("defaultCtaText") ?? "")) ?? defaultCtaForProduct(productKind);
 
@@ -162,8 +272,8 @@ export function ProductEditor({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          slug,
-          title,
+          slug: finalSlug,
+          title: finalTitle,
           sku: finalSku,
           categorySlug: categorySlugForStandType(standTypeSlug),
           standTypeSlug,
@@ -197,7 +307,7 @@ export function ProductEditor({
           ctaEditable,
           assetReadinessStatus: readiness.status,
           productOptions: finalOptions,
-          images: collectImagesFromAssets(assetSet, title),
+          images: collectImagesFromMedia(mainImage, galleryImages, assetSet, finalTitle),
           seoTitle: readOptionalString(String(form.get("seoTitle") ?? "")),
           seoDescription: readOptionalString(String(form.get("seoDescription") ?? "")),
           isActive: finalIsActive
@@ -228,11 +338,32 @@ export function ProductEditor({
       <div className="grid gap-5">
         <EditorCard title="Product Identity" description="The public name, URL handle, and product copy for this canonical stand product.">
           <div className="grid gap-4 md:grid-cols-2">
-            <Input name="title" label="Title" defaultValue={product.title} placeholder="Google Review Stand" />
-            <Input name="slug" label="Slug / URL handle" defaultValue={product.slug} placeholder="google-review-stand" />
+            <ControlledInput
+              name="title"
+              label="Title"
+              value={title}
+              placeholder="Google Review Stand"
+              onChange={updateTitle}
+            />
+            <ControlledInput
+              name="slug"
+              label="Slug / URL handle"
+              value={slug}
+              placeholder="google-review-stand"
+              helper={slugEdited ? "Edited manually" : "Auto-generated from title"}
+              onChange={updateSlug}
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Input name="sku" label="SKU" defaultValue={product.sku} placeholder="Generated from slug if empty" required={false} />
+            <ControlledInput
+              name="sku"
+              label="SKU base"
+              value={sku}
+              placeholder="GRS"
+              required={false}
+              helper={skuEdited ? "Edited manually" : "Auto-generated from title"}
+              onChange={updateSku}
+            />
             <label className="grid gap-2 text-sm font-bold text-ink">
               Stock
               <select className="rounded-md border border-line bg-white px-3 py-2.5 font-normal" name="stockStatus" defaultValue={product.stockStatus}>
@@ -248,80 +379,47 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="Media / Product Assets" description="These assets control product cards, product pages, proofs, and production templates.">
-          {isHostedProduct ? (
-            <div className="grid gap-3">
-              <AssetRow
-                label="Multi-Link angled image"
-                description="Used for the hosted product card and product detail page."
-                value={assetSet.multiLinkAngledImageUrl}
-                required
-                onChange={(value) => updateAsset("multiLinkAngledImageUrl", value)}
-                onRemove={() => updateAsset("multiLinkAngledImageUrl", "")}
-              />
-              <AssetRow
-                label="Multi-Link front template"
-                description="Used for the branded front proof and print template."
-                value={assetSet.multiLinkFrontTemplateUrl}
-                required
-                onChange={(value) => updateAsset("multiLinkFrontTemplateUrl", value)}
-                onRemove={() => updateAsset("multiLinkFrontTemplateUrl", "")}
-              />
-              <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
-                <span>
-                  Landing page preview configuration
-                  <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
-                </span>
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-line accent-brand"
-                  checked={assetSet.landingPagePreviewReady}
-                  onChange={(event) => setAssetSet((current) => ({ ...current, landingPagePreviewReady: event.target.checked }))}
+        <EditorCard title="Product Media" description="Main image and gallery shown on product cards and product pages. Uploads require the product media R2 binding.">
+          <div className="grid gap-3">
+            <MediaUploadCard
+              label="Main product image"
+              description="Primary storefront image used on cards and product detail pages."
+              value={mainImage.src}
+              required={publishStatus === "active"}
+              role="main"
+              isUploading={Boolean(uploadingRoles.main)}
+              error={mediaErrors.main}
+              onUpload={uploadMainImage}
+              onRemove={() => setMainImage({ src: "", alt: title })}
+            />
+            <div className="grid gap-3 md:grid-cols-2">
+              {galleryImages.map((image, index) => (
+                <MediaUploadCard
+                  key={`${image.src}-${index}`}
+                  label={`Gallery image ${index + 1}`}
+                  description="Optional secondary storefront image."
+                  value={image.src}
+                  role="gallery"
+                  isUploading={Boolean(uploadingRoles.gallery)}
+                  error={mediaErrors.gallery}
+                  onUpload={(file) => uploadGalleryImage(file, index)}
+                  onRemove={() => setGalleryImages((current) => current.filter((_, currentIndex) => currentIndex !== index))}
                 />
-              </label>
+              ))}
+              {galleryImages.length < 5 ? (
+                <MediaUploadCard
+                  label="Add gallery image"
+                  description="Optional image for product gallery."
+                  value=""
+                  role="gallery"
+                  isUploading={Boolean(uploadingRoles.gallery)}
+                  error={mediaErrors.gallery}
+                  onUpload={uploadGalleryImage}
+                  onRemove={() => undefined}
+                />
+              ) : null}
             </div>
-          ) : (
-            <div className="grid gap-3">
-              <AssetRow
-                label="Standard Direct angled image"
-                description="Used for the standard stand product card and detail image."
-                value={assetSet.standardAngledImageUrl}
-                required
-                onChange={(value) => updateAsset("standardAngledImageUrl", value)}
-                onRemove={() => updateAsset("standardAngledImageUrl", "")}
-              />
-              <AssetRow
-                label="Branded + QR angled image"
-                description="Used when showing the branded purchase option."
-                value={assetSet.brandedAngledImageUrl}
-                required
-                onChange={(value) => updateAsset("brandedAngledImageUrl", value)}
-                onRemove={() => updateAsset("brandedAngledImageUrl", "")}
-              />
-              <AssetRow
-                label="Branded front template"
-                description="Used for the customer front proof and print-ready template."
-                value={assetSet.brandedFrontTemplateUrl}
-                required
-                onChange={(value) => updateAsset("brandedFrontTemplateUrl", value)}
-                onRemove={() => updateAsset("brandedFrontTemplateUrl", "")}
-              />
-              <AssetRow
-                label="Standard front template"
-                description="Optional reference template for standard locked stands."
-                value={assetSet.standardFrontTemplateUrl}
-                onChange={(value) => updateAsset("standardFrontTemplateUrl", value)}
-                onRemove={() => updateAsset("standardFrontTemplateUrl", "")}
-              />
-              <AssetRow
-                label="Center platform/icon asset"
-                description="Optional platform mark or center art used by proof generation."
-                value={assetSet.centerAssetUrl}
-                onChange={(value) => updateAsset("centerAssetUrl", value)}
-                onRemove={() => updateAsset("centerAssetUrl", "")}
-              />
-            </div>
-          )}
+          </div>
         </EditorCard>
 
         <EditorCard title="Setup / Purchase Options" description="Customer purchase options live inside one canonical product. They are not separate products.">
@@ -330,7 +428,14 @@ export function ProductEditor({
               <SetupOptionEditor
                 key={option.optionCode}
                 option={option}
+                skuBase={sku || generateProductSku(title)}
+                assetSet={assetSet}
+                uploadingRoles={uploadingRoles}
+                mediaErrors={mediaErrors}
                 onChange={(patch) => updateOption(option.optionCode, patch)}
+                onUploadAsset={uploadAssetImage}
+                onUpdateAsset={updateAsset}
+                onSetLandingPreview={(ready) => setAssetSet((current) => ({ ...current, landingPagePreviewReady: ready }))}
               />
             ))}
           </div>
@@ -414,7 +519,7 @@ export function ProductEditor({
           <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} />
           <Textarea name="seoDescription" label="Meta description" defaultValue={product.seoDescription ?? ""} required={false} />
           <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs text-muted">
-            URL preview: /product/{product.slug || "product-handle"}
+            URL preview: /product/{slug || "product-handle"}
           </div>
         </EditorCard>
       </div>
@@ -530,15 +635,19 @@ export function ProductEditor({
         </SidebarCard>
 
         <SidebarCard title="Asset Readiness">
-          <ReadinessLine label="Standard image" ready={Boolean(assetSet.standardAngledImageUrl)} />
-          <ReadinessLine label="Branded image" ready={Boolean(assetSet.brandedAngledImageUrl)} />
-          <ReadinessLine label="Branded front template" ready={Boolean(assetSet.brandedFrontTemplateUrl)} />
-          {isHostedProduct ? (
-            <>
-              <ReadinessLine label="Multi-Link image" ready={Boolean(assetSet.multiLinkAngledImageUrl)} />
-              <ReadinessLine label="Multi-Link template" ready={Boolean(assetSet.multiLinkFrontTemplateUrl)} />
-              <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
-            </>
+          {activeVisibleOptions.length > 0 ? (
+            activeVisibleOptions.flatMap((option) =>
+              getOptionMediaRequirements(option.optionCode, assetSet)
+                .filter((requirement) => requirement.required)
+                .map((requirement) => (
+                  <ReadinessLine key={`${option.optionCode}-${requirement.assetKey}`} label={requirement.label} ready={Boolean(requirement.value)} />
+                ))
+            )
+          ) : (
+            <ReadinessLine label="Active product option" ready={false} />
+          )}
+          {activeVisibleOptions.some((option) => option.optionCode === "hosted_multilink") ? (
+            <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
           ) : null}
           <div className="mt-2 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs font-bold text-ink">
             Can publish: {canActivate ? "Yes" : "No"}
@@ -594,7 +703,32 @@ function SidebarCard({ title, children }: { title: string; children: ReactNode }
   );
 }
 
-function SetupOptionEditor({ option, onChange }: { option: ProductOption; onChange: (patch: Partial<ProductOption>) => void }) {
+function SetupOptionEditor({
+  option,
+  skuBase,
+  assetSet,
+  uploadingRoles,
+  mediaErrors,
+  onChange,
+  onUploadAsset,
+  onUpdateAsset,
+  onSetLandingPreview
+}: {
+  option: ProductOption;
+  skuBase: string;
+  assetSet: AssetSetState;
+  uploadingRoles: Record<string, boolean>;
+  mediaErrors: Record<string, string>;
+  onChange: (patch: Partial<ProductOption>) => void;
+  onUploadAsset: (file: File, key: AssetKey, role: MediaUploadRole) => Promise<void>;
+  onUpdateAsset: (key: AssetKey, value: string) => void;
+  onSetLandingPreview: (ready: boolean) => void;
+}) {
+  const mediaRequirements = getOptionMediaRequirements(option.optionCode, assetSet);
+  const missingRequiredMedia = mediaRequirements.filter((requirement) => requirement.required && !requirement.value);
+  const optionReady = !option.isActive || missingRequiredMedia.length === 0;
+  const optionSku = `${skuBase || "PRODUCT"}-${optionSkuSuffix(option.optionCode)}`;
+
   return (
     <div className="rounded-md border border-line bg-[#f7f8fa] p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -602,8 +736,19 @@ function SetupOptionEditor({ option, onChange }: { option: ProductOption; onChan
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-black text-ink">{option.title}</h3>
             <code className="rounded bg-white px-2 py-1 text-xs font-bold text-muted">{option.optionCode}</code>
+            <code className="rounded bg-white px-2 py-1 text-xs font-bold text-muted">{optionSku}</code>
+            <OptionReadinessBadge ready={optionReady} missingCount={missingRequiredMedia.length} />
           </div>
           <p className="mt-1 text-sm leading-6 text-muted">{option.description}</p>
+          {option.optionCode === "standard_direct" ? (
+            <p className="mt-2 text-xs font-bold text-brand">NFC only. No printed QR code.</p>
+          ) : null}
+          {option.optionCode === "branded_qr_direct" ? (
+            <p className="mt-2 text-xs font-bold text-brand">NFC + QR. Requires logo, business name, QR zone, and proof.</p>
+          ) : null}
+          {option.optionCode === "hosted_multilink" ? (
+            <p className="mt-2 text-xs font-bold text-brand">Hosted page. Requires QR, account, landing preview, and monthly service.</p>
+          ) : null}
         </div>
         <label className="flex items-center gap-2 text-sm font-bold text-ink">
           Enabled
@@ -615,6 +760,39 @@ function SetupOptionEditor({ option, onChange }: { option: ProductOption; onChan
           />
         </label>
       </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        {mediaRequirements.map((requirement) => (
+          <MediaUploadCard
+            key={`${option.optionCode}-${requirement.assetKey}`}
+            label={requirement.label}
+            description={requirement.description}
+            value={requirement.value}
+            required={requirement.required && option.isActive}
+            role={requirement.role}
+            isUploading={Boolean(uploadingRoles[requirement.role])}
+            error={mediaErrors[requirement.role]}
+            onUpload={(file) => onUploadAsset(file, requirement.assetKey, requirement.role)}
+            onRemove={() => onUpdateAsset(requirement.assetKey, "")}
+          />
+        ))}
+      </div>
+      {option.optionCode === "hosted_multilink" ? (
+        <label className="mt-4 flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
+          <span>
+            Landing page preview configuration
+            <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
+          </span>
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-line accent-brand"
+            checked={assetSet.landingPagePreviewReady}
+            onChange={(event) => {
+              onSetLandingPreview(event.target.checked);
+              onChange({ landingPageUrlPattern: event.target.checked ? option.landingPageUrlPattern ?? "/l/:client-name" : undefined });
+            }}
+          />
+        </label>
+      ) : null}
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
         {option.optionCode === "hosted_multilink" ? (
@@ -650,32 +828,37 @@ function SetupOptionEditor({ option, onChange }: { option: ProductOption; onChan
   );
 }
 
-function AssetRow({
+function MediaUploadCard({
   label,
   description,
   value,
+  role,
+  isUploading,
+  error,
   required = false,
-  onChange,
+  onUpload,
   onRemove
 }: {
   label: string;
   description: string;
   value: string;
+  role: MediaUploadRole;
+  isUploading: boolean;
+  error?: string;
   required?: boolean;
-  onChange: (value: string) => void;
+  onUpload: (file: File) => void | Promise<void>;
   onRemove: () => void;
 }) {
   const ready = Boolean(value);
 
+  function handleFile(file?: File) {
+    if (file) {
+      void onUpload(file);
+    }
+  }
+
   return (
-    <div className="grid gap-3 rounded-md border border-line bg-white p-3 md:grid-cols-[88px_minmax(0,1fr)_auto] md:items-center">
-      <div className="grid h-20 w-full place-items-center overflow-hidden rounded-md border border-line bg-[#f7f8fa] md:w-20">
-        {ready ? (
-          <img src={value} alt="" className="h-full w-full object-contain" loading="lazy" />
-        ) : (
-          <ImageIcon className="h-5 w-5 text-muted" aria-hidden="true" />
-        )}
-      </div>
+    <div className="grid gap-3 rounded-md border border-line bg-white p-3">
       <div className="grid gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-black text-ink">{label}</p>
@@ -684,22 +867,84 @@ function AssetRow({
           </span>
         </div>
         <p className="text-xs leading-5 text-muted">{description}</p>
-        <input
-          className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="/uploads/products/example.png"
-        />
       </div>
-      <button
-        type="button"
-        className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-red-200 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-40"
-        disabled={!ready}
-        onClick={onRemove}
+      <label
+        className="group grid min-h-44 cursor-pointer place-items-center overflow-hidden rounded-md border border-dashed border-line bg-[#f7f8fa] p-3 text-center hover:border-brand"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          handleFile(event.dataTransfer.files?.[0]);
+        }}
       >
-        Remove
-      </button>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="sr-only"
+          disabled={isUploading}
+          onChange={(event) => handleFile(event.target.files?.[0])}
+        />
+        {ready ? (
+          <img src={value} alt="" className="max-h-36 w-full object-contain" loading="lazy" />
+        ) : (
+          <span className="grid justify-items-center gap-2 text-xs font-bold text-muted">
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin text-brand" aria-hidden="true" /> : <UploadCloud className="h-5 w-5 text-muted group-hover:text-brand" aria-hidden="true" />}
+            Drop image here or click to upload
+            <span className="font-normal">PNG, JPG, or WEBP up to 10 MB</span>
+          </span>
+        )}
+      </label>
+      {ready ? (
+        <div className="flex items-center justify-between gap-3">
+          <code className="truncate rounded bg-[#f7f8fa] px-2 py-1 text-[11px] font-bold text-muted" title={value}>
+            {value}
+          </code>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-md border border-line px-2 py-1.5 text-xs font-bold text-ink hover:border-red-200 hover:text-red-700"
+            onClick={onRemove}
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+            Remove
+          </button>
+        </div>
+      ) : null}
+      {error ? <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</p> : null}
+      {isUploading && ready ? <p className="text-xs font-bold text-brand">Uploading replacement...</p> : null}
+      <input type="hidden" name={`media-${role}`} value={value} readOnly />
     </div>
+  );
+}
+
+function ControlledInput({
+  name,
+  label,
+  value,
+  placeholder,
+  helper,
+  required = true,
+  onChange
+}: {
+  name: string;
+  label: string;
+  value: string;
+  placeholder?: string;
+  helper?: string;
+  required?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-bold text-ink">
+      {label}
+      <input
+        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
+        name={name}
+        value={value}
+        placeholder={placeholder}
+        required={required}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {helper ? <span className="text-xs font-semibold text-muted">{helper}</span> : null}
+    </label>
   );
 }
 
@@ -796,6 +1041,14 @@ function RulePill({ active, label }: { active: boolean; label: string }) {
   );
 }
 
+function OptionReadinessBadge({ ready, missingCount }: { ready: boolean; missingCount: number }) {
+  return (
+    <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-black text-brand" : "rounded-full bg-amber-50 px-2 py-1 text-xs font-black text-ink"}>
+      {ready ? "Ready" : `${missingCount} media missing`}
+    </span>
+  );
+}
+
 function ReadinessLine({ label, ready }: { label: string; ready: boolean }) {
   return (
     <div className="flex items-center justify-between gap-3 text-sm">
@@ -814,6 +1067,77 @@ function buildInitialOptions(productKind: ProductKind, productOptions: ProductOp
     ...(templateMap.get(code) ?? getDefaultOptionsForProductKind(code === "hosted_multilink" ? "hosted_multilink" : "normal_direct").find((option) => option.optionCode === code)!),
     ...(savedOptionMap.get(code) ?? {})
   }));
+}
+
+function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: AssetSetState) {
+  if (optionCode === "hosted_multilink") {
+    return [
+      {
+        label: "Multi-Link angled image",
+        description: "Used for the hosted product card and product detail page.",
+        assetKey: "multiLinkAngledImageUrl" as const,
+        role: "multilink_angled" as const,
+        value: assetSet.multiLinkAngledImageUrl,
+        required: true
+      },
+      {
+        label: "Multi-Link front template",
+        description: "Used for the branded front proof and hosted stand template.",
+        assetKey: "multiLinkFrontTemplateUrl" as const,
+        role: "multilink_front_template" as const,
+        value: assetSet.multiLinkFrontTemplateUrl,
+        required: true
+      }
+    ];
+  }
+
+  if (optionCode === "branded_qr_direct") {
+    return [
+      {
+        label: "Branded + QR angled image",
+        description: "Shows the branded stand option with QR code in the storefront.",
+        assetKey: "brandedAngledImageUrl" as const,
+        role: "branded_angled" as const,
+        value: assetSet.brandedAngledImageUrl,
+        required: true
+      },
+      {
+        label: "Branded front template",
+        description: "Print/proof template with logo, business-name, and QR zones.",
+        assetKey: "brandedFrontTemplateUrl" as const,
+        role: "branded_front_template" as const,
+        value: assetSet.brandedFrontTemplateUrl,
+        required: true
+      },
+      {
+        label: "Center platform/icon asset",
+        description: "Optional locked platform logo or icon used in branded proof generation.",
+        assetKey: "centerAssetUrl" as const,
+        role: "center_asset" as const,
+        value: assetSet.centerAssetUrl,
+        required: false
+      }
+    ];
+  }
+
+  return [
+    {
+      label: "Standard Direct angled image",
+      description: "Ready-made NFC stand image. Standard Direct has no printed QR code.",
+      assetKey: "standardAngledImageUrl" as const,
+      role: "standard_angled" as const,
+      value: assetSet.standardAngledImageUrl,
+      required: true
+    },
+    {
+      label: "Standard front template",
+      description: "Optional locked front reference for standard stands.",
+      assetKey: "standardFrontTemplateUrl" as const,
+      role: "standard_front" as const,
+      value: assetSet.standardFrontTemplateUrl,
+      required: false
+    }
+  ];
 }
 
 function getOrganizationIssues({
@@ -856,8 +1180,15 @@ function cleanAssetSet(assetSet: AssetSetState) {
   };
 }
 
-function collectImagesFromAssets(assetSet: AssetSetState, title: string): MigratedProduct["images"] {
+function collectImagesFromMedia(
+  mainImage: MediaItemState,
+  galleryImages: MediaItemState[],
+  assetSet: AssetSetState,
+  title: string
+): MigratedProduct["images"] {
   const sources = [
+    mainImage.src,
+    ...galleryImages.map((image) => image.src),
     assetSet.standardAngledImageUrl,
     assetSet.brandedAngledImageUrl,
     assetSet.multiLinkAngledImageUrl,
@@ -865,10 +1196,15 @@ function collectImagesFromAssets(assetSet: AssetSetState, title: string): Migrat
     assetSet.brandedFrontTemplateUrl,
     assetSet.multiLinkFrontTemplateUrl
   ];
+  const seen = new Set<string>();
 
   return sources
     .map(readOptionalString)
-    .filter((source): source is string => Boolean(source))
+    .filter((source): source is string => {
+      if (!source || seen.has(source)) return false;
+      seen.add(source);
+      return true;
+    })
     .map((src) => ({ src, alt: title }));
 }
 
@@ -951,8 +1287,30 @@ function defaultCtaForProduct(productKind: ProductKind) {
   return productKind === "hosted_multilink" ? "CONNECT WITH US" : "Tap to connect";
 }
 
-function generateSku(slug: string) {
-  return `TR-${slug.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "PRODUCT"}`;
+function generateProductSku(title: string) {
+  const words = title
+    .replace(/&/g, " and ")
+    .replace(/[^A-Za-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  const acronym = words.map((word) => word[0]).join("").toUpperCase();
+  return formatSku(acronym || "PRODUCT");
+}
+
+function optionSkuSuffix(optionCode: ProductOptionCode) {
+  const map: Record<ProductOptionCode, string> = {
+    standard_direct: "STD",
+    branded_qr_direct: "BQR",
+    hosted_multilink: "HML"
+  };
+
+  return map[optionCode];
+}
+
+function formatSku(value: string) {
+  return value.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
 }
 
 function slugify(value: string) {

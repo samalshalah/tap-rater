@@ -8,10 +8,17 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "r2_buckets": [
+    {
+      "binding": "PRODUCT_MEDIA_BUCKET",
+      "bucket_name": "tap-rater-product-media"
+    }
+  ],
   "observability": {
     "enabled": true
   },
   "vars": {
-    "NEXT_PUBLIC_SITE_URL": "https://taprater.com"
+    "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
+    "PRODUCT_MEDIA_PUBLIC_BASE_URL": ""
   }
 }

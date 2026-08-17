@@ -410,6 +410,7 @@ export function getProductAssetReadiness(product: {
   const assetSet = product.assetSet ?? {};
   const missing: string[] = [];
   const isHosted = product.productKind === "hosted_multilink" || product.isSpecialSolution;
+  const enabledOptionCodes = new Set(activeOptions.filter((option) => option.isActive).map((option) => option.optionCode));
 
   if (isHosted) {
     if (!(assetSet.multiLinkAngledImageUrl ?? assetSet.brandedAngledImageUrl)) missing.push("Multi-Link angled image");
@@ -417,15 +418,26 @@ export function getProductAssetReadiness(product: {
     if (!assetSet.landingPagePreviewConfig || Object.keys(assetSet.landingPagePreviewConfig).length === 0) {
       missing.push("Landing page preview configuration");
     }
-    if (!activeOptions.some((option) => option.optionCode === "hosted_multilink" && option.isActive)) {
+    if (!enabledOptionCodes.has("hosted_multilink")) {
       missing.push("Hosted Multi-Link option");
     }
   } else {
-    if (!assetSet.standardAngledImageUrl) missing.push("Standard angled image");
-    if (!assetSet.brandedAngledImageUrl) missing.push("Branded + QR angled image");
-    if (!assetSet.brandedFrontTemplateUrl) missing.push("Branded front template");
-    if (!activeOptions.some((option) => option.isActive)) {
+    if (enabledOptionCodes.size === 0) {
       missing.push("At least one active product option");
+    }
+    if (enabledOptionCodes.has("standard_direct") && !assetSet.standardAngledImageUrl) {
+      missing.push("Standard Direct angled image");
+    }
+    if (enabledOptionCodes.has("branded_qr_direct")) {
+      if (!assetSet.brandedAngledImageUrl) missing.push("Branded + QR angled image");
+      if (!assetSet.brandedFrontTemplateUrl) missing.push("Branded + QR front template");
+    }
+    if (enabledOptionCodes.has("hosted_multilink")) {
+      if (!assetSet.multiLinkAngledImageUrl) missing.push("Multi-Link angled image");
+      if (!assetSet.multiLinkFrontTemplateUrl) missing.push("Multi-Link front template");
+      if (!assetSet.landingPagePreviewConfig || Object.keys(assetSet.landingPagePreviewConfig).length === 0) {
+        missing.push("Landing page preview configuration");
+      }
     }
   }
 

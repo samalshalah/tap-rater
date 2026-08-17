@@ -338,7 +338,7 @@ export function AdminProductsTable({
                   <td className="p-4 text-muted">{options.map((option) => option.title).join(", ") || "-"}</td>
                   <td className="p-4 font-black text-ink">{formatPriceRange(options, product)}</td>
                   <td className="p-4">
-                    <ReadinessBadge status={readiness.status} missingCount={readiness.missing.length} />
+                    <ReadinessBadge status={readiness.status} missing={readiness.missing} />
                   </td>
                   <td className="p-4">
                     <StatusBadge status={getProductStatus(product)} />
@@ -448,14 +448,16 @@ function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus
   );
 }
 
-function ReadinessBadge({ status, missingCount }: { status: string; missingCount: number }) {
+function ReadinessBadge({ status, missing }: { status: string; missing: string[] }) {
   if (status === "ready") {
     return <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand">Ready</span>;
   }
 
+  const label = missing.length === 1 ? `Missing ${missing[0]}` : missing.length > 1 ? `${missing.length} missing` : "Blocked";
+
   return (
-    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700">
-      {missingCount > 0 ? `${missingCount} missing` : "Blocked"}
+    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700" title={missing.join(", ")}>
+      {label}
     </span>
   );
 }
