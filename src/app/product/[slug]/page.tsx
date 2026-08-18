@@ -10,6 +10,7 @@ import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
+import { resolveProductSeo } from "@/lib/product-seo";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -33,17 +34,16 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     return { title: "Product Not Found" };
   }
 
-  const title = product.seoTitle?.replace(" | Tap Rater", "") ?? product.title;
-  const description = product.seoDescription ?? product.description;
+  const seo = resolveProductSeo(product);
 
   return {
-    title,
-    description,
+    title: seo.title,
+    description: seo.description,
     keywords: product.searchKeywords,
     alternates: { canonical: `/product/${product.slug}` },
     openGraph: {
-      title,
-      description,
+      title: seo.title,
+      description: seo.description,
       url: `/product/${product.slug}`,
       images: product.images.map((image) => ({ url: absoluteUrl(image.src), alt: image.alt }))
     }

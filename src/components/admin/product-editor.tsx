@@ -13,6 +13,7 @@ import type {
 } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
 import { formatPrice } from "@/lib/products";
+import { generateProductSeo } from "@/lib/product-seo";
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -141,6 +142,44 @@ export function ProductEditor({
   const canActivate = activationIssues.length === 0;
   const primaryPlatform = platforms.find((platform) => platform.slug === primaryPlatformSlug);
   const pricingSummary = formatOptionPricing(activeVisibleOptions);
+  const basePriceCents = activeVisibleOptions.length > 0 ? Math.min(...activeVisibleOptions.map((option) => option.priceCents)) : product.basePriceCents;
+  const seoPreview = useMemo(
+    () =>
+      generateProductSeo({
+        ...product,
+        slug: slug || slugify(title) || product.slug,
+        title: title || product.title,
+        sku: sku || product.sku,
+        categorySlug: categorySlugForStandType(standTypeSlug),
+        standTypeSlug,
+        primaryPlatformSlug,
+        destinationType,
+        businessUseSlugs,
+        isSpecialSolution: isSpecialSolution || productKind === "hosted_multilink",
+        productKind,
+        basePriceCents,
+        salePriceCents: undefined,
+        requiresAccount: productKind === "hosted_multilink",
+        requiresSubscription: productKind === "hosted_multilink",
+        requiresLandingPage: productKind === "hosted_multilink",
+        supportedDestinations: getSupportedDestinations(primaryPlatformSlug),
+        seoTitle: undefined,
+        seoDescription: undefined
+      }),
+    [
+      product,
+      slug,
+      title,
+      sku,
+      standTypeSlug,
+      primaryPlatformSlug,
+      destinationType,
+      businessUseSlugs,
+      isSpecialSolution,
+      productKind,
+      basePriceCents
+    ]
+  );
   const productMediaReady = Boolean(readOptionalString(mainImage.src));
   const optionReadinessRows = activeVisibleOptions.flatMap((option) =>
     getOptionMediaRequirements(option.optionCode, assetSet)
@@ -500,11 +539,31 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="SEO" description="Metadata used when this product is published.">
-          <Input name="seoTitle" label="SEO title" defaultValue={product.seoTitle ?? ""} required={false} />
-          <Textarea name="seoDescription" label="Meta description" defaultValue={product.seoDescription ?? ""} required={false} />
-          <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs text-muted">
-            URL preview: /product/{slug || "product-handle"}
+        <EditorCard title="SEO" description="Leave fields blank to use generated search metadata from the stand type, platform, use, and price.">
+          <Input
+            name="seoTitle"
+            label="SEO title override"
+            defaultValue={product.seoTitle ?? ""}
+            placeholder={seoPreview.generatedTitle}
+            required={false}
+          />
+          <Textarea
+            name="seoDescription"
+            label="Meta description override"
+            defaultValue={product.seoDescription ?? ""}
+            placeholder={seoPreview.generatedDescription}
+            required={false}
+          />
+          <div className="grid gap-2 rounded-md border border-line bg-[#f7f8fa] px-3 py-3 text-xs text-muted">
+            <p>
+              <span className="font-black text-ink">URL:</span> /product/{slug || "product-handle"}
+            </p>
+            <p>
+              <span className="font-black text-ink">Generated title:</span> {seoPreview.generatedTitle}
+            </p>
+            <p>
+              <span className="font-black text-ink">Generated meta:</span> {seoPreview.generatedDescription}
+            </p>
           </div>
         </EditorCard>
       </div>
@@ -1290,12 +1349,14 @@ function Textarea({
   name,
   label,
   defaultValue,
+  placeholder,
   tall = false,
   required = true
 }: {
   name: string;
   label: string;
   defaultValue: string;
+  placeholder?: string;
   tall?: boolean;
   required?: boolean;
 }) {
@@ -1306,6 +1367,7 @@ function Textarea({
         className={`${tall ? "min-h-36" : "min-h-20"} rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink`}
         name={name}
         defaultValue={defaultValue}
+        placeholder={placeholder}
         required={required}
       />
     </label>

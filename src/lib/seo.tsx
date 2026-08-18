@@ -1,4 +1,5 @@
 import type { MigratedProduct } from "@/data/migrated-products";
+import { resolveProductSeo } from "@/lib/product-seo";
 import { getProductPriceCents } from "@/lib/products";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com";
@@ -9,11 +10,12 @@ export function absoluteUrl(path: string) {
 
 export function productJsonLd(product: MigratedProduct) {
   const price = (getProductPriceCents(product) / 100).toFixed(2);
+  const seo = resolveProductSeo(product);
   const data: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.seoTitle ?? product.title,
-    description: product.seoDescription ?? product.description,
+    name: product.title,
+    description: seo.description,
     sku: product.sku,
     brand: {
       "@type": "Brand",
