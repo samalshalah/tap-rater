@@ -21,9 +21,9 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
         <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Order received</p>
         <h1 className="mt-3 text-4xl font-extrabold leading-tight text-ink">Your order was received</h1>
         <p className="mt-4 leading-7 text-muted">
-          Your order was received. We will contact you for logo/design confirmation before printing when your selected
-          stand requires branding or custom artwork. Standard direct stands move to fulfillment after payment and setup
-          details are confirmed.
+          Your order was received. Standard Direct stands move to fulfillment after payment and setup details are
+          confirmed. Branded + QR stands include the uploaded logo, business name, QR destination, and front proof
+          details for production review before printing.
         </p>
         <p className="mt-3 leading-7 text-muted">
           Stripe marks the order paid only after the webhook confirms the checkout session.

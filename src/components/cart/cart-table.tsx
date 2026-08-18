@@ -65,10 +65,15 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
             <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
               {row.item.setup?.businessName ? <p><strong className="text-ink">Business:</strong> {row.item.setup.businessName}</p> : null}
               {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Link:</strong> {row.item.setup.destinationUrl}</p> : null}
+              <p>
+                <strong className="text-ink">Connection:</strong>{" "}
+                {row.item.setup?.hasQr || row.option.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"}
+              </p>
               {row.item.setup?.headline ? <p><strong className="text-ink">Headline:</strong> {row.item.setup.headline}</p> : null}
               {row.item.setup?.designNotes ? <p><strong className="text-ink">Design notes:</strong> {row.item.setup.designNotes}</p> : null}
-              {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> collect manually after checkout</p> : null}
-              {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> required before printing</p> : null}
+              {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> {row.item.setup?.logoMediaUrl || row.item.setup?.logoStorageKey ? "Uploaded" : "Missing"}</p> : null}
+              {row.option.hasQr ? <p><strong className="text-ink">QR:</strong> {row.item.setup?.generatedQrValue ? "Generated from destination link" : "Missing"}</p> : null}
+              {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> {row.item.setup?.proofApproved ? "Preview confirmed" : "Preview required"}</p> : null}
             </div>
           </div>
           <div className="flex h-10 w-fit items-center overflow-hidden rounded-full border border-line">
@@ -124,7 +129,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
       </button>
       <p className="text-sm leading-6 text-muted">
         {isLiveStripe
-          ? "Secure payment through Stripe. Branded and custom stands still receive manual proof review before printing."
+          ? "Secure payment through Stripe. Branded stands include the uploaded logo and proof details for production review before printing."
           : "Test mode only. Use Stripe test cards; live payments stay disabled until explicitly approved."}
       </p>
       {checkoutError ? (

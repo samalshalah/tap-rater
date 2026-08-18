@@ -15,11 +15,25 @@ export type CartItem = {
   quantity: number;
   productSnapshot?: CartProductSnapshot;
   setup?: {
+    productSlug?: string;
+    optionCode?: PurchaseOptionId;
     destinationUrl?: string;
+    destinationType?: string;
+    platformSlug?: string;
+    googlePlaceId?: string;
+    googlePlaceName?: string;
     businessName?: string;
     headline?: string;
     cta?: string;
     logoFileName?: string;
+    logoMediaUrl?: string;
+    logoStorageKey?: string;
+    generatedQrValue?: string;
+    frontTemplateUrl?: string;
+    proofPreviewData?: Record<string, unknown>;
+    hasQr?: boolean;
+    nfcOnly?: boolean;
+    priceCents?: number;
     designNotes?: string;
     proofApproved?: boolean;
     manualCollectionAcknowledged?: boolean;
@@ -176,22 +190,42 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     item.productId,
     item.optionId ?? standardDirectOption.id,
     setup.destinationUrl ?? "",
+    setup.destinationType ?? "",
+    setup.platformSlug ?? "",
+    setup.googlePlaceId ?? "",
     setup.businessName ?? "",
     setup.headline ?? "",
     setup.cta ?? "",
     setup.designNotes ?? "",
-    setup.logoFileName ?? ""
+    setup.logoFileName ?? "",
+    setup.logoMediaUrl ?? "",
+    setup.logoStorageKey ?? "",
+    setup.generatedQrValue ?? ""
   ].join("|");
 }
 
 function normalizeSetup(value: unknown): CartItem["setup"] {
   const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   return {
+    productSlug: readString(row.productSlug),
+    optionCode: readPurchaseOptionId(row.optionCode),
     destinationUrl: readString(row.destinationUrl),
+    destinationType: readString(row.destinationType),
+    platformSlug: readString(row.platformSlug),
+    googlePlaceId: readString(row.googlePlaceId),
+    googlePlaceName: readString(row.googlePlaceName),
     businessName: readString(row.businessName),
     headline: readString(row.headline),
     cta: readString(row.cta),
     logoFileName: readString(row.logoFileName),
+    logoMediaUrl: readString(row.logoMediaUrl),
+    logoStorageKey: readString(row.logoStorageKey),
+    generatedQrValue: readString(row.generatedQrValue),
+    frontTemplateUrl: readString(row.frontTemplateUrl),
+    proofPreviewData: readRecord(row.proofPreviewData),
+    hasQr: typeof row.hasQr === "boolean" ? row.hasQr : undefined,
+    nfcOnly: typeof row.nfcOnly === "boolean" ? row.nfcOnly : undefined,
+    priceCents: typeof row.priceCents === "number" && Number.isInteger(row.priceCents) ? row.priceCents : undefined,
     designNotes: readString(row.designNotes),
     proofApproved: row.proofApproved === true,
     manualCollectionAcknowledged: row.manualCollectionAcknowledged === true
@@ -200,6 +234,14 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function readPurchaseOptionId(value: unknown): PurchaseOptionId | undefined {
+  return value === "standard_direct" || value === "branded_qr_direct" || value === "hosted_multilink" ? value : undefined;
 }
 
 export function calculateCartTotalCents(items: CartItem[]): number {

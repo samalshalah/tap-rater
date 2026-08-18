@@ -89,6 +89,7 @@ export default async function AdminOrdersPage() {
 
 function formatProductionStatus(status: string | undefined) {
   if (status === "ready_for_direct_activation") return "Ready for direct activation";
+  if (status === "pending_branded_proof_review") return "Pending branded proof review";
   if (status === "pending_manual_logo_and_proof") return "Pending manual logo collection and proof approval";
   if (status === "pending_manual_design_and_proof") return "Pending manual design collection and proof approval";
   return "Pending review";
@@ -110,7 +111,7 @@ function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
       {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
       <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
         <p><strong>{requirementLabel}:</strong> {requirementValue}</p>
-        <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Collect manually after checkout" : "Not required"}</p>
+        <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Missing" : "Not required"}</p>
         <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
         <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
         <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
@@ -133,7 +134,7 @@ function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
 
 function formatManualRequirement(item: OrderLineItem, fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
   if (fulfillmentKind === "custom") return "Manual design collection required";
-  if (fulfillmentKind === "branded") return "Manual logo collection required";
+  if (fulfillmentKind === "branded") return item.logoReference ? "Logo uploaded; proof review required" : "Manual logo collection required";
   return item.logoRequired ? "Yes" : "No";
 }
 

@@ -28,7 +28,7 @@ const featuredProductSlugGroups = [
   ["custom-direct-stand"]
 ];
 
-const proofPoints = ["From $39", "No subscription required", "Manual proof for branded/custom"];
+const proofPoints = ["From $39", "No subscription required", "Branded proof before cart"];
 
 export default async function HomePage() {
   const products = await getStorefrontProducts();

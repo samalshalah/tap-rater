@@ -78,7 +78,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
     isSpecialSolution: product.isSpecialSolution,
     productKind: product.productKind,
     requiresLandingPage: product.requiresLandingPage,
-    requiresSubscription: product.requiresSubscription
+    requiresSubscription: product.requiresSubscription,
+    primaryPlatformSlug: product.primaryPlatformSlug,
+    destinationType: product.destinationType,
+    displayText: product.displayText,
+    defaultCtaText: product.defaultCtaText,
+    images: product.images,
+    assetSet: product.assetSet
   };
   const productFaqs = [
     {
@@ -88,7 +94,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     },
     {
       question: "Does this require a monthly fee?",
-      answer: "No. Standard Direct, Branded + QR Direct, and Custom Direct stands are one-time physical stand purchases."
+      answer: "No. Standard Direct and Branded + QR Direct stands are one-time physical stand purchases."
     },
     {
       question: "Can I change the link after printing?",

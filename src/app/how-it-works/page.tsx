@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 const steps = [
   ["Choose your stand", "Pick a review, menu, booking, social, feedback, website, or custom stand."],
-  ["Add your link or branding", "Standard stands need one link. Branded and custom stands collect business details before checkout."],
-  ["Confirm the setup", "Direct stands require link confirmation. Branded/custom stands use manual proof review before printing."],
+  ["Add your link or branding", "Standard stands need one link. Branded + QR stands require logo upload and business details before checkout."],
+  ["Confirm the setup", "Standard Direct confirms the link. Branded + QR shows a front proof preview before cart."],
   ["We prepare the stand", "Tap Rater confirms production details, then prints and ships the physical stand."]
 ];
 

@@ -16,11 +16,11 @@ export type OrderLineItem = {
   lineSubtotalCents: number;
   setup?: Record<string, unknown>;
   logoRequired?: boolean;
-  logoStatus?: "not_required" | "manual_collection_required";
+  logoStatus?: "not_required" | "uploaded" | "manual_collection_required";
   logoReference?: string | null;
   proofRequired?: boolean;
   proofApproved?: boolean;
-  productionStatus?: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus?: "ready_for_direct_activation" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
   manualProductionRequired?: boolean;
   productionWarningCodes?: ManualProductionWarningCode[];
 };
@@ -104,21 +104,23 @@ export function applyOrderLineItemFulfillmentInference(item: OrderLineItem): Ord
 
   const productionStatus =
     fulfillmentKind === "custom" ? "pending_manual_design_and_proof" : "pending_manual_logo_and_proof";
+  const hasLogoReference = Boolean(item.logoReference);
 
   return {
     ...item,
     logoRequired: true,
-    logoStatus: item.logoReference ? item.logoStatus ?? "manual_collection_required" : "manual_collection_required",
+    logoStatus: hasLogoReference ? item.logoStatus ?? "uploaded" : "manual_collection_required",
     logoReference: item.logoReference ?? null,
     proofRequired: true,
     proofApproved: item.proofApproved === true,
-    productionStatus,
+    productionStatus: hasLogoReference && fulfillmentKind === "branded" ? item.productionStatus ?? "pending_branded_proof_review" : productionStatus,
     manualProductionRequired: true,
-    productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes, [
-      "pending_manual_proof",
-      "asset_storage_not_configured",
-      "do_not_print_until_manual_review"
-    ])
+    productionWarningCodes: normalizeProductionWarningCodes(
+      item.productionWarningCodes,
+      hasLogoReference && fulfillmentKind === "branded"
+        ? ["pending_manual_proof", "do_not_print_until_manual_review"]
+        : ["pending_manual_proof", "asset_storage_not_configured", "do_not_print_until_manual_review"]
+    )
   };
 }
 
@@ -139,6 +141,7 @@ export function getOrderLineItemFulfillmentKind(item: OrderLineItem): OrderLineI
   if (
     optionId === "branded_qr_direct" ||
     optionLabel.includes("branded + qr") ||
+    productionStatus === "pending_branded_proof_review" ||
     productionStatus === "pending_manual_logo_and_proof"
   ) {
     return "branded";

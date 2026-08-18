@@ -46,11 +46,11 @@ export type CheckoutCartRow = {
   shortDescription: string;
   setup: NonNullable<CartItem["setup"]>;
   logoRequired: boolean;
-  logoStatus: "not_required" | "manual_collection_required";
+  logoStatus: "not_required" | "uploaded" | "manual_collection_required";
   logoReference?: string | null;
   proofRequired: boolean;
   proofApproved: boolean;
-  productionStatus: "ready_for_direct_activation" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus: "ready_for_direct_activation" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
   manualProductionRequired: boolean;
   productionWarningCodes: ManualProductionWarningCode[];
 };
@@ -123,12 +123,13 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
-    const proofApproved = proofRequired ? false : setup.proofApproved === true;
-    const manualProductionRequired = option.requiresManualCollection;
+    const proofApproved = proofRequired ? setup.proofApproved === true : setup.proofApproved === true;
+    const manualProductionRequired = option.id === "branded_qr_direct";
     const productionStatus =
       option.id === "branded_qr_direct"
-          ? "pending_manual_logo_and_proof"
+          ? "pending_branded_proof_review"
           : "ready_for_direct_activation";
+    const logoReference = setup.logoStorageKey ?? setup.logoMediaUrl ?? null;
 
     rows.push({
       productId: product.slug,
@@ -142,13 +143,13 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       shortDescription: product.shortDescription,
       setup,
       logoRequired,
-      logoStatus: logoRequired ? "manual_collection_required" : "not_required",
-      logoReference: null,
+      logoStatus: logoRequired ? "uploaded" : "not_required",
+      logoReference,
       proofRequired,
       proofApproved,
       productionStatus,
       manualProductionRequired,
-      productionWarningCodes: manualProductionRequired ? manualProductionWarningCodes : []
+      productionWarningCodes: manualProductionRequired ? ["pending_manual_proof", "do_not_print_until_manual_review"] : []
     });
   }
 
@@ -217,10 +218,25 @@ export function createCheckoutSessionParams({
 
 function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {
   return {
+    productSlug: setup?.productSlug?.trim(),
+    optionCode: setup?.optionCode,
     destinationUrl: setup?.destinationUrl?.trim(),
+    destinationType: setup?.destinationType?.trim(),
+    platformSlug: setup?.platformSlug?.trim(),
+    googlePlaceId: setup?.googlePlaceId?.trim(),
+    googlePlaceName: setup?.googlePlaceName?.trim(),
     businessName: setup?.businessName?.trim(),
     headline: setup?.headline?.trim(),
     cta: setup?.cta?.trim(),
+    logoFileName: setup?.logoFileName?.trim(),
+    logoMediaUrl: setup?.logoMediaUrl?.trim(),
+    logoStorageKey: setup?.logoStorageKey?.trim(),
+    generatedQrValue: setup?.generatedQrValue?.trim(),
+    frontTemplateUrl: setup?.frontTemplateUrl?.trim(),
+    proofPreviewData: setup?.proofPreviewData,
+    hasQr: setup?.hasQr,
+    nfcOnly: setup?.nfcOnly,
+    priceCents: setup?.priceCents,
     designNotes: setup?.designNotes?.trim(),
     proofApproved: setup?.proofApproved === true,
     manualCollectionAcknowledged: setup?.manualCollectionAcknowledged === true
@@ -240,8 +256,18 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
     return false;
   }
 
-  if (option.requiresManualCollection && setup.manualCollectionAcknowledged !== true) {
-    return false;
+  if (option.id === "branded_qr_direct") {
+    if (!setup.logoMediaUrl && !setup.logoStorageKey) {
+      return false;
+    }
+
+    if (!setup.generatedQrValue || !isHttpUrl(setup.generatedQrValue)) {
+      return false;
+    }
+
+    if (!setup.proofPreviewData || setup.proofApproved !== true) {
+      return false;
+    }
   }
 
   return true;

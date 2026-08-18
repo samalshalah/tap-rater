@@ -75,7 +75,7 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("allows branded checkout only with manual logo collection acknowledged and no fake logo reference", () => {
+  it("allows branded checkout only with uploaded logo, generated QR, and proof approval", () => {
     expect(
       validateCheckoutCart(
         [
@@ -104,7 +104,15 @@ describe("Stripe checkout helpers", () => {
             destinationUrl: "https://g.page/example/review",
             businessName: "Nova Implant",
             logoFileName: "fake-local-logo.png",
-            manualCollectionAcknowledged: true
+            logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+            logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+            generatedQrValue: "https://g.page/example/review",
+            frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+            proofPreviewData: {
+              businessName: "Nova Implant",
+              qrValue: "https://g.page/example/review"
+            },
+            proofApproved: true
           }
         }
       ],
@@ -116,19 +124,22 @@ describe("Stripe checkout helpers", () => {
     expect(result.rows[0]).toMatchObject({
       optionId: "branded_qr_direct",
       logoRequired: true,
-      logoStatus: "manual_collection_required",
-      logoReference: null,
+      logoStatus: "uploaded",
+      logoReference: "products/customer-setup-google-review-stand/center_asset/logo.png",
       proofRequired: true,
-      proofApproved: false,
-      productionStatus: "pending_manual_logo_and_proof",
+      proofApproved: true,
+      productionStatus: "pending_branded_proof_review",
       manualProductionRequired: true,
       productionWarningCodes: [
         "pending_manual_proof",
-        "asset_storage_not_configured",
         "do_not_print_until_manual_review"
       ]
     });
-    expect(result.rows[0].setup).not.toHaveProperty("logoFileName");
+    expect(result.rows[0].setup).toMatchObject({
+      logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+      generatedQrValue: "https://g.page/example/review",
+      proofApproved: true
+    });
   });
 
   it("does not accept Hosted Multi-Link in the current one-time checkout", () => {

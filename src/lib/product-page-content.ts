@@ -116,8 +116,8 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     },
     {
       label: "Branded",
-      bestFor: "Business name, QR code, and manual logo collection",
-      fit: "Final proof required before printing",
+      bestFor: "Business name, uploaded logo, and printed QR code",
+      fit: "Front proof preview before cart",
       active: product.allowsLogoUpload
     },
     {

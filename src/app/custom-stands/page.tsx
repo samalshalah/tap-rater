@@ -16,7 +16,7 @@ export default function CustomStandsPage() {
             <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Custom stands</p>
             <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Custom printed NFC and QR stands from $49.</h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
-              Use your own business name, custom headline, CTA, design notes, and one direct destination link. After checkout, Tap Rater collects logo/design details and sends a final proof before printing.
+              Use your own business name, logo, custom headline, CTA, design notes, and one direct destination link. Branded setup should collect the required details before checkout.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/product/custom-direct-stand" className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-6 text-sm font-black text-white transition hover:bg-brand">
@@ -37,7 +37,7 @@ export default function CustomStandsPage() {
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
           {[
             ["One direct link", "Use one approved destination such as a website, form, booking page, or custom URL."],
-            ["Manual proof", "Logo/design details are collected after checkout and confirmed before production."],
+            ["Proof preview", "Branded details should be reviewed before cart so production has the approved setup."],
             ["No active subscription", "Hosted multi-link checkout remains request-only until its lifecycle is fully approved."]
           ].map(([title, body]) => (
             <article key={title} className="rounded-[18px] border border-line bg-white p-5">

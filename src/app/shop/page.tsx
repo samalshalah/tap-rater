@@ -24,7 +24,7 @@ export default async function ShopPage() {
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Tap Rater shop</p>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Shop NFC and QR stands.</h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
-            Pick the action first, then choose Standard Direct, Branded + QR, or Custom Direct on the product page.
+            Pick the action first, then choose Standard Direct or Branded + QR on the product page.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href="#all-stands" className="inline-flex min-h-10 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">

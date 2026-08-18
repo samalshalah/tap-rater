@@ -24,7 +24,8 @@ type ProductMediaBucket = {
     }
   ) => Promise<unknown>;
   get: (key: string) => Promise<{
-    body: ReadableStream;
+    body?: ReadableStream;
+    arrayBuffer?: () => Promise<ArrayBuffer>;
     httpMetadata?: {
       contentType?: string;
       cacheControl?: string;
@@ -94,11 +95,6 @@ export async function uploadProductMedia({
   productSlug: string;
   role: ProductMediaRole;
 }): Promise<UploadedProductMedia> {
-  const bucket = await getProductMediaBucket();
-  if (!bucket) {
-    throw new ProductMediaStorageError("Product media storage is not configured.", 503);
-  }
-
   if (!file || file.size <= 0) {
     throw new ProductMediaStorageError("Choose an image file to upload.", 400);
   }
@@ -124,6 +120,11 @@ export async function uploadProductMedia({
 
   if (dimensions.width > maxProductMediaDimensionPixels || dimensions.height > maxProductMediaDimensionPixels) {
     throw new ProductMediaStorageError("Image dimensions are too large.", 400);
+  }
+
+  const bucket = await getProductMediaBucket();
+  if (!bucket) {
+    throw new ProductMediaStorageError("Product media storage is not configured.", 503);
   }
 
   const safeProductSlug = slugSegment(productSlug || "draft-product");

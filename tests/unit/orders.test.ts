@@ -9,7 +9,7 @@ import {
 } from "@/lib/orders";
 
 describe("orders repository", () => {
-  it("preserves manual logo and proof status in order line items", () => {
+  it("preserves uploaded logo and branded proof status in order line items", () => {
     const items = mapCheckoutRowsToOrderLineItems([
       {
         productId: "google-review-stand",
@@ -24,18 +24,20 @@ describe("orders repository", () => {
         setup: {
           destinationUrl: "https://g.page/example/review",
           businessName: "Nova Implant",
-          manualCollectionAcknowledged: true
+          logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+          logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+          generatedQrValue: "https://g.page/example/review",
+          proofApproved: true
         },
         logoRequired: true,
-        logoStatus: "manual_collection_required",
-        logoReference: null,
+        logoStatus: "uploaded",
+        logoReference: "products/customer-setup-google-review-stand/center_asset/logo.png",
         proofRequired: true,
-        proofApproved: false,
-        productionStatus: "pending_manual_logo_and_proof",
+        proofApproved: true,
+        productionStatus: "pending_branded_proof_review",
         manualProductionRequired: true,
         productionWarningCodes: [
           "pending_manual_proof",
-          "asset_storage_not_configured",
           "do_not_print_until_manual_review"
         ]
       }
@@ -44,15 +46,14 @@ describe("orders repository", () => {
     expect(items[0]).toMatchObject({
       optionLabel: "Branded + QR Direct Stand",
       logoRequired: true,
-      logoStatus: "manual_collection_required",
-      logoReference: null,
+      logoStatus: "uploaded",
+      logoReference: "products/customer-setup-google-review-stand/center_asset/logo.png",
       proofRequired: true,
-      proofApproved: false,
-      productionStatus: "pending_manual_logo_and_proof",
+      proofApproved: true,
+      productionStatus: "pending_branded_proof_review",
       manualProductionRequired: true,
       productionWarningCodes: [
         "pending_manual_proof",
-        "asset_storage_not_configured",
         "do_not_print_until_manual_review"
       ]
     });

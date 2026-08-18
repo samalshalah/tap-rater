@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 const prices = [
   ["Standard Direct Stand", "$39", "One direct NFC destination link.", "/category/reviews"],
-  ["Branded + QR Direct Stand", "$49", "Business name and QR code. Logo is collected after checkout before printing.", "/shop"],
-  ["Custom Direct Stand", "$49", "Custom headline or content with one direct link. Logo/design details are confirmed after checkout.", "/product/custom-direct-stand"]
+  ["Branded + QR Direct Stand", "$49", "Business name, uploaded logo, and printed QR code before checkout.", "/shop"],
+  ["Custom Stand", "$49", "Custom headline or content with one direct link and proof preview.", "/product/custom-direct-stand"]
 ];
 
 export default function PricingPage() {
@@ -20,7 +20,7 @@ export default function PricingPage() {
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Pricing</p>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Simple one-time stand pricing.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Start with a physical stand. Branded and custom orders use manual proof review before anything is printed.
+            Start with a physical stand. Branded + QR setup uses the destination, uploaded logo, business name, and proof preview before checkout.
           </p>
         </div>
       </section>
