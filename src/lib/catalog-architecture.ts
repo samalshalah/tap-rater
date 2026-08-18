@@ -406,8 +406,10 @@ export function getProductAssetReadiness(product: {
   productKind?: ProductKind;
   isSpecialSolution?: boolean;
   assetSet?: ProductAssetSet;
+  images?: { src?: string }[];
 }, activeOptions: ProductOption[] = []): ProductAssetReadiness {
   const assetSet = product.assetSet ?? {};
+  const standardAngledImageUrl = assetSet.standardAngledImageUrl ?? product.images?.[0]?.src;
   const missing: string[] = [];
   const isHosted = product.productKind === "hosted_multilink" || product.isSpecialSolution;
   const enabledOptionCodes = new Set(activeOptions.filter((option) => option.isActive).map((option) => option.optionCode));
@@ -425,7 +427,7 @@ export function getProductAssetReadiness(product: {
     if (enabledOptionCodes.size === 0) {
       missing.push("At least one active product option");
     }
-    if (enabledOptionCodes.has("standard_direct") && !assetSet.standardAngledImageUrl) {
+    if (enabledOptionCodes.has("standard_direct") && !standardAngledImageUrl) {
       missing.push("Standard Direct angled image");
     }
     if (enabledOptionCodes.has("branded_qr_direct")) {

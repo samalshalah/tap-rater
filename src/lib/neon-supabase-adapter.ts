@@ -466,13 +466,18 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
       throw new Error(`No upsert conflict target configured for ${table}.`);
     }
 
-    assertColumns(table, [conflictTarget]);
-    const updateColumns = columns.filter((column) => column !== conflictTarget);
-    if (updateColumns.length === 0) {
-      return ` on conflict (${conflictTarget}) do nothing`;
+    const conflictColumns = conflictTarget.split(",").map((column) => column.trim()).filter(Boolean);
+    if (conflictColumns.length === 0) {
+      throw new Error(`Invalid upsert conflict target configured for ${table}.`);
     }
 
-    return ` on conflict (${conflictTarget}) do update set ${updateColumns.map((column) => `${column} = excluded.${column}`).join(", ")}`;
+    assertColumns(table, conflictColumns);
+    const updateColumns = columns.filter((column) => !conflictColumns.includes(column));
+    if (updateColumns.length === 0) {
+      return ` on conflict (${conflictColumns.join(", ")}) do nothing`;
+    }
+
+    return ` on conflict (${conflictColumns.join(", ")}) do update set ${updateColumns.map((column) => `${column} = excluded.${column}`).join(", ")}`;
   }
 
   private buildWhereClause(table: TableName, params: unknown[]) {

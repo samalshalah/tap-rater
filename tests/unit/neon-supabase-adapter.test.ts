@@ -105,6 +105,41 @@ describe("Neon Supabase adapter", () => {
     expect(query.mock.calls[0][0]).toContain("::text[]");
   });
 
+  it("supports composite upsert conflict targets for product options", async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const client = createNeonSupabaseAdapter(query);
+
+    const result = await client.from("product_options").upsert(
+      [
+        {
+          product_slug: "google-review-stand",
+          option_code: "standard_direct",
+          title: "Standard Direct",
+          description: "Ready-made NFC stand.",
+          price_cents: 3900,
+          requires_destination_url: true,
+          has_qr: false,
+          requires_logo: false,
+          requires_business_name: false,
+          requires_design_step: false,
+          requires_front_proof: false,
+          requires_subscription: false,
+          account_required: false,
+          supports_reorderable_links: false,
+          supports_link_visibility: false,
+          is_active: true,
+          sort_order: 10
+        }
+      ],
+      { onConflict: "product_slug,option_code" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(query.mock.calls[0][0]).toContain("on conflict (product_slug, option_code) do update");
+    expect(query.mock.calls[0][0]).not.toContain("product_slug = excluded.product_slug");
+    expect(query.mock.calls[0][0]).not.toContain("option_code = excluded.option_code");
+  });
+
   it("builds one filtered delete query for product slugs", async () => {
     const query = vi.fn().mockResolvedValue([{ slug: "google-review-stand" }]);
     const client = createNeonSupabaseAdapter(query);

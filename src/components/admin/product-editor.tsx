@@ -111,19 +111,26 @@ export function ProductEditor({
     [isHostedProduct, optionStates]
   );
   const activeVisibleOptions = visibleOptions.filter((option) => option.isActive);
+  const effectiveAssetSet = useMemo(
+    () => ({
+      ...assetSet,
+      standardAngledImageUrl: assetSet.standardAngledImageUrl || mainImage.src
+    }),
+    [assetSet, mainImage.src]
+  );
   const readiness = getProductAssetReadiness(
     {
       productKind,
       isSpecialSolution,
       assetSet: {
-        standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl),
-        brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
-        multiLinkAngledImageUrl: readOptionalString(assetSet.multiLinkAngledImageUrl),
-        standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
-        brandedFrontTemplateUrl: readOptionalString(assetSet.brandedFrontTemplateUrl),
-        multiLinkFrontTemplateUrl: readOptionalString(assetSet.multiLinkFrontTemplateUrl),
-        centerAssetUrl: readOptionalString(assetSet.centerAssetUrl),
-        landingPagePreviewConfig: assetSet.landingPagePreviewReady ? { ready: true } : undefined
+        standardAngledImageUrl: readOptionalString(effectiveAssetSet.standardAngledImageUrl),
+        brandedAngledImageUrl: readOptionalString(effectiveAssetSet.brandedAngledImageUrl),
+        multiLinkAngledImageUrl: readOptionalString(effectiveAssetSet.multiLinkAngledImageUrl),
+        standardFrontTemplateUrl: readOptionalString(effectiveAssetSet.standardFrontTemplateUrl),
+        brandedFrontTemplateUrl: readOptionalString(effectiveAssetSet.brandedFrontTemplateUrl),
+        multiLinkFrontTemplateUrl: readOptionalString(effectiveAssetSet.multiLinkFrontTemplateUrl),
+        centerAssetUrl: readOptionalString(effectiveAssetSet.centerAssetUrl),
+        landingPagePreviewConfig: effectiveAssetSet.landingPagePreviewReady ? { ready: true } : undefined
       }
     },
     activeVisibleOptions
@@ -182,7 +189,7 @@ export function ProductEditor({
   );
   const productMediaReady = Boolean(readOptionalString(mainImage.src));
   const optionReadinessRows = activeVisibleOptions.flatMap((option) =>
-    getOptionMediaRequirements(option.optionCode, assetSet)
+    getOptionMediaRequirements(option.optionCode, effectiveAssetSet)
       .filter((requirement) => requirement.required)
       .map((requirement) => ({
         optionTitle: option.title,
@@ -352,7 +359,7 @@ export function ProductEditor({
           allowsLogoUpload: finalActiveOptions.some((option) => option.requiresLogo),
           allowsCustomDesign: false,
           designMode: finalActiveOptions.some((option) => option.requiresLogo) ? "logo" : "standard",
-          assetSet: cleanAssetSet(assetSet),
+          assetSet: cleanAssetSet(assetSet, mainImage.src),
           defaultCtaText,
           ctaEditable,
           assetReadinessStatus: readiness.status,
@@ -453,7 +460,7 @@ export function ProductEditor({
                 key={option.optionCode}
                 option={option}
                 skuBase={sku || generateProductSku(title)}
-                assetSet={assetSet}
+                assetSet={effectiveAssetSet}
                 uploadingRoles={uploadingRoles}
                 mediaErrors={mediaErrors}
                 onChange={(patch) => updateOption(option.optionCode, patch)}
@@ -989,23 +996,32 @@ function SetupOptionEditor({
           ) : null}
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
-          {mediaRequirements.map((requirement) => (
-            <MediaUploadCard
-              key={`${option.optionCode}-${requirement.assetKey}`}
-              label={requirement.label}
-              description={requirement.description}
-              value={requirement.value}
-              required={requirement.required && option.isActive}
-              role={requirement.role}
-              size="compact"
-              isUploading={Boolean(uploadingRoles[requirement.role])}
-              error={mediaErrors[requirement.role]}
-              onUpload={(file) => onUploadAsset(file, requirement.assetKey, requirement.role)}
-              onRemove={() => onUpdateAsset(requirement.assetKey, "")}
-            />
-          ))}
-        </div>
+        {option.optionCode === "standard_direct" ? (
+          <div className="rounded-md border border-line bg-white px-3 py-3 text-sm text-muted">
+            <p className="font-bold text-ink">Standard Direct uses the main product image.</p>
+            <p className="mt-1 text-xs leading-5">
+              Upload or replace the first image in Product Media. Branded + QR uses separate branded media when that option is selected.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {mediaRequirements.map((requirement) => (
+              <MediaUploadCard
+                key={`${option.optionCode}-${requirement.assetKey}`}
+                label={requirement.label}
+                description={requirement.description}
+                value={requirement.value}
+                required={requirement.required && option.isActive}
+                role={requirement.role}
+                size="compact"
+                isUploading={Boolean(uploadingRoles[requirement.role])}
+                error={mediaErrors[requirement.role]}
+                onUpload={(file) => onUploadAsset(file, requirement.assetKey, requirement.role)}
+                onRemove={() => onUpdateAsset(requirement.assetKey, "")}
+              />
+            ))}
+          </div>
+        )}
 
         {option.optionCode === "hosted_multilink" ? (
           <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
@@ -1526,9 +1542,9 @@ function getOrganizationIssues({
   return issues;
 }
 
-function cleanAssetSet(assetSet: AssetSetState) {
+function cleanAssetSet(assetSet: AssetSetState, mainImageSrc?: string) {
   return {
-    standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl),
+    standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl) ?? readOptionalString(mainImageSrc),
     brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
     multiLinkAngledImageUrl: readOptionalString(assetSet.multiLinkAngledImageUrl),
     standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
