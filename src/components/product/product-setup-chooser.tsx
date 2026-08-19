@@ -3,11 +3,12 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Search, UploadCloud } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, standardDirectOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -450,7 +451,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       ) : null}
 
       {step === "design" && selectedOption.id === "branded_qr_direct" ? (
-        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
           <div>
             <p className="text-sm font-black text-ink">Branded design</p>
             <p className="mt-1 text-sm leading-6 text-muted">
@@ -510,7 +511,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       ) : null}
 
       {step === "review" ? (
-        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
           <div>
             <p className="text-sm font-black text-ink">Review setup</p>
             <p className="mt-1 text-sm leading-6 text-muted">
@@ -654,7 +655,7 @@ function TemplateProofPreview({
         {businessName || "Business name"}
       </p>
       <div className="absolute left-[65.2%] top-[73.1%] aspect-square w-[16.2%]">
-        <QrPreview value={qrValue} variant="modules" />
+        <QrPreview value={qrValue} variant="template" />
       </div>
     </div>
   );
@@ -698,18 +699,52 @@ function CleanProofPreview({
   );
 }
 
-function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "modules" }) {
-  const cells = useMemo(() => makeQrPreviewCells(value), [value]);
+function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "template" }) {
+  const [qrSvg, setQrSvg] = useState("");
+  const [qrError, setQrError] = useState("");
   const className =
-    variant === "modules"
-      ? "grid h-full w-full grid-cols-7 gap-[1px] bg-white p-[2px]"
-      : "grid h-20 w-20 grid-cols-7 gap-0.5 border-4 border-ink bg-white p-1";
+    variant === "template"
+      ? "grid h-full w-full place-items-center bg-white p-[3px]"
+      : "grid h-20 w-20 place-items-center border-4 border-ink bg-white p-1";
+
+  useEffect(() => {
+    let isActive = true;
+
+    setQrSvg("");
+    setQrError("");
+
+    createQrSvg(value)
+      .then((svg) => {
+        if (isActive) setQrSvg(svg);
+      })
+      .catch(() => {
+        if (isActive) setQrError(QR_CODE_ERROR_MESSAGE);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [value]);
+
+  if (qrError) {
+    return (
+      <div className={`${className} text-center text-[6px] font-black leading-tight text-red-700`} role="alert">
+        {QR_CODE_ERROR_MESSAGE}
+      </div>
+    );
+  }
+
+  if (!qrSvg) {
+    return (
+      <div className={`${className} text-center text-[7px] font-black uppercase leading-tight text-muted`} aria-label="Generating QR code">
+        Generating QR
+      </div>
+    );
+  }
 
   return (
-    <div className={className} aria-label="Generated QR preview">
-      {cells.map((filled, index) => (
-        <span key={index} className={filled ? "bg-ink" : "bg-white"} />
-      ))}
+    <div className={className} aria-label="Generated QR code">
+      <div className="h-full w-full [&_svg]:block [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
     </div>
   );
 }
@@ -749,24 +784,6 @@ function platformMark(product: ProductSetupChooserProduct) {
   if (platform === "tripadvisor") return "T";
   if (platform === "facebook") return "f";
   return product.displayText?.slice(0, 1).toUpperCase() || "T";
-}
-
-function makeQrPreviewCells(value: string) {
-  const seed = value || "tap-rater";
-  let hash = 0;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
-  }
-
-  return Array.from({ length: 49 }, (_, index) => {
-    const row = Math.floor(index / 7);
-    const column = index % 7;
-    const finder =
-      (row < 2 && column < 2) ||
-      (row < 2 && column > 4) ||
-      (row > 4 && column < 2);
-    return finder || ((hash >> (index % 24)) & 1) === 1 || (row + column + hash) % 5 === 0;
-  });
 }
 
 function isHttpUrl(value: string) {
