@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   applyOrderLineItemFulfillmentInference,
   getOrderLineItemFulfillmentKind,
+  getOrderLineItemProductionSummary,
   mapCheckoutRowsToOrderLineItems,
   mapCheckoutSessionToOrderInput,
   savePaidOrderFromCheckoutSessionWithClient,
@@ -161,6 +162,101 @@ describe("orders repository", () => {
       manualProductionRequired: false,
       productionWarningCodes: []
     });
+  });
+
+  it("summarizes Standard Direct fulfillment without QR or proof warnings", () => {
+    const summary = getOrderLineItemProductionSummary({
+      productId: "google-review-stand",
+      optionId: "standard_direct",
+      optionLabel: "Standard Direct Stand",
+      title: "Google Review Stand",
+      sku: "GRS",
+      quantity: 2,
+      unitAmountCents: 3900,
+      lineSubtotalCents: 7800,
+      setup: {
+        destinationUrl: "https://g.page/example/review",
+        destinationType: "review",
+        platformSlug: "google"
+      }
+    });
+
+    expect(summary).toMatchObject({
+      fulfillmentKind: "standard",
+      optionLabel: "Standard Direct",
+      nfcBehavior: "NFC only",
+      printedQrLabel: "No printed QR",
+      destinationUrl: "https://g.page/example/review",
+      statusLabel: "Ready for direct fulfillment",
+      statusTone: "ready",
+      warnings: []
+    });
+  });
+
+  it("summarizes complete Branded + QR fulfillment as ready for production review", () => {
+    const summary = getOrderLineItemProductionSummary({
+      productId: "google-review-stand",
+      optionId: "branded_qr_direct",
+      optionLabel: "Branded + QR Direct Stand",
+      title: "Google Review Stand",
+      sku: "GRS",
+      quantity: 1,
+      unitAmountCents: 4900,
+      lineSubtotalCents: 4900,
+      setup: {
+        destinationUrl: "https://g.page/example/review",
+        destinationType: "review",
+        platformSlug: "google",
+        businessName: "Nova Implant",
+        logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
+        logoStorageKey: "products/customer-setup/logo.png",
+        generatedQrValue: "https://g.page/example/review",
+        frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
+      },
+      logoReference: "products/customer-setup/logo.png",
+      proofApproved: true
+    });
+
+    expect(summary).toMatchObject({
+      fulfillmentKind: "branded",
+      optionLabel: "Branded + QR Direct",
+      nfcBehavior: "NFC + printed QR",
+      printedQrLabel: "Printed QR included",
+      businessName: "Nova Implant",
+      logoReference: "products/customer-setup/logo.png",
+      generatedQrValue: "https://g.page/example/review",
+      frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+      proofConfirmed: true,
+      statusLabel: "Ready for production review",
+      statusTone: "ready",
+      warnings: []
+    });
+  });
+
+  it("summarizes incomplete Branded + QR fulfillment with specific missing setup warnings", () => {
+    const summary = getOrderLineItemProductionSummary({
+      productId: "google-review-stand",
+      optionId: "branded_qr_direct",
+      optionLabel: "Branded + QR Direct Stand",
+      title: "Google Review Stand",
+      sku: "GRS",
+      quantity: 1,
+      unitAmountCents: 4900,
+      lineSubtotalCents: 4900,
+      setup: {
+        destinationUrl: "https://g.page/example/review"
+      },
+      proofApproved: false
+    });
+
+    expect(summary.statusLabel).toBe("Needs setup review");
+    expect(summary.statusTone).toBe("warning");
+    expect(summary.warnings).toEqual([
+      "Missing business name",
+      "Missing logo",
+      "Missing QR value",
+      "Proof not confirmed"
+    ]);
   });
 
   it("maps a paid Stripe Checkout Session into a Supabase order payload", () => {

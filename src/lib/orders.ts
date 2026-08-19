@@ -25,7 +25,27 @@ export type OrderLineItem = {
   productionWarningCodes?: ManualProductionWarningCode[];
 };
 
-export type OrderLineItemFulfillmentKind = "standard" | "branded" | "custom";
+export type OrderLineItemFulfillmentKind = "standard" | "branded" | "custom" | "hosted";
+
+export type OrderLineItemProductionSummary = {
+  fulfillmentKind: OrderLineItemFulfillmentKind;
+  optionLabel: string;
+  nfcBehavior: "NFC only" | "NFC + printed QR" | "Hosted NFC + QR";
+  printedQrLabel: "No printed QR" | "Printed QR included" | "Hosted QR";
+  destinationUrl?: string;
+  destinationType?: string;
+  platformSlug?: string;
+  businessName?: string;
+  logoMediaUrl?: string;
+  logoReference?: string;
+  generatedQrValue?: string;
+  frontTemplateUrl?: string;
+  proofRequired: boolean;
+  proofConfirmed: boolean;
+  statusLabel: string;
+  statusTone: "ready" | "warning" | "neutral";
+  warnings: string[];
+};
 
 export type OrderRecord = {
   id?: string;
@@ -130,6 +150,10 @@ export function getOrderLineItemFulfillmentKind(item: OrderLineItem): OrderLineI
   const productionStatus = item.productionStatus?.toLowerCase() ?? "";
   const warningCodes = Array.isArray(item.productionWarningCodes) ? item.productionWarningCodes : [];
 
+  if (optionId === "hosted_multilink" || optionLabel.includes("hosted multi-link")) {
+    return "hosted";
+  }
+
   if (
     optionId === "custom_direct" ||
     optionLabel.includes("custom direct") ||
@@ -152,6 +176,92 @@ export function getOrderLineItemFulfillmentKind(item: OrderLineItem): OrderLineI
   }
 
   return "standard";
+}
+
+export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLineItemProductionSummary {
+  const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
+  const destinationUrl = readSetupString(item.setup, "destinationUrl");
+  const destinationType = readSetupString(item.setup, "destinationType");
+  const platformSlug = readSetupString(item.setup, "platformSlug");
+  const businessName = readSetupString(item.setup, "businessName");
+  const logoMediaUrl = readSetupString(item.setup, "logoMediaUrl");
+  const logoReference = item.logoReference ?? readSetupString(item.setup, "logoStorageKey") ?? logoMediaUrl;
+  const generatedQrValue = readSetupString(item.setup, "generatedQrValue");
+  const frontTemplateUrl = readSetupString(item.setup, "frontTemplateUrl") ?? readProofPreviewString(item.setup, "frontTemplateUrl");
+
+  if (fulfillmentKind === "standard") {
+    return {
+      fulfillmentKind,
+      optionLabel: "Standard Direct",
+      nfcBehavior: "NFC only",
+      printedQrLabel: "No printed QR",
+      destinationUrl,
+      destinationType,
+      platformSlug,
+      proofRequired: false,
+      proofConfirmed: false,
+      statusLabel: "Ready for direct fulfillment",
+      statusTone: "ready",
+      warnings: []
+    };
+  }
+
+  if (fulfillmentKind === "hosted") {
+    return {
+      fulfillmentKind,
+      optionLabel: "Hosted Multi-Link",
+      nfcBehavior: "Hosted NFC + QR",
+      printedQrLabel: "Hosted QR",
+      destinationUrl,
+      destinationType,
+      platformSlug,
+      businessName,
+      logoMediaUrl,
+      logoReference: logoReference ?? undefined,
+      generatedQrValue,
+      frontTemplateUrl,
+      proofRequired: true,
+      proofConfirmed: item.proofApproved === true,
+      statusLabel: "Hosted setup pending",
+      statusTone: "warning",
+      warnings: ["Hosted Multi-Link fulfillment is not enabled for Phase 1 production."]
+    };
+  }
+
+  const warnings: string[] = [];
+  const proofConfirmed = item.proofApproved === true;
+
+  if (!destinationUrl) warnings.push("Missing destination URL");
+  if (!businessName) warnings.push(fulfillmentKind === "custom" ? "Missing business name/design name" : "Missing business name");
+  if (!logoReference) warnings.push(fulfillmentKind === "custom" ? "Missing logo or design asset" : "Missing logo");
+  if (fulfillmentKind === "branded" && !generatedQrValue) warnings.push("Missing QR value");
+  if (!proofConfirmed) warnings.push("Proof not confirmed");
+
+  const isComplete = warnings.length === 0;
+
+  return {
+    fulfillmentKind,
+    optionLabel: fulfillmentKind === "custom" ? "Custom Direct" : "Branded + QR Direct",
+    nfcBehavior: "NFC + printed QR",
+    printedQrLabel: "Printed QR included",
+    destinationUrl,
+    destinationType,
+    platformSlug,
+    businessName,
+    logoMediaUrl,
+    logoReference: logoReference ?? undefined,
+    generatedQrValue,
+    frontTemplateUrl,
+    proofRequired: true,
+    proofConfirmed,
+    statusLabel: isComplete
+      ? fulfillmentKind === "custom"
+        ? "Ready for custom production review"
+        : "Ready for production review"
+      : "Needs setup review",
+    statusTone: isComplete ? "ready" : "warning",
+    warnings
+  };
 }
 
 export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLike): OrderRecord {
@@ -346,6 +456,23 @@ function isManualProductionWarningCode(value: unknown): value is ManualProductio
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function readSetupString(setup: Record<string, unknown> | undefined, key: string) {
+  if (!setup || typeof setup !== "object") {
+    return undefined;
+  }
+
+  return readString(setup[key]);
+}
+
+function readProofPreviewString(setup: Record<string, unknown> | undefined, key: string) {
+  const proofPreviewData = setup?.proofPreviewData;
+  if (!proofPreviewData || typeof proofPreviewData !== "object") {
+    return undefined;
+  }
+
+  return readString((proofPreviewData as Record<string, unknown>)[key]);
 }
 
 function readNumber(value: unknown) {

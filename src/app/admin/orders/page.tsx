@@ -1,6 +1,13 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getAdminOrders, getOrderLineItemFulfillmentKind, type OrderLineItem } from "@/lib/orders";
+import {
+  getAdminOrders,
+  getOrderLineItemProductionSummary,
+  type OrderLineItem,
+  type OrderLineItemProductionSummary,
+  type OrderRecord
+} from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
 export default async function AdminOrdersPage() {
@@ -43,6 +50,7 @@ export default async function AdminOrdersPage() {
                 <th className="p-4">Stripe session</th>
                 <th className="p-4">Customer</th>
                 <th className="p-4">Items</th>
+                <th className="p-4">Fulfillment</th>
                 <th className="p-4">Total</th>
                 <th className="p-4">Status</th>
                 <th className="p-4">Created</th>
@@ -63,6 +71,9 @@ export default async function AdminOrdersPage() {
                         ))
                       : "-"}
                   </td>
+                  <td className="p-4">
+                    <OrderFulfillmentBadges order={order} />
+                  </td>
                   <td className="p-4 font-black text-ink">{formatPrice(order.total_cents)}</td>
                   <td className="p-4">
                     <span className={order.status === "paid" ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand" : "rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase text-ink"}>
@@ -74,7 +85,7 @@ export default async function AdminOrdersPage() {
               ))}
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-muted">
+                  <td colSpan={7} className="p-8 text-center text-muted">
                     No Stripe orders yet.
                   </td>
                 </tr>
@@ -87,63 +98,197 @@ export default async function AdminOrdersPage() {
   );
 }
 
-function formatProductionStatus(status: string | undefined) {
-  if (status === "ready_for_direct_activation") return "Ready for direct activation";
-  if (status === "pending_branded_proof_review") return "Pending branded proof review";
-  if (status === "pending_manual_logo_and_proof") return "Pending manual logo collection and proof approval";
-  if (status === "pending_manual_design_and_proof") return "Pending manual design collection and proof approval";
-  return "Pending review";
-}
-
 function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
-  const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
-  const isManualProduction = fulfillmentKind === "branded" || fulfillmentKind === "custom" || item.manualProductionRequired === true;
-  const requirementLabel = fulfillmentKind === "custom" ? "Logo/design required" : "Logo required";
-  const requirementValue = formatManualRequirement(item, fulfillmentKind);
+  const summary = getOrderLineItemProductionSummary(item);
 
   return (
-    <div className="mb-3 last:mb-0">
-      <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
-      {item.optionLabel ? <p>{item.optionLabel}</p> : null}
-      {item.setup && typeof item.setup.destinationUrl === "string" ? <p>Link: {item.setup.destinationUrl}</p> : null}
-      {item.setup && typeof item.setup.businessName === "string" ? <p>Business: {item.setup.businessName}</p> : null}
-      {item.setup && typeof item.setup.headline === "string" ? <p>Headline: {item.setup.headline}</p> : null}
-      {item.setup && typeof item.setup.designNotes === "string" ? <p>Design notes: {item.setup.designNotes}</p> : null}
-      <div className="mt-2 rounded-md border border-line bg-gray-50 p-2 text-xs leading-5 text-ink">
-        <p><strong>{requirementLabel}:</strong> {requirementValue}</p>
-        <p><strong>Logo reference:</strong> {item.logoReference ? String(item.logoReference) : item.logoRequired ? "Missing" : "Not required"}</p>
-        <p><strong>Proof required:</strong> {item.proofRequired ? "Yes" : "No"}</p>
-        <p><strong>Proof approved:</strong> {item.proofApproved ? "Yes" : "No"}</p>
-        <p><strong>Production:</strong> {formatProductionStatus(item.productionStatus)}</p>
-        {isManualProduction ? (
-          <div className="mt-2 rounded-md border border-amber-200 bg-amber-50 p-2 text-amber-800">
-            <p className="font-black">Manual production review required</p>
-            <p>{formatManualProductionWarning(fulfillmentKind)}</p>
-            {item.productionWarningCodes?.length ? (
-              <p className="mt-1 font-mono text-[11px]">{item.productionWarningCodes.join(", ")}</p>
-            ) : null}
+    <div className="mb-3 rounded-lg border border-line bg-white p-3 text-xs text-ink shadow-sm last:mb-0">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-black text-ink">{item.quantity} x {item.title}</p>
+          <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <StatusPill tone="neutral">{summary.optionLabel}</StatusPill>
+            <StatusPill tone={summary.nfcBehavior === "NFC only" ? "neutral" : "ready"}>{summary.nfcBehavior}</StatusPill>
+            <StatusPill tone={summary.printedQrLabel === "No printed QR" ? "neutral" : "ready"}>{summary.printedQrLabel}</StatusPill>
           </div>
+        </div>
+        <div className="text-left lg:text-right">
+          <p className="font-black text-ink">{formatPrice(item.lineSubtotalCents)}</p>
+          <p className="mt-1 text-muted">{formatPrice(item.unitAmountCents)} each</p>
+        </div>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <FulfillmentField label="Destination URL" value={summary.destinationUrl} link />
+        <FulfillmentField label="Destination type" value={summary.destinationType} />
+        <FulfillmentField label="Platform" value={summary.platformSlug} />
+        {summary.fulfillmentKind !== "standard" ? (
+          <>
+            <FulfillmentField label="Business name" value={summary.businessName} />
+            <FulfillmentField label="Logo" value={summary.logoReference ? "Uploaded" : undefined} detail={summary.logoReference} />
+            <FulfillmentField label="QR value" value={summary.generatedQrValue ? "Generated" : undefined} detail={summary.generatedQrValue} link />
+            <FulfillmentField label="Front template" value={summary.frontTemplateUrl ? "Attached" : undefined} detail={summary.frontTemplateUrl} link />
+            <FulfillmentField label="Proof confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
+          </>
         ) : null}
-        {item.logoRequired || item.proofRequired || isManualProduction ? (
-          <p className="mt-1 font-black text-amber-700">Do not print until logo/design is collected and proof is approved.</p>
-        ) : null}
+      </div>
+
+      {summary.fulfillmentKind !== "standard" ? <ProofAssetStrip summary={summary} /> : null}
+
+      <div className="mt-3">
+        <ProductionStatus summary={summary} />
       </div>
     </div>
   );
 }
 
-function formatManualRequirement(item: OrderLineItem, fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
-  if (fulfillmentKind === "custom") return "Manual design collection required";
-  if (fulfillmentKind === "branded") return item.logoReference ? "Logo uploaded; proof review required" : "Manual logo collection required";
-  return item.logoRequired ? "Yes" : "No";
+function OrderFulfillmentBadges({ order }: { order: OrderRecord }) {
+  const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
+  const hasWarnings = summaries.some((summary) => summary.warnings.length > 0);
+  const hasBranded = summaries.some((summary) => summary.fulfillmentKind === "branded");
+  const hasStandard = summaries.some((summary) => summary.fulfillmentKind === "standard");
+  const hasHosted = summaries.some((summary) => summary.fulfillmentKind === "hosted");
+
+  return (
+    <div className="flex max-w-xs flex-wrap gap-2">
+      <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>
+        {order.status === "paid" ? "Paid" : "Payment pending"}
+      </StatusPill>
+      {hasStandard ? <StatusPill tone="neutral">Standard Direct - NFC only</StatusPill> : null}
+      {hasBranded ? (
+        <StatusPill tone={hasWarnings ? "warning" : "ready"}>
+          {hasWarnings ? "Needs proof data" : "Branded + QR - proof confirmed"}
+        </StatusPill>
+      ) : null}
+      {hasHosted ? <StatusPill tone="warning">Hosted setup pending</StatusPill> : null}
+      {!hasWarnings && order.status === "paid" ? <StatusPill tone="ready">Ready for production review</StatusPill> : null}
+    </div>
+  );
 }
 
-function formatManualProductionWarning(fulfillmentKind: ReturnType<typeof getOrderLineItemFulfillmentKind>) {
-  if (fulfillmentKind === "custom") {
-    return "Collect/confirm custom design details before printing. Do not print until proof is approved.";
+function ProductionStatus({ summary }: { summary: OrderLineItemProductionSummary }) {
+  if (summary.fulfillmentKind === "standard") {
+    return (
+      <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
+        <p className="font-black">{summary.statusLabel}</p>
+        <p className="mt-1 text-ink">Standard Direct is NFC only. No logo, printed QR, or proof approval is required.</p>
+      </div>
+    );
   }
 
-  return "Collect/confirm logo and business details before printing. Do not print until proof is approved.";
+  if (summary.warnings.length === 0) {
+    return (
+      <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
+        <p className="font-black">{summary.statusLabel}</p>
+        <p className="mt-1 text-ink">Logo, business name, QR value, and proof confirmation are present. Review the proof before production.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+      <p className="font-black">Manual production review required</p>
+      <p className="mt-1">
+        {summary.fulfillmentKind === "custom"
+          ? "Collect/confirm custom design details before printing."
+          : "Collect/confirm logo, business details, QR, and proof before printing."}
+      </p>
+      <ul className="mt-2 list-disc space-y-1 pl-4">
+        {summary.warnings.map((warning) => (
+          <li key={warning}>{warning}</li>
+        ))}
+      </ul>
+      <p className="mt-2 font-black">Do not print until the missing setup data is resolved and proof is approved.</p>
+    </div>
+  );
+}
+
+function ProofAssetStrip({ summary }: { summary: OrderLineItemProductionSummary }) {
+  return (
+    <div className="mt-3 grid gap-2 rounded-md border border-line bg-gray-50 p-2 sm:grid-cols-3">
+      <AssetPreview label="Logo thumbnail" src={summary.logoMediaUrl} fallback={summary.logoReference} />
+      <AssetPreview label="Front template" src={summary.frontTemplateUrl} fallback={summary.frontTemplateUrl} />
+      <div className="rounded-md border border-line bg-white p-2">
+        <p className="text-[11px] font-black uppercase text-muted">QR value</p>
+        {summary.generatedQrValue ? (
+          <p className="mt-2 break-all font-mono text-[11px] text-ink">{summary.generatedQrValue}</p>
+        ) : (
+          <p className="mt-2 font-bold text-amber-700">Missing</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AssetPreview({ label, src, fallback }: { label: string; src?: string; fallback?: string }) {
+  const canRenderImage = src && (src.startsWith("/") || src.startsWith("http://") || src.startsWith("https://"));
+
+  return (
+    <div className="rounded-md border border-line bg-white p-2">
+      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
+      {canRenderImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={src} alt={label} className="mt-2 h-20 w-full rounded border border-line object-contain p-1" />
+      ) : fallback ? (
+        <p className="mt-2 break-all font-mono text-[11px] text-ink">{fallback}</p>
+      ) : (
+        <p className="mt-2 font-bold text-amber-700">Missing</p>
+      )}
+    </div>
+  );
+}
+
+function FulfillmentField({
+  label,
+  value,
+  detail,
+  link = false
+}: {
+  label: string;
+  value?: string;
+  detail?: string;
+  link?: boolean;
+}) {
+  const href = link && detail && isHttpUrl(detail) ? detail : link && value && isHttpUrl(value) ? value : undefined;
+
+  return (
+    <div className="rounded-md border border-line bg-gray-50 p-2">
+      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
+      {value ? (
+        href ? (
+          <a href={href} className="mt-1 block break-all font-bold text-brand" target="_blank" rel="noreferrer">
+            {value}
+          </a>
+        ) : (
+          <p className="mt-1 break-words font-bold text-ink">{value}</p>
+        )
+      ) : (
+        <p className="mt-1 font-bold text-amber-700">Missing</p>
+      )}
+      {detail && detail !== value ? <p className="mt-1 break-all font-mono text-[11px] text-muted">{detail}</p> : null}
+    </div>
+  );
+}
+
+function StatusPill({ children, tone }: { children: ReactNode; tone: "ready" | "warning" | "neutral" }) {
+  const className =
+    tone === "ready"
+      ? "bg-teal-50 text-brand"
+      : tone === "warning"
+        ? "bg-amber-50 text-amber-800"
+        : "bg-gray-100 text-muted";
+
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase ${className}`}>{children}</span>;
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
