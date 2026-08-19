@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import type { MigratedProduct } from "@/data/migrated-products";
+import type { PurchaseOptionId } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 
-export function ProductGallery({ product }: { product: MigratedProduct }) {
-  const image = getProductVisual(product);
+export function ProductGallery({ product, selectedOptionId }: { product: MigratedProduct; selectedOptionId?: PurchaseOptionId }) {
+  const image = getSelectedGalleryImage(product, selectedOptionId);
 
   return (
     <div className="lg:sticky lg:top-24">
@@ -17,4 +20,22 @@ export function ProductGallery({ product }: { product: MigratedProduct }) {
       </div>
     </div>
   );
+}
+
+function getSelectedGalleryImage(product: MigratedProduct, selectedOptionId: PurchaseOptionId | undefined) {
+  if (selectedOptionId === "branded_qr_direct" && product.assetSet?.brandedAngledImageUrl) {
+    return {
+      src: product.assetSet.brandedAngledImageUrl,
+      alt: `${product.title} branded option`
+    };
+  }
+
+  if (selectedOptionId === "hosted_multilink" && (product.assetSet?.multiLinkAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl)) {
+    return {
+      src: product.assetSet.multiLinkAngledImageUrl ?? product.assetSet.brandedAngledImageUrl ?? "",
+      alt: `${product.title} hosted multi-link option`
+    };
+  }
+
+  return getProductVisual(product);
 }

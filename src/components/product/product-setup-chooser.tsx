@@ -9,7 +9,7 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, standardDirectOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
-type ProductSetupChooserProduct = Pick<
+export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
   | "slug"
   | "title"
@@ -31,6 +31,12 @@ type ProductSetupChooserProduct = Pick<
 
 type SetupStep = "choose" | "destination" | "design" | "review";
 
+type ProductSetupChooserProps = {
+  product: ProductSetupChooserProduct;
+  selectedOptionId?: PurchaseOptionId;
+  onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
+};
+
 type UploadedLogo = {
   mediaUrl: string;
   storageKey: string;
@@ -44,9 +50,9 @@ type GooglePlaceResult = {
   reviewUrl: string;
 };
 
-export function ProductSetupChooser({ product }: { product: ProductSetupChooserProduct }) {
+export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
-  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
+  const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [step, setStep] = useState<SetupStep>("choose");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
@@ -62,7 +68,9 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
   const [error, setError] = useState("");
   const cart = useCart();
   const router = useRouter();
-  const selectedOption = options.find((option) => option.id === selectedOptionId) ?? options[0] ?? standardDirectOption;
+  const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
+  const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0] ?? standardDirectOption;
+  const selectedOptionId = selectedOption.id;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = getSelectedOptionImage(product, selectedOption);
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? product.assetSet?.standardFrontTemplateUrl ?? "";
@@ -71,7 +79,8 @@ export function ProductSetupChooser({ product }: { product: ProductSetupChooserP
   const isHosted = selectedOption?.id === "hosted_multilink";
 
   function chooseOption(optionId: PurchaseOptionId) {
-    setSelectedOptionId(optionId);
+    setUncontrolledSelectedOptionId(optionId);
+    onSelectedOptionChange?.(optionId);
     setError("");
     setProofApproved(false);
     setStep("choose");
