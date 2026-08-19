@@ -81,6 +81,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   function chooseOption(optionId: PurchaseOptionId) {
     setUncontrolledSelectedOptionId(optionId);
     onSelectedOptionChange?.(optionId);
+    window.dispatchEvent(
+      new CustomEvent("taprater:product-option-change", {
+        detail: {
+          productSlug: product.slug,
+          optionId
+        }
+      })
+    );
     setError("");
     setProofApproved(false);
     setStep("choose");
