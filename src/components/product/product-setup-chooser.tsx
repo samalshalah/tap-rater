@@ -614,27 +614,11 @@ function ProofPreview({
         <p className="text-xs font-bold text-muted">QR generated from destination link</p>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_180px] md:items-start">
-        <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-[16px] border border-line bg-white p-5 text-center shadow-sm">
-          <div className="grid min-h-16 w-full place-items-center rounded-[12px] border border-dashed border-line bg-[#f7f8fa] p-2">
-            {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
-          </div>
-          <p className="mt-3 max-w-full break-words text-sm font-black uppercase text-ink">{businessName || "Business name"}</p>
-          <div className="mt-5 grid justify-items-center gap-2">
-            <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
-            <p className="text-sm font-black text-ink">{ctaText}</p>
-          </div>
-          <div className="mt-5 grid w-full grid-cols-2 items-end gap-5">
-            <div className="grid justify-items-center gap-1">
-              <div className="text-4xl font-black">⌁</div>
-              <p className="text-[10px] font-black uppercase leading-tight text-ink">Contactless<br />tapping</p>
-            </div>
-            <div className="grid justify-items-center gap-1">
-              <QrPreview value={qrValue} />
-              <p className="text-[10px] font-black uppercase text-ink">Scan</p>
-            </div>
-          </div>
-          <p className="mt-auto border-t border-ink px-8 pt-2 text-xs font-black uppercase text-ink">Tap Rater</p>
-        </div>
+        {templateUrl ? (
+          <TemplateProofPreview businessName={businessName} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
+        ) : (
+          <CleanProofPreview businessName={businessName} ctaText={ctaText} logo={logo} product={product} qrValue={qrValue} />
+        )}
         <div className="grid gap-3 text-sm text-muted">
           {templateUrl ? <ReviewLine label="Template" value="Branded front template attached" /> : <ReviewLine label="Template" value="Clean proof layout shown" />}
           <ReviewLine label="Logo" value={logo ? "Uploaded before cart" : "Upload required"} />
@@ -645,11 +629,84 @@ function ProofPreview({
   );
 }
 
-function QrPreview({ value }: { value: string }) {
+function TemplateProofPreview({
+  businessName,
+  logo,
+  qrValue,
+  templateUrl
+}: {
+  businessName: string;
+  logo: UploadedLogo | null;
+  qrValue: string;
+  templateUrl: string;
+}) {
+  return (
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-[16px] border border-line bg-white shadow-sm">
+      <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
+      <div className="absolute left-[13%] top-[4.5%] grid h-[9.5%] w-[74%] place-items-center">
+        {logo ? (
+          <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <span className="rounded-full border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
+        )}
+      </div>
+      <p className="absolute left-[8%] top-[17.1%] w-[84%] overflow-hidden text-center text-[11px] font-black uppercase leading-tight text-ink">
+        {businessName || "Business name"}
+      </p>
+      <div className="absolute left-[65.2%] top-[73.1%] aspect-square w-[16.2%]">
+        <QrPreview value={qrValue} variant="modules" />
+      </div>
+    </div>
+  );
+}
+
+function CleanProofPreview({
+  businessName,
+  ctaText,
+  logo,
+  product,
+  qrValue
+}: {
+  businessName: string;
+  ctaText: string;
+  logo: UploadedLogo | null;
+  product: ProductSetupChooserProduct;
+  qrValue: string;
+}) {
+  return (
+    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-[16px] border border-line bg-white p-5 text-center shadow-sm">
+      <div className="grid min-h-16 w-full place-items-center rounded-[12px] border border-dashed border-line bg-[#f7f8fa] p-2">
+        {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
+      </div>
+      <p className="mt-3 max-w-full break-words text-sm font-black uppercase text-ink">{businessName || "Business name"}</p>
+      <div className="mt-5 grid justify-items-center gap-2">
+        <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
+        <p className="text-sm font-black text-ink">{ctaText}</p>
+      </div>
+      <div className="mt-5 grid w-full grid-cols-2 items-end gap-5">
+        <div className="grid justify-items-center gap-1">
+          <div className="text-4xl font-black">⌁</div>
+          <p className="text-[10px] font-black uppercase leading-tight text-ink">Contactless<br />tapping</p>
+        </div>
+        <div className="grid justify-items-center gap-1">
+          <QrPreview value={qrValue} />
+          <p className="text-[10px] font-black uppercase text-ink">Scan</p>
+        </div>
+      </div>
+      <p className="mt-auto border-t border-ink px-8 pt-2 text-xs font-black uppercase text-ink">Tap Rater</p>
+    </div>
+  );
+}
+
+function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "modules" }) {
   const cells = useMemo(() => makeQrPreviewCells(value), [value]);
+  const className =
+    variant === "modules"
+      ? "grid h-full w-full grid-cols-7 gap-[1px] bg-white p-[2px]"
+      : "grid h-20 w-20 grid-cols-7 gap-0.5 border-4 border-ink bg-white p-1";
 
   return (
-    <div className="grid h-20 w-20 grid-cols-7 gap-0.5 border-4 border-ink bg-white p-1" aria-label="Generated QR preview">
+    <div className={className} aria-label="Generated QR preview">
       {cells.map((filled, index) => (
         <span key={index} className={filled ? "bg-ink" : "bg-white"} />
       ))}
