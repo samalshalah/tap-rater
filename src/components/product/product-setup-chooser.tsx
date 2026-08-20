@@ -297,16 +297,16 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   }
 
   return (
-    <section className="grid gap-4 rounded-[18px] border border-line bg-white p-4 shadow-sm sm:p-5">
+    <section className="grid gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-5">
       <div>
-        <p className="text-xs font-black uppercase tracking-[0.12em] text-brand">Choose setup</p>
-        <h2 className="mt-2 text-xl font-extrabold text-ink">Configure this stand</h2>
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">Choose setup</p>
+        <h2 className="mt-2 text-xl font-semibold text-ink">Configure this stand</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           Choose how this stand is produced, connect the destination link, then review the setup before cart.
         </p>
       </div>
 
-      <ol className="grid grid-cols-4 gap-2 text-center text-[11px] font-black uppercase tracking-[0.04em] text-muted">
+      <ol className="grid grid-cols-4 gap-2 text-center text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">
         {["Choose", "Destination", "Design", "Review"].map((label, index) => {
           const currentIndex = ["choose", "destination", "design", "review"].indexOf(step);
           const isActive = index <= currentIndex;
@@ -336,19 +336,19 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             type="button"
             className={
               selectedOptionId === option.id
-                ? "grid cursor-pointer gap-3 rounded-[14px] border border-brand bg-white p-4 text-left shadow-sm"
-                : "grid cursor-pointer gap-3 rounded-[14px] border border-line bg-white p-4 text-left hover:border-ink"
+                ? "grid cursor-pointer gap-3 rounded-xl border border-brand bg-white p-4 text-left shadow-sm"
+                : "grid cursor-pointer gap-3 rounded-xl border border-line bg-white p-4 text-left hover:border-ink"
             }
             onClick={() => chooseOption(option.id)}
           >
             <span className="flex items-start justify-between gap-3">
               <span>
-                <span className="block font-black text-ink">{option.label}</span>
+                <span className="block font-semibold text-ink">{option.label}</span>
                 <span className="mt-1 block text-sm leading-5 text-muted">{option.summary}</span>
               </span>
-              <span className="text-sm font-black text-ink">{formatPrice(option.priceCents)}</span>
+              <span className="text-sm font-semibold text-ink">{formatPrice(option.priceCents)}</span>
             </span>
-            <span className="flex flex-wrap gap-2 text-[11px] font-black uppercase tracking-[0.04em]">
+            <span className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.04em]">
               <span className="rounded-full bg-gray-100 px-2.5 py-1 text-muted">{option.hasQr ? "NFC + QR" : "NFC only"}</span>
               {option.requiresLogo ? <span className="rounded-full bg-teal-50 px-2.5 py-1 text-brand">Logo before cart</span> : null}
               {option.requiresFinalProof ? <span className="rounded-full bg-teal-50 px-2.5 py-1 text-brand">Proof preview</span> : null}
@@ -371,7 +371,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       {step === "choose" ? (
         <button
           type="button"
-          className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-5 text-sm font-black text-white transition hover:bg-brand"
+          className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-brand"
           onClick={continueFromChoice}
         >
           {selectedOption.id === "branded_qr_direct" ? "Continue to setup" : selectedOption.id === "hosted_multilink" ? "Build your multi-link page" : "Continue"}
@@ -381,7 +381,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       {step === "destination" ? (
         <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
           <div>
-            <p className="text-sm font-black text-ink">Destination link</p>
+            <p className="text-sm font-semibold text-ink">Destination link</p>
             <p className="mt-1 text-sm leading-6 text-muted">
               {isGoogleReviewProduct
                 ? "Search for your Google Business Profile or paste your Google review link manually."
@@ -391,7 +391,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
           {isGoogleReviewProduct ? (
             <div className="grid gap-3 rounded-[14px] border border-line bg-white p-4">
-              <label className="grid gap-2 text-sm font-bold text-ink">
+              <label className="grid gap-2 text-sm font-semibold text-ink">
                 Google Business search
                 <div className="flex gap-2">
                   <input
@@ -402,7 +402,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   />
                   <button
                     type="button"
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-black text-white hover:bg-brand disabled:bg-gray-300"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-brand disabled:bg-gray-300"
                     disabled={isSearchingGoogle}
                     onClick={searchGooglePlaces}
                   >
@@ -422,7 +422,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                       className="rounded-[12px] border border-line bg-white p-3 text-left hover:border-brand"
                       onClick={() => useGooglePlace(place)}
                     >
-                      <span className="block text-sm font-black text-ink">{place.name}</span>
+                      <span className="block text-sm font-semibold text-ink">{place.name}</span>
                       {place.formattedAddress ? <span className="block text-xs leading-5 text-muted">{place.formattedAddress}</span> : null}
                     </button>
                   ))}
@@ -431,7 +431,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
           ) : null}
 
-          <label className="grid gap-2 text-sm font-bold text-ink">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
             {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
             <input
               className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
@@ -453,10 +453,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           ) : null}
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-black text-ink" onClick={() => setStep("choose")}>
+            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink" onClick={() => setStep("choose")}>
               Back
             </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand" onClick={continueFromDestination}>
+            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDestination}>
               {selectedOption.id === "branded_qr_direct" ? "Continue to design" : "Review setup"}
             </button>
           </div>
@@ -466,13 +466,13 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       {step === "design" && selectedOption.id === "branded_qr_direct" ? (
         <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
           <div>
-            <p className="text-sm font-black text-ink">Branded design</p>
+            <p className="text-sm font-semibold text-ink">Branded design</p>
             <p className="mt-1 text-sm leading-6 text-muted">
               Upload your business logo and enter the exact business name for the printed stand. Your QR code is generated from the destination link.
             </p>
           </div>
 
-          <label className="grid gap-2 text-sm font-bold text-ink">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
             Printed business name
             <input
               className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
@@ -485,12 +485,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <div className="grid gap-3 rounded-[14px] border border-line bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-black text-ink">Business logo</p>
+                <p className="text-sm font-semibold text-ink">Business logo</p>
                 <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
               </div>
-              {logo ? <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black text-brand">Logo uploaded</span> : null}
+              {logo ? <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-brand">Logo uploaded</span> : null}
             </div>
-            <label className="grid min-h-28 cursor-pointer place-items-center rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4 text-center text-sm font-bold text-muted hover:border-brand">
+            <label className="grid min-h-28 cursor-pointer place-items-center rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4 text-center text-sm font-medium text-muted hover:border-brand">
               <UploadCloud className="mb-2 h-6 w-6" />
               {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
               <input
@@ -513,10 +513,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           />
 
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-black text-ink" onClick={() => setStep("destination")}>
+            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink" onClick={() => setStep("destination")}>
               Back
             </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand" onClick={continueFromDesign}>
+            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDesign}>
               Review front proof
             </button>
           </div>
@@ -526,7 +526,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       {step === "review" ? (
         <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
           <div>
-            <p className="text-sm font-black text-ink">Review setup</p>
+            <p className="text-sm font-semibold text-ink">Review setup</p>
             <p className="mt-1 text-sm leading-6 text-muted">
               Confirm these details before adding the configured stand to cart.
             </p>
@@ -563,7 +563,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </>
           ) : (
             <div className="rounded-[12px] border border-line bg-white p-3 text-sm leading-6 text-muted">
-              <p className="font-black text-ink">Direct setup confirmation</p>
+              <p className="font-semibold text-ink">Direct setup confirmation</p>
               <p>This Standard Direct stand is NFC only and will open the destination link above.</p>
             </div>
           )}
@@ -571,12 +571,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className="min-h-11 rounded-full border border-line px-5 text-sm font-black text-ink"
+              className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink"
               onClick={() => setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination")}
             >
               Back
             </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand" onClick={addConfiguredItemToCart}>
+            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={addConfiguredItemToCart}>
               Add configured stand to cart
             </button>
           </div>
@@ -595,9 +595,9 @@ function SelectedOptionPreview({ image, productTitle, option }: { image: { src: 
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2" />
       </div>
       <div>
-        <p className="text-sm font-black text-ink">{productTitle}</p>
+        <p className="text-sm font-semibold text-ink">{productTitle}</p>
         <p className="mt-1 text-sm text-muted">{option.label}</p>
-        <p className="mt-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.05em] text-brand">
+        <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-brand">
           <CheckCircle2 size={14} />
           {option.hasQr ? "Branded image shown when available" : "Main product image"}
         </p>

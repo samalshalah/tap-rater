@@ -17,26 +17,26 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group flex h-full flex-col rounded-[18px] border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]"
+      className="group flex h-full flex-col rounded-2xl border border-line bg-white p-3.5 transition hover:-translate-y-0.5 hover:border-brand/35 hover:shadow-[0_18px_44px_rgba(17,24,39,0.07)]"
     >
-      <div className="relative h-52 overflow-hidden rounded-[14px] border border-line/70 bg-white">
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-200 group-hover:scale-[1.03]" />
+      <div className="relative h-48 overflow-hidden rounded-xl border border-line/70 bg-[#fafafa]">
+        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-200 group-hover:scale-[1.025]" />
       </div>
-      <div className="flex flex-1 flex-col pt-4">
-        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
-        <h2 className="mt-2 text-lg font-black leading-snug text-ink">{product.title}</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="flex flex-1 flex-col pt-3.5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
+        <h2 className="mt-1.5 text-[17px] font-semibold leading-snug text-ink">{product.title}</h2>
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
           {options.some((option) => option.id === "standard_direct") ? (
-            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-muted">Standard Direct</span>
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">Standard Direct</span>
           ) : null}
           {options.some((option) => option.id === "branded_qr_direct") ? (
-            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-brand">Branded + QR</span>
+            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] text-brand">Branded + QR</span>
           ) : null}
         </div>
-        <p className="mt-3 text-sm leading-5 text-muted">{setupLabel}</p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-          <span className="text-sm font-black text-ink">{purchaseLabel}</span>
-          <span className="inline-flex min-h-9 min-w-[104px] items-center justify-center rounded-full bg-ink px-5 text-sm font-black text-white transition group-hover:bg-brand">
+        <p className="mt-3 text-[13px] leading-5 text-muted">{setupLabel}</p>
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+          <span className="text-sm font-semibold text-ink">{purchaseLabel}</span>
+          <span className="inline-flex min-h-9 min-w-[92px] items-center justify-center rounded-full bg-ink px-4 text-sm font-semibold text-white transition group-hover:bg-brand">
             View
           </span>
         </div>

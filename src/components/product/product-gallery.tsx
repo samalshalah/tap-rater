@@ -29,10 +29,10 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
 
   return (
     <div className="lg:sticky lg:top-24">
-      <div className="relative aspect-[1.04] overflow-hidden rounded-[18px] border border-line bg-white">
-        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-5 sm:p-7" />
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-line bg-[#fafafa] lg:max-h-[560px]">
+        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-5 sm:p-8" />
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-black uppercase tracking-[0.06em] text-muted">
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
         <div className="rounded-full border border-line bg-white px-3 py-2">NFC</div>
         <div className="rounded-full border border-line bg-white px-3 py-2">QR</div>
         <div className="rounded-full border border-line bg-white px-3 py-2">Proof</div>

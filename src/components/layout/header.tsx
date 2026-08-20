@@ -33,14 +33,14 @@ export function Header() {
               className="h-9 w-auto object-contain"
             />
           </Link>
-          <nav className="hidden justify-center gap-8 text-sm font-semibold text-ink lg:flex">
+          <nav className="hidden justify-center gap-7 text-[13px] font-medium text-ink lg:flex">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href} className="hover:text-brand">
                 {item.label}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center justify-end gap-3 text-sm font-semibold text-ink">
+          <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
             <Link
               href="/admin"
               className="hidden h-10 w-10 items-center justify-center rounded-full border border-transparent hover:border-line hover:text-brand sm:inline-flex"
@@ -56,7 +56,7 @@ export function Header() {
               onClick={() => setIsMenuOpen(false)}
             >
               <ShoppingBag size={21} />
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-xs font-bold text-white">
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-xs font-semibold text-white">
                 {cart.count}
               </span>
             </Link>
@@ -72,7 +72,7 @@ export function Header() {
           </div>
         </div>
         {isMenuOpen ? (
-          <nav className="grid gap-1 border-t border-line py-3 text-sm font-black text-ink lg:hidden">
+          <nav className="grid gap-1 border-t border-line py-3 text-sm font-semibold text-ink lg:hidden">
             {navItems.map((item) => (
               <Link
                 key={item.href}
