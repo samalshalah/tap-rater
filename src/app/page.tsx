@@ -24,8 +24,7 @@ export const metadata: Metadata = {
 const featuredProductSlugGroups = [
   ["google-review-stand", "google-review-stand-branded-qr"],
   ["view-menu-stand", "view-our-menu-stand"],
-  ["book-appointment-stand", "book-your-next-visit-stand"],
-  ["custom-direct-stand"]
+  ["book-appointment-stand", "book-your-next-visit-stand"]
 ];
 
 const proofPoints = ["From $39", "No subscription required", "Branded proof before cart"];

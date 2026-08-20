@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 const prices = [
   ["Standard Direct Stand", "$39", "One direct NFC destination link.", "/category/reviews"],
   ["Branded + QR Direct Stand", "$49", "Business name, uploaded logo, and printed QR code before checkout.", "/shop"],
-  ["Custom Stand", "$49", "Custom headline or content with one direct link and proof preview.", "/product/custom-direct-stand"]
+  ["Custom Stand", "$49", "Custom headline or content with one direct link. Request help before custom checkout opens.", "/custom-stands"]
 ];
 
 export default function PricingPage() {

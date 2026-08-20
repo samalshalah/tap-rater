@@ -145,8 +145,8 @@ export const customerActionCards: CustomerActionCard[] = [
   },
   {
     title: "Custom stand",
-    description: "Use your own headline, branding, and one direct destination.",
-    href: "/product/custom-direct-stand",
+    description: "Review custom stand options and request design help before checkout opens.",
+    href: "/custom-stands",
     image: { src: "/uploads/products/business-google-white-stands-bundle.jpg", alt: "Custom Tap Rater Stands" }
   }
 ];
