@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
-import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
+import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnapshot } from "@/data/migrated-products";
+import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
 
@@ -8,8 +9,10 @@ type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { 
 type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
 type ProductQueryBuilder = ProductQueryResult & {
   eq: (column: string, value: unknown) => ProductQueryBuilder;
+  in: (column: string, value: unknown[]) => ProductQueryBuilder;
   limit: (limit: number) => ProductQueryBuilder;
   maybeSingle: <T = unknown>() => ProductSingleQueryResult<T>;
+  order: (column: string, options: { ascending: boolean }) => ProductQueryBuilder;
 };
 
 export type ProductRepositoryClient = {
@@ -74,6 +77,30 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "seo_title",
   "seo_description"
 ].join(",");
+const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
+  "id",
+  "product_slug",
+  "option_code",
+  "title",
+  "description",
+  "price_cents",
+  "monthly_price_cents",
+  "max_links",
+  "requires_destination_url",
+  "has_qr",
+  "requires_logo",
+  "requires_business_name",
+  "requires_design_step",
+  "requires_front_proof",
+  "requires_subscription",
+  "account_required",
+  "supports_reorderable_links",
+  "supports_link_visibility",
+  "landing_page_url_pattern",
+  "footer_label",
+  "is_active",
+  "sort_order"
+].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
   return migratedProducts.filter((product) => product.isActive);
@@ -89,7 +116,7 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   try {
     return await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
   } catch {
-    return staticStorefrontProducts();
+    return [];
   }
 }
 
@@ -108,7 +135,7 @@ export const getStorefrontProductBySlug = cache(async (slug: string): Promise<Mi
     writeCache(productBySlugCache, slug, product);
     return product;
   } catch {
-    return getStaticStorefrontProductBySlug(slug);
+    return undefined;
   }
 });
 
@@ -144,7 +171,15 @@ export async function getStorefrontProductBySlugFromClient(
 
   const product = normalizeStorefrontProductRow(data);
 
-  return product?.isActive ? product : undefined;
+  if (!product?.isActive) {
+    return undefined;
+  }
+
+  const options = await getActiveProductOptionsFromClient(client, [product.slug]);
+  return {
+    ...product,
+    purchaseOptions: options.get(product.slug) ?? []
+  };
 }
 
 export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3): Promise<MigratedProduct[]> {
@@ -166,7 +201,7 @@ export async function getRelatedStorefrontProductsForProduct(product: MigratedPr
 
     return getStorefrontRelatedProducts(product, categoryProducts, limit);
   } catch {
-    return getStorefrontRelatedProducts(product, staticStorefrontProducts(), limit);
+    return [];
   }
 }
 
@@ -197,26 +232,72 @@ export async function getStorefrontProductsByCategoryFromClient(
     throw new Error(error.message);
   }
 
-  return (data ?? [])
+  const products = (data ?? [])
     .map((row) => normalizeStorefrontProductRow(row))
     .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock"))
     .slice(0, limit);
+  const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
+
+  return products.map((product) => ({
+    ...product,
+    purchaseOptions: optionsByProduct.get(product.slug) ?? []
+  }));
 }
 
 export async function getStorefrontProductsFromClient(client: ProductRepositoryClient): Promise<MigratedProduct[]> {
   const { data, error } = await client.from("products").select(STOREFRONT_PRODUCT_COLUMNS).eq("is_active", true);
 
   if (error || !data) {
-    return staticStorefrontProducts();
+    return [];
   }
 
   const products = data
     .map((row) => normalizeStorefrontProductRow(row))
     .filter((product): product is MigratedProduct => Boolean(product?.isActive));
+  const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
+  const productsWithOptions = products.map((product) => ({
+    ...product,
+    purchaseOptions: optionsByProduct.get(product.slug) ?? []
+  }));
 
-  primeStorefrontProductCaches(products);
+  primeStorefrontProductCaches(productsWithOptions);
 
-  return products;
+  return productsWithOptions;
+}
+
+async function getActiveProductOptionsFromClient(client: ProductRepositoryClient, productSlugs: string[]) {
+  const optionsByProduct = new Map<string, ProductPurchaseOptionSnapshot[]>();
+  const slugs = Array.from(new Set(productSlugs.filter(Boolean)));
+  if (slugs.length === 0) {
+    return optionsByProduct;
+  }
+
+  const { data, error } = await client
+    .from("product_options")
+    .select(STOREFRONT_PRODUCT_OPTION_COLUMNS)
+    .in("product_slug", slugs)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  for (const option of (data ?? []).map(normalizeProductOptionRow)) {
+    if (!option?.isActive || !option.productSlug) {
+      continue;
+    }
+
+    const productOptions = optionsByProduct.get(option.productSlug) ?? [];
+    productOptions.push(option);
+    optionsByProduct.set(option.productSlug, productOptions);
+  }
+
+  for (const [productSlug, options] of optionsByProduct) {
+    optionsByProduct.set(productSlug, options.sort((first, second) => first.sortOrder - second.sortOrder));
+  }
+
+  return optionsByProduct;
 }
 
 function getStaticStorefrontProductBySlug(slug: string) {

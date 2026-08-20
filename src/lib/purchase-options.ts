@@ -73,8 +73,34 @@ export const hostedMultiLinkOption: PurchaseOption = {
 };
 
 export function getProductPurchaseOptions(
-  product: Pick<MigratedProduct, "slug" | "categorySlug" | "allowsCustomDesign" | "isSpecialSolution" | "productKind" | "requiresLandingPage" | "requiresSubscription">
+  product: Pick<
+    MigratedProduct,
+    "slug" | "categorySlug" | "allowsCustomDesign" | "isSpecialSolution" | "productKind" | "purchaseOptions" | "requiresLandingPage" | "requiresSubscription"
+  >
 ): PurchaseOption[] {
+  if (Array.isArray(product.purchaseOptions)) {
+    return product.purchaseOptions
+      .filter((option) => option.isActive)
+      .sort((first, second) => first.sortOrder - second.sortOrder)
+      .map((option) => ({
+        id: option.optionCode,
+        label: option.title,
+        priceCents: option.priceCents,
+        monthlyPriceCents: option.monthlyPriceCents,
+        summary: option.description,
+        requiresDestinationUrl: option.requiresDestinationUrl,
+        hasQr: option.hasQr,
+        requiresBusinessName: option.requiresBusinessName,
+        requiresLogo: option.requiresLogo,
+        requiresDesignStep: option.requiresDesignStep,
+        requiresCustomText: false,
+        requiresManualCollection: false,
+        requiresFinalProof: option.requiresFrontProof,
+        requiresSubscription: option.requiresSubscription,
+        accountRequired: option.accountRequired
+      }));
+  }
+
   if (product.productKind === "hosted_multilink" || product.isSpecialSolution || product.requiresLandingPage || product.requiresSubscription) {
     return [hostedMultiLinkOption];
   }
@@ -87,7 +113,19 @@ export function getPurchaseOption(optionId: string): PurchaseOption | undefined 
 }
 
 export function getLowestPurchasePriceCents(
-  product: Pick<MigratedProduct, "slug" | "categorySlug" | "allowsCustomDesign" | "isSpecialSolution" | "productKind" | "requiresLandingPage" | "requiresSubscription">
+  product: Pick<
+    MigratedProduct,
+    | "slug"
+    | "categorySlug"
+    | "allowsCustomDesign"
+    | "basePriceCents"
+    | "isSpecialSolution"
+    | "productKind"
+    | "purchaseOptions"
+    | "requiresLandingPage"
+    | "requiresSubscription"
+  >
 ) {
-  return Math.min(...getProductPurchaseOptions(product).map((option) => option.priceCents));
+  const optionPrices = getProductPurchaseOptions(product).map((option) => option.priceCents);
+  return optionPrices.length > 0 ? Math.min(...optionPrices) : product.basePriceCents;
 }

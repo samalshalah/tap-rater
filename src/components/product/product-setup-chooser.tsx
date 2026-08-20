@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
-import { getProductPurchaseOptions, standardDirectOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 
 export type ProductSetupChooserProduct = Pick<
@@ -20,6 +20,7 @@ export type ProductSetupChooserProduct = Pick<
   | "allowsCustomDesign"
   | "isSpecialSolution"
   | "productKind"
+  | "purchaseOptions"
   | "requiresLandingPage"
   | "requiresSubscription"
   | "primaryPlatformSlug"
@@ -70,14 +71,26 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
-  const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0] ?? standardDirectOption;
-  const selectedOptionId = selectedOption.id;
+  const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0];
+  const selectedOptionId = selectedOption?.id;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
-  const selectedImage = getSelectedOptionImage(product, selectedOption);
+  const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? product.assetSet?.standardFrontTemplateUrl ?? "";
   const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
   const generatedQrValue = destinationUrl.trim();
   const isHosted = selectedOption?.id === "hosted_multilink";
+
+  if (!selectedOption || !selectedImage) {
+    return (
+      <div className="rounded-[18px] border border-line bg-white p-6 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Choose setup</p>
+        <h2 className="mt-3 text-2xl font-black text-ink">Checkout is not available yet</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          This stand does not have an active backend purchase option. Please contact support or choose another ready stand.
+        </p>
+      </div>
+    );
+  }
 
   function chooseOption(optionId: PurchaseOptionId) {
     setUncontrolledSelectedOptionId(optionId);

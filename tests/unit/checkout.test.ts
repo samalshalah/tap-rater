@@ -142,6 +142,116 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
+  it("uses active backend product option pricing and ignores submitted cart price", () => {
+    const googleProduct = migratedProducts.find((product) => product.slug === "google-review-stand");
+    if (!googleProduct) throw new Error("Expected Google product fixture");
+
+    const result = validateCheckoutCart(
+      [
+        {
+          ...configuredStandardItem,
+          setup: {
+            ...configuredStandardItem.setup,
+            priceCents: 1
+          }
+        }
+      ],
+      [
+        {
+          ...googleProduct,
+          purchaseOptions: [
+            {
+              optionCode: "standard_direct",
+              title: "Standard Direct",
+              description: "Backend configured Standard Direct option.",
+              priceCents: 4200,
+              requiresDestinationUrl: true,
+              hasQr: false,
+              requiresLogo: false,
+              requiresBusinessName: false,
+              requiresDesignStep: false,
+              requiresFrontProof: false,
+              requiresSubscription: false,
+              accountRequired: false,
+              isActive: true,
+              sortOrder: 1
+            }
+          ]
+        }
+      ]
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toMatchObject({
+      optionId: "standard_direct",
+      optionLabel: "Standard Direct",
+      unitAmountCents: 4200,
+      lineSubtotalCents: 4200
+    });
+    expect(result.totalCents).toBe(4200);
+  });
+
+  it("rejects forced checkout for options missing from backend product options", () => {
+    const googleProduct = migratedProducts.find((product) => product.slug === "google-review-stand");
+    if (!googleProduct) throw new Error("Expected Google product fixture");
+
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            destinationUrl: "https://g.page/example/review",
+            businessName: "Nova Implant",
+            logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+            logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+            generatedQrValue: "https://g.page/example/review",
+            proofPreviewData: {
+              businessName: "Nova Implant"
+            },
+            proofApproved: true
+          }
+        }
+      ],
+      [
+        {
+          ...googleProduct,
+          purchaseOptions: [
+            {
+              optionCode: "standard_direct",
+              title: "Standard Direct",
+              description: "Backend configured Standard Direct option.",
+              priceCents: 3900,
+              requiresDestinationUrl: true,
+              hasQr: false,
+              requiresLogo: false,
+              requiresBusinessName: false,
+              requiresDesignStep: false,
+              requiresFrontProof: false,
+              requiresSubscription: false,
+              accountRequired: false,
+              isActive: true,
+              sortOrder: 1
+            }
+          ]
+        }
+      ]
+    );
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
+  it("rejects checkout when a backend product has no active options", () => {
+    const googleProduct = migratedProducts.find((product) => product.slug === "google-review-stand");
+    if (!googleProduct) throw new Error("Expected Google product fixture");
+
+    const result = validateCheckoutCart([configuredStandardItem], [{ ...googleProduct, purchaseOptions: [] }]);
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
   it("does not accept Hosted Multi-Link in the current one-time checkout", () => {
     const result = validateCheckoutCart(
       [

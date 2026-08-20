@@ -3,12 +3,13 @@ import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getReviewDestination } from "@/lib/product-page-content";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
-import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
+import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 
 export function ProductCard({ product }: { product: MigratedProduct }) {
   const image = getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
+  const options = getProductPurchaseOptions(product);
   const purchaseLabel = getPurchaseLabel(product);
   const destination = getReviewDestination(product);
   const setupLabel = getSetupLabel(product);
@@ -25,8 +26,10 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
         <p className="text-[12px] font-black uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
         <h2 className="mt-2 text-lg font-black leading-snug text-ink">{product.title}</h2>
         <div className="mt-3 flex flex-wrap gap-2">
-          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-muted">Standard Direct</span>
-          {product.customizationOptions.includes("add_logo") ? (
+          {options.some((option) => option.id === "standard_direct") ? (
+            <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-muted">Standard Direct</span>
+          ) : null}
+          {options.some((option) => option.id === "branded_qr_direct") ? (
             <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-brand">Branded + QR</span>
           ) : null}
         </div>
@@ -43,6 +46,11 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
 }
 
 function getPurchaseLabel(product: MigratedProduct) {
+  const options = getProductPurchaseOptions(product);
+  if (options.length === 0) {
+    return "Unavailable";
+  }
+
   if (product.checkoutMode === "request_quote") {
     return "Request quote";
   }

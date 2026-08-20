@@ -73,6 +73,7 @@ export type MigratedProduct = {
   defaultCtaText?: string;
   ctaEditable?: boolean;
   assetReadinessStatus?: ProductAssetReadinessStatus;
+  purchaseOptions?: ProductPurchaseOptionSnapshot[];
   images: { src: string; alt: string }[];
   variants: { id: string; label: string; sku: string; stockStatus: "instock" | "outofstock" }[];
   isActive: boolean;
@@ -80,6 +81,31 @@ export type MigratedProduct = {
   seoDescription?: string;
   searchKeywords?: string[];
   updatedAt?: string;
+};
+
+export type ProductPurchaseOptionSnapshot = {
+  id?: string;
+  productSlug?: string;
+  optionCode: "standard_direct" | "branded_qr_direct" | "hosted_multilink";
+  title: string;
+  description: string;
+  priceCents: number;
+  monthlyPriceCents?: number;
+  maxLinks?: number;
+  requiresDestinationUrl: boolean;
+  hasQr: boolean;
+  requiresLogo: boolean;
+  requiresBusinessName: boolean;
+  requiresDesignStep: boolean;
+  requiresFrontProof: boolean;
+  requiresSubscription: boolean;
+  accountRequired: boolean;
+  supportsReorderableLinks?: boolean;
+  supportsLinkVisibility?: boolean;
+  landingPageUrlPattern?: string;
+  footerLabel?: string;
+  isActive: boolean;
+  sortOrder: number;
 };
 
 export type ProductCommerceType = "physical_redirect" | "physical_managed" | "platform_landing_page" | "bundle";

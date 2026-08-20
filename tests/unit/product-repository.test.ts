@@ -3,8 +3,7 @@ import {
   getStorefrontProductBySlugFromClient,
   getStorefrontProductsFromClient,
   getStorefrontRelatedProductsFromClient,
-  normalizeStorefrontProductRow,
-  staticStorefrontProducts
+  normalizeStorefrontProductRow
 } from "@/lib/product-repository";
 import type { ProductRepositoryClient } from "@/lib/product-repository";
 
@@ -174,6 +173,70 @@ describe("product repository", () => {
       basePriceCents: 3900,
       images: [{ src: "/uploads/products/v5/google-review-stand.png", alt: "Database-only Google review stand" }]
     });
+  });
+
+  it("attaches active backend product options to storefront products", async () => {
+    const products = await getStorefrontProductsFromClient(mockProductsClient(
+      [
+        {
+          slug: "database-only-google-review-stand",
+          title: "Database Only Google Review Stand",
+          sku: "DB-GOOGLE-1",
+          category_slug: "reviews",
+          format: "stand",
+          base_price_cents: 3900,
+          stock_status: "instock",
+          short_description: "Database-only Google review stand",
+          description: "A Google review stand managed only from the products table.",
+          product_type: "physical_redirect",
+          service_mode: "basic_redirect",
+          checkout_mode: "buy_now",
+          requires_account: false,
+          requires_subscription: false,
+          requires_landing_page: false,
+          supported_destinations: ["google"],
+          activation_type: "free_basic_activation",
+          included_service_label: "Free basic activation",
+          customization_options: ["standard_design", "add_logo"],
+          allows_logo_upload: true,
+          allows_custom_design: false,
+          design_mode: "standard",
+          images: [{ src: "/uploads/products/google-review-stand.png", alt: "Database-only Google review stand" }],
+          variants: [],
+          is_active: true
+        }
+      ],
+      null,
+      createQueryCalls(),
+      [
+        {
+          product_slug: "database-only-google-review-stand",
+          option_code: "standard_direct",
+          title: "Standard Direct",
+          description: "Backend Standard Direct",
+          price_cents: 4200,
+          requires_destination_url: true,
+          has_qr: false,
+          requires_logo: false,
+          requires_business_name: false,
+          requires_design_step: false,
+          requires_front_proof: false,
+          requires_subscription: false,
+          account_required: false,
+          is_active: true,
+          sort_order: 1
+        }
+      ]
+    ));
+
+    expect(products[0].purchaseOptions).toEqual([
+      expect.objectContaining({
+        optionCode: "standard_direct",
+        title: "Standard Direct",
+        priceCents: 4200,
+        isActive: true
+      })
+    ]);
   });
 
   it("normalizes locked catalog organization and asset fields", () => {
@@ -482,10 +545,10 @@ describe("product repository", () => {
     expect(products).toEqual([]);
   });
 
-  it("falls back to static products when the Supabase query fails", async () => {
+  it("fails closed instead of restoring static products when the configured product query fails", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient(null, { message: "query failed" }));
 
-    expect(products).toEqual(staticStorefrontProducts());
+    expect(products).toEqual([]);
   });
 });
 
@@ -499,20 +562,33 @@ function createQueryCalls(): QueryCalls {
   return { filters: [], limits: [], maybeSingleCalls: 0 };
 }
 
-function mockProductsClient(data: unknown[] | null, error: null | { message: string } = null, calls = createQueryCalls()): ProductRepositoryClient {
+function mockProductsClient(
+  data: unknown[] | null,
+  error: null | { message: string } = null,
+  calls = createQueryCalls(),
+  productOptions: unknown[] = []
+): ProductRepositoryClient {
   return {
     from(table: string) {
-      expect(table).toBe("products");
-
       return {
         select() {
           const builder = {
             eq(column: string, value: unknown) {
-              calls.filters.push({ column, value });
+              if (table === "products") {
+                calls.filters.push({ column, value });
+              }
+              return builder;
+            },
+            in() {
+              return builder;
+            },
+            order() {
               return builder;
             },
             limit(limit: number) {
-              calls.limits.push(limit);
+              if (table === "products") {
+                calls.limits.push(limit);
+              }
               return builder;
             },
             maybeSingle<T = unknown>() {
@@ -523,7 +599,9 @@ function mockProductsClient(data: unknown[] | null, error: null | { message: str
               onfulfilled?: ((value: { data: unknown[] | null; error: null | { message: string } }) => TResult1 | PromiseLike<TResult1>) | null,
               onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
             ) {
-              return Promise.resolve({ data, error }).then(onfulfilled, onrejected);
+              const tableData = table === "product_options" ? productOptions : data;
+              const tableError = table === "products" ? error : null;
+              return Promise.resolve({ data: tableData, error: tableError }).then(onfulfilled, onrejected);
             }
           } as ReturnType<ReturnType<ProductRepositoryClient["from"]>["select"]>;
 

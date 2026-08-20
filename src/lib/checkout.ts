@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
-import { getProductPurchaseOptions, getPurchaseOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -105,13 +105,11 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
   for (const item of items) {
     const product = productById.get(item.productId);
-    const option = item.optionId ? getPurchaseOption(item.optionId) : undefined;
+    const productOptions = product ? getProductPurchaseOptions(product) : [];
+    const optionId = item.optionId ?? item.setup?.optionCode;
+    const option = optionId ? productOptions.find((purchaseOption) => purchaseOption.id === optionId) : productOptions[0];
 
     if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !product || !option) {
-      continue;
-    }
-
-    if (!getProductPurchaseOptions(product).some((purchaseOption) => purchaseOption.id === option.id)) {
       continue;
     }
 
