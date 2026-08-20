@@ -5,6 +5,7 @@ import {
   buildStripeCheckoutLineItems,
   createCheckoutSessionParams,
   getStripeMode,
+  getCheckoutSiteUrl,
   getStripeClient,
   isStripeLivePublishableKey,
   isStripeLiveSecretKey,
@@ -441,5 +442,12 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.metadata?.stripe_mode).toBe("live");
+  });
+
+  it("prefers the request origin for checkout redirects over build-time site env", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+
+    expect(getCheckoutSiteUrl("https://taprater.com")).toBe("https://taprater.com");
+    expect(getCheckoutSiteUrl()).toBe("http://localhost:3000");
   });
 });

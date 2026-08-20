@@ -41,7 +41,7 @@ export type CheckoutRouteDependencies = {
     stripeMode: "test" | "live";
   }) => Promise<StripeCheckoutSessionResult>;
   getProducts: () => Promise<MigratedProduct[]>;
-  getSiteUrl: () => string;
+  getSiteUrl: (requestOrigin?: string | null) => string;
   hasOrderPersistence: () => boolean;
   logger: CheckoutRouteLogger;
   orderTimeoutMs: number;
@@ -102,10 +102,11 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
 
   try {
     logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_start");
+    const requestOrigin = new URL(request.url).origin;
     const session = await withTimeout(
       dependencies.createStripeSession({
         cart,
-        siteUrl: dependencies.getSiteUrl(),
+        siteUrl: dependencies.getSiteUrl(requestOrigin),
         stripeMode: stripeConfig.mode
       }),
       dependencies.stripeTimeoutMs,
