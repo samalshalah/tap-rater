@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import type { CatalogCategory, MigratedProduct } from "@/data/migrated-products";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
+import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 
 type ProductHeroProps = {
@@ -19,6 +20,9 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
+  const selectedOption = options.find((option) => option.id === effectiveSelectedOptionId) ?? options[0];
+  const selectedPrice = selectedOption ? formatPrice(selectedOption.priceCents).replace(".00", "") : fromPrice;
+  const isBranded = selectedOption?.id === "branded_qr_direct";
 
   return (
     <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[0.92fr_1fr] lg:px-8 lg:py-10">
@@ -51,17 +55,18 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
 
           <div className="mt-5 grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-4 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.08em] text-muted">Selected price</p>
-              <p className="mt-1 text-2xl font-extrabold text-ink">{fromPrice}</p>
+              <p className="text-xs font-black uppercase tracking-[0.08em] text-muted">Selected setup</p>
+              <p className="mt-1 text-2xl font-extrabold text-ink">{selectedPrice}</p>
+              {selectedOption ? <p className="mt-1 text-sm font-bold text-muted">{selectedOption.label}</p> : null}
             </div>
             <div className="grid gap-1 text-sm text-muted">
               <p className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-brand" />
-                NFC included
+                {isBranded ? "NFC + printed QR" : "NFC only"}
               </p>
               <p className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-brand" />
-                QR on branded option
+                {isBranded ? "Logo and proof before cart" : "One direct destination link"}
               </p>
             </div>
           </div>

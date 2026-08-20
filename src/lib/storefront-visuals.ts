@@ -114,40 +114,40 @@ export const businessUseCases: BusinessUseCase[] = [
 
 export const customerActionCards: CustomerActionCard[] = [
   {
-    title: "Get reviews",
+    title: "Get Reviews",
     description: "Send customers to Google, Yelp, Tripadvisor, or another review page.",
     href: "/category/reviews",
     image: { src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }
   },
   {
-    title: "Book appointments",
+    title: "Book Appointments",
     description: "Open booking, scheduling, reservation, or service links.",
     href: "/category/appointments",
     image: { src: "/uploads/products/book-next-visit-stand.png", alt: "Book appointment stand" }
   },
   {
-    title: "View menu",
+    title: "View Menu",
     description: "Put menus, specials, services, or info one tap away.",
     href: "/category/menu",
     image: { src: "/uploads/products/view-menu-stand.png", alt: "View Menu Stand" }
   },
   {
-    title: "Follow social media",
+    title: "Follow Us",
     description: "Grow Instagram, Facebook, TikTok, LinkedIn, and social profiles.",
     href: "/category/social-media",
     image: { src: "/uploads/products/social-media-stand.png", alt: "Social Media Stand" }
   },
   {
-    title: "Visit website",
+    title: "Collect Feedback",
+    description: "Open surveys, private feedback forms, and experience rating links.",
+    href: "/category/feedback",
+    image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Rate Your Experience Stand" }
+  },
+  {
+    title: "Visit Website",
     description: "Connect to your site, catalog, offer, app, location, or link page.",
     href: "/category/website-links",
     image: { src: "/uploads/products/no-photo-available.png", alt: "Website link stand" }
-  },
-  {
-    title: "Custom stand",
-    description: "Review custom stand options and request design help before checkout opens.",
-    href: "/custom-stands",
-    image: { src: "/uploads/products/business-google-white-stands-bundle.jpg", alt: "Custom Tap Rater Stands" }
   }
 ];
 

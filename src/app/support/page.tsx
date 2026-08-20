@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Tap Rater Support",
-  description: "Get help with Tap Rater stand setup, custom orders, bulk orders, link changes, and hosted multi-link requests."
+  description: "Get help with Tap Rater stand setup, custom stand requests, order questions, logo questions, and link changes."
 };
 
 const supportLinks = [
-  ["Contact Tap Rater", "Ask about orders, custom work, and launch questions.", "/contact-us"],
+  ["Request custom work", "Ask about a custom stand, design question, bulk order, or production detail.", "/contact-us"],
   ["Change a link", "Request an update for an existing Tap Rater stand.", "/change-taprater-link"],
   ["Read FAQs", "Quick answers about setup, checkout, proofing, and production.", "/faqs"]
 ];
@@ -20,7 +20,7 @@ export default function SupportPage() {
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Support</p>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Need help with a stand order?</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Use support for complex custom work, bulk orders, hosted multi-link requests, or link-change help.
+            Use support for custom stand requests, order help, logo or design questions, link setup questions, and link-change help.
           </p>
         </div>
       </section>

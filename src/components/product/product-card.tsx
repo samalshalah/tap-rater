@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
-import { getProductServiceBadges, getReviewDestination } from "@/lib/product-page-content";
+import { getReviewDestination } from "@/lib/product-page-content";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
@@ -9,7 +9,6 @@ import { getProductVisual } from "@/lib/storefront-visuals";
 export function ProductCard({ product }: { product: MigratedProduct }) {
   const image = getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
-  const serviceBadges = getProductServiceBadges(product);
   const purchaseLabel = getPurchaseLabel(product);
   const destination = getReviewDestination(product);
   const setupLabel = getSetupLabel(product);
@@ -19,16 +18,19 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
       href={`/product/${product.slug}`}
       className="group flex h-full flex-col rounded-[18px] border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]"
     >
-      <div className="relative h-52 overflow-hidden rounded-[14px] bg-white">
+      <div className="relative h-52 overflow-hidden rounded-[14px] border border-line/70 bg-white">
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-200 group-hover:scale-[1.03]" />
       </div>
       <div className="flex flex-1 flex-col pt-4">
-        <p className="text-[13px] font-black text-brand">{category?.title ?? destination}</p>
+        <p className="text-[12px] font-black uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
         <h2 className="mt-2 text-lg font-black leading-snug text-ink">{product.title}</h2>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-muted">Standard Direct</span>
+          {product.customizationOptions.includes("add_logo") ? (
+            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.04em] text-brand">Branded + QR</span>
+          ) : null}
+        </div>
         <p className="mt-3 text-sm leading-5 text-muted">{setupLabel}</p>
-        {serviceBadges.length > 0 ? (
-          <p className="mt-2 text-xs font-bold uppercase tracking-[0.08em] text-muted">{serviceBadges[0]}</p>
-        ) : null}
         <div className="mt-auto flex items-center justify-between gap-3 pt-5">
           <span className="text-sm font-black text-ink">{purchaseLabel}</span>
           <span className="inline-flex min-h-9 min-w-[104px] items-center justify-center rounded-full bg-ink px-5 text-sm font-black text-white transition group-hover:bg-brand">
@@ -58,7 +60,7 @@ function getPurchaseLabel(product: MigratedProduct) {
 
 function getSetupLabel(product: MigratedProduct) {
   if (product.checkoutMode === "request_quote") {
-    return "Request quote setup";
+    return "Request custom help";
   }
 
   if (product.slug === "custom-direct-stand" || product.allowsCustomDesign) {
@@ -66,10 +68,10 @@ function getSetupLabel(product: MigratedProduct) {
   }
 
   if (product.customizationOptions.includes("add_logo")) {
-    return "Standard or Branded + QR";
+    return "Choose NFC only or NFC + printed QR on the product page.";
   }
 
-  return "Standard Direct Stand";
+  return "NFC direct stand with one destination link.";
 }
 
 function formatCompactPrice(cents: number) {

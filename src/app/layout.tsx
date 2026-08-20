@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteShell } from "@/components/layout/site-shell";
 import "./globals.css";
@@ -29,6 +29,11 @@ export const metadata: Metadata = {
     siteName: "Tap Rater",
     type: "website"
   }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -7,9 +7,9 @@ export const metadata: Metadata = {
 };
 
 const prices = [
-  ["Standard Direct Stand", "$39", "One direct NFC destination link.", "/category/reviews"],
-  ["Branded + QR Direct Stand", "$49", "Business name, uploaded logo, and printed QR code before checkout.", "/shop"],
-  ["Custom Stand", "$49", "Custom headline or content with one direct link. Request help before custom checkout opens.", "/custom-stands"]
+  ["Standard Direct", "$39", "One-time. NFC only with one direct destination link and no printed QR.", "/shop"],
+  ["Branded + QR", "$49", "One-time. NFC + printed QR with uploaded logo, business name, and proof before checkout.", "/shop"],
+  ["Custom request", "Request", "For custom printed stand work that needs review before checkout or printing.", "/custom-stands"]
 ];
 
 export default function PricingPage() {
@@ -18,9 +18,9 @@ export default function PricingPage() {
       <section className="border-b border-line bg-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Pricing</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Simple one-time stand pricing.</h1>
+          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Simple pricing for direct stands.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Start with a physical stand. Branded + QR setup uses the destination, uploaded logo, business name, and proof preview before checkout.
+            Buy ready NFC stands from the shop. Standard Direct is NFC only. Branded + QR adds the printed QR, logo, business name, and proof preview before checkout.
           </p>
         </div>
       </section>
@@ -30,7 +30,7 @@ export default function PricingPage() {
           {prices.map(([title, price, body, href]) => (
             <article key={title} className="flex min-h-[260px] flex-col rounded-[18px] border border-line bg-white p-5 shadow-sm">
               <h2 className="text-xl font-black text-ink">{title}</h2>
-              <p className="mt-5 text-3xl font-extrabold text-ink">{price}</p>
+              <p className="mt-5 text-2xl font-extrabold text-ink">{price}</p>
               <p className="mt-3 text-sm leading-6 text-muted">{body}</p>
               <Link href={href} className="mt-auto inline-flex min-h-11 w-fit items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
                 View options
