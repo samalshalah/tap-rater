@@ -323,4 +323,71 @@ describe("orders repository", () => {
       onConflict: "stripe_checkout_session_id"
     });
   });
+
+  it("reports when a Stripe Checkout Session was already paid to avoid duplicate emails", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const client = {
+      from(table: string) {
+        expect(table).toBe("orders");
+        return {
+          select() {
+            return {
+              eq() {
+                return {
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: {
+                      stripe_checkout_session_id: "cs_test_123",
+                      status: "paid",
+                      payment_status: "paid",
+                      subtotal_cents: 3900,
+                      total_cents: 3900,
+                      currency: "usd",
+                      line_items_json: [
+                        {
+                          productId: "google-review-stand",
+                          optionId: "standard_direct",
+                          optionLabel: "Standard Direct Stand",
+                          title: "Google Review Stand",
+                          sku: "GRS",
+                          quantity: 1,
+                          unitAmountCents: 3900,
+                          lineSubtotalCents: 3900
+                        }
+                      ]
+                    },
+                    error: null
+                  })
+                };
+              }
+            };
+          },
+          upsert
+        };
+      }
+    } as unknown as OrdersDbClient;
+
+    const result = await savePaidOrderFromCheckoutSessionWithClient(client, {
+      id: "cs_test_123",
+      payment_intent: "pi_test_123",
+      payment_status: "paid",
+      amount_subtotal: 3900,
+      amount_total: 3900,
+      currency: "usd",
+      customer_details: { email: "buyer@example.com" },
+      metadata: { order_items: "[]" }
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      wasAlreadyPaid: true,
+      order: {
+        line_items_json: [
+          expect.objectContaining({
+            productId: "google-review-stand",
+            optionId: "standard_direct"
+          })
+        ]
+      }
+    });
+  });
 });

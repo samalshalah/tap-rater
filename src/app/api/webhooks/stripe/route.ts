@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
+import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { savePaidOrderFromCheckoutSession } from "@/lib/orders";
 
 export async function POST(request: Request) {
@@ -26,6 +27,24 @@ export async function POST(request: Request) {
         const result = await savePaidOrderFromCheckoutSession(session);
         if (!result.ok) {
           return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
+        }
+
+        if (!result.wasAlreadyPaid) {
+          try {
+            const emailResult = await sendPaidOrderEmails(result.order);
+            if (!emailResult.customer.sent || !emailResult.admin.sent) {
+              console.warn("[stripe-webhook] paid_order_email_not_sent", {
+                stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+                customerReason: emailResult.customer.sent ? undefined : emailResult.customer.reason,
+                adminReason: emailResult.admin.sent ? undefined : emailResult.admin.reason
+              });
+            }
+          } catch (error) {
+            console.warn("[stripe-webhook] paid_order_email_failed", {
+              stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+              errorName: error instanceof Error ? error.name : "UnknownError"
+            });
+          }
         }
       }
     }

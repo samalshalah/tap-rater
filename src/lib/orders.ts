@@ -64,6 +64,17 @@ export type OrderRecord = {
   updated_at?: string;
 };
 
+export type PaidOrderSaveResult =
+  | {
+      ok: true;
+      order: OrderRecord;
+      wasAlreadyPaid: boolean;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export type StripeCheckoutSessionLike = {
   id?: string | null;
   payment_intent?: string | { id?: string | null } | null;
@@ -338,7 +349,7 @@ export async function createPendingOrderForCheckoutWithClient(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSessionLike) {
+export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSessionLike): Promise<PaidOrderSaveResult> {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured." };
   }
@@ -346,21 +357,34 @@ export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSe
   return savePaidOrderFromCheckoutSessionWithClient(getSupabaseAdmin() as OrdersDbClient, session);
 }
 
-export async function savePaidOrderFromCheckoutSessionWithClient(client: OrdersDbClient, session: StripeCheckoutSessionLike) {
+export async function savePaidOrderFromCheckoutSessionWithClient(
+  client: OrdersDbClient,
+  session: StripeCheckoutSessionLike
+): Promise<PaidOrderSaveResult> {
   const order = mapCheckoutSessionToOrderInput(session);
 
   if (!order.stripe_checkout_session_id) {
     return { ok: false, error: "Missing Stripe Checkout Session ID." };
   }
 
+  const existingOrder = await getOrderByStripeCheckoutSessionId(client, order.stripe_checkout_session_id);
+  const wasAlreadyPaid = existingOrder?.status === "paid" || existingOrder?.payment_status === "paid";
+  const mergedOrder: OrderRecord = {
+    ...existingOrder,
+    ...order,
+    line_items_json: order.line_items_json.length > 0 ? order.line_items_json : existingOrder?.line_items_json ?? []
+  };
+
   const payload: Record<string, unknown> = { ...order };
-  if (order.line_items_json.length === 0) {
+  if (mergedOrder.line_items_json.length > 0 && order.line_items_json.length === 0) {
+    payload.line_items_json = mergedOrder.line_items_json;
+  } else if (order.line_items_json.length === 0) {
     delete payload.line_items_json;
   }
 
   const { error } = await client.from("orders").upsert(payload, { onConflict: "stripe_checkout_session_id" });
 
-  return error ? { ok: false, error: error.message } : { ok: true };
+  return error ? { ok: false, error: error.message } : { ok: true, order: mergedOrder, wasAlreadyPaid };
 }
 
 export async function getAdminOrders(): Promise<{ configured: boolean; orders: OrderRecord[] }> {
@@ -456,6 +480,25 @@ function isManualProductionWarningCode(value: unknown): value is ManualProductio
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+async function getOrderByStripeCheckoutSessionId(client: OrdersDbClient, stripeCheckoutSessionId: string): Promise<OrderRecord | null> {
+  try {
+    const query = client
+      .from("orders")
+      .select("*")
+      .eq("stripe_checkout_session_id", stripeCheckoutSessionId)
+      .maybeSingle();
+    const { data, error } = await query;
+
+    if (error || !data) {
+      return null;
+    }
+
+    return normalizeOrderRecord(data);
+  } catch {
+    return null;
+  }
 }
 
 function readSetupString(setup: Record<string, unknown> | undefined, key: string) {
