@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Search, UploadCloud } from "lucide-react";
+import { CheckCircle2, Search, UploadCloud, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -68,6 +68,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [proofApproved, setProofApproved] = useState(false);
   const [error, setError] = useState("");
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -79,6 +80,16 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
   const generatedQrValue = destinationUrl.trim();
   const isHosted = selectedOption?.id === "hosted_multilink";
+
+  useEffect(() => {
+    if (!isBuilderOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isBuilderOpen]);
 
   if (!selectedOption || !selectedImage) {
     return (
@@ -106,6 +117,25 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setError("");
     setProofApproved(false);
     setStep("choose");
+  }
+
+  function openBuilder(optionId: PurchaseOptionId) {
+    chooseOption(optionId);
+    const option = options.find((item) => item.id === optionId);
+
+    if (option?.id === "hosted_multilink") {
+      setError("Hosted Multi-Link builder is coming next. Choose Standard Direct or Branded + QR Direct for this checkout.");
+      return;
+    }
+
+    setStep("destination");
+    setError("");
+    setIsBuilderOpen(true);
+  }
+
+  function closeBuilder() {
+    setIsBuilderOpen(false);
+    setError("");
   }
 
   function continueFromChoice() {
@@ -296,310 +326,327 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     router.push("/cart");
   }
 
+  const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build Your Branded QR Stand" : "Set up your Standard Direct Stand";
+  const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
+  const activeStepIndex = selectedOption.id === "branded_qr_direct"
+    ? step === "destination"
+      ? 0
+      : step === "design"
+        ? 1
+        : 2
+    : step === "destination"
+      ? 0
+      : 1;
+
   return (
-    <section className="grid gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-5">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">Choose setup</p>
-        <h2 className="mt-2 text-xl font-semibold text-ink">Configure this stand</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          Choose how this stand is produced, connect the destination link, then review the setup before cart.
-        </p>
-      </div>
-
-      <ol className="grid grid-cols-4 gap-2 text-center text-[10px] font-semibold uppercase tracking-[0.04em] text-muted">
-        {["Choose", "Destination", "Design", "Review"].map((label, index) => {
-          const currentIndex = ["choose", "destination", "design", "review"].indexOf(step);
-          const isActive = index <= currentIndex;
-          const hiddenForStandard = label === "Design" && selectedOption.id === "standard_direct";
-
-          return (
-            <li
-              key={label}
-              className={
-                hiddenForStandard
-                  ? "hidden rounded-full border border-line px-2 py-2 sm:block"
-                  : isActive
-                    ? "rounded-full bg-ink px-2 py-2 text-white"
-                    : "rounded-full border border-line px-2 py-2"
-              }
-            >
-              {label}
-            </li>
-          );
-        })}
-      </ol>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {options.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            className={
-              selectedOptionId === option.id
-                ? "grid cursor-pointer gap-3 rounded-xl border border-brand bg-white p-4 text-left shadow-sm"
-                : "grid cursor-pointer gap-3 rounded-xl border border-line bg-white p-4 text-left hover:border-ink"
-            }
-            onClick={() => chooseOption(option.id)}
-          >
-            <span className="flex items-start justify-between gap-3">
-              <span>
-                <span className="block font-semibold text-ink">{option.label}</span>
-                <span className="mt-1 block text-sm leading-5 text-muted">{option.summary}</span>
-              </span>
-              <span className="text-sm font-semibold text-ink">{formatPrice(option.priceCents)}</span>
-            </span>
-            <span className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.04em]">
-              <span className="rounded-full bg-gray-100 px-2.5 py-1 text-muted">{option.hasQr ? "NFC + QR" : "NFC only"}</span>
-              {option.requiresLogo ? <span className="rounded-full bg-teal-50 px-2.5 py-1 text-brand">Logo before cart</span> : null}
-              {option.requiresFinalProof ? <span className="rounded-full bg-teal-50 px-2.5 py-1 text-brand">Proof preview</span> : null}
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {isHosted ? (
-        <div className="rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4">
-          <p className="text-sm font-black text-ink">Hosted Multi-Link builder coming next</p>
-          <p className="mt-1 text-sm leading-6 text-muted">
-            Hosted Multi-Link uses a branded stand, QR code, hosted Tap Rater page, and subscription setup. It is not part of this direct-stand checkout yet.
+    <>
+      <section className="grid gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-5">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">Choose setup</p>
+          <h2 className="mt-2 text-xl font-semibold text-ink">Choose how to build this stand</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Select a production option. Setup opens in a guided builder before anything goes to cart.
           </p>
         </div>
-      ) : null}
 
-      <SelectedOptionPreview image={selectedImage} productTitle={product.title} option={selectedOption} />
+        <div className="grid gap-3 md:grid-cols-2">
+          {options
+            .filter((option) => option.id !== "hosted_multilink")
+            .map((option) => (
+              <article
+                key={option.id}
+                className={
+                  selectedOptionId === option.id
+                    ? "grid gap-4 rounded-2xl border border-brand bg-white p-4 shadow-sm"
+                    : "grid gap-4 rounded-2xl border border-line bg-white p-4"
+                }
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-ink">{option.label}</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted">{option.summary}</p>
+                  </div>
+                  <p className="text-lg font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</p>
+                </div>
+                <div className="grid gap-2 text-sm text-muted">
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-brand" />
+                    {option.hasQr ? "NFC + printed QR" : "NFC only"}
+                  </p>
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-brand" />
+                    {option.hasQr ? "Logo and business name" : "No printed QR"}
+                  </p>
+                  <p className="inline-flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-brand" />
+                    {option.hasQr ? "Proof preview before checkout" : "One destination link"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="mt-auto inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-brand"
+                  onClick={() => openBuilder(option.id)}
+                >
+                  {option.id === "branded_qr_direct" ? "Build Branded Stand" : "Set up Standard"}
+                </button>
+              </article>
+            ))}
+        </div>
 
-      {step === "choose" ? (
-        <button
-          type="button"
-          className="inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-brand"
-          onClick={continueFromChoice}
-        >
-          {selectedOption.id === "branded_qr_direct" ? "Continue to setup" : selectedOption.id === "hosted_multilink" ? "Build your multi-link page" : "Continue"}
-        </button>
-      ) : null}
-
-      {step === "destination" ? (
-        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
-          <div>
-            <p className="text-sm font-semibold text-ink">Destination link</p>
+        {options.some((option) => option.id === "hosted_multilink") ? (
+          <div className="rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4">
+            <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
             <p className="mt-1 text-sm leading-6 text-muted">
-              {isGoogleReviewProduct
-                ? "Search for your Google Business Profile or paste your Google review link manually."
-                : "Paste the URL this stand should open when customers tap."}
+              Multi-Link will be its own builder later. This product supports Standard Direct and Branded + QR checkout today.
             </p>
           </div>
+        ) : null}
 
-          {isGoogleReviewProduct ? (
-            <div className="grid gap-3 rounded-[14px] border border-line bg-white p-4">
-              <label className="grid gap-2 text-sm font-semibold text-ink">
-                Google Business search
-                <div className="flex gap-2">
-                  <input
-                    className="min-w-0 flex-1 rounded-full border border-line px-4 py-3 font-normal outline-none focus:border-brand"
-                    value={googleSearchQuery}
-                    onChange={(event) => setGoogleSearchQuery(event.target.value)}
-                    placeholder="Business name and city"
-                  />
-                  <button
-                    type="button"
-                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-brand disabled:bg-gray-300"
-                    disabled={isSearchingGoogle}
-                    onClick={searchGooglePlaces}
-                  >
-                    <Search size={16} />
-                    {isSearchingGoogle ? "Searching" : "Search"}
-                  </button>
+        {error && !isBuilderOpen ? <p className="rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+      </section>
+
+      {isBuilderOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={modalTitle}>
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_28px_80px_rgba(17,24,39,0.22)]">
+            <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-4 sm:px-6">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">{product.title}</p>
+                <h2 className="mt-1 text-2xl font-semibold text-ink">{modalTitle}</h2>
+              </div>
+              <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-ink hover:border-ink" onClick={closeBuilder} aria-label="Close builder">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="border-b border-line px-4 py-3 sm:px-6">
+              <ol className="grid gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.04em] text-muted sm:grid-cols-3">
+                {stepLabels.map((label, index) => (
+                  <li key={label} className={index <= activeStepIndex ? "rounded-full bg-ink px-3 py-2 text-white" : "rounded-full border border-line px-3 py-2"}>
+                    {label}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="overflow-y-auto px-4 py-4 sm:px-6">
+              {step === "destination" ? (
+                <div className="grid gap-4">
+                  <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} />
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Destination link</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      {isGoogleReviewProduct
+                        ? "Search for your Google Business Profile or paste your Google review link manually."
+                        : "Paste the URL this stand should open when customers tap."}
+                    </p>
+                  </div>
+
+                  {isGoogleReviewProduct ? (
+                    <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+                      <label className="grid gap-2 text-sm font-semibold text-ink">
+                        Google Business search
+                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                          <input
+                            className="min-w-0 rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                            value={googleSearchQuery}
+                            onChange={(event) => setGoogleSearchQuery(event.target.value)}
+                            placeholder="Business name and city"
+                          />
+                          <button
+                            type="button"
+                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-brand disabled:bg-gray-300"
+                            disabled={isSearchingGoogle}
+                            onClick={searchGooglePlaces}
+                          >
+                            <Search size={16} />
+                            {isSearchingGoogle ? "Searching" : "Search"}
+                          </button>
+                        </div>
+                      </label>
+
+                      {googleSearchMessage ? <p className="text-sm font-semibold text-muted">{googleSearchMessage}</p> : null}
+                      {googleResults.length ? (
+                        <div className="grid gap-2">
+                          {googleResults.map((place) => (
+                            <button
+                              key={place.placeId}
+                              type="button"
+                              className="rounded-[12px] border border-line bg-white p-3 text-left hover:border-brand"
+                              onClick={() => useGooglePlace(place)}
+                            >
+                              <span className="block text-sm font-semibold text-ink">{place.name}</span>
+                              {place.formattedAddress ? <span className="block text-xs leading-5 text-muted">{place.formattedAddress}</span> : null}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <label className="grid gap-2 text-sm font-semibold text-ink">
+                    {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
+                    <input
+                      className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                      type="url"
+                      value={destinationUrl}
+                      onChange={(event) => {
+                        setDestinationUrl(event.target.value);
+                        setGooglePlaceId("");
+                        setGooglePlaceName("");
+                      }}
+                      placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
+                    />
+                  </label>
+
+                  {googlePlaceName ? (
+                    <p className="rounded-[12px] border border-teal-100 bg-teal-50 p-3 text-sm font-semibold text-brand">
+                      Selected Google business: {googlePlaceName}
+                    </p>
+                  ) : null}
                 </div>
-              </label>
+              ) : null}
 
-              {googleSearchMessage ? <p className="text-sm font-semibold text-muted">{googleSearchMessage}</p> : null}
-              {googleResults.length ? (
-                <div className="grid gap-2">
-                  {googleResults.map((place) => (
-                    <button
-                      key={place.placeId}
-                      type="button"
-                      className="rounded-[12px] border border-line bg-white p-3 text-left hover:border-brand"
-                      onClick={() => useGooglePlace(place)}
-                    >
-                      <span className="block text-sm font-semibold text-ink">{place.name}</span>
-                      {place.formattedAddress ? <span className="block text-xs leading-5 text-muted">{place.formattedAddress}</span> : null}
-                    </button>
-                  ))}
+              {step === "design" && selectedOption.id === "branded_qr_direct" ? (
+                <div className="grid gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Logo + business name</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      Upload the logo and enter the exact business name for the printed front proof.
+                    </p>
+                  </div>
+
+                  <label className="grid gap-2 text-sm font-semibold text-ink">
+                    Printed business name
+                    <input
+                      className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                      value={businessName}
+                      onChange={(event) => setBusinessName(event.target.value)}
+                      placeholder="Your business name"
+                    />
+                  </label>
+
+                  <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Business logo</p>
+                        <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
+                      </div>
+                      {logo ? <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-brand">Logo uploaded</span> : null}
+                    </div>
+                    <label className="grid min-h-32 cursor-pointer place-items-center rounded-[14px] border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted hover:border-brand">
+                      <UploadCloud className="mb-2 h-6 w-6" />
+                      {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
+                      <input
+                        className="sr-only"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        disabled={isUploadingLogo}
+                        onChange={(event) => uploadLogo(event.target.files?.[0])}
+                      />
+                    </label>
+                  </div>
+                </div>
+              ) : null}
+
+              {step === "review" ? (
+                <div className="grid gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{selectedOption.id === "branded_qr_direct" ? "Proof preview" : "Confirm setup"}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      Review these details before adding the configured stand to cart.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-2 rounded-[14px] border border-line bg-[#f7f8fa] p-4 text-sm text-muted">
+                    <ReviewLine label="Product" value={product.title} />
+                    <ReviewLine label="Setup" value={selectedOption.label} />
+                    <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
+                    <ReviewLine label="Connection" value={selectedOption.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"} />
+                    <ReviewLine label="Destination" value={destinationUrl || "-"} />
+                    {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
+                    {selectedOption.id === "branded_qr_direct" ? (
+                      <>
+                        <ReviewLine label="Business name" value={businessName || "-"} />
+                        <ReviewLine label="Logo" value={logo ? "Uploaded" : "Missing"} />
+                        <ReviewLine label="QR value" value={generatedQrValue || "-"} />
+                      </>
+                    ) : null}
+                  </div>
+
+                  {selectedOption.id === "branded_qr_direct" ? (
+                    <>
+                      <ProofPreview
+                        businessName={businessName}
+                        ctaText={ctaText}
+                        logo={logo}
+                        product={product}
+                        qrValue={generatedQrValue}
+                        templateUrl={brandedFrontTemplateUrl}
+                      />
+                      <label className="flex items-start gap-3 rounded-[12px] border border-line bg-white p-3 text-sm font-semibold text-ink">
+                        <input className="mt-1" type="checkbox" checked={proofApproved} onChange={(event) => setProofApproved(event.target.checked)} />
+                        I reviewed the front proof preview and confirm these branded setup details.
+                      </label>
+                    </>
+                  ) : (
+                    <div className="rounded-[12px] border border-line bg-white p-3 text-sm leading-6 text-muted">
+                      <p className="font-semibold text-ink">Standard Direct confirmation</p>
+                      <p>This stand is NFC only, has no printed QR, and opens the destination link above.</p>
+                    </div>
+                  )}
                 </div>
               ) : null}
             </div>
-          ) : null}
 
-          <label className="grid gap-2 text-sm font-semibold text-ink">
-            {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
-            <input
-              className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
-              type="url"
-              value={destinationUrl}
-              onChange={(event) => {
-                setDestinationUrl(event.target.value);
-                setGooglePlaceId("");
-                setGooglePlaceName("");
-              }}
-              placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
-            />
-          </label>
-
-          {googlePlaceName ? (
-            <p className="rounded-[12px] border border-teal-100 bg-teal-50 p-3 text-sm font-bold text-brand">
-              Selected Google business: {googlePlaceName}
-            </p>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink" onClick={() => setStep("choose")}>
-              Back
-            </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDestination}>
-              {selectedOption.id === "branded_qr_direct" ? "Continue to design" : "Review setup"}
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {step === "design" && selectedOption.id === "branded_qr_direct" ? (
-        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
-          <div>
-            <p className="text-sm font-semibold text-ink">Branded design</p>
-            <p className="mt-1 text-sm leading-6 text-muted">
-              Upload your business logo and enter the exact business name for the printed stand. Your QR code is generated from the destination link.
-            </p>
-          </div>
-
-          <label className="grid gap-2 text-sm font-semibold text-ink">
-            Printed business name
-            <input
-              className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
-              value={businessName}
-              onChange={(event) => setBusinessName(event.target.value)}
-              placeholder="Your business name"
-            />
-          </label>
-
-          <div className="grid gap-3 rounded-[14px] border border-line bg-white p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-ink">Business logo</p>
-                <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
+            <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
+              {error ? <p className="mb-3 rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+                <button
+                  type="button"
+                  className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink"
+                  onClick={() => {
+                    if (step === "destination") closeBuilder();
+                    else setStep(selectedOption.id === "branded_qr_direct" && step === "review" ? "design" : "destination");
+                  }}
+                >
+                  {step === "destination" ? "Cancel" : "Back"}
+                </button>
+                {step === "destination" ? (
+                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDestination}>
+                    {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                  </button>
+                ) : null}
+                {step === "design" && selectedOption.id === "branded_qr_direct" ? (
+                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDesign}>
+                    Preview proof
+                  </button>
+                ) : null}
+                {step === "review" ? (
+                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={addConfiguredItemToCart}>
+                    Add to cart
+                  </button>
+                ) : null}
               </div>
-              {logo ? <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-brand">Logo uploaded</span> : null}
             </div>
-            <label className="grid min-h-28 cursor-pointer place-items-center rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4 text-center text-sm font-medium text-muted hover:border-brand">
-              <UploadCloud className="mb-2 h-6 w-6" />
-              {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
-              <input
-                className="sr-only"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                disabled={isUploadingLogo}
-                onChange={(event) => uploadLogo(event.target.files?.[0])}
-              />
-            </label>
-          </div>
-
-          <ProofPreview
-            businessName={businessName}
-            ctaText={ctaText}
-            logo={logo}
-            product={product}
-            qrValue={generatedQrValue}
-            templateUrl={brandedFrontTemplateUrl}
-          />
-
-          <div className="flex flex-wrap gap-3">
-            <button type="button" className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink" onClick={() => setStep("destination")}>
-              Back
-            </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDesign}>
-              Review front proof
-            </button>
           </div>
         </div>
       ) : null}
-
-      {step === "review" ? (
-        <div className="grid gap-4 rounded-[14px] border border-line bg-[#f7f8fa] p-4 pb-24 md:pb-4">
-          <div>
-            <p className="text-sm font-semibold text-ink">Review setup</p>
-            <p className="mt-1 text-sm leading-6 text-muted">
-              Confirm these details before adding the configured stand to cart.
-            </p>
-          </div>
-
-          <div className="grid gap-2 text-sm text-muted">
-            <ReviewLine label="Setup" value={selectedOption.label} />
-            <ReviewLine label="Connection" value={selectedOption.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"} />
-            <ReviewLine label="Destination" value={destinationUrl || "-"} />
-            {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
-            {selectedOption.id === "branded_qr_direct" ? (
-              <>
-                <ReviewLine label="Business name" value={businessName || "-"} />
-                <ReviewLine label="Logo" value={logo ? "Uploaded" : "Missing"} />
-                <ReviewLine label="QR value" value={generatedQrValue || "-"} />
-              </>
-            ) : null}
-          </div>
-
-          {selectedOption.id === "branded_qr_direct" ? (
-            <>
-              <ProofPreview
-                businessName={businessName}
-                ctaText={ctaText}
-                logo={logo}
-                product={product}
-                qrValue={generatedQrValue}
-                templateUrl={brandedFrontTemplateUrl}
-              />
-              <label className="flex items-start gap-3 rounded-[12px] border border-line bg-white p-3 text-sm font-bold text-ink">
-                <input className="mt-1" type="checkbox" checked={proofApproved} onChange={(event) => setProofApproved(event.target.checked)} />
-                I reviewed the front proof preview and confirm these branded setup details.
-              </label>
-            </>
-          ) : (
-            <div className="rounded-[12px] border border-line bg-white p-3 text-sm leading-6 text-muted">
-              <p className="font-semibold text-ink">Direct setup confirmation</p>
-              <p>This Standard Direct stand is NFC only and will open the destination link above.</p>
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink"
-              onClick={() => setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination")}
-            >
-              Back
-            </button>
-            <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={addConfiguredItemToCart}>
-              Add configured stand to cart
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {error ? <p className="rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
-    </section>
+    </>
   );
 }
 
-function SelectedOptionPreview({ image, productTitle, option }: { image: { src: string; alt: string }; productTitle: string; option: PurchaseOption }) {
+function BuilderSummary({ image, productTitle, option }: { image: { src: string; alt: string }; productTitle: string; option: PurchaseOption }) {
   return (
-    <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-3 sm:grid-cols-[120px_1fr] sm:items-center">
+    <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-3 sm:grid-cols-[96px_1fr] sm:items-center">
       <div className="relative aspect-square overflow-hidden rounded-[12px] bg-white">
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2" />
       </div>
       <div>
         <p className="text-sm font-semibold text-ink">{productTitle}</p>
-        <p className="mt-1 text-sm text-muted">{option.label}</p>
+        <p className="mt-1 text-sm text-muted">{option.label} · {formatPrice(option.priceCents)}</p>
         <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-brand">
           <CheckCircle2 size={14} />
-          {option.hasQr ? "Branded image shown when available" : "Main product image"}
+          {option.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"}
         </p>
       </div>
     </div>
