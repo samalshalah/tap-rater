@@ -30,6 +30,9 @@ export function Footer() {
           <Link href="/pricing">Pricing</Link>
           <Link href="/faqs">FAQs</Link>
           <Link href="/privacy-policy">Privacy Policy</Link>
+          <Link href="/terms">Terms</Link>
+          <Link href="/refund-policy">Refund Policy</Link>
+          <Link href="/shipping">Shipping</Link>
         </div>
       </div>
       <div className="border-t border-line px-4 py-5 text-center text-xs text-muted">

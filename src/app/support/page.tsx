@@ -9,7 +9,11 @@ export const metadata: Metadata = {
 const supportLinks = [
   ["Request custom work", "Ask about a custom stand, design question, bulk order, or production detail.", "/contact-us"],
   ["Change a link", "Request an update for an existing Tap Rater stand.", "/change-taprater-link"],
-  ["Read FAQs", "Quick answers about setup, checkout, proofing, and production.", "/faqs"]
+  ["Read FAQs", "Quick answers about setup, checkout, proofing, and production.", "/faqs"],
+  ["Privacy", "How Tap Rater handles order details, uploaded logos, destination links, and support requests.", "/privacy-policy"],
+  ["Terms", "Customer responsibilities for links, uploaded logos, proof approval, and product use.", "/terms"],
+  ["Refunds", "Refund, cancellation, damaged item, and replacement guidance for printed stands.", "/refund-policy"],
+  ["Shipping", "Production readiness, shipping estimates, and order issue support.", "/shipping"]
 ];
 
 export default function SupportPage() {
@@ -26,7 +30,7 @@ export default function SupportPage() {
       </section>
 
       <section className="bg-[#f7f8fa]">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
           {supportLinks.map(([title, body, href]) => (
             <Link key={title} href={href} className="flex min-h-[180px] flex-col rounded-[18px] border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]">
               <h2 className="text-lg font-black text-ink">{title}</h2>
