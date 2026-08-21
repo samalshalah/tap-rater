@@ -361,7 +361,13 @@ create table if not exists stand_types (
   slug text not null unique,
   title text not null,
   description text not null default '',
+  short_description text not null default '',
+  long_content text not null default '',
+  buyer_intent text not null default '',
+  seo_title text,
+  seo_description text,
   image_url text,
+  banner_image_url text,
   sort_order integer not null default 0,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
@@ -373,12 +379,32 @@ create table if not exists business_uses (
   slug text not null unique,
   title text not null,
   description text not null default '',
+  short_description text not null default '',
+  long_content text not null default '',
+  seo_title text,
+  seo_description text,
   image_url text,
+  banner_image_url text,
   sort_order integer not null default 0,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table business_uses
+  add column if not exists short_description text not null default '',
+  add column if not exists long_content text not null default '',
+  add column if not exists seo_title text,
+  add column if not exists seo_description text,
+  add column if not exists banner_image_url text;
+
+alter table stand_types
+  add column if not exists short_description text not null default '',
+  add column if not exists long_content text not null default '',
+  add column if not exists buyer_intent text not null default '',
+  add column if not exists seo_title text,
+  add column if not exists seo_description text,
+  add column if not exists banner_image_url text;
 
 create table if not exists platforms (
   id uuid primary key default gen_random_uuid(),
@@ -488,6 +514,8 @@ alter table products
 
 create index if not exists stand_types_active_sort_idx on stand_types(is_active, sort_order, title);
 create index if not exists business_uses_active_sort_idx on business_uses(is_active, sort_order, title);
+create index if not exists business_uses_public_sort_idx on business_uses(is_active, sort_order, title);
+create index if not exists stand_types_public_sort_idx on stand_types(is_active, sort_order, title);
 create index if not exists platforms_active_destination_sort_idx on platforms(is_active, destination_type, title);
 create index if not exists product_business_uses_business_use_idx on product_business_uses(business_use_slug);
 create index if not exists product_options_product_active_sort_idx on product_options(product_slug, is_active, sort_order);

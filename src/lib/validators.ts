@@ -219,6 +219,38 @@ export const productContentSchema = z.object({
   isActive: z.boolean()
 });
 
+export const businessUseContentSchema = z.object({
+  originalSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().max(500).default(""),
+  shortDescription: z.string().trim().max(500).default(""),
+  longContent: z.string().trim().max(10000).default(""),
+  seoTitle: z.string().trim().max(180).optional(),
+  seoDescription: z.string().trim().max(320).optional(),
+  imageUrl: z.string().trim().max(2048).optional(),
+  bannerImageUrl: z.string().trim().max(2048).optional(),
+  sortOrder: z.number().int().min(0).max(100000).default(0),
+  isActive: z.boolean().default(false),
+  productSlugs: z.array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/)).max(200).default([])
+});
+
+export const standTypeContentSchema = z.object({
+  originalSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/).optional(),
+  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().max(500).default(""),
+  shortDescription: z.string().trim().max(500).default(""),
+  longContent: z.string().trim().max(10000).default(""),
+  buyerIntent: z.string().trim().max(500).default(""),
+  seoTitle: z.string().trim().max(180).optional(),
+  seoDescription: z.string().trim().max(320).optional(),
+  imageUrl: z.string().trim().max(2048).optional(),
+  bannerImageUrl: z.string().trim().max(2048).optional(),
+  sortOrder: z.number().int().min(0).max(100000).default(0),
+  isActive: z.boolean().default(false)
+});
+
 export const adminProductDeleteSchema = z.object({
   slugs: z
     .array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/))
@@ -228,6 +260,8 @@ export const adminProductDeleteSchema = z.object({
 
 export type HomepageContentInput = z.infer<typeof homepageContentSchema>;
 export type PageContentInput = z.infer<typeof pageContentSchema>;
+export type BusinessUseContentInput = z.infer<typeof businessUseContentSchema>;
+export type StandTypeContentInput = z.infer<typeof standTypeContentSchema>;
 export type ProductContentInput = z.infer<typeof productContentSchema>;
 
 const deviceProductTypes = [

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { VisualCard } from "@/components/storefront/visual-card";
-import { businessUseCases } from "@/lib/storefront-visuals";
+import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 
 export const metadata: Metadata = {
   title: "Tap Rater Solutions by Business Use",
@@ -8,7 +8,9 @@ export const metadata: Metadata = {
     "Shop Tap Rater NFC and QR tabletop stands by business use: restaurants, dealerships, healthcare, beauty, hospitality, retail, real estate, events, and more."
 };
 
-export default function SolutionsPage() {
+export default async function SolutionsPage() {
+  const businessUses = await getPublicBusinessUses();
+
   return (
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">
@@ -24,13 +26,16 @@ export default function SolutionsPage() {
       <section className="bg-[#f7f8fa]">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {businessUseCases.map((useCase) => (
+            {businessUses.map((useCase) => (
               <VisualCard
-                key={useCase.title}
-                href={useCase.href}
+                key={useCase.slug}
+                href={`/solutions/${useCase.slug}`}
                 title={useCase.title}
-                description={useCase.description}
-                image={useCase.image}
+                description={useCase.shortDescription || useCase.description}
+                image={{
+                  src: useCase.imageUrl ?? useCase.bannerImageUrl ?? "/uploads/products/no-photo-available.png",
+                  alt: useCase.title
+                }}
                 imageFit="cover"
                 cta="View recommendations"
               />

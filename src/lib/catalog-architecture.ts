@@ -5,7 +5,13 @@ export type StandType = {
   slug: StandTypeSlug;
   title: string;
   description: string;
+  shortDescription?: string;
+  longContent?: string;
+  buyerIntent?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   imageUrl?: string;
+  bannerImageUrl?: string;
   sortOrder: number;
   isActive: boolean;
 };
@@ -15,7 +21,12 @@ export type BusinessUse = {
   slug: BusinessUseSlug;
   title: string;
   description: string;
+  shortDescription?: string;
+  longContent?: string;
+  seoTitle?: string;
+  seoDescription?: string;
   imageUrl?: string;
+  bannerImageUrl?: string;
   sortOrder: number;
   isActive: boolean;
 };
@@ -78,28 +89,9 @@ export type ProductAssetReadiness =
       missing: string[];
     };
 
-export type StandTypeSlug =
-  | "review-stands"
-  | "social-media-stands"
-  | "appointment-reservation-stands"
-  | "feedback-survey-stands"
-  | "menu-info-stands"
-  | "website-link-stands"
-  | "payment-tip-donation-stands"
-  | "loyalty-rewards-stands"
-  | "custom-stands";
+export type StandTypeSlug = string;
 
-export type BusinessUseSlug =
-  | "automotive"
-  | "restaurant-food"
-  | "hotel-travel"
-  | "healthcare-dental"
-  | "home-services"
-  | "legal"
-  | "real-estate"
-  | "beauty-salon-wellness"
-  | "ecommerce-online-brand"
-  | "retail-local-business";
+export type BusinessUseSlug = string;
 
 export type PlatformDestinationType =
   | "review"

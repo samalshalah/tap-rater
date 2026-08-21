@@ -24,7 +24,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     label: "Commerce",
     items: [
       { label: "Products", href: "/admin/products", description: "Product records, prices, stock, and SEO" },
-      { label: "Categories", href: "/admin/categories", description: "Shop categories and category SEO" },
+      { label: "Business Uses", href: "/admin/business-uses", description: "Shop by Use cards, landing pages, and assigned products" },
+      { label: "Stand Types", href: "/admin/stand-types", description: "Shop categories, category content, buyer intent, and SEO" },
       { label: "Inventory", href: "/admin/inventory", description: "Stock levels, low-stock alerts, and SKUs" },
       { label: "Discounts", href: "/admin/discounts", description: "Coupons, bundle savings, and promotions" },
       { label: "Shipping", href: "/admin/shipping", description: "Shipping zones, rates, and fulfillment rules" },

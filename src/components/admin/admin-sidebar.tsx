@@ -29,6 +29,8 @@ const icons = {
   Customers: Users,
   Products: Package,
   Categories: Tags,
+  "Business Uses": Tags,
+  "Stand Types": Tags,
   Inventory: Boxes,
   Discounts: Percent,
   Shipping: Truck,

@@ -30,8 +30,8 @@ type ArchitectureClient = {
   };
 };
 
-const standTypeColumns = "id,slug,title,description,image_url,sort_order,is_active";
-const businessUseColumns = "id,slug,title,description,image_url,sort_order,is_active";
+export const standTypeColumns = "id,slug,title,description,short_description,long_content,buyer_intent,seo_title,seo_description,image_url,banner_image_url,sort_order,is_active";
+export const businessUseColumns = "id,slug,title,description,short_description,long_content,seo_title,seo_description,image_url,banner_image_url,sort_order,is_active";
 const platformColumns = "id,slug,title,destination_type,icon_url,google_places_enabled,manual_url_allowed,is_active";
 const productOptionColumns = [
   "id",
@@ -88,6 +88,16 @@ export async function getStandTypes(): Promise<StandType[]> {
 export async function getBusinessUses(): Promise<BusinessUse[]> {
   noStore();
   return readArchitectureRows("business_uses", businessUseColumns, normalizeBusinessUseRow, lockedBusinessUses);
+}
+
+export async function getStandTypeBySlug(slug: string): Promise<StandType | undefined> {
+  const standTypes = await getStandTypes();
+  return standTypes.find((standType) => standType.slug === slug);
+}
+
+export async function getBusinessUseBySlug(slug: string): Promise<BusinessUse | undefined> {
+  const businessUses = await getBusinessUses();
+  return businessUses.find((businessUse) => businessUse.slug === slug);
 }
 
 export async function getPlatforms(): Promise<PlatformDestination[]> {
@@ -187,7 +197,13 @@ function normalizeStandTypeRow(row: unknown): StandType | null {
     slug,
     title,
     description: readString(record.description) ?? "",
+    shortDescription: readString(record.short_description),
+    longContent: readString(record.long_content),
+    buyerIntent: readString(record.buyer_intent),
+    seoTitle: readString(record.seo_title),
+    seoDescription: readString(record.seo_description),
     imageUrl: readString(record.image_url),
+    bannerImageUrl: readString(record.banner_image_url),
     sortOrder: readNumber(record.sort_order) ?? 0,
     isActive: readBoolean(record.is_active) ?? true
   };
@@ -204,7 +220,12 @@ function normalizeBusinessUseRow(row: unknown): BusinessUse | null {
     slug,
     title,
     description: readString(record.description) ?? "",
+    shortDescription: readString(record.short_description),
+    longContent: readString(record.long_content),
+    seoTitle: readString(record.seo_title),
+    seoDescription: readString(record.seo_description),
     imageUrl: readString(record.image_url),
+    bannerImageUrl: readString(record.banner_image_url),
     sortOrder: readNumber(record.sort_order) ?? 0,
     isActive: readBoolean(record.is_active) ?? true
   };
@@ -279,11 +300,11 @@ function readBoolean(value: unknown) {
 }
 
 function readStandTypeSlug(value: unknown): StandTypeSlug | undefined {
-  return lockedStandTypes.some((standType) => standType.slug === value) ? (value as StandTypeSlug) : undefined;
+  return readString(value);
 }
 
 function readBusinessUseSlug(value: unknown): BusinessUseSlug | undefined {
-  return lockedBusinessUses.some((businessUse) => businessUse.slug === value) ? (value as BusinessUseSlug) : undefined;
+  return readString(value);
 }
 
 function readProductOptionCode(value: unknown): ProductOptionCode | undefined {

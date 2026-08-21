@@ -168,10 +168,11 @@ describe("Neon Supabase adapter", () => {
     ]);
     const client = createNeonSupabaseAdapter(query);
 
-    const result = await client.from("stand_types").select("slug,title,image_url").eq("is_active", true).order("sort_order", { ascending: true });
+    const result = await client.from("stand_types").select("slug,title,image_url,banner_image_url,buyer_intent").eq("is_active", true).order("sort_order", { ascending: true });
 
     expect(result.error).toBeNull();
-    expect(query.mock.calls[0][0]).toContain("select stand_types.slug, stand_types.title, stand_types.image_url");
+    expect(query.mock.calls[0][0]).toContain("stand_types.banner_image_url");
+    expect(query.mock.calls[0][0]).toContain("stand_types.buyer_intent");
     expect(query.mock.calls[0][0]).toContain("order by stand_types.sort_order asc");
 
     await client.from("products").select("stand_type_slug,primary_platform_slug,multilink_angled_image_url,multilink_front_template_url,asset_readiness_status,landing_page_preview_config");

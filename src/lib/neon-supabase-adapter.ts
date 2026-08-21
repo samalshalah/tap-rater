@@ -141,8 +141,39 @@ const tableColumns = {
   ],
   product_images: ["id", "product_id", "src", "alt", "sort_order"],
   product_variants: ["id", "product_id", "label", "sku", "stock_status"],
-  stand_types: ["id", "slug", "title", "description", "image_url", "sort_order", "is_active", "created_at", "updated_at"],
-  business_uses: ["id", "slug", "title", "description", "image_url", "sort_order", "is_active", "created_at", "updated_at"],
+  stand_types: [
+    "id",
+    "slug",
+    "title",
+    "description",
+    "short_description",
+    "long_content",
+    "buyer_intent",
+    "seo_title",
+    "seo_description",
+    "image_url",
+    "banner_image_url",
+    "sort_order",
+    "is_active",
+    "created_at",
+    "updated_at"
+  ],
+  business_uses: [
+    "id",
+    "slug",
+    "title",
+    "description",
+    "short_description",
+    "long_content",
+    "seo_title",
+    "seo_description",
+    "image_url",
+    "banner_image_url",
+    "sort_order",
+    "is_active",
+    "created_at",
+    "updated_at"
+  ],
   platforms: [
     "id",
     "slug",
@@ -240,9 +271,11 @@ const jsonbColumns = new Set([
 ]);
 const textArrayColumns = new Set(["supported_destinations", "customization_options"]);
 const defaultConflictTargets: Partial<Record<TableName, string>> = {
+  business_uses: "slug",
   orders: "stripe_checkout_session_id",
   products: "slug",
-  site_content: "key"
+  site_content: "key",
+  stand_types: "slug"
 };
 
 export function getDatabaseUrlFromEnv(env: Record<string, string | undefined> = process.env) {
