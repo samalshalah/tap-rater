@@ -9,6 +9,7 @@ import {
   updateOrderFulfillmentWithClient,
   type OrdersDbClient
 } from "@/lib/orders";
+import { orderFulfillmentUpdateSchema } from "@/lib/validators";
 
 describe("orders repository", () => {
   it("preserves uploaded logo and branded proof status in order line items", () => {
@@ -381,6 +382,66 @@ describe("orders repository", () => {
       admin_fulfillment_notes: "Ready.",
       shipped_at: expect.any(String)
     }));
+  });
+
+  it("clears fulfillment text fields with intentional empty strings", async () => {
+    const update = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+    const client = {
+      from(table: string) {
+        expect(table).toBe("orders");
+        return { update };
+      }
+    } as unknown as OrdersDbClient;
+
+    const result = await updateOrderFulfillmentWithClient(client, "order-123", {
+      productionStatus: "not_started",
+      shippingStatus: "not_shipped",
+      shippingMethod: "",
+      shippingCarrier: "",
+      trackingNumber: "",
+      trackingUrl: "",
+      internalNotes: "",
+      adminFulfillmentNotes: "",
+      markShipped: false
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      shipping_method: "",
+      shipping_carrier: "",
+      tracking_number: "",
+      tracking_url: "",
+      internal_notes: "",
+      admin_fulfillment_notes: ""
+    }));
+  });
+
+  it("allows empty tracking URL but rejects invalid non-empty tracking URL", () => {
+    expect(orderFulfillmentUpdateSchema.safeParse({
+      productionStatus: "not_started",
+      shippingStatus: "not_shipped",
+      shippingMethod: "",
+      shippingCarrier: "",
+      trackingNumber: "",
+      trackingUrl: "",
+      internalNotes: "",
+      adminFulfillmentNotes: "",
+      markShipped: false
+    }).success).toBe(true);
+
+    expect(orderFulfillmentUpdateSchema.safeParse({
+      productionStatus: "not_started",
+      shippingStatus: "not_shipped",
+      shippingMethod: "",
+      shippingCarrier: "",
+      trackingNumber: "",
+      trackingUrl: "not-a-url",
+      internalNotes: "",
+      adminFulfillmentNotes: "",
+      markShipped: false
+    }).success).toBe(false);
   });
 
   it("upserts paid orders by Stripe checkout session id", async () => {

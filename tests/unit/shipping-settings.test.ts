@@ -51,4 +51,36 @@ describe("shipping settings repository", () => {
       })
     }));
   });
+
+  it("saves intentional empty strings in editable text fields", async () => {
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const client = {
+      from(table: string) {
+        expect(table).toBe("site_content");
+        return { upsert };
+      }
+    };
+
+    await saveShippingSettings(client, {
+      shippingMode: "manual",
+      flatShippingAmountCents: 0,
+      allowedCountryCodes: ["US"],
+      handlingTimeText: "",
+      supportedRegionsText: "",
+      defaultCarrierNotes: "",
+      customerFacingShippingNote: ""
+    });
+
+    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({
+      payload: {
+        shippingMode: "manual",
+        flatShippingAmountCents: 0,
+        allowedCountryCodes: ["US"],
+        handlingTimeText: "",
+        supportedRegionsText: "",
+        defaultCarrierNotes: "",
+        customerFacingShippingNote: ""
+      }
+    }));
+  });
 });

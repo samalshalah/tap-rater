@@ -51,11 +51,20 @@ export async function getShippingSettingsWithClient(client: ShippingSettingsDbCl
 
 export async function saveShippingSettings(client: ShippingSettingsDbClient, input: ShippingSettingsInput) {
   const parsed = shippingSettingsSchema.parse(input);
+  const payload: ShippingSettingsInput = {
+    shippingMode: parsed.shippingMode,
+    flatShippingAmountCents: parsed.flatShippingAmountCents,
+    allowedCountryCodes: parsed.allowedCountryCodes,
+    handlingTimeText: parsed.handlingTimeText,
+    supportedRegionsText: parsed.supportedRegionsText,
+    defaultCarrierNotes: parsed.defaultCarrierNotes,
+    customerFacingShippingNote: parsed.customerFacingShippingNote
+  };
   const { error } = await client.from("site_content").upsert({
     key: "shipping_settings",
     type: "section",
     status: "published",
-    payload: parsed,
+    payload,
     updated_at: new Date().toISOString()
   });
 

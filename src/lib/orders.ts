@@ -515,10 +515,10 @@ export async function updateOrderFulfillmentWithClient(client: OrdersDbClient, o
   const payload: Record<string, unknown> = {
     production_status: input.productionStatus,
     shipping_status: shippingStatus,
-    shipping_method: input.shippingMethod || null,
-    shipping_carrier: input.shippingCarrier || null,
-    tracking_number: input.trackingNumber || null,
-    tracking_url: input.trackingUrl || null,
+    shipping_method: input.shippingMethod,
+    shipping_carrier: input.shippingCarrier,
+    tracking_number: input.trackingNumber,
+    tracking_url: input.trackingUrl,
     internal_notes: input.internalNotes,
     admin_fulfillment_notes: input.adminFulfillmentNotes,
     updated_at: now
