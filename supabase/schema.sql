@@ -680,12 +680,25 @@ create table if not exists orders (
   currency text not null default 'usd',
   line_items_json jsonb not null default '[]'::jsonb,
   customer_details_json jsonb,
+  shipping_address_json jsonb,
+  shipping_amount_cents integer not null default 0,
+  shipping_mode text,
+  production_status text not null default 'not_started',
+  shipping_status text not null default 'not_shipped',
+  shipping_method text,
+  shipping_carrier text,
+  tracking_number text,
+  tracking_url text,
+  shipped_at timestamptz,
+  internal_notes text not null default '',
+  admin_fulfillment_notes text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
+create index if not exists orders_fulfillment_queue_idx on orders(status, production_status, shipping_status, created_at desc);
 
 create table if not exists site_content (
   key text primary key,

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -185,13 +186,17 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Ch
 export function createCheckoutSessionParams({
   cart,
   siteUrl,
-  stripeMode = getStripeMode()
+  stripeMode = getStripeMode(),
+  shippingSettings = getDefaultShippingSettings()
 }: {
   cart: Extract<ValidatedCheckoutCart, { ok: true }>;
   siteUrl: string;
   stripeMode?: StripeMode;
+  shippingSettings?: ShippingSettingsInput;
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
+  const allowedCountries = shippingSettings.allowedCountryCodes as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[];
+  const shippingOptions = buildStripeShippingOptions(shippingSettings);
 
   return {
     mode: "payment",
@@ -201,17 +206,46 @@ export function createCheckoutSessionParams({
     cancel_url: `${normalizedSiteUrl}/checkout/cancel`,
     billing_address_collection: "auto",
     shipping_address_collection: {
-      allowed_countries: ["US"]
+      allowed_countries: allowedCountries.length > 0 ? allowedCountries : ["US"]
     },
+    ...(shippingOptions.length > 0 ? { shipping_options: shippingOptions } : {}),
     phone_number_collection: {
       enabled: true
     },
     metadata: {
       stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
-      configured_items: String(cart.rows.length)
+      configured_items: String(cart.rows.length),
+      shipping_mode: shippingSettings.shippingMode,
+      shipping_amount_cents: String(settingsShippingAmountCents(shippingSettings))
     }
   };
+}
+
+function settingsShippingAmountCents(settings: ShippingSettingsInput) {
+  return settings.shippingMode === "flat" ? settings.flatShippingAmountCents : 0;
+}
+
+function buildStripeShippingOptions(settings: ShippingSettingsInput): Stripe.Checkout.SessionCreateParams.ShippingOption[] {
+  if (settings.shippingMode === "manual") {
+    return [];
+  }
+
+  const amount = settings.shippingMode === "flat" ? settings.flatShippingAmountCents : 0;
+  const displayName = settings.shippingMode === "flat" ? "Flat rate shipping" : "Free shipping";
+
+  return [
+    {
+      shipping_rate_data: {
+        type: "fixed_amount",
+        display_name: displayName,
+        fixed_amount: {
+          amount,
+          currency: "usd"
+        }
+      }
+    }
+  ];
 }
 
 function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {

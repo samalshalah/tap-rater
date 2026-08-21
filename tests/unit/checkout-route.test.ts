@@ -30,6 +30,15 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
     createRequestId: () => "checkout_test_request",
     createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", url: "https://checkout.stripe.com/c/pay/cs_test_123" }),
     getProducts: vi.fn().mockResolvedValue(migratedProducts),
+    getShippingSettings: vi.fn().mockResolvedValue({
+      shippingMode: "manual",
+      flatShippingAmountCents: 0,
+      allowedCountryCodes: ["US"],
+      handlingTimeText: "",
+      supportedRegionsText: "United States",
+      defaultCarrierNotes: "",
+      customerFacingShippingNote: ""
+    }),
     getSiteUrl: () => "https://taprater.test",
     hasOrderPersistence: () => true,
     logger: {
@@ -140,10 +149,45 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledOnce();
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        stripeMode: "test"
+        stripeMode: "test",
+        shippingSettings: expect.objectContaining({ shippingMode: "manual" })
       })
     );
-    expect(dependencies.createPendingOrder).toHaveBeenCalledOnce();
+    expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        totalCents: 3900,
+        shippingAmountCents: 0,
+        shippingMode: "manual"
+      })
+    );
+  });
+
+  it("includes configured flat shipping in the pending order total", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies({
+      getShippingSettings: vi.fn().mockResolvedValue({
+        shippingMode: "flat",
+        flatShippingAmountCents: 795,
+        allowedCountryCodes: ["US"],
+        handlingTimeText: "",
+        supportedRegionsText: "United States",
+        defaultCarrierNotes: "",
+        customerFacingShippingNote: ""
+      })
+    });
+
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+
+    expect(response.status).toBe(200);
+    expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtotalCents: 3900,
+        totalCents: 4695,
+        shippingAmountCents: 795,
+        shippingMode: "flat"
+      })
+    );
   });
 
   it("rejects mismatched live keys while Stripe mode is test", async () => {
@@ -177,7 +221,8 @@ describe("checkout route reliability", () => {
     expect(body).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_live_123" });
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        stripeMode: "live"
+        stripeMode: "live",
+        shippingSettings: expect.objectContaining({ shippingMode: "manual" })
       })
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledOnce();

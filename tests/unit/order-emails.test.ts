@@ -17,6 +17,17 @@ const paidOrder: OrderRecord = {
   subtotal_cents: 8800,
   total_cents: 8800,
   currency: "usd",
+  shipping_amount_cents: 0,
+  shipping_mode: "manual",
+  production_status: "not_started",
+  shipping_status: "not_shipped",
+  shipping_method: null,
+  shipping_carrier: null,
+  tracking_number: null,
+  tracking_url: null,
+  shipped_at: null,
+  internal_notes: "",
+  admin_fulfillment_notes: "",
   line_items_json: [
     {
       productId: "google-review-stand",

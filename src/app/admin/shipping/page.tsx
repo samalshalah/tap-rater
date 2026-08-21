@@ -1,28 +1,26 @@
-import { AdminSectionPage } from "@/components/admin/admin-section-page";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { ShippingSettingsForm } from "@/components/admin/shipping-settings-form";
 import { requireAdmin } from "@/lib/admin-auth";
+import { getShippingSettings } from "@/lib/shipping-settings";
 
 export default async function AdminShippingPage() {
   await requireAdmin();
+  const settings = await getShippingSettings();
 
   return (
     <AdminShell>
-      <AdminSectionPage
-        eyebrow="Commerce"
-        title="Shipping"
-        description="Configure shipping zones, rates, package rules, free-shipping thresholds, and fulfillment settings."
-        primaryItems={["Shipping zones", "Flat-rate rules", "Free-shipping threshold", "Package dimensions", "Fulfillment status options"]}
-        nextItems={["Confirm US/international shipping scope.", "Add shipping settings table.", "Include shipping rates in checkout validation."]}
-        config={{
-          area: "shipping",
-          primaryLabel: "Shipping rate",
-          secondaryLabel: "Free-shipping rule",
-          notesLabel: "Fulfillment notes",
-          primaryPlaceholder: "US flat rate $7.95",
-          secondaryPlaceholder: "Free shipping over $150",
-          notesPlaceholder: "Packaging, handling time, or carrier details"
-        }}
-      />
+      <section className="mx-auto max-w-5xl px-4 py-8 md:px-8 lg:py-12">
+        <p className="text-sm font-black uppercase text-brand">Commerce</p>
+        <div className="mt-3">
+          <h1 className="text-4xl font-black text-ink">Shipping</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+            Configure how Stripe Checkout collects shipping addresses and whether Tap Rater adds a shipping charge.
+          </p>
+        </div>
+        <div className="mt-8">
+          <ShippingSettingsForm settings={settings} />
+        </div>
+      </section>
     </AdminShell>
   );
 }

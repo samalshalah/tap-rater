@@ -356,6 +356,52 @@ export const adminConfigSchema = z.object({
 
 export type AdminConfigInput = z.infer<typeof adminConfigSchema>;
 
+export const shippingSettingsSchema = z.object({
+  shippingMode: z.enum(["manual", "free", "flat"]).default("manual"),
+  flatShippingAmountCents: z.number().int().min(0).max(100000).default(0),
+  allowedCountryCodes: z
+    .array(z.string().trim().regex(/^[A-Z]{2}$/))
+    .min(1)
+    .max(50)
+    .default(["US"]),
+  handlingTimeText: z.string().trim().max(500).default(""),
+  supportedRegionsText: z.string().trim().max(1000).default("United States"),
+  defaultCarrierNotes: z.string().trim().max(1000).default(""),
+  customerFacingShippingNote: z
+    .string()
+    .trim()
+    .max(1000)
+    .default("Production and shipping timelines are shown at checkout or shared after order review when applicable.")
+});
+
+export const orderFulfillmentUpdateSchema = z.object({
+  productionStatus: z.enum(["not_started", "ready_for_production", "in_production", "blocked", "completed"]),
+  shippingStatus: z.enum(["not_shipped", "ready_to_ship", "shipped", "delivered", "blocked"]),
+  shippingMethod: z.string().trim().max(120).default(""),
+  shippingCarrier: z.string().trim().max(120).default(""),
+  trackingNumber: z.string().trim().max(160).default(""),
+  trackingUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .default("")
+    .refine((value) => {
+      if (!value) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    }, "Tracking URL must start with http or https."),
+  internalNotes: z.string().trim().max(5000).default(""),
+  adminFulfillmentNotes: z.string().trim().max(5000).default(""),
+  markShipped: z.boolean().default(false)
+});
+
+export type ShippingSettingsInput = z.infer<typeof shippingSettingsSchema>;
+export type OrderFulfillmentUpdateInput = z.infer<typeof orderFulfillmentUpdateSchema>;
+
 export const checkoutCartSchema = z.object({
   items: z
     .array(

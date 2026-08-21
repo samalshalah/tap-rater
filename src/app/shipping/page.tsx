@@ -1,20 +1,25 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getShippingSettings } from "@/lib/shipping-settings";
 
 export const metadata: Metadata = {
   title: "Shipping",
   description: "Tap Rater production and shipping information for printed NFC and QR stands."
 };
 
-const sections = [
-  ["Printed on demand", "Tap Rater stands are prepared after checkout based on the selected stand, destination link, and any required branded proof details."],
-  ["Production readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided. Branded + QR orders require logo upload, business name, generated QR, and proof confirmation before production review."],
-  ["Shipping timelines", "Production and shipping timelines are shown at checkout or shared after order review when applicable. Any timeline provided is an estimate and may vary based on product readiness, order volume, carrier handling, and destination."],
-  ["Shipping address", "Please review your shipping and contact information before checkout. Incorrect addresses can delay delivery or require additional support."],
-  ["Order issues", "If you have a shipping, delivery, damaged item, or fulfillment question, contact Tap Rater support with your order email and details."]
-];
+export default async function ShippingPage() {
+  const settings = await getShippingSettings();
+  const sections = [
+    ["Printed on demand", "Tap Rater stands are prepared after checkout based on the selected stand, destination link, and any required branded proof details."],
+    ["Production readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided. Branded + QR orders require logo upload, business name, generated QR, and proof confirmation before production review."],
+    ["Shipping timelines", settings.customerFacingShippingNote],
+    ["Supported regions", settings.supportedRegionsText || "United States"],
+    ["Handling time", settings.handlingTimeText || "Handling timelines are confirmed during fulfillment review."],
+    ["Carrier notes", settings.defaultCarrierNotes || "Carrier details and tracking are added when an order ships."],
+    ["Shipping address", "Please review your shipping and contact information before checkout. Incorrect addresses can delay delivery or require additional support."],
+    ["Order issues", "If you have a shipping, delivery, damaged item, or fulfillment question, contact Tap Rater support with your order email and details."]
+  ];
 
-export default function ShippingPage() {
   return (
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">

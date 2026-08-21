@@ -6,6 +6,7 @@ import {
   mapCheckoutRowsToOrderLineItems,
   mapCheckoutSessionToOrderInput,
   savePaidOrderFromCheckoutSessionWithClient,
+  updateOrderFulfillmentWithClient,
   type OrdersDbClient
 } from "@/lib/orders";
 
@@ -296,6 +297,90 @@ describe("orders repository", () => {
       currency: "usd"
     });
     expect(order.line_items_json).toHaveLength(1);
+  });
+
+  it("normalizes Stripe shipping details into order shipping fields", () => {
+    const order = mapCheckoutSessionToOrderInput({
+      id: "cs_test_shipping",
+      payment_status: "paid",
+      amount_subtotal: 3900,
+      amount_total: 4695,
+      currency: "usd",
+      customer_details: {
+        email: "buyer@example.com",
+        name: "Buyer Name",
+        phone: "555-0100"
+      },
+      shipping_details: {
+        name: "Receiving Team",
+        phone: "555-0101",
+        address: {
+          line1: "100 Main St",
+          city: "Erbil",
+          state: "NY",
+          postal_code: "10001",
+          country: "US"
+        }
+      },
+      shipping_cost: {
+        amount_total: 795
+      },
+      metadata: {
+        shipping_mode: "flat",
+        shipping_amount_cents: "795"
+      }
+    });
+
+    expect(order.shipping_address_json).toEqual({
+      name: "Receiving Team",
+      phone: "555-0101",
+      address: {
+        line1: "100 Main St",
+        city: "Erbil",
+        state: "NY",
+        postal_code: "10001",
+        country: "US"
+      }
+    });
+    expect(order.shipping_amount_cents).toBe(795);
+    expect(order.shipping_mode).toBe("flat");
+  });
+
+  it("updates fulfillment fields and sets shipped timestamp when marking shipped", async () => {
+    const update = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null })
+    });
+    const client = {
+      from(table: string) {
+        expect(table).toBe("orders");
+        return { update };
+      }
+    } as unknown as OrdersDbClient;
+
+    const result = await updateOrderFulfillmentWithClient(client, "order-123", {
+      productionStatus: "completed",
+      shippingStatus: "ready_to_ship",
+      shippingMethod: "Ground",
+      shippingCarrier: "USPS",
+      trackingNumber: "TRACK123",
+      trackingUrl: "https://example.com/track/TRACK123",
+      internalNotes: "Packed carefully.",
+      adminFulfillmentNotes: "Ready.",
+      markShipped: true
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      production_status: "completed",
+      shipping_status: "shipped",
+      shipping_method: "Ground",
+      shipping_carrier: "USPS",
+      tracking_number: "TRACK123",
+      tracking_url: "https://example.com/track/TRACK123",
+      internal_notes: "Packed carefully.",
+      admin_fulfillment_notes: "Ready.",
+      shipped_at: expect.any(String)
+    }));
   });
 
   it("upserts paid orders by Stripe checkout session id", async () => {

@@ -250,6 +250,18 @@ const tableColumns = {
     "currency",
     "line_items_json",
     "customer_details_json",
+    "shipping_address_json",
+    "shipping_amount_cents",
+    "shipping_mode",
+    "production_status",
+    "shipping_status",
+    "shipping_method",
+    "shipping_carrier",
+    "tracking_number",
+    "tracking_url",
+    "shipped_at",
+    "internal_notes",
+    "admin_fulfillment_notes",
     "created_at",
     "updated_at"
   ],
@@ -266,6 +278,7 @@ const jsonbColumns = new Set([
   "payload_json",
   "line_items_json",
   "customer_details_json",
+  "shipping_address_json",
   "images",
   "landing_page_preview_config"
 ]);

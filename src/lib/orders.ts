@@ -1,5 +1,6 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
+import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
@@ -47,6 +48,9 @@ export type OrderLineItemProductionSummary = {
   warnings: string[];
 };
 
+export type ProductionStatus = "not_started" | "ready_for_production" | "in_production" | "blocked" | "completed";
+export type ShippingStatus = "not_shipped" | "ready_to_ship" | "shipped" | "delivered" | "blocked";
+
 export type OrderRecord = {
   id?: string;
   stripe_checkout_session_id: string;
@@ -60,6 +64,18 @@ export type OrderRecord = {
   currency: string;
   line_items_json: OrderLineItem[];
   customer_details_json?: Record<string, unknown> | null;
+  shipping_address_json?: Record<string, unknown> | null;
+  shipping_amount_cents: number;
+  shipping_mode?: "manual" | "free" | "flat" | null;
+  production_status: ProductionStatus;
+  shipping_status: ShippingStatus;
+  shipping_method?: string | null;
+  shipping_carrier?: string | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  shipped_at?: string | null;
+  internal_notes: string;
+  admin_fulfillment_notes: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -88,6 +104,21 @@ export type StripeCheckoutSessionLike = {
     name?: string | null;
     phone?: string | null;
     address?: unknown;
+  } | null;
+  shipping_details?: {
+    name?: string | null;
+    phone?: string | null;
+    address?: unknown;
+  } | null;
+  shipping_cost?: {
+    amount_total?: number | null;
+  } | null;
+  collected_information?: {
+    shipping_details?: {
+      name?: string | null;
+      phone?: string | null;
+      address?: unknown;
+    } | null;
   } | null;
   metadata?: Record<string, string | null> | null;
 };
@@ -279,6 +310,8 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
   const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
   const email = session.customer_details?.email ?? session.customer_email ?? null;
   const lineItems = parseOrderLineItems(session.metadata?.order_items);
+  const shippingDetails = session.shipping_details ?? session.collected_information?.shipping_details ?? null;
+  const shippingAddress = normalizeShippingAddress(shippingDetails, session.customer_details);
 
   return {
     stripe_checkout_session_id: session.id ?? "",
@@ -292,6 +325,18 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
     currency: session.currency ?? "usd",
     line_items_json: lineItems,
     customer_details_json: session.customer_details ? { ...session.customer_details } : null,
+    shipping_address_json: shippingAddress,
+    shipping_amount_cents: session.shipping_cost?.amount_total ?? readIntegerString(session.metadata?.shipping_amount_cents) ?? 0,
+    shipping_mode: readShippingMode(session.metadata?.shipping_mode) ?? null,
+    production_status: "not_started",
+    shipping_status: "not_shipped",
+    shipping_method: null,
+    shipping_carrier: null,
+    tracking_number: null,
+    tracking_url: null,
+    shipped_at: null,
+    internal_notes: "",
+    admin_fulfillment_notes: "",
     updated_at: new Date().toISOString()
   };
 }
@@ -301,13 +346,17 @@ export async function createPendingOrderForCheckout({
   rows,
   subtotalCents,
   totalCents,
-  currency
+  currency,
+  shippingAmountCents = 0,
+  shippingMode = "manual"
 }: {
   stripeCheckoutSessionId: string;
   rows: CheckoutCartRow[];
   subtotalCents: number;
   totalCents: number;
   currency: string;
+  shippingAmountCents?: number;
+  shippingMode?: "manual" | "free" | "flat";
 }) {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured. Checkout is disabled until order persistence is ready." };
@@ -318,7 +367,9 @@ export async function createPendingOrderForCheckout({
     rows,
     subtotalCents,
     totalCents,
-    currency
+    currency,
+    shippingAmountCents,
+    shippingMode
   });
 }
 
@@ -330,6 +381,8 @@ export async function createPendingOrderForCheckoutWithClient(
     subtotalCents: number;
     totalCents: number;
     currency: string;
+    shippingAmountCents?: number;
+    shippingMode?: "manual" | "free" | "flat";
   }
 ) {
   const { error } = await client.from("orders").upsert(
@@ -341,6 +394,8 @@ export async function createPendingOrderForCheckoutWithClient(
       total_cents: input.totalCents,
       currency: input.currency,
       line_items_json: mapCheckoutRowsToOrderLineItems(input.rows),
+      shipping_amount_cents: input.shippingAmountCents ?? 0,
+      shipping_mode: input.shippingMode ?? "manual",
       updated_at: new Date().toISOString()
     },
     { onConflict: "stripe_checkout_session_id" }
@@ -382,6 +437,21 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     delete payload.line_items_json;
   }
 
+  if (existingOrder) {
+    payload.production_status = existingOrder.production_status;
+    payload.shipping_status = existingOrder.shipping_status;
+    payload.shipping_method = existingOrder.shipping_method;
+    payload.shipping_carrier = existingOrder.shipping_carrier;
+    payload.tracking_number = existingOrder.tracking_number;
+    payload.tracking_url = existingOrder.tracking_url;
+    payload.shipped_at = existingOrder.shipped_at;
+    payload.internal_notes = existingOrder.internal_notes;
+    payload.admin_fulfillment_notes = existingOrder.admin_fulfillment_notes;
+    payload.shipping_address_json = order.shipping_address_json ?? existingOrder.shipping_address_json ?? null;
+    payload.shipping_amount_cents = order.shipping_amount_cents || existingOrder.shipping_amount_cents;
+    payload.shipping_mode = order.shipping_mode ?? existingOrder.shipping_mode ?? null;
+  }
+
   const { error } = await client.from("orders").upsert(payload, { onConflict: "stripe_checkout_session_id" });
 
   return error ? { ok: false, error: error.message } : { ok: true, order: mergedOrder, wasAlreadyPaid };
@@ -407,6 +477,59 @@ export async function getAdminOrders(): Promise<{ configured: boolean; orders: O
   } catch {
     return { configured: true, orders: [] };
   }
+}
+
+export async function getAdminOrderById(orderId: string): Promise<{ configured: boolean; order: OrderRecord | null }> {
+  if (!hasSupabaseAdminConfig()) {
+    return { configured: false, order: null };
+  }
+
+  try {
+    const { data, error } = await (getSupabaseAdmin() as OrdersDbClient)
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return { configured: true, order: null };
+    }
+
+    return { configured: true, order: normalizeOrderRecord(data) };
+  } catch {
+    return { configured: true, order: null };
+  }
+}
+
+export async function updateOrderFulfillment(orderId: string, input: OrderFulfillmentUpdateInput) {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false, error: "Database persistence is not configured." };
+  }
+
+  return updateOrderFulfillmentWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
+}
+
+export async function updateOrderFulfillmentWithClient(client: OrdersDbClient, orderId: string, input: OrderFulfillmentUpdateInput) {
+  const now = new Date().toISOString();
+  const shippingStatus = input.markShipped ? "shipped" : input.shippingStatus;
+  const payload: Record<string, unknown> = {
+    production_status: input.productionStatus,
+    shipping_status: shippingStatus,
+    shipping_method: input.shippingMethod || null,
+    shipping_carrier: input.shippingCarrier || null,
+    tracking_number: input.trackingNumber || null,
+    tracking_url: input.trackingUrl || null,
+    internal_notes: input.internalNotes,
+    admin_fulfillment_notes: input.adminFulfillmentNotes,
+    updated_at: now
+  };
+
+  if (input.markShipped) {
+    payload.shipped_at = now;
+  }
+
+  const { error } = await client.from("orders").update(payload).eq("id", orderId);
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] {
@@ -461,6 +584,18 @@ function normalizeOrderRecord(value: unknown): OrderRecord {
       ? (row.line_items_json as OrderLineItem[]).map(applyOrderLineItemFulfillmentInference)
       : [],
     customer_details_json: row.customer_details_json && typeof row.customer_details_json === "object" ? (row.customer_details_json as Record<string, unknown>) : null,
+    shipping_address_json: row.shipping_address_json && typeof row.shipping_address_json === "object" ? (row.shipping_address_json as Record<string, unknown>) : null,
+    shipping_amount_cents: readNumber(row.shipping_amount_cents) ?? 0,
+    shipping_mode: readShippingMode(row.shipping_mode) ?? null,
+    production_status: readProductionStatus(row.production_status) ?? "not_started",
+    shipping_status: readShippingStatus(row.shipping_status) ?? "not_shipped",
+    shipping_method: readString(row.shipping_method) ?? null,
+    shipping_carrier: readString(row.shipping_carrier) ?? null,
+    tracking_number: readString(row.tracking_number) ?? null,
+    tracking_url: readString(row.tracking_url) ?? null,
+    shipped_at: readString(row.shipped_at) ?? null,
+    internal_notes: readString(row.internal_notes) ?? "",
+    admin_fulfillment_notes: readString(row.admin_fulfillment_notes) ?? "",
     created_at: readString(row.created_at),
     updated_at: readString(row.updated_at)
   };
@@ -522,6 +657,44 @@ function readNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function readIntegerString(value: unknown) {
+  if (typeof value !== "string" || !/^\d+$/.test(value)) {
+    return undefined;
+  }
+
+  return Number(value);
+}
+
 function readOrderStatus(value: unknown): OrderRecord["status"] | undefined {
   return value === "pending_payment" || value === "paid" || value === "failed" || value === "canceled" ? value : undefined;
+}
+
+function readProductionStatus(value: unknown): ProductionStatus | undefined {
+  return value === "not_started" || value === "ready_for_production" || value === "in_production" || value === "blocked" || value === "completed"
+    ? value
+    : undefined;
+}
+
+function readShippingStatus(value: unknown): ShippingStatus | undefined {
+  return value === "not_shipped" || value === "ready_to_ship" || value === "shipped" || value === "delivered" || value === "blocked" ? value : undefined;
+}
+
+function readShippingMode(value: unknown): "manual" | "free" | "flat" | undefined {
+  return value === "manual" || value === "free" || value === "flat" ? value : undefined;
+}
+
+function normalizeShippingAddress(
+  shippingDetails: StripeCheckoutSessionLike["shipping_details"],
+  customerDetails: StripeCheckoutSessionLike["customer_details"]
+): Record<string, unknown> | null {
+  const address = shippingDetails?.address ?? customerDetails?.address;
+  if (!address || typeof address !== "object") {
+    return null;
+  }
+
+  return {
+    name: shippingDetails?.name ?? customerDetails?.name ?? null,
+    phone: shippingDetails?.phone ?? customerDetails?.phone ?? null,
+    address
+  };
 }

@@ -427,7 +427,44 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.stripe_mode).toBe("test");
     expect(params.metadata?.total_cents).toBe("3900");
     expect(params.metadata?.configured_items).toBe("1");
+    expect(params.metadata?.shipping_mode).toBe("manual");
+    expect(params.metadata?.shipping_amount_cents).toBe("0");
+    expect(params.shipping_address_collection?.allowed_countries).toEqual(["US"]);
+    expect(params.shipping_options).toBeUndefined();
     expect(params.metadata).not.toHaveProperty("order_items");
+  });
+
+  it("adds configured flat shipping to Checkout Session params", () => {
+    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = createCheckoutSessionParams({
+      cart: result,
+      siteUrl: "https://taprater.com",
+      shippingSettings: {
+        shippingMode: "flat",
+        flatShippingAmountCents: 795,
+        allowedCountryCodes: ["US"],
+        handlingTimeText: "",
+        supportedRegionsText: "United States",
+        defaultCarrierNotes: "",
+        customerFacingShippingNote: ""
+      }
+    });
+
+    expect(params.metadata?.shipping_mode).toBe("flat");
+    expect(params.metadata?.shipping_amount_cents).toBe("795");
+    expect(params.shipping_options?.[0]).toMatchObject({
+      shipping_rate_data: {
+        type: "fixed_amount",
+        display_name: "Flat rate shipping",
+        fixed_amount: {
+          amount: 795,
+          currency: "usd"
+        }
+      }
+    });
   });
 
   it("records live mode metadata when live checkout is enabled", () => {

@@ -15,6 +15,7 @@ import {
 import { hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCheckoutShippingAmountCents, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { checkoutCartSchema } from "@/lib/validators";
 
 type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
@@ -33,14 +34,18 @@ export type CheckoutRouteDependencies = {
     subtotalCents: number;
     totalCents: number;
     currency: string;
+    shippingAmountCents?: number;
+    shippingMode?: "manual" | "free" | "flat";
   }) => Promise<PendingOrderResult>;
   createRequestId: () => string;
   createStripeSession: (input: {
     cart: Extract<ValidatedCheckoutCart, { ok: true }>;
     siteUrl: string;
     stripeMode: "test" | "live";
+    shippingSettings: ShippingSettingsInput;
   }) => Promise<StripeCheckoutSessionResult>;
   getProducts: () => Promise<MigratedProduct[]>;
+  getShippingSettings: () => Promise<ShippingSettingsInput>;
   getSiteUrl: (requestOrigin?: string | null) => string;
   hasOrderPersistence: () => boolean;
   logger: CheckoutRouteLogger;
@@ -87,6 +92,7 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
   }
 
   const products = await dependencies.getProducts();
+  const shippingSettings = await dependencies.getShippingSettings();
   logCheckout(dependencies.logger, "info", requestId, "products_loaded", { count: products.length });
   const cart = validateCheckoutCart(parsed.data.items, products);
 
@@ -107,7 +113,8 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
       dependencies.createStripeSession({
         cart,
         siteUrl: dependencies.getSiteUrl(requestOrigin),
-        stripeMode: stripeConfig.mode
+        stripeMode: stripeConfig.mode,
+        shippingSettings
       }),
       dependencies.stripeTimeoutMs,
       "Stripe Checkout Session creation"
@@ -131,8 +138,10 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
         stripeCheckoutSessionId: session.id,
         rows: cart.rows,
         subtotalCents: cart.totalCents,
-        totalCents: cart.totalCents,
-        currency: cart.currency
+        totalCents: cart.totalCents + getCheckoutShippingAmountCents(shippingSettings),
+        currency: cart.currency,
+        shippingAmountCents: getCheckoutShippingAmountCents(shippingSettings),
+        shippingMode: shippingSettings.shippingMode
       }),
       dependencies.orderTimeoutMs,
       "Pending order creation"
@@ -166,17 +175,19 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
 const checkoutRouteDependencies: CheckoutRouteDependencies = {
   createPendingOrder: createPendingOrderForCheckout,
   createRequestId: createCheckoutRequestId,
-  createStripeSession: async ({ cart, siteUrl, stripeMode }) => {
+  createStripeSession: async ({ cart, siteUrl, stripeMode, shippingSettings }) => {
     const stripe = getStripeClient();
     return stripe.checkout.sessions.create(
       createCheckoutSessionParams({
         cart,
         siteUrl,
-        stripeMode
+        stripeMode,
+        shippingSettings
       })
     );
   },
   getProducts: getStorefrontProducts,
+  getShippingSettings,
   getSiteUrl: getCheckoutSiteUrl,
   hasOrderPersistence: hasSupabaseAdminConfig,
   logger: console,

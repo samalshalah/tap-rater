@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
@@ -10,9 +11,16 @@ import {
 } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
-export default async function AdminOrdersPage() {
+type AdminOrdersPageProps = {
+  searchParams?: Promise<{ filter?: string }>;
+};
+
+export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
   await requireAdmin();
   const { configured, orders } = await getAdminOrders();
+  const params = await searchParams;
+  const activeFilter = params?.filter ?? "all";
+  const filteredOrders = filterOrders(orders, activeFilter);
 
   return (
     <AdminShell>
@@ -26,7 +34,7 @@ export default async function AdminOrdersPage() {
             </p>
           </div>
           <div className="rounded-md border border-line bg-white px-4 py-3 text-sm font-bold text-ink">
-            {orders.length} orders
+            {filteredOrders.length} orders
           </div>
         </div>
 
@@ -43,6 +51,24 @@ export default async function AdminOrdersPage() {
           <SummaryCard label="Revenue" value={formatPrice(orders.filter((order) => order.status === "paid").reduce((sum, order) => sum + order.total_cents, 0))} />
         </div>
 
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[
+            ["all", "All"],
+            ["paid", "Paid"],
+            ["pending", "Pending"],
+            ["production", "Production"],
+            ["shipped", "Shipped"]
+          ].map(([value, label]) => (
+            <Link
+              key={value}
+              href={value === "all" ? "/admin/orders" : `/admin/orders?filter=${value}`}
+              className={activeFilter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-black uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-black uppercase text-ink"}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
         <div className="mt-6 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
           <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
             <thead>
@@ -57,9 +83,16 @@ export default async function AdminOrdersPage() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
+              {filteredOrders.map((order) => (
                 <tr key={order.stripe_checkout_session_id} className="border-b border-line last:border-b-0">
-                  <td className="p-4 font-mono text-xs text-ink">{order.stripe_checkout_session_id}</td>
+                  <td className="p-4">
+                    <p className="font-mono text-xs text-ink">{order.stripe_checkout_session_id}</p>
+                    {order.id ? (
+                      <Link href={`/admin/orders/${order.id}`} className="mt-2 inline-flex rounded-md border border-line px-3 py-1 text-xs font-black text-ink">
+                        View order
+                      </Link>
+                    ) : null}
+                  </td>
                   <td className="p-4">
                     <p className="font-bold text-ink">{order.customer_name ?? "Customer"}</p>
                     <p className="text-muted">{order.email ?? "-"}</p>
@@ -73,6 +106,10 @@ export default async function AdminOrdersPage() {
                   </td>
                   <td className="p-4">
                     <OrderFulfillmentBadges order={order} />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <StatusPill tone={order.production_status === "completed" ? "ready" : "neutral"}>{formatStatus(order.production_status)}</StatusPill>
+                      <StatusPill tone={order.shipping_status === "shipped" || order.shipping_status === "delivered" ? "ready" : "neutral"}>{formatStatus(order.shipping_status)}</StatusPill>
+                    </div>
                   </td>
                   <td className="p-4 font-black text-ink">{formatPrice(order.total_cents)}</td>
                   <td className="p-4">
@@ -83,7 +120,7 @@ export default async function AdminOrdersPage() {
                   <td className="p-4 text-muted">{order.created_at ? new Date(order.created_at).toLocaleString() : "-"}</td>
                 </tr>
               ))}
-              {orders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-muted">
                     No Stripe orders yet.
@@ -96,6 +133,18 @@ export default async function AdminOrdersPage() {
       </section>
     </AdminShell>
   );
+}
+
+function filterOrders(orders: OrderRecord[], filter: string) {
+  if (filter === "paid") return orders.filter((order) => order.status === "paid");
+  if (filter === "pending") return orders.filter((order) => order.status === "pending_payment");
+  if (filter === "production") return orders.filter((order) => order.production_status !== "completed" && order.shipping_status !== "shipped" && order.shipping_status !== "delivered");
+  if (filter === "shipped") return orders.filter((order) => order.shipping_status === "shipped" || order.shipping_status === "delivered");
+  return orders;
+}
+
+function formatStatus(value: string) {
+  return value.replaceAll("_", " ");
 }
 
 function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
