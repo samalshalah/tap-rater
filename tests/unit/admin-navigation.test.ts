@@ -22,7 +22,8 @@ describe("admin navigation", () => {
         "/admin/taxes",
         "/admin/seo",
         "/admin/analytics",
-        "/admin/settings"
+        "/admin/settings",
+        "/admin/settings/emails"
       ])
     );
   });

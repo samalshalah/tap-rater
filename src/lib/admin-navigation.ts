@@ -44,7 +44,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "System",
     items: [
-      { label: "Settings", href: "/admin/settings", description: "Store profile, admin, integrations, and launch checklist" }
+      { label: "Settings", href: "/admin/settings", description: "Store profile, admin, integrations, and launch checklist" },
+      { label: "Email Templates", href: "/admin/settings/emails", description: "Order, request, and shipping notification copy" }
     ]
   }
 ];

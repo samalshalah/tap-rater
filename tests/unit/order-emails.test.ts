@@ -127,4 +127,83 @@ describe("paid order emails", () => {
       subject: "New paid Tap Rater order"
     });
   });
+
+  it("uses configured email template text for paid order emails", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    await sendPaidOrderEmails(paidOrder, {
+      sendEmailFn,
+      env: { ORDER_NOTIFICATION_EMAIL: "orders@example.com" },
+      getTemplateFn: async (key) =>
+        key === "customer-order-confirmation"
+          ? {
+              key,
+              label: "Customer",
+              description: "",
+              enabled: true,
+              subject: "Custom customer subject",
+              introText: "Custom customer intro",
+              supportText: "Custom customer support",
+              footerText: "Custom customer footer"
+            }
+          : {
+              key,
+              label: "Admin",
+              description: "",
+              enabled: true,
+              subject: "Custom admin subject",
+              introText: "Custom admin intro",
+              supportText: "",
+              footerText: "Custom admin footer"
+            }
+    });
+
+    expect(sendEmailFn.mock.calls[0][0]).toMatchObject({ subject: "Custom customer subject" });
+    expect(sendEmailFn.mock.calls[0][0].html).toContain("Custom customer intro");
+    expect(sendEmailFn.mock.calls[0][0].html).toContain("Custom customer support");
+    expect(sendEmailFn.mock.calls[0][0].html).toContain("Custom customer footer");
+    expect(sendEmailFn.mock.calls[1][0]).toMatchObject({ subject: "Custom admin subject" });
+    expect(sendEmailFn.mock.calls[1][0].html).toContain("Custom admin intro");
+    expect(sendEmailFn.mock.calls[1][0].html).toContain("Custom admin footer");
+  });
+
+  it("falls back to default templates when template loading fails", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    await sendPaidOrderEmails(paidOrder, {
+      sendEmailFn,
+      env: { ORDER_NOTIFICATION_EMAIL: "orders@example.com" },
+      getTemplateFn: async () => {
+        throw new Error("template storage unavailable");
+      }
+    });
+
+    expect(sendEmailFn.mock.calls[0][0]).toMatchObject({ subject: "Your Tap Rater order is confirmed" });
+    expect(sendEmailFn.mock.calls[1][0]).toMatchObject({ subject: "New paid Tap Rater order" });
+  });
+
+  it("keeps critical paid order emails enabled even when template settings are disabled", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await sendPaidOrderEmails(paidOrder, {
+      sendEmailFn,
+      env: { ORDER_NOTIFICATION_EMAIL: "orders@example.com" },
+      getTemplateFn: async (key) => ({
+        key,
+        label: key,
+        description: "",
+        enabled: false,
+        subject: "Disabled",
+        introText: "",
+        supportText: "",
+        footerText: ""
+      })
+    });
+
+    expect(result).toEqual({
+      customer: { sent: true },
+      admin: { sent: true }
+    });
+    expect(sendEmailFn).toHaveBeenCalledTimes(2);
+  });
 });

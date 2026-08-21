@@ -1,9 +1,11 @@
+import { sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import {
-  buildEmailHtml,
-  sendEmail,
-  type EmailResult,
-  type SendEmailInput
-} from "@/lib/email";
+  defaultEmailTemplates,
+  getEmailTemplate,
+  renderEmailTemplateHtml,
+  type EmailTemplateKey,
+  type EmailTemplateSettings
+} from "@/lib/email-templates";
 import {
   getOrderLineItemProductionSummary,
   type OrderLineItem,
@@ -21,20 +23,24 @@ export async function sendPaidOrderEmails(
   order: OrderRecord,
   options: {
     sendEmailFn?: SendEmailFn;
+    getTemplateFn?: (key: EmailTemplateKey) => Promise<EmailTemplateSettings>;
     env?: Record<string, string | undefined>;
   } = {}
 ): Promise<PaidOrderEmailResult> {
   const sendEmailFn = options.sendEmailFn ?? sendEmail;
+  const getTemplateFn = options.getTemplateFn ?? getEmailTemplate;
   const env = options.env ?? process.env;
   const customerEmail = order.email?.trim();
   const adminEmail = env.ORDER_NOTIFICATION_EMAIL?.trim();
+  const customerTemplate = await resolveEmailTemplate("customer-order-confirmation", getTemplateFn);
+  const adminTemplate = await resolveEmailTemplate("admin-new-order", getTemplateFn);
 
   const customer =
     customerEmail
       ? await sendPaidOrderEmailSafely(sendEmailFn, {
           to: customerEmail,
-          subject: "Your Tap Rater order is confirmed",
-          html: buildCustomerPaidOrderEmailHtml(order)
+          subject: customerTemplate.subject,
+          html: buildCustomerPaidOrderEmailHtml(order, customerTemplate)
         })
       : { sent: false as const, reason: "missing_customer_email" as const };
 
@@ -42,21 +48,21 @@ export async function sendPaidOrderEmails(
     adminEmail
       ? await sendPaidOrderEmailSafely(sendEmailFn, {
           to: adminEmail,
-          subject: "New paid Tap Rater order",
-          html: buildAdminPaidOrderEmailHtml(order)
+          subject: adminTemplate.subject,
+          html: buildAdminPaidOrderEmailHtml(order, adminTemplate)
         })
       : { sent: false as const, reason: "missing_notification_email" as const };
 
   return { customer, admin };
 }
 
-export function buildCustomerPaidOrderEmailHtml(order: OrderRecord) {
-  return buildEmailHtml({
-    intro: "Your Tap Rater order is confirmed and marked paid.",
+export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["customer-order-confirmation"]) {
+  return renderEmailTemplateHtml(template, {
     rows: {
       "Order reference": getOrderReference(order),
       Status: "Paid",
-      Total: formatMoney(order.total_cents, order.currency)
+      Total: formatMoney(order.total_cents, order.currency),
+      Shipping: formatShippingSummary(order)
     },
     body: [
       "Order summary:",
@@ -70,15 +76,21 @@ export function buildCustomerPaidOrderEmailHtml(order: OrderRecord) {
   });
 }
 
-export function buildAdminPaidOrderEmailHtml(order: OrderRecord) {
-  return buildEmailHtml({
-    intro: "A paid Tap Rater order is ready for fulfillment review.",
+export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["admin-new-order"]) {
+  return renderEmailTemplateHtml(template, {
     rows: {
       "Order reference": getOrderReference(order),
       "Customer email": order.email ?? "",
       "Customer name": order.customer_name ?? "",
       Total: formatMoney(order.total_cents, order.currency),
       "Payment status": order.payment_status ?? order.status,
+      "Shipping mode": order.shipping_mode ?? "",
+      "Shipping amount": formatMoney(order.shipping_amount_cents, order.currency),
+      "Production status": order.production_status,
+      "Shipping status": order.shipping_status,
+      Carrier: order.shipping_carrier ?? "",
+      "Tracking number": order.tracking_number ?? "",
+      "Tracking URL": order.tracking_url ?? "",
       "Stripe session": order.stripe_checkout_session_id,
       "Payment intent": order.stripe_payment_intent_id ?? ""
     },
@@ -141,6 +153,19 @@ async function sendPaidOrderEmailSafely(sendEmailFn: SendEmailFn, input: SendEma
   } catch {
     return { sent: false, reason: "email_send_exception" };
   }
+}
+
+async function resolveEmailTemplate(key: EmailTemplateKey, getTemplateFn: (key: EmailTemplateKey) => Promise<EmailTemplateSettings>) {
+  try {
+    return await getTemplateFn(key);
+  } catch {
+    return defaultEmailTemplates[key];
+  }
+}
+
+function formatShippingSummary(order: OrderRecord) {
+  const amount = order.shipping_amount_cents ? `, ${formatMoney(order.shipping_amount_cents, order.currency)}` : "";
+  return `${order.shipping_mode ?? "manual"}${amount}`;
 }
 
 function formatMoney(cents: number, currency: string) {
