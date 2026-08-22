@@ -9,9 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
-
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
+import type { StripePublicConfig } from "@/lib/stripe-public-config";
 
 type EmbeddedCheckoutSession = {
   clientSecret: string;
@@ -19,7 +17,7 @@ type EmbeddedCheckoutSession = {
   createdAt?: number;
 };
 
-export function EmbeddedCheckoutClient() {
+export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicConfig: StripePublicConfig }) {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
@@ -27,6 +25,8 @@ export function EmbeddedCheckoutClient() {
   const totalCents = calculateCartTotalCents(items);
   const [session, setSession] = useState<EmbeddedCheckoutSession | null>(null);
   const [error, setError] = useState("");
+  const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
+  const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -114,8 +114,8 @@ export function EmbeddedCheckoutClient() {
       </aside>
 
       <section className="min-h-[560px] rounded-[22px] border border-line bg-white p-3 shadow-sm sm:p-5">
-        {!publishableKey ? (
-          <CheckoutError message="Stripe publishable key is not configured." />
+        {!stripePublicConfig.ok ? (
+          <CheckoutError message={stripePublicConfig.error} />
         ) : !stripePromise ? (
           <CheckoutError message="Stripe could not be loaded." />
         ) : error ? (
