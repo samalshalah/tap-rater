@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import type { OrderRecord } from "@/lib/orders";
+import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 
 export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
@@ -33,7 +34,7 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
       const response = await fetch(`/api/admin/orders/${order.id}/fulfillment`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(createOrderFulfillmentPayload(form))
       });
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
 
@@ -91,15 +92,15 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <TextField label="Shipping method" value={form.shippingMethod} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
-        <TextField label="Carrier" value={form.shippingCarrier} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
-        <TextField label="Tracking number" value={form.trackingNumber} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
-        <TextField label="Tracking URL" value={form.trackingUrl} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
+        <TextField name="shippingMethod" label="Shipping method" value={form.shippingMethod} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
+        <TextField name="shippingCarrier" label="Carrier" value={form.shippingCarrier} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
+        <TextField name="trackingNumber" label="Tracking number" value={form.trackingNumber} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
+        <TextField name="trackingUrl" label="Tracking URL" value={form.trackingUrl} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <TextArea label="Internal notes" value={form.internalNotes} onChange={(value) => setForm((current) => ({ ...current, internalNotes: value }))} />
-        <TextArea label="Admin fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
+        <TextArea name="internalNotes" label="Internal notes" value={form.internalNotes} onChange={(value) => setForm((current) => ({ ...current, internalNotes: value }))} />
+        <TextArea name="adminFulfillmentNotes" label="Admin fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
       </div>
 
       <label className="flex items-center gap-3 rounded-md border border-line bg-gray-50 p-3 text-sm font-bold text-ink">
@@ -125,20 +126,34 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
   );
 }
 
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextField({ name, label, value, onChange }: { name: string; label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="block text-sm font-bold text-ink">
-      {label}
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
+      <span className="flex items-center justify-between gap-3">
+        {label}
+        {value ? (
+          <button type="button" onClick={() => onChange("")} className="text-xs font-black text-brand hover:text-ink">
+            Clear
+          </button>
+        ) : null}
+      </span>
+      <input name={name} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
     </label>
   );
 }
 
-function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextArea({ name, label, value, onChange }: { name: string; label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="block text-sm font-bold text-ink">
-      {label}
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
+      <span className="flex items-center justify-between gap-3">
+        {label}
+        {value ? (
+          <button type="button" onClick={() => onChange("")} className="text-xs font-black text-brand hover:text-ink">
+            Clear
+          </button>
+        ) : null}
+      </span>
+      <textarea name={name} value={value} onChange={(event) => onChange(event.target.value)} rows={4} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
     </label>
   );
 }
