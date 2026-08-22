@@ -28,7 +28,7 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
   return {
     createPendingOrder: vi.fn().mockResolvedValue({ ok: true }),
     createRequestId: () => "checkout_test_request",
-    createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", url: "https://checkout.stripe.com/c/pay/cs_test_123" }),
+    createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", client_secret: "cs_test_123_secret_unit" }),
     getProducts: vi.fn().mockResolvedValue(migratedProducts),
     getShippingSettings: vi.fn().mockResolvedValue({
       shippingMode: "manual",
@@ -136,7 +136,24 @@ describe("checkout route reliability", () => {
     expect(createPendingOrder).not.toHaveBeenCalled();
   });
 
-  it("creates a pending order only after Stripe returns a checkout session", async () => {
+  it("does not create an order when embedded Checkout omits the client secret", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const createPendingOrder = vi.fn().mockResolvedValue({ ok: true });
+    const dependencies = createDependencies({
+      createPendingOrder,
+      createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123" })
+    });
+
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "Stripe Checkout Session could not be created." });
+    expect(createPendingOrder).not.toHaveBeenCalled();
+  });
+
+  it("creates a pending order only after Stripe returns an embedded checkout session", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const dependencies = createDependencies();
@@ -145,7 +162,11 @@ describe("checkout route reliability", () => {
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_test_123" });
+    expect(body).toEqual({
+      checkoutMode: "embedded",
+      clientSecret: "cs_test_123_secret_unit",
+      sessionId: "cs_test_123"
+    });
     expect(dependencies.createStripeSession).toHaveBeenCalledOnce();
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -211,14 +232,18 @@ describe("checkout route reliability", () => {
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_live_unit";
     process.env.STRIPE_WEBHOOK_SECRET = "whsec_live_unit";
     const dependencies = createDependencies({
-      createStripeSession: vi.fn().mockResolvedValue({ id: "cs_live_123", url: "https://checkout.stripe.com/c/pay/cs_live_123" })
+      createStripeSession: vi.fn().mockResolvedValue({ id: "cs_live_123", client_secret: "cs_live_123_secret_unit" })
     });
 
     const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
     const body = await response.json();
 
     expect(response.status).toBe(200);
-    expect(body).toEqual({ url: "https://checkout.stripe.com/c/pay/cs_live_123" });
+    expect(body).toEqual({
+      checkoutMode: "embedded",
+      clientSecret: "cs_live_123_secret_unit",
+      sessionId: "cs_live_123"
+    });
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "live",

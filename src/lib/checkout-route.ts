@@ -22,6 +22,7 @@ type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
 
 type StripeCheckoutSessionResult = {
   id?: string | null;
+  client_secret?: string | null;
   url?: string | null;
 };
 
@@ -121,13 +122,13 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     );
     logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_success", {
       sessionIdPrefix: session.id?.slice(0, 8) ?? "missing",
-      hasUrl: Boolean(session.url)
+      hasClientSecret: Boolean(session.client_secret)
     });
 
-    if (!session.id || !session.url) {
+    if (!session.id || !session.client_secret) {
       logCheckout(dependencies.logger, "error", requestId, "stripe_session_missing_fields", {
         hasId: Boolean(session.id),
-        hasUrl: Boolean(session.url)
+        hasClientSecret: Boolean(session.client_secret)
       });
       return NextResponse.json({ error: "Stripe Checkout Session could not be created." }, { status: 500 });
     }
@@ -155,7 +156,11 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     }
 
     logCheckout(dependencies.logger, "info", requestId, "pending_order_create_success");
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({
+      checkoutMode: "embedded",
+      clientSecret: session.client_secret,
+      sessionId: session.id
+    });
   } catch (error) {
     if (isCheckoutTimeoutError(error)) {
       logCheckout(dependencies.logger, "error", requestId, "checkout_timeout", {

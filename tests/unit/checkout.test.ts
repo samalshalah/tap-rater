@@ -401,7 +401,7 @@ describe("Stripe checkout helpers", () => {
     ]);
   });
 
-  it("creates Checkout Session params with dynamic price_data and mode metadata", () => {
+  it("creates embedded Checkout Session params with dynamic price_data and mode metadata", () => {
     const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
 
     expect(result.ok).toBe(true);
@@ -412,8 +412,10 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.mode).toBe("payment");
-    expect(params.success_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
-    expect(params.cancel_url).toBe("https://taprater.com/checkout/cancel");
+    expect(params.ui_mode).toBe("embedded_page");
+    expect(params.return_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
+    expect(params).not.toHaveProperty("success_url");
+    expect(params).not.toHaveProperty("cancel_url");
     expect(params.payment_method_types).toEqual(["card"]);
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {

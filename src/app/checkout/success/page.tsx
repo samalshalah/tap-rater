@@ -26,7 +26,8 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           details for production review before printing.
         </p>
         <p className="mt-3 leading-7 text-muted">
-          Stripe marks the order paid only after the webhook confirms the checkout session.
+          Payment confirmation is finalized by Stripe processing and the Tap Rater webhook. If the order still shows
+          as pending for a moment, refresh shortly or contact support with the session ID below.
         </p>
         {sessionId ? (
           <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm font-semibold text-muted">Session: {sessionId}</p>

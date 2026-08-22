@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
@@ -9,6 +10,7 @@ import { calculateCartTotalCents, getCartItemKey, getCartRows } from "@/lib/cart
 
 export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live" }) {
   const { decreaseItem, increaseItem, items, removeItem } = useCart();
+  const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const isLiveStripe = stripeMode === "live";
@@ -28,12 +30,25 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
       });
       const body = await response.json().catch(() => ({}));
 
-      if (!response.ok || typeof body.url !== "string") {
+      if (
+        !response.ok ||
+        body.checkoutMode !== "embedded" ||
+        typeof body.clientSecret !== "string" ||
+        typeof body.sessionId !== "string"
+      ) {
         setCheckoutError(body.error ?? "Stripe Checkout is not available yet.");
         return;
       }
 
-      window.location.href = body.url;
+      window.sessionStorage.setItem(
+        `taprater:embedded-checkout:${body.sessionId}`,
+        JSON.stringify({
+          clientSecret: body.clientSecret,
+          sessionId: body.sessionId,
+          createdAt: Date.now()
+        })
+      );
+      router.push(`/checkout?session_id=${encodeURIComponent(body.sessionId)}`);
     } catch {
       setCheckoutError("Stripe Checkout is not available yet.");
     } finally {
@@ -125,12 +140,12 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
         className="min-h-12 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand disabled:cursor-not-allowed disabled:bg-gray-300"
         onClick={startCheckout}
       >
-        {isCheckingOut ? "Starting Stripe Checkout..." : isLiveStripe ? "Checkout with Stripe" : "Checkout with Stripe test mode"}
+        {isCheckingOut ? "Starting Stripe Checkout..." : isLiveStripe ? "Secure checkout" : "Secure checkout in Stripe test mode"}
       </button>
       <p className="text-sm leading-6 text-muted">
         {isLiveStripe
-          ? "Secure payment through Stripe. Branded stands include the uploaded logo and proof details for production review before printing."
-          : "Test mode only. Use Stripe test cards; live payments stay disabled until explicitly approved."}
+          ? "Payment opens inside Tap Rater with Stripe. Branded stands include the uploaded logo and proof details for production review before printing."
+          : "Test mode only. Stripe payment opens inside Tap Rater; live payments stay disabled until explicitly approved."}
       </p>
       {checkoutError ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-ink">{checkoutError}</p>

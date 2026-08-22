@@ -200,10 +200,10 @@ export function createCheckoutSessionParams({
 
   return {
     mode: "payment",
+    ui_mode: "embedded_page",
     payment_method_types: ["card"],
     line_items: buildStripeCheckoutLineItems(cart.rows),
-    success_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${normalizedSiteUrl}/checkout/cancel`,
+    return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     billing_address_collection: "auto",
     shipping_address_collection: {
       allowed_countries: allowedCountries.length > 0 ? allowedCountries : ["US"]
