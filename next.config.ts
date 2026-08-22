@@ -14,8 +14,7 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/product-category/:slug*", destination: "/shop", permanent: true },
-      { source: "/my-account", destination: "/admin", permanent: true },
-      { source: "/checkout", destination: "/cart", permanent: false }
+      { source: "/my-account", destination: "/admin", permanent: true }
     ];
   }
 };
