@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getStorefrontProductBySlugFromClient,
+  getStorefrontProductsByCategoryFromClient,
   getStorefrontProductsFromClient,
   getStorefrontRelatedProductsFromClient,
   normalizeStorefrontProductRow
@@ -300,6 +301,64 @@ describe("product repository", () => {
     });
   });
 
+  it("derives storefront category from stand type when category data is stale", () => {
+    const socialProduct = normalizeStorefrontProductRow({
+      slug: "follow-us-stand",
+      title: "Follow Us Stand",
+      sku: "FUS",
+      category_slug: "custom-stands",
+      stand_type_slug: "social-media-stands",
+      format: "stand",
+      base_price_cents: 3900,
+      stock_status: "instock",
+      short_description: "Social follow stand",
+      description: "Social follow stand",
+      product_type: "physical_redirect",
+      service_mode: "basic_redirect",
+      checkout_mode: "buy_now",
+      requires_account: false,
+      requires_subscription: false,
+      requires_landing_page: false,
+      supported_destinations: ["custom"],
+      activation_type: "free_basic_activation",
+      included_service_label: "Free basic activation",
+      customization_options: ["standard_design", "add_logo"],
+      allows_logo_upload: true,
+      allows_custom_design: false,
+      design_mode: "standard",
+      is_active: true
+    });
+    const websiteProduct = normalizeStorefrontProductRow({
+      slug: "visit-website-stand",
+      title: "Visit Website Stand",
+      sku: "VWS",
+      category_slug: "social-media",
+      stand_type_slug: "website-link-stands",
+      format: "stand",
+      base_price_cents: 3900,
+      stock_status: "instock",
+      short_description: "Website stand",
+      description: "Website stand",
+      product_type: "physical_redirect",
+      service_mode: "basic_redirect",
+      checkout_mode: "buy_now",
+      requires_account: false,
+      requires_subscription: false,
+      requires_landing_page: false,
+      supported_destinations: ["website"],
+      activation_type: "free_basic_activation",
+      included_service_label: "Free basic activation",
+      customization_options: ["standard_design", "add_logo"],
+      allows_logo_upload: true,
+      allows_custom_design: false,
+      design_mode: "standard",
+      is_active: true
+    });
+
+    expect(socialProduct?.categorySlug).toBe("social-media");
+    expect(websiteProduct?.categorySlug).toBe("website-links");
+  });
+
   it("keeps sparse database-only products visible with launch-safe defaults", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient([
       {
@@ -318,7 +377,7 @@ describe("product repository", () => {
       slug: "book-appointment-stand",
       title: "Book Appointment Stand",
       sku: "BOOK-APPOINTMENT-STAND",
-      categorySlug: "appointment-reservation-stands",
+      categorySlug: "appointments",
       serviceMode: "basic_redirect",
       checkoutMode: "buy_now",
       requiresSubscription: false,
@@ -502,10 +561,71 @@ describe("product repository", () => {
     expect(related.map((item) => item.slug)).toEqual(["yelp-review-stand"]);
     expect(calls.filters).toEqual([
       { column: "is_active", value: true },
-      { column: "category_slug", value: "reviews" },
       { column: "stock_status", value: "instock" }
     ]);
-    expect(calls.limits).toEqual([7]);
+    expect(calls.limits).toEqual([]);
+  });
+
+  it("filters category products after normalizing stand type mappings", async () => {
+    const products = await getStorefrontProductsByCategoryFromClient(
+      mockProductsClient([
+        {
+          slug: "follow-us-stand",
+          title: "Follow Us Stand",
+          sku: "FUS",
+          category_slug: "custom-stands",
+          stand_type_slug: "social-media-stands",
+          format: "stand",
+          base_price_cents: 3900,
+          stock_status: "instock",
+          short_description: "Social stand",
+          description: "Social stand",
+          product_type: "physical_redirect",
+          service_mode: "basic_redirect",
+          checkout_mode: "buy_now",
+          requires_account: false,
+          requires_subscription: false,
+          requires_landing_page: false,
+          supported_destinations: ["custom"],
+          activation_type: "free_basic_activation",
+          included_service_label: "Free basic activation",
+          customization_options: ["standard_design", "add_logo"],
+          allows_logo_upload: true,
+          allows_custom_design: false,
+          design_mode: "standard",
+          is_active: true
+        },
+        {
+          slug: "visit-website-stand",
+          title: "Visit Website Stand",
+          sku: "VWS",
+          category_slug: "custom-stands",
+          stand_type_slug: "website-link-stands",
+          format: "stand",
+          base_price_cents: 3900,
+          stock_status: "instock",
+          short_description: "Website stand",
+          description: "Website stand",
+          product_type: "physical_redirect",
+          service_mode: "basic_redirect",
+          checkout_mode: "buy_now",
+          requires_account: false,
+          requires_subscription: false,
+          requires_landing_page: false,
+          supported_destinations: ["website"],
+          activation_type: "free_basic_activation",
+          included_service_label: "Free basic activation",
+          customization_options: ["standard_design", "add_logo"],
+          allows_logo_upload: true,
+          allows_custom_design: false,
+          design_mode: "standard",
+          is_active: true
+        }
+      ]),
+      "social-media"
+    );
+
+    expect(products.map((product) => product.slug)).toEqual(["follow-us-stand"]);
   });
 
   it("keeps explicit empty database images instead of restoring static images", () => {

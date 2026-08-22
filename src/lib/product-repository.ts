@@ -224,9 +224,7 @@ export async function getStorefrontProductsByCategoryFromClient(
     .from("products")
     .select(STOREFRONT_PRODUCT_COLUMNS)
     .eq("is_active", true)
-    .eq("category_slug", categorySlug)
-    .eq("stock_status", "instock")
-    .limit(limit);
+    .eq("stock_status", "instock");
 
   if (error) {
     throw new Error(error.message);
@@ -234,7 +232,7 @@ export async function getStorefrontProductsByCategoryFromClient(
 
   const products = (data ?? [])
     .map((row) => normalizeStorefrontProductRow(row))
-    .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock"))
+    .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock" && item.categorySlug === categorySlug))
     .slice(0, limit);
   const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
 
@@ -378,7 +376,7 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
   const productKind = readProductKind(productRow.product_kind) ?? readProductKind(productRow.productKind) ?? staticProduct?.productKind;
   const status = readProductStatus(productRow.status) ?? staticProduct?.status;
   const matchedCategory = rawCategorySlug ? getCategoryBySlug(rawCategorySlug) : undefined;
-  const categorySlug = matchedCategory?.slug === rawCategorySlug ? rawCategorySlug : staticProduct?.categorySlug ?? matchedCategory?.slug ?? rawCategorySlug;
+  const categorySlug = categorySlugForStandType(standTypeSlug) ?? categorySlugForStandType(rawCategorySlug) ?? matchedCategory?.slug ?? staticProduct?.categorySlug ?? rawCategorySlug;
   const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents ?? 3900;
   const stockStatus = readStockStatus(productRow.stock_status) ?? readStockStatus(productRow.stockStatus) ?? staticProduct?.stockStatus ?? "instock";
   const shortDescription =
@@ -615,6 +613,22 @@ function readProductFormat(value: unknown): MigratedProduct["format"] | undefine
 
 function readProductKind(value: unknown): MigratedProduct["productKind"] | undefined {
   return value === "normal_direct" || value === "custom_direct" || value === "hosted_multilink" || value === "bundle" ? value : undefined;
+}
+
+function categorySlugForStandType(standTypeSlug: string | undefined): MigratedProduct["categorySlug"] | undefined {
+  const map: Record<string, MigratedProduct["categorySlug"]> = {
+    "review-stands": "reviews",
+    "social-media-stands": "social-media",
+    "appointment-reservation-stands": "appointments",
+    "menu-info-stands": "menu",
+    "feedback-survey-stands": "feedback",
+    "website-link-stands": "website-links",
+    "payment-tip-donation-stands": "website-links",
+    "loyalty-rewards-stands": "website-links",
+    "custom-stands": "custom-stands"
+  };
+
+  return standTypeSlug ? map[standTypeSlug] : undefined;
 }
 
 function readProductStatus(value: unknown): MigratedProduct["status"] | undefined {

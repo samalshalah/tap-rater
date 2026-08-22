@@ -81,6 +81,17 @@ export function AdminSidebar() {
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span>{item.label}</span>
+                    {item.status === "draft" ? (
+                      <span
+                        className={
+                          active
+                            ? "ml-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-white"
+                            : "ml-auto rounded-full bg-[#f1f3f5] px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-muted"
+                        }
+                      >
+                        Draft
+                      </span>
+                    ) : null}
                   </Link>
                 );
               })}

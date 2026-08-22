@@ -2,6 +2,7 @@ export type AdminNavigationItem = {
   label: string;
   href: string;
   description: string;
+  status?: "operational" | "draft";
 };
 
 export type AdminNavigationGroup = {
@@ -16,8 +17,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       { label: "Dashboard", href: "/admin", description: "Store overview and daily actions" },
       { label: "Requests", href: "/admin/requests", description: "Setup, contact, and link-change queue" },
       { label: "Devices", href: "/admin/devices", description: "NFC/QR devices, activation codes, redirects, and tap counts" },
-      { label: "Orders", href: "/admin/orders", description: "Order management when checkout is enabled" },
-      { label: "Customers", href: "/admin/customers", description: "Customer profiles and history" }
+      { label: "Orders", href: "/admin/orders", description: "Paid, pending, production, and shipping fulfillment" }
     ]
   },
   {
@@ -26,26 +26,27 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       { label: "Products", href: "/admin/products", description: "Product records, prices, stock, and SEO" },
       { label: "Business Uses", href: "/admin/business-uses", description: "Shop by Use cards, landing pages, and assigned products" },
       { label: "Stand Types", href: "/admin/stand-types", description: "Shop categories, category content, buyer intent, and SEO" },
-      { label: "Inventory", href: "/admin/inventory", description: "Stock levels, low-stock alerts, and SKUs" },
-      { label: "Discounts", href: "/admin/discounts", description: "Coupons, bundle savings, and promotions" },
-      { label: "Shipping", href: "/admin/shipping", description: "Shipping zones, rates, and fulfillment rules" },
-      { label: "Taxes", href: "/admin/taxes", description: "Tax settings for checkout stage" }
-    ]
-  },
-  {
-    label: "Growth",
-    items: [
-      { label: "Website", href: "/admin/content", description: "Homepage, pages, and editable content" },
-      { label: "Media", href: "/admin/media", description: "Images, product assets, and banners" },
-      { label: "SEO", href: "/admin/seo", description: "Metadata, redirects, sitemap, and search snippets" },
-      { label: "Analytics", href: "/admin/analytics", description: "Sales, traffic, conversion, and product reports" }
+      { label: "Shipping", href: "/admin/shipping", description: "Shipping mode, handling text, regions, and fulfillment notes" }
     ]
   },
   {
     label: "System",
     items: [
-      { label: "Settings", href: "/admin/settings", description: "Store profile, admin, integrations, and launch checklist" },
-      { label: "Email Templates", href: "/admin/settings/emails", description: "Order, request, and shipping notification copy" }
+      { label: "Email Templates", href: "/admin/settings/emails", description: "Order, request, and shipping notification copy" },
+      { label: "Settings", href: "/admin/settings", description: "Store profile, admin, integrations, and launch checklist" }
+    ]
+  },
+  {
+    label: "Future / Draft tools",
+    items: [
+      { label: "Customers", href: "/admin/customers", description: "Coming soon: customer profiles and history", status: "draft" },
+      { label: "Inventory", href: "/admin/inventory", description: "Coming soon: stock levels, alerts, and inventory activity", status: "draft" },
+      { label: "Discounts", href: "/admin/discounts", description: "Coming soon: coupons, bundles, and promotions", status: "draft" },
+      { label: "Taxes", href: "/admin/taxes", description: "Coming soon: tax settings for a later checkout phase", status: "draft" },
+      { label: "Website", href: "/admin/content", description: "Draft tool: CMS editing is not part of daily Phase 1 operations", status: "draft" },
+      { label: "Media", href: "/admin/media", description: "Draft tool: use product editor uploads for product assets today", status: "draft" },
+      { label: "SEO", href: "/admin/seo", description: "Draft tool: SEO fields live in product, use, and stand-type editors today", status: "draft" },
+      { label: "Analytics", href: "/admin/analytics", description: "Draft tool: reporting is not operational for launch yet", status: "draft" }
     ]
   }
 ];
