@@ -14,7 +14,7 @@ const steps = [
 ];
 
 const flows = [
-  ["Standard Direct", "Choose stand → add link → cart → checkout", "NFC only, no printed QR."],
+  ["Standard Direct", "Choose stand → add link → cart → checkout", "QR and NFC direct to your destination."],
   ["Branded + QR", "Choose stand → add link → upload logo → add business name → preview QR proof → cart → checkout", "NFC + printed QR with proof before cart."]
 ];
 

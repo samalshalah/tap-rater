@@ -41,8 +41,8 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
           </>
         ) : (
           <>
-            <div className="rounded-full border border-line bg-white px-3 py-2">NFC only</div>
-            <div className="rounded-full border border-line bg-white px-3 py-2">No QR</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">QR + NFC direct</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">No logo required</div>
             <div className="rounded-full border border-line bg-white px-3 py-2">Direct link</div>
           </>
         )}

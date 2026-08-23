@@ -6,10 +6,18 @@ const config: Config = {
     extend: {
       colors: {
         ink: "#111827",
-        muted: "#667085",
-        line: "#E5E7EB",
+        muted: "#5F6B76",
+        line: "#DFE5E3",
         brand: "#0B7A75",
+        "brand-dark": "#075E59",
+        soft: "#F7F8F6",
+        panel: "#F2F6F5",
         accent: "#F5A524"
+      },
+      borderRadius: {
+        card: "8px",
+        control: "8px",
+        panel: "12px"
       }
     }
   },

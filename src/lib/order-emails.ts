@@ -106,13 +106,15 @@ function formatCustomerLineItem(item: OrderLineItem) {
   const lines = [
     `${item.quantity} x ${item.title} - ${summary.optionLabel} - ${formatMoney(item.lineSubtotalCents, "usd")}`,
     `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
-    `Connection: ${summary.nfcBehavior}; ${summary.printedQrLabel}`
+    `Connection: QR and NFC open the destination link directly`,
+    `QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`,
+    `NFC target: ${summary.nfcTargetUrl ?? summary.destinationUrl ?? "Not provided"}`
   ];
 
   if (summary.fulfillmentKind === "branded" || summary.fulfillmentKind === "custom") {
     lines.push(`Business name: ${summary.businessName ?? "Not provided"}`);
     lines.push(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"}`);
-    lines.push(`QR: ${summary.generatedQrValue ? "Generated" : "Not generated"}`);
+    lines.push(`QR: ${summary.qrTargetUrl ?? summary.generatedQrValue ? "Generated" : "Not generated"}`);
     lines.push(`Proof confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
   }
 
@@ -129,6 +131,8 @@ function formatAdminLineItem(item: OrderLineItem) {
     `Line subtotal: ${formatMoney(item.lineSubtotalCents, "usd")}`,
     `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
     `Connection: ${summary.nfcBehavior}; ${summary.printedQrLabel}`,
+    `QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`,
+    `NFC target: ${summary.nfcTargetUrl ?? summary.destinationUrl ?? "Not provided"}`,
     `Production readiness: ${summary.statusLabel}`
   ];
 
@@ -137,6 +141,13 @@ function formatAdminLineItem(item: OrderLineItem) {
   if (summary.logoMediaUrl) lines.push(`Logo media URL: ${summary.logoMediaUrl}`);
   if (summary.generatedQrValue) lines.push(`QR value: ${summary.generatedQrValue}`);
   if (summary.frontTemplateUrl) lines.push(`Front template: ${summary.frontTemplateUrl}`);
+  if (summary.productionArtwork) {
+    lines.push(`Production artwork status: ${summary.productionArtwork.status}`);
+    lines.push(`Production template: ${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}`);
+    lines.push(`Production artwork dimensions: ${summary.productionArtwork.widthPx}x${summary.productionArtwork.heightPx}px @ ${summary.productionArtwork.dpi} DPI`);
+    if (summary.productionArtwork.url) lines.push(`Production artwork: ${summary.productionArtwork.url}`);
+    if (summary.productionArtwork.error) lines.push(`Production artwork error: ${summary.productionArtwork.error}`);
+  }
   lines.push(`Proof confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
   if (summary.warnings.length > 0) lines.push(`Warnings: ${summary.warnings.join("; ")}`);
 

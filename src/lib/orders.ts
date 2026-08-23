@@ -1,5 +1,13 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
+import { buildDirectProductionTargets } from "@/lib/direct-production";
+import { purchaseOptionIdToCustomizationLevel, type CustomizationLevel, type DestinationMode } from "@/lib/product-model";
+import {
+  generateProductionArtworkForOrderLineItem,
+  readProductionArtworkReference,
+  type ProductionArtworkReference,
+  type ProductionArtworkStorage
+} from "@/lib/production-artwork";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 
 export type OrdersDbClient = {
@@ -10,6 +18,8 @@ export type OrderLineItem = {
   productId: string;
   optionId?: string;
   optionLabel?: string;
+  destinationMode?: DestinationMode;
+  customizationLevel?: CustomizationLevel;
   title: string;
   sku: string;
   quantity: number;
@@ -21,7 +31,7 @@ export type OrderLineItem = {
   logoReference?: string | null;
   proofRequired?: boolean;
   proofApproved?: boolean;
-  productionStatus?: "ready_for_direct_activation" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus?: "ready_for_direct_fulfillment" | "ready_for_direct_activation" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof" | "artwork_generation_failed";
   manualProductionRequired?: boolean;
   productionWarningCodes?: ManualProductionWarningCode[];
 };
@@ -31,8 +41,8 @@ export type OrderLineItemFulfillmentKind = "standard" | "branded" | "custom" | "
 export type OrderLineItemProductionSummary = {
   fulfillmentKind: OrderLineItemFulfillmentKind;
   optionLabel: string;
-  nfcBehavior: "NFC only" | "NFC + printed QR" | "Hosted NFC + QR";
-  printedQrLabel: "No printed QR" | "Printed QR included" | "Hosted QR";
+  nfcBehavior: "DIRECT NFC" | "HOSTED NFC";
+  printedQrLabel: "DIRECT QR" | "HOSTED QR";
   destinationUrl?: string;
   destinationType?: string;
   platformSlug?: string;
@@ -40,7 +50,10 @@ export type OrderLineItemProductionSummary = {
   logoMediaUrl?: string;
   logoReference?: string;
   generatedQrValue?: string;
+  qrTargetUrl?: string;
+  nfcTargetUrl?: string;
   frontTemplateUrl?: string;
+  productionArtwork?: ProductionArtworkReference;
   proofRequired: boolean;
   proofConfirmed: boolean;
   statusLabel: string;
@@ -93,6 +106,9 @@ export type PaidOrderSaveResult =
 
 export type StripeCheckoutSessionLike = {
   id?: string | null;
+  mode?: string | null;
+  customer?: string | { id?: string | null } | null;
+  subscription?: string | { id?: string | null; status?: string | null; current_period_end?: number | null; cancel_at_period_end?: boolean | null } | null;
   payment_intent?: string | { id?: string | null } | null;
   payment_status?: string | null;
   amount_subtotal?: number | null;
@@ -129,6 +145,8 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       productId: row.productId,
       optionId: row.optionId,
       optionLabel: row.optionLabel,
+      destinationMode: row.destinationMode,
+      customizationLevel: row.customizationLevel,
       title: row.title,
       sku: row.sku,
       quantity: row.quantity,
@@ -147,42 +165,99 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
   );
 }
 
+export async function mapCheckoutRowsToProductionReadyOrderLineItems(
+  rows: CheckoutCartRow[],
+  orderReference: string,
+  storage?: ProductionArtworkStorage
+): Promise<OrderLineItem[]> {
+  const items = mapCheckoutRowsToOrderLineItems(rows);
+
+  return Promise.all(
+    items.map((item, index) =>
+      item.optionId === "branded_qr_direct"
+        ? generateProductionArtworkForOrderLineItem({ orderReference, lineItemIndex: index, item }, storage)
+        : item
+    )
+  );
+}
+
 export function applyOrderLineItemFulfillmentInference(item: OrderLineItem): OrderLineItem {
   const fulfillmentKind = getOrderLineItemFulfillmentKind(item);
 
   if (fulfillmentKind === "standard") {
     return {
       ...item,
+      destinationMode: item.destinationMode ?? "DIRECT",
+      customizationLevel: item.customizationLevel ?? purchaseOptionIdToCustomizationLevel(item.optionId),
       logoRequired: item.logoRequired === true,
       logoStatus: item.logoRequired ? item.logoStatus ?? "manual_collection_required" : "not_required",
       logoReference: item.logoReference ?? null,
       proofRequired: item.proofRequired === true,
       proofApproved: item.proofApproved === true,
-      productionStatus: item.productionStatus ?? "ready_for_direct_activation",
+      productionStatus: item.productionStatus === "ready_for_direct_activation" ? "ready_for_direct_fulfillment" : item.productionStatus ?? "ready_for_direct_fulfillment",
       manualProductionRequired: item.manualProductionRequired === true,
       productionWarningCodes: normalizeProductionWarningCodes(item.productionWarningCodes)
     };
   }
 
+  if (fulfillmentKind === "hosted") {
+    const setup = item.setup && typeof item.setup === "object" ? item.setup : {};
+    const hostedPageCode = readSetupString(setup, "hostedPageCode") ?? readSetupString(setup, "permanentPageCode");
+    const qrTargetUrl = readSetupString(setup, "qrTargetUrl") ?? readSetupString(setup, "generatedQrValue");
+    const nfcTargetUrl = readSetupString(setup, "nfcTargetUrl");
+    const isProvisioned = Boolean(hostedPageCode && qrTargetUrl && nfcTargetUrl);
+
+    return {
+      ...item,
+      destinationMode: "HOSTED",
+      customizationLevel: item.customizationLevel ?? "BRANDED",
+      logoRequired: true,
+      logoStatus: item.logoReference ? item.logoStatus ?? "uploaded" : item.logoStatus ?? "manual_collection_required",
+      logoReference: item.logoReference ?? null,
+      proofRequired: true,
+      proofApproved: item.proofApproved === true,
+      productionStatus: isProvisioned ? item.productionStatus ?? "ready_for_direct_fulfillment" : item.productionStatus ?? "pending_manual_design_and_proof",
+      manualProductionRequired: !isProvisioned,
+      productionWarningCodes: isProvisioned
+        ? normalizeProductionWarningCodes(item.productionWarningCodes)
+        : normalizeProductionWarningCodes(item.productionWarningCodes, ["pending_manual_proof", "do_not_print_until_manual_review"])
+    };
+  }
+
+  const hasLogoReference = Boolean(item.logoReference);
+  const productionArtwork = readProductionArtworkReference(item);
+  const isProductionReadyBranded = fulfillmentKind === "branded" && hasLogoReference && item.proofApproved === true && productionArtwork?.status === "generated";
+  const hasArtworkFailure = productionArtwork?.status === "generation_failed" || item.productionStatus === "artwork_generation_failed";
   const productionStatus =
     fulfillmentKind === "custom" ? "pending_manual_design_and_proof" : "pending_manual_logo_and_proof";
-  const hasLogoReference = Boolean(item.logoReference);
 
   return {
     ...item,
+    destinationMode: item.destinationMode ?? "DIRECT",
+    customizationLevel: item.customizationLevel ?? purchaseOptionIdToCustomizationLevel(item.optionId),
     logoRequired: true,
     logoStatus: hasLogoReference ? item.logoStatus ?? "uploaded" : "manual_collection_required",
     logoReference: item.logoReference ?? null,
     proofRequired: true,
     proofApproved: item.proofApproved === true,
-    productionStatus: hasLogoReference && fulfillmentKind === "branded" ? item.productionStatus ?? "pending_branded_proof_review" : productionStatus,
-    manualProductionRequired: true,
-    productionWarningCodes: normalizeProductionWarningCodes(
-      item.productionWarningCodes,
-      hasLogoReference && fulfillmentKind === "branded"
-        ? ["pending_manual_proof", "do_not_print_until_manual_review"]
-        : ["pending_manual_proof", "asset_storage_not_configured", "do_not_print_until_manual_review"]
-    )
+    productionStatus: hasArtworkFailure
+      ? "artwork_generation_failed"
+      : isProductionReadyBranded
+      ? "ready_for_direct_fulfillment"
+      : hasLogoReference && fulfillmentKind === "branded"
+        ? item.productionStatus ?? "pending_branded_proof_review"
+        : productionStatus,
+    manualProductionRequired: !isProductionReadyBranded,
+    productionWarningCodes: hasArtworkFailure
+      ? normalizeProductionWarningCodes(item.productionWarningCodes, ["artwork_generation_failed", "do_not_print_until_manual_review"])
+      : isProductionReadyBranded
+      ? []
+      : normalizeProductionWarningCodes(
+          item.productionWarningCodes,
+          hasLogoReference && fulfillmentKind === "branded"
+            ? ["pending_manual_proof", "do_not_print_until_manual_review"]
+            : ["pending_manual_proof", "asset_storage_not_configured", "do_not_print_until_manual_review"]
+        )
   };
 }
 
@@ -228,18 +303,26 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   const businessName = readSetupString(item.setup, "businessName");
   const logoMediaUrl = readSetupString(item.setup, "logoMediaUrl");
   const logoReference = item.logoReference ?? readSetupString(item.setup, "logoStorageKey") ?? logoMediaUrl;
-  const generatedQrValue = readSetupString(item.setup, "generatedQrValue");
+  const directTargets = buildDirectProductionTargets(destinationUrl);
+  const generatedQrValue = readSetupString(item.setup, "generatedQrValue") ?? directTargets?.qrTargetUrl;
+  const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? generatedQrValue ?? directTargets?.qrTargetUrl;
+  const nfcTargetUrl = readSetupString(item.setup, "nfcTargetUrl") ?? directTargets?.nfcTargetUrl;
   const frontTemplateUrl = readSetupString(item.setup, "frontTemplateUrl") ?? readProofPreviewString(item.setup, "frontTemplateUrl");
+  const productionArtwork = readProductionArtworkReference(item);
 
   if (fulfillmentKind === "standard") {
     return {
       fulfillmentKind,
       optionLabel: "Standard Direct",
-      nfcBehavior: "NFC only",
-      printedQrLabel: "No printed QR",
+      nfcBehavior: "DIRECT NFC",
+      printedQrLabel: "DIRECT QR",
       destinationUrl,
       destinationType,
       platformSlug,
+      generatedQrValue,
+      qrTargetUrl,
+      nfcTargetUrl,
+      productionArtwork,
       proofRequired: false,
       proofConfirmed: false,
       statusLabel: "Ready for direct fulfillment",
@@ -249,11 +332,16 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   }
 
   if (fulfillmentKind === "hosted") {
+    const hostedWarnings: string[] = [];
+    if (!qrTargetUrl) hostedWarnings.push("Missing hosted QR target URL");
+    if (!nfcTargetUrl) hostedWarnings.push("Missing hosted NFC target URL");
+    if (!readSetupString(item.setup, "hostedPageCode") && !readSetupString(item.setup, "permanentPageCode")) hostedWarnings.push("Missing permanent hosted page code");
+
     return {
       fulfillmentKind,
       optionLabel: "Hosted Multi-Link",
-      nfcBehavior: "Hosted NFC + QR",
-      printedQrLabel: "Hosted QR",
+      nfcBehavior: "HOSTED NFC",
+      printedQrLabel: "HOSTED QR",
       destinationUrl,
       destinationType,
       platformSlug,
@@ -261,12 +349,15 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
       logoMediaUrl,
       logoReference: logoReference ?? undefined,
       generatedQrValue,
+      qrTargetUrl,
+      nfcTargetUrl,
       frontTemplateUrl,
+      productionArtwork,
       proofRequired: true,
       proofConfirmed: item.proofApproved === true,
-      statusLabel: "Hosted setup pending",
-      statusTone: "warning",
-      warnings: ["Hosted Multi-Link fulfillment is not enabled for Phase 1 production."]
+      statusLabel: hostedWarnings.length === 0 ? "Ready for hosted production" : "Hosted setup pending",
+      statusTone: hostedWarnings.length === 0 ? "ready" : "warning",
+      warnings: hostedWarnings
     };
   }
 
@@ -277,15 +368,18 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   if (!businessName) warnings.push(fulfillmentKind === "custom" ? "Missing business name/design name" : "Missing business name");
   if (!logoReference) warnings.push(fulfillmentKind === "custom" ? "Missing logo or design asset" : "Missing logo");
   if (fulfillmentKind === "branded" && !generatedQrValue) warnings.push("Missing QR value");
+  if (fulfillmentKind === "branded" && !qrTargetUrl) warnings.push("Missing QR target URL");
+  if (fulfillmentKind === "branded" && !nfcTargetUrl) warnings.push("Missing NFC target URL");
   if (!proofConfirmed) warnings.push("Proof not confirmed");
+  if (fulfillmentKind === "branded" && productionArtwork?.status !== "generated") warnings.push(productionArtwork?.error ?? "Production artwork not generated");
 
   const isComplete = warnings.length === 0;
 
   return {
     fulfillmentKind,
     optionLabel: fulfillmentKind === "custom" ? "Custom Direct" : "Branded + QR Direct",
-    nfcBehavior: "NFC + printed QR",
-    printedQrLabel: "Printed QR included",
+    nfcBehavior: "DIRECT NFC",
+    printedQrLabel: "DIRECT QR",
     destinationUrl,
     destinationType,
     platformSlug,
@@ -293,7 +387,10 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
     logoMediaUrl,
     logoReference: logoReference ?? undefined,
     generatedQrValue,
+    qrTargetUrl,
+    nfcTargetUrl,
     frontTemplateUrl,
+    productionArtwork,
     proofRequired: true,
     proofConfirmed,
     statusLabel: isComplete
@@ -385,6 +482,7 @@ export async function createPendingOrderForCheckoutWithClient(
     shippingMode?: "manual" | "free" | "flat";
   }
 ) {
+  const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(input.rows, input.stripeCheckoutSessionId);
   const { error } = await client.from("orders").upsert(
     {
       stripe_checkout_session_id: input.stripeCheckoutSessionId,
@@ -393,7 +491,7 @@ export async function createPendingOrderForCheckoutWithClient(
       subtotal_cents: input.subtotalCents,
       total_cents: input.totalCents,
       currency: input.currency,
-      line_items_json: mapCheckoutRowsToOrderLineItems(input.rows),
+      line_items_json: lineItems,
       shipping_amount_cents: input.shippingAmountCents ?? 0,
       shipping_mode: input.shippingMode ?? "manual",
       updated_at: new Date().toISOString()
@@ -610,7 +708,12 @@ function normalizeProductionWarningCodes(
 }
 
 function isManualProductionWarningCode(value: unknown): value is ManualProductionWarningCode {
-  return value === "pending_manual_proof" || value === "asset_storage_not_configured" || value === "do_not_print_until_manual_review";
+  return (
+    value === "pending_manual_proof" ||
+    value === "asset_storage_not_configured" ||
+    value === "artwork_generation_failed" ||
+    value === "do_not_print_until_manual_review"
+  );
 }
 
 function readString(value: unknown) {

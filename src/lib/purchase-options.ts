@@ -24,9 +24,9 @@ export const standardDirectOption: PurchaseOption = {
   id: "standard_direct",
   label: "Standard Direct Stand",
   priceCents: 3900,
-  summary: "Ready-made stand connected to one direct NFC destination link. No printed QR code.",
+  summary: "Ready-made stand with QR and NFC connected directly to one destination link.",
   requiresDestinationUrl: true,
-  hasQr: false,
+  hasQr: true,
   requiresBusinessName: false,
   requiresLogo: false,
   requiresDesignStep: false,
@@ -82,23 +82,27 @@ export function getProductPurchaseOptions(
     return product.purchaseOptions
       .filter((option) => option.isActive)
       .sort((first, second) => first.sortOrder - second.sortOrder)
-      .map((option) => ({
-        id: option.optionCode,
-        label: option.title,
-        priceCents: option.priceCents,
-        monthlyPriceCents: option.monthlyPriceCents,
-        summary: option.description,
-        requiresDestinationUrl: option.requiresDestinationUrl,
-        hasQr: option.hasQr,
-        requiresBusinessName: option.requiresBusinessName,
-        requiresLogo: option.requiresLogo,
-        requiresDesignStep: option.requiresDesignStep,
-        requiresCustomText: false,
-        requiresManualCollection: false,
-        requiresFinalProof: option.requiresFrontProof,
-        requiresSubscription: option.requiresSubscription,
-        accountRequired: option.accountRequired
-      }));
+      .map((option) => {
+        const isStandardDirect = option.optionCode === "standard_direct";
+
+        return {
+          id: option.optionCode,
+          label: option.title,
+          priceCents: option.priceCents,
+          monthlyPriceCents: option.monthlyPriceCents,
+          summary: isStandardDirect ? standardDirectOption.summary : option.description,
+          requiresDestinationUrl: option.requiresDestinationUrl,
+          hasQr: isStandardDirect ? true : option.hasQr,
+          requiresBusinessName: option.requiresBusinessName,
+          requiresLogo: option.requiresLogo,
+          requiresDesignStep: option.requiresDesignStep,
+          requiresCustomText: false,
+          requiresManualCollection: false,
+          requiresFinalProof: option.requiresFrontProof,
+          requiresSubscription: option.requiresSubscription,
+          accountRequired: option.accountRequired
+        };
+      });
   }
 
   if (product.productKind === "hosted_multilink" || product.isSpecialSolution || product.requiresLandingPage || product.requiresSubscription) {

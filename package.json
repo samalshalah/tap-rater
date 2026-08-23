@@ -11,6 +11,8 @@
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "hosted-pages:typegen": "wrangler types --config workers/hosted-pages/wrangler.jsonc workers/hosted-pages/worker-configuration.d.ts",
+    "hosted-pages:check": "wrangler deploy --dry-run --config workers/hosted-pages/wrangler.jsonc",
     "backend:dev": "npm --workspace @tap-rater/backend run dev",
     "backend:build": "npm --workspace @tap-rater/backend run build",
     "backend:start": "npm --workspace @tap-rater/backend run start",

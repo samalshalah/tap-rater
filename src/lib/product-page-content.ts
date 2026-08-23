@@ -71,7 +71,7 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
     },
     {
       title: "Connects to one destination URL",
-      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct is NFC only; Branded + QR adds the printed QR to the same destination.`
+      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct points QR and NFC to that destination; Branded + QR adds logo and proof controls for the same destination.`
     },
     {
       title: "Countertop physical product",

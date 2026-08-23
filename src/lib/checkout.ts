@@ -1,8 +1,17 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
+import {
+  cartItemRequestsPermanentHostedCode,
+  getPurchaseOptionCustomizationLevel,
+  getPurchaseOptionDestinationMode,
+  isProductOptionArchitectureConsistent,
+  type CustomizationLevel,
+  type DestinationMode
+} from "@/lib/product-model";
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
+import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -41,9 +50,12 @@ export type CheckoutCartRow = {
   optionLabel: string;
   title: string;
   sku: string;
+  destinationMode: DestinationMode;
+  customizationLevel: CustomizationLevel;
   quantity: number;
   unitAmountCents: number;
   lineSubtotalCents: number;
+  monthlyAmountCents?: number;
   shortDescription: string;
   setup: NonNullable<CartItem["setup"]>;
   logoRequired: boolean;
@@ -51,7 +63,7 @@ export type CheckoutCartRow = {
   logoReference?: string | null;
   proofRequired: boolean;
   proofApproved: boolean;
-  productionStatus: "ready_for_direct_activation" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
+  productionStatus: "ready_for_direct_fulfillment" | "pending_branded_proof_review" | "pending_manual_logo_and_proof" | "pending_manual_design_and_proof";
   manualProductionRequired: boolean;
   productionWarningCodes: ManualProductionWarningCode[];
 };
@@ -59,6 +71,7 @@ export type CheckoutCartRow = {
 export type ManualProductionWarningCode =
   | "pending_manual_proof"
   | "asset_storage_not_configured"
+  | "artwork_generation_failed"
   | "do_not_print_until_manual_review";
 
 export type StripeMode = "test" | "live";
@@ -80,6 +93,7 @@ export type StripeRuntimeConfig =
 const manualProductionWarningCodes: ManualProductionWarningCode[] = [
   "pending_manual_proof",
   "asset_storage_not_configured",
+  "artwork_generation_failed",
   "do_not_print_until_manual_review"
 ];
 
@@ -88,6 +102,8 @@ export type ValidatedCheckoutCart =
       ok: true;
       rows: CheckoutCartRow[];
       totalCents: number;
+      recurringTotalCents: number;
+      checkoutMode: "payment" | "subscription";
       currency: "usd";
     }
   | {
@@ -99,7 +115,7 @@ export type ValidatedCheckoutCart =
 export function validateCheckoutCart(items: CartItem[], products: MigratedProduct[]): ValidatedCheckoutCart {
   const productById = new Map(
     products
-      .filter((product) => product.isActive && product.stockStatus === "instock" && product.checkoutMode === "buy_now")
+      .filter((product) => product.isActive && product.stockStatus === "instock" && (product.checkoutMode === "buy_now" || product.checkoutMode === "subscription"))
       .map((product) => [product.slug, product])
   );
   const rows: CheckoutCartRow[] = [];
@@ -116,19 +132,41 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
     const setup = normalizeCheckoutSetup(item.setup);
 
-    if (option.requiresSubscription || !isValidCheckoutSetup(option, setup)) {
+    if (!isProductOptionArchitectureConsistent(product, option) || cartItemRequestsPermanentHostedCode(item) || !isValidCheckoutSetup(option, setup)) {
       continue;
     }
 
+    const destinationMode = getPurchaseOptionDestinationMode(option);
+    if (destinationMode === "HOSTED" && (product.checkoutMode !== "subscription" || !option.requiresSubscription || !option.monthlyPriceCents)) {
+      continue;
+    }
+
+    if (destinationMode === "DIRECT" && (product.checkoutMode !== "buy_now" || option.requiresSubscription)) {
+      continue;
+    }
+
+    const customizationLevel = getPurchaseOptionCustomizationLevel(option);
+    const directTargets = destinationMode === "DIRECT" ? buildDirectProductionTargets(setup.destinationUrl) : null;
+    const rowSetup = directTargets
+      ? {
+          ...setup,
+          destinationUrl: directTargets.destinationUrl,
+          generatedQrValue: setup.generatedQrValue ?? directTargets.qrTargetUrl,
+          qrTargetUrl: directTargets.qrTargetUrl,
+          nfcTargetUrl: directTargets.nfcTargetUrl,
+          hasQr: true,
+          nfcOnly: false
+        }
+      : setup;
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
-    const proofApproved = proofRequired ? setup.proofApproved === true : setup.proofApproved === true;
-    const manualProductionRequired = option.id === "branded_qr_direct";
+    const proofApproved = proofRequired ? isApprovedProofCurrent(option, rowSetup) : rowSetup.proofApproved === true;
+    const manualProductionRequired = option.id === "branded_qr_direct" ? !proofApproved : false;
     const productionStatus =
       option.id === "branded_qr_direct"
-          ? "pending_branded_proof_review"
-          : "ready_for_direct_activation";
-    const logoReference = setup.logoStorageKey ?? setup.logoMediaUrl ?? null;
+          ? "ready_for_direct_fulfillment"
+          : "ready_for_direct_fulfillment";
+    const logoReference = rowSetup.logoStorageKey ?? rowSetup.logoMediaUrl ?? null;
 
     rows.push({
       productId: product.slug,
@@ -136,11 +174,14 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       optionLabel: option.label,
       title: product.title,
       sku: product.sku,
+      destinationMode,
+      customizationLevel,
       quantity: item.quantity,
       unitAmountCents: option.priceCents,
       lineSubtotalCents: option.priceCents * item.quantity,
+      monthlyAmountCents: option.monthlyPriceCents,
       shortDescription: product.shortDescription,
-      setup,
+      setup: rowSetup,
       logoRequired,
       logoStatus: logoRequired ? "uploaded" : "not_required",
       logoReference,
@@ -148,7 +189,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       proofApproved,
       productionStatus,
       manualProductionRequired,
-      productionWarningCodes: manualProductionRequired ? ["pending_manual_proof", "do_not_print_until_manual_review"] : []
+      productionWarningCodes: []
     });
   }
 
@@ -160,27 +201,58 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     ok: true,
     rows,
     totalCents: rows.reduce((sum, row) => sum + row.lineSubtotalCents, 0),
+    recurringTotalCents: rows.reduce((sum, row) => sum + (row.monthlyAmountCents ?? 0) * row.quantity, 0),
+    checkoutMode: rows.some((row) => row.destinationMode === "HOSTED") ? "subscription" : "payment",
     currency: "usd"
   };
 }
 
 export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  return rows.map((row) => ({
-    quantity: row.quantity,
-    price_data: {
-      currency: "usd",
-      product_data: {
-        name: row.title,
-        description: `${row.optionLabel} - ${row.shortDescription}`,
-        metadata: {
-          product_id: row.productId,
-          option_id: row.optionId,
-          sku: row.sku
-        }
-      },
-      unit_amount: row.unitAmountCents
+  return rows.flatMap((row) => {
+    const productData = {
+      name: row.title,
+      description: `${row.optionLabel} - ${row.shortDescription}`,
+      metadata: {
+        product_id: row.productId,
+        option_id: row.optionId,
+        sku: row.sku
+      }
+    };
+    const physicalLine: Stripe.Checkout.SessionCreateParams.LineItem = {
+      quantity: row.quantity,
+      price_data: {
+        currency: "usd",
+        product_data: productData,
+        unit_amount: row.unitAmountCents
+      }
+    };
+
+    if (row.destinationMode !== "HOSTED") {
+      return [physicalLine];
     }
-  }));
+
+    return [
+      physicalLine,
+      {
+        quantity: row.quantity,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            ...productData,
+            name: `${row.title} monthly hosting`,
+            metadata: {
+              ...productData.metadata,
+              line_kind: "hosted_subscription"
+            }
+          },
+          recurring: {
+            interval: "month"
+          },
+          unit_amount: row.monthlyAmountCents ?? 0
+        }
+      }
+    ];
+  });
 }
 
 export function createCheckoutSessionParams({
@@ -199,7 +271,7 @@ export function createCheckoutSessionParams({
   const shippingOptions = buildStripeShippingOptions(shippingSettings);
 
   return {
-    mode: "payment",
+    mode: cart.checkoutMode,
     ui_mode: "embedded_page",
     payment_method_types: ["card"],
     line_items: buildStripeCheckoutLineItems(cart.rows),
@@ -215,7 +287,9 @@ export function createCheckoutSessionParams({
     metadata: {
       stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
+      recurring_total_cents: String(cart.recurringTotalCents),
       configured_items: String(cart.rows.length),
+      checkout_intent: cart.checkoutMode === "subscription" ? "hosted_subscription" : "direct_payment",
       shipping_mode: shippingSettings.shippingMode,
       shipping_amount_cents: String(settingsShippingAmountCents(shippingSettings))
     }
@@ -264,7 +338,11 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     logoMediaUrl: setup?.logoMediaUrl?.trim(),
     logoStorageKey: setup?.logoStorageKey?.trim(),
     generatedQrValue: setup?.generatedQrValue?.trim(),
+    qrTargetUrl: setup?.qrTargetUrl?.trim(),
+    nfcTargetUrl: setup?.nfcTargetUrl?.trim(),
     frontTemplateUrl: setup?.frontTemplateUrl?.trim(),
+    proofApprovalSnapshot: setup?.proofApprovalSnapshot,
+    proofApprovedAt: setup?.proofApprovedAt?.trim(),
     proofPreviewData: setup?.proofPreviewData,
     hasQr: setup?.hasQr,
     nfcOnly: setup?.nfcOnly,
@@ -276,8 +354,36 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
 }
 
 function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {
+  if (getPurchaseOptionDestinationMode(option) === "DIRECT" && !option.requiresDestinationUrl) {
+    return false;
+  }
+
+  if (getPurchaseOptionDestinationMode(option) === "HOSTED" && option.requiresDestinationUrl) {
+    return false;
+  }
+
   if (option.requiresDestinationUrl && !isHttpUrl(setup.destinationUrl)) {
     return false;
+  }
+
+  const directTargets = getPurchaseOptionDestinationMode(option) === "DIRECT" ? buildDirectProductionTargets(setup.destinationUrl) : null;
+
+  if (getPurchaseOptionDestinationMode(option) === "DIRECT" && !directTargets) {
+    return false;
+  }
+
+  if (directTargets) {
+    if (setup.qrTargetUrl && setup.qrTargetUrl !== directTargets.qrTargetUrl) {
+      return false;
+    }
+
+    if (setup.nfcTargetUrl && setup.nfcTargetUrl !== directTargets.nfcTargetUrl) {
+      return false;
+    }
+
+    if (setup.generatedQrValue && setup.generatedQrValue !== directTargets.qrTargetUrl) {
+      return false;
+    }
   }
 
   if (option.requiresBusinessName && !setup.businessName) {
@@ -297,7 +403,11 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
       return false;
     }
 
-    if (!setup.proofPreviewData || setup.proofApproved !== true) {
+    if (!setup.frontTemplateUrl) {
+      return false;
+    }
+
+    if (!setup.proofPreviewData || !isApprovedProofCurrent(option, setup)) {
       return false;
     }
   }
@@ -305,14 +415,21 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
   return true;
 }
 
-function isHttpUrl(value: string | undefined) {
-  if (!value) return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
+function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {
+  if (option.id !== "branded_qr_direct") {
+    return setup.proofApproved === true;
   }
+
+  return setup.proofApproved === true && isProofApprovalSnapshotCurrent({
+    productSlug: setup.productSlug,
+    optionCode: setup.optionCode,
+    destinationUrl: setup.destinationUrl,
+    businessName: setup.businessName,
+    logoStorageKey: setup.logoStorageKey,
+    logoMediaUrl: setup.logoMediaUrl,
+    generatedQrValue: setup.generatedQrValue,
+    frontTemplateUrl: setup.frontTemplateUrl
+  }, setup.proofApprovalSnapshot);
 }
 
 export function isStripeTestSecretKey(value: string | undefined) {

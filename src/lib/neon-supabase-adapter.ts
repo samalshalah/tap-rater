@@ -89,6 +89,41 @@ const tableColumns = {
     "created_at"
   ],
   form_submissions: ["id", "landing_page_id", "business_id", "device_id", "name", "email", "phone", "message", "payload_json", "created_at"],
+  hosted_page_editor_pages: [
+    "id",
+    "customer_id",
+    "business_id",
+    "code",
+    "lifecycle_status",
+    "draft_json",
+    "published_version",
+    "published_at",
+    "created_at",
+    "updated_at"
+  ],
+  hosted_subscriptions: [
+    "id",
+    "customer_id",
+    "business_id",
+    "hosted_page_id",
+    "order_id",
+    "stripe_checkout_session_id",
+    "stripe_customer_id",
+    "stripe_subscription_id",
+    "permanent_code",
+    "hosted_page_url",
+    "status",
+    "lifecycle_status",
+    "current_period_end",
+    "cancel_at_period_end",
+    "past_due_since",
+    "grace_ends_at",
+    "provisioning_status",
+    "provisioning_error",
+    "created_at",
+    "updated_at"
+  ],
+  stripe_events: ["id", "type", "processed_at", "created_at"],
   device_activation_attempts: ["id", "device_code", "email", "ip_hash", "success", "reason", "created_at"],
   products: [
     "id",
@@ -276,6 +311,7 @@ const jsonbColumns = new Set([
   "buttons_json",
   "form_config_json",
   "payload_json",
+  "draft_json",
   "line_items_json",
   "customer_details_json",
   "shipping_address_json",
@@ -285,6 +321,8 @@ const jsonbColumns = new Set([
 const textArrayColumns = new Set(["supported_destinations", "customization_options"]);
 const defaultConflictTargets: Partial<Record<TableName, string>> = {
   business_uses: "slug",
+  hosted_page_editor_pages: "code",
+  hosted_subscriptions: "stripe_checkout_session_id",
   orders: "stripe_checkout_session_id",
   products: "slug",
   site_content: "key",

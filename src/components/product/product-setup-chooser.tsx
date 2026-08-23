@@ -9,6 +9,7 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
+import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -67,6 +68,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [proofApproved, setProofApproved] = useState(false);
+  const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const cart = useCart();
@@ -79,7 +81,23 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? product.assetSet?.standardFrontTemplateUrl ?? "";
   const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
   const generatedQrValue = destinationUrl.trim();
+  const directTargets = buildDirectProductionTargets(destinationUrl);
   const isHosted = selectedOption?.id === "hosted_multilink";
+  const currentApprovalSnapshot = selectedOption
+    ? buildProofApprovalSnapshot({
+        productSlug: product.slug,
+        optionCode: selectedOption.id,
+        destinationUrl,
+        businessName,
+        logoStorageKey: logo?.storageKey,
+        logoMediaUrl: logo?.mediaUrl,
+        generatedQrValue,
+        frontTemplateUrl: brandedFrontTemplateUrl || undefined
+      })
+    : undefined;
+  const isApprovedConfigurationCurrent =
+    selectedOption?.id !== "branded_qr_direct" ||
+    (proofApproved && currentApprovalSnapshot && isProofApprovalSnapshotCurrent(currentApprovalSnapshot, approvedProofSnapshot));
 
   useEffect(() => {
     if (!isBuilderOpen) return;
@@ -91,10 +109,19 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     };
   }, [isBuilderOpen]);
 
+  useEffect(() => {
+    if (selectedOption?.id !== "branded_qr_direct" || !proofApproved) return;
+
+    if (!currentApprovalSnapshot || !isProofApprovalSnapshotCurrent(currentApprovalSnapshot, approvedProofSnapshot)) {
+      setProofApproved(false);
+      setApprovedProofSnapshot(null);
+    }
+  }, [approvedProofSnapshot, currentApprovalSnapshot, proofApproved, selectedOption?.id]);
+
   if (!selectedOption || !selectedImage) {
     return (
-      <div className="rounded-[18px] border border-line bg-white p-6 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Choose setup</p>
+      <div className="tr-card p-6">
+        <p className="tr-eyebrow">Choose setup</p>
         <h2 className="mt-3 text-2xl font-black text-ink">Checkout is not available yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
           This stand does not have an active backend purchase option. Please contact support or choose another ready stand.
@@ -116,6 +143,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     );
     setError("");
     setProofApproved(false);
+    setApprovedProofSnapshot(null);
     setStep("choose");
   }
 
@@ -186,6 +214,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setBusinessName((current) => current || place.name);
     setGoogleSearchMessage("");
     setError("");
+    setProofApproved(false);
+    setApprovedProofSnapshot(null);
   }
 
   function continueFromDestination() {
@@ -197,6 +227,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     }
 
     setProofApproved(false);
+    setApprovedProofSnapshot(null);
     setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
@@ -221,6 +252,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
       if (!response.ok || !body.asset?.mediaUrl || !body.asset?.storageKey) {
         setLogo(null);
+        setProofApproved(false);
+        setApprovedProofSnapshot(null);
         setError(body.error ?? "Logo upload failed. Use a PNG, JPG, or WEBP image up to 10 MB.");
         return;
       }
@@ -230,8 +263,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         storageKey: body.asset.storageKey,
         filename: body.asset.filename ?? file.name
       });
+      setProofApproved(false);
+      setApprovedProofSnapshot(null);
     } catch {
       setLogo(null);
+      setProofApproved(false);
+      setApprovedProofSnapshot(null);
       setError("Logo upload failed. Please try again.");
     } finally {
       setIsUploadingLogo(false);
@@ -251,14 +288,20 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       return;
     }
 
+    if (!brandedFrontTemplateUrl) {
+      setError("Branded production artwork is not configured for this product yet.");
+      return;
+    }
+
     setProofApproved(false);
+    setApprovedProofSnapshot(null);
     setStep("review");
   }
 
   function addConfiguredItemToCart() {
     setError("");
 
-    if (!isHttpUrl(destinationUrl)) {
+    if (!directTargets) {
       setError("Enter a valid destination link starting with http or https.");
       setStep("destination");
       return;
@@ -277,7 +320,13 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         return;
       }
 
-      if (!proofApproved) {
+      if (!brandedFrontTemplateUrl) {
+        setError("Branded production artwork is not configured for this product yet.");
+        setStep("design");
+        return;
+      }
+
+      if (!isApprovedConfigurationCurrent || !currentApprovalSnapshot) {
         setError("Confirm the front proof preview before adding this stand to cart.");
         return;
       }
@@ -295,7 +344,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       setup: {
         productSlug: product.slug,
         optionCode: selectedOption.id,
-        destinationUrl: destinationUrl.trim(),
+        destinationUrl: directTargets.destinationUrl,
         destinationType: product.destinationType,
         platformSlug: product.primaryPlatformSlug,
         googlePlaceId: googlePlaceId || undefined,
@@ -304,21 +353,25 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         logoFileName: logo?.filename,
         logoMediaUrl: logo?.mediaUrl,
         logoStorageKey: logo?.storageKey,
-        generatedQrValue: selectedOption.hasQr ? generatedQrValue : undefined,
-        frontTemplateUrl: selectedOption.hasQr ? brandedFrontTemplateUrl || undefined : undefined,
+        generatedQrValue: directTargets.qrTargetUrl,
+        qrTargetUrl: directTargets.qrTargetUrl,
+        nfcTargetUrl: directTargets.nfcTargetUrl,
+        frontTemplateUrl: selectedOption.hasQr ? brandedFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
+        proofApprovalSnapshot: selectedOption.id === "branded_qr_direct" ? approvedProofSnapshot ?? currentApprovalSnapshot : undefined,
+        proofApprovedAt: selectedOption.id === "branded_qr_direct" ? new Date().toISOString() : undefined,
         proofPreviewData:
           selectedOption.id === "branded_qr_direct"
             ? {
                 productTitle: product.title,
                 businessName: businessName.trim(),
                 logoMediaUrl: logo?.mediaUrl,
-                qrValue: generatedQrValue,
+                qrValue: directTargets.qrTargetUrl,
                 ctaText,
                 frontTemplateUrl: brandedFrontTemplateUrl || undefined
               }
             : undefined,
-        hasQr: selectedOption.hasQr,
-        nfcOnly: !selectedOption.hasQr,
+        hasQr: true,
+        nfcOnly: false,
         priceCents: selectedOption.priceCents,
         proofApproved: selectedOption.id === "branded_qr_direct" ? proofApproved : true
       }
@@ -340,12 +393,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
   return (
     <>
-      <section className="grid gap-4 rounded-2xl border border-line bg-white p-4 shadow-sm sm:p-5">
+      <section className="tr-card grid gap-4 p-4 sm:p-5">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">Choose setup</p>
+          <p className="tr-eyebrow">Choose setup</p>
           <h2 className="mt-2 text-xl font-semibold text-ink">Choose how to build this stand</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Choose NFC only for one direct link, or add a printed QR with logo, business name, and proof approval before cart.
+            Choose a direct stand template or add branding. QR and NFC both use the customer destination URL.
           </p>
         </div>
 
@@ -357,8 +410,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 key={option.id}
                 className={
                   selectedOptionId === option.id
-                    ? "grid gap-4 rounded-2xl border border-brand bg-white p-4 shadow-sm"
-                    : "grid gap-4 rounded-2xl border border-line bg-white p-4"
+                    ? "grid gap-4 rounded-lg border border-brand bg-white p-4 shadow-sm"
+                    : "grid gap-4 rounded-lg border border-line bg-white p-4"
                 }
               >
                 <div className="flex items-start justify-between gap-3">
@@ -371,20 +424,20 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 <div className="grid gap-2 text-sm text-muted">
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.hasQr ? "NFC + printed QR" : "NFC only"}
+                    QR and NFC direct to one URL
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.hasQr ? "Logo + business name" : "No printed QR"}
+                    {option.requiresLogo || option.requiresBusinessName ? "Logo + business name" : "No logo required"}
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.hasQr ? "Proof before cart" : "One direct destination link"}
+                    {option.requiresFinalProof ? "Proof before cart" : "One direct destination link"}
                   </p>
                 </div>
                 <button
                   type="button"
-                  className="mt-auto inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 text-sm font-semibold text-white transition hover:bg-brand"
+                  className="tr-button-primary mt-auto"
                   onClick={() => openBuilder(option.id)}
                 >
                   {option.id === "branded_qr_direct" ? "Build Branded Stand" : "Set up Standard"}
@@ -394,7 +447,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         </div>
 
         {options.some((option) => option.id === "hosted_multilink") ? (
-          <div className="rounded-[14px] border border-dashed border-line bg-[#f7f8fa] p-4">
+          <div className="tr-panel-muted border-dashed">
             <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
             <p className="mt-1 text-sm leading-6 text-muted">
               Multi-Link will be its own builder later. This product supports Standard Direct and Branded + QR checkout today.
@@ -402,15 +455,15 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           </div>
         ) : null}
 
-        {error && !isBuilderOpen ? <p className="rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+        {error && !isBuilderOpen ? <p className="tr-status-error">{error}</p> : null}
       </section>
 
       {isBuilderOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={modalTitle}>
-          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_28px_80px_rgba(17,24,39,0.22)]">
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-[0_28px_80px_rgba(17,24,39,0.22)]">
             <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-4 sm:px-6">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">{product.title}</p>
+                <p className="tr-eyebrow">{product.title}</p>
                 <h2 className="mt-1 text-2xl font-semibold text-ink">{modalTitle}</h2>
               </div>
               <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-ink hover:border-ink" onClick={closeBuilder} aria-label="Close builder">
@@ -419,7 +472,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
 
             <div className="border-b border-line px-4 py-3 sm:px-6">
-              <ol className="grid gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.04em] text-muted sm:grid-cols-3">
+              <ol className="grid gap-2 text-center text-xs font-semibold uppercase text-muted sm:grid-cols-3">
                 {stepLabels.map((label, index) => (
                   <li key={label} className={index <= activeStepIndex ? "rounded-full bg-ink px-3 py-2 text-white" : "rounded-full border border-line px-3 py-2"}>
                     {label}
@@ -442,19 +495,19 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   </div>
 
                   {isGoogleReviewProduct ? (
-                    <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+                    <div className="tr-panel-muted grid gap-3">
                       <label className="grid gap-2 text-sm font-semibold text-ink">
                         Google Business search
                         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                           <input
-                            className="min-w-0 rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                            className="tr-input min-w-0"
                             value={googleSearchQuery}
                             onChange={(event) => setGoogleSearchQuery(event.target.value)}
                             placeholder="Business name and city"
                           />
                           <button
                             type="button"
-                            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-brand disabled:bg-gray-300"
+                            className="tr-button-primary px-4"
                             disabled={isSearchingGoogle}
                             onClick={searchGooglePlaces}
                           >
@@ -471,7 +524,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                             <button
                               key={place.placeId}
                               type="button"
-                              className="rounded-[12px] border border-line bg-white p-3 text-left hover:border-brand"
+                              className="rounded-lg border border-line bg-white p-3 text-left transition hover:border-brand"
                               onClick={() => useGooglePlace(place)}
                             >
                               <span className="block text-sm font-semibold text-ink">{place.name}</span>
@@ -486,20 +539,22 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <label className="grid gap-2 text-sm font-semibold text-ink">
                     {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
                     <input
-                      className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                      className="tr-input"
                       type="url"
                       value={destinationUrl}
                       onChange={(event) => {
                         setDestinationUrl(event.target.value);
                         setGooglePlaceId("");
                         setGooglePlaceName("");
+                        setProofApproved(false);
+                        setApprovedProofSnapshot(null);
                       }}
                       placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
                     />
                   </label>
 
                   {googlePlaceName ? (
-                    <p className="rounded-[12px] border border-teal-100 bg-teal-50 p-3 text-sm font-semibold text-brand">
+                    <p className="tr-status-success">
                       Selected Google business: {googlePlaceName}
                     </p>
                   ) : null}
@@ -518,22 +573,26 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <label className="grid gap-2 text-sm font-semibold text-ink">
                     Printed business name
                     <input
-                      className="rounded-full border border-line bg-white px-4 py-3 font-normal outline-none focus:border-brand"
+                      className="tr-input"
                       value={businessName}
-                      onChange={(event) => setBusinessName(event.target.value)}
+                      onChange={(event) => {
+                        setBusinessName(event.target.value);
+                        setProofApproved(false);
+                        setApprovedProofSnapshot(null);
+                      }}
                       placeholder="Your business name"
                     />
                   </label>
 
-                  <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-4">
+                  <div className="tr-panel-muted grid gap-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-ink">Business logo</p>
                         <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
                       </div>
-                      {logo ? <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-brand">Logo uploaded</span> : null}
+                      {logo ? <span className="tr-pill-brand">Logo uploaded</span> : null}
                     </div>
-                    <label className="grid min-h-32 cursor-pointer place-items-center rounded-[14px] border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted hover:border-brand">
+                    <label className="grid min-h-32 cursor-pointer place-items-center rounded-lg border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted transition hover:border-brand">
                       <UploadCloud className="mb-2 h-6 w-6" />
                       {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
                       <input
@@ -555,15 +614,16 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <p className="mt-1 text-sm leading-6 text-muted">
                       {selectedOption.id === "branded_qr_direct"
                         ? "This is the printed front proof. Confirm the logo, business name, and QR placement before adding to cart."
-                        : "Confirm the direct destination link before adding this NFC-only stand to cart."}
+                        : "Confirm the direct destination link before adding this stand to cart. QR and NFC use the same URL."}
                     </p>
                   </div>
 
-                  <div className="grid gap-2 rounded-[14px] border border-line bg-[#f7f8fa] p-4 text-sm text-muted">
+                  <div className="tr-panel-muted grid gap-2 text-sm text-muted">
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
                     <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
-                    <ReviewLine label="Connection" value={selectedOption.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"} />
+                    <ReviewLine label="QR target" value={directTargets?.qrTargetUrl || "-"} />
+                    <ReviewLine label="NFC target" value={directTargets?.nfcTargetUrl || "-"} />
                     <ReviewLine label="Destination link" value={destinationUrl || "-"} />
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                     {selectedOption.id === "branded_qr_direct" ? (
@@ -585,15 +645,23 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         qrValue={generatedQrValue}
                         templateUrl={brandedFrontTemplateUrl}
                       />
-                      <label className="flex items-start gap-3 rounded-[12px] border border-line bg-white p-3 text-sm font-semibold text-ink">
-                        <input className="mt-1" type="checkbox" checked={proofApproved} onChange={(event) => setProofApproved(event.target.checked)} />
+                      <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
+                        <input
+                          className="mt-1"
+                          type="checkbox"
+                          checked={proofApproved}
+                          onChange={(event) => {
+                            setProofApproved(event.target.checked);
+                            setApprovedProofSnapshot(event.target.checked && currentApprovalSnapshot ? currentApprovalSnapshot : null);
+                          }}
+                        />
                         I reviewed the front proof preview and confirm these branded setup details.
                       </label>
                     </>
                   ) : (
-                    <div className="rounded-[12px] border border-line bg-white p-3 text-sm leading-6 text-muted">
+                    <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
                       <p className="font-semibold text-ink">Standard Direct confirmation</p>
-                      <p>This stand is NFC only, has no printed QR, and opens the destination link above.</p>
+                      <p>QR and NFC both open the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
                     </div>
                   )}
                 </div>
@@ -601,11 +669,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
 
             <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
-              {error ? <p className="mb-3 rounded-[14px] border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+              {error ? <p className="tr-status-error mb-3">{error}</p> : null}
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                 <button
                   type="button"
-                  className="min-h-11 rounded-full border border-line px-5 text-sm font-semibold text-ink"
+                  className="tr-button-outline"
                   onClick={() => {
                     if (step === "destination") closeBuilder();
                     else setStep(selectedOption.id === "branded_qr_direct" && step === "review" ? "design" : "destination");
@@ -614,17 +682,17 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   {step === "destination" ? "Cancel" : "Back"}
                 </button>
                 {step === "destination" ? (
-                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDestination}>
+                  <button type="button" className="tr-button-primary" onClick={continueFromDestination}>
                     {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
                   </button>
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
-                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={continueFromDesign}>
+                  <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
                     Preview proof
                   </button>
                 ) : null}
                 {step === "review" ? (
-                  <button type="button" className="min-h-11 rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand" onClick={addConfiguredItemToCart}>
+                  <button type="button" className="tr-button-primary" onClick={addConfiguredItemToCart}>
                     Add to cart
                   </button>
                 ) : null}
@@ -639,8 +707,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
 function BuilderSummary({ image, productTitle, option }: { image: { src: string; alt: string }; productTitle: string; option: PurchaseOption }) {
   return (
-    <div className="grid gap-3 rounded-[14px] border border-line bg-[#f7f8fa] p-3 sm:grid-cols-[96px_1fr] sm:items-center">
-      <div className="relative aspect-square overflow-hidden rounded-[12px] bg-white">
+    <div className="tr-panel-muted grid gap-3 p-3 sm:grid-cols-[96px_1fr] sm:items-center">
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2" />
       </div>
       <div>
@@ -648,7 +716,7 @@ function BuilderSummary({ image, productTitle, option }: { image: { src: string;
         <p className="mt-1 text-sm text-muted">{option.label} · {formatPrice(option.priceCents)}</p>
         <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-brand">
           <CheckCircle2 size={14} />
-          {option.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"}
+          QR and NFC direct
         </p>
       </div>
     </div>
@@ -671,7 +739,7 @@ function ProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-line bg-white p-4">
+    <div className="tr-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-black text-ink">Front proof preview</p>
         <p className="text-xs font-bold text-muted">QR generated from destination link</p>
@@ -704,7 +772,7 @@ function TemplateProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-[16px] border border-line bg-white shadow-sm">
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-lg border border-line bg-white shadow-sm">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
       <div className="absolute left-[13%] top-[4.5%] grid h-[9.5%] w-[74%] place-items-center">
         {logo ? (
@@ -737,8 +805,8 @@ function CleanProofPreview({
   qrValue: string;
 }) {
   return (
-    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-[16px] border border-line bg-white p-5 text-center shadow-sm">
-      <div className="grid min-h-16 w-full place-items-center rounded-[12px] border border-dashed border-line bg-[#f7f8fa] p-2">
+    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-lg border border-line bg-white p-5 text-center shadow-sm">
+      <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
         {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
       </div>
       <p className="mt-3 max-w-full break-words text-sm font-black uppercase text-ink">{businessName || "Business name"}</p>
@@ -841,10 +909,10 @@ function isGoogleReviewStand(product: ProductSetupChooserProduct) {
 
 function getOptionSummary(option: PurchaseOption) {
   if (option.id === "branded_qr_direct") {
-    return "NFC + printed QR stand with logo, business name, and front proof before cart.";
+    return "QR and NFC direct stand with logo, business name, and front proof before cart.";
   }
 
-  return "NFC-only stand connected to one direct destination link. No printed QR.";
+  return "Ready-made stand with QR and NFC connected to one direct destination link.";
 }
 
 function platformMark(product: ProductSetupChooserProduct) {

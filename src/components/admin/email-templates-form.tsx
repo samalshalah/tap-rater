@@ -288,7 +288,7 @@ function PreviewContent({ templateKey }: { templateKey: EmailTemplateKey }) {
       <p>Total: $39.00</p>
       <p>1 x Google Review Stand - Standard Direct - $39.00</p>
       <p>Destination URL: https://example.com/review</p>
-      <p>Connection: NFC only; No printed QR</p>
+      <p>Connection: QR and NFC direct to destination</p>
       <p>Support: https://taprater.com/support</p>
       <p>Shipping: https://taprater.com/shipping</p>
       <p>Refund Policy: https://taprater.com/refund-policy</p>

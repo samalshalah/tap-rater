@@ -301,7 +301,7 @@ export const lockedPlatforms: PlatformDestination[] = [
 export const standardDirectProductOption: ProductOption = {
   optionCode: "standard_direct",
   title: "Standard Direct",
-  description: "Ready-made direct stand with NFC only and one required destination link.",
+  description: "Ready-made direct stand with QR and NFC pointed to one required destination link.",
   priceCents: 3900,
   requiresDestinationUrl: true,
   hasQr: false,

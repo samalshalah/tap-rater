@@ -12,6 +12,10 @@
     {
       "binding": "PRODUCT_MEDIA_BUCKET",
       "bucket_name": "tap-rater-product-media"
+    },
+    {
+      "binding": "HOSTED_PAGE_SNAPSHOTS",
+      "bucket_name": "tap-rater-hosted-page-snapshots"
     }
   ],
   "observability": {
@@ -19,6 +23,7 @@
   },
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
+    "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://app.taprater.com",
     "PRODUCT_MEDIA_PUBLIC_BASE_URL": ""
   }
 }

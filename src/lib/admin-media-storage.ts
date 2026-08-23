@@ -1,4 +1,6 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 
 export type ProductMediaRole =
   | "main"
@@ -60,12 +62,78 @@ export class ProductMediaStorageError extends Error {
 }
 
 export async function getProductMediaBucket() {
+  const localBucket = getLocalProductMediaBucket();
+  if (localBucket) return localBucket;
+
   try {
     const context = await getCloudflareContext({ async: true });
     const env = context.env as CloudflareEnv & { PRODUCT_MEDIA_BUCKET?: ProductMediaBucket };
     return env[productMediaBucketBinding];
   } catch {
     return undefined;
+  }
+}
+
+function getLocalProductMediaBucket(): ProductMediaBucket | undefined {
+  if (process.env.NODE_ENV === "production") return undefined;
+
+  const root = process.env.TAP_RATER_LOCAL_PRODUCT_MEDIA_DIR?.trim();
+  if (!root) return undefined;
+
+  const absoluteRoot = resolve(root);
+
+  return {
+    async put(key, value, options) {
+      assertLocalMediaKey(key);
+      const filePath = localMediaPath(absoluteRoot, key);
+      await mkdir(dirname(filePath), { recursive: true });
+      await writeFile(filePath, Buffer.from(value));
+      await writeFile(`${filePath}.metadata.json`, JSON.stringify(options?.httpMetadata ?? {}, null, 2), "utf8");
+    },
+    async get(key) {
+      assertLocalMediaKey(key);
+      const filePath = localMediaPath(absoluteRoot, key);
+
+      try {
+        const buffer = await readFile(filePath);
+        const metadata = await readLocalMediaMetadata(filePath);
+        const bytes = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
+        return {
+          arrayBuffer: async () => bytes,
+          httpMetadata: metadata,
+          writeHttpMetadata(headers: Headers) {
+            if (metadata.contentType) headers.set("Content-Type", metadata.contentType);
+            if (metadata.cacheControl) headers.set("Cache-Control", metadata.cacheControl);
+          }
+        };
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+        throw error;
+      }
+    }
+  };
+}
+
+async function readLocalMediaMetadata(filePath: string) {
+  try {
+    const parsed = JSON.parse(await readFile(`${filePath}.metadata.json`, "utf8"));
+    return {
+      contentType: typeof parsed.contentType === "string" ? parsed.contentType : undefined,
+      cacheControl: typeof parsed.cacheControl === "string" ? parsed.cacheControl : undefined
+    };
+  } catch {
+    return {};
+  }
+}
+
+function localMediaPath(root: string, key: string) {
+  return join(root, ...key.split("/"));
+}
+
+function assertLocalMediaKey(key: string) {
+  if (!isSafeProductMediaKey(key)) {
+    throw new ProductMediaStorageError("Invalid media key.", 400);
   }
 }
 

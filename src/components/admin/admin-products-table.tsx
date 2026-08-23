@@ -8,6 +8,8 @@ import { Edit3, Search, Trash2 } from "lucide-react";
 import type { MigratedProduct, ProductKind } from "@/data/migrated-products";
 import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
+import { getBrandedProductionTemplateReadiness, type BrandedTemplateReadiness } from "@/lib/admin-product-readiness";
+import { getCanonicalProductModel } from "@/lib/product-model";
 import { formatPrice } from "@/lib/products";
 
 type AdminProductsTableProps = {
@@ -31,7 +33,7 @@ type Filters = {
   status: string;
   assetReadiness: string;
   specialSolution: string;
-  productKind: string;
+  destinationMode: string;
 };
 
 const defaultFilters: Filters = {
@@ -42,7 +44,7 @@ const defaultFilters: Filters = {
   status: "",
   assetReadiness: "",
   specialSolution: "",
-  productKind: ""
+  destinationMode: ""
 };
 
 export function AdminProductsTable({
@@ -63,6 +65,7 @@ export function AdminProductsTable({
     return products.filter((product) => {
       const productStatus = getProductStatus(product);
       const productKind = getProductKind(product);
+      const model = getCanonicalProductModel(product);
       const assetStatus = getProductAssetReadiness(product, getDefaultOptionsForProductKind(productKind)).status;
       const businessUseSlugs = product.businessUseSlugs ?? [];
       const searchText = [product.title, product.slug, product.sku, product.primaryPlatformSlug, product.destinationType]
@@ -79,7 +82,7 @@ export function AdminProductsTable({
         (!filters.assetReadiness || assetStatus === filters.assetReadiness) &&
         (!filters.specialSolution ||
           (filters.specialSolution === "yes" ? product.isSpecialSolution === true : product.isSpecialSolution !== true)) &&
-        (!filters.productKind || productKind === filters.productKind)
+        (!filters.destinationMode || model.destinationMode === filters.destinationMode)
       );
     });
   }, [filters, products]);
@@ -227,11 +230,9 @@ export function AdminProductsTable({
           <option value="yes">Special solution</option>
           <option value="no">Normal product</option>
         </FilterSelect>
-        <FilterSelect label="Product kind" value={filters.productKind} onChange={(value) => updateFilter("productKind", value)}>
-          <option value="normal_direct">Direct stand</option>
-          <option value="custom_direct">Custom stand</option>
-          <option value="hosted_multilink">Hosted Multi-Link</option>
-          <option value="bundle">Bundle</option>
+        <FilterSelect label="Destination mode" value={filters.destinationMode} onChange={(value) => updateFilter("destinationMode", value)}>
+          <option value="DIRECT">DIRECT</option>
+          <option value="HOSTED">HOSTED</option>
         </FilterSelect>
       </div>
 
@@ -268,7 +269,7 @@ export function AdminProductsTable({
         </div>
       ) : null}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1280px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1420px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-[#f7f8fa] text-xs uppercase text-muted">
               <th className="w-12 p-4">
@@ -285,9 +286,11 @@ export function AdminProductsTable({
               <th className="p-4">Product name</th>
               <th className="p-4">Stand Type</th>
               <th className="p-4">Business Uses</th>
-              <th className="p-4">Platform / Destination</th>
+              <th className="p-4">Destination</th>
+              <th className="p-4">Customization</th>
               <th className="p-4">Available Options</th>
               <th className="p-4">Price Range</th>
+              <th className="p-4">Production Template</th>
               <th className="p-4">Assets Ready</th>
               <th className="p-4">Status</th>
               <th className="p-4">Stock</th>
@@ -300,6 +303,8 @@ export function AdminProductsTable({
               const productKind = getProductKind(product);
               const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
               const readiness = getProductAssetReadiness(product, options);
+              const model = getCanonicalProductModel(product);
+              const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
 
               return (
                 <tr
@@ -332,11 +337,18 @@ export function AdminProductsTable({
                   <td className="p-4 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
                   <td className="p-4 text-muted">{formatBusinessUses(product, businessUses)}</td>
                   <td className="p-4 text-muted">
-                    <span className="block font-semibold text-ink">{findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"}</span>
+                    <StatusBadge status={model.destinationMode} />
+                    <span className="mt-2 block font-semibold text-ink">{findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"}</span>
                     <span className="text-xs">{product.destinationType ?? "custom"}</span>
+                  </td>
+                  <td className="p-4">
+                    <StatusBadge status={model.customizationLevel} />
                   </td>
                   <td className="p-4 text-muted">{options.map((option) => option.title).join(", ") || "-"}</td>
                   <td className="p-4 font-black text-ink">{formatPriceRange(options, product)}</td>
+                  <td className="p-4">
+                    <TemplateReadinessBadge readiness={brandedReadiness} />
+                  </td>
                   <td className="p-4">
                     <ReadinessBadge status={readiness.status} missing={readiness.missing} />
                     <MediaWarningList warnings={getMediaWarnings(product)} />
@@ -374,7 +386,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={13}>
+                <td className="p-10 text-center text-muted" colSpan={15}>
                   No products match these filters.
                 </td>
               </tr>
@@ -426,13 +438,29 @@ function ProductThumbnail({ product }: { product: MigratedProduct }) {
 
 function StatusBadge({ status }: { status: string }) {
   const classes =
-    status === "active"
+    status === "active" || status === "DIRECT" || status === "STANDARD"
       ? "bg-teal-50 text-brand"
-      : status === "archived"
+      : status === "archived" || status === "HOSTED"
         ? "bg-gray-100 text-muted"
         : "bg-amber-50 text-ink";
 
   return <span className={`rounded-full px-3 py-1 text-xs font-black uppercase ${classes}`}>{status}</span>;
+}
+
+function TemplateReadinessBadge({ readiness }: { readiness: BrandedTemplateReadiness }) {
+  if (readiness.status === "not_offered") {
+    return <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black uppercase text-muted">Branded not offered</span>;
+  }
+
+  if (readiness.status === "ready") {
+    return <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand">Ready</span>;
+  }
+
+  return (
+    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700" title={readiness.reason}>
+      Missing - branded unavailable
+    </span>
+  );
 }
 
 function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus"] }) {

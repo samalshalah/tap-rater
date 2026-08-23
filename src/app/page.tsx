@@ -27,7 +27,7 @@ const options = [
   {
     title: "Standard Direct",
     price: "$39",
-    body: "NFC only. One direct destination link with no printed QR code."
+    body: "QR and NFC pointed directly to one destination link."
   },
   {
     title: "Branded + QR",
@@ -47,20 +47,20 @@ export default async function HomePage() {
       <JsonLd data={websiteJsonLd()} />
 
       <section className="border-b border-line bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.78fr] lg:items-center lg:px-8 lg:py-14">
+        <div className="tr-container grid gap-8 py-10 lg:grid-cols-[1fr_0.78fr] lg:items-center lg:py-14">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Tap Rater NFC + QR stands</p>
-            <h1 className="mt-4 max-w-3xl break-words text-3xl font-bold leading-[1.1] tracking-normal text-ink sm:text-5xl">
+            <p className="tr-eyebrow">Tap Rater NFC + QR stands</p>
+            <h1 className="tr-page-title mt-4 max-w-3xl break-words tracking-normal">
               Turn Every Counter Into a Customer Action Point
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg">
               Sell NFC stands that help customers review, book, follow, view menus, and visit your links with one tap.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/shop" className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-6 text-sm font-black text-white transition hover:bg-brand">
+              <Link href="/shop" className="tr-button-primary px-6">
                 Shop Stands
               </Link>
-              <Link href="/how-it-works" className="inline-flex min-h-11 items-center justify-center rounded-full border border-line bg-white px-6 text-sm font-black text-ink transition hover:border-ink">
+              <Link href="/how-it-works" className="tr-button-outline px-6">
                 See How It Works
               </Link>
               <div className="basis-full pt-1 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-muted">
@@ -74,7 +74,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="relative min-h-[300px] overflow-hidden rounded-[24px] border border-line bg-white lg:min-h-[430px]">
+          <div className="relative min-h-[300px] overflow-hidden rounded-lg border border-line bg-white lg:min-h-[430px]">
             {heroProductImage ? (
               <Image src={heroProductImage.src} alt={heroProductImage.alt} fill priority unoptimized className="object-contain p-6 sm:p-8" />
             ) : null}
@@ -83,12 +83,12 @@ export default async function HomePage() {
       </section>
 
       <section className="border-b border-line bg-white">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
+        <div className="tr-container grid gap-4 py-10 md:grid-cols-2">
           {options.map((option) => (
-            <article key={option.title} className="rounded-[18px] border border-line bg-[#f7f8fa] p-5">
+            <article key={option.title} className="tr-panel-muted p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-brand">{option.title}</p>
+                  <p className="tr-eyebrow">{option.title}</p>
                   <h2 className="mt-2 text-2xl font-black text-ink">{option.price} one-time</h2>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-muted">Direct stand</span>
@@ -99,12 +99,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="bg-[#f7f8fa]">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="bg-soft">
+        <div className="tr-container py-12">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">What do you want customers to do?</p>
-              <h2 className="mt-3 text-3xl font-extrabold leading-tight text-ink md:text-4xl">Start with the customer action.</h2>
+              <p className="tr-eyebrow">What do you want customers to do?</p>
+              <h2 className="tr-section-title mt-3">Start with the customer action.</h2>
             </div>
             <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-black text-brand">
               View every stand
@@ -120,11 +120,11 @@ export default async function HomePage() {
       </section>
 
       <section className="bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="tr-container py-12">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Shop by business use</p>
-              <h2 className="mt-3 text-3xl font-extrabold leading-tight text-ink md:text-4xl">Use cards that match real buyers.</h2>
+              <p className="tr-eyebrow">Shop by business use</p>
+              <h2 className="tr-section-title mt-3">Use cards that match real buyers.</h2>
             </div>
             <Link href="/solutions" className="inline-flex items-center gap-2 text-sm font-black text-brand">
               View all uses
@@ -147,12 +147,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-t border-line bg-[#f7f8fa]">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <section className="border-t border-line bg-soft">
+        <div className="tr-container py-12">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Popular stands</p>
-              <h2 className="mt-3 text-3xl font-extrabold leading-tight text-ink md:text-4xl">Ready stands for the MVP catalog.</h2>
+                <p className="tr-eyebrow">Popular stands</p>
+                <h2 className="tr-section-title mt-3">Ready stands for the MVP catalog.</h2>
             </div>
             <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-black text-brand">
               Shop all
@@ -163,7 +163,7 @@ export default async function HomePage() {
             {products.length > 0 ? (
               products.slice(0, 8).map((product) => <ProductCard key={product.slug} product={product} />)
             ) : (
-              <div className="rounded-[18px] border border-line bg-white p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-4">
+              <div className="tr-card p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-4">
                 Products are being prepared.
               </div>
             )}

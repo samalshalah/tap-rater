@@ -46,9 +46,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
         <div className="mt-8 grid gap-4 md:grid-cols-4">
           <SummaryCard label="Total orders" value={String(orders.length)} />
-          <SummaryCard label="Paid" value={String(orders.filter((order) => order.status === "paid").length)} />
-          <SummaryCard label="Pending" value={String(orders.filter((order) => order.status === "pending_payment").length)} />
-          <SummaryCard label="Revenue" value={formatPrice(orders.filter((order) => order.status === "paid").reduce((sum, order) => sum + order.total_cents, 0))} />
+          <SummaryCard label="Needs production" value={String(orders.filter(orderNeedsProductionAttention).length)} />
+          <SummaryCard label="Artwork failed" value={String(orders.filter(orderHasArtworkFailure).length)} />
+          <SummaryCard label="Ready to ship" value={String(orders.filter(orderReadyToShip).length)} />
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
@@ -56,7 +56,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
             ["all", "All"],
             ["paid", "Paid"],
             ["pending", "Pending"],
-            ["production", "Production"],
+            ["production", "Needs production"],
+            ["artwork_failed", "Artwork failed"],
+            ["ready_to_ship", "Ready to ship"],
             ["shipped", "Shipped"]
           ].map(([value, label]) => (
             <Link
@@ -138,9 +140,29 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 function filterOrders(orders: OrderRecord[], filter: string) {
   if (filter === "paid") return orders.filter((order) => order.status === "paid");
   if (filter === "pending") return orders.filter((order) => order.status === "pending_payment");
-  if (filter === "production") return orders.filter((order) => order.production_status !== "completed" && order.shipping_status !== "shipped" && order.shipping_status !== "delivered");
+  if (filter === "production") return orders.filter(orderNeedsProductionAttention);
+  if (filter === "artwork_failed") return orders.filter(orderHasArtworkFailure);
+  if (filter === "ready_to_ship") return orders.filter(orderReadyToShip);
   if (filter === "shipped") return orders.filter((order) => order.shipping_status === "shipped" || order.shipping_status === "delivered");
   return orders;
+}
+
+function orderNeedsProductionAttention(order: OrderRecord) {
+  if (order.shipping_status === "shipped" || order.shipping_status === "delivered") return false;
+  if (order.production_status !== "completed") return true;
+
+  return order.line_items_json.some((item) => {
+    const summary = getOrderLineItemProductionSummary(item);
+    return summary.warnings.length > 0 || summary.productionArtwork?.status === "generation_failed";
+  });
+}
+
+function orderHasArtworkFailure(order: OrderRecord) {
+  return order.line_items_json.some((item) => getOrderLineItemProductionSummary(item).productionArtwork?.status === "generation_failed");
+}
+
+function orderReadyToShip(order: OrderRecord) {
+  return order.production_status === "completed" && order.shipping_status === "ready_to_ship";
 }
 
 function formatStatus(value: string) {
@@ -158,8 +180,8 @@ function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
           <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <StatusPill tone="neutral">{summary.optionLabel}</StatusPill>
-            <StatusPill tone={summary.nfcBehavior === "NFC only" ? "neutral" : "ready"}>{summary.nfcBehavior}</StatusPill>
-            <StatusPill tone={summary.printedQrLabel === "No printed QR" ? "neutral" : "ready"}>{summary.printedQrLabel}</StatusPill>
+            <StatusPill tone={summary.nfcBehavior === "DIRECT NFC" ? "neutral" : "ready"}>{summary.nfcBehavior}</StatusPill>
+            <StatusPill tone={summary.printedQrLabel === "DIRECT QR" ? "neutral" : "ready"}>{summary.printedQrLabel}</StatusPill>
           </div>
         </div>
         <div className="text-left lg:text-right">
@@ -170,15 +192,29 @@ function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <FulfillmentField label="Destination URL" value={summary.destinationUrl} link />
+        <FulfillmentField label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link />
+        <FulfillmentField label="NFC target" value={summary.nfcTargetUrl ?? summary.destinationUrl} link />
         <FulfillmentField label="Destination type" value={summary.destinationType} />
         <FulfillmentField label="Platform" value={summary.platformSlug} />
         {summary.fulfillmentKind !== "standard" ? (
           <>
             <FulfillmentField label="Business name" value={summary.businessName} />
             <FulfillmentField label="Logo" value={summary.logoReference ? "Uploaded" : undefined} detail={summary.logoReference} />
-            <FulfillmentField label="QR value" value={summary.generatedQrValue ? "Generated" : undefined} detail={summary.generatedQrValue} link />
+            <FulfillmentField label="QR production value" value={summary.generatedQrValue ? "Generated" : undefined} detail={summary.generatedQrValue} link />
             <FulfillmentField label="Front template" value={summary.frontTemplateUrl ? "Attached" : undefined} detail={summary.frontTemplateUrl} link />
             <FulfillmentField label="Proof confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
+            <FulfillmentField label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : undefined} />
+            <FulfillmentField
+              label="Production artwork"
+              value={summary.productionArtwork?.status === "generated" ? "Download Production Artwork" : summary.productionArtwork?.status === "generation_failed" ? "Generation failed" : undefined}
+              detail={summary.productionArtwork?.url ?? summary.productionArtwork?.error}
+              link={summary.productionArtwork?.status === "generated"}
+            />
+            <FulfillmentField
+              label="Artwork dimensions"
+              value={summary.productionArtwork ? `${summary.productionArtwork.widthPx} x ${summary.productionArtwork.heightPx}px @ ${summary.productionArtwork.dpi} DPI` : undefined}
+              detail={summary.productionArtwork ? `${summary.productionArtwork.widthIn.toFixed(2)} x ${summary.productionArtwork.heightIn.toFixed(2)} in` : undefined}
+            />
           </>
         ) : null}
       </div>
@@ -204,10 +240,10 @@ function OrderFulfillmentBadges({ order }: { order: OrderRecord }) {
       <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>
         {order.status === "paid" ? "Paid" : "Payment pending"}
       </StatusPill>
-      {hasStandard ? <StatusPill tone="neutral">Standard Direct - NFC only</StatusPill> : null}
+      {hasStandard ? <StatusPill tone="neutral">Standard Direct - QR + NFC</StatusPill> : null}
       {hasBranded ? (
         <StatusPill tone={hasWarnings ? "warning" : "ready"}>
-          {hasWarnings ? "Needs proof data" : "Branded + QR - proof confirmed"}
+          {hasWarnings ? "Needs production data" : "Branded + QR - artwork ready"}
         </StatusPill>
       ) : null}
       {hasHosted ? <StatusPill tone="warning">Hosted setup pending</StatusPill> : null}
@@ -221,7 +257,7 @@ function ProductionStatus({ summary }: { summary: OrderLineItemProductionSummary
     return (
       <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
         <p className="font-black">{summary.statusLabel}</p>
-        <p className="mt-1 text-ink">Standard Direct is NFC only. No logo, printed QR, or proof approval is required.</p>
+        <p className="mt-1 text-ink">Standard Direct includes QR and NFC pointed to the customer destination URL. No logo or proof approval is required.</p>
       </div>
     );
   }
@@ -230,7 +266,12 @@ function ProductionStatus({ summary }: { summary: OrderLineItemProductionSummary
     return (
       <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
         <p className="font-black">{summary.statusLabel}</p>
-        <p className="mt-1 text-ink">Logo, business name, QR value, and proof confirmation are present. Review the proof before production.</p>
+        <p className="mt-1 text-ink">Logo, business name, QR value, proof confirmation, and production artwork are present.</p>
+        {summary.productionArtwork?.url ? (
+          <a href={summary.productionArtwork.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex font-black text-brand">
+            Download Production Artwork
+          </a>
+        ) : null}
       </div>
     );
   }
@@ -260,8 +301,8 @@ function ProofAssetStrip({ summary }: { summary: OrderLineItemProductionSummary 
       <AssetPreview label="Front template" src={summary.frontTemplateUrl} fallback={summary.frontTemplateUrl} />
       <div className="rounded-md border border-line bg-white p-2">
         <p className="text-[11px] font-black uppercase text-muted">QR value</p>
-        {summary.generatedQrValue ? (
-          <p className="mt-2 break-all font-mono text-[11px] text-ink">{summary.generatedQrValue}</p>
+        {summary.qrTargetUrl ?? summary.generatedQrValue ? (
+          <p className="mt-2 break-all font-mono text-[11px] text-ink">{summary.qrTargetUrl ?? summary.generatedQrValue}</p>
         ) : (
           <p className="mt-2 font-bold text-amber-700">Missing</p>
         )}

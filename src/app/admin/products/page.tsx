@@ -19,11 +19,13 @@ export default async function AdminProductsPage() {
   return (
     <AdminShell>
     <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
-      <p className="text-sm font-semibold uppercase text-brand">Admin</p>
+      <p className="tr-eyebrow">Commerce</p>
       <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-4xl font-black text-ink">Products</h1>
-          <p className="mt-2 text-sm leading-6 text-muted">Create and manage product records, pricing, inventory status, visibility, and SEO.</p>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Manage sellable products, DIRECT/HOSTED mode, Standard/Branded availability, pricing, and production template readiness.
+          </p>
         </div>
         <Link href="/admin/products/new" className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white">
           Create product
@@ -37,8 +39,8 @@ export default async function AdminProductsPage() {
       <div className="mt-8 grid gap-4 md:grid-cols-4">
         <SummaryCard label="Total products" value={String(products.length)} />
         <SummaryCard label="Active" value={String(products.filter((product) => product.isActive).length)} />
-        <SummaryCard label="Drafts" value={String(products.filter((product) => !product.isActive).length)} />
-        <SummaryCard label="Out of stock" value={String(products.filter((product) => product.stockStatus === "outofstock").length)} />
+        <SummaryCard label="Branded template ready" value={String(products.filter((product) => Boolean(product.assetSet?.brandedFrontTemplateUrl)).length)} />
+        <SummaryCard label="Needs review" value={String(products.filter((product) => !product.isActive || product.stockStatus === "outofstock").length)} />
       </div>
       <AdminProductsTable
         products={products}

@@ -40,6 +40,8 @@ const paidOrder: OrderRecord = {
       lineSubtotalCents: 3900,
       setup: {
         destinationUrl: "https://g.page/example/review",
+        qrTargetUrl: "https://g.page/example/review",
+        nfcTargetUrl: "https://g.page/example/review",
         destinationType: "review",
         platformSlug: "google"
       }
@@ -61,7 +63,25 @@ const paidOrder: OrderRecord = {
         logoMediaUrl: "/api/media/product/products/customer-logo.png",
         logoStorageKey: "products/customer-logo.png",
         generatedQrValue: "https://example.com/menu",
-        frontTemplateUrl: "/api/media/product/products/view-menu/front-template.png"
+        qrTargetUrl: "https://example.com/menu",
+        nfcTargetUrl: "https://example.com/menu",
+        frontTemplateUrl: "/api/media/product/products/view-menu/front-template.png",
+        productionArtwork: {
+          status: "generated",
+          storageKey: "products/view-menu-stand/production_artwork/order-123/line-2-hash.svg",
+          url: "/api/media/product/products/view-menu-stand/production_artwork/order-123/line-2-hash.svg",
+          format: "svg",
+          contentType: "image/svg+xml",
+          widthPx: 1278,
+          heightPx: 1949,
+          dpi: 300,
+          widthIn: 4.26,
+          heightIn: 6.4967,
+          templateId: "taprater-branded-stand-front",
+          templateVersion: "2026-08-23.1",
+          approvalSnapshotHash: "hash",
+          generatedAt: "2026-08-23T14:00:00.000Z"
+        }
       },
       logoReference: "products/customer-logo.png",
       proofApproved: true
@@ -76,7 +96,9 @@ describe("paid order emails", () => {
     expect(html).toContain("Your Tap Rater order is confirmed");
     expect(html).toContain("Google Review Stand - Standard Direct");
     expect(html).toContain("Destination URL: https://g.page/example/review");
-    expect(html).toContain("Connection: NFC only; No printed QR");
+    expect(html).toContain("Connection: QR and NFC open the destination link directly");
+    expect(html).toContain("QR target: https://g.page/example/review");
+    expect(html).toContain("NFC target: https://g.page/example/review");
     expect(html).toContain("Total:</strong> $88.00");
     expect(html).toContain("https://taprater.com/support");
   });
@@ -85,7 +107,9 @@ describe("paid order emails", () => {
     const html = buildCustomerPaidOrderEmailHtml(paidOrder);
 
     expect(html).toContain("View Menu Stand - Branded + QR Direct");
-    expect(html).toContain("Connection: NFC + printed QR; Printed QR included");
+    expect(html).toContain("Connection: QR and NFC open the destination link directly");
+    expect(html).toContain("QR target: https://example.com/menu");
+    expect(html).toContain("NFC target: https://example.com/menu");
     expect(html).toContain("Business name: QA Menu Business");
     expect(html).toContain("Logo: Uploaded");
     expect(html).toContain("QR: Generated");
@@ -105,6 +129,9 @@ describe("paid order emails", () => {
     expect(html).toContain("Logo reference: products/customer-logo.png");
     expect(html).toContain("QR value: https://example.com/menu");
     expect(html).toContain("Front template: /api/media/product/products/view-menu/front-template.png");
+    expect(html).toContain("Production artwork status: generated");
+    expect(html).toContain("Production template: taprater-branded-stand-front / 2026-08-23.1");
+    expect(html).toContain("Production artwork: /api/media/product/products/view-menu-stand/production_artwork/order-123/line-2-hash.svg");
     expect(html).toContain("Production readiness: Ready for production review");
   });
 

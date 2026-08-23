@@ -10,3 +10,6 @@ apps/backend/dist/
 coverage/
 playwright-report/
 test-results/
+tmp*
+exports/
+*.tsbuildinfo

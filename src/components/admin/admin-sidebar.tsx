@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
   Boxes,
   ClipboardList,
   FileText,
   GalleryHorizontalEnd,
+  Hammer,
   LayoutDashboard,
   Megaphone,
   Package,
@@ -26,6 +27,7 @@ const icons = {
   Dashboard: LayoutDashboard,
   Requests: ClipboardList,
   Orders: ShoppingBag,
+  "Production Queue": Hammer,
   Customers: Users,
   Products: Package,
   Categories: Tags,
@@ -44,6 +46,7 @@ const icons = {
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
   async function logout() {
@@ -56,7 +59,7 @@ export function AdminSidebar() {
     <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
       <div className="px-4 py-5">
         <Link href="/admin" className="block">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Tap Rater</p>
+          <p className="tr-eyebrow">Tap Rater</p>
           <h2 className="mt-1 text-lg font-black">Commerce Admin</h2>
         </Link>
       </div>
@@ -67,7 +70,15 @@ export function AdminSidebar() {
             <div className="grid gap-1">
               {group.items.map((item) => {
                 const Icon = icons[item.label as keyof typeof icons] ?? Megaphone;
-                const active = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
+                const itemPathname = item.href.split("?")[0];
+                const itemSearch = item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]) : null;
+                const active = isAdminNavigationItemActive({
+                  itemHref: item.href,
+                  itemPathname,
+                  itemSearch,
+                  pathname,
+                  currentFilter: searchParams.get("filter")
+                });
 
                 return (
                   <Link
@@ -76,22 +87,11 @@ export function AdminSidebar() {
                     className={
                       active
                         ? "flex items-center gap-3 rounded-full bg-ink px-3 py-2 text-sm font-bold text-white"
-                        : "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-bold text-muted hover:bg-[#f7f8fa] hover:text-ink"
+                        : "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-bold text-muted hover:bg-soft hover:text-ink"
                     }
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     <span>{item.label}</span>
-                    {item.status === "draft" ? (
-                      <span
-                        className={
-                          active
-                            ? "ml-auto rounded-full bg-white/15 px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-white"
-                            : "ml-auto rounded-full bg-[#f1f3f5] px-2 py-0.5 text-[10px] uppercase tracking-[0.08em] text-muted"
-                        }
-                      >
-                        Draft
-                      </span>
-                    ) : null}
                   </Link>
                 );
               })}
@@ -100,10 +100,34 @@ export function AdminSidebar() {
         ))}
       </nav>
       <div className="hidden px-4 py-5 lg:block">
-        <button className="w-full rounded-full border border-line px-3 py-2 text-sm font-bold text-ink hover:border-ink" onClick={logout}>
+        <button className="tr-button-outline w-full min-h-10 px-3 py-2" onClick={logout}>
           Log out
         </button>
       </div>
     </aside>
   );
+}
+
+function isAdminNavigationItemActive({
+  itemHref,
+  itemPathname,
+  itemSearch,
+  pathname,
+  currentFilter
+}: {
+  itemHref: string;
+  itemPathname: string;
+  itemSearch: URLSearchParams | null;
+  pathname: string;
+  currentFilter: string | null;
+}) {
+  if (itemSearch) {
+    return pathname === itemPathname && Array.from(itemSearch.entries()).every(([key, value]) => key === "filter" && currentFilter === value);
+  }
+
+  if (itemHref === "/admin/orders") {
+    return (pathname === "/admin/orders" && !currentFilter) || pathname.startsWith("/admin/orders/");
+  }
+
+  return pathname === itemPathname || (itemPathname !== "/admin" && pathname.startsWith(`${itemPathname}/`));
 }

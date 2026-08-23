@@ -57,27 +57,27 @@ export function AccountLoginForm({ token }: { token?: string }) {
   }
 
   return (
-    <form onSubmit={requestLogin} className="grid gap-4 rounded-lg border border-line bg-white p-5 shadow-sm md:p-7">
-      <label className="grid gap-2 text-sm font-semibold text-ink">
+    <form onSubmit={requestLogin} className="tr-card grid gap-4 p-5 md:p-7">
+      <label className="tr-field-label">
         Email
         <input
           required
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="rounded-md border border-line px-4 py-3 text-sm font-medium outline-none focus:border-brand"
+          className="tr-input"
           autoComplete="email"
           placeholder="owner@example.com"
         />
       </label>
       <button
         disabled={status === "loading"}
-        className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white transition hover:bg-ink disabled:cursor-not-allowed disabled:bg-muted"
+        className="tr-button-secondary disabled:bg-muted"
       >
         {status === "loading" ? "Sending..." : "Send login link"}
       </button>
       {message ? (
-        <div className={`rounded-md border px-4 py-3 text-sm font-semibold ${status === "error" ? "border-red-200 bg-red-50 text-red-700" : "border-green-200 bg-green-50 text-green-800"}`}>
+        <div className={status === "error" ? "tr-status-error" : "tr-status-success"}>
           {message}
           {devMagicLink ? (
             <a href={devMagicLink} className="mt-2 block break-all text-brand underline">

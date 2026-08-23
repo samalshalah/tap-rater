@@ -25,7 +25,7 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
   const isBranded = selectedOption?.id === "branded_qr_direct";
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-7 px-4 py-7 sm:px-6 lg:grid-cols-[0.82fr_1fr] lg:px-8 lg:py-8">
+    <div className="tr-container grid gap-7 py-7 lg:grid-cols-[0.82fr_1fr] lg:py-8">
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-4">
@@ -43,17 +43,17 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6">
+        <div className="tr-card p-5 sm:p-6">
           <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.09em]">
-            {category ? <span className="rounded-full bg-teal-50 px-3 py-1.5 text-brand">{category.title}</span> : null}
-            <span className="rounded-full bg-gray-100 px-3 py-1.5 text-muted">{destination}</span>
-            <span className="rounded-full bg-gray-100 px-3 py-1.5 text-muted">No monthly fee</span>
+            {category ? <span className="tr-pill-brand">{category.title}</span> : null}
+            <span className="tr-pill-neutral">{destination}</span>
+            <span className="tr-pill-neutral">No monthly fee</span>
           </div>
 
           <h1 className="mt-4 text-3xl font-semibold leading-tight text-ink md:text-[40px]">{product.title}</h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-7 text-muted">{product.shortDescription}</p>
 
-          <div className="mt-5 grid gap-3 rounded-xl border border-line bg-[#f7f8fa] p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="tr-panel-muted mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Selected setup</p>
               <p className="mt-1 text-xl font-semibold text-ink">{selectedPrice}</p>
@@ -62,7 +62,7 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
             <div className="grid gap-1 text-[13px] text-muted">
               <p className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-brand" />
-                {isBranded ? "NFC + printed QR" : "NFC only"}
+                QR and NFC direct
               </p>
               <p className="inline-flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-brand" />

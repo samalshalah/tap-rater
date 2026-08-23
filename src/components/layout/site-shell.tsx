@@ -8,7 +8,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   if (pathname.startsWith("/admin")) {
-    return <div className="min-h-screen bg-[#f7f8fa]">{children}</div>;
+    return <div className="min-h-screen bg-soft">{children}</div>;
   }
 
   return (

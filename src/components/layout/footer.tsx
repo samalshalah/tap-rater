@@ -3,7 +3,7 @@ import Link from "next/link";
 export function Footer() {
   return (
     <footer className="border-t border-line bg-white text-ink">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="tr-container grid gap-8 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <p className="text-lg font-black">Tap Rater</p>
           <p className="mt-3 max-w-sm text-sm leading-6 text-muted">

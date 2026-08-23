@@ -2,7 +2,7 @@ export type AdminNavigationItem = {
   label: string;
   href: string;
   description: string;
-  status?: "operational" | "draft";
+  status?: "operational" | "hidden";
 };
 
 export type AdminNavigationGroup = {
@@ -12,21 +12,24 @@ export type AdminNavigationGroup = {
 
 export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
-    label: "Operations",
+    label: "Dashboard",
     items: [
-      { label: "Dashboard", href: "/admin", description: "Store overview and daily actions" },
-      { label: "Requests", href: "/admin/requests", description: "Setup, contact, and link-change queue" },
-      { label: "Devices", href: "/admin/devices", description: "NFC/QR devices, activation codes, redirects, and tap counts" },
-      { label: "Orders", href: "/admin/orders", description: "Paid, pending, production, and shipping fulfillment" }
+      { label: "Dashboard", href: "/admin", description: "Daily order, production, and fulfillment overview" }
     ]
   },
   {
     label: "Commerce",
     items: [
-      { label: "Products", href: "/admin/products", description: "Product records, prices, stock, and SEO" },
-      { label: "Business Uses", href: "/admin/business-uses", description: "Shop by Use cards, landing pages, and assigned products" },
-      { label: "Stand Types", href: "/admin/stand-types", description: "Shop categories, category content, buyer intent, and SEO" },
-      { label: "Shipping", href: "/admin/shipping", description: "Shipping mode, handling text, regions, and fulfillment notes" }
+      { label: "Orders", href: "/admin/orders", description: "Paid, pending, production, and shipping fulfillment" },
+      { label: "Products", href: "/admin/products", description: "Sellable products, prices, assets, and production readiness" }
+    ]
+  },
+  {
+    label: "Operations",
+    items: [
+      { label: "Production Queue", href: "/admin/orders?filter=production", description: "Orders needing artwork, production, or review" },
+      { label: "Shipping", href: "/admin/shipping", description: "Shipping mode, tracking, and fulfillment settings" },
+      { label: "Requests", href: "/admin/requests", description: "Contact, setup, and link-change request queue" }
     ]
   },
   {
@@ -35,22 +38,27 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       { label: "Email Templates", href: "/admin/settings/emails", description: "Order, request, and shipping notification copy" },
       { label: "Settings", href: "/admin/settings", description: "Store profile, admin, integrations, and launch checklist" }
     ]
-  },
-  {
-    label: "Future / Draft tools",
-    items: [
-      { label: "Customers", href: "/admin/customers", description: "Coming soon: customer profiles and history", status: "draft" },
-      { label: "Inventory", href: "/admin/inventory", description: "Coming soon: stock levels, alerts, and inventory activity", status: "draft" },
-      { label: "Discounts", href: "/admin/discounts", description: "Coming soon: coupons, bundles, and promotions", status: "draft" },
-      { label: "Taxes", href: "/admin/taxes", description: "Coming soon: tax settings for a later checkout phase", status: "draft" },
-      { label: "Website", href: "/admin/content", description: "Draft tool: CMS editing is not part of daily Phase 1 operations", status: "draft" },
-      { label: "Media", href: "/admin/media", description: "Draft tool: use product editor uploads for product assets today", status: "draft" },
-      { label: "SEO", href: "/admin/seo", description: "Draft tool: SEO fields live in product, use, and stand-type editors today", status: "draft" },
-      { label: "Analytics", href: "/admin/analytics", description: "Draft tool: reporting is not operational for launch yet", status: "draft" }
-    ]
   }
+];
+
+export const hiddenAdminNavigationItems: AdminNavigationItem[] = [
+  { label: "Customers", href: "/admin/customers", description: "Future customer ownership and subscription support", status: "hidden" },
+  { label: "Devices", href: "/admin/devices", description: "Legacy activation/device management retained off primary navigation", status: "hidden" },
+  { label: "Business Uses", href: "/admin/business-uses", description: "Storefront taxonomy editor retained off primary navigation", status: "hidden" },
+  { label: "Stand Types", href: "/admin/stand-types", description: "Storefront taxonomy editor retained off primary navigation", status: "hidden" },
+  { label: "Inventory", href: "/admin/inventory", description: "Unfinished inventory tooling hidden until operationally complete", status: "hidden" },
+  { label: "Discounts", href: "/admin/discounts", description: "Unfinished discounts hidden until launch requirements demand it", status: "hidden" },
+  { label: "Taxes", href: "/admin/taxes", description: "Tax handling remains a Milestone 8 launch-readiness item", status: "hidden" },
+  { label: "Website", href: "/admin/content", description: "CMS tooling retained off primary operations navigation", status: "hidden" },
+  { label: "Media", href: "/admin/media", description: "Media infrastructure remains available through product/order workflows", status: "hidden" },
+  { label: "SEO", href: "/admin/seo", description: "SEO fields remain in product/taxonomy editors", status: "hidden" },
+  { label: "Analytics", href: "/admin/analytics", description: "Analytics dashboard hidden because analytics is not core to the frozen product", status: "hidden" }
 ];
 
 export function getAdminNavigationItems(): AdminNavigationItem[] {
   return adminNavigationGroups.flatMap((group) => group.items);
+}
+
+export function getHiddenAdminNavigationItems(): AdminNavigationItem[] {
+  return hiddenAdminNavigationItems;
 }

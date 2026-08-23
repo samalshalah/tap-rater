@@ -68,27 +68,27 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_0.45fr] lg:items-end lg:px-8">
+        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[1fr_0.45fr] lg:items-end">
           <div>
             <Link href="/shop" className="text-sm font-semibold text-brand">
               Shop all stands
             </Link>
-            <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{category.eyebrow}</p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-ink md:text-4xl">{title}</h1>
+            <p className="tr-eyebrow mt-6">{category.eyebrow}</p>
+            <h1 className="tr-page-title mt-3 max-w-3xl">{title}</h1>
             <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted">{description}</p>
           </div>
-          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-2xl border border-line bg-[#fafafa] lg:block">
+          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-lg border border-line bg-soft lg:block">
             <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-6" />
           </div>
         </div>
       </section>
 
-      <section className="border-b border-line bg-[#f7f8fa]">
-        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
+      <section className="border-b border-line bg-soft">
+        <div className="tr-container py-5">
           <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
             <Link
               href="/shop"
-              className="inline-flex min-h-9 shrink-0 items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink hover:border-ink"
+              className="tr-button-outline min-h-9 shrink-0 px-4 text-[13px]"
             >
               All stands
             </Link>
@@ -98,8 +98,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 href={getCategoryHref(item.slug)}
                 className={
                   item.slug === category.slug
-                    ? "inline-flex min-h-9 shrink-0 items-center rounded-full bg-brand px-4 text-[13px] font-semibold text-white"
-                    : "inline-flex min-h-9 shrink-0 items-center rounded-full border border-line bg-white px-4 text-[13px] font-semibold text-ink hover:border-ink"
+                    ? "tr-button-secondary min-h-9 shrink-0 px-4 text-[13px]"
+                    : "tr-button-outline min-h-9 shrink-0 px-4 text-[13px]"
                 }
               >
                 {item.title}
@@ -109,11 +109,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
+      <section className="tr-container py-9">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{products.length} stands</p>
-            <h2 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">Shop {title.toLowerCase()}</h2>
+            <p className="tr-eyebrow">{products.length} stands</p>
+            <h2 className="tr-section-title mt-2">Shop {title.toLowerCase()}</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">{buyerIntent}</p>
         </div>
@@ -122,7 +122,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (
-            <div className="rounded-[18px] border border-line bg-[#f7f8fa] p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <div className="tr-panel-muted p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
               Products are being prepared.
             </div>
           )}

@@ -223,7 +223,7 @@ function getSampleBodyForTemplate(key: EmailTemplateKey) {
       "Fulfillment details:",
       "1 x Google Review Stand",
       "Option: Standard Direct",
-      "Connection: NFC only; No printed QR",
+      "Connection: QR and NFC direct to destination",
       "Destination URL: https://example.com/review"
     ];
   }
@@ -240,7 +240,7 @@ function getSampleBodyForTemplate(key: EmailTemplateKey) {
     "Order summary:",
     "1 x Google Review Stand - Standard Direct - $39.00",
     "Destination URL: https://example.com/review",
-    "Connection: NFC only; No printed QR",
+    "Connection: QR and NFC direct to destination",
     "Support: https://taprater.com/support",
     "Shipping: https://taprater.com/shipping",
     "Refund Policy: https://taprater.com/refund-policy",

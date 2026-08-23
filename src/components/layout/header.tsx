@@ -21,7 +21,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-10">
+      <div className="tr-container-wide">
         <div className="grid min-h-14 grid-cols-[1fr_auto] items-center gap-3 lg:min-h-16 lg:grid-cols-[180px_1fr_180px]">
           <Link href="/" className="inline-flex items-center" onClick={() => setIsMenuOpen(false)}>
             <Image
@@ -43,7 +43,7 @@ export function Header() {
           <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
             <Link
               href="/admin"
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-transparent hover:border-line hover:text-brand sm:inline-flex"
+              className="hidden h-10 w-10 items-center justify-center rounded-full border border-transparent transition hover:border-line hover:text-brand sm:inline-flex"
               aria-label="Admin"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -52,7 +52,7 @@ export function Header() {
             <Link
               href="/cart"
               aria-label="Cart"
-              className="relative grid h-10 w-10 place-items-center rounded-full border border-transparent hover:border-line hover:text-brand"
+              className="relative grid h-10 w-10 place-items-center rounded-full border border-transparent transition hover:border-line hover:text-brand"
               onClick={() => setIsMenuOpen(false)}
             >
               <ShoppingBag size={21} />
@@ -62,7 +62,7 @@ export function Header() {
             </Link>
             <button
               type="button"
-              className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:border-ink lg:hidden"
+              className="tr-icon-button lg:hidden"
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((current) => !current)}
@@ -77,7 +77,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-xl px-3 py-3 hover:bg-[#f7f8fa] hover:text-brand"
+                className="rounded-lg px-3 py-3 hover:bg-soft hover:text-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -85,7 +85,7 @@ export function Header() {
             ))}
             <Link
               href="/cart"
-              className="rounded-xl px-3 py-3 hover:bg-[#f7f8fa] hover:text-brand"
+              className="rounded-lg px-3 py-3 hover:bg-soft hover:text-brand"
               onClick={() => setIsMenuOpen(false)}
             >
               Cart

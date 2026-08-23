@@ -52,6 +52,8 @@ describe("Stripe checkout helpers", () => {
       productId: "google-review-stand",
       optionId: "standard_direct",
       optionLabel: "Standard Direct Stand",
+      destinationMode: "DIRECT",
+      customizationLevel: "STANDARD",
       manualProductionRequired: false,
       productionWarningCodes: [],
       quantity: 2,
@@ -59,6 +61,62 @@ describe("Stripe checkout helpers", () => {
       lineSubtotalCents: 7800
     });
     expect(result.totalCents).toBe(7800);
+  });
+
+  it("maps Standard Direct QR and NFC targets to the customer destination URL", () => {
+    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toMatchObject({
+      optionId: "standard_direct",
+      destinationMode: "DIRECT",
+      customizationLevel: "STANDARD",
+      proofRequired: false,
+      logoRequired: false,
+      manualProductionRequired: false,
+      productionWarningCodes: []
+    });
+    expect(result.rows[0].setup).toMatchObject({
+      destinationUrl: "https://g.page/example/review",
+      generatedQrValue: "https://g.page/example/review",
+      qrTargetUrl: "https://g.page/example/review",
+      nfcTargetUrl: "https://g.page/example/review",
+      hasQr: true,
+      nfcOnly: false
+    });
+  });
+
+  it("rejects DIRECT checkout setup when QR or NFC targets differ from the destination URL", () => {
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            ...configuredStandardItem,
+            setup: {
+              ...configuredStandardItem.setup,
+              qrTargetUrl: "https://example.com/other"
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
+
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            ...configuredStandardItem,
+            setup: {
+              ...configuredStandardItem.setup,
+              nfcTargetUrl: "https://example.com/other"
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("rejects empty or invalid checkout carts", () => {
@@ -102,18 +160,32 @@ describe("Stripe checkout helpers", () => {
           optionId: "branded_qr_direct",
           quantity: 1,
           setup: {
+            productSlug: "google-review-stand",
+            optionCode: "branded_qr_direct",
             destinationUrl: "https://g.page/example/review",
             businessName: "Nova Implant",
             logoFileName: "fake-local-logo.png",
             logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
             logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
             generatedQrValue: "https://g.page/example/review",
+            qrTargetUrl: "https://g.page/example/review",
+            nfcTargetUrl: "https://g.page/example/review",
             frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
             proofPreviewData: {
               businessName: "Nova Implant",
               qrValue: "https://g.page/example/review"
             },
-            proofApproved: true
+            proofApproved: true,
+            proofApprovalSnapshot: {
+              productSlug: "google-review-stand",
+              optionCode: "branded_qr_direct",
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Nova Implant",
+              logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+              logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+              generatedQrValue: "https://g.page/example/review",
+              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
+            }
           }
         }
       ],
@@ -124,23 +196,106 @@ describe("Stripe checkout helpers", () => {
     if (!result.ok) return;
     expect(result.rows[0]).toMatchObject({
       optionId: "branded_qr_direct",
+      destinationMode: "DIRECT",
+      customizationLevel: "BRANDED",
       logoRequired: true,
       logoStatus: "uploaded",
       logoReference: "products/customer-setup-google-review-stand/center_asset/logo.png",
       proofRequired: true,
       proofApproved: true,
-      productionStatus: "pending_branded_proof_review",
-      manualProductionRequired: true,
-      productionWarningCodes: [
-        "pending_manual_proof",
-        "do_not_print_until_manual_review"
-      ]
+      productionStatus: "ready_for_direct_fulfillment",
+      manualProductionRequired: false,
+      productionWarningCodes: []
     });
     expect(result.rows[0].setup).toMatchObject({
       logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
       generatedQrValue: "https://g.page/example/review",
+      qrTargetUrl: "https://g.page/example/review",
+      nfcTargetUrl: "https://g.page/example/review",
       proofApproved: true
     });
+  });
+
+  it("rejects branded checkout when proof approval no longer matches the current setup", () => {
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            productId: "google-review-stand",
+            optionId: "branded_qr_direct",
+            quantity: 1,
+            setup: {
+              productSlug: "google-review-stand",
+              optionCode: "branded_qr_direct",
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Changed Business",
+              logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+              logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+              generatedQrValue: "https://g.page/example/review",
+              qrTargetUrl: "https://g.page/example/review",
+              nfcTargetUrl: "https://g.page/example/review",
+              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+              proofPreviewData: {
+                businessName: "Changed Business",
+                qrValue: "https://g.page/example/review"
+              },
+              proofApproved: true,
+              proofApprovalSnapshot: {
+                productSlug: "google-review-stand",
+                optionCode: "branded_qr_direct",
+                destinationUrl: "https://g.page/example/review",
+                businessName: "Original Business",
+                logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+                logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+                generatedQrValue: "https://g.page/example/review",
+                frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
+              }
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
+  it("rejects branded checkout without a production artwork front template", () => {
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            productId: "google-review-stand",
+            optionId: "branded_qr_direct",
+            quantity: 1,
+            setup: {
+              productSlug: "google-review-stand",
+              optionCode: "branded_qr_direct",
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Nova Implant",
+              logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+              logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+              generatedQrValue: "https://g.page/example/review",
+              qrTargetUrl: "https://g.page/example/review",
+              nfcTargetUrl: "https://g.page/example/review",
+              proofPreviewData: {
+                businessName: "Nova Implant",
+                qrValue: "https://g.page/example/review"
+              },
+              proofApproved: true,
+              proofApprovalSnapshot: {
+                productSlug: "google-review-stand",
+                optionCode: "branded_qr_direct",
+                destinationUrl: "https://g.page/example/review",
+                businessName: "Nova Implant",
+                logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+                logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+                generatedQrValue: "https://g.page/example/review"
+              }
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("uses active backend product option pricing and ignores submitted cart price", () => {
@@ -253,17 +408,76 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("does not accept Hosted Multi-Link in the current one-time checkout", () => {
+  it("accepts Hosted Multi-Link through subscription checkout without assigning a permanent code", () => {
+    const hostedProduct = {
+      ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
+      slug: "hosted-multilink-stand",
+      productKind: "hosted_multilink" as const,
+      productType: "platform_landing_page" as const,
+      serviceMode: "hosted_landing_page" as const,
+      checkoutMode: "subscription" as const,
+      requiresAccount: true,
+      requiresSubscription: true,
+      requiresLandingPage: true
+    };
     const result = validateCheckoutCart(
       [
         {
-          productId: "custom-direct-stand",
+          productId: "hosted-multilink-stand",
           optionId: "hosted_multilink",
           quantity: 1,
           setup: {
             businessName: "Nova Implant",
             manualCollectionAcknowledged: true
           }
+        }
+      ],
+      [hostedProduct]
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.checkoutMode).toBe("subscription");
+    expect(result.totalCents).toBe(4900);
+    expect(result.recurringTotalCents).toBe(990);
+    expect(result.rows[0]).toMatchObject({
+      optionId: "hosted_multilink",
+      destinationMode: "HOSTED",
+      customizationLevel: "BRANDED",
+      monthlyAmountCents: 990
+    });
+    expect(result.rows[0].setup).not.toHaveProperty("hostedPageCode");
+  });
+
+  it("rejects a HOSTED option attached to a DIRECT product", () => {
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "hosted_multilink",
+          quantity: 1,
+          setup: {
+            businessName: "Nova Implant"
+          }
+        }
+      ],
+      migratedProducts
+    );
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
+  it("rejects premature permanent hosted page codes during cart checkout", () => {
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "standard_direct",
+          quantity: 1,
+          setup: {
+            destinationUrl: "https://g.page/example/review",
+            hostedPageCode: "ABC123"
+          } as any
         }
       ],
       migratedProducts
@@ -428,12 +642,67 @@ describe("Stripe checkout helpers", () => {
     });
     expect(params.metadata?.stripe_mode).toBe("test");
     expect(params.metadata?.total_cents).toBe("3900");
+    expect(params.metadata?.recurring_total_cents).toBe("0");
+    expect(params.metadata?.checkout_intent).toBe("direct_payment");
     expect(params.metadata?.configured_items).toBe("1");
     expect(params.metadata?.shipping_mode).toBe("manual");
     expect(params.metadata?.shipping_amount_cents).toBe("0");
     expect(params.shipping_address_collection?.allowed_countries).toEqual(["US"]);
     expect(params.shipping_options).toBeUndefined();
     expect(params.metadata).not.toHaveProperty("order_items");
+  });
+
+  it("creates subscription Checkout Session params for hosted products with one-time and monthly lines", () => {
+    const hostedProduct = {
+      ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
+      slug: "hosted-multilink-stand",
+      productKind: "hosted_multilink" as const,
+      productType: "platform_landing_page" as const,
+      serviceMode: "hosted_landing_page" as const,
+      checkoutMode: "subscription" as const,
+      requiresAccount: true,
+      requiresSubscription: true,
+      requiresLandingPage: true
+    };
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "hosted-multilink-stand",
+          optionId: "hosted_multilink",
+          quantity: 1,
+          setup: {
+            businessName: "Nova Implant",
+            manualCollectionAcknowledged: true
+          }
+        }
+      ],
+      [hostedProduct]
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = createCheckoutSessionParams({
+      cart: result,
+      siteUrl: "https://taprater.com"
+    });
+
+    expect(params.mode).toBe("subscription");
+    expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
+    expect(params.metadata?.recurring_total_cents).toBe("990");
+    expect(params.line_items).toHaveLength(2);
+    expect(params.line_items?.[0]).toMatchObject({
+      price_data: {
+        unit_amount: 4900
+      }
+    });
+    expect(params.line_items?.[1]).toMatchObject({
+      price_data: {
+        unit_amount: 990,
+        recurring: {
+          interval: "month"
+        }
+      }
+    });
   });
 
   it("adds configured flat shipping to Checkout Session params", () => {

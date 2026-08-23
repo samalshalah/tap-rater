@@ -4,12 +4,30 @@ import {
   getOrderLineItemFulfillmentKind,
   getOrderLineItemProductionSummary,
   mapCheckoutRowsToOrderLineItems,
+  mapCheckoutRowsToProductionReadyOrderLineItems,
   mapCheckoutSessionToOrderInput,
   savePaidOrderFromCheckoutSessionWithClient,
   updateOrderFulfillmentWithClient,
   type OrdersDbClient
 } from "@/lib/orders";
 import { orderFulfillmentUpdateSchema } from "@/lib/validators";
+
+const generatedProductionArtwork = {
+  status: "generated",
+  storageKey: "products/google-review-stand/production_artwork/cs-test/line-1-hash.svg",
+  url: "/api/media/product/products/google-review-stand/production_artwork/cs-test/line-1-hash.svg",
+  format: "svg",
+  contentType: "image/svg+xml",
+  widthPx: 1278,
+  heightPx: 1949,
+  dpi: 300,
+  widthIn: 4.26,
+  heightIn: 6.4967,
+  templateId: "taprater-branded-stand-front",
+  templateVersion: "2026-08-23.1",
+  approvalSnapshotHash: "hash",
+  generatedAt: "2026-08-23T14:00:00.000Z"
+};
 
 describe("orders repository", () => {
   it("preserves uploaded logo and branded proof status in order line items", () => {
@@ -18,6 +36,8 @@ describe("orders repository", () => {
         productId: "google-review-stand",
         optionId: "branded_qr_direct",
         optionLabel: "Branded + QR Direct Stand",
+        destinationMode: "DIRECT",
+        customizationLevel: "BRANDED",
         title: "Google Review Stand",
         sku: "TR-GOOGLE-STAND",
         quantity: 1,
@@ -30,6 +50,8 @@ describe("orders repository", () => {
           logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
           logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
           generatedQrValue: "https://g.page/example/review",
+          qrTargetUrl: "https://g.page/example/review",
+          nfcTargetUrl: "https://g.page/example/review",
           proofApproved: true
         },
         logoRequired: true,
@@ -60,6 +82,80 @@ describe("orders repository", () => {
         "do_not_print_until_manual_review"
       ]
     });
+  });
+
+  it("generates production artwork while preparing pending order line items", async () => {
+    const writes = new Map<string, string>();
+    const items = await mapCheckoutRowsToProductionReadyOrderLineItems(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          optionLabel: "Branded + QR Direct Stand",
+          destinationMode: "DIRECT",
+          customizationLevel: "BRANDED",
+          title: "Google Review Stand",
+          sku: "TR-GOOGLE-STAND",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          shortDescription: "Google review stand",
+          setup: {
+            productSlug: "google-review-stand",
+            optionCode: "branded_qr_direct",
+            destinationUrl: "https://g.page/example/review",
+            businessName: "Nova Implant",
+            logoStorageKey: "products/customer-setup/logo.png",
+            logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
+            generatedQrValue: "https://g.page/example/review",
+            qrTargetUrl: "https://g.page/example/review",
+            nfcTargetUrl: "https://g.page/example/review",
+            frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+            proofApproved: true,
+            proofApprovalSnapshot: {
+              productSlug: "google-review-stand",
+              optionCode: "branded_qr_direct",
+              destinationUrl: "https://g.page/example/review",
+              businessName: "Nova Implant",
+              logoStorageKey: "products/customer-setup/logo.png",
+              logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
+              generatedQrValue: "https://g.page/example/review",
+              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
+            },
+            proofPreviewData: {
+              businessName: "Nova Implant",
+              qrValue: "https://g.page/example/review"
+            }
+          },
+          logoRequired: true,
+          logoStatus: "uploaded",
+          logoReference: "products/customer-setup/logo.png",
+          proofRequired: true,
+          proofApproved: true,
+          productionStatus: "ready_for_direct_fulfillment",
+          manualProductionRequired: false,
+          productionWarningCodes: []
+        }
+      ],
+      "cs_test_order",
+      {
+        async put(key, value) {
+          writes.set(key, value);
+        }
+      }
+    );
+
+    expect(items[0]).toMatchObject({
+      productionStatus: "ready_for_direct_fulfillment",
+      manualProductionRequired: false,
+      productionWarningCodes: []
+    });
+    expect(items[0].setup?.productionArtwork).toMatchObject({
+      status: "generated",
+      templateId: "taprater-branded-stand-front",
+      templateVersion: "2026-08-23.1"
+    });
+    expect(writes.size).toBe(1);
   });
 
   it("infers manual logo and proof requirements for legacy branded orders with weak booleans", () => {
@@ -160,7 +256,7 @@ describe("orders repository", () => {
       logoStatus: "not_required",
       proofRequired: false,
       proofApproved: false,
-      productionStatus: "ready_for_direct_activation",
+      productionStatus: "ready_for_direct_fulfillment",
       manualProductionRequired: false,
       productionWarningCodes: []
     });
@@ -186,8 +282,8 @@ describe("orders repository", () => {
     expect(summary).toMatchObject({
       fulfillmentKind: "standard",
       optionLabel: "Standard Direct",
-      nfcBehavior: "NFC only",
-      printedQrLabel: "No printed QR",
+      nfcBehavior: "DIRECT NFC",
+      printedQrLabel: "DIRECT QR",
       destinationUrl: "https://g.page/example/review",
       statusLabel: "Ready for direct fulfillment",
       statusTone: "ready",
@@ -213,7 +309,8 @@ describe("orders repository", () => {
         logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
         logoStorageKey: "products/customer-setup/logo.png",
         generatedQrValue: "https://g.page/example/review",
-        frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
+        frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+        productionArtwork: generatedProductionArtwork
       },
       logoReference: "products/customer-setup/logo.png",
       proofApproved: true
@@ -222,12 +319,15 @@ describe("orders repository", () => {
     expect(summary).toMatchObject({
       fulfillmentKind: "branded",
       optionLabel: "Branded + QR Direct",
-      nfcBehavior: "NFC + printed QR",
-      printedQrLabel: "Printed QR included",
+      nfcBehavior: "DIRECT NFC",
+      printedQrLabel: "DIRECT QR",
       businessName: "Nova Implant",
       logoReference: "products/customer-setup/logo.png",
       generatedQrValue: "https://g.page/example/review",
+      qrTargetUrl: "https://g.page/example/review",
+      nfcTargetUrl: "https://g.page/example/review",
       frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+      productionArtwork: generatedProductionArtwork,
       proofConfirmed: true,
       statusLabel: "Ready for production review",
       statusTone: "ready",
@@ -256,8 +356,8 @@ describe("orders repository", () => {
     expect(summary.warnings).toEqual([
       "Missing business name",
       "Missing logo",
-      "Missing QR value",
-      "Proof not confirmed"
+      "Proof not confirmed",
+      "Production artwork not generated"
     ]);
   });
 

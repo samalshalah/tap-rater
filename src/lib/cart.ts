@@ -29,7 +29,11 @@ export type CartItem = {
     logoMediaUrl?: string;
     logoStorageKey?: string;
     generatedQrValue?: string;
+    qrTargetUrl?: string;
+    nfcTargetUrl?: string;
     frontTemplateUrl?: string;
+    proofApprovalSnapshot?: Record<string, unknown>;
+    proofApprovedAt?: string;
     proofPreviewData?: Record<string, unknown>;
     hasQr?: boolean;
     nfcOnly?: boolean;
@@ -200,7 +204,9 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.logoFileName ?? "",
     setup.logoMediaUrl ?? "",
     setup.logoStorageKey ?? "",
-    setup.generatedQrValue ?? ""
+    setup.generatedQrValue ?? "",
+    setup.qrTargetUrl ?? "",
+    setup.nfcTargetUrl ?? ""
   ].join("|");
 }
 
@@ -221,7 +227,11 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     logoMediaUrl: readString(row.logoMediaUrl),
     logoStorageKey: readString(row.logoStorageKey),
     generatedQrValue: readString(row.generatedQrValue),
+    qrTargetUrl: readString(row.qrTargetUrl),
+    nfcTargetUrl: readString(row.nfcTargetUrl),
     frontTemplateUrl: readString(row.frontTemplateUrl),
+    proofApprovalSnapshot: readRecord(row.proofApprovalSnapshot),
+    proofApprovedAt: readString(row.proofApprovedAt),
     proofPreviewData: readRecord(row.proofPreviewData),
     hasQr: typeof row.hasQr === "boolean" ? row.hasQr : undefined,
     nfcOnly: typeof row.nfcOnly === "boolean" ? row.nfcOnly : undefined,

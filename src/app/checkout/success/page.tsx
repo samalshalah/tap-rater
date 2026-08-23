@@ -25,7 +25,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           before production starts.
         </p>
         <p className="mt-3 leading-7 text-muted">
-          Standard Direct stands use NFC only with no printed QR. Branded + QR stands include the uploaded logo,
+          Standard Direct stands use QR and NFC pointed directly to your destination. Branded + QR stands include the uploaded logo,
           business name, generated QR, and proof confirmation for production review.
         </p>
         {sessionId ? (

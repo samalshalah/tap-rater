@@ -127,17 +127,32 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="font-black text-ink">{item.quantity} x {item.title}</p>
+          <p className="mt-1 font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
           <p className="mt-1 text-sm text-muted">{summary.optionLabel} - {summary.nfcBehavior} - {summary.printedQrLabel}</p>
         </div>
         <p className="font-black text-ink">{formatPrice(item.lineSubtotalCents)}</p>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Field label="Destination URL" value={summary.destinationUrl} link />
+        <Field label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link />
+        <Field label="NFC target" value={summary.nfcTargetUrl ?? summary.destinationUrl} link />
         <Field label="Business name" value={summary.businessName} />
         <Field label="Logo" value={summary.logoReference ?? summary.logoMediaUrl} link={Boolean(summary.logoMediaUrl)} />
-        <Field label="QR value" value={summary.generatedQrValue} link />
+        <Field label="QR production value" value={summary.generatedQrValue} link />
         <Field label="Front template" value={summary.frontTemplateUrl} link />
         <Field label="Proof confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
+        <Field label="Proof approved at" value={readSetupString(item.setup, "proofApprovedAt")} />
+        <Field label="Approval snapshot hash" value={summary.productionArtwork?.approvalSnapshotHash} />
+        <Field label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : null} />
+        <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? summary.productionArtwork.url : summary.productionArtwork?.error} link={summary.productionArtwork?.status === "generated"} />
+        <Field
+          label="Artwork dimensions"
+          value={
+            summary.productionArtwork
+              ? `${summary.productionArtwork.widthPx} x ${summary.productionArtwork.heightPx}px @ ${summary.productionArtwork.dpi} DPI (${summary.productionArtwork.widthIn.toFixed(2)} x ${summary.productionArtwork.heightIn.toFixed(2)} in)`
+              : null
+          }
+        />
       </div>
     </div>
   );
@@ -156,4 +171,10 @@ function readAddressObject(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const address = (value as Record<string, unknown>).address;
   return address && typeof address === "object" ? (address as Record<string, unknown>) : value;
+}
+
+function readSetupString(setup: OrderLineItem["setup"], key: string) {
+  if (!setup || typeof setup !== "object") return null;
+  const value = (setup as Record<string, unknown>)[key];
+  return typeof value === "string" && value.trim() ? value : null;
 }

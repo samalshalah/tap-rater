@@ -58,16 +58,16 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-[18px] border border-line bg-white p-8 text-center shadow-sm">
+      <div className="tr-card p-8 text-center">
         <p className="text-lg font-semibold text-ink">Your cart is empty.</p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
           Choose a ready NFC stand or contact support for a custom request.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand">
+          <Link href="/shop" className="tr-button-primary">
             Shop ready stands
           </Link>
-          <Link href="/support" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-semibold text-ink hover:border-ink">
+          <Link href="/support" className="tr-button-outline">
             Request custom help
           </Link>
         </div>
@@ -76,7 +76,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
   }
 
   return (
-    <div className="grid gap-5 rounded-[22px] border border-line bg-white p-4 shadow-sm sm:p-6">
+    <div className="tr-card grid gap-5 p-4 sm:p-6">
       {rows.map((row) => {
         const cartKey = getCartItemKey(row.item);
         return (
@@ -90,12 +90,14 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
               {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Destination link:</strong> {row.item.setup.destinationUrl}</p> : null}
               <p>
                 <strong className="text-ink">Connection:</strong>{" "}
-                {row.item.setup?.hasQr || row.option.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"}
+                QR and NFC open the destination link directly
               </p>
+              {row.item.setup?.qrTargetUrl ? <p><strong className="text-ink">QR target:</strong> {row.item.setup.qrTargetUrl}</p> : null}
+              {row.item.setup?.nfcTargetUrl ? <p><strong className="text-ink">NFC target:</strong> {row.item.setup.nfcTargetUrl}</p> : null}
               {row.item.setup?.headline ? <p><strong className="text-ink">Headline:</strong> {row.item.setup.headline}</p> : null}
               {row.item.setup?.designNotes ? <p><strong className="text-ink">Design notes:</strong> {row.item.setup.designNotes}</p> : null}
               {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> {row.item.setup?.logoMediaUrl || row.item.setup?.logoStorageKey ? "Logo uploaded" : "Missing"}</p> : null}
-              {row.option.hasQr ? <p><strong className="text-ink">QR:</strong> {row.item.setup?.generatedQrValue ? "QR generated" : "Missing"}</p> : null}
+              {row.item.setup?.hasQr || row.option.hasQr ? <p><strong className="text-ink">QR:</strong> {row.item.setup?.generatedQrValue || row.item.setup?.qrTargetUrl ? "Direct QR ready" : "Missing"}</p> : null}
               {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> {row.item.setup?.proofApproved ? "Proof confirmed" : "Proof required"}</p> : null}
             </div>
           </div>
@@ -145,7 +147,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
       <button
         type="button"
         disabled={isCheckingOut}
-        className="min-h-12 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand disabled:cursor-not-allowed disabled:bg-gray-300"
+        className="tr-button-primary min-h-12"
         onClick={startCheckout}
       >
         {isCheckingOut ? "Starting secure checkout..." : isLiveStripe ? "Secure checkout" : "Secure checkout in Stripe test mode"}
@@ -156,7 +158,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
           : "Test mode only. Stripe payment opens inside Tap Rater. Shipping is reviewed after payment, and no shipping fee is added today."}
       </p>
       {checkoutError ? (
-        <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-ink">{checkoutError}</p>
+        <p className="tr-status-warning">{checkoutError}</p>
       ) : null}
     </div>
   );

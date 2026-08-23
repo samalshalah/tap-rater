@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
+import { provisionHostedSubscriptionFromCheckout } from "@/lib/hosted-subscription-provisioning";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { savePaidOrderFromCheckoutSession } from "@/lib/orders";
 
@@ -27,6 +28,20 @@ export async function POST(request: Request) {
         const result = await savePaidOrderFromCheckoutSession(session);
         if (!result.ok) {
           return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
+        }
+
+        const provisioning = await provisionHostedSubscriptionFromCheckout({
+          session,
+          order: result.order,
+          eventId: event.id,
+          eventType: event.type
+        });
+        if (!provisioning.ok) {
+          console.warn("[stripe-webhook] hosted_subscription_provisioning_failed", {
+            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+            error: provisioning.error
+          });
+          return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
         }
 
         if (!result.wasAlreadyPaid) {

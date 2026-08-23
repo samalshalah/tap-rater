@@ -88,7 +88,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
                   </div>
                   <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
                     {row.item.setup?.destinationUrl ? <p>Destination link: {row.item.setup.destinationUrl}</p> : null}
-                    <p>{row.option.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"}</p>
+                    <p>QR and NFC open the destination link directly</p>
                     {row.item.setup?.businessName ? <p>Business: {row.item.setup.businessName}</p> : null}
                   </div>
                 </div>

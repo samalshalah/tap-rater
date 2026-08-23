@@ -2,7 +2,7 @@ import { AccountLoginForm } from "@/components/account/account-login-form";
 
 export const metadata = {
   title: "Customer Login | Tap Rater",
-  description: "Log in to manage your Tap Rater business profile and activated devices."
+  description: "Log in to manage your Tap Rater Multi-Link page."
 };
 
 type LoginPageProps = {
@@ -22,11 +22,8 @@ export default async function AccountLoginPage({ searchParams }: LoginPageProps)
           <p className="text-sm font-black uppercase text-brand">Customer account</p>
           <h1 className="text-4xl font-black leading-tight text-ink">Log in to Tap Rater</h1>
           <p className="text-lg leading-8 text-muted">
-            Get a secure email link to view your business profile, activated devices, destination URLs, and basic tap counts.
+            Get a secure email link to edit your business information, links, logo, style, and permanent Tap Rater page.
           </p>
-          <div className="rounded-md border border-line bg-white p-4 text-sm text-muted shadow-sm">
-            Destination edits are handled as support requests for now. Direct self-service editing will come later.
-          </div>
         </div>
         <AccountLoginForm token={token} />
       </section>

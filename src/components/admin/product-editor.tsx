@@ -199,6 +199,7 @@ export function ProductEditor({
       }))
   );
   const missingOptionMedia = optionReadinessRows.filter((row) => !row.ready);
+  const brandedProductionTemplateMissing = activeVisibleOptions.some((option) => option.optionCode === "branded_qr_direct") && !readOptionalString(effectiveAssetSet.brandedFrontTemplateUrl);
 
   function updateAsset(key: AssetKey, value: string) {
     setAssetSet((current) => ({ ...current, [key]: value }));
@@ -541,7 +542,7 @@ export function ProductEditor({
             </label>
           </div>
           <div className="grid gap-2 text-sm text-muted">
-            <RuleRow label="Standard Direct" value="NFC only. No logo zone, business name zone, QR zone, or design step." />
+            <RuleRow label="Standard Direct" value="QR and NFC direct. No logo zone, business name zone, or design step." />
             <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and front proof required." />
             <RuleRow label="Hosted Multi-Link" value="Logo, business name, QR, hosted page preview, account, and subscription readiness required." />
           </div>
@@ -595,6 +596,11 @@ export function ProductEditor({
           {!canActivate ? (
             <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-ink">
               <p className="font-black">Required assets are missing. This product cannot be activated yet.</p>
+              {brandedProductionTemplateMissing ? (
+                <p className="mt-2 font-black text-red-700">
+                  Branded Direct is unavailable until a branded front template is attached for production artwork.
+                </p>
+              ) : null}
               <ul className="mt-2 list-disc space-y-1 pl-4">
                 {activationIssues.map((issue) => (
                   <li key={issue}>{issue}</li>
@@ -616,9 +622,9 @@ export function ProductEditor({
           </div>
         </SidebarCard>
 
-        <SidebarCard title="Product Organization">
+        <SidebarCard title="Product Model">
           <label className="grid gap-2 text-sm font-bold text-ink">
-            Product kind
+            Operational product type
             <select
               className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
               value={productKind}
@@ -715,6 +721,11 @@ export function ProductEditor({
           ) : null}
           <div className="mt-2 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs font-bold text-ink">
             Can publish: {canActivate ? "Yes" : "No"}
+            {brandedProductionTemplateMissing ? (
+              <span className="mt-1 block text-red-700">
+                Branded unavailable: missing production front template.
+              </span>
+            ) : null}
           </div>
           {mediaWarnings.length > 0 ? (
             <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
@@ -730,8 +741,8 @@ export function ProductEditor({
 
         <SidebarCard title="Production Notes">
           <ul className="grid gap-2 text-xs leading-5 text-muted">
-            <li>Standard Direct is NFC only and does not include a printed QR code.</li>
-            <li>Branded + QR requires logo collection, business name, QR generation, and front proof.</li>
+            <li>Standard Direct includes QR and NFC pointed to the customer-provided URL.</li>
+            <li>Branded + QR requires logo collection, business name, QR generation, front proof, and a branded front template before publishing.</li>
             <li>Hosted Multi-Link requires account, hosted page, subscription readiness, and landing page preview.</li>
           </ul>
         </SidebarCard>
@@ -1509,7 +1520,7 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
   return [
     {
       label: "Standard Direct angled image",
-      description: "Ready-made NFC stand image. Standard Direct has no printed QR code.",
+      description: "Ready-made QR and NFC stand image for Standard Direct.",
       assetKey: "standardAngledImageUrl" as const,
       role: "standard_angled" as const,
       value: assetSet.standardAngledImageUrl,
@@ -1721,8 +1732,8 @@ function generateProductSku(title: string) {
 function getOptionDisplayMeta(option: ProductOption) {
   const map: Record<ProductOptionCode, { badge: string; summary: string }> = {
     standard_direct: {
-      badge: "STD / NFC only",
-      summary: "Standard Direct uses the ready-made angled stand image, NFC only, no printed QR."
+      badge: "STD / QR + NFC",
+      summary: "Standard Direct uses the ready-made angled stand image with QR and NFC pointed to one direct URL."
     },
     branded_qr_direct: {
       badge: "BQR / NFC + QR",

@@ -178,6 +178,77 @@ create index if not exists tap_events_created_at_idx on tap_events(created_at de
 create index if not exists device_activation_attempts_device_code_created_at_idx on device_activation_attempts(device_code, created_at desc);
 create index if not exists device_activation_attempts_ip_hash_created_at_idx on device_activation_attempts(ip_hash, created_at desc);
 
+create table if not exists hosted_page_codes (
+  code text primary key,
+  physical_product_ref text not null unique,
+  assigned_by text,
+  assigned_at timestamptz not null default now(),
+  retired_at timestamptz,
+  constraint hosted_page_codes_code_check check (code ~ '^[A-HJKMNPQRSTVWXYZ2-9]{12}$')
+);
+
+create table if not exists hosted_page_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  code text not null references hosted_page_codes(code) on delete restrict,
+  version text not null,
+  r2_key text not null unique,
+  lifecycle_status text not null,
+  published_at timestamptz not null default now(),
+  is_current boolean not null default false,
+  constraint hosted_page_snapshots_version_unique unique (code, version),
+  constraint hosted_page_snapshots_lifecycle_status_check check (
+    lifecycle_status in (
+      'ACTIVE',
+      'PAST_DUE',
+      'CANCELLED_AT_PERIOD_END',
+      'EXPIRED',
+      'REACTIVATED',
+      'RETIRED_INTERNAL'
+    )
+  )
+);
+
+create unique index if not exists hosted_page_snapshots_one_current_idx
+  on hosted_page_snapshots(code)
+  where is_current;
+
+create table if not exists hosted_page_editor_pages (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references customers(id) on delete restrict,
+  business_id uuid not null references businesses(id) on delete restrict,
+  code text not null unique references hosted_page_codes(code) on delete restrict,
+  lifecycle_status text not null default 'ACTIVE',
+  draft_json jsonb not null default '{}'::jsonb,
+  published_version text,
+  published_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint hosted_page_editor_pages_code_check check (code ~ '^[A-HJKMNPQRSTVWXYZ2-9]{12}$'),
+  constraint hosted_page_editor_pages_lifecycle_status_check check (
+    lifecycle_status in (
+      'ACTIVE',
+      'PAST_DUE',
+      'CANCELLED_AT_PERIOD_END',
+      'EXPIRED',
+      'REACTIVATED',
+      'RETIRED_INTERNAL'
+    )
+  )
+);
+
+create index if not exists hosted_page_editor_pages_customer_id_idx
+  on hosted_page_editor_pages(customer_id);
+
+create index if not exists hosted_page_editor_pages_business_id_idx
+  on hosted_page_editor_pages(business_id);
+
+create table if not exists stripe_events (
+  id text primary key,
+  type text not null,
+  processed_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists products (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
@@ -628,7 +699,7 @@ insert into product_option_templates (
 values
   ('standard_direct', 'Standard Direct', 'Ready-made direct stand with NFC only and one required destination link.', 3900, null, null, true, false, false, false, false, false, false, false, false, false, null, null, 10, true),
   ('branded_qr_direct', 'Branded + QR Direct', 'Branded direct stand with NFC, printed QR, business name, logo collection, and front proof.', 4900, null, null, true, true, true, true, true, true, false, false, false, false, null, null, 20, true),
-  ('hosted_multilink', 'Hosted Multi-Link', 'Branded NFC and QR stand connected to a hosted Tap Rater multi-link landing page.', 4900, 990, 10, false, true, true, true, true, true, true, true, true, true, '/l/:client-name', 'Powered by Tap Rater', 30, true)
+  ('hosted_multilink', 'Hosted Multi-Link', 'Branded NFC and QR stand connected to a hosted Tap Rater multi-link landing page.', 4900, 990, 10, false, true, true, true, true, true, true, true, true, true, 'https://taprater.com/p/{code}', 'Powered by Tap Rater', 30, true)
 on conflict (option_code) do update set
   title = excluded.title,
   description = excluded.description,
@@ -699,6 +770,48 @@ create table if not exists orders (
 create index if not exists orders_status_idx on orders(status);
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists orders_fulfillment_queue_idx on orders(status, production_status, shipping_status, created_at desc);
+
+create table if not exists hosted_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid not null references customers(id) on delete restrict,
+  business_id uuid not null references businesses(id) on delete restrict,
+  hosted_page_id uuid not null references hosted_page_editor_pages(id) on delete restrict,
+  order_id uuid references orders(id) on delete set null,
+  stripe_checkout_session_id text not null unique,
+  stripe_customer_id text,
+  stripe_subscription_id text not null unique,
+  permanent_code text not null unique references hosted_page_codes(code) on delete restrict,
+  hosted_page_url text not null,
+  status text not null default 'unknown',
+  lifecycle_status text not null default 'ACTIVE',
+  current_period_end timestamptz,
+  cancel_at_period_end boolean not null default false,
+  past_due_since timestamptz,
+  grace_ends_at timestamptz,
+  provisioning_status text not null default 'ready_for_customer_setup',
+  provisioning_error text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint hosted_subscriptions_permanent_code_check check (permanent_code ~ '^[A-HJKMNPQRSTVWXYZ2-9]{12}$'),
+  constraint hosted_subscriptions_status_check check (
+    status in ('active', 'past_due', 'canceled', 'unpaid', 'incomplete', 'trialing', 'unknown')
+  ),
+  constraint hosted_subscriptions_lifecycle_status_check check (
+    lifecycle_status in ('ACTIVE', 'PAST_DUE', 'CANCELLED_AT_PERIOD_END', 'EXPIRED', 'REACTIVATED', 'RETIRED_INTERNAL')
+  ),
+  constraint hosted_subscriptions_provisioning_status_check check (
+    provisioning_status in ('ready_for_customer_setup', 'provisioning_failed')
+  )
+);
+
+create index if not exists hosted_subscriptions_customer_id_idx
+  on hosted_subscriptions(customer_id);
+
+create index if not exists hosted_subscriptions_business_id_idx
+  on hosted_subscriptions(business_id);
+
+create index if not exists hosted_subscriptions_lifecycle_status_idx
+  on hosted_subscriptions(lifecycle_status);
 
 create table if not exists site_content (
   key text primary key,
