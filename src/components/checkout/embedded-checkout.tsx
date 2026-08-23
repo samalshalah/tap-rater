@@ -66,11 +66,11 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
       <aside className="rounded-[22px] border border-line bg-white p-5 shadow-sm sm:p-6">
         <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-brand">
           <LockKeyhole size={16} />
-          Secure Stripe checkout
+          Secure payment powered by Stripe
         </div>
         <h1 className="mt-3 text-3xl font-extrabold leading-tight text-ink">Checkout inside Tap Rater</h1>
         <p className="mt-3 text-sm leading-6 text-muted">
-          Payment is processed securely by Stripe. Tap Rater prepares the order after Stripe confirms payment through the webhook.
+          You are not charged until payment is complete. Tap Rater receives your setup details after Stripe confirms payment.
         </p>
 
         <div className="mt-6 rounded-2xl border border-line bg-[#f7f8fa] p-4">
@@ -87,8 +87,8 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
                     <p className="font-black text-ink">{formatPrice(row.lineSubtotalCents)}</p>
                   </div>
                   <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
-                    {row.item.setup?.destinationUrl ? <p>Destination: {row.item.setup.destinationUrl}</p> : null}
-                    <p>{row.option.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"}</p>
+                    {row.item.setup?.destinationUrl ? <p>Destination link: {row.item.setup.destinationUrl}</p> : null}
+                    <p>{row.option.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"}</p>
                     {row.item.setup?.businessName ? <p>Business: {row.item.setup.businessName}</p> : null}
                   </div>
                 </div>
@@ -100,13 +100,13 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
             </div>
           ) : (
             <p className="mt-3 text-sm leading-6 text-muted">
-              Your configured order was sent to Stripe. Return to the cart if you need to review or change the setup details.
+              Your configured order is ready for secure payment. Return to the cart if you need to review or change the setup details.
             </p>
           )}
         </div>
 
         <p className="mt-5 text-xs leading-5 text-muted">
-          Manual shipping mode is active. Stripe collects the shipping address, and no shipping fee is added by Tap Rater in manual mode.
+          Shipping is reviewed after payment. Stripe collects the shipping address, and no shipping fee is added today.
         </p>
         <Link href="/cart" className="mt-5 inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
           Back to cart
@@ -138,9 +138,15 @@ function CheckoutError({ message }: { message: string }) {
       <div>
         <AlertCircle className="mx-auto text-amber-600" size={34} />
         <p className="mt-4 font-black text-ink">{message}</p>
-        <Link href="/cart" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
-          Return to cart
-        </Link>
+        <p className="mt-2 text-sm leading-6 text-muted">Your cart details are still available if the session expired or was opened in another tab.</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/cart" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
+            Return to cart
+          </Link>
+          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
+            Shop ready stands
+          </Link>
+        </div>
       </div>
     </div>
   );

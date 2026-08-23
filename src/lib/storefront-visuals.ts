@@ -101,13 +101,13 @@ export const businessUseCases: BusinessUseCase[] = [
   {
     title: "Real Estate",
     description: "Reviews, listings, contact actions, galleries, and tours.",
-    href: "/category/website-links",
+    href: "/category/website-link-stands",
     image: { src: "/uploads/use-cases/real-estate.webp", alt: "Real estate open house table" }
   },
   {
     title: "Events & Pop-Ups",
     description: "Schedules, tickets, social links, maps, and vendor info.",
-    href: "/category/website-links",
+    href: "/category/website-link-stands",
     image: { src: "/uploads/use-cases/events-popups.webp", alt: "Event reception and networking" }
   }
 ];
@@ -146,7 +146,7 @@ export const customerActionCards: CustomerActionCard[] = [
   {
     title: "Visit Website",
     description: "Connect to your site, catalog, offer, app, location, or link page.",
-    href: "/category/website-links",
+    href: "/category/website-link-stands",
     image: { src: "/uploads/products/no-photo-available.png", alt: "Website link stand" }
   }
 ];

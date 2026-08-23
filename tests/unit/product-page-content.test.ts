@@ -115,7 +115,7 @@ describe("product page content", () => {
     const product = productFixture(typedOverrides);
 
     expect(getReviewDestination(product)).toBe(label);
-    expect(getProductDestinationCopy(product)).toEqual({ label, highlightTarget });
+    expect(getProductDestinationCopy(product)).toMatchObject({ label, highlightTarget });
     expect(getProductPageHighlights(product)[0].body).toContain(`open your ${highlightTarget} without searching`);
   });
 

@@ -45,14 +45,14 @@ export default async function ShopPage() {
               <h2 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">Browse by stand type.</h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              Every category card uses a real stand image so customers know what they are buying before they open a product.
+              Category cards show the best available stand image. Some MVP media is temporary while final product photography is prepared.
             </p>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {categories.map((category) => (
               <VisualCard
                 key={category.slug}
-                href={`/category/${category.slug}`}
+                href={getCategoryHref(category.slug)}
                 eyebrow={`${products.filter((product) => product.categorySlug === category.slug).length} stands`}
                 title={category.title}
                 description={category.buyerIntent}
@@ -85,4 +85,8 @@ export default async function ShopPage() {
       </section>
     </main>
   );
+}
+
+function getCategoryHref(slug: string) {
+  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }

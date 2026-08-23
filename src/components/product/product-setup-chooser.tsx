@@ -345,7 +345,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-brand">Choose setup</p>
           <h2 className="mt-2 text-xl font-semibold text-ink">Choose how to build this stand</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Select a production option. Setup opens in a guided builder before anything goes to cart.
+            Choose NFC only for one direct link, or add a printed QR with logo, business name, and proof approval before cart.
           </p>
         </div>
 
@@ -364,7 +364,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="text-lg font-semibold text-ink">{option.label}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted">{option.summary}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{getOptionSummary(option)}</p>
                   </div>
                   <p className="text-lg font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</p>
                 </div>
@@ -375,11 +375,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.hasQr ? "Logo and business name" : "No printed QR"}
+                    {option.hasQr ? "Logo + business name" : "No printed QR"}
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.hasQr ? "Proof preview before checkout" : "One destination link"}
+                    {option.hasQr ? "Proof before cart" : "One direct destination link"}
                   </p>
                 </div>
                 <button
@@ -553,7 +553,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <div>
                     <p className="text-sm font-semibold text-ink">{selectedOption.id === "branded_qr_direct" ? "Proof preview" : "Confirm setup"}</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Review these details before adding the configured stand to cart.
+                      {selectedOption.id === "branded_qr_direct"
+                        ? "This is the printed front proof. Confirm the logo, business name, and QR placement before adding to cart."
+                        : "Confirm the direct destination link before adding this NFC-only stand to cart."}
                     </p>
                   </div>
 
@@ -561,14 +563,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
                     <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
-                    <ReviewLine label="Connection" value={selectedOption.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"} />
-                    <ReviewLine label="Destination" value={destinationUrl || "-"} />
+                    <ReviewLine label="Connection" value={selectedOption.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"} />
+                    <ReviewLine label="Destination link" value={destinationUrl || "-"} />
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                     {selectedOption.id === "branded_qr_direct" ? (
                       <>
                         <ReviewLine label="Business name" value={businessName || "-"} />
-                        <ReviewLine label="Logo" value={logo ? "Uploaded" : "Missing"} />
-                        <ReviewLine label="QR value" value={generatedQrValue || "-"} />
+                        <ReviewLine label="Logo" value={logo ? "Logo uploaded" : "Missing"} />
+                        <ReviewLine label="QR" value={generatedQrValue ? "QR generated from destination link" : "Missing"} />
                       </>
                     ) : null}
                   </div>
@@ -682,8 +684,8 @@ function ProofPreview({
         )}
         <div className="grid gap-3 text-sm text-muted">
           {templateUrl ? <ReviewLine label="Template" value="Branded front template attached" /> : <ReviewLine label="Template" value="Clean proof layout shown" />}
-          <ReviewLine label="Logo" value={logo ? "Uploaded before cart" : "Upload required"} />
-          <ReviewLine label="QR" value={qrValue ? "Generated from destination" : "Add destination first"} />
+          <ReviewLine label="Logo" value={logo ? "Logo uploaded" : "Upload required"} />
+          <ReviewLine label="QR" value={qrValue ? "QR generated from destination link" : "Add destination first"} />
         </div>
       </div>
     </div>
@@ -835,6 +837,14 @@ function inferCtaText(product: ProductSetupChooserProduct) {
 function isGoogleReviewStand(product: ProductSetupChooserProduct) {
   const searchableText = `${product.slug} ${product.title} ${product.categorySlug} ${product.destinationType ?? ""} ${product.primaryPlatformSlug ?? ""}`.toLowerCase();
   return searchableText.includes("google") && searchableText.includes("review");
+}
+
+function getOptionSummary(option: PurchaseOption) {
+  if (option.id === "branded_qr_direct") {
+    return "NFC + printed QR stand with logo, business name, and front proof before cart.";
+  }
+
+  return "NFC-only stand connected to one direct destination link. No printed QR.";
 }
 
 function platformMark(product: ProductSetupChooserProduct) {

@@ -33,9 +33,19 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
         <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-5 sm:p-8" />
       </div>
       <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-        <div className="rounded-full border border-line bg-white px-3 py-2">NFC</div>
-        <div className="rounded-full border border-line bg-white px-3 py-2">QR</div>
-        <div className="rounded-full border border-line bg-white px-3 py-2">Proof</div>
+        {activeOptionId === "branded_qr_direct" ? (
+          <>
+            <div className="rounded-full border border-line bg-white px-3 py-2">NFC</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">Printed QR</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">Proof</div>
+          </>
+        ) : (
+          <>
+            <div className="rounded-full border border-line bg-white px-3 py-2">NFC only</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">No QR</div>
+            <div className="rounded-full border border-line bg-white px-3 py-2">Direct link</div>
+          </>
+        )}
       </div>
     </div>
   );

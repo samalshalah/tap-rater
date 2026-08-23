@@ -71,7 +71,7 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
     },
     {
       title: "Connects to one destination URL",
-      body: "Use your business review page, recommendation page, booking page, menu, feedback form, website, or custom URL."
+      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct is NFC only; Branded + QR adds the printed QR to the same destination.`
     },
     {
       title: "Countertop physical product",
@@ -141,6 +141,7 @@ export function getReviewDestination(product: MigratedProduct): string {
 type ProductDestinationCopy = {
   label: string;
   highlightTarget: string;
+  linkType: string;
 };
 
 export function getProductDestinationCopy(product: MigratedProduct): ProductDestinationCopy {
@@ -153,7 +154,8 @@ export function getProductDestinationCopy(product: MigratedProduct): ProductDest
   if (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
     return {
       label: "hosted multi-link page",
-      highlightTarget: "hosted Tap Rater page"
+      highlightTarget: "hosted Tap Rater page",
+      linkType: "hosted landing page"
     };
   }
 
@@ -168,56 +170,56 @@ export function getProductDestinationCopy(product: MigratedProduct): ProductDest
   }
 
   if (standType.includes("review") || category === "reviews") {
-    return { label: "review", highlightTarget: "review link" };
+    return { label: "review", highlightTarget: "review link", linkType: "review link" };
   }
 
   if (standType.includes("menu") || category === "menu" || title.includes("menu")) {
-    return { label: "menu", highlightTarget: "menu URL" };
+    return { label: "menu", highlightTarget: "menu URL", linkType: "menu URL" };
   }
 
   if (standType.includes("appointment") || category === "appointments" || title.includes("book")) {
-    return { label: "booking", highlightTarget: "booking URL" };
+    return { label: "booking", highlightTarget: "booking URL", linkType: "booking URL" };
   }
 
   if (standType.includes("social") || category === "social-media" || title.includes("follow") || title.includes("social")) {
-    return { label: "social media", highlightTarget: "social profile" };
+    return { label: "social media", highlightTarget: "social profile", linkType: "social profile URL" };
   }
 
   if (standType.includes("feedback") || category === "feedback" || title.includes("experience")) {
-    return { label: "feedback", highlightTarget: "feedback form" };
+    return { label: "feedback", highlightTarget: "feedback form", linkType: "feedback form URL" };
   }
 
   if (standType.includes("website") || category === "website-links" || title.includes("website")) {
-    return { label: "website", highlightTarget: "website link" };
+    return { label: "website", highlightTarget: "website link", linkType: "website URL" };
   }
 
-  return { label: "direct link", highlightTarget: "destination link" };
+  return { label: "direct link", highlightTarget: "destination link", linkType: "destination URL" };
 }
 
 function getPlatformDestinationCopy(platform: string): ProductDestinationCopy | undefined {
-  if (platform === "google") return { label: "Google review", highlightTarget: "Google review destination" };
-  if (platform === "yelp") return { label: "Yelp review", highlightTarget: "Yelp review destination" };
-  if (platform === "facebook") return { label: "Facebook review", highlightTarget: "Facebook review destination" };
-  if (platform === "tripadvisor") return { label: "TripAdvisor review", highlightTarget: "TripAdvisor review destination" };
-  if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile" };
-  if (platform === "website") return { label: "website", highlightTarget: "website link" };
-  if (platform === "custom-menu-url") return { label: "menu", highlightTarget: "menu URL" };
-  if (platform === "custom-booking-url") return { label: "booking", highlightTarget: "booking URL" };
+  if (platform === "google") return { label: "Google review", highlightTarget: "Google review destination", linkType: "Google review link" };
+  if (platform === "yelp") return { label: "Yelp review", highlightTarget: "Yelp review destination", linkType: "Yelp review link" };
+  if (platform === "facebook") return { label: "Facebook review", highlightTarget: "Facebook review destination", linkType: "Facebook review link" };
+  if (platform === "tripadvisor") return { label: "TripAdvisor review", highlightTarget: "TripAdvisor review destination", linkType: "TripAdvisor review link" };
+  if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile", linkType: "Instagram profile URL" };
+  if (platform === "website") return { label: "website", highlightTarget: "website link", linkType: "website URL" };
+  if (platform === "custom-menu-url") return { label: "menu", highlightTarget: "menu URL", linkType: "menu URL" };
+  if (platform === "custom-booking-url") return { label: "booking", highlightTarget: "booking URL", linkType: "booking URL" };
   if (platform === "custom-url") return undefined;
   return undefined;
 }
 
 function getDestinationTypeCopy(destinationType: string): ProductDestinationCopy | undefined {
   if (destinationType === "review" || destinationType === "review_social") {
-    return { label: "review", highlightTarget: "review link" };
+    return { label: "review", highlightTarget: "review link", linkType: "review link" };
   }
 
-  if (destinationType === "menu") return { label: "menu", highlightTarget: "menu URL" };
-  if (destinationType === "booking" || destinationType === "reservation") return { label: "booking", highlightTarget: "booking URL" };
-  if (destinationType === "social") return { label: "social media", highlightTarget: "social profile" };
-  if (destinationType === "feedback") return { label: "feedback", highlightTarget: "feedback form" };
-  if (destinationType === "website") return { label: "website", highlightTarget: "website link" };
-  if (destinationType === "hosted_multilink") return { label: "hosted multi-link page", highlightTarget: "hosted Tap Rater page" };
+  if (destinationType === "menu") return { label: "menu", highlightTarget: "menu URL", linkType: "menu URL" };
+  if (destinationType === "booking" || destinationType === "reservation") return { label: "booking", highlightTarget: "booking URL", linkType: "booking URL" };
+  if (destinationType === "social") return { label: "social media", highlightTarget: "social profile", linkType: "social profile URL" };
+  if (destinationType === "feedback") return { label: "feedback", highlightTarget: "feedback form", linkType: "feedback form URL" };
+  if (destinationType === "website") return { label: "website", highlightTarget: "website link", linkType: "website URL" };
+  if (destinationType === "hosted_multilink") return { label: "hosted multi-link page", highlightTarget: "hosted Tap Rater page", linkType: "hosted landing page" };
   return undefined;
 }
 

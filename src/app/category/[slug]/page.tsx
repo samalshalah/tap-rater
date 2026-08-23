@@ -28,12 +28,12 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     title: standType?.seoTitle || category.seoTitle.replace(" | Tap Rater", ""),
     description: standType?.seoDescription || category.seoDescription,
     alternates: {
-      canonical: `/category/${category.slug}`
+      canonical: getCategoryHref(category.slug)
     },
     openGraph: {
       title: standType?.seoTitle || category.seoTitle,
       description: standType?.seoDescription || category.seoDescription,
-      url: `/category/${category.slug}`
+      url: getCategoryHref(category.slug)
     }
   };
 }
@@ -95,7 +95,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             {categories.map((item) => (
               <Link
                 key={item.slug}
-                href={`/category/${item.slug}`}
+                href={getCategoryHref(item.slug)}
                 className={
                   item.slug === category.slug
                     ? "inline-flex min-h-9 shrink-0 items-center rounded-full bg-brand px-4 text-[13px] font-semibold text-white"
@@ -130,6 +130,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </section>
     </main>
   );
+}
+
+function getCategoryHref(slug: CatalogCategorySlug) {
+  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }
 
 function categoryToStandTypeSlug(slug: CatalogCategorySlug) {

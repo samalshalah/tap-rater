@@ -59,10 +59,18 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
   if (rows.length === 0) {
     return (
       <div className="rounded-[18px] border border-line bg-white p-8 text-center shadow-sm">
-        <p className="text-muted">Your cart is empty.</p>
-        <Link href="/shop" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
-          Shop products
-        </Link>
+        <p className="text-lg font-semibold text-ink">Your cart is empty.</p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
+          Choose a ready NFC stand or contact support for a custom request.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand">
+            Shop ready stands
+          </Link>
+          <Link href="/support" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-semibold text-ink hover:border-ink">
+            Request custom help
+          </Link>
+        </div>
       </div>
     );
   }
@@ -74,21 +82,21 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
         return (
         <div key={cartKey} className="grid gap-4 border-b border-line py-4 last:border-b-0 md:grid-cols-[1fr_auto_auto] md:items-center">
           <div>
-            <p className="font-black text-ink">{row.product.title}</p>
-            <p className="mt-1 text-sm font-black text-brand">{row.option.label}</p>
+            <p className="font-semibold text-ink">{row.product.title}</p>
+            <p className="mt-1 text-sm font-semibold text-brand">{row.option.label}</p>
             <p className="text-sm text-muted">{formatPrice(row.unitPriceCents)} each</p>
             <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
               {row.item.setup?.businessName ? <p><strong className="text-ink">Business:</strong> {row.item.setup.businessName}</p> : null}
-              {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Link:</strong> {row.item.setup.destinationUrl}</p> : null}
+              {row.item.setup?.destinationUrl ? <p><strong className="text-ink">Destination link:</strong> {row.item.setup.destinationUrl}</p> : null}
               <p>
                 <strong className="text-ink">Connection:</strong>{" "}
-                {row.item.setup?.hasQr || row.option.hasQr ? "NFC + printed QR" : "NFC only, no printed QR"}
+                {row.item.setup?.hasQr || row.option.hasQr ? "NFC + printed QR" : "NFC only; no printed QR"}
               </p>
               {row.item.setup?.headline ? <p><strong className="text-ink">Headline:</strong> {row.item.setup.headline}</p> : null}
               {row.item.setup?.designNotes ? <p><strong className="text-ink">Design notes:</strong> {row.item.setup.designNotes}</p> : null}
-              {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> {row.item.setup?.logoMediaUrl || row.item.setup?.logoStorageKey ? "Uploaded" : "Missing"}</p> : null}
-              {row.option.hasQr ? <p><strong className="text-ink">QR:</strong> {row.item.setup?.generatedQrValue ? "Generated from destination link" : "Missing"}</p> : null}
-              {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> {row.item.setup?.proofApproved ? "Preview confirmed" : "Preview required"}</p> : null}
+              {row.option.requiresLogo ? <p><strong className="text-ink">Logo:</strong> {row.item.setup?.logoMediaUrl || row.item.setup?.logoStorageKey ? "Logo uploaded" : "Missing"}</p> : null}
+              {row.option.hasQr ? <p><strong className="text-ink">QR:</strong> {row.item.setup?.generatedQrValue ? "QR generated" : "Missing"}</p> : null}
+              {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> {row.item.setup?.proofApproved ? "Proof confirmed" : "Proof required"}</p> : null}
             </div>
           </div>
           <div className="flex h-10 w-fit items-center overflow-hidden rounded-full border border-line">
@@ -140,12 +148,12 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
         className="min-h-12 rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand disabled:cursor-not-allowed disabled:bg-gray-300"
         onClick={startCheckout}
       >
-        {isCheckingOut ? "Starting Stripe Checkout..." : isLiveStripe ? "Secure checkout" : "Secure checkout in Stripe test mode"}
+        {isCheckingOut ? "Starting secure checkout..." : isLiveStripe ? "Secure checkout" : "Secure checkout in Stripe test mode"}
       </button>
       <p className="text-sm leading-6 text-muted">
         {isLiveStripe
-          ? "Payment opens inside Tap Rater with Stripe. Branded stands include the uploaded logo and proof details for production review before printing."
-          : "Test mode only. Stripe payment opens inside Tap Rater; live payments stay disabled until explicitly approved."}
+          ? "Payment opens inside Tap Rater with Stripe. Shipping is reviewed after payment. No shipping fee is added today."
+          : "Test mode only. Stripe payment opens inside Tap Rater. Shipping is reviewed after payment, and no shipping fee is added today."}
       </p>
       {checkoutError ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-ink">{checkoutError}</p>

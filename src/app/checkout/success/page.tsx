@@ -21,23 +21,24 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
         <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Order received</p>
         <h1 className="mt-3 text-4xl font-extrabold leading-tight text-ink">Your order was received</h1>
         <p className="mt-4 leading-7 text-muted">
-          Your order was received. Standard Direct stands move to fulfillment after payment and setup details are
-          confirmed. Branded + QR stands include the uploaded logo, business name, QR destination, and front proof
-          details for production review before printing.
+          Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details
+          before production starts.
         </p>
         <p className="mt-3 leading-7 text-muted">
-          Payment confirmation is finalized by Stripe processing and the Tap Rater webhook. If the order still shows
-          as pending for a moment, refresh shortly or contact support with the session ID below.
+          Standard Direct stands use NFC only with no printed QR. Branded + QR stands include the uploaded logo,
+          business name, generated QR, and proof confirmation for production review.
         </p>
         {sessionId ? (
-          <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm font-semibold text-muted">Session: {sessionId}</p>
+          <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">
+            Need help with this order? Contact support and include the checkout reference from your payment confirmation.
+          </p>
         ) : null}
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
             Continue shopping
           </Link>
-          <Link href="/account/login" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
-            Customer account
+          <Link href="/support" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
+            Contact support
           </Link>
         </div>
       </section>

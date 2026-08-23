@@ -339,6 +339,7 @@ export function AdminProductsTable({
                   <td className="p-4 font-black text-ink">{formatPriceRange(options, product)}</td>
                   <td className="p-4">
                     <ReadinessBadge status={readiness.status} missing={readiness.missing} />
+                    <MediaWarningList warnings={getMediaWarnings(product)} />
                   </td>
                   <td className="p-4">
                     <StatusBadge status={getProductStatus(product)} />
@@ -465,6 +466,49 @@ function ReadinessBadge({ status, missing }: { status: string; missing: string[]
       {label}
     </span>
   );
+}
+
+function MediaWarningList({ warnings }: { warnings: string[] }) {
+  if (warnings.length === 0) return null;
+
+  return (
+    <ul className="mt-2 grid gap-1 text-[11px] leading-4 text-amber-700">
+      {warnings.map((warning) => (
+        <li key={warning}>Warning: {warning}</li>
+      ))}
+    </ul>
+  );
+}
+
+function getMediaWarnings(product: MigratedProduct) {
+  const warnings = new Set<string>();
+  const mainImage = product.images[0]?.src ?? "";
+  const standardImage = product.assetSet?.standardAngledImageUrl ?? mainImage;
+  const brandedImage = product.assetSet?.brandedAngledImageUrl ?? "";
+  const brandedTemplate = product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const imageText = product.images.map((image) => `${image.src} ${image.alt}`).join(" ").toLowerCase();
+
+  if (mainImage.includes("no-photo-available")) {
+    warnings.add("placeholder main image");
+  }
+
+  if (mainImage.includes("/draft-product/")) {
+    warnings.add("main image still uses draft media path");
+  }
+
+  if (brandedImage && standardImage && brandedImage === standardImage) {
+    warnings.add("branded angled image matches standard image");
+  }
+
+  if (brandedTemplate.includes("/products/") && !brandedTemplate.includes(`/products/${product.slug}/`)) {
+    warnings.add("front template reused from another product");
+  }
+
+  if (imageText.includes("temporary")) {
+    warnings.add("temporary media label");
+  }
+
+  return Array.from(warnings);
 }
 
 function shortMissingLabel(value: string) {
