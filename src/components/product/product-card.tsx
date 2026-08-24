@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
       </div>
       <div className="flex flex-1 flex-col px-1 pb-1 pt-6">
         <p className="text-xs font-semibold uppercase tracking-[0.06em] text-accent">{category?.title ?? destination}</p>
-        <h2 className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f]">{product.title}</h2>
+        <p className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f]">{product.title}</p>
         <p className="mt-3 text-sm font-normal leading-6 text-[#646a72]">{setupLabel}</p>
         <div className="mt-5 flex flex-wrap gap-1.5">
           {options.some((option) => option.id === "standard_direct") ? (

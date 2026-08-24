@@ -123,7 +123,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <p className="max-w-xl text-sm leading-6 text-muted">{buyerIntent}</p>
         </div>
         {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
-        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80 [&_>_a_h2]:text-2xl` : productGridClassName}>
+        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (
