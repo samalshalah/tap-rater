@@ -88,7 +88,7 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="border-t border-line bg-[#f7f8f8] text-ink">
+    <footer className="border-t border-line bg-white text-ink">
       <div className="tr-container grid gap-8 py-12 md:grid-cols-[1.35fr_repeat(4,0.9fr)] lg:py-14">
         <div>
           <p className="text-lg font-semibold text-brand">Tap Rater</p>

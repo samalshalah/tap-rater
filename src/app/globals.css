@@ -10,6 +10,7 @@
   --tr-color-brand-dark: #064f4b;
   --tr-color-accent: #f5a524;
   --tr-color-surface: #ffffff;
+  --tr-color-page: #f5f5f7;
   --tr-color-soft: #f6f8f7;
   --tr-color-panel: #edf4f2;
   --tr-radius-sm: 8px;
@@ -35,7 +36,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
-  background: var(--tr-color-surface);
+  background: var(--tr-color-page);
 }
 
 a {
@@ -235,6 +236,24 @@ main h3 {
   .tr-pill-brand {
     @apply tr-pill bg-teal-50 text-brand;
   }
+}
+
+.tr-public-shell {
+  background: var(--tr-color-page);
+}
+
+.tr-public-shell main,
+.tr-public-shell main.bg-white,
+.tr-public-shell main > section,
+.tr-public-shell main > section.bg-white,
+.tr-public-shell main > section[class*="bg-[#f7f8f8]"],
+.tr-public-shell main > section[class*="bg-[#fbfbfb]"] {
+  background: var(--tr-color-page) !important;
+}
+
+.tr-public-shell header,
+.tr-public-shell footer {
+  background: var(--tr-color-surface) !important;
 }
 
 main.bg-white h1[class],

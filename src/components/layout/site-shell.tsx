@@ -12,7 +12,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="tr-public-shell min-h-screen">
       <Header />
       <main>{children}</main>
       <Footer />
