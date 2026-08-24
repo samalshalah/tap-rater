@@ -72,15 +72,56 @@ export const hostedMultiLinkOption: PurchaseOption = {
   accountRequired: true
 };
 
+type ProductForPurchaseOptions = Pick<
+  MigratedProduct,
+  | "slug"
+  | "categorySlug"
+  | "allowsCustomDesign"
+  | "isSpecialSolution"
+  | "productKind"
+  | "purchaseOptions"
+  | "requiresLandingPage"
+  | "requiresSubscription"
+> & {
+  assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl">;
+};
+
+export function hasBrandedDirectProductionTemplate(product: ProductForPurchaseOptions): boolean {
+  return Boolean(product.assetSet?.brandedFrontTemplateUrl?.trim());
+}
+
+export function isHostedPurchaseOptionEnabled(): boolean {
+  return true;
+}
+
+export function isPurchaseOptionSellableForProduct(product: ProductForPurchaseOptions, optionId: PurchaseOptionId): boolean {
+  const isHostedProduct =
+    product.productKind === "hosted_multilink" ||
+    product.isSpecialSolution ||
+    product.requiresLandingPage ||
+    product.requiresSubscription;
+
+  if (optionId === "hosted_multilink") {
+    return isHostedPurchaseOptionEnabled();
+  }
+
+  if (isHostedProduct) {
+    return false;
+  }
+
+  if (optionId === "branded_qr_direct") {
+    return hasBrandedDirectProductionTemplate(product);
+  }
+
+  return optionId === "standard_direct";
+}
+
 export function getProductPurchaseOptions(
-  product: Pick<
-    MigratedProduct,
-    "slug" | "categorySlug" | "allowsCustomDesign" | "isSpecialSolution" | "productKind" | "purchaseOptions" | "requiresLandingPage" | "requiresSubscription"
-  >
+  product: ProductForPurchaseOptions
 ): PurchaseOption[] {
   if (Array.isArray(product.purchaseOptions)) {
     return product.purchaseOptions
-      .filter((option) => option.isActive)
+      .filter((option) => option.isActive && isPurchaseOptionSellableForProduct(product, option.optionCode))
       .sort((first, second) => first.sortOrder - second.sortOrder)
       .map((option) => {
         const isStandardDirect = option.optionCode === "standard_direct";
@@ -106,10 +147,10 @@ export function getProductPurchaseOptions(
   }
 
   if (product.productKind === "hosted_multilink" || product.isSpecialSolution || product.requiresLandingPage || product.requiresSubscription) {
-    return [hostedMultiLinkOption];
+    return isHostedPurchaseOptionEnabled() ? [hostedMultiLinkOption] : [];
   }
 
-  return [standardDirectOption, brandedQrDirectOption];
+  return hasBrandedDirectProductionTemplate(product) ? [standardDirectOption, brandedQrDirectOption] : [standardDirectOption];
 }
 
 export function getPurchaseOption(optionId: string): PurchaseOption | undefined {
@@ -128,7 +169,9 @@ export function getLowestPurchasePriceCents(
     | "purchaseOptions"
     | "requiresLandingPage"
     | "requiresSubscription"
-  >
+  > & {
+    assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl">;
+  }
 ) {
   const optionPrices = getProductPurchaseOptions(product).map((option) => option.priceCents);
   return optionPrices.length > 0 ? Math.min(...optionPrices) : product.basePriceCents;

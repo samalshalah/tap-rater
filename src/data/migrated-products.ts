@@ -633,7 +633,7 @@ export const migratedProducts: MigratedProduct[] = [
       sku: `TR-CUSTOM-STAND-${color.suffix}`,
       stockStatus: "instock"
     })),
-    isActive: true,
+    isActive: false,
     seoTitle: "Custom Direct Stand | Custom NFC and QR Tabletop Stand",
     seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, headline, CTA, and one direct destination link.",
     searchKeywords: ["custom nfc stand", "custom qr stand", "custom review stand"]

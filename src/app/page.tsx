@@ -16,12 +16,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More | Tap Rater",
     description:
-      "Custom printed tabletop NFC and QR stands for local businesses. Choose a stand, add your link or branding, approve your design, and Tap Rater prints and ships.",
+      "Custom printed tabletop NFC and QR stands for local businesses. Choose a stand, add your link, and Tap Rater prints and ships.",
     url: "/"
   }
 };
 
-const proofPoints = ["Standard Direct from $39", "No subscription required for direct stands", "Branded proof before cart"];
+const proofPoints = ["Standard Direct from $39", "No subscription required", "QR and NFC use the same customer URL"];
 
 const options = [
   {
@@ -30,9 +30,9 @@ const options = [
     body: "QR and NFC pointed directly to one destination link."
   },
   {
-    title: "Branded + QR",
-    price: "$49",
-    body: "NFC + printed QR with logo upload, business name, and proof preview before cart."
+    title: "DIRECT mode",
+    price: "No account",
+    body: "No Tap Rater account, hosted page, activation step, or subscription is required."
   }
 ];
 

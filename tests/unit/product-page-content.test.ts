@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MigratedProduct } from "@/data/migrated-products";
+import { migratedProducts } from "@/data/migrated-products";
 import { getProductBySlug } from "@/lib/products";
 import {
   getProductActivationCopy,
@@ -33,7 +34,7 @@ describe("product page content", () => {
 
   it("marks the active product type in comparison rows", () => {
     const stand = getProductBySlug("google-review-stand");
-    const custom = getProductBySlug("custom-direct-stand");
+    const custom = migratedProducts.find((product) => product.slug === "custom-direct-stand");
 
     expect(getProductComparisonRows(stand!).find((row) => row.label === "Stand")?.active).toBe(true);
     expect(getProductComparisonRows(custom!).find((row) => row.label === "Custom")?.active).toBe(true);

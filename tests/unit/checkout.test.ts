@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { migratedProducts } from "@/data/migrated-products";
+import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
 import {
   buildStripeCheckoutLineItems,
   createCheckoutSessionParams,
@@ -135,6 +135,8 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("allows branded checkout only with uploaded logo, generated QR, and proof approval", () => {
+    const products = productsWithBrandedGoogleTemplate();
+
     expect(
       validateCheckoutCart(
         [
@@ -149,7 +151,7 @@ describe("Stripe checkout helpers", () => {
             }
           }
         ],
-        migratedProducts
+        products
       )
     ).toMatchObject({ ok: false, reason: "empty_cart" });
 
@@ -189,7 +191,7 @@ describe("Stripe checkout helpers", () => {
           }
         }
       ],
-      migratedProducts
+      products
     );
 
     expect(result.ok).toBe(true);
@@ -217,6 +219,8 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("rejects branded checkout when proof approval no longer matches the current setup", () => {
+    const products = productsWithBrandedGoogleTemplate();
+
     expect(
       validateCheckoutCart(
         [
@@ -253,12 +257,14 @@ describe("Stripe checkout helpers", () => {
             }
           }
         ],
-        migratedProducts
+        products
       )
     ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("rejects branded checkout without a production artwork front template", () => {
+  it("rejects branded checkout without an approved production artwork front template", () => {
+    const products = productsWithBrandedGoogleTemplate();
+
     expect(
       validateCheckoutCart(
         [
@@ -293,7 +299,7 @@ describe("Stripe checkout helpers", () => {
             }
           }
         ],
-        migratedProducts
+        products
       )
     ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
@@ -418,7 +424,8 @@ describe("Stripe checkout helpers", () => {
       checkoutMode: "subscription" as const,
       requiresAccount: true,
       requiresSubscription: true,
-      requiresLandingPage: true
+      requiresLandingPage: true,
+      isActive: true
     };
     const result = validateCheckoutCart(
       [
@@ -662,7 +669,8 @@ describe("Stripe checkout helpers", () => {
       checkoutMode: "subscription" as const,
       requiresAccount: true,
       requiresSubscription: true,
-      requiresLandingPage: true
+      requiresLandingPage: true,
+      isActive: true
     };
     const result = validateCheckoutCart(
       [
@@ -759,3 +767,19 @@ describe("Stripe checkout helpers", () => {
     expect(getCheckoutSiteUrl()).toBe("http://localhost:3000");
   });
 });
+
+function productsWithBrandedGoogleTemplate(): MigratedProduct[] {
+  return migratedProducts.map((product) => {
+    if (product.slug !== "google-review-stand") {
+      return product;
+    }
+
+    return {
+      ...product,
+      assetSet: {
+        ...product.assetSet,
+        brandedFrontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
+      }
+    };
+  });
+}

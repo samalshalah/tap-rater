@@ -4,6 +4,7 @@ import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnaps
 import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
+import { getProductPurchaseOptions } from "@/lib/purchase-options";
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
 type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
@@ -103,7 +104,7 @@ const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
 ].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
-  return migratedProducts.filter((product) => product.isActive);
+  return migratedProducts.filter(isPublicLaunchStorefrontProduct);
 }
 
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
@@ -176,10 +177,9 @@ export async function getStorefrontProductBySlugFromClient(
   }
 
   const options = await getActiveProductOptionsFromClient(client, [product.slug]);
-  return {
-    ...product,
-    purchaseOptions: options.get(product.slug) ?? []
-  };
+  const productWithOptions = withAttachedOptions(product, options);
+
+  return isPublicLaunchStorefrontProduct(productWithOptions) ? productWithOptions : undefined;
 }
 
 export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3): Promise<MigratedProduct[]> {
@@ -232,14 +232,13 @@ export async function getStorefrontProductsByCategoryFromClient(
 
   const products = (data ?? [])
     .map((row) => normalizeStorefrontProductRow(row))
-    .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock" && item.categorySlug === categorySlug))
-    .slice(0, limit);
+    .filter((item): item is MigratedProduct => Boolean(item?.isActive && item.stockStatus === "instock" && item.categorySlug === categorySlug));
   const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
 
-  return products.map((product) => ({
-    ...product,
-    purchaseOptions: optionsByProduct.get(product.slug) ?? []
-  }));
+  return products
+    .map((product) => withAttachedOptions(product, optionsByProduct))
+    .filter(isPublicLaunchStorefrontProduct)
+    .slice(0, limit);
 }
 
 export async function getStorefrontProductsFromClient(client: ProductRepositoryClient): Promise<MigratedProduct[]> {
@@ -253,10 +252,9 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
     .map((row) => normalizeStorefrontProductRow(row))
     .filter((product): product is MigratedProduct => Boolean(product?.isActive));
   const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
-  const productsWithOptions = products.map((product) => ({
-    ...product,
-    purchaseOptions: optionsByProduct.get(product.slug) ?? []
-  }));
+  const productsWithOptions = products
+    .map((product) => withAttachedOptions(product, optionsByProduct))
+    .filter(isPublicLaunchStorefrontProduct);
 
   primeStorefrontProductCaches(productsWithOptions);
 
@@ -301,7 +299,40 @@ async function getActiveProductOptionsFromClient(client: ProductRepositoryClient
 function getStaticStorefrontProductBySlug(slug: string) {
   const product = getProductBySlug(slug);
 
-  return product?.isActive ? product : undefined;
+  return product && isPublicLaunchStorefrontProduct(product) ? product : undefined;
+}
+
+function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {
+  const options = optionsByProduct.get(product.slug);
+  return options ? { ...product, purchaseOptions: options } : product;
+}
+
+export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boolean {
+  if (!product.isActive || product.status === "archived" || product.stockStatus !== "instock") {
+    return false;
+  }
+
+  if (isNonProductionStorefrontSlug(product.slug)) {
+    return false;
+  }
+
+  if (product.checkoutMode !== "buy_now") {
+    return false;
+  }
+
+  return getProductPurchaseOptions(product).some((option) => option.id === "standard_direct" || option.id === "branded_qr_direct");
+}
+
+function isNonProductionStorefrontSlug(slug: string): boolean {
+  const normalized = slug.toLowerCase();
+  return (
+    normalized.startsWith("qa-") ||
+    normalized.startsWith("test-") ||
+    normalized.startsWith("demo-") ||
+    normalized.includes("-qa-") ||
+    normalized.includes("-test-") ||
+    normalized.includes("-demo-")
+  );
 }
 
 function readCache<T>(cacheStore: Map<string, StorefrontCacheEntry<T>>, key: string): T | undefined {

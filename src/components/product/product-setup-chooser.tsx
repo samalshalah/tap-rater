@@ -78,7 +78,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const selectedOptionId = selectedOption?.id;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
-  const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? product.assetSet?.standardFrontTemplateUrl ?? "";
+  const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const directOptions = options.filter((option) => option.id !== "hosted_multilink");
+  const hasBrandedOption = directOptions.some((option) => option.id === "branded_qr_direct");
   const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
@@ -152,7 +154,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     const option = options.find((item) => item.id === optionId);
 
     if (option?.id === "hosted_multilink") {
-      setError("Hosted Multi-Link builder is coming next. Choose Standard Direct or Branded + QR Direct for this checkout.");
+      setError("Hosted Multi-Link checkout is not available yet. Choose an available direct checkout option.");
       return;
     }
 
@@ -170,7 +172,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setError("");
 
     if (isHosted) {
-      setError("Hosted Multi-Link builder is coming next. Choose Standard Direct or Branded + QR Direct for this checkout.");
+      setError("Hosted Multi-Link checkout is not available yet. Choose an available direct checkout option.");
       return;
     }
 
@@ -398,14 +400,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <p className="tr-eyebrow">Choose setup</p>
           <h2 className="mt-2 text-xl font-semibold text-ink">Choose how to build this stand</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Choose a direct stand template or add branding. QR and NFC both use the customer destination URL.
+            {hasBrandedOption
+              ? "Choose a direct stand template or add branding. QR and NFC both use the customer destination URL."
+              : "Set up this direct stand with one customer destination URL. QR and NFC both use that same URL."}
           </p>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          {options
-            .filter((option) => option.id !== "hosted_multilink")
-            .map((option) => (
+          {directOptions.map((option) => (
               <article
                 key={option.id}
                 className={
@@ -450,7 +452,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <div className="tr-panel-muted border-dashed">
             <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Multi-Link will be its own builder later. This product supports Standard Direct and Branded + QR checkout today.
+              Multi-Link will be its own builder later. Choose an available direct checkout option today.
             </p>
           </div>
         ) : null}

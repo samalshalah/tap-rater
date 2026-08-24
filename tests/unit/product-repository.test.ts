@@ -129,10 +129,10 @@ describe("product repository", () => {
       }
     ]));
 
-    expect(products).toHaveLength(2);
+    expect(products).toHaveLength(1);
     expect(products[0].title).toBe("Supabase Google Stand");
     expect(products[0].salePriceCents).toBe(4900);
-    expect(products[1].title).toBe("Old active tag");
+    expect(products.map((product) => product.title)).not.toContain("Old active tag");
   });
 
   it("returns active database-only products that are not in the legacy static catalog", async () => {
@@ -238,6 +238,64 @@ describe("product repository", () => {
         isActive: true
       })
     ]);
+  });
+
+  it("hides QA and hosted products from the public storefront", async () => {
+    const products = await getStorefrontProductsFromClient(mockProductsClient([
+      {
+        slug: "qa-rate-your-experience-hosted-multilink",
+        title: "QA Hosted Multi-Link Stand",
+        sku: "QA-HOSTED",
+        category_slug: "feedback",
+        format: "stand",
+        base_price_cents: 4900,
+        stock_status: "instock",
+        short_description: "QA hosted product",
+        description: "QA hosted product",
+        product_type: "platform_landing_page",
+        service_mode: "hosted_landing_page",
+        checkout_mode: "subscription",
+        requires_account: true,
+        requires_subscription: true,
+        requires_landing_page: true,
+        supported_destinations: ["feedback"],
+        activation_type: "premium_hosted_activation",
+        included_service_label: "Hosted page",
+        customization_options: ["standard_design", "add_logo"],
+        allows_logo_upload: true,
+        allows_custom_design: false,
+        design_mode: "standard",
+        product_kind: "hosted_multilink",
+        is_active: true
+      },
+      {
+        slug: "database-only-google-review-stand",
+        title: "Database Only Google Review Stand",
+        sku: "DB-GOOGLE-1",
+        category_slug: "reviews",
+        format: "stand",
+        base_price_cents: 3900,
+        stock_status: "instock",
+        short_description: "Database-only Google review stand",
+        description: "A Google review stand managed only from the products table.",
+        product_type: "physical_redirect",
+        service_mode: "basic_redirect",
+        checkout_mode: "buy_now",
+        requires_account: false,
+        requires_subscription: false,
+        requires_landing_page: false,
+        supported_destinations: ["google"],
+        activation_type: "free_basic_activation",
+        included_service_label: "Free basic activation",
+        customization_options: ["standard_design", "add_logo"],
+        allows_logo_upload: true,
+        allows_custom_design: false,
+        design_mode: "standard",
+        is_active: true
+      }
+    ]));
+
+    expect(products.map((product) => product.slug)).toEqual(["database-only-google-review-stand"]);
   });
 
   it("normalizes locked catalog organization and asset fields", () => {

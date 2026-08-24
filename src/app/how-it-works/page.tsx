@@ -3,19 +3,19 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "How Tap Rater Works",
-  description: "Choose a stand, add your link or branding, approve your design, and Tap Rater prints and ships."
+  description: "Choose a stand, add your link, and Tap Rater prints and ships."
 };
 
 const steps = [
   ["Choose your stand", "Pick a review, menu, booking, social, feedback, or website stand from the active shop catalog."],
   ["Add your link", "Standard Direct needs one destination URL and goes straight to setup review."],
-  ["Customize if branded", "Branded + QR collects the logo, business name, and generates the printed QR from your link."],
-  ["Preview and checkout", "Branded stands show a front proof before cart. Tap Rater then prepares the physical stand."]
+  ["Confirm QR and NFC", "The QR code and NFC tap target both use the same customer-provided URL."],
+  ["Checkout", "Tap Rater collects the order and shipping details before preparing the physical stand."]
 ];
 
 const flows = [
   ["Standard Direct", "Choose stand → add link → cart → checkout", "QR and NFC direct to your destination."],
-  ["Branded + QR", "Choose stand → add link → upload logo → add business name → preview QR proof → cart → checkout", "NFC + printed QR with proof before cart."]
+  ["No hosted activation", "No account → no hosted page → no subscription", "DIRECT products do not require a Tap Rater account or activation workflow."]
 ];
 
 export default function HowItWorksPage() {
@@ -26,7 +26,7 @@ export default function HowItWorksPage() {
           <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">How it works</p>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">From product page to printed stand.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Direct stands are built for fast checkout. Branded + QR adds logo upload and proof confirmation before the order reaches the cart.
+            Direct stands are built for fast checkout: choose the stand, add one destination URL, and complete checkout.
           </p>
         </div>
       </section>

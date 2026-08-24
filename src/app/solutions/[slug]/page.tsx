@@ -80,7 +80,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             <h2 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">Recommended stands</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">
-            Each product keeps Standard Direct and Branded + QR as setup options inside the product.
+            Each product uses Standard Direct setup with one customer destination URL.
           </p>
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

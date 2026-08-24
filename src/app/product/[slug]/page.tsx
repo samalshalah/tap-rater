@@ -7,7 +7,7 @@ import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } fr
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
-import { getLowestPurchasePriceCents } from "@/lib/purchase-options";
+import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { resolveProductSeo } from "@/lib/product-seo";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +65,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const relatedProducts = await getRelatedStorefrontProductsForProduct(product);
   const highlights = getProductPageHighlights(product);
   const destination = getReviewDestination(product);
+  const purchaseOptions = getProductPurchaseOptions(product);
+  const supportsBrandedDirect = purchaseOptions.some((option) => option.id === "branded_qr_direct");
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
   const productFaqs = [
     {
@@ -74,7 +76,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
     },
     {
       question: "Does this require a monthly fee?",
-      answer: "No. Standard Direct and Branded + QR Direct stands are one-time physical stand purchases."
+      answer: supportsBrandedDirect
+        ? "No. Standard Direct and Branded + QR Direct stands are one-time physical stand purchases."
+        : "No. Standard Direct stands are one-time physical stand purchases."
     },
     {
       question: "Can I change the link after printing?",

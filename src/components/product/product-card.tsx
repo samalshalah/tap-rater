@@ -75,11 +75,11 @@ function getSetupLabel(product: MigratedProduct) {
     return "Custom Direct Stand";
   }
 
-  if (product.customizationOptions.includes("add_logo")) {
+  if (getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct")) {
     return "Choose ready-made QR + NFC or branded QR + NFC on the product page.";
   }
 
-  return "NFC direct stand with one destination link.";
+  return "QR + NFC direct stand with one destination link.";
 }
 
 function formatCompactPrice(cents: number) {

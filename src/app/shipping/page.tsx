@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 export default async function ShippingPage() {
   const settings = await getShippingSettings();
   const sections = [
-    ["Printed on demand", "Tap Rater stands are prepared after checkout based on the selected stand, destination link, and any required branded proof details."],
-    ["Production readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided. Branded + QR orders require logo upload, business name, generated QR, and proof confirmation before production review."],
+    ["Printed on demand", "Tap Rater stands are prepared after checkout based on the selected stand and approved destination link."],
+    ["Production readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided and the order is paid."],
     ["Shipping timelines", settings.customerFacingShippingNote],
     ["Supported regions", settings.supportedRegionsText || "United States"],
     ["Handling time", settings.handlingTimeText || "Handling timelines are confirmed during fulfillment review."],

@@ -25,8 +25,8 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           before production starts.
         </p>
         <p className="mt-3 leading-7 text-muted">
-          Standard Direct stands use QR and NFC pointed directly to your destination. Branded + QR stands include the uploaded logo,
-          business name, generated QR, and proof confirmation for production review.
+          Standard Direct stands use QR and NFC pointed directly to the destination URL approved during setup.
+          Tap Rater reviews the order before fulfillment.
         </p>
         {sessionId ? (
           <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">
