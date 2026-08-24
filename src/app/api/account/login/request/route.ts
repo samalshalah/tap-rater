@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
-import { isDevelopmentAdminLoginAllowed } from "@/lib/customer-login";
 import { accountLoginRequestSchema } from "@/lib/validators";
 
 const customerSessionMaxAgeSeconds = 30 * 24 * 60 * 60;
@@ -25,10 +24,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
+  if (isConfiguredAdminEmail(email)) {
+    return createLoginResponse(email, request);
+  }
+
   if (!hasSupabaseAdminConfig()) {
-    if (isDevelopmentAdminLoginAllowed(email)) {
-      return createLoginResponse(email, request);
-    }
     return NextResponse.json({ error: "Customer login is not configured yet." }, { status: 503 });
   }
 
@@ -54,7 +54,7 @@ function createLoginResponse(email: string, request: Request) {
 }
 
 function getExpectedPassword(email: string) {
-  if (isDevelopmentAdminLoginAllowed(email) && process.env.ADMIN_PASSWORD) {
+  if (isConfiguredAdminEmail(email) && process.env.ADMIN_PASSWORD) {
     return process.env.ADMIN_PASSWORD;
   }
 
@@ -63,4 +63,12 @@ function getExpectedPassword(email: string) {
 
 function passwordMatches(actual: string, expected: string) {
   return actual.length === expected.length && actual === expected;
+}
+
+function isConfiguredAdminEmail(email: string) {
+  return Boolean(process.env.ADMIN_EMAIL) && normalizeEmail(email) === normalizeEmail(process.env.ADMIN_EMAIL ?? "");
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
 }
