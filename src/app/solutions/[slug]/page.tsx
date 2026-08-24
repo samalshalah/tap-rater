@@ -46,34 +46,34 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
     return businessUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(businessUse.slug);
   });
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
+  const hasSingleProduct = assignedProducts.length === 1;
+  const productGridClassName =
+    hasSingleProduct
+      ? "mt-8 grid max-w-[520px] gap-5 md:max-w-[600px]"
+      : "mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
   return (
     <main className="bg-white text-ink">
       <section className="bg-white">
-        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[1fr_0.62fr] lg:items-center lg:py-16">
-          <div>
+        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:py-16">
+          <div className="lg:pr-6">
             <Link href="/solutions" className="text-sm font-semibold text-brand">All business uses</Link>
             <p className="tr-eyebrow mt-6">Shop by use</p>
             <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.2rem]">{businessUse.title}</h1>
             <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">
               {businessUse.shortDescription || businessUse.description}
             </p>
+            {businessUse.longContent ? (
+              <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{businessUse.longContent}</div>
+            ) : null}
           </div>
-          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)] lg:block">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
             <Image src={heroImage} alt={businessUse.title} fill unoptimized className="object-cover" />
           </div>
         </div>
       </section>
 
-      {businessUse.longContent ? (
-        <section className="border-y border-line bg-[#f7f8f8]">
-          <div className="tr-container py-8">
-            <div className="max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{businessUse.longContent}</div>
-          </div>
-        </section>
-      ) : null}
-
-      <section className="tr-container py-12 lg:py-16">
+      <section className={hasSingleProduct ? "tr-container py-10 lg:py-12" : "tr-container py-12 lg:py-16"}>
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">{assignedProducts.length} stands</p>
@@ -83,7 +83,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             Each product uses Standard Direct setup with one customer destination URL.
           </p>
         </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
           {assignedProducts.length > 0 ? (
             assignedProducts.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (

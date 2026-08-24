@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { catalogCategories, type CatalogCategorySlug } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
-import { getCatalogCategories, getCategoryBySlug } from "@/lib/products";
+import { getCategoryBySlug } from "@/lib/products";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
 
 type CategoryPageProps = {
@@ -58,7 +58,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (!activeStandType) {
     notFound();
   }
-  const categories = getCatalogCategories().filter((item) => publicStandTypes.some((standType) => standType.slug === categoryToStandTypeSlug(item.slug)));
   const visual = getCategoryVisual(category);
   const heroImage = activeStandType.bannerImageUrl || activeStandType.imageUrl || visual.src;
   const hasSingleProduct = products.length === 1;
@@ -73,43 +72,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   return (
     <main className="bg-white text-ink">
       <section className="bg-white">
-        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[1fr_0.62fr] lg:items-center lg:py-16">
-          <div>
+        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:py-16">
+          <div className="lg:pr-6">
             <Link href="/shop" className="text-sm font-semibold text-brand">
               Shop all stands
             </Link>
             <p className="tr-eyebrow mt-6">{category.eyebrow}</p>
             <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.2rem]">{title}</h1>
             <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">{description}</p>
+            {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
           </div>
-          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)] lg:block">
-            <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-8 mix-blend-multiply" />
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-line bg-[#f7f8f8]">
-        <div className="tr-container py-5">
-          <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
-            <Link
-              href="/shop"
-              className="tr-button-outline min-h-9 shrink-0 px-4 text-[13px]"
-            >
-              All stands
-            </Link>
-            {categories.map((item) => (
-              <Link
-                key={item.slug}
-                href={getCategoryHref(item.slug)}
-                className={
-                  item.slug === category.slug
-                    ? "tr-button-secondary min-h-9 shrink-0 px-4 text-[13px]"
-                    : "tr-button-outline min-h-9 shrink-0 px-4 text-[13px]"
-                }
-              >
-                {item.title}
-              </Link>
-            ))}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
+            <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
           </div>
         </div>
       </section>
@@ -122,7 +96,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">{buyerIntent}</p>
         </div>
-        {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
         <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)

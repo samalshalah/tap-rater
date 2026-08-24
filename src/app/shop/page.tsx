@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ProductCard } from "@/components/product/product-card";
 import { VisualCard } from "@/components/storefront/visual-card";
+import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCatalogCategories } from "@/lib/products";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
@@ -14,8 +14,9 @@ export const metadata: Metadata = {
 };
 
 export default async function ShopPage() {
-  const products = await getStorefrontProducts();
+  const [products, businessUses] = await Promise.all([getStorefrontProducts(), getPublicBusinessUses()]);
   const categories = getCatalogCategories();
+  const visibleBusinessUses = businessUses.filter((useCase) => Boolean(useCase.imageUrl || useCase.bannerImageUrl));
 
   return (
     <main className="bg-white text-ink">
@@ -29,13 +30,13 @@ export default async function ShopPage() {
           </div>
           <div>
             <p className="text-xl font-medium leading-8 text-[#5f686f]">
-              Pick the action first, then configure a stand with QR and NFC connected directly to your destination.
+              Browse by stand type or business use, then choose the product that fits the customer action.
           </p>
             <div className="mt-7 flex flex-wrap gap-4">
-            <Link href="#all-stands" className="tr-button-primary min-h-10">
-              View all stands
+            <Link href="#stand-categories" className="tr-button-primary min-h-10">
+              Shop by type
             </Link>
-              <Link href="/solutions" className="tr-editorial-link">
+              <Link href="#business-uses" className="tr-editorial-link">
               Shop by use
                 <span aria-hidden="true">→</span>
             </Link>
@@ -72,36 +73,34 @@ export default async function ShopPage() {
         </div>
       </section>
 
-      <section id="all-stands" className="bg-white">
-        <div className="tr-container grid gap-8 py-10 lg:grid-cols-[240px_1fr] lg:py-14">
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <p className="tr-eyebrow">Filter</p>
-            <div className="mt-4 flex max-w-full flex-wrap gap-2 pb-2 lg:grid lg:pb-0">
-              <Link href="/shop" className="tr-button-primary min-h-10 px-4 text-[13px]">All Stands</Link>
-              {categories.map((category) => (
-                <Link key={category.slug} href={getCategoryHref(category.slug)} className="tr-button-outline min-h-10 px-4 text-[13px]">
-                  {category.title}
-                </Link>
-              ))}
+      <section id="business-uses" className="bg-white">
+        <div className="tr-container py-10 sm:py-14">
+          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+            <div>
+              <p className="tr-eyebrow">Shop by use</p>
+              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Find stands for your business.</h2>
             </div>
-          </aside>
-          <div>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-              <p className="tr-eyebrow">All stands</p>
-                <h2 className="mt-2 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.35rem]">Tap Rater catalog</h2>
-            </div>
-            <p className="text-sm font-medium text-muted">{products.length} stands available</p>
+            <Link href="/solutions" className="tr-editorial-link">
+              View all use cases
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.length > 0 ? (
-              products.map((product) => <ProductCard key={product.slug} product={product} />)
-            ) : (
-              <div className="tr-panel-muted p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
-                Products are being prepared.
-              </div>
-            )}
-          </div>
+          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {visibleBusinessUses.slice(0, 8).map((useCase) => (
+              <VisualCard
+                key={useCase.slug}
+                href={`/solutions/${useCase.slug}`}
+                title={useCase.title}
+                description={useCase.shortDescription || useCase.description}
+                image={{
+                  src: useCase.bannerImageUrl ?? useCase.imageUrl ?? "/uploads/products/rate-your-experience-stand.png",
+                  alt: useCase.title
+                }}
+                imageFit="cover"
+                variant="use-case"
+                cta="View recommendations"
+              />
+            ))}
           </div>
         </div>
       </section>
