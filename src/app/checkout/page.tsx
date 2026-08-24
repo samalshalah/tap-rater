@@ -13,9 +13,9 @@ export default function CheckoutPage() {
   const stripePublicConfig = validateStripePublicConfig();
 
   return (
-    <main className="bg-[#f7f8fa] px-4 py-10 text-ink sm:px-6 lg:px-8">
-      <section className="mx-auto max-w-6xl">
-        <Suspense fallback={<div className="rounded-[22px] border border-line bg-white p-8 text-sm font-semibold text-muted shadow-sm">Loading checkout...</div>}>
+    <main className="bg-soft text-ink">
+      <section className="tr-container tr-section">
+        <Suspense fallback={<div className="tr-card p-8 text-sm font-semibold text-muted">Loading checkout...</div>}>
           <EmbeddedCheckoutClient stripePublicConfig={stripePublicConfig} />
         </Suspense>
       </section>

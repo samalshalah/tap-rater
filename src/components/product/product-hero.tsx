@@ -25,7 +25,7 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
   const isBranded = selectedOption?.id === "branded_qr_direct";
 
   return (
-    <div className="tr-container grid gap-7 py-7 lg:grid-cols-[0.82fr_1fr] lg:py-8">
+    <div className="tr-container grid gap-8 py-8 lg:grid-cols-[0.86fr_1fr] lg:py-10">
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-4">
@@ -43,17 +43,17 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
           ) : null}
         </div>
 
-        <div className="tr-card p-5 sm:p-6">
+        <div className="border-b border-line pb-6">
           <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.09em]">
             {category ? <span className="tr-pill-brand">{category.title}</span> : null}
             <span className="tr-pill-neutral">{destination}</span>
             <span className="tr-pill-neutral">No monthly fee</span>
           </div>
 
-          <h1 className="mt-4 text-3xl font-semibold leading-tight text-ink md:text-[40px]">{product.title}</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-muted">{product.shortDescription}</p>
+          <h1 className="mt-4 text-3xl font-black leading-tight text-ink md:text-[42px]">{product.title}</h1>
+          <p className="tr-body-sm mt-3 max-w-2xl md:text-[15px]">{product.shortDescription}</p>
 
-          <div className="tr-panel-muted mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+          <div className="mt-5 grid gap-3 rounded-[18px] bg-soft p-4 sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">Selected setup</p>
               <p className="mt-1 text-xl font-semibold text-ink">{selectedPrice}</p>

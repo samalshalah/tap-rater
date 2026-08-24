@@ -63,8 +63,8 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(360px,1.14fr)] lg:items-start">
-      <aside className="rounded-[22px] border border-line bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-brand">
+      <aside className="tr-card p-5 sm:p-6">
+        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-brand">
           <LockKeyhole size={16} />
           Secure payment powered by Stripe
         </div>
@@ -73,7 +73,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
           You are not charged until payment is complete. Tap Rater receives your setup details after Stripe confirms payment.
         </p>
 
-        <div className="mt-6 rounded-2xl border border-line bg-[#f7f8fa] p-4">
+        <div className="tr-card mt-6 bg-soft p-4">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-muted">Order summary</p>
           {rows.length > 0 ? (
             <div className="mt-4 grid gap-4">
@@ -108,12 +108,12 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
         <p className="mt-5 text-xs leading-5 text-muted">
           Shipping is reviewed after payment. Stripe collects the shipping address, and no shipping fee is added today.
         </p>
-        <Link href="/cart" className="mt-5 inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
+        <Link href="/cart" className="tr-button-outline mt-5">
           Back to cart
         </Link>
       </aside>
 
-      <section className="min-h-[560px] rounded-[22px] border border-line bg-white p-3 shadow-sm sm:p-5">
+      <section className="tr-card min-h-[560px] p-3 sm:p-5">
         {!stripePublicConfig.ok ? (
           <CheckoutError message={stripePublicConfig.error} />
         ) : !stripePromise ? (
@@ -140,10 +140,10 @@ function CheckoutError({ message }: { message: string }) {
         <p className="mt-4 font-black text-ink">{message}</p>
         <p className="mt-2 text-sm leading-6 text-muted">Your cart details are still available if the session expired or was opened in another tab.</p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/cart" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
+          <Link href="/cart" className="tr-button-primary">
             Return to cart
           </Link>
-          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
+          <Link href="/shop" className="tr-button-outline">
             Shop ready stands
           </Link>
         </div>

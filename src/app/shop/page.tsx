@@ -23,7 +23,7 @@ export default async function ShopPage() {
         <div className="tr-container tr-section-compact">
           <p className="tr-eyebrow">Tap Rater shop</p>
           <h1 className="tr-page-title mt-3 max-w-3xl">Shop NFC and QR stands.</h1>
-          <p className="mt-3 max-w-2xl text-[15px] leading-7 text-muted">
+          <p className="tr-body mt-3 max-w-2xl">
             Pick the action first, then set up a Standard Direct stand with one customer destination URL.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
@@ -38,17 +38,17 @@ export default async function ShopPage() {
       </section>
 
       <section className="bg-soft">
-        <div className="tr-container py-9">
+        <div className="tr-container py-10 sm:py-12">
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
               <p className="tr-eyebrow">Stand categories</p>
               <h2 className="tr-section-title mt-2">Browse by stand type.</h2>
             </div>
-            <p className="max-w-xl text-sm leading-6 text-muted">
+            <p className="tr-body-sm max-w-xl">
               Category cards show the best available stand image while final product photography is prepared.
             </p>
           </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {categories.map((category) => (
               <VisualCard
                 key={category.slug}
@@ -57,6 +57,8 @@ export default async function ShopPage() {
                 title={category.title}
                 description={category.buyerIntent}
                 image={getCategoryVisual(category)}
+                cta="Learn more"
+                density="compact"
               />
             ))}
           </div>
@@ -64,7 +66,7 @@ export default async function ShopPage() {
       </section>
 
       <section id="all-stands" className="border-t border-line bg-white">
-        <div className="tr-container py-9">
+        <div className="tr-container tr-section">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="tr-eyebrow">All stands</p>

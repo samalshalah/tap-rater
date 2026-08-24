@@ -97,12 +97,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       <section className="border-b border-line bg-soft">
-        <div className="tr-container py-10">
+        <div className="tr-container tr-section-compact">
           <div className="grid gap-4 md:grid-cols-4">
             {highlights.map((highlight) => (
               <article key={highlight.title} className="tr-card p-5">
                 <h2 className="text-base font-black text-ink">{highlight.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted">{highlight.body}</p>
+                <p className="tr-body-sm mt-2">{highlight.body}</p>
               </article>
             ))}
           </div>
@@ -110,7 +110,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       <section className="border-b border-line bg-white">
-        <div className="tr-container py-10">
+        <div className="tr-container tr-section">
           <div className="max-w-3xl">
             <p className="tr-eyebrow">Product questions</p>
             <h2 className="tr-section-title mt-3">Answers before you buy.</h2>
@@ -119,7 +119,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             {productFaqs.map((faq) => (
               <article key={faq.question} className="tr-card p-5">
                 <h3 className="font-black text-ink">{faq.question}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">{faq.answer}</p>
+                <p className="tr-body-sm mt-2">{faq.answer}</p>
               </article>
             ))}
           </div>
@@ -128,7 +128,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {relatedProducts.length > 0 ? (
         <section className="bg-soft">
-          <div className="tr-container py-10">
+          <div className="tr-container tr-section">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="tr-eyebrow">More stands</p>

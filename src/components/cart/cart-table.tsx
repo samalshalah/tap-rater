@@ -63,11 +63,11 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
           Choose a ready NFC stand or contact support for a custom request.
         </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/shop" className="tr-button-primary">
+        <div className="mt-5 grid justify-center gap-3 sm:flex sm:flex-wrap">
+          <Link href="/shop" className="tr-button-primary w-full sm:w-auto">
             Shop ready stands
           </Link>
-          <Link href="/support" className="tr-button-outline">
+          <Link href="/support" className="tr-button-outline w-full sm:w-auto">
             Request custom help
           </Link>
         </div>
@@ -101,11 +101,11 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
               {row.option.requiresFinalProof ? <p><strong className="text-ink">Proof:</strong> {row.item.setup?.proofApproved ? "Proof confirmed" : "Proof required"}</p> : null}
             </div>
           </div>
-          <div className="flex h-10 w-fit items-center overflow-hidden rounded-full border border-line">
+          <div className="flex h-10 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
             <button
               type="button"
               aria-label={`Decrease ${row.product.title} quantity`}
-              className="grid h-10 w-10 place-items-center text-ink hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-muted"
+              className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
               disabled={row.item.quantity <= 1}
               onClick={() => decreaseItem(cartKey)}
             >
@@ -117,7 +117,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
             <button
               type="button"
               aria-label={`Increase ${row.product.title} quantity`}
-              className="grid h-10 w-10 place-items-center text-ink hover:bg-gray-50"
+              className="grid h-10 w-10 place-items-center text-ink hover:bg-soft"
               onClick={() => increaseItem(cartKey)}
             >
               <Plus size={16} />
@@ -131,7 +131,7 @@ export function CartTable({ stripeMode = "test" }: { stripeMode?: "test" | "live
             <button
               type="button"
               aria-label={`Remove ${row.product.title}`}
-              className="grid h-10 w-10 place-items-center rounded-full border border-line text-brand hover:bg-gray-50"
+              className="tr-icon-button text-brand"
               onClick={() => removeItem(cartKey)}
             >
               <Trash2 size={17} />

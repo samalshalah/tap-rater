@@ -412,7 +412,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 key={option.id}
                 className={
                   selectedOptionId === option.id
-                    ? "grid gap-4 rounded-lg border border-brand bg-white p-4 shadow-sm"
+                    ? "grid gap-4 rounded-lg border border-brand bg-white p-4"
                     : "grid gap-4 rounded-lg border border-line bg-white p-4"
                 }
               >
@@ -468,7 +468,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 <p className="tr-eyebrow">{product.title}</p>
                 <h2 className="mt-1 text-2xl font-semibold text-ink">{modalTitle}</h2>
               </div>
-              <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line text-ink hover:border-ink" onClick={closeBuilder} aria-label="Close builder">
+              <button type="button" className="tr-icon-button shrink-0" onClick={closeBuilder} aria-label="Close builder">
                 <X size={18} />
               </button>
             </div>
@@ -476,7 +476,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             <div className="border-b border-line px-4 py-3 sm:px-6">
               <ol className="grid gap-2 text-center text-xs font-semibold uppercase text-muted sm:grid-cols-3">
                 {stepLabels.map((label, index) => (
-                  <li key={label} className={index <= activeStepIndex ? "rounded-full bg-ink px-3 py-2 text-white" : "rounded-full border border-line px-3 py-2"}>
+                  <li key={label} className={index <= activeStepIndex ? "rounded-lg bg-ink px-3 py-2 text-white" : "rounded-lg border border-line px-3 py-2"}>
                     {label}
                   </li>
                 ))}
@@ -774,13 +774,13 @@ function TemplateProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-lg border border-line bg-white shadow-sm">
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
       <div className="absolute left-[13%] top-[4.5%] grid h-[9.5%] w-[74%] place-items-center">
         {logo ? (
           <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-full max-w-full object-contain" />
         ) : (
-          <span className="rounded-full border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
+          <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
       <p className="absolute left-[8%] top-[17.1%] w-[84%] overflow-hidden text-center text-[11px] font-black uppercase leading-tight text-ink">
@@ -807,7 +807,7 @@ function CleanProofPreview({
   qrValue: string;
 }) {
   return (
-    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-lg border border-line bg-white p-5 text-center shadow-sm">
+    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
       <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
         {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
       </div>

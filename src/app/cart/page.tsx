@@ -11,7 +11,7 @@ export default function CartPage() {
       <section className="tr-container tr-section">
         <p className="tr-eyebrow">Cart</p>
         <h1 className="tr-page-title mt-4">Your configured stands</h1>
-        <p className="mt-4 max-w-2xl text-sm leading-6 text-muted">
+        <p className="tr-body-sm mt-4 max-w-2xl">
           Quantity duplicates the exact same configured stand. Use a separate product page setup when you need a different design, business name, or link.
         </p>
         <div className="mt-8">

@@ -17,15 +17,17 @@ export default async function AccountLoginPage({ searchParams }: LoginPageProps)
 
   return (
     <main className="min-h-screen bg-soft">
-      <section className="mx-auto grid max-w-5xl gap-8 px-4 py-12 md:grid-cols-[0.85fr_1.15fr] md:px-6 md:py-16">
+      <section className="tr-container grid min-h-[calc(100vh-220px)] items-center py-12">
+        <div className="mx-auto grid w-full max-w-5xl gap-8 md:grid-cols-[0.85fr_1.15fr] md:items-center">
         <div className="space-y-4">
-          <p className="text-sm font-black uppercase text-brand">Customer account</p>
-          <h1 className="text-4xl font-black leading-tight text-ink">Log in to Tap Rater</h1>
-          <p className="text-lg leading-8 text-muted">
+          <p className="tr-eyebrow">Customer account</p>
+          <h1 className="tr-page-title">Log in to Tap Rater</h1>
+          <p className="tr-body max-w-md">
             Get a secure email link to edit your business information, links, logo, style, and permanent Tap Rater page.
           </p>
         </div>
         <AccountLoginForm token={token} />
+        </div>
       </section>
     </main>
   );

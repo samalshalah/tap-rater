@@ -20,9 +20,9 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
       <div className="tr-container-wide">
-        <div className="grid min-h-14 grid-cols-[1fr_auto] items-center gap-3 lg:min-h-16 lg:grid-cols-[180px_1fr_180px]">
+        <div className="grid min-h-16 grid-cols-[1fr_auto] items-center gap-3 lg:min-h-[72px] lg:grid-cols-[190px_1fr_190px]">
           <Link href="/" className="inline-flex items-center" onClick={() => setIsMenuOpen(false)}>
             <Image
               src="/uploads/brand/tap-rater-logo.png"
@@ -30,33 +30,34 @@ export function Header() {
               width={110}
               height={66}
               priority
-              className="h-9 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
           </Link>
-          <nav className="hidden justify-center gap-7 text-[13px] font-medium text-ink lg:flex">
+          <nav className="hidden justify-center gap-1 rounded-lg border border-line bg-soft/80 p-1 text-[13px] font-bold text-ink lg:flex">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="hover:text-brand">
+              <Link key={item.href} href={item.href} className="rounded-md px-3 py-2 transition hover:bg-white hover:text-brand">
                 {item.label}
               </Link>
             ))}
           </nav>
           <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
             <Link
-              href="/admin"
-              className="hidden h-10 w-10 items-center justify-center rounded-full border border-transparent transition hover:border-line hover:text-brand sm:inline-flex"
-              aria-label="Admin"
+              href="/account/login"
+              className="hidden min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-white px-3 text-sm font-bold transition hover:border-brand hover:text-brand sm:inline-flex"
+              aria-label="Account"
               onClick={() => setIsMenuOpen(false)}
             >
               <CircleUserRound size={18} />
+              <span className="hidden xl:inline">Account</span>
             </Link>
             <Link
               href="/cart"
               aria-label="Cart"
-              className="relative grid h-10 w-10 place-items-center rounded-full border border-transparent transition hover:border-line hover:text-brand"
+              className="relative grid h-10 w-10 place-items-center rounded-lg border border-line bg-white transition hover:border-brand hover:text-brand"
               onClick={() => setIsMenuOpen(false)}
             >
               <ShoppingBag size={21} />
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-ink px-1 text-xs font-semibold text-white">
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-black text-white">
                 {cart.count}
               </span>
             </Link>

@@ -166,7 +166,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         <div className="tr-card min-w-0 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-black uppercase text-muted">Permanent URL</p>
+              <p className="tr-eyebrow text-muted">Permanent URL</p>
               <p className="mt-1 break-all text-sm font-bold text-ink">{permanentUrl}</p>
             </div>
             <div className="grid gap-2 sm:flex sm:flex-wrap">
@@ -182,7 +182,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
 
         <div className="tr-card grid gap-4 p-5">
-          <h2 className="text-xl font-black text-ink">Business</h2>
+          <div>
+            <p className="tr-eyebrow">Page information</p>
+            <h2 className="tr-card-title mt-2">Business</h2>
+          </div>
           <label className="tr-field-label">
             Business name
             <input className="tr-input" value={draft.businessName} onChange={(event) => updateDraft({ ...draft, businessName: event.target.value })} />
@@ -204,7 +207,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
 
         <div className="tr-card grid gap-4 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xl font-black text-ink">Your Links</h2>
+            <div>
+              <p className="tr-eyebrow">Buttons / links</p>
+              <h2 className="tr-card-title mt-2">Your Links</h2>
+            </div>
             <select className="tr-input sm:w-52" defaultValue="" onChange={(event) => event.target.value && addButton(event.target.value as HostedPageEditorButton["type"])}>
               <option value="" disabled>
                 Add link
@@ -218,7 +224,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           </div>
           <div className="grid gap-3">
             {orderedButtons.map((button, index) => (
-              <div key={button.id} className="rounded-md border border-line bg-soft p-3">
+              <div key={button.id} className="rounded-lg border border-line bg-soft p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <label className="flex items-center gap-2 text-sm font-bold text-ink">
                     <input type="checkbox" checked={button.enabled} onChange={(event) => updateButton(button.id, { enabled: event.target.checked })} />
@@ -249,7 +255,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
 
         <div className="tr-card grid gap-4 p-5">
-          <h2 className="text-xl font-black text-ink">Page Style</h2>
+          <div>
+            <p className="tr-eyebrow">Appearance</p>
+            <h2 className="tr-card-title mt-2">Page Style</h2>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="tr-field-label">
               Style
@@ -272,10 +281,13 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
       </section>
 
-      <aside className="grid h-fit gap-4 lg:sticky lg:top-6">
+      <aside className="grid h-fit gap-4 lg:sticky lg:top-24">
         <div className="tr-card p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-black text-ink">Preview</h2>
+            <div>
+              <p className="tr-eyebrow">Preview</p>
+              <h2 className="tr-card-title mt-1">Live page draft</h2>
+            </div>
             <button type="button" onClick={() => refreshPreview()} className="tr-button-ghost text-sm">
               <Eye size={16} /> Refresh
             </button>
@@ -283,6 +295,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[640px] w-full rounded-md border border-line bg-white" />
         </div>
         <div className="tr-card grid gap-3 p-4">
+          <p className="tr-eyebrow">Publish</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary">
               <Save size={16} /> {status === "saving" ? "Saving..." : "Save Draft"}

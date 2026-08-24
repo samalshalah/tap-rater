@@ -47,13 +47,13 @@ export default async function HomePage() {
       <JsonLd data={websiteJsonLd()} />
 
       <section className="border-b border-line bg-white">
-        <div className="tr-container grid gap-8 py-10 lg:grid-cols-[1fr_0.78fr] lg:items-center lg:py-14">
+        <div className="tr-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:py-16">
           <div>
             <p className="tr-eyebrow">Tap Rater NFC + QR stands</p>
-            <h1 className="tr-page-title mt-4 max-w-3xl break-words tracking-normal">
+            <h1 className="tr-hero-title mt-4 max-w-3xl break-words">
               Turn Every Counter Into a Customer Action Point
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-muted sm:text-lg">
+            <p className="tr-body mt-5 max-w-2xl sm:text-lg">
               Sell NFC stands that help customers review, book, follow, view menus, and visit your links with one tap.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -63,44 +63,43 @@ export default async function HomePage() {
               <Link href="/how-it-works" className="tr-button-outline px-6">
                 See How It Works
               </Link>
-              <div className="basis-full pt-1 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-muted">
+              <div className="flex basis-full flex-col items-start gap-2 pt-1 text-[13px] font-semibold text-muted sm:flex-row sm:flex-wrap sm:gap-x-4 sm:text-sm">
                 {proofPoints.map((item) => (
-                  <span key={item} className="inline-flex items-center gap-1.5">
+                  <span key={item} className="inline-flex min-w-0 max-w-full items-center gap-1.5">
                     <CheckCircle2 className="h-4 w-4 text-brand" />
-                    {item}
+                    <span>{item}</span>
                   </span>
                 ))}
               </div>
             </div>
           </div>
 
-          <div className="relative min-h-[300px] overflow-hidden rounded-lg border border-line bg-white lg:min-h-[430px]">
+          <div className="tr-premium-surface relative min-h-[340px] bg-soft lg:min-h-[560px]">
             {heroProductImage ? (
-              <Image src={heroProductImage.src} alt={heroProductImage.alt} fill priority unoptimized className="object-contain p-6 sm:p-8" />
+              <Image src={heroProductImage.src} alt={heroProductImage.alt} fill priority unoptimized className="object-contain p-2 sm:p-4 lg:p-5" />
             ) : null}
           </div>
         </div>
       </section>
 
       <section className="border-b border-line bg-white">
-        <div className="tr-container grid gap-4 py-10 md:grid-cols-2">
+        <div className="tr-container grid gap-6 py-8 md:grid-cols-2">
           {options.map((option) => (
-            <article key={option.title} className="tr-panel-muted p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+            <article key={option.title} className="border-l-2 border-brand pl-5">
+              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div>
                   <p className="tr-eyebrow">{option.title}</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink">{option.price} one-time</h2>
+                  <h2 className="mt-2 text-2xl font-black text-ink">{option.title === "Standard Direct" ? `${option.price} one-time` : option.price}</h2>
                 </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-muted">Direct stand</span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-muted">{option.body}</p>
+              <p className="tr-body-sm mt-3">{option.body}</p>
             </article>
           ))}
         </div>
       </section>
 
       <section className="bg-soft">
-        <div className="tr-container py-12">
+        <div className="tr-container tr-section">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="tr-eyebrow">What do you want customers to do?</p>
@@ -111,16 +110,16 @@ export default async function HomePage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
             {customerActionCards.map((card) => (
-              <VisualCard key={card.title} href={card.href} title={card.title} description={card.description} image={card.image} />
+              <VisualCard key={card.title} href={card.href} title={card.title} description={card.description} image={card.image} cta="View stand" />
             ))}
           </div>
         </div>
       </section>
 
       <section className="bg-white">
-        <div className="tr-container py-12">
+        <div className="tr-container tr-section">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
               <p className="tr-eyebrow">Shop by business use</p>
@@ -131,7 +130,7 @@ export default async function HomePage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
             {businessUseCases.slice(0, 6).map((useCase) => (
               <VisualCard
                 key={useCase.title}
@@ -140,7 +139,8 @@ export default async function HomePage() {
                 description={useCase.description}
                 image={useCase.image}
                 imageFit="cover"
-                cta="View recommendations"
+                cta="Explore solutions"
+                variant="use-case"
               />
             ))}
           </div>
@@ -148,7 +148,7 @@ export default async function HomePage() {
       </section>
 
       <section className="border-t border-line bg-soft">
-        <div className="tr-container py-12">
+        <div className="tr-container tr-section">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
                 <p className="tr-eyebrow">Popular stands</p>

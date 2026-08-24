@@ -29,21 +29,21 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
 
   return (
     <div className="lg:sticky lg:top-24">
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-line bg-[#fafafa] lg:max-h-[560px]">
-        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-5 sm:p-8" />
+      <div className="tr-premium-surface relative aspect-[4/3] bg-soft lg:max-h-[620px]">
+        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-2 sm:p-4 lg:p-5" />
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+      <div className="mt-3 grid gap-2 text-center text-[10px] font-bold uppercase tracking-[0.04em] text-muted sm:grid-cols-3 sm:text-[11px]">
         {activeOptionId === "branded_qr_direct" ? (
           <>
-            <div className="rounded-full border border-line bg-white px-3 py-2">NFC</div>
-            <div className="rounded-full border border-line bg-white px-3 py-2">Printed QR</div>
-            <div className="rounded-full border border-line bg-white px-3 py-2">Proof</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">NFC</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">Printed QR</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">Proof</div>
           </>
         ) : (
           <>
-            <div className="rounded-full border border-line bg-white px-3 py-2">QR + NFC direct</div>
-            <div className="rounded-full border border-line bg-white px-3 py-2">No logo required</div>
-            <div className="rounded-full border border-line bg-white px-3 py-2">Direct link</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">QR + NFC direct</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">No logo required</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">Direct link</div>
           </>
         )}
       </div>

@@ -34,14 +34,14 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
   }
 
   return (
-    <form onSubmit={submitRequest} className="grid gap-3 rounded-md border border-line bg-white p-4 shadow-sm">
+    <form onSubmit={submitRequest} className="tr-card grid gap-3 p-4">
       <p className="font-black text-ink">Request destination change</p>
       <input
         required
         value={tapraterId}
         onChange={(event) => setTapraterId(event.target.value)}
         placeholder="Tap Rater ID"
-        className="rounded-md border border-line px-3 py-2 text-sm"
+        className="tr-input"
       />
       <input
         required
@@ -49,15 +49,15 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
         value={newReviewUrl}
         onChange={(event) => setNewReviewUrl(event.target.value)}
         placeholder="https://new-destination.example"
-        className="rounded-md border border-line px-3 py-2 text-sm"
+        className="tr-input"
       />
       <textarea
         value={notes}
         onChange={(event) => setNotes(event.target.value)}
         placeholder="Notes for support"
-        className="min-h-24 rounded-md border border-line px-3 py-2 text-sm"
+        className="tr-textarea min-h-24"
       />
-      <button disabled={status === "saving"} className="w-fit rounded-md bg-brand px-4 py-2 text-sm font-bold text-white disabled:bg-muted">
+      <button disabled={status === "saving"} className="tr-button-secondary w-fit">
         {status === "saving" ? "Sending..." : "Send request"}
       </button>
       {message ? (

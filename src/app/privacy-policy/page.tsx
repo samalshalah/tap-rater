@@ -65,27 +65,27 @@ function PolicyPage({
   return (
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">{eyebrow}</p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-tight text-ink md:text-5xl">{title}</h1>
-          <p className="mt-4 text-base leading-7 text-muted">{intro}</p>
+        <div className="tr-container-narrow tr-section-compact">
+          <p className="tr-eyebrow">{eyebrow}</p>
+          <h1 className="tr-page-title mt-4">{title}</h1>
+          <p className="tr-body mt-4">{intro}</p>
         </div>
       </section>
 
-      <section className="bg-[#f7f8fa]">
-        <div className="mx-auto grid max-w-4xl gap-4 px-4 py-10 sm:px-6 lg:px-8">
+      <section className="bg-soft">
+        <div className="tr-container-narrow grid gap-4 py-10">
           {sections.map((section) => (
-            <article key={section.title} className="rounded-[18px] border border-line bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-black text-ink">{section.title}</h2>
-              <div className="mt-3 grid gap-3 text-sm leading-6 text-muted">
+            <article key={section.title} className="tr-card p-5">
+              <h2 className="tr-card-title">{section.title}</h2>
+              <div className="tr-body-sm mt-3 grid gap-3">
                 {section.body.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
               </div>
             </article>
           ))}
-          <div className="rounded-[18px] border border-line bg-white p-5">
-            <p className="text-sm leading-6 text-muted">
+          <div className="tr-card p-5">
+            <p className="tr-body-sm">
               Need help? <Link href="/support" className="font-black text-brand">Contact Tap Rater support</Link>.
             </p>
           </div>

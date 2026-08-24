@@ -17,15 +17,16 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="tr-hover-card group flex h-full flex-col p-3.5"
+      className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-line/80 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg"
     >
-      <div className="relative h-48 overflow-hidden rounded-lg border border-line/70 bg-soft">
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-200 group-hover:scale-[1.025]" />
+      <div className="relative h-56 overflow-hidden rounded-[18px] bg-soft sm:h-64">
+        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2 transition duration-200 scale-[1.08] group-hover:scale-[1.12]" />
       </div>
-      <div className="flex flex-1 flex-col pt-3.5">
-        <p className="tr-eyebrow">{category?.title ?? destination}</p>
-        <h2 className="mt-1.5 text-[17px] font-semibold leading-snug text-ink">{product.title}</h2>
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+      <div className="flex flex-1 flex-col px-1 pb-1 pt-5">
+        <p className="text-xs font-black uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
+        <h2 className="mt-2 text-xl font-black leading-snug text-ink">{product.title}</h2>
+        <p className="mt-2 text-sm leading-6 text-muted">{setupLabel}</p>
+        <div className="mt-4 flex flex-wrap gap-1.5">
           {options.some((option) => option.id === "standard_direct") ? (
             <span className="tr-pill-neutral">Standard Direct</span>
           ) : null}
@@ -33,11 +34,10 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
             <span className="tr-pill-brand">Branded + QR</span>
           ) : null}
         </div>
-        <p className="mt-3 text-[13px] leading-5 text-muted">{setupLabel}</p>
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
-          <span className="text-sm font-semibold text-ink">{purchaseLabel}</span>
-          <span className="tr-button-primary min-h-9 min-w-[92px] px-4">
-            View
+        <div className="mt-auto grid gap-3 pt-5">
+          <span className="text-base font-black text-ink">{purchaseLabel}</span>
+          <span className="tr-button-primary min-h-10 w-full px-4">
+            View Product
           </span>
         </div>
       </div>

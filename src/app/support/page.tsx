@@ -20,21 +20,21 @@ export default function SupportPage() {
   return (
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Support</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Need help with a stand order?</h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
+        <div className="tr-container tr-section-compact">
+          <p className="tr-eyebrow">Support</p>
+          <h1 className="tr-page-title mt-4 max-w-3xl">Need help with a stand order?</h1>
+          <p className="tr-body mt-4 max-w-2xl">
             Use support for custom stand requests, order help, logo or design questions, link setup questions, and link-change help.
           </p>
         </div>
       </section>
 
-      <section className="bg-[#f7f8fa]">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-2 lg:grid-cols-4 lg:px-8">
+      <section className="bg-soft">
+        <div className="tr-container grid gap-4 py-10 md:grid-cols-2 lg:grid-cols-4">
           {supportLinks.map(([title, body, href]) => (
-            <Link key={title} href={href} className="flex min-h-[180px] flex-col rounded-[18px] border border-line bg-white p-5 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-[0_18px_42px_rgba(17,24,39,0.08)]">
-              <h2 className="text-lg font-black text-ink">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">{body}</p>
+            <Link key={title} href={href} className="tr-hover-card flex min-h-[180px] flex-col p-5">
+              <h2 className="tr-card-title">{title}</h2>
+              <p className="tr-body-sm mt-2">{body}</p>
               <span className="mt-auto text-sm font-black text-brand">Open</span>
             </Link>
           ))}
