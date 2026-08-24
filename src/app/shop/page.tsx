@@ -45,7 +45,7 @@ export default async function ShopPage() {
               <h2 className="tr-section-title mt-2">Browse by stand type.</h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              Category cards show the best available stand image. Some MVP media is temporary while final product photography is prepared.
+              Category cards show the best available stand image while final product photography is prepared.
             </p>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

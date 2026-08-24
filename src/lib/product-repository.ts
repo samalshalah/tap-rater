@@ -4,7 +4,7 @@ import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnaps
 import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
-import { getProductPurchaseOptions } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
 type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
@@ -304,7 +304,16 @@ function getStaticStorefrontProductBySlug(slug: string) {
 
 function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {
   const options = optionsByProduct.get(product.slug);
-  return options ? { ...product, purchaseOptions: options } : product;
+  if (!options) {
+    return sanitizePublicStorefrontProduct(product);
+  }
+
+  const sanitizedProduct = sanitizePublicStorefrontProduct(product);
+  const publicOptions = options
+    .map(sanitizePublicStorefrontOption)
+    .filter((option) => option.isActive && isPurchaseOptionSellableForProduct(sanitizedProduct, option.optionCode));
+
+  return { ...sanitizedProduct, purchaseOptions: publicOptions };
 }
 
 export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boolean {
@@ -500,7 +509,7 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     return null;
   }
 
-  return {
+  return sanitizePublicStorefrontProduct({
     slug,
     title,
     sku,
@@ -544,7 +553,54 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     searchKeywords:
       readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
     updatedAt: readString(productRow.updated_at) ?? readString(productRow.updatedAt) ?? staticProduct?.updatedAt
+  });
+}
+
+function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {
+  if (isHostedProduct(product)) {
+    return product;
+  }
+
+  const cleanDescription = `${product.title} connects QR and NFC directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
+  return {
+    ...product,
+    shortDescription: containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription,
+    description: containsLegacyDirectCopy(product.description) ? cleanDescription : product.description,
+    requiresAccount: false,
+    requiresSubscription: false,
+    requiresLandingPage: false,
+    serviceMode: product.serviceMode === "hosted_landing_page" ? "basic_redirect" : product.serviceMode,
+    activationType: product.activationType === "premium_hosted_activation" ? "free_basic_activation" : product.activationType
   };
+}
+
+function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): ProductPurchaseOptionSnapshot {
+  if (option.optionCode !== "standard_direct") {
+    return option;
+  }
+
+  return {
+    ...option,
+    title: "Standard Direct",
+    description: "Ready-made stand with QR and NFC connected directly to one destination link.",
+    priceCents: 3900,
+    requiresDestinationUrl: true,
+    hasQr: true,
+    requiresLogo: false,
+    requiresBusinessName: false,
+    requiresDesignStep: false,
+    requiresFrontProof: false,
+    requiresSubscription: false,
+    accountRequired: false
+  };
+}
+
+function containsLegacyDirectCopy(value: string | undefined) {
+  return Boolean(value && /(nfc[\s-]*only|no\s+(printed\s+)?qr|choose\s+nfc\s+only|mvp\s+media|mvp\s+catalog)/i.test(value));
+}
+
+function isHostedProduct(product: MigratedProduct) {
+  return product.productKind === "hosted_multilink" || product.requiresLandingPage || product.requiresSubscription || product.serviceMode === "hosted_landing_page";
 }
 
 function readString(value: unknown) {

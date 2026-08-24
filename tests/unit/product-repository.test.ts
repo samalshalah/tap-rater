@@ -176,7 +176,7 @@ describe("product repository", () => {
     });
   });
 
-  it("attaches active backend product options to storefront products", async () => {
+  it("sanitizes stale backend Standard Direct options before exposing storefront products", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient(
       [
         {
@@ -214,7 +214,7 @@ describe("product repository", () => {
           product_slug: "database-only-google-review-stand",
           option_code: "standard_direct",
           title: "Standard Direct",
-          description: "Backend Standard Direct",
+          description: "Ready-made NFC-only stand with one direct destination. No printed QR.",
           price_cents: 4200,
           requires_destination_url: true,
           has_qr: false,
@@ -234,10 +234,44 @@ describe("product repository", () => {
       expect.objectContaining({
         optionCode: "standard_direct",
         title: "Standard Direct",
-        priceCents: 4200,
+        description: "Ready-made stand with QR and NFC connected directly to one destination link.",
+        priceCents: 3900,
+        hasQr: true,
         isActive: true
       })
     ]);
+  });
+
+  it("removes stale direct product copy from database-backed storefront rows", () => {
+    const product = normalizeStorefrontProductRow({
+      slug: "yelp-review-stand",
+      title: "Yelp Review Stand",
+      sku: "YRS",
+      category_slug: "reviews",
+      format: "stand",
+      base_price_cents: 3900,
+      stock_status: "instock",
+      short_description: "Countertop NFC-only stand.",
+      description: "Standard Direct is NFC only. No printed QR.",
+      product_type: "physical_redirect",
+      service_mode: "basic_redirect",
+      checkout_mode: "buy_now",
+      requires_account: false,
+      requires_subscription: false,
+      requires_landing_page: false,
+      supported_destinations: ["yelp"],
+      activation_type: "free_basic_activation",
+      included_service_label: "Free basic activation",
+      customization_options: ["standard_design", "add_logo"],
+      allows_logo_upload: true,
+      allows_custom_design: false,
+      design_mode: "standard",
+      is_active: true
+    });
+
+    expect(product?.shortDescription).toContain("QR and NFC directly");
+    expect(product?.description).toContain("No subscription, account, hosted page, or activation is required.");
+    expect(`${product?.shortDescription} ${product?.description}`).not.toMatch(/NFC only|No printed QR/i);
   });
 
   it("hides QA and hosted products from the public storefront", async () => {

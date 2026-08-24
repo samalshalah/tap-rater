@@ -152,7 +152,7 @@ export default async function HomePage() {
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
                 <p className="tr-eyebrow">Popular stands</p>
-                <h2 className="tr-section-title mt-3">Ready stands for the MVP catalog.</h2>
+                <h2 className="tr-section-title mt-3">Ready stands for the launch catalog.</h2>
             </div>
             <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-black text-brand">
               Shop all
