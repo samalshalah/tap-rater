@@ -168,6 +168,10 @@ main h3 {
     box-shadow: 0 22px 60px rgba(16, 32, 30, 0.08);
   }
 
+  .tr-process-step-card {
+    @apply rounded-[28px] border border-line bg-white p-7 shadow-sm;
+  }
+
   .tr-editorial-link {
     @apply inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-dark;
   }

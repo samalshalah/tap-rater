@@ -1,11 +1,12 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { WebsiteEditor } from "@/components/admin/website-editor";
 import { requireAdmin } from "@/lib/admin-auth";
+import { getAdminBusinessUses } from "@/lib/admin-business-uses";
 import { getFooterContent, getHeaderNavigationContent, getHomepageThemeContent } from "@/lib/website-content";
 
 export default async function AdminHomepageEditorPage() {
   await requireAdmin();
-  const [header, footer, homepage] = await Promise.all([getHeaderNavigationContent(), getFooterContent(), getHomepageThemeContent()]);
+  const [header, footer, homepage, businessUses] = await Promise.all([getHeaderNavigationContent(), getFooterContent(), getHomepageThemeContent(), getAdminBusinessUses()]);
 
   return (
     <AdminShell>
@@ -16,7 +17,7 @@ export default async function AdminHomepageEditorPage() {
         Control approved public website content without changing the Tap Rater design system, product model, checkout, subscriptions, or production workflow.
       </p>
       <div className="mt-8">
-        <WebsiteEditor header={header} footer={footer} homepage={homepage} />
+        <WebsiteEditor businessUses={businessUses} header={header} footer={footer} homepage={homepage} />
       </div>
     </section>
     </AdminShell>

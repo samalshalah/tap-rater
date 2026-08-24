@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
+import { FaqList } from "@/components/storefront/faq-list";
+import { ProcessStepCard } from "@/components/storefront/process-step-card";
 import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
@@ -99,11 +101,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <section className="border-b border-line bg-[#f7f8f8]">
         <div className="tr-container py-12">
           <div className="grid gap-4 md:grid-cols-4">
-            {highlights.map((highlight) => (
-              <article key={highlight.title} className="rounded-[24px] border border-line bg-white p-6 shadow-sm">
-                <h2 className="text-base font-semibold text-ink">{highlight.title}</h2>
-                <p className="tr-body-sm mt-2">{highlight.body}</p>
-              </article>
+            {highlights.map((highlight, index) => (
+              <ProcessStepCard key={highlight.title} description={highlight.body} index={index} title={highlight.title} />
             ))}
           </div>
         </div>
@@ -115,14 +114,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <p className="tr-eyebrow">Product questions</p>
             <h2 className="mt-3 text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.85rem]">Answers before you buy.</h2>
           </div>
-          <div className="mt-7 grid gap-4 md:grid-cols-3">
-            {productFaqs.map((faq) => (
-              <article key={faq.question} className="rounded-[24px] border border-line bg-white p-6 shadow-sm">
-                <h3 className="font-semibold text-ink">{faq.question}</h3>
-                <p className="tr-body-sm mt-2">{faq.answer}</p>
-              </article>
-            ))}
-          </div>
+          <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
         </div>
       </section>
 

@@ -98,7 +98,6 @@ export default async function ShopPage() {
                 }}
                 imageFit="cover"
                 variant="use-case"
-                cta="View recommendations"
               />
             ))}
           </div>

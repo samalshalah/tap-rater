@@ -39,7 +39,6 @@ export default async function SolutionsPage() {
                 }}
                 imageFit="cover"
                 variant="use-case"
-                cta="View recommendations"
               />
             ))}
           </div>

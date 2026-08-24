@@ -7,14 +7,16 @@ import type {
   HeaderNavigationContent,
   HomepageThemeContent
 } from "@/lib/website-content";
+import type { AdminBusinessUse } from "@/lib/admin-business-uses";
 
 type WebsiteEditorProps = {
+  businessUses: AdminBusinessUse[];
   header: HeaderNavigationContent;
   footer: FooterContent;
   homepage: HomepageThemeContent;
 };
 
-export function WebsiteEditor({ header, footer, homepage }: WebsiteEditorProps) {
+export function WebsiteEditor({ businessUses, header, footer, homepage }: WebsiteEditorProps) {
   const [status, setStatus] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -71,7 +73,18 @@ export function WebsiteEditor({ header, footer, homepage }: WebsiteEditorProps) 
         <Checkbox name="featured-uses-enabled" label="Show featured use cases" defaultChecked={homepage.featuredUses.enabled} />
         <Input name="featured-uses-eyebrow" label="Section eyebrow" defaultValue={homepage.featuredUses.eyebrow} />
         <Input name="featured-uses-headline" label="Section headline" defaultValue={homepage.featuredUses.headline} />
-        <Input name="featured-uses-slugs" label="Business-use slugs, separated by commas" defaultValue={homepage.featuredUses.businessUseSlugs.join(", ")} required={false} />
+        <div className="grid gap-4 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Select
+              key={`featured-use-${index}`}
+              name={`featured-use-${index}`}
+              label={`Featured use ${index + 1}`}
+              defaultValue={homepage.featuredUses.businessUseSlugs[index] ?? ""}
+              options={businessUses.filter((businessUse) => businessUse.isActive).map((businessUse) => ({ label: businessUse.title, value: businessUse.slug }))}
+              placeholder="None"
+            />
+          ))}
+        </div>
       </EditorCard>
 
       <MarketingCard prefix="multilink" title="Multi-Link" content={homepage.multilink} />
@@ -227,13 +240,30 @@ function Checkbox({ name, label, defaultChecked }: { name: string; label: string
   );
 }
 
-function Select({ name, label, defaultValue, options }: { name: string; label: string; defaultValue: string; options: string[] }) {
+function Select({
+  defaultValue,
+  label,
+  name,
+  options,
+  placeholder
+}: {
+  defaultValue: string;
+  label: string;
+  name: string;
+  options: Array<string | { label: string; value: string }>;
+  placeholder?: string;
+}) {
   return (
     <label className="tr-field-label">
       {label}
       <select className="tr-input" name={name} defaultValue={defaultValue}>
+        {placeholder ? <option value="">{placeholder}</option> : null}
         {options.map((option) => (
-          <option key={option} value={option}>{option}</option>
+          typeof option === "string" ? (
+            <option key={option} value={option}>{option}</option>
+          ) : (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          )
         ))}
       </select>
     </label>
@@ -297,7 +327,7 @@ function buildPayload(form: FormData, header: HeaderNavigationContent, footer: F
       enabled: enabled(form, "featured-uses-enabled"),
       eyebrow: text(form, "featured-uses-eyebrow"),
       headline: text(form, "featured-uses-headline"),
-      businessUseSlugs: splitList(text(form, "featured-uses-slugs"))
+      businessUseSlugs: Array.from({ length: 6 }).map((_, index) => text(form, `featured-use-${index}`)).filter(Boolean)
     },
     multilink: marketingPayload(form, "multilink"),
     howItWorks: {

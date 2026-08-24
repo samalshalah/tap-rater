@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, Link2, ShoppingBag, Truck } from "lucide-react";
+import { FaqList } from "@/components/storefront/faq-list";
+import { ProcessStepCard } from "@/components/storefront/process-step-card";
 import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -137,7 +139,6 @@ export default async function HomePage() {
                   }}
                   imageFit="cover"
                   variant="use-case"
-                  cta="View recommendations"
                 />
               ))}
             </div>
@@ -187,14 +188,7 @@ export default async function HomePage() {
               <p className="tr-eyebrow">FAQ</p>
               <h2 className="mt-4 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.65rem]">Answers before you buy.</h2>
             </div>
-            <div className="mx-auto mt-10 grid max-w-4xl gap-3">
-              {faqs.map((faq) => (
-                <details key={faq.question} className="rounded-[22px] border border-line bg-white p-6 shadow-sm">
-                  <summary className="cursor-pointer text-lg font-semibold text-ink">{faq.question}</summary>
-                  <p className="mt-4 leading-7 text-muted">{faq.answer}</p>
-                </details>
-              ))}
-            </div>
+            <FaqList faqs={faqs} />
           </div>
         </section>
       ) : null}
@@ -317,14 +311,7 @@ function HowItWorks({ content }: { content: HomepageHowItWorksContent }) {
             .map((step, index) => {
               const Icon = icons[step.icon];
               return (
-                <article key={step.title} className="rounded-[28px] border border-line bg-[#f7f8f8] p-7">
-                  <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand shadow-sm">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <p className="mt-6 text-xs font-semibold uppercase tracking-[0.08em] text-accent">0{index + 1}</p>
-                  <h3 className="mt-2 text-xl font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted">{step.description}</p>
-                </article>
+                <ProcessStepCard key={step.title} description={step.description} icon={Icon} index={index} title={step.title} />
               );
             })}
         </div>

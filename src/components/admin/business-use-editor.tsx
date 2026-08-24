@@ -31,6 +31,7 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const selectedProductSlugs = useMemo(() => new Set(form.productSlugs), [form.productSlugs]);
+  const availableProducts = useMemo(() => products.filter((product) => !selectedProductSlugs.has(product.slug)), [products, selectedProductSlugs]);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((current) => {
@@ -42,12 +43,22 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
     setStatus(null);
   }
 
-  function toggleProduct(slug: string) {
+  function addProduct(slug: string) {
+    if (!slug || selectedProductSlugs.has(slug)) {
+      return;
+    }
+
     setForm((current) => ({
       ...current,
-      productSlugs: selectedProductSlugs.has(slug)
-        ? current.productSlugs.filter((item) => item !== slug)
-        : [...current.productSlugs, slug]
+      productSlugs: [...current.productSlugs, slug]
+    }));
+    setStatus(null);
+  }
+
+  function removeProduct(slug: string) {
+    setForm((current) => ({
+      ...current,
+      productSlugs: current.productSlugs.filter((item) => item !== slug)
     }));
     setStatus(null);
   }
@@ -96,21 +107,24 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
         </Panel>
 
         <Panel title="Assigned products">
+          <ProductSelect products={availableProducts} onAdd={addProduct} />
           <div className="grid gap-2">
-            {products.map((product) => (
-              <label key={product.slug} className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm">
-                <span>
-                  <span className="font-bold text-ink">{product.title}</span>
-                  <span className="ml-2 text-xs text-muted">{product.slug}</span>
-                </span>
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-brand"
-                  checked={selectedProductSlugs.has(product.slug)}
-                  onChange={() => toggleProduct(product.slug)}
-                />
-              </label>
-            ))}
+            {form.productSlugs.map((slug) => {
+              const product = products.find((item) => item.slug === slug);
+
+              return (
+                <div key={slug} className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm">
+                  <span>
+                    <span className="font-bold text-ink">{product?.title ?? slug}</span>
+                    <span className="ml-2 text-xs text-muted">{slug}</span>
+                  </span>
+                  <button type="button" className="rounded-md border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-red-300 hover:text-red-700" onClick={() => removeProduct(slug)}>
+                    Remove
+                  </button>
+                </div>
+              );
+            })}
+            {form.productSlugs.length === 0 ? <p className="rounded-md border border-dashed border-line bg-soft p-4 text-sm font-semibold text-muted">No products selected.</p> : null}
           </div>
         </Panel>
       </div>
@@ -141,6 +155,37 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
         </button>
         {status ? <p className={status.tone === "success" ? "text-sm font-bold text-brand" : "text-sm font-bold text-red-700"}>{status.message}</p> : null}
       </div>
+    </div>
+  );
+}
+
+function ProductSelect({ onAdd, products }: { products: MigratedProduct[]; onAdd: (slug: string) => void }) {
+  const [selectedSlug, setSelectedSlug] = useState("");
+
+  return (
+    <div className="grid gap-3 rounded-md border border-line bg-soft p-4 sm:grid-cols-[1fr_auto]">
+      <label className="block text-xs font-black uppercase text-muted">
+        Add product
+        <select className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm font-normal text-ink" value={selectedSlug} onChange={(event) => setSelectedSlug(event.target.value)}>
+          <option value="">Select a product</option>
+          {products.map((product) => (
+            <option key={product.slug} value={product.slug}>
+              {product.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="self-end rounded-md bg-ink px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={!selectedSlug}
+        onClick={() => {
+          onAdd(selectedSlug);
+          setSelectedSlug("");
+        }}
+      >
+        Add
+      </button>
     </div>
   );
 }

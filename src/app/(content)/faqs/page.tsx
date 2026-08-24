@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FaqList } from "@/components/storefront/faq-list";
 import { getFaqContent, orderedEnabledFaqs } from "@/lib/website-content";
 
 export const metadata: Metadata = {
@@ -26,14 +27,7 @@ export default async function FaqsPage() {
       </section>
       <section className="bg-[#f7f8f8]">
         <div className="tr-container py-12 lg:py-16">
-          <div className="mx-auto grid max-w-4xl gap-3">
-            {faqs.map((faq) => (
-              <details key={`${faq.area}-${faq.question}`} className="rounded-[22px] border border-line bg-white p-6 shadow-sm">
-                <summary className="cursor-pointer text-lg font-semibold text-ink">{faq.question}</summary>
-                <p className="mt-4 leading-7 text-muted">{faq.answer}</p>
-              </details>
-            ))}
-          </div>
+          <FaqList faqs={faqs} className="mx-auto grid max-w-4xl gap-3" />
         </div>
       </section>
     </main>

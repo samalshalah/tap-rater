@@ -17,7 +17,7 @@ type VisualCardProps = {
 
 export function VisualCard({ cta = "View options", density = "editorial", description, eyebrow, href, image, imageFit = "contain", title, variant = "story" }: VisualCardProps) {
   if (variant === "use-case") {
-    return <UseCaseCard cta={cta} description={description} eyebrow={eyebrow} href={href} image={image} title={title} />;
+    return <UseCaseCard description={description} eyebrow={eyebrow} href={href} image={image} title={title} />;
   }
 
   if (variant === "type") {
@@ -92,17 +92,13 @@ function ProductStoryCard({
   );
 }
 
-function UseCaseCard({ cta, description, eyebrow, href, image, title }: Pick<VisualCardProps, "cta" | "description" | "eyebrow" | "href" | "image" | "title"> & { cta: string }) {
+function UseCaseCard({ description, eyebrow, href, image, title }: Pick<VisualCardProps, "description" | "eyebrow" | "href" | "image" | "title">) {
   return (
     <Link href={href} className="group flex h-full min-h-[390px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_52px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.09)]">
       <div className="px-5 pb-4 pt-6 sm:px-6 sm:pt-7">
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
         <h3 className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f] sm:text-[1.55rem]">{title}</h3>
         <p className="mt-3 max-w-xl text-sm font-normal leading-6 text-[#646a72]">{description}</p>
-        <span className="sr-only">
-          {cta}
-          <ArrowRight className="h-4 w-4" />
-        </span>
       </div>
       <div className="relative mt-auto min-h-[190px] overflow-hidden bg-white sm:min-h-[220px]">
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
