@@ -21,9 +21,9 @@ export default async function ActivatePage({ searchParams }: ActivatePageProps) 
     <main className="bg-soft">
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-[0.8fr_1.2fr] md:px-6 md:py-16">
         <div className="space-y-5">
-          <p className="text-sm font-bold uppercase tracking-[0.16em] text-brand">Tap Rater activation</p>
+          <p className="tr-eyebrow">Tap Rater activation</p>
           <div className="space-y-4">
-            <h1 className="text-4xl font-black leading-tight text-ink md:text-5xl">Activate your Tap Rater</h1>
+            <h1 className="tr-page-title">Activate your Tap Rater</h1>
             <p className="text-lg leading-8 text-muted">
               Connect your stand to your review, booking, or business link. Once activated, every scan of the NFC chip or QR code will use
               your saved destination.

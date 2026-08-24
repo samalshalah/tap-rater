@@ -18,8 +18,8 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
   return (
     <main className="min-h-screen bg-[#f7f8fa] px-4 py-16 text-ink">
       <section className="mx-auto max-w-2xl rounded-[22px] border border-line bg-white p-7 shadow-sm sm:p-8">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Order received</p>
-        <h1 className="mt-3 text-4xl font-extrabold leading-tight text-ink">Your order was received</h1>
+        <p className="tr-eyebrow">Order received</p>
+        <h1 className="tr-page-title mt-3">Your order was received</h1>
         <p className="mt-4 leading-7 text-muted">
           Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details
           before production starts.
@@ -34,10 +34,10 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           </p>
         ) : null}
         <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
+          <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand">
             Continue shopping
           </Link>
-          <Link href="/support" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-black text-ink hover:border-ink">
+          <Link href="/support" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 text-sm font-semibold text-ink hover:border-ink">
             Contact support
           </Link>
         </div>

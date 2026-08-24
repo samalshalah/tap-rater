@@ -23,7 +23,7 @@ export default async function AccountLoginPage({ searchParams }: LoginPageProps)
           <p className="tr-eyebrow">Customer account</p>
           <h1 className="tr-page-title">Log in to Tap Rater</h1>
           <p className="tr-body max-w-md">
-            Get a secure email link to edit your business information, links, logo, style, and permanent Tap Rater page.
+            Use your account email and password to edit your business information, links, logo, style, and permanent Tap Rater page.
           </p>
         </div>
         <AccountLoginForm token={token} />

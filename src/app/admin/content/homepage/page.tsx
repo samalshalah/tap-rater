@@ -1,22 +1,22 @@
 import { AdminShell } from "@/components/admin/admin-shell";
-import { HomepageEditor } from "@/components/admin/homepage-editor";
+import { WebsiteEditor } from "@/components/admin/website-editor";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getHomepageContent } from "@/lib/cms-repository";
+import { getFooterContent, getHeaderNavigationContent, getHomepageThemeContent } from "@/lib/website-content";
 
 export default async function AdminHomepageEditorPage() {
   await requireAdmin();
-  const content = await getHomepageContent();
+  const [header, footer, homepage] = await Promise.all([getHeaderNavigationContent(), getFooterContent(), getHomepageThemeContent()]);
 
   return (
     <AdminShell>
-    <section className="mx-auto max-w-4xl px-4 py-8 md:px-8 lg:py-12">
+    <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 lg:py-12">
       <p className="text-sm font-semibold uppercase text-brand">Admin</p>
-      <h1 className="mt-3 text-4xl font-black text-ink">Homepage editor</h1>
+      <h1 className="mt-3 text-4xl font-black text-ink">Website editor</h1>
       <p className="mt-4 leading-7 text-muted">
-        These fields control the homepage hero when database persistence is configured. Without database credentials, the form will show the fallback content and saving returns a configuration message.
+        Control approved public website content without changing the Tap Rater design system, product model, checkout, subscriptions, or production workflow.
       </p>
-      <div className="mt-8 rounded-md border border-line bg-white p-5 shadow-sm md:p-7">
-        <HomepageEditor content={content} />
+      <div className="mt-8">
+        <WebsiteEditor header={header} footer={footer} homepage={homepage} />
       </div>
     </section>
     </AdminShell>

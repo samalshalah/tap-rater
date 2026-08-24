@@ -19,33 +19,40 @@ export default async function ShopPage() {
 
   return (
     <main className="bg-white text-ink">
-      <section className="border-b border-line bg-white">
-        <div className="tr-container tr-section-compact">
+      <section className="bg-white">
+        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end lg:py-16">
+          <div>
           <p className="tr-eyebrow">Tap Rater shop</p>
-          <h1 className="tr-page-title mt-3 max-w-3xl">Shop NFC and QR stands.</h1>
-          <p className="tr-body mt-3 max-w-2xl">
-            Pick the action first, then set up a Standard Direct stand with one customer destination URL.
+            <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.25rem]">
+              Shop NFC and QR stands.
+            </h1>
+          </div>
+          <div>
+            <p className="text-xl font-medium leading-8 text-[#5f686f]">
+              Pick the action first, then configure a stand with QR and NFC connected directly to your destination.
           </p>
-          <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-7 flex flex-wrap gap-4">
             <Link href="#all-stands" className="tr-button-primary min-h-10">
               View all stands
             </Link>
-            <Link href="/solutions" className="tr-button-outline min-h-10">
+              <Link href="/solutions" className="tr-editorial-link">
               Shop by use
+                <span aria-hidden="true">→</span>
             </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-soft">
-        <div className="tr-container py-10 sm:py-12">
+      <section id="stand-categories" className="bg-[#f7f8f8]">
+        <div className="tr-container py-10 sm:py-14">
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
               <p className="tr-eyebrow">Stand categories</p>
-              <h2 className="tr-section-title mt-2">Browse by stand type.</h2>
+              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Browse by stand type.</h2>
             </div>
-            <p className="tr-body-sm max-w-xl">
-              Category cards show the best available stand image while final product photography is prepared.
+            <p className="max-w-xl text-sm font-medium leading-6 text-muted">
+              Use categories when you already know the kind of counter action you need.
             </p>
           </div>
           <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -65,12 +72,24 @@ export default async function ShopPage() {
         </div>
       </section>
 
-      <section id="all-stands" className="border-t border-line bg-white">
-        <div className="tr-container tr-section">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
+      <section id="all-stands" className="bg-white">
+        <div className="tr-container grid gap-8 py-10 lg:grid-cols-[240px_1fr] lg:py-14">
+          <aside className="lg:sticky lg:top-28 lg:self-start">
+            <p className="tr-eyebrow">Filter</p>
+            <div className="mt-4 flex max-w-full flex-wrap gap-2 pb-2 lg:grid lg:pb-0">
+              <Link href="/shop" className="tr-button-primary min-h-10 px-4 text-[13px]">All Stands</Link>
+              {categories.map((category) => (
+                <Link key={category.slug} href={getCategoryHref(category.slug)} className="tr-button-outline min-h-10 px-4 text-[13px]">
+                  {category.title}
+                </Link>
+              ))}
+            </div>
+          </aside>
+          <div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
               <p className="tr-eyebrow">All stands</p>
-              <h2 className="tr-section-title mt-2">Tap Rater catalog</h2>
+                <h2 className="mt-2 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.35rem]">Tap Rater catalog</h2>
             </div>
             <p className="text-sm font-medium text-muted">{products.length} stands available</p>
           </div>
@@ -82,6 +101,7 @@ export default async function ShopPage() {
                 Products are being prepared.
               </div>
             )}
+          </div>
           </div>
         </div>
       </section>

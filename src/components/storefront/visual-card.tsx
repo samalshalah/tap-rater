@@ -36,24 +36,24 @@ function ProductStoryCard({
   const compact = density === "compact";
   const imageClassName =
     imageFit === "cover"
-      ? "object-cover transition duration-200 group-hover:scale-[1.03]"
-      : "object-contain p-1 transition duration-200 scale-[1.14] group-hover:scale-[1.18]";
+      ? "object-cover transition duration-300 group-hover:scale-[1.02]"
+      : "object-contain p-4 transition duration-300 scale-[1.08] group-hover:scale-[1.11]";
 
   return (
     <Link
       href={href}
-      className={`tr-premium-surface group grid overflow-hidden bg-soft md:grid-cols-[0.9fr_1.1fr] ${compact ? "min-h-[320px]" : "min-h-[420px]"}`}
+      className={`group flex h-full flex-col overflow-hidden rounded-[34px] bg-[#fbfbfb] shadow-[0_22px_70px_rgba(16,32,30,0.08)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_26px_82px_rgba(16,32,30,0.1)] ${compact ? "min-h-[520px]" : "min-h-[640px]"}`}
     >
-      <div className={`flex flex-col justify-center ${compact ? "p-5 sm:p-6 lg:p-7" : "p-6 sm:p-8 lg:p-10"}`}>
+      <div className={compact ? "px-7 pb-3 pt-8 sm:px-8 sm:pt-9" : "px-8 pb-4 pt-10 sm:px-11 sm:pt-12"}>
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
-        <h3 className={`mt-3 font-black leading-tight text-ink ${compact ? "text-2xl sm:text-3xl" : "text-[1.75rem] sm:text-4xl"}`}>{title}</h3>
-        <p className={`mt-4 max-w-md leading-7 text-muted ${compact ? "text-sm" : "text-base"}`}>{description}</p>
+        <h3 className={`mt-4 font-semibold leading-[1.08] text-[#090b0f] ${compact ? "text-[1.65rem] sm:text-[1.95rem]" : "text-[1.95rem] sm:text-[2.35rem]"}`}>{title}</h3>
+        <p className={`mt-4 max-w-[650px] font-normal leading-8 text-[#646a72] ${compact ? "text-base" : "text-lg"}`}>{description}</p>
         <span className={`tr-editorial-link ${compact ? "mt-5" : "mt-7"}`}>
           {cta}
           <ArrowRight className="h-4 w-4" />
         </span>
       </div>
-      <div className={imageFit === "cover" ? `relative bg-soft md:min-h-full ${compact ? "min-h-[220px]" : "min-h-[260px]"}` : `relative bg-white md:min-h-full ${compact ? "min-h-[220px]" : "min-h-[280px]"}`}>
+      <div className={imageFit === "cover" ? `relative mt-auto bg-[#f7f8f8] ${compact ? "min-h-[300px]" : "min-h-[390px]"}` : `relative mt-auto bg-[#fbfbfb] ${compact ? "min-h-[300px]" : "min-h-[430px]"}`}>
         <Image src={image.src} alt={image.alt} fill unoptimized className={imageClassName} />
       </div>
     </Link>
@@ -62,18 +62,18 @@ function ProductStoryCard({
 
 function UseCaseCard({ cta, description, eyebrow, href, image, title }: Pick<VisualCardProps, "cta" | "description" | "eyebrow" | "href" | "image" | "title"> & { cta: string }) {
   return (
-    <Link href={href} className="tr-premium-surface group flex h-full min-h-[460px] flex-col bg-white">
-      <div className="p-6 pb-5 sm:p-8 sm:pb-6">
+    <Link href={href} className="group flex h-full min-h-[390px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_52px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.09)]">
+      <div className="px-5 pb-4 pt-6 sm:px-6 sm:pt-7">
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
-        <h3 className="mt-2 text-[1.7rem] font-black leading-tight text-ink sm:text-[2.1rem]">{title}</h3>
-        <p className="mt-3 max-w-xl text-base leading-7 text-muted">{description}</p>
-        <span className="tr-editorial-link mt-6">
+        <h3 className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f] sm:text-[1.55rem]">{title}</h3>
+        <p className="mt-3 max-w-xl text-sm font-normal leading-6 text-[#646a72]">{description}</p>
+        <span className="sr-only">
           {cta}
           <ArrowRight className="h-4 w-4" />
         </span>
       </div>
-      <div className="relative mt-auto min-h-[250px] overflow-hidden rounded-t-[24px] bg-soft sm:min-h-[300px]">
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-200 group-hover:scale-[1.025]" />
+      <div className="relative mt-auto min-h-[190px] overflow-hidden bg-white sm:min-h-[220px]">
+        <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
       </div>
     </Link>
   );

@@ -91,7 +91,7 @@ describe("backend validators", () => {
   });
 
   it("accepts account login and change request payloads", () => {
-    expect(accountLoginRequestSchema.parse({ email: "owner@example.com" }).email).toBe("owner@example.com");
+    expect(accountLoginRequestSchema.parse({ email: "owner@example.com", password: "secret-password" }).email).toBe("owner@example.com");
     expect(accountLoginVerifySchema.parse({ token: "signed-token" }).token).toBe("signed-token");
     expect(
       accountChangeRequestSchema.parse({

@@ -88,7 +88,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ];
 
   return (
-    <main className="bg-soft text-ink">
+    <main className="bg-white text-ink">
       <JsonLd data={productJsonLd(product)} />
       <JsonLd data={faqJsonLd(productFaqs)} />
 
@@ -96,12 +96,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} />
       </section>
 
-      <section className="border-b border-line bg-soft">
-        <div className="tr-container tr-section-compact">
+      <section className="border-b border-line bg-[#f7f8f8]">
+        <div className="tr-container py-12">
           <div className="grid gap-4 md:grid-cols-4">
             {highlights.map((highlight) => (
-              <article key={highlight.title} className="tr-card p-5">
-                <h2 className="text-base font-black text-ink">{highlight.title}</h2>
+              <article key={highlight.title} className="rounded-[24px] border border-line bg-white p-6 shadow-sm">
+                <h2 className="text-base font-semibold text-ink">{highlight.title}</h2>
                 <p className="tr-body-sm mt-2">{highlight.body}</p>
               </article>
             ))}
@@ -113,12 +113,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="tr-container tr-section">
           <div className="max-w-3xl">
             <p className="tr-eyebrow">Product questions</p>
-            <h2 className="tr-section-title mt-3">Answers before you buy.</h2>
+            <h2 className="mt-3 text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.85rem]">Answers before you buy.</h2>
           </div>
           <div className="mt-7 grid gap-4 md:grid-cols-3">
             {productFaqs.map((faq) => (
-              <article key={faq.question} className="tr-card p-5">
-                <h3 className="font-black text-ink">{faq.question}</h3>
+              <article key={faq.question} className="rounded-[24px] border border-line bg-white p-6 shadow-sm">
+                <h3 className="font-semibold text-ink">{faq.question}</h3>
                 <p className="tr-body-sm mt-2">{faq.answer}</p>
               </article>
             ))}
@@ -127,14 +127,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </section>
 
       {relatedProducts.length > 0 ? (
-        <section className="bg-soft">
+        <section className="bg-[#f7f8f8]">
           <div className="tr-container tr-section">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="tr-eyebrow">More stands</p>
-                <h2 className="tr-section-title mt-3">Related Tap Rater stands</h2>
+                <h2 className="mt-3 text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.85rem]">Related Tap Rater stands</h2>
               </div>
-              <Link href="/shop" className="text-sm font-black text-brand">
+              <Link href="/shop" className="text-sm font-semibold text-brand">
                 View all stands
               </Link>
             </div>

@@ -13,6 +13,8 @@ describe("admin navigation", () => {
         "/admin/orders?filter=production",
         "/admin/requests",
         "/admin/shipping",
+        "/admin/content",
+        "/admin/business-uses",
         "/admin/settings",
         "/admin/settings/emails"
       ])
@@ -20,14 +22,12 @@ describe("admin navigation", () => {
 
     expect(hrefs).not.toEqual(
       expect.arrayContaining([
-        "/admin/business-uses",
         "/admin/stand-types",
         "/admin/customers",
         "/admin/devices",
         "/admin/inventory",
         "/admin/discounts",
         "/admin/taxes",
-        "/admin/content",
         "/admin/media",
         "/admin/seo",
         "/admin/analytics"
@@ -42,12 +42,10 @@ describe("admin navigation", () => {
       expect.arrayContaining([
         "/admin/customers",
         "/admin/devices",
-        "/admin/business-uses",
         "/admin/stand-types",
         "/admin/inventory",
         "/admin/discounts",
         "/admin/taxes",
-        "/admin/content",
         "/admin/media",
         "/admin/seo",
         "/admin/analytics"

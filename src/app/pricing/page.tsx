@@ -17,8 +17,8 @@ export default function PricingPage() {
     <main className="bg-white text-ink">
       <section className="border-b border-line bg-white">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-brand">Pricing</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-tight text-ink md:text-5xl">Simple pricing for direct stands.</h1>
+          <p className="tr-eyebrow">Pricing</p>
+          <h1 className="tr-page-title mt-4 max-w-3xl">Simple pricing for direct stands.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
             Buy ready NFC stands from the shop. Standard Direct includes QR and NFC direct to one link with no monthly fee.
           </p>
@@ -29,10 +29,10 @@ export default function PricingPage() {
         <div className="mx-auto grid max-w-7xl gap-4 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
           {prices.map(([title, price, body, href]) => (
             <article key={title} className="flex min-h-[260px] flex-col rounded-[18px] border border-line bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black text-ink">{title}</h2>
-              <p className="mt-5 text-2xl font-extrabold text-ink">{price}</p>
+              <h2 className="text-xl font-semibold text-ink">{title}</h2>
+              <p className="mt-5 text-2xl font-semibold text-ink">{price}</p>
               <p className="mt-3 text-sm leading-6 text-muted">{body}</p>
-              <Link href={href} className="mt-auto inline-flex min-h-11 w-fit items-center rounded-full bg-ink px-5 text-sm font-black text-white hover:bg-brand">
+              <Link href={href} className="mt-auto inline-flex min-h-11 w-fit items-center rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand">
                 View options
               </Link>
             </article>

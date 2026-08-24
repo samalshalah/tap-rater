@@ -9,14 +9,18 @@ export default async function AdminContentPage() {
     <AdminShell>
     <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 lg:py-12">
       <p className="text-sm font-semibold uppercase text-brand">Admin</p>
-      <h1 className="mt-3 text-4xl font-black text-ink">Website content</h1>
+      <h1 className="mt-3 text-4xl font-black text-ink">Website</h1>
       <p className="mt-4 max-w-3xl leading-7 text-muted">
-        Edit homepage copy, create CMS pages, and prepare SEO/content changes. Saved content uses Postgres when configured.
+        Manage approved public website content inside Tap Rater's controlled visual system.
       </p>
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         <Link href="/admin/content/homepage" className="rounded-md border border-line bg-white p-5 shadow-sm">
-          <h2 className="font-black text-ink">Homepage</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Hero text, buttons, featured labels.</p>
+          <h2 className="font-black text-ink">Homepage, Navigation & FAQ</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">Hero, action cards, sections, header, footer, and FAQ records.</p>
+        </Link>
+        <Link href="/admin/business-uses" className="rounded-md border border-line bg-white p-5 shadow-sm">
+          <h2 className="font-black text-ink">Use Cases</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">Industries, imagery, SEO, ordering, and product relationships.</p>
         </Link>
         <Link href="/admin/content/pages" className="rounded-md border border-line bg-white p-5 shadow-sm">
           <h2 className="font-black text-ink">Pages</h2>

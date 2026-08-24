@@ -13,8 +13,8 @@ export default function SetupPage() {
   return (
     <section className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[0.8fr_1.2fr]">
       <div>
-        <p className="text-sm font-semibold uppercase text-brand">Setup</p>
-        <h1 className="mt-3 text-4xl font-black text-ink">Setup New TapRater</h1>
+        <p className="tr-eyebrow">Setup</p>
+        <h1 className="tr-page-title mt-3">Setup New TapRater</h1>
         <p className="mt-4 leading-7 text-muted">
           Send the review or feedback URL you want connected to your Tap Rater product. This creates a backend setup request for the team to review.
         </p>

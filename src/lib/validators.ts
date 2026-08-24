@@ -315,7 +315,8 @@ export type AdminDeviceCreateInput = z.infer<typeof adminDeviceCreateSchema>;
 export type AdminDeviceUpdateInput = z.infer<typeof adminDeviceUpdateSchema>;
 
 export const accountLoginRequestSchema = z.object({
-  email: z.string().trim().email().max(180)
+  email: z.string().trim().email().max(180),
+  password: z.string().min(1).max(200)
 });
 
 export const accountLoginVerifySchema = z.object({

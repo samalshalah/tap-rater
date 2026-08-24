@@ -17,16 +17,16 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-[22px] border border-line/80 bg-white p-3 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lg"
+      className="group flex h-full flex-col overflow-hidden rounded-[32px] bg-[#fbfbfb] p-5 shadow-[0_18px_58px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_24px_70px_rgba(16,32,30,0.09)]"
     >
-      <div className="relative h-56 overflow-hidden rounded-[18px] bg-soft sm:h-64">
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2 transition duration-200 scale-[1.08] group-hover:scale-[1.12]" />
+      <div className="relative h-64 overflow-hidden rounded-[28px] bg-[#f7f8f8] sm:h-72">
+        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-3 transition duration-300 scale-[1.08] group-hover:scale-[1.11]" />
       </div>
-      <div className="flex flex-1 flex-col px-1 pb-1 pt-5">
-        <p className="text-xs font-black uppercase tracking-[0.08em] text-brand">{category?.title ?? destination}</p>
-        <h2 className="mt-2 text-xl font-black leading-snug text-ink">{product.title}</h2>
-        <p className="mt-2 text-sm leading-6 text-muted">{setupLabel}</p>
-        <div className="mt-4 flex flex-wrap gap-1.5">
+      <div className="flex flex-1 flex-col px-1 pb-1 pt-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.06em] text-accent">{category?.title ?? destination}</p>
+        <h2 className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f]">{product.title}</h2>
+        <p className="mt-3 text-sm font-normal leading-6 text-[#646a72]">{setupLabel}</p>
+        <div className="mt-5 flex flex-wrap gap-1.5">
           {options.some((option) => option.id === "standard_direct") ? (
             <span className="tr-pill-neutral">Standard Direct</span>
           ) : null}
@@ -35,8 +35,8 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
           ) : null}
         </div>
         <div className="mt-auto grid gap-3 pt-5">
-          <span className="text-base font-black text-ink">{purchaseLabel}</span>
-          <span className="tr-button-primary min-h-10 w-full px-4">
+          <span className="text-base font-semibold text-ink">{purchaseLabel}</span>
+          <span className="tr-button-primary min-h-10 w-full rounded-xl px-4">
             View Product
           </span>
         </div>

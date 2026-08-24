@@ -61,29 +61,34 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const categories = getCatalogCategories().filter((item) => publicStandTypes.some((standType) => standType.slug === categoryToStandTypeSlug(item.slug)));
   const visual = getCategoryVisual(category);
   const heroImage = activeStandType.bannerImageUrl || activeStandType.imageUrl || visual.src;
+  const hasSingleProduct = products.length === 1;
+  const productGridClassName =
+    hasSingleProduct
+      ? "mt-8 grid max-w-[520px] gap-5 md:max-w-[600px]"
+      : "mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   const title = activeStandType.title || category.title;
   const description = activeStandType.shortDescription || activeStandType.description || category.description;
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
 
   return (
     <main className="bg-white text-ink">
-      <section className="border-b border-line bg-white">
-        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[1fr_0.45fr] lg:items-end">
+      <section className="bg-white">
+        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[1fr_0.62fr] lg:items-center lg:py-16">
           <div>
             <Link href="/shop" className="text-sm font-semibold text-brand">
               Shop all stands
             </Link>
             <p className="tr-eyebrow mt-6">{category.eyebrow}</p>
-            <h1 className="tr-page-title mt-3 max-w-3xl">{title}</h1>
-            <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted">{description}</p>
+            <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.2rem]">{title}</h1>
+            <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">{description}</p>
           </div>
-          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-lg border border-line bg-soft lg:block">
-            <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-6" />
+          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)] lg:block">
+            <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-8 mix-blend-multiply" />
           </div>
         </div>
       </section>
 
-      <section className="border-b border-line bg-soft">
+      <section className="border-y border-line bg-[#f7f8f8]">
         <div className="tr-container py-5">
           <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
             <Link
@@ -109,16 +114,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </section>
 
-      <section className="tr-container py-9">
+      <section className={hasSingleProduct ? "tr-container py-10 lg:py-12" : "tr-container py-12 lg:py-16"}>
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">{products.length} stands</p>
-            <h2 className="tr-section-title mt-2">Shop {title.toLowerCase()}</h2>
+            <h2 className="mt-2 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.35rem]">Shop {title.toLowerCase()}</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">{buyerIntent}</p>
         </div>
         {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80 [&_>_a_h2]:text-2xl` : productGridClassName}>
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (

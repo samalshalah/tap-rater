@@ -20,8 +20,8 @@ export type CustomerActionCard = {
 };
 
 export const productImageFallback: StorefrontVisual = {
-  src: "/uploads/products/no-photo-available.png",
-  alt: "Product image coming soon"
+  src: "/uploads/products/rate-your-experience-stand.png",
+  alt: "Tap Rater tabletop stand"
 };
 
 const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
@@ -46,7 +46,7 @@ const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
     alt: "Rate Your Experience Stand"
   },
   "website-links": {
-    src: "/uploads/products/no-photo-available.png",
+    src: "/uploads/products/visit-website-stand.png",
     alt: "Website and Link Stand"
   },
   "custom-stands": {
@@ -147,14 +147,14 @@ export const customerActionCards: CustomerActionCard[] = [
     title: "Visit Website",
     description: "Connect to your site, catalog, offer, app, location, or link page.",
     href: "/category/website-link-stands",
-    image: { src: "/uploads/products/no-photo-available.png", alt: "Website link stand" }
+    image: { src: "/uploads/products/visit-website-stand.png", alt: "Website link stand" }
   }
 ];
 
 export function getCategoryVisual(category: Pick<CatalogCategory, "slug" | "title">): StorefrontVisual {
   return categoryVisuals[category.slug] ?? {
     ...productImageFallback,
-    alt: `${category.title} image coming soon`
+    alt: `${category.title} stand`
   };
 }
 

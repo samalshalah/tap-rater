@@ -21,10 +21,12 @@ describe("Tap Rater product strategy", () => {
 
   it("positions the homepage around launch-ready ecommerce stand sales", () => {
     const homepage = readFileSync("src/app/page.tsx", "utf8");
+    const websiteContent = readFileSync("src/lib/website-content.ts", "utf8");
 
     expect(homepage).toContain("NFC & QR Stands for Reviews, Menus, Booking, Social Media and More");
-    expect(homepage).toContain("Shop Stands");
-    expect(homepage).toContain("No subscription");
+    expect(homepage).toContain("getHomepageThemeContent");
+    expect(websiteContent).toContain("Shop Stands");
+    expect(websiteContent).toContain("does not require a Tap Rater account, hosted redirect, activation, or subscription");
   });
 
   it("documents the platform domain split, redirect engine, and database entities", () => {

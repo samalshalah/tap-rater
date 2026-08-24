@@ -1,24 +1,33 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import { isDevelopmentAdminLoginAllowed, sendCustomerLoginEmail } from "@/lib/customer-login";
+import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
+import { isDevelopmentAdminLoginAllowed } from "@/lib/customer-login";
 import { accountLoginRequestSchema } from "@/lib/validators";
+
+const customerSessionMaxAgeSeconds = 30 * 24 * 60 * 60;
 
 export async function POST(request: Request) {
   const parsed = accountLoginRequestSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    return NextResponse.json({ error: "Please enter a valid email and password." }, { status: 400 });
   }
 
   const email = parsed.data.email.toLowerCase();
+  const password = parsed.data.password;
+  const expectedPassword = getExpectedPassword(email);
+
+  if (!expectedPassword) {
+    return NextResponse.json({ error: "Customer password login is not configured yet. Please contact Tap Rater support." }, { status: 503 });
+  }
+
+  if (!passwordMatches(password, expectedPassword)) {
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+  }
+
   if (!hasSupabaseAdminConfig()) {
     if (isDevelopmentAdminLoginAllowed(email)) {
-      const login = await sendCustomerLoginEmail(email);
-      return NextResponse.json({
-        ok: true,
-        message: "Development login link generated for the admin email.",
-        devMagicLink: login.loginUrl
-      });
+      return createLoginResponse(email, request);
     }
     return NextResponse.json({ error: "Customer login is not configured yet." }, { status: 503 });
   }
@@ -26,21 +35,32 @@ export async function POST(request: Request) {
   const { data: customer } = await getSupabaseAdmin().from("customers").select("id,email").eq("email", email).maybeSingle();
 
   if (!customer?.id) {
-    return NextResponse.json({ ok: true, message: "If this email has an account, a login link will be sent." });
+    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
-  const login = await sendCustomerLoginEmail(email);
-  if (!login.sent && login.loginUrl) {
-    return NextResponse.json({
-      ok: true,
-      message: "Development login link generated for the admin email.",
-      devMagicLink: login.loginUrl
-    });
+  return createLoginResponse(customer.email ?? email, request);
+}
+
+function createLoginResponse(email: string, request: Request) {
+  const response = NextResponse.json({ ok: true, redirectTo: "/account" });
+  response.cookies.set(customerCookieName, createCustomerSessionValue(email), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: new URL(request.url).protocol === "https:",
+    path: "/",
+    maxAge: customerSessionMaxAgeSeconds
+  });
+  return response;
+}
+
+function getExpectedPassword(email: string) {
+  if (isDevelopmentAdminLoginAllowed(email) && process.env.ADMIN_PASSWORD) {
+    return process.env.ADMIN_PASSWORD;
   }
 
-  if (!login.sent) {
-    return NextResponse.json({ error: "Email login is not configured yet. Please contact Tap Rater support." }, { status: 503 });
-  }
+  return process.env.CUSTOMER_ACCOUNT_PASSWORD || process.env.CUSTOMER_LOGIN_PASSWORD || "";
+}
 
-  return NextResponse.json({ ok: true, message: "If this email has an account, a login link will be sent." });
+function passwordMatches(actual: string, expected: string) {
+  return actual.length === expected.length && actual === expected;
 }

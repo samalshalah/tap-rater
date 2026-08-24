@@ -1,12 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { ProductCard } from "@/components/product/product-card";
+import { ArrowRight, Link2, ShoppingBag, Truck } from "lucide-react";
 import { VisualCard } from "@/components/storefront/visual-card";
-import { getStorefrontProducts } from "@/lib/product-repository";
+import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
-import { businessUseCases, customerActionCards, productImageFallback } from "@/lib/storefront-visuals";
+import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
 
 export const metadata: Metadata = {
   title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More",
@@ -21,155 +20,328 @@ export const metadata: Metadata = {
   }
 };
 
-const proofPoints = ["Standard Direct from $39", "No subscription required", "QR and NFC use the same customer URL"];
-
-const options = [
-  {
-    title: "Standard Direct",
-    price: "$39",
-    body: "QR and NFC pointed directly to one destination link."
-  },
-  {
-    title: "DIRECT mode",
-    price: "No account",
-    body: "No Tap Rater account, hosted page, activation step, or subscription is required."
-  }
-];
-
 export default async function HomePage() {
-  const products = await getStorefrontProducts();
-  const heroProduct = products.find((product) => product.slug === "google-review-stand") ?? products[0];
-  const heroProductImage = heroProduct?.images[0] ?? (heroProduct ? { ...productImageFallback, alt: heroProduct.title } : undefined);
+  const [content, businessUses] = await Promise.all([getHomepageThemeContent(), getPublicBusinessUses()]);
+  const completeBusinessUses = businessUses.filter((businessUse) => Boolean(businessUse.bannerImageUrl || businessUse.imageUrl));
+  const configuredFeaturedUses = content.featuredUses.businessUseSlugs.length
+    ? content.featuredUses.businessUseSlugs.flatMap((slug) => businessUses.find((businessUse) => businessUse.slug === slug) ?? [])
+    : [];
+  const featuredUses = mergeFeaturedUses(configuredFeaturedUses, completeBusinessUses).slice(0, 6);
+  const faqs = orderedEnabledFaqs(content.faqs, "global").slice(0, 4);
 
   return (
     <main className="bg-white text-ink">
       <JsonLd data={organizationJsonLd()} />
       <JsonLd data={websiteJsonLd()} />
 
-      <section className="border-b border-line bg-white">
-        <div className="tr-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:py-16">
-          <div>
-            <p className="tr-eyebrow">Tap Rater NFC + QR stands</p>
-            <h1 className="tr-hero-title mt-4 max-w-3xl break-words">
-              Turn Every Counter Into a Customer Action Point
-            </h1>
-            <p className="tr-body mt-5 max-w-2xl sm:text-lg">
-              Sell NFC stands that help customers review, book, follow, view menus, and visit your links with one tap.
-            </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
-              <Link href="/shop" className="tr-button-primary px-6">
-                Shop Stands
-              </Link>
-              <Link href="/how-it-works" className="tr-button-outline px-6">
-                See How It Works
-              </Link>
-              <div className="flex basis-full flex-col items-start gap-2 pt-1 text-[13px] font-semibold text-muted sm:flex-row sm:flex-wrap sm:gap-x-4 sm:text-sm">
-                {proofPoints.map((item) => (
-                  <span key={item} className="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-brand" />
-                    <span>{item}</span>
-                  </span>
-                ))}
+      {content.hero.enabled ? (
+        <section className="bg-white">
+          <div className="tr-container grid gap-6 pb-10 pt-8 sm:pb-14 sm:pt-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start lg:pb-16 lg:pt-12">
+            <div className="max-w-[660px] lg:pt-8">
+              <p className="tr-eyebrow">{content.hero.eyebrow}</p>
+              <h1 className="mt-5 text-[2.55rem] font-semibold leading-[1.05] text-[#111317] sm:text-[3.15rem] lg:text-[3.25rem]">
+                {content.hero.headline}
+              </h1>
+              <p className="mt-6 max-w-[560px] text-lg font-medium leading-8 text-[#5f686f] sm:text-xl">{content.hero.body}</p>
+              <div className="mt-8 flex flex-wrap items-center gap-5">
+                <Link href={content.hero.primaryCta.href} className="tr-button-primary px-7">
+                  {content.hero.primaryCta.label}
+                </Link>
+                {content.hero.secondaryCta ? (
+                  <Link href={content.hero.secondaryCta.href} className="tr-editorial-link">
+                    {content.hero.secondaryCta.label}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                ) : null}
               </div>
+              {content.hero.proofPoints.length > 0 ? (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {content.hero.proofPoints.map((point) => (
+                    <span key={point} className="tr-pill-neutral bg-[#f4f5f5] text-[#4e575d]">
+                      {point}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="relative min-h-[320px] overflow-hidden sm:min-h-[470px] lg:min-h-[560px]">
+              <Image
+                src={content.hero.image.src}
+                alt={content.hero.image.alt}
+                fill
+                priority
+                unoptimized
+                className="object-contain object-center mix-blend-multiply scale-[0.94] sm:scale-[0.98] lg:scale-[1.02]"
+                sizes="(min-width: 1024px) 58vw, 100vw"
+              />
             </div>
           </div>
+        </section>
+      ) : null}
 
-          <div className="tr-premium-surface relative min-h-[340px] bg-soft lg:min-h-[560px]">
-            {heroProductImage ? (
-              <Image src={heroProductImage.src} alt={heroProductImage.alt} fill priority unoptimized className="object-contain p-2 sm:p-4 lg:p-5" />
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-line bg-white">
-        <div className="tr-container grid gap-6 py-8 md:grid-cols-2">
-          {options.map((option) => (
-            <article key={option.title} className="border-l-2 border-brand pl-5">
-              <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
-                <div>
-                  <p className="tr-eyebrow">{option.title}</p>
-                  <h2 className="mt-2 text-2xl font-black text-ink">{option.title === "Standard Direct" ? `${option.price} one-time` : option.price}</h2>
-                </div>
+      {content.actions.enabled ? (
+        <section className="bg-[#f7f8f8] py-12 sm:py-16 lg:py-20">
+          <div className="tr-container">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="tr-eyebrow">{content.actions.eyebrow}</p>
+                <h2 className="mt-4 max-w-[780px] text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.65rem]">
+                  {content.actions.headline}
+                </h2>
               </div>
-              <p className="tr-body-sm mt-3">{option.body}</p>
-            </article>
+              <Link href="/shop" className="tr-editorial-link">
+                Shop All Stands
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+            </div>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {content.actions.items
+                .filter((item) => item.enabled)
+                .sort((first, second) => first.order - second.order)
+                .map((item) => (
+                  <Link
+                    key={`${item.title}-${item.href}`}
+                    href={item.href}
+                    className="group flex min-h-[400px] flex-col overflow-hidden rounded-[30px] bg-white p-6 shadow-[0_14px_44px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.03]"
+                  >
+                    <div className="relative min-h-[250px] flex-1">
+                      <Image
+                        src={item.image.src}
+                        alt={item.image.alt}
+                        fill
+                        unoptimized
+                        className="object-contain object-center mix-blend-multiply transition duration-300 group-hover:scale-[1.04]"
+                        sizes="(min-width: 1024px) 25vw, 76vw"
+                      />
+                    </div>
+                    <h3 className="mt-4 text-xl font-semibold leading-tight text-ink">{item.title}</h3>
+                    <p className="mt-2 text-sm font-medium leading-6 text-muted">{item.description}</p>
+                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand">
+                      Learn more
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </Link>
+                ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {content.featuredUses.enabled && featuredUses.length > 0 ? (
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="tr-container">
+            <div className="mx-auto max-w-4xl text-center">
+              <p className="tr-eyebrow">{content.featuredUses.eyebrow}</p>
+              <h2 className="mt-4 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.75rem]">
+                {content.featuredUses.headline}
+              </h2>
+            </div>
+            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {featuredUses.map((useCase) => (
+                <VisualCard
+                  key={useCase.slug}
+                  href={`/solutions/${useCase.slug}`}
+                  title={useCase.title}
+                  description={useCase.shortDescription || useCase.description}
+                  image={{
+                    src: useCase.bannerImageUrl || useCase.imageUrl || "/uploads/products/no-photo-available.png",
+                    alt: useCase.title
+                  }}
+                  imageFit="cover"
+                  variant="use-case"
+                  cta="View recommendations"
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {content.multilink.enabled ? (
+        <section className="bg-[#f7f8f8] py-12 sm:py-16 lg:py-20">
+          <div className="tr-container grid gap-10 lg:grid-cols-[1fr_0.92fr] lg:items-center">
+            <MarketingVisual content={content.multilink} />
+            <MarketingCopy eyebrow={content.multilink.eyebrow} headline={content.multilink.headline} body={content.multilink.body} cta={content.multilink.cta} />
+          </div>
+        </section>
+      ) : null}
+
+      {content.howItWorks.enabled ? <HowItWorks content={content.howItWorks} /> : null}
+
+      {content.customBranding.enabled ? (
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="tr-container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <MarketingCopy
+              eyebrow={content.customBranding.eyebrow}
+              headline={content.customBranding.headline}
+              body={content.customBranding.body}
+              cta={content.customBranding.cta}
+              bullets={content.customBranding.bullets}
+            />
+            <div className="relative min-h-[560px] sm:min-h-[700px]">
+              <Image
+                src={content.customBranding.image.src}
+                alt={content.customBranding.image.alt}
+                fill
+                unoptimized
+                className="object-contain object-center mix-blend-multiply"
+                sizes="(min-width: 1024px) 54vw, 100vw"
+              />
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {faqs.length > 0 ? (
+        <section className="bg-[#f7f8f8] py-12 sm:py-16 lg:py-20">
+          <div className="tr-container">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="tr-eyebrow">FAQ</p>
+              <h2 className="mt-4 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.65rem]">Answers before you buy.</h2>
+            </div>
+            <div className="mx-auto mt-10 grid max-w-4xl gap-3">
+              {faqs.map((faq) => (
+                <details key={faq.question} className="rounded-[22px] border border-line bg-white p-6 shadow-sm">
+                  <summary className="cursor-pointer text-lg font-semibold text-ink">{faq.question}</summary>
+                  <p className="mt-4 leading-7 text-muted">{faq.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {content.finalCta.enabled ? (
+        <section className="bg-white py-16 sm:py-20 lg:py-24">
+          <div className="tr-container text-center">
+            <p className="tr-eyebrow">{content.finalCta.eyebrow}</p>
+            <h2 className="mx-auto mt-5 max-w-[860px] text-[2.15rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.85rem]">
+              {content.finalCta.headline}
+            </h2>
+            <div className="mt-9 flex flex-wrap justify-center gap-5">
+              <Link href={content.finalCta.primaryCta.href} className="tr-button-primary px-7">
+                {content.finalCta.primaryCta.label}
+              </Link>
+              {content.finalCta.secondaryCta ? (
+                <Link href={content.finalCta.secondaryCta.href} className="tr-editorial-link">
+                  {content.finalCta.secondaryCta.label}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+    </main>
+  );
+}
+
+function mergeFeaturedUses<T extends { slug: string; bannerImageUrl?: string; imageUrl?: string }>(configured: T[], fallback: T[]) {
+  const merged = new Map<string, T>();
+
+  for (const item of configured.filter((useCase) => Boolean(useCase.bannerImageUrl || useCase.imageUrl))) {
+    merged.set(item.slug, item);
+  }
+
+  for (const item of fallback) {
+    if (!merged.has(item.slug)) {
+      merged.set(item.slug, item);
+    }
+  }
+
+  return Array.from(merged.values());
+}
+
+function MarketingCopy({
+  eyebrow,
+  headline,
+  body,
+  cta,
+  bullets = []
+}: {
+  eyebrow: string;
+  headline: string;
+  body: string;
+  cta: { label: string; href: string };
+  bullets?: string[];
+}) {
+  return (
+    <div className="max-w-[610px]">
+      <p className="tr-eyebrow">{eyebrow}</p>
+      <h2 className="mt-6 text-[2.1rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.75rem]">{headline}</h2>
+      <p className="mt-6 text-xl font-medium leading-8 text-[#5d666d]">{body}</p>
+      {bullets.length > 0 ? (
+        <div className="mt-7 flex flex-wrap gap-2">
+          {bullets.map((bullet) => (
+            <span key={bullet} className="tr-pill-neutral">{bullet}</span>
           ))}
         </div>
-      </section>
+      ) : null}
+      <Link href={cta.href} className="mt-9 tr-editorial-link text-base">
+        {cta.label}
+        <ArrowRight className="h-5 w-5" />
+      </Link>
+    </div>
+  );
+}
 
-      <section className="bg-soft">
-        <div className="tr-container tr-section">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="tr-eyebrow">What do you want customers to do?</p>
-              <h2 className="tr-section-title mt-3">Start with the customer action.</h2>
-            </div>
-            <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-black text-brand">
-              View every stand
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            {customerActionCards.map((card) => (
-              <VisualCard key={card.title} href={card.href} title={card.title} description={card.description} image={card.image} cta="View stand" />
+function MarketingVisual({ content }: { content: { image: { src: string; alt: string }; bullets: string[] } }) {
+  return (
+    <div className="relative min-h-[560px] overflow-hidden rounded-[38px] bg-white sm:min-h-[700px]">
+      <div className="absolute inset-y-8 left-0 w-[58%] sm:w-[60%] lg:left-[-12%] lg:w-[66%]">
+        <Image src={content.image.src} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 34vw, 58vw" />
+      </div>
+      <div className="absolute right-5 top-12 w-[54%] max-w-[320px] rounded-[34px] bg-white p-5 shadow-[0_22px_60px_rgba(16,32,30,0.14)] ring-1 ring-black/[0.04] sm:right-10 sm:top-16 sm:w-[48%]">
+        <div className="rounded-[26px] bg-[#fbfcfc] p-5">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand text-sm font-semibold text-white">TR</div>
+          <p className="mt-4 text-center text-base font-semibold text-ink">Tap Rater Page</p>
+          <p className="mt-1 text-center text-xs font-semibold text-muted">Tap or scan for important links</p>
+          <div className="mt-5 grid gap-3">
+            {content.bullets.slice(0, 6).map((button) => (
+              <span key={button} className="rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold text-ink shadow-sm">
+                {button}
+              </span>
             ))}
           </div>
         </div>
-      </section>
+      </div>
+      <p className="absolute bottom-8 left-8 max-w-[270px] text-sm font-semibold leading-6 text-muted">
+        One physical stand opens one editable branded page.
+      </p>
+    </div>
+  );
+}
 
-      <section className="bg-white">
-        <div className="tr-container tr-section">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="tr-eyebrow">Shop by business use</p>
-              <h2 className="tr-section-title mt-3">Use cards that match real buyers.</h2>
-            </div>
-            <Link href="/solutions" className="inline-flex items-center gap-2 text-sm font-black text-brand">
-              View all uses
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {businessUseCases.slice(0, 6).map((useCase) => (
-              <VisualCard
-                key={useCase.title}
-                href={useCase.href}
-                title={useCase.title}
-                description={useCase.description}
-                image={useCase.image}
-                imageFit="cover"
-                cta="Explore solutions"
-                variant="use-case"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
+function HowItWorks({ content }: { content: HomepageHowItWorksContent }) {
+  const icons = { shop: ShoppingBag, link: Link2, truck: Truck };
 
-      <section className="border-t border-line bg-soft">
-        <div className="tr-container tr-section">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-                <p className="tr-eyebrow">Popular stands</p>
-                <h2 className="tr-section-title mt-3">Ready stands for the launch catalog.</h2>
-            </div>
-            <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-black text-brand">
-              Shop all
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {products.length > 0 ? (
-              products.slice(0, 8).map((product) => <ProductCard key={product.slug} product={product} />)
-            ) : (
-              <div className="tr-card p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-4">
-                Products are being prepared.
-              </div>
-            )}
-          </div>
+  return (
+    <section className="bg-white py-14 sm:py-18 lg:py-24">
+      <div className="tr-container">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="tr-eyebrow">{content.eyebrow}</p>
+          <h2 className="mt-4 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.65rem]">{content.headline}</h2>
         </div>
-      </section>
-    </main>
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {content.steps
+            .slice()
+            .sort((first, second) => first.order - second.order)
+            .map((step, index) => {
+              const Icon = icons[step.icon];
+              return (
+                <article key={step.title} className="rounded-[28px] border border-line bg-[#f7f8f8] p-7">
+                  <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-brand shadow-sm">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <p className="mt-6 text-xs font-semibold uppercase tracking-[0.08em] text-accent">0{index + 1}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-ink">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-muted">{step.description}</p>
+                </article>
+              );
+            })}
+        </div>
+      </div>
+    </section>
   );
 }

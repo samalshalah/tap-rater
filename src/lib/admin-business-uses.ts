@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { lockedBusinessUses, type BusinessUse } from "@/lib/catalog-architecture";
 import { businessUseColumns } from "@/lib/catalog-architecture-repository";
@@ -55,12 +56,14 @@ export async function getAdminBusinessUsesFromClient(client: AdminBusinessUseCli
 }
 
 export async function getPublicBusinessUses(): Promise<AdminBusinessUse[]> {
+  noStore();
+
   if (!hasSupabaseAdminConfig()) {
     return lockedBusinessUses.filter((businessUse) => businessUse.isActive).map((businessUse) => ({ ...businessUse, productSlugs: [] }));
   }
 
   const businessUses = await getAdminBusinessUsesFromClient(getSupabaseAdmin() as AdminBusinessUseClient);
-  return businessUses.filter((businessUse) => businessUse.isActive);
+  return businessUses.filter((businessUse) => businessUse.isActive).map(applyBusinessUseAssetFallback);
 }
 
 export async function getPublicBusinessUseBySlug(slug: string): Promise<AdminBusinessUse | undefined> {
@@ -164,6 +167,19 @@ function normalizeBusinessUse(row: unknown): BusinessUse | null {
     bannerImageUrl: readString(record.banner_image_url),
     sortOrder: readNumber(record.sort_order) ?? 0,
     isActive: readBoolean(record.is_active) ?? false
+  };
+}
+
+function applyBusinessUseAssetFallback(businessUse: AdminBusinessUse): AdminBusinessUse {
+  const fallback = lockedBusinessUses.find((item) => item.slug === businessUse.slug);
+  if (!fallback) {
+    return businessUse;
+  }
+
+  return {
+    ...businessUse,
+    imageUrl: businessUse.imageUrl || fallback.imageUrl,
+    bannerImageUrl: businessUse.bannerImageUrl || fallback.bannerImageUrl
   };
 }
 

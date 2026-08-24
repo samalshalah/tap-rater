@@ -49,35 +49,35 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
 
   return (
     <main className="bg-white text-ink">
-      <section className="border-b border-line bg-white">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.45fr] lg:items-end lg:px-8">
+      <section className="bg-white">
+        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[1fr_0.62fr] lg:items-center lg:py-16">
           <div>
             <Link href="/solutions" className="text-sm font-semibold text-brand">All business uses</Link>
-            <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.16em] text-brand">Shop by use</p>
-            <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight text-ink md:text-4xl">{businessUse.title}</h1>
-            <p className="mt-3 max-w-3xl text-[15px] leading-7 text-muted">
+            <p className="tr-eyebrow mt-6">Shop by use</p>
+            <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.2rem]">{businessUse.title}</h1>
+            <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">
               {businessUse.shortDescription || businessUse.description}
             </p>
           </div>
-          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-2xl border border-line bg-[#fafafa] lg:block">
+          <div className="relative hidden aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)] lg:block">
             <Image src={heroImage} alt={businessUse.title} fill unoptimized className="object-cover" />
           </div>
         </div>
       </section>
 
       {businessUse.longContent ? (
-        <section className="border-b border-line bg-[#f7f8fa]">
-          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <section className="border-y border-line bg-[#f7f8f8]">
+          <div className="tr-container py-8">
             <div className="max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{businessUse.longContent}</div>
           </div>
         </section>
       ) : null}
 
-      <section className="mx-auto max-w-7xl px-4 py-9 sm:px-6 lg:px-8">
+      <section className="tr-container py-12 lg:py-16">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-brand">{assignedProducts.length} stands</p>
-            <h2 className="mt-2 text-2xl font-semibold text-ink md:text-3xl">Recommended stands</h2>
+            <p className="tr-eyebrow">{assignedProducts.length} stands</p>
+            <h2 className="mt-2 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.35rem]">Recommended stands</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-muted">
             Each product uses Standard Direct setup with one customer destination URL.

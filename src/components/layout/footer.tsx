@@ -1,38 +1,109 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+
+type FooterContent = {
+  intro: string;
+  columns: Array<{
+    label: string;
+    order: number;
+    links: Array<{ label: string; href: string; order: number; enabled: boolean }>;
+  }>;
+};
+
+const defaultFooterContent: FooterContent = {
+  intro: "Custom printed NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
+  columns: [
+    {
+      label: "Shop",
+      order: 10,
+      links: [
+        { label: "All Stands", href: "/shop", order: 10, enabled: true },
+        { label: "Review Stands", href: "/category/reviews", order: 20, enabled: true },
+        { label: "Menu Stands", href: "/category/menu", order: 30, enabled: true },
+        { label: "Multi-Link Stands", href: "/category/website-link-stands", order: 40, enabled: true }
+      ]
+    },
+    {
+      label: "Solutions",
+      order: 20,
+      links: [
+        { label: "Automotive", href: "/solutions/auto-dealerships", order: 10, enabled: true },
+        { label: "Restaurants", href: "/solutions/restaurants-cafes", order: 20, enabled: true },
+        { label: "Healthcare", href: "/solutions/healthcare-dental", order: 30, enabled: true },
+        { label: "Beauty & Wellness", href: "/solutions/beauty-wellness", order: 40, enabled: true }
+      ]
+    },
+    {
+      label: "Resources",
+      order: 30,
+      links: [
+        { label: "How It Works", href: "/how-it-works", order: 10, enabled: true },
+        { label: "FAQ", href: "/faqs", order: 20, enabled: true },
+        { label: "Support", href: "/support", order: 30, enabled: true },
+        { label: "Contact", href: "/contact-us", order: 40, enabled: true }
+      ]
+    },
+    {
+      label: "Company",
+      order: 40,
+      links: [
+        { label: "Terms", href: "/terms", order: 10, enabled: true },
+        { label: "Privacy", href: "/privacy-policy", order: 20, enabled: true },
+        { label: "Refund Policy", href: "/refund-policy", order: 30, enabled: true },
+        { label: "Shipping", href: "/shipping", order: 40, enabled: true }
+      ]
+    }
+  ]
+};
 
 export function Footer() {
+  const [content, setContent] = useState<FooterContent>(defaultFooterContent);
+  const columns = useMemo(
+    () => content.columns
+      .slice()
+      .sort((first, second) => first.order - second.order || first.label.localeCompare(second.label))
+      .map((column) => ({
+        ...column,
+        links: column.links.filter((link) => link.enabled).sort((first, second) => first.order - second.order || first.label.localeCompare(second.label))
+      })),
+    [content]
+  );
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/site/website-content")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (active && body?.footer?.columns) {
+          setContent(body.footer);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
-    <footer className="border-t border-line bg-soft text-ink">
-      <div className="tr-container grid gap-8 py-12 md:grid-cols-[1.35fr_0.9fr_0.9fr_1fr] lg:py-14">
+    <footer className="border-t border-line bg-[#f7f8f8] text-ink">
+      <div className="tr-container grid gap-8 py-12 md:grid-cols-[1.35fr_repeat(4,0.9fr)] lg:py-14">
         <div>
-          <p className="text-lg font-black text-brand">Tap Rater</p>
+          <p className="text-lg font-semibold text-brand">Tap Rater</p>
           <p className="mt-3 max-w-sm text-sm leading-6 text-muted">
-            Custom printed NFC and QR tabletop stands for local businesses.
+            {content.intro}
           </p>
-          <p className="mt-5 max-w-sm text-sm font-semibold leading-6 text-ink">Built for reviews, menus, booking, social media, feedback, and custom business links.</p>
         </div>
-        <div className="grid content-start gap-2 text-sm text-muted [&_a:hover]:text-brand">
-          <p className="mb-2 text-xs font-black uppercase text-ink">Shop</p>
-          <Link href="/shop">All stands</Link>
-          <Link href="/category/reviews">Review stands</Link>
-          <Link href="/category/menu">Menu stands</Link>
-          <Link href="/custom-stands">Custom stands</Link>
-        </div>
-        <div className="grid content-start gap-2 text-sm text-muted [&_a:hover]:text-brand">
-          <p className="mb-2 text-xs font-black uppercase text-ink">Support</p>
-          <Link href="/how-it-works">How it works</Link>
-          <Link href="/support">Support</Link>
-          <Link href="/change-taprater-link">Change Tap Rater link</Link>
-        </div>
-        <div className="grid content-start gap-2 text-sm text-muted [&_a:hover]:text-brand">
-          <p className="mb-2 text-xs font-black uppercase text-ink">Company</p>
-          <Link href="/solutions">Solutions</Link>
-          <Link href="/pricing">Pricing</Link>
-          <Link href="/privacy-policy">Privacy Policy</Link>
-          <Link href="/terms">Terms</Link>
-          <Link href="/refund-policy">Refund Policy</Link>
-          <Link href="/shipping">Shipping</Link>
-        </div>
+        {columns.map((column) => (
+          <div key={column.label} className="grid content-start gap-2 text-sm text-muted [&_a:hover]:text-brand">
+            <p className="mb-2 text-xs font-semibold uppercase text-ink">{column.label}</p>
+            {column.links.map((link) => (
+              <Link key={`${column.label}-${link.href}-${link.label}`} href={link.href}>{link.label}</Link>
+            ))}
+          </div>
+        ))}
       </div>
       <div className="border-t border-line bg-white px-4 py-5 text-center text-xs text-muted">
         Copyright 2026 Tap Rater. All rights reserved.

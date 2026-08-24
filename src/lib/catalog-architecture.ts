@@ -152,7 +152,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "website-link-stands",
     title: "Website & Link Stands",
     description: "Stands that open websites, catalogs, apps, locations, or custom direct URLs.",
-    imageUrl: "/uploads/products/no-photo-available.png",
+    imageUrl: "/uploads/products/visit-website-stand.png",
     sortOrder: 60,
     isActive: true
   },
