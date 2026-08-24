@@ -1,4 +1,4 @@
-import { sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import {
   defaultEmailTemplates,
   getEmailTemplate,
@@ -40,7 +40,8 @@ export async function sendPaidOrderEmails(
       ? await sendPaidOrderEmailSafely(sendEmailFn, {
           to: customerEmail,
           subject: customerTemplate.subject,
-          html: buildCustomerPaidOrderEmailHtml(order, customerTemplate)
+          html: buildCustomerPaidOrderEmailHtml(order, customerTemplate),
+          replyTo: getCustomerReplyToEmail(env)
         })
       : { sent: false as const, reason: "missing_customer_email" as const };
 

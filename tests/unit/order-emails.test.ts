@@ -4,6 +4,8 @@ import {
   buildCustomerPaidOrderEmailHtml,
   sendPaidOrderEmails
 } from "@/lib/order-emails";
+import { buildShippingNotificationEmailHtml } from "@/lib/shipping-emails";
+import { buildHostedSetupEmailHtml } from "@/lib/hosted-setup-email";
 import type { OrderRecord } from "@/lib/orders";
 
 const paidOrder: OrderRecord = {
@@ -147,12 +149,14 @@ describe("paid order emails", () => {
     expect(sendEmailFn).toHaveBeenCalledTimes(2);
     expect(sendEmailFn.mock.calls[0][0]).toMatchObject({
       to: "buyer@example.com",
-      subject: "Your Tap Rater order is confirmed"
+      subject: "Your Tap Rater order is confirmed",
+      replyTo: "support@taprater.com"
     });
     expect(sendEmailFn.mock.calls[1][0]).toMatchObject({
       to: "orders@example.com",
       subject: "New paid Tap Rater order"
     });
+    expect(sendEmailFn.mock.calls[1][0]).not.toHaveProperty("replyTo");
   });
 
   it("uses configured email template text for paid order emails", async () => {
@@ -232,5 +236,42 @@ describe("paid order emails", () => {
       admin: { sent: true }
     });
     expect(sendEmailFn).toHaveBeenCalledTimes(2);
+  });
+
+  it("renders hosted page-ready email with account and permanent page URLs", () => {
+    const html = buildHostedSetupEmailHtml({
+      businessName: "Hosted Cafe",
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2",
+      accountUrl: "https://app.taprater.com/account/login?token=signed-token"
+    });
+
+    expect(html).toContain("Your Tap Rater hosted page for Hosted Cafe has been created.");
+    expect(html).toContain("https://taprater.com/p/ABCDEFGHJKM2");
+    expect(html).toContain("That permanent URL stays the same");
+    expect(html).toContain("https://app.taprater.com/account/login?token=signed-token");
+    expect(html).toContain("https://taprater.com/support");
+    expect(html).not.toMatch(/analytics|clicks|conversion|device|subscription|localhost|workers\\.dev/i);
+  });
+
+  it("renders shipping email without leaking internal notes or operational fields", () => {
+    const html = buildShippingNotificationEmailHtml({
+      ...paidOrder,
+      shipping_status: "shipped",
+      shipping_carrier: "USPS",
+      tracking_number: "TRACK123",
+      tracking_url: "https://tools.usps.com/go/TrackConfirmAction?tLabels=TRACK123",
+      internal_notes: "Internal packing note",
+      admin_fulfillment_notes: "Admin-only note"
+    });
+
+    expect(html).toContain("Your Tap Rater order has a shipping update.");
+    expect(html).toContain("Status:</strong> Shipped");
+    expect(html).toContain("Carrier:</strong> USPS");
+    expect(html).toContain("Tracking number:</strong> TRACK123");
+    expect(html).toContain("https://tools.usps.com/go/TrackConfirmAction?tLabels=TRACK123");
+    expect(html).toContain("https://taprater.com/support");
+    expect(html).not.toContain("Internal packing note");
+    expect(html).not.toContain("Admin-only note");
+    expect(html).not.toMatch(/production_status|shipping_status|line_items_json|service_mode|basic_redirect|hosted_landing_page|localhost|workers\\.dev/i);
   });
 });

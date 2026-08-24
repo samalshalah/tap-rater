@@ -484,6 +484,146 @@ describe("orders repository", () => {
     }));
   });
 
+  it("sends shipping notification once when transitioning to shipped with tracking", async () => {
+    const rows: Record<string, any>[] = [
+      {
+        id: "order-123",
+        stripe_checkout_session_id: "cs_test_shipping_email",
+        status: "paid",
+        payment_status: "paid",
+        email: "buyer@example.com",
+        customer_name: "Buyer",
+        subtotal_cents: 3900,
+        total_cents: 3900,
+        currency: "usd",
+        line_items_json: [],
+        shipping_amount_cents: 0,
+        production_status: "completed",
+        shipping_status: "ready_to_ship",
+        internal_notes: "Internal note",
+        admin_fulfillment_notes: "Admin note"
+      }
+    ];
+    const client = createOrdersMemoryClient(rows);
+    const sendShippingNotificationEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await updateOrderFulfillmentWithClient(
+      client,
+      "order-123",
+      {
+        productionStatus: "completed",
+        shippingStatus: "ready_to_ship",
+        shippingMethod: "Ground",
+        shippingCarrier: "USPS",
+        trackingNumber: "TRACK123",
+        trackingUrl: "https://example.com/track/TRACK123",
+        internalNotes: "Updated internal note",
+        adminFulfillmentNotes: "Updated admin note",
+        markShipped: true
+      },
+      { sendShippingNotificationEmailFn }
+    );
+
+    expect(result).toEqual({ ok: true, shippingEmail: { sent: true } });
+    expect(rows[0]).toMatchObject({ shipping_status: "shipped", tracking_number: "TRACK123" });
+    expect(sendShippingNotificationEmailFn).toHaveBeenCalledWith({
+      order: expect.objectContaining({
+        id: "order-123",
+        email: "buyer@example.com",
+        shipping_status: "shipped",
+        shipping_carrier: "USPS",
+        tracking_number: "TRACK123",
+        tracking_url: "https://example.com/track/TRACK123"
+      })
+    });
+  });
+
+  it("does not resend shipping email for unrelated edits to an already shipped order", async () => {
+    const rows: Record<string, any>[] = [
+      {
+        id: "order-123",
+        stripe_checkout_session_id: "cs_test_shipping_email",
+        status: "paid",
+        payment_status: "paid",
+        email: "buyer@example.com",
+        subtotal_cents: 3900,
+        total_cents: 3900,
+        currency: "usd",
+        line_items_json: [],
+        shipping_amount_cents: 0,
+        production_status: "completed",
+        shipping_status: "shipped",
+        tracking_number: "TRACK123",
+        internal_notes: "",
+        admin_fulfillment_notes: ""
+      }
+    ];
+    const sendShippingNotificationEmailFn = vi.fn();
+
+    const result = await updateOrderFulfillmentWithClient(
+      createOrdersMemoryClient(rows),
+      "order-123",
+      {
+        productionStatus: "completed",
+        shippingStatus: "shipped",
+        shippingMethod: "Ground",
+        shippingCarrier: "USPS",
+        trackingNumber: "TRACK123",
+        trackingUrl: "https://example.com/track/TRACK123",
+        internalNotes: "Unrelated edit",
+        adminFulfillmentNotes: "",
+        markShipped: true
+      },
+      { sendShippingNotificationEmailFn }
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(sendShippingNotificationEmailFn).not.toHaveBeenCalled();
+  });
+
+  it("does not roll back shipping state when shipping email fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const rows: Record<string, any>[] = [
+      {
+        id: "order-123",
+        stripe_checkout_session_id: "cs_test_shipping_email",
+        status: "paid",
+        payment_status: "paid",
+        email: "buyer@example.com",
+        subtotal_cents: 3900,
+        total_cents: 3900,
+        currency: "usd",
+        line_items_json: [],
+        shipping_amount_cents: 0,
+        production_status: "completed",
+        shipping_status: "ready_to_ship",
+        internal_notes: "",
+        admin_fulfillment_notes: ""
+      }
+    ];
+
+    const result = await updateOrderFulfillmentWithClient(
+      createOrdersMemoryClient(rows),
+      "order-123",
+      {
+        productionStatus: "completed",
+        shippingStatus: "ready_to_ship",
+        shippingMethod: "Ground",
+        shippingCarrier: "USPS",
+        trackingNumber: "TRACK123",
+        trackingUrl: "https://example.com/track/TRACK123",
+        internalNotes: "",
+        adminFulfillmentNotes: "",
+        markShipped: true
+      },
+      { sendShippingNotificationEmailFn: vi.fn().mockResolvedValue({ sent: false, reason: "missing_api_key" }) }
+    );
+
+    expect(result).toEqual({ ok: true, shippingEmail: { sent: false, reason: "missing_api_key" } });
+    expect(rows[0]).toMatchObject({ shipping_status: "shipped", tracking_number: "TRACK123" });
+    expect(warn).toHaveBeenCalledWith("[orders] shipping_email_not_sent", expect.objectContaining({ reason: "missing_api_key" }));
+  });
+
   it("clears fulfillment text fields with intentional empty strings", async () => {
     const update = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ error: null })
@@ -637,3 +777,54 @@ describe("orders repository", () => {
     });
   });
 });
+
+function createOrdersMemoryClient(rows: Record<string, any>[]): OrdersDbClient {
+  return {
+    from(table: string) {
+      expect(table).toBe("orders");
+      return new OrdersMemoryQuery(rows);
+    }
+  } as unknown as OrdersDbClient;
+}
+
+class OrdersMemoryQuery {
+  private filters: Array<{ column: string; value: unknown }> = [];
+  private updatePayload: Record<string, unknown> | null = null;
+
+  constructor(private readonly rows: Record<string, any>[]) {}
+
+  select() {
+    return this;
+  }
+
+  eq(column: string, value: unknown) {
+    this.filters.push({ column, value });
+    return this;
+  }
+
+  update(payload: Record<string, unknown>) {
+    this.updatePayload = payload;
+    return this;
+  }
+
+  async maybeSingle() {
+    const row = this.rows.find((candidate) => this.filters.every((filter) => candidate[filter.column] === filter.value));
+    return { data: row ?? null, error: null };
+  }
+
+  then<TResult1 = any, TResult2 = never>(
+    onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | null,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
+  ) {
+    return this.execute().then(onfulfilled, onrejected);
+  }
+
+  private async execute() {
+    if (this.updatePayload) {
+      this.rows
+        .filter((candidate) => this.filters.every((filter) => candidate[filter.column] === filter.value))
+        .forEach((candidate) => Object.assign(candidate, this.updatePayload));
+    }
+    return { data: null, error: null };
+  }
+}

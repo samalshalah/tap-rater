@@ -2,7 +2,7 @@ import { Resend } from "resend";
 
 type EmailClient = {
   emails: {
-    send: (input: { from: string; to: string | string[]; subject: string; html: string }) => Promise<unknown>;
+    send: (input: { from: string; to: string | string[]; subject: string; html: string; replyTo?: string | string[] }) => Promise<unknown>;
   };
 };
 
@@ -20,6 +20,7 @@ export type SendEmailInput = {
   subject: string;
   html: string;
   from?: string;
+  replyTo?: string | string[];
   resendClient?: EmailClient;
 };
 
@@ -39,6 +40,10 @@ type EmailClientInput = {
 
 export function getDefaultFromEmail(env: Record<string, string | undefined> = process.env) {
   return env.RESEND_FROM_EMAIL || "Tap Rater <notifications@taprater.com>";
+}
+
+export function getCustomerReplyToEmail(env: Record<string, string | undefined> = process.env) {
+  return env.CUSTOMER_SUPPORT_EMAIL || "support@taprater.com";
 }
 
 export function hasResendApiKey(env: Record<string, string | undefined> = process.env) {
@@ -81,7 +86,8 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
     from: input.from ?? getDefaultFromEmail(),
     to: input.to,
     subject: input.subject,
-    html: input.html
+    html: input.html,
+    ...(input.replyTo ? { replyTo: input.replyTo } : {})
   });
   const error = readResendError(result);
 
@@ -99,6 +105,7 @@ export async function sendCustomerLoginLinkEmail(input: { to: string; loginUrl: 
         url: input.loginUrl
       }
     }),
+    replyTo: getCustomerReplyToEmail(),
     resendClient: input.resendClient
   });
 }
@@ -132,6 +139,7 @@ export async function sendQuoteRequestConfirmationEmail(input: { to: string; bus
         "We will review the details and follow up with next steps."
       ]
     }),
+    replyTo: getCustomerReplyToEmail(),
     resendClient: input.resendClient
   });
 }

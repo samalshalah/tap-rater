@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildEmailHtml,
+  getCustomerReplyToEmail,
   getDefaultFromEmail,
   sendEmail,
+  sendCustomerLoginLinkEmail,
   sendLinkChangeRequestEmail,
   sendQuoteRequestConfirmationEmail
 } from "@/lib/email";
@@ -31,6 +33,7 @@ describe("email utility", () => {
   it("uses configured sender with a safe default fallback", () => {
     expect(getDefaultFromEmail({})).toBe("Tap Rater <notifications@taprater.com>");
     expect(getDefaultFromEmail({ RESEND_FROM_EMAIL: "Tap Rater <hello@mail.taprater.com>" })).toBe("Tap Rater <hello@mail.taprater.com>");
+    expect(getCustomerReplyToEmail({})).toBe("support@taprater.com");
   });
 
   it("does not send when the Resend API key is missing", async () => {
@@ -65,6 +68,22 @@ describe("email utility", () => {
     });
   });
 
+  it("passes replyTo through to Resend-compatible clients", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const send = vi.fn().mockResolvedValue({ data: { id: "email-1" }, error: null });
+
+    const result = await sendEmail({
+      to: "owner@example.com",
+      subject: "Tap Rater test",
+      html: "<p>Hello</p>",
+      replyTo: "support@taprater.com",
+      resendClient: { emails: { send } }
+    });
+
+    expect(result).toEqual({ sent: true });
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ replyTo: "support@taprater.com" }));
+  });
+
   it("builds supported email types", async () => {
     process.env.RESEND_API_KEY = "re_test";
     const send = vi.fn().mockResolvedValue({ data: { id: "email-1" }, error: null });
@@ -73,6 +92,11 @@ describe("email utility", () => {
     await sendQuoteRequestConfirmationEmail({
       to: "owner@example.com",
       businessName: "Main Street Dental",
+      resendClient
+    });
+    await sendCustomerLoginLinkEmail({
+      to: "owner@example.com",
+      loginUrl: "https://app.taprater.com/account/login?token=test",
       resendClient
     });
     await sendLinkChangeRequestEmail({
@@ -84,7 +108,9 @@ describe("email utility", () => {
       resendClient
     });
 
-    expect(send).toHaveBeenCalledTimes(2);
-    expect(send.mock.calls[1][0].html).toContain("Owner &lt;One&gt;");
+    expect(send).toHaveBeenCalledTimes(3);
+    expect(send.mock.calls[0][0]).toMatchObject({ replyTo: "support@taprater.com" });
+    expect(send.mock.calls[1][0]).toMatchObject({ replyTo: "support@taprater.com" });
+    expect(send.mock.calls[2][0].html).toContain("Owner &lt;One&gt;");
   });
 });

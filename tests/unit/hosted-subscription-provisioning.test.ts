@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { describe, expect, it, vi } from "vitest";
 import {
   isHostedSubscriptionCheckout,
   mapStripeSubscriptionLifecycle,
@@ -14,10 +15,11 @@ describe("hosted subscription provisioning", () => {
     expect(isHostedSubscriptionCheckout({ id: "cs_test_direct" }, order)).toBe(false);
   });
 
-  it("provisions customer ownership, permanent code, hosted page URL, subscription, and production targets after paid checkout", async () => {
+  it("provisions customer ownership, permanent code, hosted page URL, subscription, production targets, and setup email after paid checkout", async () => {
     const client = new MemoryDbClient();
     const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
     const order = createHostedOrder();
+    const sendHostedSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
 
     const result = await provisionHostedSubscriptionFromCheckout(
       {
@@ -45,7 +47,7 @@ describe("hosted subscription provisioning", () => {
         now: new Date("2026-08-23T12:00:00.000Z"),
         siteUrl: "https://taprater.com"
       },
-      { client, storage, generateCode: () => "ABCDEFGHJKM2" }
+      { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn }
     );
 
     expect(result).toEqual({
@@ -73,6 +75,44 @@ describe("hosted subscription provisioning", () => {
       nfcTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2"
     });
     expect(storage.objects.has("hosted-pages/ABCDEFGHJKM2/current.json")).toBe(true);
+    expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({
+      to: "owner@example.com",
+      businessName: "Owner Example",
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+  });
+
+  it("does not roll back hosted provisioning when setup email fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+
+    const result = await provisionHostedSubscriptionFromCheckout(
+      {
+        eventId: "evt_test_hosted_email_failure",
+        session: {
+          id: "cs_test_hosted",
+          payment_status: "paid",
+          customer_details: { email: "owner@example.com" },
+          metadata: { checkout_intent: "hosted_subscription" },
+          subscription: { id: "sub_test_123", status: "active" }
+        },
+        order: createHostedOrder(),
+        now: new Date("2026-08-23T12:00:00.000Z"),
+        siteUrl: "https://taprater.com"
+      },
+      {
+        client,
+        storage,
+        generateCode: () => "ABCDEFGHJKM2",
+        sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: false, reason: "missing_api_key" })
+      }
+    );
+
+    expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
+    expect(client.table("hosted_subscriptions")).toHaveLength(1);
+    expect(storage.objects.has("hosted-pages/ABCDEFGHJKM2/current.json")).toBe(true);
+    expect(warn).toHaveBeenCalledWith("[hosted-provisioning] setup_email_not_sent", expect.objectContaining({ reason: "missing_api_key" }));
   });
 
   it("does not consume a second code for duplicate Stripe events", async () => {
@@ -98,6 +138,13 @@ describe("hosted subscription provisioning", () => {
 
     expect(duplicate).toEqual({ ok: true, provisioned: false, reason: "duplicate_event" });
     expect(storage.assignedCodes).toEqual(["ABCDEFGHJKM2"]);
+  });
+
+  it("does not send hosted setup email from the browser success page", async () => {
+    const source = await readFile("src/app/checkout/success/page.tsx", "utf8");
+
+    expect(source).not.toContain("sendHostedSetupEmail");
+    expect(source).not.toContain("provisionHostedSubscriptionFromCheckout");
   });
 
   it("maps subscription lifecycle states without recycling permanent URLs", () => {

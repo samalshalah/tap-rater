@@ -2,6 +2,7 @@ import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
 import { buildDirectProductionTargets } from "@/lib/direct-production";
 import { purchaseOptionIdToCustomizationLevel, type CustomizationLevel, type DestinationMode } from "@/lib/product-model";
+import { sendShippingNotificationEmail, type ShippingEmailInput } from "@/lib/shipping-emails";
 import {
   generateProductionArtworkForOrderLineItem,
   readProductionArtworkReference,
@@ -98,6 +99,16 @@ export type PaidOrderSaveResult =
       ok: true;
       order: OrderRecord;
       wasAlreadyPaid: boolean;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+export type FulfillmentUpdateResult =
+  | {
+      ok: true;
+      shippingEmail?: Awaited<ReturnType<typeof sendShippingNotificationEmail>>;
     }
   | {
       ok: false;
@@ -599,7 +610,7 @@ export async function getAdminOrderById(orderId: string): Promise<{ configured: 
   }
 }
 
-export async function updateOrderFulfillment(orderId: string, input: OrderFulfillmentUpdateInput) {
+export async function updateOrderFulfillment(orderId: string, input: OrderFulfillmentUpdateInput): Promise<FulfillmentUpdateResult> {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured." };
   }
@@ -607,9 +618,23 @@ export async function updateOrderFulfillment(orderId: string, input: OrderFulfil
   return updateOrderFulfillmentWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
 }
 
-export async function updateOrderFulfillmentWithClient(client: OrdersDbClient, orderId: string, input: OrderFulfillmentUpdateInput) {
+export async function updateOrderFulfillmentWithClient(
+  client: OrdersDbClient,
+  orderId: string,
+  input: OrderFulfillmentUpdateInput,
+  options: {
+    sendShippingNotificationEmailFn?: (input: ShippingEmailInput) => ReturnType<typeof sendShippingNotificationEmail>;
+  } = {}
+): Promise<FulfillmentUpdateResult> {
   const now = new Date().toISOString();
   const shippingStatus = input.markShipped ? "shipped" : input.shippingStatus;
+  const existingOrder = await getOrderByIdForFulfillment(client, orderId);
+  const shouldSendShippingEmail =
+    Boolean(input.markShipped) &&
+    existingOrder?.shipping_status !== "shipped" &&
+    existingOrder?.shipping_status !== "delivered" &&
+    Boolean(existingOrder?.email) &&
+    Boolean(input.trackingNumber || input.trackingUrl);
   const payload: Record<string, unknown> = {
     production_status: input.productionStatus,
     shipping_status: shippingStatus,
@@ -627,7 +652,36 @@ export async function updateOrderFulfillmentWithClient(client: OrdersDbClient, o
   }
 
   const { error } = await client.from("orders").update(payload).eq("id", orderId);
-  return error ? { ok: false, error: error.message } : { ok: true };
+  if (error) return { ok: false, error: error.message };
+
+  if (!shouldSendShippingEmail || !existingOrder) {
+    return { ok: true };
+  }
+
+  const shippingEmail = await (options.sendShippingNotificationEmailFn ?? sendShippingNotificationEmail)({
+    order: {
+      ...existingOrder,
+      production_status: input.productionStatus,
+      shipping_status: "shipped",
+      shipping_method: input.shippingMethod,
+      shipping_carrier: input.shippingCarrier,
+      tracking_number: input.trackingNumber,
+      tracking_url: input.trackingUrl,
+      internal_notes: input.internalNotes,
+      admin_fulfillment_notes: input.adminFulfillmentNotes,
+      shipped_at: input.markShipped ? now : existingOrder.shipped_at,
+      updated_at: now
+    }
+  });
+
+  if (!shippingEmail.sent) {
+    console.warn("[orders] shipping_email_not_sent", {
+      orderId,
+      reason: shippingEmail.reason
+    });
+  }
+
+  return { ok: true, shippingEmail };
 }
 
 function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] {
@@ -726,6 +780,25 @@ async function getOrderByStripeCheckoutSessionId(client: OrdersDbClient, stripeC
       .from("orders")
       .select("*")
       .eq("stripe_checkout_session_id", stripeCheckoutSessionId)
+      .maybeSingle();
+    const { data, error } = await query;
+
+    if (error || !data) {
+      return null;
+    }
+
+    return normalizeOrderRecord(data);
+  } catch {
+    return null;
+  }
+}
+
+async function getOrderByIdForFulfillment(client: OrdersDbClient, orderId: string): Promise<OrderRecord | null> {
+  try {
+    const query = client
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
       .maybeSingle();
     const { data, error } = await query;
 

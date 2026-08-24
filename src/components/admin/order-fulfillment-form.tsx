@@ -36,13 +36,18 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(createOrderFulfillmentPayload(form))
       });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as { error?: string; shippingEmail?: { sent: boolean; reason?: string } } | null;
 
       if (!response.ok) {
         throw new Error(data?.error ?? "Fulfillment details could not be saved.");
       }
 
-      setMessage("Fulfillment details saved.");
+      const emailMessage = data?.shippingEmail
+        ? data.shippingEmail.sent
+          ? " Shipping notification sent."
+          : ` Shipping notification was not sent: ${data.shippingEmail.reason ?? "unknown reason"}.`
+        : "";
+      setMessage(`Fulfillment details saved.${emailMessage}`);
       setForm((current) => ({ ...current, markShipped: false, shippingStatus: current.markShipped ? "shipped" : current.shippingStatus }));
       router.refresh();
     } catch (saveError) {
@@ -56,7 +61,7 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
     <form onSubmit={onSubmit} className="space-y-5 rounded-md border border-line bg-white p-5 shadow-sm">
       <div>
         <h2 className="text-lg font-black text-ink">Fulfillment operations</h2>
-        <p className="mt-1 text-sm text-muted">Update production and shipping state. This does not send customer email yet.</p>
+        <p className="mt-1 text-sm text-muted">Update production and shipping state. Marking an order shipped with tracking sends the customer shipping notification once.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

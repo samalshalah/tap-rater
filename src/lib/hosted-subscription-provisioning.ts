@@ -1,7 +1,9 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
+import type { EmailResult } from "@/lib/email";
 import type { OrderLineItem, OrderRecord, OrdersDbClient, StripeCheckoutSessionLike } from "@/lib/orders";
 
 export type HostedSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "trialing" | "unknown";
@@ -33,6 +35,7 @@ export type HostedSubscriptionProvisioningDependencies = {
   client: OrdersDbClient;
   storage: HostedPageTextStorage;
   generateCode?: () => string;
+  sendHostedSetupEmailFn?: (input: HostedSetupEmailInput) => Promise<EmailResult>;
 };
 
 type StripeSubscriptionLike = {
@@ -164,6 +167,18 @@ export async function provisionHostedSubscriptionFromCheckout(
     appearance: { theme: "light", accentColor: "#0f766e" },
     subscriptionPaidThrough: paidThrough ?? undefined
   }));
+
+  const setupEmail = await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+    to: email,
+    businessName,
+    hostedPageUrl
+  });
+  if (!setupEmail.sent) {
+    console.warn("[hosted-provisioning] setup_email_not_sent", {
+      stripeCheckoutSessionId: input.session.id,
+      reason: setupEmail.reason
+    });
+  }
 
   return { ok: true, provisioned: true, code: assignment.code, hostedPageUrl };
 }
