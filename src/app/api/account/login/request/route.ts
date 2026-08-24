@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { adminCookieName, createAdminSessionValue } from "@/lib/admin-auth";
 import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
 import { accountLoginRequestSchema } from "@/lib/validators";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   if (isConfiguredAdminEmail(email)) {
-    return createLoginResponse(email, request);
+    return createAdminLoginResponse(email, request);
   }
 
   if (!hasSupabaseAdminConfig()) {
@@ -49,6 +50,17 @@ function createLoginResponse(email: string, request: Request) {
     secure: new URL(request.url).protocol === "https:",
     path: "/",
     maxAge: customerSessionMaxAgeSeconds
+  });
+  return response;
+}
+
+function createAdminLoginResponse(email: string, request: Request) {
+  const response = NextResponse.json({ ok: true, redirectTo: "/admin" });
+  response.cookies.set(adminCookieName, createAdminSessionValue(email), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: new URL(request.url).protocol === "https:",
+    path: "/"
   });
   return response;
 }
