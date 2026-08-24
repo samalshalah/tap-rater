@@ -591,7 +591,8 @@ function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): 
     requiresDesignStep: false,
     requiresFrontProof: false,
     requiresSubscription: false,
-    accountRequired: false
+    accountRequired: false,
+    footerLabel: "QR + NFC direct"
   };
 }
 

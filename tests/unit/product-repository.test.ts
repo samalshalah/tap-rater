@@ -224,6 +224,7 @@ describe("product repository", () => {
           requires_front_proof: false,
           requires_subscription: false,
           account_required: false,
+          footer_label: "NFC only",
           is_active: true,
           sort_order: 1
         }
@@ -237,6 +238,7 @@ describe("product repository", () => {
         description: "Ready-made stand with QR and NFC connected directly to one destination link.",
         priceCents: 3900,
         hasQr: true,
+        footerLabel: "QR + NFC direct",
         isActive: true
       })
     ]);
