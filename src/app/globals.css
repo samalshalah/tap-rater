@@ -256,6 +256,18 @@ main h3 {
   background: var(--tr-color-surface) !important;
 }
 
+.tr-page-hero-media {
+  width: min(100%, 520px);
+  max-height: 360px;
+  justify-self: center;
+}
+
+@media (min-width: 1024px) {
+  .tr-page-hero-media {
+    justify-self: end;
+  }
+}
+
 main.bg-white h1[class],
 main.bg-white h2[class],
 main.bg-white h3[class] {

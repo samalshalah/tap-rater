@@ -82,7 +82,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">{description}</p>
             {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
+          <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
             <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
           </div>
         </div>

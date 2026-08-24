@@ -67,7 +67,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
               <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{businessUse.longContent}</div>
             ) : null}
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
+          <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
             <Image src={heroImage} alt={businessUse.title} fill unoptimized className="object-cover" />
           </div>
         </div>

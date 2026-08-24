@@ -30,7 +30,7 @@ export default async function CustomStandsPage() {
               </Link>
             </div>
           </div>
-          <div className="relative min-h-[560px] overflow-hidden rounded-[38px] bg-[#f7f8f8]">
+          <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
             <Image src={customBranding.image.src} alt={customBranding.image.alt} fill unoptimized className="object-contain object-center p-4 mix-blend-multiply" />
           </div>
         </div>
