@@ -55,7 +55,7 @@ export default async function ShopPage() {
               Use categories when you already know the kind of counter action you need.
             </p>
           </div>
-          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {categories.map((category) => (
               <VisualCard
                 key={category.slug}
@@ -65,7 +65,7 @@ export default async function ShopPage() {
                 description={category.buyerIntent}
                 image={getCategoryVisual(category)}
                 cta="Learn more"
-                density="compact"
+                variant="type"
               />
             ))}
           </div>

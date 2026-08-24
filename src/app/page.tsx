@@ -100,28 +100,15 @@ export default async function HomePage() {
                 .filter((item) => item.enabled)
                 .sort((first, second) => first.order - second.order)
                 .map((item) => (
-                  <Link
+                  <VisualCard
                     key={`${item.title}-${item.href}`}
                     href={item.href}
-                    className="group flex min-h-[400px] flex-col overflow-hidden rounded-[30px] bg-white p-6 shadow-[0_14px_44px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.03]"
-                  >
-                    <div className="relative min-h-[250px] flex-1">
-                      <Image
-                        src={item.image.src}
-                        alt={item.image.alt}
-                        fill
-                        unoptimized
-                        className="object-contain object-center mix-blend-multiply transition duration-300 group-hover:scale-[1.04]"
-                        sizes="(min-width: 1024px) 25vw, 76vw"
-                      />
-                    </div>
-                    <h3 className="mt-4 text-xl font-semibold leading-tight text-ink">{item.title}</h3>
-                    <p className="mt-2 text-sm font-medium leading-6 text-muted">{item.description}</p>
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-brand">
-                      Learn more
-                      <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </Link>
+                    title={item.title}
+                    description={item.description}
+                    image={item.image}
+                    cta="Learn more"
+                    variant="type"
+                  />
                 ))}
             </div>
           </div>

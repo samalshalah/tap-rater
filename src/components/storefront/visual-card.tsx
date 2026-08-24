@@ -11,7 +11,7 @@ type VisualCardProps = {
   eyebrow?: string;
   cta?: string;
   imageFit?: "contain" | "cover";
-  variant?: "story" | "use-case";
+  variant?: "story" | "type" | "use-case";
   density?: "editorial" | "compact";
 };
 
@@ -20,7 +20,39 @@ export function VisualCard({ cta = "View options", density = "editorial", descri
     return <UseCaseCard cta={cta} description={description} eyebrow={eyebrow} href={href} image={image} title={title} />;
   }
 
+  if (variant === "type") {
+    return <TypeCard cta={cta} description={description} href={href} image={image} title={title} />;
+  }
+
   return <ProductStoryCard cta={cta} density={density} description={description} eyebrow={eyebrow} href={href} image={image} imageFit={imageFit} title={title} />;
+}
+
+function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps, "cta" | "description" | "href" | "image" | "title"> & { cta: string }) {
+  return (
+    <Link
+      href={href}
+      className="group flex h-full min-h-[442px] flex-col overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(16,32,30,0.06)] ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.08)]"
+    >
+      <div className="relative min-h-[238px] w-full overflow-hidden rounded-[22px] bg-white">
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          unoptimized
+          className="object-contain object-center p-3 mix-blend-multiply transition duration-300 group-hover:scale-[1.025]"
+          sizes="(min-width: 1280px) 22vw, (min-width: 768px) 45vw, 90vw"
+        />
+      </div>
+      <div className="flex flex-1 flex-col pt-6">
+        <p className="text-[1.45rem] font-semibold leading-[1.12] text-[#101722] sm:text-[1.62rem]">{title}</p>
+        <p className="mt-3 text-sm font-medium leading-6 text-[#5f6b78]">{description}</p>
+        <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-brand">
+          {cta}
+          <ArrowRight className="h-4 w-4" />
+        </span>
+      </div>
+    </Link>
+  );
 }
 
 function ProductStoryCard({
