@@ -19,11 +19,11 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
       href={`/product/${product.slug}`}
       className={
         isCompact
-          ? "group flex h-full min-h-[430px] flex-col overflow-hidden rounded-[24px] bg-white p-5 shadow-[0_14px_36px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(16,32,30,0.09)]"
+          ? "group flex h-full min-h-[365px] flex-col overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_12px_30px_rgba(16,32,30,0.055)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(16,32,30,0.08)]"
           : "group flex h-full min-h-[500px] flex-col overflow-hidden rounded-[28px] bg-white p-7 shadow-[0_16px_42px_rgba(16,32,30,0.08)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_22px_58px_rgba(16,32,30,0.1)]"
       }
     >
-      <div className={isCompact ? "relative h-52 bg-white sm:h-56" : "relative h-64 bg-white sm:h-72"}>
+      <div className={isCompact ? "relative h-40 bg-white sm:h-44" : "relative h-64 bg-white sm:h-72"}>
         <Image
           src={image.src}
           alt={image.alt}
@@ -46,10 +46,10 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
           {swatches.length > 6 ? <span className="text-sm font-medium text-[#53616d]">+</span> : null}
         </div>
       ) : null}
-      <div className={isCompact ? "flex flex-1 flex-col pt-5" : "flex flex-1 flex-col pt-6"}>
+      <div className={isCompact ? "flex flex-1 flex-col pt-4" : "flex flex-1 flex-col pt-6"}>
         <p className="text-xs font-semibold text-accent">{category?.title ?? destination}</p>
-        <p className={isCompact ? "mt-2 text-[1.02rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.08rem]" : "mt-2 text-[1.12rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.2rem]"}>{product.title}</p>
-        <p className={isCompact ? "mt-auto pt-6 text-base font-normal text-[#090b0f]" : "mt-auto pt-8 text-base font-normal text-[#090b0f]"}>{purchaseLabel}</p>
+        <p className={isCompact ? "mt-2 text-[0.98rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.02rem]" : "mt-2 text-[1.12rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.2rem]"}>{product.title}</p>
+        <p className={isCompact ? "mt-auto pt-5 text-sm font-normal text-[#090b0f]" : "mt-auto pt-8 text-base font-normal text-[#090b0f]"}>{purchaseLabel}</p>
       </div>
     </Link>
   );

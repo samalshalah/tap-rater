@@ -31,9 +31,9 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
   return (
     <Link
       href={href}
-      className="group flex h-full min-h-[442px] flex-col overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(16,32,30,0.06)] ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.08)]"
+      className="group flex h-full min-h-[390px] flex-col overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(16,32,30,0.06)] ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.08)]"
     >
-      <div className="relative min-h-[238px] w-full overflow-hidden rounded-[22px] bg-white">
+      <div className="relative min-h-[205px] w-full overflow-hidden rounded-[22px] bg-white">
         <Image
           src={image.src}
           alt={image.alt}
@@ -44,7 +44,7 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
         />
       </div>
       <div className="flex flex-1 flex-col pt-6">
-        <p className="text-[1.45rem] font-semibold leading-[1.12] text-[#101722] sm:text-[1.62rem]">{title}</p>
+        <p className="text-[1.25rem] font-semibold leading-[1.12] text-[#101722] sm:text-[1.38rem]">{title}</p>
         <p className="mt-3 text-sm font-medium leading-6 text-[#5f6b78]">{description}</p>
         <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-brand">
           {cta}

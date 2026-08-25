@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
+import { VisualCard } from "@/components/storefront/visual-card";
+import type { CatalogCategorySlug } from "@/data/migrated-products";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCategoryVisual, productImageFallback } from "@/lib/storefront-visuals";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -26,7 +29,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const selectedUse = businessUses.find((businessUse) => businessUse.slug === filters?.use);
   const filteredProducts = products.filter((product) => {
     const selectedCategorySlug = selectedType ? standTypeToCategorySlug(selectedType.slug) : undefined;
-    const matchesType = selectedCategorySlug ? product.categorySlug === selectedCategorySlug : true;
+    const matchesType = selectedType ? Boolean(selectedCategorySlug) && product.categorySlug === selectedCategorySlug : true;
     const matchesUse = selectedUse ? selectedUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(selectedUse.slug) : true;
     return matchesType && matchesUse;
   });
@@ -48,7 +51,34 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </section>
 
       <section className="bg-[#f7f8f8]">
-        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[340px_1fr] lg:py-10">
+        <div className="tr-container py-8 lg:py-10">
+          <div id="stand-categories" className="mb-10">
+            <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div>
+                <p className="tr-eyebrow">Shop by type</p>
+                <h2 className="mt-2 text-[1.85rem] font-semibold leading-tight text-ink md:text-[2.25rem]">Choose the stand type.</h2>
+              </div>
+              <Link href="/shop" className="tr-editorial-link">
+                View all products
+              </Link>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {standTypes.map((standType) => (
+                <VisualCard
+                  key={standType.slug}
+                  cta="View products"
+                  description={standType.shortDescription || standType.buyerIntent || standType.description || "Choose products for this stand type."}
+                  href={buildShopHref({ type: standType.slug })}
+                  image={getStandTypeCardVisual(standType)}
+                  title={standType.title}
+                  variant="type"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="tr-container grid gap-8 pb-8 lg:grid-cols-[340px_1fr] lg:pb-10">
           <aside className="h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24">
             <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
               <p className="text-sm font-semibold text-ink">Filters</p>
@@ -113,7 +143,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => <ProductCard key={product.slug} product={product} density="compact" />)
               ) : (
@@ -148,6 +178,20 @@ function standTypeToCategorySlug(slug: string) {
   };
 
   return map[slug];
+}
+
+function getStandTypeCardVisual(standType: StandTypeForFilter) {
+  const categorySlug = standTypeToCategorySlug(standType.slug);
+  if (standType.imageUrl) {
+    return { src: standType.imageUrl, alt: standType.title };
+  }
+
+  if (standType.bannerImageUrl) {
+    return { src: standType.bannerImageUrl, alt: standType.title };
+  }
+
+  const category = categorySlug ? getCategoryVisual({ slug: categorySlug as CatalogCategorySlug, title: standType.title }) : undefined;
+  return category ?? { ...productImageFallback, alt: `${standType.title} stand` };
 }
 
 function FilterGroup({ children, title }: { children: React.ReactNode; title: string }) {
