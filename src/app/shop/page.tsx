@@ -89,17 +89,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           </aside>
 
           <div>
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <p className="tr-eyebrow">All products</p>
-                <h2 className="mt-2 text-[1.85rem] font-semibold leading-tight text-ink md:text-[2.25rem]">Shop every Tap Rater stand.</h2>
-                <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted">
-                  {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} shown
-                  {selectedType ? ` in ${selectedType.title}` : ""}
-                  {selectedUse ? ` for ${selectedUse.title}` : ""}.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+            {(selectedType || selectedUse) ? (
+              <div className="mb-5 flex flex-wrap gap-2">
                 {selectedType ? (
                   <Link href={buildShopHref({ use: selectedUse?.slug })} className="tr-pill-neutral bg-white">
                     Type: {selectedType.title} ×
@@ -111,9 +102,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   </Link>
                 ) : null}
               </div>
-            </div>
+            ) : null}
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
               {filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => <ProductCard key={product.slug} product={product} density="compact" />)
               ) : (
