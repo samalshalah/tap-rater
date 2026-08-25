@@ -9,10 +9,10 @@ export default async function AdminShippingPage() {
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-5xl px-4 py-8 md:px-8 lg:py-12">
-        <p className="text-sm font-black uppercase text-brand">Commerce</p>
+      <section className="tr-admin-section max-w-5xl">
+        <p className="tr-eyebrow">Commerce</p>
         <div className="mt-3">
-          <h1 className="text-4xl font-black text-ink">Shipping</h1>
+          <h1 className="tr-admin-title">Shipping</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             Configure how Stripe Checkout collects shipping addresses and whether Tap Rater adds a shipping charge.
           </p>

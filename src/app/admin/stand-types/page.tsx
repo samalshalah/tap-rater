@@ -9,14 +9,14 @@ export default async function AdminStandTypesPage() {
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
+      <section className="tr-admin-section">
         <div>
-          <p className="text-sm font-semibold uppercase text-brand">Catalog</p>
-          <h1 className="mt-2 text-4xl font-black text-ink">Stand Types</h1>
+          <p className="tr-eyebrow">Catalog</p>
+          <h1 className="tr-admin-title mt-2">Stand Types</h1>
           <p className="mt-2 text-sm leading-6 text-muted">Manage category page content, buyer intent, SEO, images, visibility, and ordering.</p>
         </div>
 
-        <div className="mt-8 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
+        <div className="tr-admin-table-shell mt-8 overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
@@ -31,7 +31,7 @@ export default async function AdminStandTypesPage() {
               {standTypes.map((standType) => (
                 <tr key={standType.slug} className="border-b border-line last:border-b-0">
                   <td className="p-4">
-                    <p className="font-black text-ink">{standType.title}</p>
+                    <p className="font-semibold text-ink">{standType.title}</p>
                     <p className="mt-1 line-clamp-2 text-muted">{standType.buyerIntent || standType.shortDescription || standType.description || "-"}</p>
                   </td>
                   <td className="p-4 font-mono text-xs text-muted">{standType.slug}</td>

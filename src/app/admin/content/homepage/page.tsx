@@ -10,16 +10,16 @@ export default async function AdminHomepageEditorPage() {
 
   return (
     <AdminShell>
-    <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 lg:py-12">
-      <p className="text-sm font-semibold uppercase text-brand">Admin</p>
-      <h1 className="mt-3 text-4xl font-black text-ink">Website editor</h1>
+      <section className="tr-admin-section">
+      <p className="tr-eyebrow">Admin</p>
+      <h1 className="tr-admin-title mt-3">Website editor</h1>
       <p className="mt-4 leading-7 text-muted">
         Control approved public website content without changing the Tap Rater design system, product model, checkout, subscriptions, or production workflow.
       </p>
       <div className="mt-8">
         <WebsiteEditor businessUses={businessUses} header={header} footer={footer} homepage={homepage} />
       </div>
-    </section>
+      </section>
     </AdminShell>
   );
 }

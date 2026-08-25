@@ -35,7 +35,7 @@ export function AdminSectionPage({
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="tr-eyebrow">{eyebrow}</p>
-          <h1 className="tr-page-title mt-2">{title}</h1>
+          <h1 className="tr-admin-title mt-2">{title}</h1>
           <p className="tr-body mt-3 max-w-3xl">{description}</p>
         </div>
         {primaryHref && primaryLabel ? (
@@ -47,8 +47,8 @@ export function AdminSectionPage({
 
       <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
         {config ? (
-          <div className="tr-card p-5 lg:col-span-2">
-            <h2 className="text-xl font-black text-ink">Editable settings</h2>
+          <div className="tr-admin-card p-5 lg:col-span-2">
+            <h2 className="tr-admin-card-title text-ink">Editable settings</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
               Save operational settings for this admin area. These records are stored in Postgres `site_content` when configured.
             </p>
@@ -66,21 +66,21 @@ export function AdminSectionPage({
             </div>
           </div>
         ) : null}
-        <div className="tr-card p-5">
-          <h2 className="text-xl font-black text-ink">Controls included</h2>
+        <div className="tr-admin-card p-5">
+          <h2 className="tr-admin-card-title text-ink">Controls included</h2>
           <div className="mt-4 grid gap-3">
             {primaryItems.map((item) => (
-              <div key={item} className="rounded-lg border border-line bg-soft p-4 text-sm font-semibold text-ink">
+              <div key={item} className="tr-admin-soft-panel p-4 text-sm font-semibold text-ink">
                 {item}
               </div>
             ))}
           </div>
         </div>
-        <div className="tr-card p-5">
-          <h2 className="text-xl font-black text-ink">Next implementation steps</h2>
+        <div className="tr-admin-card p-5">
+          <h2 className="tr-admin-card-title text-ink">Next implementation steps</h2>
           <div className="mt-4 grid gap-3">
             {nextItems.map((item) => (
-              <div key={item} className="rounded-lg border border-line p-4 text-sm leading-6 text-muted">
+              <div key={item} className="rounded-xl border border-line p-4 text-sm leading-6 text-muted">
                 {item}
               </div>
             ))}

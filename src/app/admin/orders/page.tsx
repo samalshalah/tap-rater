@@ -24,11 +24,11 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
-        <p className="text-sm font-black uppercase text-brand">Commerce</p>
+      <section className="tr-admin-section">
+        <p className="tr-eyebrow">Commerce</p>
         <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-4xl font-black text-ink">Orders</h1>
+            <h1 className="tr-admin-title">Orders</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Stripe checkout creates pending orders, and the Stripe webhook marks them paid after checkout completes.
             </p>
@@ -71,7 +71,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           ))}
         </div>
 
-        <div className="mt-6 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
+        <div className="tr-admin-table-shell mt-6 overflow-x-auto">
           <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">

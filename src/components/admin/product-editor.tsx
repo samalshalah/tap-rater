@@ -393,8 +393,8 @@ export function ProductEditor({
   }
 
   return (
-    <form className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]" onSubmit={submit}>
-      <div className="grid gap-5">
+    <form className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]" onSubmit={submit}>
+      <div className="grid gap-4">
         <EditorCard title="Product Identity" description="The public name, URL handle, and product copy for this canonical stand product.">
           <div className="grid gap-4 md:grid-cols-2">
             <ControlledInput
@@ -577,7 +577,7 @@ export function ProductEditor({
         </EditorCard>
       </div>
 
-      <aside className="grid content-start gap-5">
+      <aside className="grid content-start gap-4">
         <SidebarCard title="Status">
           <label className="grid gap-2 text-sm font-bold text-ink">
             Product status
@@ -678,7 +678,7 @@ export function ProductEditor({
         </SidebarCard>
 
         <SidebarCard title="Pricing Summary">
-          <p className="text-2xl font-black text-ink">{pricingSummary || formatPrice(product.basePriceCents)}</p>
+          <p className="text-2xl font-semibold text-ink">{pricingSummary || formatPrice(product.basePriceCents)}</p>
           <div className="mt-3 grid gap-2 text-sm text-muted">
             {activeVisibleOptions.map((option) => (
               <div className="flex justify-between gap-3" key={option.optionCode}>
@@ -769,9 +769,9 @@ export function ProductEditor({
 
 function EditorCard({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <section className="grid gap-4 rounded-lg border border-line bg-white p-4 shadow-sm md:p-5">
+    <section className="tr-admin-card grid gap-4 p-4 md:p-5">
       <div>
-        <h2 className="text-base font-black text-ink">{title}</h2>
+        <h2 className="tr-admin-card-title text-ink">{title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
       </div>
       {children}
@@ -781,8 +781,8 @@ function EditorCard({ title, description, children }: { title: string; descripti
 
 function SidebarCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="grid gap-3 rounded-lg border border-line bg-white p-4 shadow-sm">
-      <h2 className="text-sm font-black text-ink">{title}</h2>
+    <section className="tr-admin-card grid gap-3 p-4">
+      <h2 className="text-sm font-semibold text-ink">{title}</h2>
       {children}
     </section>
   );

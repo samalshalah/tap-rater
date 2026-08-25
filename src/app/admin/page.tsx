@@ -18,9 +18,9 @@ export default async function AdminPage() {
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
+      <section className="tr-admin-section">
         <p className="tr-eyebrow">Admin</p>
-        <h1 className="mt-3 text-4xl font-black text-ink">Operations dashboard</h1>
+        <h1 className="tr-admin-title mt-3">Operations dashboard</h1>
         <p className="mt-4 max-w-3xl leading-7 text-muted">
           Review the orders, production work, fulfillment status, and sellable product readiness that staff need today.
         </p>
@@ -36,18 +36,18 @@ export default async function AdminPage() {
             ["Ready to ship", String(readyToShip.length), "Produced orders awaiting shipment handling"],
             ["Active products", String(activeProducts.length), "Sellable products currently visible to customers"]
           ].map(([label, value, copy]) => (
-            <article key={label} className="rounded-md border border-line bg-white p-5 shadow-sm">
+            <article key={label} className="tr-admin-card p-5">
               <p className="text-sm font-bold text-muted">{label}</p>
-              <p className="mt-2 text-3xl font-black text-ink">{value}</p>
+              <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
               <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
             </article>
           ))}
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {adminNavigationGroups.flatMap((group) => group.items).map((item) => (
-            <Link key={item.href} className="rounded-md border border-line bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg" href={item.href}>
+            <Link key={item.href} className="tr-admin-card p-5 transition hover:-translate-y-0.5" href={item.href}>
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-black text-ink">{item.label}</h2>
+                <h2 className="font-semibold text-ink">{item.label}</h2>
               </div>
               <p className="mt-2 text-sm leading-6 text-muted">{item.description}</p>
             </Link>

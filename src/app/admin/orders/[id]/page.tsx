@@ -22,15 +22,15 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
+      <section className="tr-admin-section">
         <Link href="/admin/orders" className="text-sm font-bold text-brand">Back to orders</Link>
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-black uppercase text-brand">Order detail</p>
-            <h1 className="mt-2 text-3xl font-black text-ink">{order.customer_name ?? "Customer order"}</h1>
+            <p className="tr-eyebrow">Order detail</p>
+            <h1 className="tr-admin-title mt-2">{order.customer_name ?? "Customer order"}</h1>
             <p className="mt-2 font-mono text-xs text-muted">{order.stripe_checkout_session_id}</p>
           </div>
-          <div className="rounded-md border border-line bg-white px-4 py-3 text-sm font-black text-ink">
+          <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">
             {formatPrice(order.total_cents)}
           </div>
         </div>
@@ -78,8 +78,8 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-md border border-line bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-black text-ink">{title}</h2>
+    <div className="tr-admin-card p-5">
+      <h2 className="tr-admin-card-title">{title}</h2>
       <div className="mt-4 space-y-3">{children}</div>
     </div>
   );

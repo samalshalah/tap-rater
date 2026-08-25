@@ -56,17 +56,17 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
-      <div className="px-4 py-5">
+    <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-[248px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+      <div className="px-4 py-4">
         <Link href="/admin" className="block">
           <p className="tr-eyebrow">Tap Rater</p>
-          <h2 className="mt-1 text-lg font-black">Commerce Admin</h2>
+          <h2 className="mt-1 text-base font-semibold text-ink">Admin</h2>
         </Link>
       </div>
-      <nav className="flex gap-3 overflow-x-auto px-4 pb-4 lg:block lg:space-y-6 lg:overflow-visible">
+      <nav className="flex gap-3 overflow-x-auto px-4 pb-4 lg:block lg:space-y-5 lg:overflow-visible">
         {adminNavigationGroups.map((group) => (
           <div key={group.label} className="min-w-64 lg:min-w-0">
-            <p className="mb-2 px-2 text-xs font-black uppercase tracking-[0.06em] text-muted">{group.label}</p>
+            <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{group.label}</p>
             <div className="grid gap-1">
               {group.items.map((item) => {
                 const Icon = icons[item.label as keyof typeof icons] ?? Megaphone;
@@ -86,8 +86,8 @@ export function AdminSidebar() {
                     href={item.href}
                     className={
                       active
-                        ? "flex items-center gap-3 rounded-lg bg-ink px-3 py-2 text-sm font-bold text-white"
-                        : "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-bold text-muted hover:bg-soft hover:text-ink"
+                        ? "flex items-center gap-3 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white"
+                        : "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-soft hover:text-ink"
                     }
                   >
                     <Icon className="h-4 w-4 shrink-0" />

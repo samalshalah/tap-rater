@@ -183,7 +183,7 @@ export function AdminProductsTable({
   }
 
   return (
-    <div className="mt-6 rounded-lg border border-line bg-white shadow-sm">
+    <div className="tr-admin-table-shell mt-6 overflow-hidden">
       <div className="grid gap-3 border-b border-line p-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
         <label className="relative block text-xs font-black uppercase text-muted">
           Search
@@ -269,10 +269,10 @@ export function AdminProductsTable({
         </div>
       ) : null}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1420px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-[#f7f8fa] text-xs uppercase text-muted">
-              <th className="w-12 p-4">
+              <th className="w-10 px-4 py-3">
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded border-line accent-brand"
@@ -282,20 +282,17 @@ export function AdminProductsTable({
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="p-4">Thumbnail</th>
-              <th className="p-4">Product name</th>
-              <th className="p-4">Stand Type</th>
-              <th className="p-4">Business Uses</th>
-              <th className="p-4">Destination</th>
-              <th className="p-4">Customization</th>
-              <th className="p-4">Available Options</th>
-              <th className="p-4">Price Range</th>
-              <th className="p-4">Production Template</th>
-              <th className="p-4">Assets Ready</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Stock</th>
-              <th className="p-4">Updated</th>
-              <th className="p-4 text-right">Actions</th>
+              <th className="px-4 py-3">Image</th>
+              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3">Type</th>
+              <th className="px-4 py-3">Uses</th>
+              <th className="px-4 py-3">Destination</th>
+              <th className="px-4 py-3">Options</th>
+              <th className="px-4 py-3">Price</th>
+              <th className="px-4 py-3">Readiness</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Updated</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -315,7 +312,7 @@ export function AdminProductsTable({
                   }
                   key={product.slug}
                 >
-                  <td className="p-4 align-middle">
+                  <td className="px-4 py-3 align-middle">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-line accent-brand"
@@ -325,42 +322,37 @@ export function AdminProductsTable({
                       onChange={() => toggleProduct(product.slug)}
                     />
                   </td>
-                  <td className="p-4">
+                  <td className="px-4 py-3">
                     <ProductThumbnail product={product} />
                   </td>
-                  <td className="p-4">
-                    <Link className="block font-black text-ink hover:text-brand" href={`/admin/products/${product.slug}`}>
+                  <td className="px-4 py-3">
+                    <Link className="block font-semibold text-ink hover:text-brand" href={`/admin/products/${product.slug}`}>
                       {product.title}
                     </Link>
                     <span className="mt-1 block text-xs text-muted">{product.sku || product.slug}</span>
                   </td>
-                  <td className="p-4 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
-                  <td className="p-4 text-muted">{formatBusinessUses(product, businessUses)}</td>
-                  <td className="p-4 text-muted">
+                  <td className="px-4 py-3 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
+                  <td className="px-4 py-3 text-muted">{formatBusinessUses(product, businessUses)}</td>
+                  <td className="px-4 py-3 text-muted">
                     <StatusBadge status={model.destinationMode} />
                     <span className="mt-2 block font-semibold text-ink">{findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"}</span>
                     <span className="text-xs">{product.destinationType ?? "custom"}</span>
                   </td>
-                  <td className="p-4">
-                    <StatusBadge status={model.customizationLevel} />
+                  <td className="px-4 py-3 text-muted">{formatOptionSummary(options, model.customizationLevel)}</td>
+                  <td className="px-4 py-3 font-semibold text-ink">{formatPriceRange(options, product)}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TemplateReadinessBadge readiness={brandedReadiness} />
+                      <ReadinessBadge status={readiness.status} missing={readiness.missing} />
+                      <MediaWarningList warnings={getMediaWarnings(product)} />
+                    </div>
                   </td>
-                  <td className="p-4 text-muted">{options.map((option) => option.title).join(", ") || "-"}</td>
-                  <td className="p-4 font-black text-ink">{formatPriceRange(options, product)}</td>
-                  <td className="p-4">
-                    <TemplateReadinessBadge readiness={brandedReadiness} />
-                  </td>
-                  <td className="p-4">
-                    <ReadinessBadge status={readiness.status} missing={readiness.missing} />
-                    <MediaWarningList warnings={getMediaWarnings(product)} />
-                  </td>
-                  <td className="p-4">
+                  <td className="px-4 py-3">
                     <StatusBadge status={getProductStatus(product)} />
-                  </td>
-                  <td className="p-4">
                     <StockBadge stockStatus={product.stockStatus} />
                   </td>
-                  <td className="p-4 text-muted">{formatDate(product.updatedAt)}</td>
-                  <td className="p-4">
+                  <td className="px-4 py-3 text-muted">{formatDate(product.updatedAt)}</td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-xs font-bold text-ink hover:border-brand hover:text-brand"
@@ -386,7 +378,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={15}>
+                <td className="p-10 text-center text-muted" colSpan={12}>
                   No products match these filters.
                 </td>
               </tr>
@@ -428,9 +420,9 @@ function ProductThumbnail({ product }: { product: MigratedProduct }) {
   const image = product.images[0]?.src ?? product.assetSet?.standardAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl;
 
   return image ? (
-    <img src={image} alt={product.images[0]?.alt || product.title} className="h-14 w-14 rounded-md border border-line bg-white object-contain" loading="lazy" />
+    <img src={image} alt={product.images[0]?.alt || product.title} className="h-16 w-16 rounded-lg border border-line bg-white object-contain" loading="lazy" />
   ) : (
-    <div className="grid h-14 w-14 place-items-center rounded-md border border-dashed border-line bg-white text-[10px] font-bold uppercase text-muted">
+    <div className="grid h-16 w-16 place-items-center rounded-lg border border-dashed border-line bg-white text-[10px] font-bold uppercase text-muted">
       No image
     </div>
   );
@@ -444,21 +436,21 @@ function StatusBadge({ status }: { status: string }) {
         ? "bg-gray-100 text-muted"
         : "bg-amber-50 text-ink";
 
-  return <span className={`rounded-full px-3 py-1 text-xs font-black uppercase ${classes}`}>{status}</span>;
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${classes}`}>{status}</span>;
 }
 
 function TemplateReadinessBadge({ readiness }: { readiness: BrandedTemplateReadiness }) {
   if (readiness.status === "not_offered") {
-    return <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-black uppercase text-muted">Branded not offered</span>;
+    return <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold uppercase text-muted">No branded</span>;
   }
 
   if (readiness.status === "ready") {
-    return <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand">Ready</span>;
+    return <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand">Template ready</span>;
   }
 
   return (
-    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700" title={readiness.reason}>
-      Missing - branded unavailable
+    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-red-700" title={readiness.reason}>
+      Template missing
     </span>
   );
 }
@@ -468,8 +460,8 @@ function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus
     <span
       className={
         stockStatus === "instock"
-          ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand"
-          : "rounded-full bg-gray-100 px-3 py-1 text-xs font-black uppercase text-muted"
+          ? "ml-2 inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand"
+          : "ml-2 inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold uppercase text-muted"
       }
     >
       {stockStatus === "instock" ? "In stock" : "Out of stock"}
@@ -479,7 +471,7 @@ function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus
 
 function ReadinessBadge({ status, missing }: { status: string; missing: string[] }) {
   if (status === "ready") {
-    return <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand">Ready</span>;
+    return <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand">Assets ready</span>;
   }
 
   const label =
@@ -490,7 +482,7 @@ function ReadinessBadge({ status, missing }: { status: string; missing: string[]
         : "Blocked";
 
   return (
-    <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-black uppercase text-red-700" title={missing.join(", ")}>
+    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-red-700" title={missing.join(", ")}>
       {label}
     </span>
   );
@@ -500,11 +492,9 @@ function MediaWarningList({ warnings }: { warnings: string[] }) {
   if (warnings.length === 0) return null;
 
   return (
-    <ul className="mt-2 grid gap-1 text-[11px] leading-4 text-amber-700">
-      {warnings.map((warning) => (
-        <li key={warning}>Warning: {warning}</li>
-      ))}
-    </ul>
+    <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-amber-700" title={warnings.join("; ")}>
+      {warnings.length} warning{warnings.length === 1 ? "" : "s"}
+    </span>
   );
 }
 
@@ -568,6 +558,12 @@ function formatBusinessUses(product: MigratedProduct, businessUses: BusinessUse[
 
   const labels = slugs.map((slug) => findTitle(businessUses, slug)).filter(Boolean);
   return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
+}
+
+function formatOptionSummary(options: ReturnType<typeof getDefaultOptionsForProductKind>, customizationLevel: string) {
+  const labels = options.map((option) => option.title);
+  const summary = labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
+  return summary || customizationLevel || "-";
 }
 
 function formatPriceRange(options: ReturnType<typeof getDefaultOptionsForProductKind>, product: MigratedProduct) {

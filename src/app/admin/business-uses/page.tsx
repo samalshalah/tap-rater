@@ -9,11 +9,11 @@ export default async function AdminBusinessUsesPage() {
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-7xl px-4 py-8 md:px-8 lg:py-12">
+      <section className="tr-admin-section">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase text-brand">Catalog</p>
-            <h1 className="mt-2 text-4xl font-black text-ink">Business Uses</h1>
+            <p className="tr-eyebrow">Catalog</p>
+            <h1 className="tr-admin-title mt-2">Business Uses</h1>
             <p className="mt-2 text-sm leading-6 text-muted">Manage Shop by Use cards, landing content, SEO, images, status, order, and assigned products.</p>
           </div>
           <Link href="/admin/business-uses/new" className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white">
@@ -21,7 +21,7 @@ export default async function AdminBusinessUsesPage() {
           </Link>
         </div>
 
-        <div className="mt-8 overflow-x-auto rounded-md border border-line bg-white shadow-sm">
+        <div className="tr-admin-table-shell mt-8 overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">

@@ -9,10 +9,10 @@ export default async function AdminEmailTemplatesPage() {
 
   return (
     <AdminShell>
-      <section className="mx-auto max-w-6xl px-4 py-8 md:px-8 lg:py-12">
-        <p className="text-sm font-black uppercase text-brand">Settings</p>
+      <section className="tr-admin-section max-w-6xl">
+        <p className="tr-eyebrow">Settings</p>
         <div className="mt-3">
-          <h1 className="text-4xl font-black text-ink">Email templates</h1>
+          <h1 className="tr-admin-title">Email templates</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             Manage safe email copy for operational notifications. Product, order, setup, shipping, and policy details are still generated from trusted order data.
           </p>
