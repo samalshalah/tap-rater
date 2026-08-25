@@ -159,7 +159,7 @@ export function getProductDestinationCopy(product: MigratedProduct): ProductDest
     };
   }
 
-  const platformCopy = getPlatformDestinationCopy(platform);
+  const platformCopy = getPlatformDestinationCopy(platform, destinationType);
   if (platformCopy) {
     return platformCopy;
   }
@@ -196,12 +196,21 @@ export function getProductDestinationCopy(product: MigratedProduct): ProductDest
   return { label: "direct link", highlightTarget: "destination link", linkType: "destination URL" };
 }
 
-function getPlatformDestinationCopy(platform: string): ProductDestinationCopy | undefined {
+function getPlatformDestinationCopy(platform: string, destinationType = ""): ProductDestinationCopy | undefined {
   if (platform === "google") return { label: "Google review", highlightTarget: "Google review destination", linkType: "Google review link" };
   if (platform === "yelp") return { label: "Yelp review", highlightTarget: "Yelp review destination", linkType: "Yelp review link" };
+  if (platform === "facebook" && destinationType === "social") return { label: "Facebook", highlightTarget: "Facebook page", linkType: "Facebook page URL" };
   if (platform === "facebook") return { label: "Facebook review", highlightTarget: "Facebook review destination", linkType: "Facebook review link" };
   if (platform === "tripadvisor") return { label: "TripAdvisor review", highlightTarget: "TripAdvisor review destination", linkType: "TripAdvisor review link" };
+  if (platform === "ubereats") return { label: "Uber Eats review", highlightTarget: "Uber Eats review destination", linkType: "Uber Eats review link" };
+  if (platform === "angi") return { label: "Angi review", highlightTarget: "Angi review destination", linkType: "Angi review link" };
   if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile", linkType: "Instagram profile URL" };
+  if (platform === "tiktok") return { label: "TikTok", highlightTarget: "TikTok profile", linkType: "TikTok profile URL" };
+  if (platform === "linkedin") return { label: "LinkedIn", highlightTarget: "LinkedIn page", linkType: "LinkedIn page URL" };
+  if (platform === "x") return { label: "X", highlightTarget: "X profile", linkType: "X profile URL" };
+  if (platform === "youtube") return { label: "YouTube", highlightTarget: "YouTube channel", linkType: "YouTube channel URL" };
+  if (platform === "snapchat") return { label: "Snapchat", highlightTarget: "Snapchat profile", linkType: "Snapchat profile URL" };
+  if (platform === "pinterest") return { label: "Pinterest", highlightTarget: "Pinterest profile", linkType: "Pinterest profile URL" };
   if (platform === "website") return { label: "website", highlightTarget: "website link", linkType: "website URL" };
   if (platform === "custom-menu-url") return { label: "menu", highlightTarget: "menu URL", linkType: "menu URL" };
   if (platform === "custom-booking-url") return { label: "booking", highlightTarget: "booking URL", linkType: "booking URL" };

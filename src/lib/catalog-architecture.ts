@@ -293,6 +293,9 @@ export const lockedPlatforms: PlatformDestination[] = [
   platform("linkedin", "LinkedIn", "social"),
   platform("x", "X", "social"),
   platform("youtube", "YouTube", "social"),
+  platform("snapchat", "Snapchat", "social"),
+  platform("pinterest", "Pinterest", "social"),
+  platform("angi", "Angi", "review"),
   platform("payment-url", "Payment URL", "payment"),
   platform("loyalty-url", "Loyalty URL", "loyalty"),
   platform("custom-url", "Custom URL", "custom")

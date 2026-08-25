@@ -11,6 +11,8 @@ export type SupportedDestination =
   | "linkedin"
   | "x"
   | "youtube"
+  | "snapchat"
+  | "pinterest"
   | "vagaro"
   | "booksy"
   | "fresha"
@@ -23,6 +25,7 @@ export type SupportedDestination =
   | "toast"
   | "doordash"
   | "ubereats"
+  | "angi"
   | "grubhub"
   | "opentable"
   | "resy"
@@ -259,6 +262,16 @@ const experienceStandImage = { src: "/uploads/products/rate-your-experience-stan
 const experiencePlateImage = { src: "/uploads/products/rate-your-experience-plate.png", alt: "Tap Rater Rate Your Experience Plate" };
 const socialStandImage = { src: "/uploads/products/social-media-stand.png", alt: "Tap Rater Follow Us on Social Media Stand" };
 const socialPlateImage = { src: "/uploads/products/social-media-plate.png", alt: "Tap Rater Follow Us on Social Media Plate" };
+const facebookFollowStandImage = { src: "/uploads/products/facebook-follow-stand.png", alt: "Tap Rater Follow Us on Facebook Stand" };
+const instagramFollowStandImage = { src: "/uploads/products/instagram-follow-stand.png", alt: "Tap Rater Follow Us on Instagram Stand" };
+const tiktokFollowStandImage = { src: "/uploads/products/tiktok-follow-stand.png", alt: "Tap Rater Follow Us on TikTok Stand" };
+const youtubeFollowStandImage = { src: "/uploads/products/youtube-follow-stand.png", alt: "Tap Rater Follow Us on YouTube Stand" };
+const linkedinFollowStandImage = { src: "/uploads/products/linkedin-follow-stand.png", alt: "Tap Rater Follow Us on LinkedIn Stand" };
+const xFollowStandImage = { src: "/uploads/products/x-follow-stand.png", alt: "Tap Rater Follow Us on X Stand" };
+const snapchatFollowStandImage = { src: "/uploads/products/snapchat-follow-stand.png", alt: "Tap Rater Follow Us on Snapchat Stand" };
+const pinterestFollowStandImage = { src: "/uploads/products/pinterest-follow-stand.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
+const ubereatsReviewStandImage = { src: "/uploads/products/ubereats-review-stand.png", alt: "Tap Rater Uber Eats Review Stand" };
+const angiReviewStandImage = { src: "/uploads/products/angi-review-stand.png", alt: "Tap Rater Angi Review Stand" };
 const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
 const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
@@ -278,6 +291,10 @@ type PhaseOneProductInput = {
   title: string;
   sku: string;
   categorySlug: CatalogCategorySlug;
+  standTypeSlug?: string;
+  primaryPlatformSlug?: string;
+  destinationType?: string;
+  businessUseSlugs?: string[];
   basePriceCents: number;
   shortDescription: string;
   description: string;
@@ -295,6 +312,10 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     title: input.title,
     sku: input.sku,
     categorySlug: input.categorySlug,
+    standTypeSlug: input.standTypeSlug,
+    primaryPlatformSlug: input.primaryPlatformSlug,
+    destinationType: input.destinationType,
+    businessUseSlugs: input.businessUseSlugs,
     basePriceCents: input.basePriceCents,
     stockStatus: "instock",
     shortDescription: input.shortDescription,
@@ -458,6 +479,46 @@ export const migratedProducts: MigratedProduct[] = [
     searchKeywords: ["tripadvisor review plate", "tripadvisor nfc plate", "review us on tripadvisor plate"]
   }),
   phaseOneProduct({
+    slug: "ubereats-review-stand",
+    title: "Uber Eats Review Stand",
+    sku: "TR-UBEREATS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "ubereats",
+    destinationType: "review",
+    businessUseSlugs: ["restaurant-food", "ecommerce-online-brand", "retail-local-business"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Uber Eats review destination.",
+    description:
+      "Uber Eats Review Stand is a tabletop NFC and QR display for restaurants, cafes, ghost kitchens, and delivery-focused counters. It connects directly to one Uber Eats review destination URL and is tap or scan ready.",
+    supportedDestinations: ["ubereats"],
+    displayText: "Review us on Uber Eats",
+    image: ubereatsReviewStandImage,
+    seoTitle: "Uber Eats Review Stand | NFC and QR Restaurant Review Stand",
+    seoDescription: "Buy an Uber Eats Review Stand that opens your Uber Eats review destination with one tap or scan.",
+    searchKeywords: ["uber eats review stand", "ubereats nfc stand", "review us on uber eats stand"]
+  }),
+  phaseOneProduct({
+    slug: "angi-review-stand",
+    title: "Angi Review Stand",
+    sku: "TR-ANGI-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "angi",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "real-estate", "legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Angi review destination.",
+    description:
+      "Angi Review Stand is a tabletop NFC and QR display for home service businesses and local contractors. It connects directly to one Angi review destination URL and is tap or scan ready.",
+    supportedDestinations: ["angi"],
+    displayText: "Review us on Angi",
+    image: angiReviewStandImage,
+    seoTitle: "Angi Review Stand | NFC and QR Home Services Review Stand",
+    seoDescription: "Buy an Angi Review Stand that opens your Angi review destination with one tap or scan.",
+    searchKeywords: ["angi review stand", "angi nfc stand", "review us on angi stand"]
+  }),
+  phaseOneProduct({
     slug: "rate-your-experience-stand",
     title: "Rate Your Experience Stand",
     sku: "TR-EXPERIENCE-STAND",
@@ -520,6 +581,166 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "Follow Us on Social Media Plate | NFC Social Follow Plate",
     seoDescription: "Low-profile NFC plate that opens a social media hub or direct social profile for Facebook, X, Instagram, and YouTube.",
     searchKeywords: ["social media nfc plate", "follow us social media plate", "social follow plate"]
+  }),
+  phaseOneProduct({
+    slug: "facebook-follow-stand",
+    title: "Facebook Follow Stand",
+    sku: "TR-FACEBOOK-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "facebook",
+    destinationType: "social",
+    businessUseSlugs: ["restaurant-food", "retail-local-business", "automotive", "real-estate", "beauty-salon-wellness"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Facebook page or profile.",
+    description:
+      "Facebook Follow Stand is a tabletop NFC and QR display for sending customers directly to your Facebook page or profile. It connects directly to one Facebook destination URL and is tap or scan ready.",
+    supportedDestinations: ["facebook"],
+    displayText: "Follow us on Facebook",
+    image: facebookFollowStandImage,
+    seoTitle: "Facebook Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a Facebook Follow Stand that opens your Facebook page or profile with one tap or scan.",
+    searchKeywords: ["facebook follow stand", "facebook nfc stand", "follow us on facebook stand"]
+  }),
+  phaseOneProduct({
+    slug: "instagram-follow-stand",
+    title: "Instagram Follow Stand",
+    sku: "TR-INSTAGRAM-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "instagram",
+    destinationType: "social",
+    businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Instagram profile.",
+    description:
+      "Instagram Follow Stand is a tabletop NFC and QR display for sending customers directly to your Instagram profile. It connects directly to one Instagram destination URL and is tap or scan ready.",
+    supportedDestinations: ["instagram"],
+    displayText: "Follow us on Instagram",
+    image: instagramFollowStandImage,
+    seoTitle: "Instagram Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy an Instagram Follow Stand that opens your Instagram profile with one tap or scan.",
+    searchKeywords: ["instagram follow stand", "instagram nfc stand", "follow us on instagram stand"]
+  }),
+  phaseOneProduct({
+    slug: "tiktok-follow-stand",
+    title: "TikTok Follow Stand",
+    sku: "TR-TIKTOK-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "tiktok",
+    destinationType: "social",
+    businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your TikTok profile.",
+    description:
+      "TikTok Follow Stand is a tabletop NFC and QR display for sending customers directly to your TikTok profile. It connects directly to one TikTok destination URL and is tap or scan ready.",
+    supportedDestinations: ["tiktok"],
+    displayText: "Follow us on TikTok",
+    image: tiktokFollowStandImage,
+    seoTitle: "TikTok Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a TikTok Follow Stand that opens your TikTok profile with one tap or scan.",
+    searchKeywords: ["tiktok follow stand", "tiktok nfc stand", "follow us on tiktok stand"]
+  }),
+  phaseOneProduct({
+    slug: "youtube-follow-stand",
+    title: "YouTube Follow Stand",
+    sku: "TR-YOUTUBE-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "youtube",
+    destinationType: "social",
+    businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "automotive", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your YouTube channel.",
+    description:
+      "YouTube Follow Stand is a tabletop NFC and QR display for sending customers directly to your YouTube channel. It connects directly to one YouTube destination URL and is tap or scan ready.",
+    supportedDestinations: ["youtube"],
+    displayText: "Follow us on YouTube",
+    image: youtubeFollowStandImage,
+    seoTitle: "YouTube Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a YouTube Follow Stand that opens your YouTube channel with one tap or scan.",
+    searchKeywords: ["youtube follow stand", "youtube nfc stand", "follow us on youtube stand"]
+  }),
+  phaseOneProduct({
+    slug: "linkedin-follow-stand",
+    title: "LinkedIn Follow Stand",
+    sku: "TR-LINKEDIN-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "linkedin",
+    destinationType: "social",
+    businessUseSlugs: ["legal", "real-estate", "automotive", "retail-local-business", "ecommerce-online-brand"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your LinkedIn page or profile.",
+    description:
+      "LinkedIn Follow Stand is a tabletop NFC and QR display for sending customers directly to your LinkedIn page or profile. It connects directly to one LinkedIn destination URL and is tap or scan ready.",
+    supportedDestinations: ["linkedin"],
+    displayText: "Follow us on LinkedIn",
+    image: linkedinFollowStandImage,
+    seoTitle: "LinkedIn Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a LinkedIn Follow Stand that opens your LinkedIn page or profile with one tap or scan.",
+    searchKeywords: ["linkedin follow stand", "linkedin nfc stand", "follow us on linkedin stand"]
+  }),
+  phaseOneProduct({
+    slug: "x-follow-stand",
+    title: "X Follow Stand",
+    sku: "TR-X-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "x",
+    destinationType: "social",
+    businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "automotive", "legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your X profile.",
+    description:
+      "X Follow Stand is a tabletop NFC and QR display for sending customers directly to your X profile. It connects directly to one X destination URL and is tap or scan ready.",
+    supportedDestinations: ["x"],
+    displayText: "Follow us on X",
+    image: xFollowStandImage,
+    seoTitle: "X Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy an X Follow Stand that opens your X profile with one tap or scan.",
+    searchKeywords: ["x follow stand", "x nfc stand", "follow us on x stand"]
+  }),
+  phaseOneProduct({
+    slug: "snapchat-follow-stand",
+    title: "Snapchat Follow Stand",
+    sku: "TR-SNAPCHAT-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "snapchat",
+    destinationType: "social",
+    businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Snapchat profile.",
+    description:
+      "Snapchat Follow Stand is a tabletop NFC and QR display for sending customers directly to your Snapchat profile. It connects directly to one Snapchat destination URL and is tap or scan ready.",
+    supportedDestinations: ["snapchat"],
+    displayText: "Follow us on Snapchat",
+    image: snapchatFollowStandImage,
+    seoTitle: "Snapchat Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a Snapchat Follow Stand that opens your Snapchat profile with one tap or scan.",
+    searchKeywords: ["snapchat follow stand", "snapchat nfc stand", "follow us on snapchat stand"]
+  }),
+  phaseOneProduct({
+    slug: "pinterest-follow-stand",
+    title: "Pinterest Follow Stand",
+    sku: "TR-PINTEREST-FOLLOW-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "pinterest",
+    destinationType: "social",
+    businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "beauty-salon-wellness", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Pinterest profile.",
+    description:
+      "Pinterest Follow Stand is a tabletop NFC and QR display for sending customers directly to your Pinterest profile. It connects directly to one Pinterest destination URL and is tap or scan ready.",
+    supportedDestinations: ["pinterest"],
+    displayText: "Follow us on Pinterest",
+    image: pinterestFollowStandImage,
+    seoTitle: "Pinterest Follow Stand | NFC and QR Social Media Stand",
+    seoDescription: "Buy a Pinterest Follow Stand that opens your Pinterest profile with one tap or scan.",
+    searchKeywords: ["pinterest follow stand", "pinterest nfc stand", "follow us on pinterest stand"]
   }),
   phaseOneProduct({
     slug: "book-your-next-visit-stand",

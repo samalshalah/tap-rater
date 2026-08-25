@@ -108,14 +108,14 @@ describe("catalog categories", () => {
     const websiteProducts = getProductsByCategory("website-links");
     const customProducts = getProductsByCategory("custom-stands");
 
-    expect(reviewProducts).toHaveLength(4);
-    expect(socialProducts).toHaveLength(1);
+    expect(reviewProducts).toHaveLength(6);
+    expect(socialProducts).toHaveLength(9);
     expect(appointmentProducts).toHaveLength(1);
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
     expect(websiteProducts).toHaveLength(1);
     expect(customProducts).toHaveLength(0);
-    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(4);
+    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(6);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
 
@@ -123,15 +123,25 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(9);
+    expect(products).toHaveLength(19);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
         "Facebook Review Stand",
         "Yelp Review Stand",
         "TripAdvisor Review Stand",
+        "Uber Eats Review Stand",
+        "Angi Review Stand",
         "Rate Your Experience Stand",
         "Follow Us on Social Media Stand",
+        "Facebook Follow Stand",
+        "Instagram Follow Stand",
+        "TikTok Follow Stand",
+        "YouTube Follow Stand",
+        "LinkedIn Follow Stand",
+        "X Follow Stand",
+        "Snapchat Follow Stand",
+        "Pinterest Follow Stand",
         "Book Your Next Visit Stand",
         "View Our Menu Stand",
         "Visit Our Website Stand"
