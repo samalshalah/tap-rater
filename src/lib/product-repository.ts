@@ -564,14 +564,25 @@ function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProd
   const cleanDescription = `${product.title} connects QR and NFC directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
   return {
     ...product,
-    shortDescription: containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription,
-    description: containsLegacyDirectCopy(product.description) ? cleanDescription : product.description,
+    shortDescription: sanitizeRetiredPublicCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription),
+    description: sanitizeRetiredPublicCopy(containsLegacyDirectCopy(product.description) ? cleanDescription : product.description),
+    seoDescription: product.seoDescription ? sanitizeRetiredPublicCopy(product.seoDescription) : product.seoDescription,
     requiresAccount: false,
     requiresSubscription: false,
     requiresLandingPage: false,
     serviceMode: product.serviceMode === "hosted_landing_page" ? "basic_redirect" : product.serviceMode,
     activationType: product.activationType === "premium_hosted_activation" ? "free_basic_activation" : product.activationType
   };
+}
+
+function sanitizeRetiredPublicCopy(value: string) {
+  return value
+    .replace(/\bNo monthly fee required for basic activation\.?/gi, "One-time physical product purchase.")
+    .replace(/\bdoes not require a monthly fee for basic activation\.?/gi, "connects as a one-time physical product purchase.")
+    .replace(/\bwith no monthly fee\.?/gi, "as a one-time physical product purchase.")
+    .replace(/\bNo monthly fee\.?/gi, "One-time physical product purchase.")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): ProductPurchaseOptionSnapshot {

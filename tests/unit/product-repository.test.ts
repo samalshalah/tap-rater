@@ -255,6 +255,7 @@ describe("product repository", () => {
       stock_status: "instock",
       short_description: "Countertop NFC-only stand.",
       description: "Standard Direct is NFC only. No printed QR.",
+      seo_description: "Buy a Yelp Review Stand. No monthly fee required for basic activation.",
       product_type: "physical_redirect",
       service_mode: "basic_redirect",
       checkout_mode: "buy_now",
@@ -273,7 +274,8 @@ describe("product repository", () => {
 
     expect(product?.shortDescription).toContain("QR and NFC directly");
     expect(product?.description).toContain("No subscription, account, hosted page, or activation is required.");
-    expect(`${product?.shortDescription} ${product?.description}`).not.toMatch(/NFC only|No printed QR/i);
+    expect(product?.seoDescription).toContain("One-time physical product purchase");
+    expect(`${product?.shortDescription} ${product?.description} ${product?.seoDescription}`).not.toMatch(/NFC only|No printed QR|monthly fee/i);
   });
 
   it("hides QA and hosted products from the public storefront", async () => {
