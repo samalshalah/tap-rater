@@ -115,7 +115,8 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   }
 
   try {
-    return await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
+    const databaseProducts = await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
+    return mergeWithStaticStorefrontProducts(databaseProducts);
   } catch {
     return [];
   }
@@ -132,7 +133,9 @@ export const getStorefrontProductBySlug = cache(async (slug: string): Promise<Mi
       return cachedProduct;
     }
 
-    const product = await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
+    const product =
+      (await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug)) ??
+      getStaticStorefrontProductBySlug(slug);
     writeCache(productBySlugCache, slug, product);
     return product;
   } catch {
@@ -300,6 +303,18 @@ function getStaticStorefrontProductBySlug(slug: string) {
   const product = getProductBySlug(slug);
 
   return product && isPublicLaunchStorefrontProduct(product) ? product : undefined;
+}
+
+function mergeWithStaticStorefrontProducts(databaseProducts: MigratedProduct[]): MigratedProduct[] {
+  const productsBySlug = new Map(databaseProducts.map((product) => [product.slug, product]));
+
+  for (const staticProduct of staticStorefrontProducts()) {
+    if (!productsBySlug.has(staticProduct.slug)) {
+      productsBySlug.set(staticProduct.slug, staticProduct);
+    }
+  }
+
+  return Array.from(productsBySlug.values());
 }
 
 function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {
