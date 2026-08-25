@@ -58,4 +58,69 @@ describe("admin products", () => {
 
     expect(products).toEqual([]);
   });
+
+  it("sorts backend products so active synced catalog rows are easy to find", async () => {
+    const products = await getAdminProductsFromClient({
+      from(table: string) {
+        return {
+          select() {
+            if (table === "product_business_uses") {
+              return Promise.resolve({ data: [], error: null });
+            }
+
+            return Promise.resolve({
+              data: [
+                productRow({ slug: "yelp-review-stand", title: "Yelp Review Stand", is_active: true, status: "active" }),
+                productRow({ slug: "google-review-stand", title: "Google Review Stand", is_active: true, status: "active" }),
+                productRow({ slug: "draft-product", title: "A Draft Product", is_active: false, status: "draft" }),
+                productRow({ slug: "avvo-review-stand", title: "Avvo Review Stand", is_active: true, status: "active" })
+              ],
+              error: null
+            });
+          }
+        };
+      }
+    });
+
+    expect(products.map((product) => product.slug)).toEqual([
+      "avvo-review-stand",
+      "google-review-stand",
+      "yelp-review-stand",
+      "draft-product"
+    ]);
+  });
 });
+
+function productRow(overrides: Record<string, unknown>) {
+  return {
+    sku: String(overrides.slug ?? "product").toUpperCase(),
+    category_slug: "reviews",
+    stand_type_slug: "review-stands",
+    primary_platform_slug: "custom-url",
+    destination_type: "custom",
+    is_special_solution: false,
+    product_kind: "normal_direct",
+    base_price_cents: 3900,
+    stock_status: "instock",
+    short_description: "Backend product",
+    description: "Backend product",
+    product_type: "physical_redirect",
+    service_mode: "basic_redirect",
+    checkout_mode: "buy_now",
+    requires_account: false,
+    requires_subscription: false,
+    requires_landing_page: false,
+    supported_destinations: ["custom"],
+    activation_type: "free_basic_activation",
+    included_service_label: "Free basic activation",
+    format: "stand",
+    customization_options: ["standard_design"],
+    allows_logo_upload: false,
+    allows_custom_design: false,
+    design_mode: "standard",
+    images: [],
+    is_active: true,
+    status: "active",
+    ...overrides
+  };
+}

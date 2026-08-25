@@ -82,7 +82,8 @@ export async function getAdminProductsFromClient(client: AdminProductClient): Pr
     .map((product) => ({
       ...product,
       businessUseSlugs: businessUseSlugsByProductSlug.get(product.slug) ?? product.businessUseSlugs ?? []
-    }));
+    }))
+    .sort(compareAdminProducts);
 }
 
 export async function getAdminProductBySlug(slug: string): Promise<MigratedProduct | undefined> {
@@ -122,4 +123,23 @@ async function getProductBusinessUseSlugsByProductSlug(client: AdminProductClien
   }
 
   return slugsByProductSlug;
+}
+
+function compareAdminProducts(first: MigratedProduct, second: MigratedProduct) {
+  const statusRank = productStatusRank(first) - productStatusRank(second);
+  if (statusRank !== 0) {
+    return statusRank;
+  }
+
+  return first.title.localeCompare(second.title, undefined, { sensitivity: "base" }) || first.slug.localeCompare(second.slug);
+}
+
+function productStatusRank(product: MigratedProduct) {
+  if (product.isActive && product.status !== "archived") {
+    return 0;
+  }
+  if (product.status === "draft") {
+    return 1;
+  }
+  return 2;
 }
