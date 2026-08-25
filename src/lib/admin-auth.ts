@@ -7,6 +7,10 @@ export const adminCookieName = "taprater_admin";
 const defaultSessionTtlHours = 7 * 24;
 const futureClockSkewMs = 5 * 60 * 1000;
 
+function isLocalAdminOpen() {
+  return process.env.NODE_ENV === "development";
+}
+
 function getAdminSecret() {
   const secret = process.env.ADMIN_SESSION_SECRET;
 
@@ -89,6 +93,10 @@ export function isValidAdminSession(value: string | undefined) {
 }
 
 export async function requireAdmin() {
+  if (isLocalAdminOpen()) {
+    return;
+  }
+
   const cookieStore = await cookies();
   const session = cookieStore.get(adminCookieName)?.value;
 
@@ -98,6 +106,10 @@ export async function requireAdmin() {
 }
 
 export async function requireAdminApi() {
+  if (isLocalAdminOpen()) {
+    return null;
+  }
+
   const cookieStore = await cookies();
   const session = cookieStore.get(adminCookieName)?.value;
 

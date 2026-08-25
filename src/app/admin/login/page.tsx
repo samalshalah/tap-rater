@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/login-form";
 
 export const metadata: Metadata = {
@@ -10,6 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLoginPage() {
+  if (process.env.NODE_ENV === "development") {
+    redirect("/admin");
+  }
+
   return (
     <section className="tr-container-narrow py-16">
       <p className="tr-eyebrow">Admin</p>
