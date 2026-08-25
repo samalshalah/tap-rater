@@ -30,7 +30,8 @@
 
 body {
   margin: 0;
-  font-family: Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif;
+  font-family:
+    Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -280,7 +281,8 @@ main.bg-white h3[class] {
 
 body,
 body * {
-  font-family: Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif !important;
+  font-family:
+    Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif !important;
   letter-spacing: 0 !important;
 }
 
@@ -436,12 +438,12 @@ a {
   .tr-container-wide,
   .tr-container-narrow,
   .tr-admin-section {
-    padding-left: 1.25rem;
-    padding-right: 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
   .tr-card,
   .tr-card-compact {
-    max-width: calc(100vw - 3rem);
+    max-width: 100%;
   }
 }

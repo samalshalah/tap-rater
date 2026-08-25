@@ -7,38 +7,96 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
 type HeaderNavigationContent = {
-  items: Array<{ label: string; href: string; order: number; enabled: boolean }>;
+  items: Array<{
+    label: string;
+    href: string;
+    order: number;
+    enabled: boolean;
+  }>;
 };
 
 const defaultHeaderNavigation: HeaderNavigationContent = {
   items: [
     { label: "Home", href: "/", order: 5, enabled: true },
     { label: "Shop", href: "/shop", order: 10, enabled: true },
-    { label: "Shop by Type", href: "/shop#stand-categories", order: 15, enabled: true },
+    {
+      label: "Shop by Type",
+      href: "/shop#stand-types",
+      order: 15,
+      enabled: true,
+    },
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
-    { label: "Multi-Link", href: "/category/website-link-stands", order: 40, enabled: true },
-    { label: "Resources", href: "/support", order: 60, enabled: true }
-  ]
+    {
+      label: "Multi-Link",
+      href: "/category/website-link-stands",
+      order: 40,
+      enabled: true,
+    },
+    { label: "Resources", href: "/support", order: 60, enabled: true },
+  ],
+};
+
+const mobileNavigationDescriptions: Record<string, string> = {
+  Home: "Start from the main Tap Rater storefront.",
+  Shop: "Browse all stands with filters.",
+  "Shop by Type": "Choose review, menu, website, and other stand types.",
+  "By Use": "Shop by business or customer action.",
+  "How It Works": "See the buying and setup flow.",
+  "Multi-Link": "Website and multi-link stand options.",
+  Resources: "FAQ, support, and help pages.",
 };
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
-  const enabledItems = items.filter((item) => item.enabled && item.label.toLowerCase() !== "custom branding");
-  const hasShopByType = enabledItems.some((item) => item.label.toLowerCase() === "shop by type");
+  const enabledItems = items.filter(
+    (item) => item.enabled && item.label.toLowerCase() !== "custom branding",
+  );
+  const hasShopByType = enabledItems.some(
+    (item) => item.label.toLowerCase() === "shop by type",
+  );
   const withShopByType = hasShopByType
     ? enabledItems
-    : [...enabledItems, { label: "Shop by Type", href: "/shop#stand-categories", order: 15, enabled: true }];
-  const hasHome = withShopByType.some((item) => item.label.toLowerCase() === "home");
-  const normalizedItems = hasHome ? withShopByType : [{ label: "Home", href: "/", order: 5, enabled: true }, ...withShopByType];
+    : [
+        ...enabledItems,
+        {
+          label: "Shop by Type",
+          href: "/shop#stand-types",
+          order: 15,
+          enabled: true,
+        },
+      ];
+  const hasHome = withShopByType.some(
+    (item) => item.label.toLowerCase() === "home",
+  );
+  const normalizedItems = hasHome
+    ? withShopByType
+    : [
+        { label: "Home", href: "/", order: 5, enabled: true },
+        ...withShopByType,
+      ];
 
-  return normalizedItems.sort((first, second) => first.order - second.order || first.label.localeCompare(second.label));
+  return normalizedItems
+    .map((item) =>
+      item.label.toLowerCase() === "shop by type"
+        ? { ...item, href: "/shop#stand-types" }
+        : item,
+    )
+    .sort(
+      (first, second) =>
+        first.order - second.order || first.label.localeCompare(second.label),
+    );
 }
 
 export function Header() {
   const cart = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [navigation, setNavigation] = useState<HeaderNavigationContent>(defaultHeaderNavigation);
-  const navItems = useMemo(() => orderedEnabledLinks(navigation.items), [navigation.items]);
+  const [navigation, setNavigation] = useState<HeaderNavigationContent>(
+    defaultHeaderNavigation,
+  );
+  const navItems = useMemo(
+    () => orderedEnabledLinks(navigation.items),
+    [navigation.items],
+  );
 
   useEffect(() => {
     let active = true;
@@ -60,7 +118,11 @@ export function Header() {
     <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
       <div className="tr-container-wide">
         <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 lg:min-h-20 lg:grid-cols-[210px_1fr_210px]">
-          <Link href="/" className="inline-flex items-center" onClick={() => setIsMenuOpen(false)}>
+          <Link
+            href="/"
+            className="inline-flex items-center"
+            onClick={() => setIsMenuOpen(false)}
+          >
             <Image
               src="/uploads/brand/tap-rater-logo.png"
               alt="Tap Rater"
@@ -72,7 +134,11 @@ export function Header() {
           </Link>
           <nav className="hidden justify-center gap-1.5 rounded-xl border border-line bg-white/80 p-1.5 text-sm font-semibold text-ink shadow-sm lg:flex">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-lg px-3.5 py-2.5 transition hover:bg-white hover:text-brand">
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-lg px-3.5 py-2.5 transition hover:bg-white hover:text-brand"
+              >
                 {item.label}
               </Link>
             ))}
@@ -102,6 +168,7 @@ export function Header() {
               type="button"
               className="tr-icon-button lg:hidden"
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-controls="mobile-site-navigation"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((current) => !current)}
             >
@@ -110,25 +177,45 @@ export function Header() {
           </div>
         </div>
         {isMenuOpen ? (
-          <nav className="grid gap-1 border-t border-line py-3 text-sm font-semibold text-ink lg:hidden">
-            {navItems.map((item) => (
+          <div
+            id="mobile-site-navigation"
+            className="border-t border-line py-3 lg:hidden"
+          >
+            <nav className="grid gap-2 text-ink" aria-label="Mobile navigation">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-xl border border-line bg-white px-4 py-3.5 transition hover:border-brand hover:text-brand"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span className="block text-base font-semibold">
+                    {item.label}
+                  </span>
+                  <span className="mt-1 block text-sm font-normal leading-5 text-muted">
+                    {mobileNavigationDescriptions[item.label] ??
+                      "Open this section."}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
               <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-lg px-3 py-3 hover:bg-soft hover:text-brand"
+                href="/account/login"
+                className="min-h-12 rounded-xl border border-line bg-white px-3 py-3 text-center text-sm font-semibold transition hover:border-brand hover:text-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {item.label}
+                Account
               </Link>
-            ))}
-            <Link
-              href="/cart"
-              className="rounded-lg px-3 py-3 hover:bg-soft hover:text-brand"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Cart
-            </Link>
-          </nav>
+              <Link
+                href="/cart"
+                className="min-h-12 rounded-xl border border-ink bg-ink px-3 py-3 text-center text-sm font-semibold text-white transition hover:border-brand hover:bg-brand"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Cart ({cart.count})
+              </Link>
+            </div>
+          </div>
         ) : null}
       </div>
     </header>

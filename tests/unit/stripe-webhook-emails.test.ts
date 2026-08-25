@@ -5,8 +5,8 @@ function createSignedWebhookRequest() {
     method: "POST",
     body: "{}",
     headers: {
-      "stripe-signature": "test-signature"
-    }
+      "stripe-signature": "test-signature",
+    },
   });
 }
 
@@ -24,7 +24,7 @@ describe("Stripe webhook paid order emails", () => {
         mode: "test",
         secretKey: "sk_test_unit",
         publishableKey: "pk_test_unit",
-        webhookSecret: "whsec_unit"
+        webhookSecret: "whsec_unit",
       }),
       getStripeClient: () => ({
         webhooks: {
@@ -33,12 +33,12 @@ describe("Stripe webhook paid order emails", () => {
             data: {
               object: {
                 id: "cs_test_email",
-                payment_status: "paid"
-              }
-            }
-          })
-        }
-      })
+                payment_status: "paid",
+              },
+            },
+          }),
+        },
+      }),
     }));
     vi.doMock("@/lib/orders", () => ({
       savePaidOrderFromCheckoutSession: vi.fn().mockResolvedValue({
@@ -52,12 +52,19 @@ describe("Stripe webhook paid order emails", () => {
           subtotal_cents: 3900,
           total_cents: 3900,
           currency: "usd",
-          line_items_json: []
-        }
-      })
+          line_items_json: [],
+        },
+      }),
+    }));
+    vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
+      provisionHostedSubscriptionFromCheckout: vi
+        .fn()
+        .mockResolvedValue({ ok: true }),
     }));
     vi.doMock("@/lib/order-emails", () => ({
-      sendPaidOrderEmails: vi.fn().mockRejectedValue(new Error("Resend unavailable"))
+      sendPaidOrderEmails: vi
+        .fn()
+        .mockRejectedValue(new Error("Resend unavailable")),
     }));
 
     const { POST } = await import("@/app/api/webhooks/stripe/route");
@@ -70,8 +77,8 @@ describe("Stripe webhook paid order emails", () => {
       "[stripe-webhook] paid_order_email_failed",
       expect.objectContaining({
         stripeCheckoutSessionId: "cs_test_email",
-        errorName: "Error"
-      })
+        errorName: "Error",
+      }),
     );
   });
 
@@ -83,7 +90,7 @@ describe("Stripe webhook paid order emails", () => {
         mode: "test",
         secretKey: "sk_test_unit",
         publishableKey: "pk_test_unit",
-        webhookSecret: "whsec_unit"
+        webhookSecret: "whsec_unit",
       }),
       getStripeClient: () => ({
         webhooks: {
@@ -92,12 +99,12 @@ describe("Stripe webhook paid order emails", () => {
             data: {
               object: {
                 id: "cs_test_duplicate",
-                payment_status: "paid"
-              }
-            }
-          })
-        }
-      })
+                payment_status: "paid",
+              },
+            },
+          }),
+        },
+      }),
     }));
     vi.doMock("@/lib/orders", () => ({
       savePaidOrderFromCheckoutSession: vi.fn().mockResolvedValue({
@@ -110,12 +117,17 @@ describe("Stripe webhook paid order emails", () => {
           subtotal_cents: 3900,
           total_cents: 3900,
           currency: "usd",
-          line_items_json: []
-        }
-      })
+          line_items_json: [],
+        },
+      }),
+    }));
+    vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
+      provisionHostedSubscriptionFromCheckout: vi
+        .fn()
+        .mockResolvedValue({ ok: true }),
     }));
     vi.doMock("@/lib/order-emails", () => ({
-      sendPaidOrderEmails
+      sendPaidOrderEmails,
     }));
 
     const { POST } = await import("@/app/api/webhooks/stripe/route");

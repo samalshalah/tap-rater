@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
   description:
     "Shop Tap Rater tabletop NFC and QR stands for reviews, social media, booking, menus, feedback, websites, and custom links.",
-  alternates: { canonical: "/shop" }
+  alternates: { canonical: "/shop" },
 };
 
 type ShopPageProps = {
@@ -21,13 +21,27 @@ type ShopPageProps = {
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
   const filters = await searchParams;
-  const [products, businessUses, standTypes] = await Promise.all([getStorefrontProducts(), getPublicBusinessUses(), getPublicStandTypes()]);
+  const [products, businessUses, standTypes] = await Promise.all([
+    getStorefrontProducts(),
+    getPublicBusinessUses(),
+    getPublicStandTypes(),
+  ]);
   const selectedType = resolveSelectedStandType(standTypes, filters?.type);
-  const selectedUse = businessUses.find((businessUse) => businessUse.slug === filters?.use);
+  const selectedUse = businessUses.find(
+    (businessUse) => businessUse.slug === filters?.use,
+  );
   const filteredProducts = products.filter((product) => {
-    const selectedCategorySlug = selectedType ? standTypeToCategorySlug(selectedType.slug) : undefined;
-    const matchesType = selectedType ? Boolean(selectedCategorySlug) && product.categorySlug === selectedCategorySlug : true;
-    const matchesUse = selectedUse ? selectedUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(selectedUse.slug) : true;
+    const selectedCategorySlug = selectedType
+      ? standTypeToCategorySlug(selectedType.slug)
+      : undefined;
+    const matchesType = selectedType
+      ? Boolean(selectedCategorySlug) &&
+        product.categorySlug === selectedCategorySlug
+      : true;
+    const matchesUse = selectedUse
+      ? selectedUse.productSlugs.includes(product.slug) ||
+        product.businessUseSlugs?.includes(selectedUse.slug)
+      : true;
     return matchesType && matchesUse;
   });
 
@@ -41,77 +55,87 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               Shop NFC and QR stands.
             </h1>
             <p className="max-w-2xl text-lg font-medium leading-7 text-[#5f686f]">
-              Browse by stand type or business use, then choose the product that fits the customer action.
+              Browse by stand type or business use, then choose the product that
+              fits the customer action.
             </p>
           </div>
         </div>
       </section>
 
       <section className="bg-[#f7f8f8]">
-        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[340px_1fr] lg:py-10">
-          <aside className="h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24">
-            <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
-              <p className="text-sm font-semibold text-ink">Filters</p>
-              {(selectedType || selectedUse) ? (
-                <Link href="/shop" className="text-sm font-semibold text-brand">
-                  Clear all
-                </Link>
-              ) : null}
+        <div
+          id="stand-types"
+          className="tr-container scroll-mt-24 py-8 lg:py-10"
+        >
+          <div className="grid gap-6 lg:grid-cols-[340px_1fr] lg:gap-8">
+            <div className="lg:hidden">
+              <details className="rounded-[22px] bg-white p-4 ring-1 ring-line">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
+                  <span>Filters</span>
+                  <span className="text-brand">
+                    {selectedType || selectedUse ? "Active" : "Type and use"}
+                  </span>
+                </summary>
+                <div className="mt-4 border-t border-line pt-4">
+                  <FilterPanelContent
+                    businessUses={businessUses}
+                    products={products}
+                    selectedType={selectedType}
+                    selectedUse={selectedUse}
+                    standTypes={standTypes}
+                  />
+                </div>
+              </details>
             </div>
 
-            <FilterGroup title="Type">
-              {standTypes.map((standType) => {
-                const categorySlug = standTypeToCategorySlug(standType.slug);
-                const count = categorySlug ? products.filter((product) => product.categorySlug === categorySlug).length : 0;
-                return (
-                <FilterLink
-                  key={standType.slug}
-                  active={selectedType?.slug === standType.slug}
-                  count={count}
-                  href={buildShopHref({ type: selectedType?.slug === standType.slug ? undefined : standType.slug, use: selectedUse?.slug })}
-                  label={standType.title}
-                />
-                );
-              })}
-            </FilterGroup>
+            <aside className="hidden h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24 lg:block">
+              <FilterPanelContent
+                businessUses={businessUses}
+                products={products}
+                selectedType={selectedType}
+                selectedUse={selectedUse}
+                standTypes={standTypes}
+              />
+            </aside>
 
-            <FilterGroup title="Use">
-              {businessUses.map((businessUse) => (
-                <FilterLink
-                  key={businessUse.slug}
-                  active={selectedUse?.slug === businessUse.slug}
-                  count={products.filter((product) => businessUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(businessUse.slug)).length}
-                  href={buildShopHref({ type: selectedType?.slug, use: selectedUse?.slug === businessUse.slug ? undefined : businessUse.slug })}
-                  label={businessUse.title}
-                />
-              ))}
-            </FilterGroup>
-          </aside>
-
-          <div>
-            {(selectedType || selectedUse) ? (
-              <div className="mb-5 flex flex-wrap gap-2">
-                {selectedType ? (
-                  <Link href={buildShopHref({ use: selectedUse?.slug })} className="tr-pill-neutral bg-white">
-                    Type: {selectedType.title} ×
-                  </Link>
-                ) : null}
-                {selectedUse ? (
-                  <Link href={buildShopHref({ type: selectedType?.slug })} className="tr-pill-neutral bg-white">
-                    Use: {selectedUse.title} ×
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => <ProductCard key={product.slug} product={product} density="compact" />)
-              ) : (
-                <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-4">
-                  No products match these filters. Clear filters to view all stands.
+            <div>
+              {selectedType || selectedUse ? (
+                <div className="mb-5 flex flex-wrap gap-2">
+                  {selectedType ? (
+                    <Link
+                      href={buildShopHref({ use: selectedUse?.slug })}
+                      className="tr-pill-neutral bg-white"
+                    >
+                      Type: {selectedType.title} ×
+                    </Link>
+                  ) : null}
+                  {selectedUse ? (
+                    <Link
+                      href={buildShopHref({ type: selectedType?.slug })}
+                      className="tr-pill-neutral bg-white"
+                    >
+                      Use: {selectedUse.title} ×
+                    </Link>
+                  ) : null}
                 </div>
-              )}
+              ) : null}
+
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.slug}
+                      product={product}
+                      density="compact"
+                    />
+                  ))
+                ) : (
+                  <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-4">
+                    No products match these filters. Clear filters to view all
+                    stands.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -120,11 +144,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   );
 }
 
-type StandTypeForFilter = Awaited<ReturnType<typeof getPublicStandTypes>>[number];
+type StandTypeForFilter = Awaited<
+  ReturnType<typeof getPublicStandTypes>
+>[number];
 
-function resolveSelectedStandType(standTypes: StandTypeForFilter[], value: string | undefined) {
+function resolveSelectedStandType(
+  standTypes: StandTypeForFilter[],
+  value: string | undefined,
+) {
   if (!value) return undefined;
-  return standTypes.find((standType) => standType.slug === value || standTypeToCategorySlug(standType.slug) === value);
+  return standTypes.find(
+    (standType) =>
+      standType.slug === value ||
+      standTypeToCategorySlug(standType.slug) === value,
+  );
 }
 
 function standTypeToCategorySlug(slug: string) {
@@ -135,29 +168,143 @@ function standTypeToCategorySlug(slug: string) {
     "menu-info-stands": "menu",
     "feedback-survey-stands": "feedback",
     "website-link-stands": "website-links",
-    "custom-stands": "custom-stands"
+    "custom-stands": "custom-stands",
   };
 
   return map[slug];
 }
 
-function FilterGroup({ children, title }: { children: React.ReactNode; title: string }) {
+type BusinessUseForFilter = Awaited<
+  ReturnType<typeof getPublicBusinessUses>
+>[number];
+type ProductForFilter = Awaited<
+  ReturnType<typeof getStorefrontProducts>
+>[number];
+
+function FilterPanelContent({
+  businessUses,
+  products,
+  selectedType,
+  selectedUse,
+  standTypes,
+}: {
+  businessUses: BusinessUseForFilter[];
+  products: ProductForFilter[];
+  selectedType?: StandTypeForFilter;
+  selectedUse?: BusinessUseForFilter;
+  standTypes: StandTypeForFilter[];
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
+        <p className="text-sm font-semibold text-ink">Filters</p>
+        {selectedType || selectedUse ? (
+          <Link href="/shop" className="text-sm font-semibold text-brand">
+            Clear all
+          </Link>
+        ) : null}
+      </div>
+
+      <FilterGroup title="Type">
+        {standTypes.map((standType) => {
+          const categorySlug = standTypeToCategorySlug(standType.slug);
+          const count = categorySlug
+            ? products.filter(
+                (product) => product.categorySlug === categorySlug,
+              ).length
+            : 0;
+          return (
+            <FilterLink
+              key={standType.slug}
+              active={selectedType?.slug === standType.slug}
+              count={count}
+              href={buildShopHref({
+                type:
+                  selectedType?.slug === standType.slug
+                    ? undefined
+                    : standType.slug,
+                use: selectedUse?.slug,
+              })}
+              label={standType.title}
+            />
+          );
+        })}
+      </FilterGroup>
+
+      <FilterGroup title="Use">
+        {businessUses.map((businessUse) => (
+          <FilterLink
+            key={businessUse.slug}
+            active={selectedUse?.slug === businessUse.slug}
+            count={
+              products.filter(
+                (product) =>
+                  businessUse.productSlugs.includes(product.slug) ||
+                  product.businessUseSlugs?.includes(businessUse.slug),
+              ).length
+            }
+            href={buildShopHref({
+              type: selectedType?.slug,
+              use:
+                selectedUse?.slug === businessUse.slug
+                  ? undefined
+                  : businessUse.slug,
+            })}
+            label={businessUse.title}
+          />
+        ))}
+      </FilterGroup>
+    </>
+  );
+}
+
+function FilterGroup({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title: string;
+}) {
   return (
     <div className="border-b border-line py-5 last:border-b-0 last:pb-0">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink">{title}</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink">
+        {title}
+      </p>
       <div className="grid gap-1">{children}</div>
     </div>
   );
 }
 
-function FilterLink({ active, count, href, label }: { active: boolean; count: number; href: string; label: string }) {
+function FilterLink({
+  active,
+  count,
+  href,
+  label,
+}: {
+  active: boolean;
+  count: number;
+  href: string;
+  label: string;
+}) {
   return (
     <Link
       href={href}
-      className={active ? "flex items-center justify-between gap-3 rounded-lg bg-[#f7fbfa] px-3 py-2 text-sm font-semibold text-ink" : "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"}
+      className={
+        active
+          ? "flex items-center justify-between gap-3 rounded-lg bg-[#f7fbfa] px-3 py-2 text-sm font-semibold text-ink"
+          : "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"
+      }
     >
       <span className="min-w-0 truncate">{label}</span>
-      <span className={active ? "rounded-full bg-white px-2 py-0.5 text-xs text-brand ring-1 ring-line" : "rounded-full bg-soft px-2 py-0.5 text-xs text-muted"}>{count}</span>
+      <span
+        className={
+          active
+            ? "rounded-full bg-white px-2 py-0.5 text-xs text-brand ring-1 ring-line"
+            : "rounded-full bg-soft px-2 py-0.5 text-xs text-muted"
+        }
+      >
+        {count}
+      </span>
     </Link>
   );
 }
