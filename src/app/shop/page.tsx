@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
-import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCatalogCategories } from "@/lib/products";
-import { getCategoryVisual } from "@/lib/storefront-visuals";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -14,17 +12,31 @@ export const metadata: Metadata = {
   alternates: { canonical: "/shop" }
 };
 
-export default async function ShopPage() {
+type ShopPageProps = {
+  searchParams?: Promise<{
+    type?: string;
+    use?: string;
+  }>;
+};
+
+export default async function ShopPage({ searchParams }: ShopPageProps) {
+  const filters = await searchParams;
   const [products, businessUses] = await Promise.all([getStorefrontProducts(), getPublicBusinessUses()]);
   const categories = getCatalogCategories();
-  const visibleBusinessUses = businessUses.filter((useCase) => Boolean(useCase.imageUrl || useCase.bannerImageUrl));
+  const selectedType = categories.find((category) => category.slug === filters?.type);
+  const selectedUse = businessUses.find((businessUse) => businessUse.slug === filters?.use);
+  const filteredProducts = products.filter((product) => {
+    const matchesType = selectedType ? product.categorySlug === selectedType.slug : true;
+    const matchesUse = selectedUse ? selectedUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(selectedUse.slug) : true;
+    return matchesType && matchesUse;
+  });
 
   return (
     <main className="bg-white text-ink">
       <section className="bg-white">
         <div className="tr-container grid gap-8 py-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end lg:py-16">
           <div>
-          <p className="tr-eyebrow">Tap Rater shop</p>
+            <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.25rem]">
               Shop NFC and QR stands.
             </h1>
@@ -32,103 +44,82 @@ export default async function ShopPage() {
           <div>
             <p className="text-xl font-medium leading-8 text-[#5f686f]">
               Browse by stand type or business use, then choose the product that fits the customer action.
-          </p>
-            <div className="mt-7 flex flex-wrap gap-4">
-            <Link href="#stand-categories" className="tr-button-primary min-h-10">
-              Shop by type
-            </Link>
-              <Link href="#business-uses" className="tr-editorial-link">
-              Shop by use
-                <span aria-hidden="true">→</span>
-            </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="all-products" className="bg-[#f7f8f8]">
-        <div className="tr-container py-10 sm:py-14">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
-            <div>
-              <p className="tr-eyebrow">All products</p>
-              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Shop every Tap Rater stand.</h2>
-            </div>
-            <p className="max-w-xl text-sm font-medium leading-6 text-muted">
-              Compare every active product, then choose Standard Direct or a supported branded setup on the product page.
             </p>
           </div>
-          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.slug} product={product} />
-            ))}
-          </div>
         </div>
       </section>
 
-      <section id="stand-categories" className="bg-[#f7f8f8]">
-        <div className="tr-container py-10 sm:py-14">
-          <div className="grid gap-8 rounded-[30px] bg-white p-6 md:grid-cols-[0.82fr_1fr] md:items-center lg:p-8">
-            <div>
-              <p className="tr-eyebrow">Stand categories</p>
-              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Shop by type.</h2>
-              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-muted">
-                Use stand types when you already know the customer action you want at the counter.
-              </p>
+      <section className="bg-[#f7f8f8]">
+        <div className="tr-container grid gap-8 py-10 lg:grid-cols-[280px_1fr] lg:py-14">
+          <aside className="h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24">
+            <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
+              <p className="text-sm font-semibold text-ink">Filters</p>
+              {(selectedType || selectedUse) ? (
+                <Link href="/shop" className="text-sm font-semibold text-brand">
+                  Clear all
+                </Link>
+              ) : null}
             </div>
-            <div className="relative min-h-[260px] overflow-hidden rounded-[26px] bg-[#f7f8f8]">
-              <img src="/uploads/products/google-review-stand.png" alt="Tap Rater stand type example" className="h-full min-h-[260px] w-full object-contain p-6 mix-blend-multiply" />
-            </div>
-          </div>
-          <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {categories.map((category) => (
-              <VisualCard
-                key={category.slug}
-                href={getCategoryHref(category.slug)}
-                eyebrow={`${products.filter((product) => product.categorySlug === category.slug).length} stands`}
-                title={category.title}
-                description={category.buyerIntent}
-                image={getCategoryVisual(category)}
-                cta="Learn more"
-                variant="type"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
 
-      <section id="business-uses" className="bg-white">
-        <div className="tr-container py-10 sm:py-14">
-          <div className="grid gap-8 rounded-[30px] bg-[#f7f8f8] p-6 md:grid-cols-[0.82fr_1fr] md:items-center lg:p-8">
-            <div>
-              <p className="tr-eyebrow">Shop by use</p>
-              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Find stands for your business.</h2>
-              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-muted">
-                Start with your industry or environment, then choose the stand that fits the customer moment.
-              </p>
-              <Link href="/solutions" className="mt-5 tr-editorial-link">
-                View all use cases
-                <span aria-hidden="true">→</span>
-              </Link>
+            <FilterGroup title="Type">
+              {categories.map((category) => (
+                <FilterLink
+                  key={category.slug}
+                  active={selectedType?.slug === category.slug}
+                  count={products.filter((product) => product.categorySlug === category.slug).length}
+                  href={buildShopHref({ type: selectedType?.slug === category.slug ? undefined : category.slug, use: selectedUse?.slug })}
+                  label={category.title}
+                />
+              ))}
+            </FilterGroup>
+
+            <FilterGroup title="Use">
+              {businessUses.map((businessUse) => (
+                <FilterLink
+                  key={businessUse.slug}
+                  active={selectedUse?.slug === businessUse.slug}
+                  count={products.filter((product) => businessUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(businessUse.slug)).length}
+                  href={buildShopHref({ type: selectedType?.slug, use: selectedUse?.slug === businessUse.slug ? undefined : businessUse.slug })}
+                  label={businessUse.title}
+                />
+              ))}
+            </FilterGroup>
+          </aside>
+
+          <div>
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <div>
+                <p className="tr-eyebrow">All products</p>
+                <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Shop every Tap Rater stand.</h2>
+                <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"} shown
+                  {selectedType ? ` in ${selectedType.title}` : ""}
+                  {selectedUse ? ` for ${selectedUse.title}` : ""}.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedType ? (
+                  <Link href={buildShopHref({ use: selectedUse?.slug })} className="tr-pill-neutral bg-white">
+                    Type: {selectedType.title} ×
+                  </Link>
+                ) : null}
+                {selectedUse ? (
+                  <Link href={buildShopHref({ type: selectedType?.slug })} className="tr-pill-neutral bg-white">
+                    Use: {selectedUse.title} ×
+                  </Link>
+                ) : null}
+              </div>
             </div>
-            <div className="relative min-h-[260px] overflow-hidden rounded-[26px] bg-white">
-              <img src="/uploads/use-cases/restaurants-cafes.webp" alt="Restaurant business use example" className="h-full min-h-[260px] w-full object-cover" />
+
+            <div className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product) => <ProductCard key={product.slug} product={product} />)
+              ) : (
+                <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-3 2xl:col-span-4">
+                  No products match these filters. Clear filters to view all stands.
+                </div>
+              )}
             </div>
-          </div>
-          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visibleBusinessUses.slice(0, 8).map((useCase) => (
-              <VisualCard
-                key={useCase.slug}
-                href={`/solutions/${useCase.slug}`}
-                title={useCase.title}
-                description={useCase.shortDescription || useCase.description}
-                image={{
-                  src: useCase.bannerImageUrl ?? useCase.imageUrl ?? "/uploads/products/rate-your-experience-stand.png",
-                  alt: useCase.title
-                }}
-                imageFit="cover"
-                variant="use-case"
-              />
-            ))}
           </div>
         </div>
       </section>
@@ -136,6 +127,31 @@ export default async function ShopPage() {
   );
 }
 
-function getCategoryHref(slug: string) {
-  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
+function FilterGroup({ children, title }: { children: React.ReactNode; title: string }) {
+  return (
+    <div className="border-b border-line py-5 last:border-b-0 last:pb-0">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink">{title}</p>
+      <div className="grid gap-1">{children}</div>
+    </div>
+  );
+}
+
+function FilterLink({ active, count, href, label }: { active: boolean; count: number; href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className={active ? "flex items-center justify-between gap-3 rounded-lg bg-[#f7fbfa] px-3 py-2 text-sm font-semibold text-ink" : "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"}
+    >
+      <span className="min-w-0 truncate">{label}</span>
+      <span className={active ? "rounded-full bg-white px-2 py-0.5 text-xs text-brand ring-1 ring-line" : "rounded-full bg-soft px-2 py-0.5 text-xs text-muted"}>{count}</span>
+    </Link>
+  );
+}
+
+function buildShopHref({ type, use }: { type?: string; use?: string }) {
+  const params = new URLSearchParams();
+  if (type) params.set("type", type);
+  if (use) params.set("use", use);
+  const query = params.toString();
+  return query ? `/shop?${query}` : "/shop";
 }
