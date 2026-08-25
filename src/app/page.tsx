@@ -2,10 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, Link2, ShoppingBag, Truck } from "lucide-react";
+import { ProductCard } from "@/components/product/product-card";
 import { FaqList } from "@/components/storefront/faq-list";
 import { ProcessStepCard } from "@/components/storefront/process-step-card";
 import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
+import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCatalogCategories } from "@/lib/products";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
 
@@ -23,12 +26,19 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [content, businessUses] = await Promise.all([getHomepageThemeContent(), getPublicBusinessUses()]);
+  const [content, businessUses, products] = await Promise.all([getHomepageThemeContent(), getPublicBusinessUses(), getStorefrontProducts()]);
+  const categories = getCatalogCategories();
   const completeBusinessUses = businessUses.filter((businessUse) => Boolean(businessUse.bannerImageUrl || businessUse.imageUrl));
   const configuredFeaturedUses = content.featuredUses.businessUseSlugs.length
     ? content.featuredUses.businessUseSlugs.flatMap((slug) => businessUses.find((businessUse) => businessUse.slug === slug) ?? [])
     : [];
-  const featuredUses = mergeFeaturedUses(configuredFeaturedUses, completeBusinessUses).slice(0, 6);
+  const featuredUses = mergeFeaturedUses(configuredFeaturedUses, completeBusinessUses).slice(0, 4);
+  const productSections = categories
+    .map((category) => ({
+      category,
+      products: products.filter((product) => product.categorySlug === category.slug).slice(0, 4)
+    }))
+    .filter((section) => section.products.length > 0);
   const faqs = orderedEnabledFaqs(content.faqs, "global").slice(0, 4);
 
   return (
@@ -117,6 +127,35 @@ export default async function HomePage() {
         </section>
       ) : null}
 
+      {productSections.length > 0 ? (
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="tr-container grid gap-12">
+            {productSections.map(({ category, products: categoryProducts }) => (
+              <div key={category.slug}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="tr-eyebrow">{category.eyebrow}</p>
+                    <h2 className="mt-3 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.55rem]">
+                      {category.title}
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted">{category.buyerIntent}</p>
+                  </div>
+                  <Link href={getCategoryHref(category.slug)} className="tr-editorial-link">
+                    View all
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </div>
+                <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {categoryProducts.map((product) => (
+                    <ProductCard key={product.slug} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {content.featuredUses.enabled && featuredUses.length > 0 ? (
         <section className="bg-white py-12 sm:py-16 lg:py-20">
           <div className="tr-container">
@@ -126,7 +165,7 @@ export default async function HomePage() {
                 {content.featuredUses.headline}
               </h2>
             </div>
-            <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {featuredUses.map((useCase) => (
                 <VisualCard
                   key={useCase.slug}
@@ -232,6 +271,10 @@ function mergeFeaturedUses<T extends { slug: string; bannerImageUrl?: string; im
   }
 
   return Array.from(merged.values());
+}
+
+function getCategoryHref(slug: string) {
+  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }
 
 function MarketingCopy({
