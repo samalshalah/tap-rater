@@ -31,9 +31,9 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
   return (
     <Link
       href={href}
-      className="group flex h-full min-h-[390px] flex-col overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(16,32,30,0.06)] ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.08)]"
+      className="group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden rounded-[28px] bg-white p-6 shadow-[0_16px_50px_rgba(16,32,30,0.06)] ring-1 ring-black/[0.05] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.08)]"
     >
-      <div className="relative min-h-[205px] w-full overflow-hidden rounded-[22px] bg-white">
+      <div className="relative min-h-0 flex-[1.05] w-full overflow-hidden rounded-[22px] bg-white">
         <Image
           src={image.src}
           alt={image.alt}
@@ -43,7 +43,7 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
           sizes="(min-width: 1280px) 22vw, (min-width: 768px) 45vw, 90vw"
         />
       </div>
-      <div className="flex flex-1 flex-col pt-6">
+      <div className="flex min-h-0 flex-[0.95] flex-col pt-6">
         <p className="text-[1.25rem] font-semibold leading-[1.12] text-[#101722] sm:text-[1.38rem]">{title}</p>
         <p className="mt-3 text-sm font-medium leading-6 text-[#5f6b78]">{description}</p>
         <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-brand">
@@ -94,13 +94,13 @@ function ProductStoryCard({
 
 function UseCaseCard({ description, eyebrow, href, image, title }: Pick<VisualCardProps, "description" | "eyebrow" | "href" | "image" | "title">) {
   return (
-    <Link href={href} className="group flex h-full min-h-[390px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_52px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.09)]">
-      <div className="px-5 pb-4 pt-6 sm:px-6 sm:pt-7">
+    <Link href={href} className="group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_18px_52px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.035] transition hover:-translate-y-0.5 hover:shadow-[0_22px_64px_rgba(16,32,30,0.09)]">
+      <div className="min-h-0 flex-[0.86] px-5 pb-4 pt-6 sm:px-6 sm:pt-7">
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
         <h3 className="mt-3 text-[1.35rem] font-semibold leading-[1.12] text-[#090b0f] sm:text-[1.55rem]">{title}</h3>
         <p className="mt-3 max-w-xl text-sm font-normal leading-6 text-[#646a72]">{description}</p>
       </div>
-      <div className="relative mt-auto min-h-[190px] overflow-hidden bg-white sm:min-h-[220px]">
+      <div className="relative mt-auto min-h-0 flex-[1.14] overflow-hidden bg-white">
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
       </div>
     </Link>
