@@ -127,35 +127,6 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {productSections.length > 0 ? (
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="tr-container grid gap-12">
-            {productSections.map(({ category, products: categoryProducts }) => (
-              <div key={category.slug}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="tr-eyebrow">{category.eyebrow}</p>
-                    <h2 className="mt-3 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.55rem]">
-                      {category.title}
-                    </h2>
-                    <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted">{category.buyerIntent}</p>
-                  </div>
-                  <Link href={getCategoryHref(category.slug)} className="tr-editorial-link">
-                    View all
-                    <ArrowRight className="h-5 w-5" />
-                  </Link>
-                </div>
-                <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {categoryProducts.map((product) => (
-                    <ProductCard key={product.slug} product={product} />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
       {content.featuredUses.enabled && featuredUses.length > 0 ? (
         <section className="bg-white py-12 sm:py-16 lg:py-20">
           <div className="tr-container">
@@ -181,6 +152,35 @@ export default async function HomePage() {
                 />
               ))}
             </div>
+          </div>
+        </section>
+      ) : null}
+
+      {productSections.length > 0 ? (
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="tr-container grid gap-12">
+            {productSections.map(({ category, products: categoryProducts }) => (
+              <div key={category.slug}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="tr-eyebrow">{category.eyebrow}</p>
+                    <h2 className="mt-3 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.55rem]">
+                      {category.title}
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-muted">{category.buyerIntent}</p>
+                  </div>
+                  <Link href={getCategoryHref(category.slug)} className="tr-editorial-link">
+                    View all
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                </div>
+                <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {categoryProducts.map((product) => (
+                    <ProductCard key={product.slug} product={product} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       ) : null}
