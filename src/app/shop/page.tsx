@@ -48,7 +48,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       </section>
 
       <section className="bg-[#f7f8f8]">
-        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[280px_1fr] lg:py-10">
+        <div className="tr-container grid gap-8 py-8 lg:grid-cols-[340px_1fr] lg:py-10">
           <aside className="h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24">
             <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
               <p className="text-sm font-semibold text-ink">Filters</p>
