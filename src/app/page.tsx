@@ -130,11 +130,17 @@ export default async function HomePage() {
       {content.featuredUses.enabled && featuredUses.length > 0 ? (
         <section className="bg-white py-12 sm:py-16 lg:py-20">
           <div className="tr-container">
-            <div className="mx-auto max-w-4xl text-center">
-              <p className="tr-eyebrow">{content.featuredUses.eyebrow}</p>
-              <h2 className="mt-4 text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.75rem]">
-                {content.featuredUses.headline}
-              </h2>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="tr-eyebrow">{content.featuredUses.eyebrow}</p>
+                <h2 className="mt-4 max-w-[780px] text-[2rem] font-semibold leading-[1.08] text-[#111317] sm:text-[2.75rem]">
+                  {content.featuredUses.headline}
+                </h2>
+              </div>
+              <Link href="/solutions" className="tr-editorial-link">
+                View all
+                <ArrowRight className="h-5 w-5" />
+              </Link>
             </div>
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {featuredUses.map((useCase) => (
