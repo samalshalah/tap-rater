@@ -204,6 +204,14 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "tripadvisor") return { label: "TripAdvisor review", highlightTarget: "TripAdvisor review destination", linkType: "TripAdvisor review link" };
   if (platform === "ubereats") return { label: "Uber Eats review", highlightTarget: "Uber Eats review destination", linkType: "Uber Eats review link" };
   if (platform === "angi") return { label: "Angi review", highlightTarget: "Angi review destination", linkType: "Angi review link" };
+  if (platform === "dealerrater") return { label: "DealerRater review", highlightTarget: "DealerRater review destination", linkType: "DealerRater review link" };
+  if (platform === "edmunds") return { label: "Edmunds review", highlightTarget: "Edmunds review destination", linkType: "Edmunds review link" };
+  if (platform === "cars") return { label: "Cars.com review", highlightTarget: "Cars.com review destination", linkType: "Cars.com review link" };
+  if (platform === "cargurus") return { label: "CarGurus review", highlightTarget: "CarGurus review destination", linkType: "CarGurus review link" };
+  if (platform === "airbnb") return { label: "Airbnb review", highlightTarget: "Airbnb review destination", linkType: "Airbnb review link" };
+  if (platform === "agoda") return { label: "Agoda review", highlightTarget: "Agoda review destination", linkType: "Agoda review link" };
+  if (platform === "vrbo") return { label: "Vrbo review", highlightTarget: "Vrbo review destination", linkType: "Vrbo review link" };
+  if (platform === "hotels") return { label: "Hotels.com review", highlightTarget: "Hotels.com review destination", linkType: "Hotels.com review link" };
   if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile", linkType: "Instagram profile URL" };
   if (platform === "tiktok") return { label: "TikTok", highlightTarget: "TikTok profile", linkType: "TikTok profile URL" };
   if (platform === "linkedin") return { label: "LinkedIn", highlightTarget: "LinkedIn page", linkType: "LinkedIn page URL" };

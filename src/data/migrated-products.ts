@@ -6,6 +6,10 @@ export type SupportedDestination =
   | "trustpilot"
   | "bbb"
   | "nextdoor"
+  | "dealerrater"
+  | "edmunds"
+  | "cars"
+  | "cargurus"
   | "instagram"
   | "tiktok"
   | "linkedin"
@@ -13,6 +17,10 @@ export type SupportedDestination =
   | "youtube"
   | "snapchat"
   | "pinterest"
+  | "airbnb"
+  | "agoda"
+  | "vrbo"
+  | "hotels"
   | "vagaro"
   | "booksy"
   | "fresha"
@@ -272,6 +280,14 @@ const snapchatFollowStandImage = { src: "/uploads/products/snapchat-follow-stand
 const pinterestFollowStandImage = { src: "/uploads/products/pinterest-follow-stand.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
 const ubereatsReviewStandImage = { src: "/uploads/products/ubereats-review-stand.png", alt: "Tap Rater Uber Eats Review Stand" };
 const angiReviewStandImage = { src: "/uploads/products/angi-review-stand.png", alt: "Tap Rater Angi Review Stand" };
+const dealerraterReviewStandImage = { src: "/uploads/products/dealerrater-review-stand.png", alt: "Tap Rater DealerRater Review Stand" };
+const edmundsReviewStandImage = { src: "/uploads/products/edmunds-review-stand.png", alt: "Tap Rater Edmunds Review Stand" };
+const carsReviewStandImage = { src: "/uploads/products/cars-review-stand.png", alt: "Tap Rater Cars.com Review Stand" };
+const cargurusReviewStandImage = { src: "/uploads/products/cargurus-review-stand.png", alt: "Tap Rater CarGurus Review Stand" };
+const airbnbReviewStandImage = { src: "/uploads/products/airbnb-review-stand.png", alt: "Tap Rater Airbnb Review Stand" };
+const agodaReviewStandImage = { src: "/uploads/products/agoda-review-stand.png", alt: "Tap Rater Agoda Review Stand" };
+const vrboReviewStandImage = { src: "/uploads/products/vrbo-review-stand.png", alt: "Tap Rater Vrbo Review Stand" };
+const hotelsReviewStandImage = { src: "/uploads/products/hotels-review-stand.png", alt: "Tap Rater Hotels.com Review Stand" };
 const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
 const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
@@ -517,6 +533,166 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "Angi Review Stand | NFC and QR Home Services Review Stand",
     seoDescription: "Buy an Angi Review Stand that opens your Angi review destination with one tap or scan.",
     searchKeywords: ["angi review stand", "angi nfc stand", "review us on angi stand"]
+  }),
+  phaseOneProduct({
+    slug: "dealerrater-review-stand",
+    title: "DealerRater Review Stand",
+    sku: "TR-DEALERRATER-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "dealerrater",
+    destinationType: "review",
+    businessUseSlugs: ["automotive"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your DealerRater review destination.",
+    description:
+      "DealerRater Review Stand is a tabletop NFC and QR display for dealerships and automotive service counters. It connects directly to one DealerRater review destination URL and is tap or scan ready.",
+    supportedDestinations: ["dealerrater"],
+    displayText: "Review us on DealerRater",
+    image: dealerraterReviewStandImage,
+    seoTitle: "DealerRater Review Stand | NFC and QR Automotive Review Stand",
+    seoDescription: "Buy a DealerRater Review Stand that opens your DealerRater review destination with one tap or scan.",
+    searchKeywords: ["dealerrater review stand", "dealerrater nfc stand", "review us on dealerrater stand"]
+  }),
+  phaseOneProduct({
+    slug: "edmunds-review-stand",
+    title: "Edmunds Review Stand",
+    sku: "TR-EDMUNDS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "edmunds",
+    destinationType: "review",
+    businessUseSlugs: ["automotive"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Edmunds review destination.",
+    description:
+      "Edmunds Review Stand is a tabletop NFC and QR display for dealerships and automotive sales teams. It connects directly to one Edmunds review destination URL and is tap or scan ready.",
+    supportedDestinations: ["edmunds"],
+    displayText: "Review us on Edmunds",
+    image: edmundsReviewStandImage,
+    seoTitle: "Edmunds Review Stand | NFC and QR Automotive Review Stand",
+    seoDescription: "Buy an Edmunds Review Stand that opens your Edmunds review destination with one tap or scan.",
+    searchKeywords: ["edmunds review stand", "edmunds nfc stand", "review us on edmunds stand"]
+  }),
+  phaseOneProduct({
+    slug: "cars-review-stand",
+    title: "Cars.com Review Stand",
+    sku: "TR-CARS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "cars",
+    destinationType: "review",
+    businessUseSlugs: ["automotive"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Cars.com review destination.",
+    description:
+      "Cars.com Review Stand is a tabletop NFC and QR display for dealerships and automotive retail counters. It connects directly to one Cars.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["cars"],
+    displayText: "Review us on Cars.com",
+    image: carsReviewStandImage,
+    seoTitle: "Cars.com Review Stand | NFC and QR Automotive Review Stand",
+    seoDescription: "Buy a Cars.com Review Stand that opens your Cars.com review destination with one tap or scan.",
+    searchKeywords: ["cars.com review stand", "cars nfc stand", "review us on cars.com stand"]
+  }),
+  phaseOneProduct({
+    slug: "cargurus-review-stand",
+    title: "CarGurus Review Stand",
+    sku: "TR-CARGURUS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "cargurus",
+    destinationType: "review",
+    businessUseSlugs: ["automotive"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your CarGurus review destination.",
+    description:
+      "CarGurus Review Stand is a tabletop NFC and QR display for dealerships and automotive sales counters. It connects directly to one CarGurus review destination URL and is tap or scan ready.",
+    supportedDestinations: ["cargurus"],
+    displayText: "Review us on CarGurus",
+    image: cargurusReviewStandImage,
+    seoTitle: "CarGurus Review Stand | NFC and QR Automotive Review Stand",
+    seoDescription: "Buy a CarGurus Review Stand that opens your CarGurus review destination with one tap or scan.",
+    searchKeywords: ["cargurus review stand", "cargurus nfc stand", "review us on cargurus stand"]
+  }),
+  phaseOneProduct({
+    slug: "airbnb-review-stand",
+    title: "Airbnb Review Stand",
+    sku: "TR-AIRBNB-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "airbnb",
+    destinationType: "review",
+    businessUseSlugs: ["hotel-travel", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Airbnb review destination.",
+    description:
+      "Airbnb Review Stand is a tabletop NFC and QR display for short-term rentals, hosts, and guest checkout points. It connects directly to one Airbnb review destination URL and is tap or scan ready.",
+    supportedDestinations: ["airbnb"],
+    displayText: "Review us on Airbnb",
+    image: airbnbReviewStandImage,
+    seoTitle: "Airbnb Review Stand | NFC and QR Hospitality Review Stand",
+    seoDescription: "Buy an Airbnb Review Stand that opens your Airbnb review destination with one tap or scan.",
+    searchKeywords: ["airbnb review stand", "airbnb nfc stand", "review us on airbnb stand"]
+  }),
+  phaseOneProduct({
+    slug: "agoda-review-stand",
+    title: "Agoda Review Stand",
+    sku: "TR-AGODA-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "agoda",
+    destinationType: "review",
+    businessUseSlugs: ["hotel-travel"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Agoda review destination.",
+    description:
+      "Agoda Review Stand is a tabletop NFC and QR display for hotels, guest stays, and travel hospitality counters. It connects directly to one Agoda review destination URL and is tap or scan ready.",
+    supportedDestinations: ["agoda"],
+    displayText: "Review us on Agoda",
+    image: agodaReviewStandImage,
+    seoTitle: "Agoda Review Stand | NFC and QR Hotel Review Stand",
+    seoDescription: "Buy an Agoda Review Stand that opens your Agoda review destination with one tap or scan.",
+    searchKeywords: ["agoda review stand", "agoda nfc stand", "review us on agoda stand"]
+  }),
+  phaseOneProduct({
+    slug: "vrbo-review-stand",
+    title: "Vrbo Review Stand",
+    sku: "TR-VRBO-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "vrbo",
+    destinationType: "review",
+    businessUseSlugs: ["hotel-travel", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Vrbo review destination.",
+    description:
+      "Vrbo Review Stand is a tabletop NFC and QR display for vacation rentals, hosts, and guest checkout points. It connects directly to one Vrbo review destination URL and is tap or scan ready.",
+    supportedDestinations: ["vrbo"],
+    displayText: "Review us on Vrbo",
+    image: vrboReviewStandImage,
+    seoTitle: "Vrbo Review Stand | NFC and QR Vacation Rental Review Stand",
+    seoDescription: "Buy a Vrbo Review Stand that opens your Vrbo review destination with one tap or scan.",
+    searchKeywords: ["vrbo review stand", "vrbo nfc stand", "review us on vrbo stand"]
+  }),
+  phaseOneProduct({
+    slug: "hotels-review-stand",
+    title: "Hotels.com Review Stand",
+    sku: "TR-HOTELS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "hotels",
+    destinationType: "review",
+    businessUseSlugs: ["hotel-travel"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Hotels.com review destination.",
+    description:
+      "Hotels.com Review Stand is a tabletop NFC and QR display for hotels, hospitality desks, and guest checkout counters. It connects directly to one Hotels.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["hotels"],
+    displayText: "Review us on Hotels.com",
+    image: hotelsReviewStandImage,
+    seoTitle: "Hotels.com Review Stand | NFC and QR Hotel Review Stand",
+    seoDescription: "Buy a Hotels.com Review Stand that opens your Hotels.com review destination with one tap or scan.",
+    searchKeywords: ["hotels.com review stand", "hotels nfc stand", "review us on hotels.com stand"]
   }),
   phaseOneProduct({
     slug: "rate-your-experience-stand",

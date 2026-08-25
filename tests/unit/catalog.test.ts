@@ -108,14 +108,14 @@ describe("catalog categories", () => {
     const websiteProducts = getProductsByCategory("website-links");
     const customProducts = getProductsByCategory("custom-stands");
 
-    expect(reviewProducts).toHaveLength(6);
+    expect(reviewProducts).toHaveLength(14);
     expect(socialProducts).toHaveLength(9);
     expect(appointmentProducts).toHaveLength(1);
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
     expect(websiteProducts).toHaveLength(1);
     expect(customProducts).toHaveLength(0);
-    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(6);
+    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(14);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
 
@@ -123,7 +123,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(19);
+    expect(products).toHaveLength(27);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -132,6 +132,14 @@ describe("catalog categories", () => {
         "TripAdvisor Review Stand",
         "Uber Eats Review Stand",
         "Angi Review Stand",
+        "DealerRater Review Stand",
+        "Edmunds Review Stand",
+        "Cars.com Review Stand",
+        "CarGurus Review Stand",
+        "Airbnb Review Stand",
+        "Agoda Review Stand",
+        "Vrbo Review Stand",
+        "Hotels.com Review Stand",
         "Rate Your Experience Stand",
         "Follow Us on Social Media Stand",
         "Facebook Follow Stand",
