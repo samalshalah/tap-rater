@@ -52,7 +52,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
       <section className="bg-[#f7f8f8]">
         <div className="tr-container py-8 lg:py-10">
-          <div id="stand-categories" className="mb-10">
+          <div id="stand-categories">
             <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
               <div>
                 <p className="tr-eyebrow">Shop by type</p>
@@ -76,9 +76,33 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               ))}
             </div>
           </div>
+
+          <div id="business-uses" className="mt-12">
+            <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
+              <div>
+                <p className="tr-eyebrow">Shop by use</p>
+                <h2 className="mt-2 text-[1.85rem] font-semibold leading-tight text-ink md:text-[2.25rem]">Choose the business use.</h2>
+              </div>
+              <Link href="/solutions" className="tr-editorial-link">
+                View all uses
+              </Link>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {businessUses.map((businessUse) => (
+                <VisualCard
+                  key={businessUse.slug}
+                  description={businessUse.shortDescription || businessUse.description || "Choose stands for this business use."}
+                  href={buildShopHref({ use: businessUse.slug })}
+                  image={getBusinessUseCardVisual(businessUse)}
+                  title={businessUse.title}
+                  variant="use-case"
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="tr-container grid gap-8 pb-8 lg:grid-cols-[340px_1fr] lg:pb-10">
+        <div className="tr-container grid gap-8 border-t border-line pb-8 pt-10 lg:grid-cols-[340px_1fr] lg:pb-10">
           <aside className="h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24">
             <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
               <p className="text-sm font-semibold text-ink">Filters</p>
@@ -160,6 +184,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 }
 
 type StandTypeForFilter = Awaited<ReturnType<typeof getPublicStandTypes>>[number];
+type BusinessUseForFilter = Awaited<ReturnType<typeof getPublicBusinessUses>>[number];
 
 function resolveSelectedStandType(standTypes: StandTypeForFilter[], value: string | undefined) {
   if (!value) return undefined;
@@ -192,6 +217,11 @@ function getStandTypeCardVisual(standType: StandTypeForFilter) {
 
   const category = categorySlug ? getCategoryVisual({ slug: categorySlug as CatalogCategorySlug, title: standType.title }) : undefined;
   return category ?? { ...productImageFallback, alt: `${standType.title} stand` };
+}
+
+function getBusinessUseCardVisual(businessUse: BusinessUseForFilter) {
+  const src = businessUse.bannerImageUrl || businessUse.imageUrl || productImageFallback.src;
+  return { src, alt: businessUse.title };
 }
 
 function FilterGroup({ children, title }: { children: React.ReactNode; title: string }) {
