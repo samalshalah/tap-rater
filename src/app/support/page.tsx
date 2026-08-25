@@ -7,13 +7,13 @@ export const metadata: Metadata = {
 };
 
 const supportLinks = [
-  ["Request custom work", "Ask about a custom stand, design question, bulk order, or production detail.", "/contact-us"],
+  ["Request custom work", "Ask about a custom stand, design question, bulk order, or order detail.", "/contact-us"],
   ["Change a link", "Request an update for an existing Tap Rater stand.", "/change-taprater-link"],
-  ["Read FAQs", "Quick answers about setup, checkout, proofing, and production.", "/faqs"],
+  ["Read FAQs", "Quick answers about setup, checkout, proofing, and fulfillment.", "/faqs"],
   ["Privacy", "How Tap Rater handles order details, uploaded logos, destination links, and support requests.", "/privacy-policy"],
   ["Terms", "Customer responsibilities for links, uploaded logos, proof approval, and product use.", "/terms"],
-  ["Refunds", "Refund, cancellation, damaged item, and replacement guidance for printed stands.", "/refund-policy"],
-  ["Shipping", "Production readiness, shipping estimates, and order issue support.", "/shipping"]
+  ["Refunds", "Refund, cancellation, damaged item, and replacement guidance for stands.", "/refund-policy"],
+  ["Shipping", "Order readiness, shipping estimates, and order issue support.", "/shipping"]
 ];
 
 export default function SupportPage() {

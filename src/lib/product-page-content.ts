@@ -50,7 +50,7 @@ export function getProductActivationCopy(product: MigratedProduct): ProductActiv
     return {
       title: "Managed direct stand setup",
       body:
-        "This one-time product connects directly to the destination you choose after Tap Rater confirms your setup and production artwork."
+        "This one-time product connects directly to the destination you choose after Tap Rater confirms your setup and artwork."
     };
   }
 
@@ -115,7 +115,7 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     },
     {
       label: "Branded",
-      bestFor: "Business name, uploaded logo, and printed QR code",
+      bestFor: "Business name, uploaded logo, and QR code",
       fit: "Front proof preview before cart",
       active: product.allowsLogoUpload
     },
@@ -127,7 +127,7 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     },
     {
       label: "Custom",
-      bestFor: "Custom UV printing and direct custom URLs",
+      bestFor: "Custom branding and direct custom URLs",
       fit: "Best for branded prompts",
       active: product.categorySlug === "custom-stands"
     }

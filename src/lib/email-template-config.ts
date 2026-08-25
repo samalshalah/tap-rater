@@ -27,7 +27,7 @@ export const defaultEmailTemplates: Record<EmailTemplateKey, EmailTemplateSettin
     subject: "Your Tap Rater order is confirmed",
     introText: "Your Tap Rater order is confirmed and marked paid.",
     supportText: "Questions? Contact Tap Rater support.",
-    footerText: "Tap Rater prints NFC stands that help local businesses connect customers to reviews, menus, bookings, feedback, social profiles, and websites."
+    footerText: "Tap Rater NFC stands help local businesses connect customers to reviews, menus, bookings, feedback, social profiles, and websites."
   },
   "admin-new-order": {
     key: "admin-new-order",
@@ -57,6 +57,6 @@ export const defaultEmailTemplates: Record<EmailTemplateKey, EmailTemplateSettin
     subject: "Your Tap Rater order shipping update",
     introText: "Your Tap Rater order has a shipping update.",
     supportText: "Contact Tap Rater support if anything looks incorrect.",
-    footerText: "Production and shipping timelines are reviewed by Tap Rater before fulfillment."
+    footerText: "Shipping timelines are reviewed by Tap Rater before fulfillment."
   }
 };

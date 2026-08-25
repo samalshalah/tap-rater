@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s | Tap Rater"
   },
   description:
-    "Tap Rater sells custom printed NFC and QR tabletop stands that help customers tap or scan to open review, menu, booking, social, feedback, website, or custom links.",
+    "Tap Rater sells custom NFC and QR tabletop stands that help customers tap or scan to open review, menu, booking, social, feedback, website, or custom links.",
   keywords: [
     "Google review stand",
     "NFC review stand",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Tap Rater | NFC and QR Stands for Local Businesses",
     description:
-      "Custom printed NFC and QR tabletop stands that help customers open your important link with one tap or scan.",
+      "Custom NFC and QR tabletop stands that help customers open your important link with one tap or scan.",
     url: "/",
     siteName: "Tap Rater",
     type: "website"

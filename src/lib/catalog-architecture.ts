@@ -175,7 +175,7 @@ export const lockedStandTypes: StandType[] = [
   {
     slug: "custom-stands",
     title: "Custom Stands",
-    description: "Custom Tap Rater stand products and special printed solutions.",
+    description: "Custom Tap Rater stand products and special solutions.",
     imageUrl: "/uploads/products/business-google-white-stands-bundle.jpg",
     sortOrder: 90,
     isActive: true
@@ -320,7 +320,7 @@ export const standardDirectProductOption: ProductOption = {
 export const brandedQrDirectProductOption: ProductOption = {
   optionCode: "branded_qr_direct",
   title: "Branded + QR Direct",
-  description: "Branded direct stand with NFC, printed QR, business name, logo collection, and front proof.",
+  description: "Branded direct stand with NFC, QR, business name, logo collection, and front proof.",
   priceCents: 4900,
   requiresDestinationUrl: true,
   hasQr: true,

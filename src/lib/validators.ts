@@ -372,7 +372,7 @@ export const shippingSettingsSchema = z.object({
     .string()
     .trim()
     .max(1000)
-    .default("Production and shipping timelines are shown at checkout or shared after order review when applicable.")
+    .default("Shipping timelines are shown at checkout or shared after order review when applicable.")
 });
 
 export const orderFulfillmentUpdateSchema = z.object({

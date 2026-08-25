@@ -11,7 +11,7 @@ const sections = [
     title: "Information we collect",
     body: [
       "Tap Rater collects the information needed to sell, customize, support, and fulfill NFC stand orders. This may include your name, email address, business name, destination link, shipping or order details, uploaded logo files, design notes, and support request details.",
-      "For Branded + QR orders, we collect the business name, destination URL, logo file, generated QR value, and proof confirmation details needed to prepare the printed stand."
+      "For Branded + QR orders, we collect the business name, destination URL, logo file, generated QR value, and proof confirmation details needed to prepare the stand."
     ]
   },
   {
@@ -23,8 +23,8 @@ const sections = [
   {
     title: "How we use information",
     body: [
-      "We use order and setup information to process checkout, generate QR proofs, prepare production details, answer support requests, update destination links, and communicate about your order.",
-      "We may review uploaded content to confirm it is appropriate for production and compatible with the selected stand option."
+      "We use order and setup information to process checkout, generate QR proofs, prepare order details, answer support requests, update destination links, and communicate about your order.",
+      "We may review uploaded content to confirm it is appropriate and compatible with the selected stand option."
     ]
   },
   {
@@ -47,7 +47,7 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <PolicyPage eyebrow="Privacy Policy" title="How Tap Rater handles customer and order information." intro="This page summarizes the practical information Tap Rater collects to operate the storefront, support customers, and prepare printed NFC stand orders." sections={sections} />
+    <PolicyPage eyebrow="Privacy Policy" title="How Tap Rater handles customer and order information." intro="This page summarizes the practical information Tap Rater collects to operate the storefront, support customers, and prepare NFC stand orders." sections={sections} />
   );
 }
 

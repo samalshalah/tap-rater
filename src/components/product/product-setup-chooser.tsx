@@ -80,11 +80,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
   const directOptions = options.filter((option) => option.id !== "hosted_multilink");
-  const hasBrandedOption = directOptions.some((option) => option.id === "branded_qr_direct");
   const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
-  const isHosted = selectedOption?.id === "hosted_multilink";
   const currentApprovalSnapshot = selectedOption
     ? buildProofApprovalSnapshot({
         productSlug: product.slug,
@@ -166,17 +164,6 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   function closeBuilder() {
     setIsBuilderOpen(false);
     setError("");
-  }
-
-  function continueFromChoice() {
-    setError("");
-
-    if (isHosted) {
-      setError("Hosted Multi-Link checkout is not available yet. Choose an available direct checkout option.");
-      return;
-    }
-
-    setStep("destination");
   }
 
   async function searchGooglePlaces() {
@@ -291,7 +278,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     }
 
     if (!brandedFrontTemplateUrl) {
-      setError("Branded production artwork is not configured for this product yet.");
+      setError("Branded artwork is not configured for this product yet.");
       return;
     }
 
@@ -323,7 +310,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       }
 
       if (!brandedFrontTemplateUrl) {
-        setError("Branded production artwork is not configured for this product yet.");
+        setError("Branded artwork is not configured for this product yet.");
         setStep("design");
         return;
       }
@@ -382,6 +369,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   }
 
   const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build Your Branded QR Stand" : "Set up your Standard Direct Stand";
+  const selectedPrice = formatPrice(selectedOption.priceCents).replace(".00", "");
   const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
     ? step === "destination"
@@ -395,75 +383,44 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
   return (
     <>
-      <section className="tr-card grid gap-4 p-4 sm:p-5">
+      <section className="rounded-[16px] bg-white p-5 shadow-[0_1px_0_rgba(17,24,39,0.05)] ring-1 ring-line sm:p-6">
         <div>
-          <p className="tr-eyebrow">Choose setup</p>
-          <h3 className="mt-2 font-semibold text-ink">Choose how to build this stand</h3>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            {hasBrandedOption
-              ? "Choose a direct stand template or add branding. QR and NFC both use the customer destination URL."
-              : "Set up this direct stand with one customer destination URL. QR and NFC both use that same URL."}
-          </p>
+          <p className="tr-eyebrow">Select your stand</p>
+          <p className="mt-2 text-3xl font-semibold leading-none text-ink">{selectedPrice}</p>
+          <p className="mt-2 text-sm font-medium text-muted">One-time purchase</p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="my-5 h-px bg-line" />
+
+        <div className="grid gap-1">
           {directOptions.map((option) => (
-              <article
-                key={option.id}
-                onClick={() => chooseOption(option.id)}
-                className={
-                  selectedOptionId === option.id
-                    ? "grid cursor-pointer gap-4 rounded-lg border border-brand bg-white p-4 ring-2 ring-brand/10 transition"
-                    : "grid cursor-pointer gap-4 rounded-lg border border-line bg-white p-4 transition hover:border-brand/50"
-                }
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex min-w-0 gap-3">
-                    <input
-                      type="radio"
-                      name={`${product.slug}-setup-option`}
-                      checked={selectedOptionId === option.id}
-                      onChange={() => chooseOption(option.id)}
-                      aria-label={`Select ${option.label}`}
-                      className="mt-1 h-4 w-4 accent-brand"
-                    />
-                    <div className="min-w-0">
-                    <h3 className="text-lg font-semibold text-ink">{option.label}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted">{getOptionSummary(option)}</p>
-                    </div>
-                  </div>
-                  <p className="text-lg font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</p>
-                </div>
-                <div className="grid gap-2 text-sm text-muted">
-                  <p className="inline-flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-brand" />
-                    QR and NFC direct to one URL
-                  </p>
-                  <p className="inline-flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-brand" />
-                    {option.requiresLogo || option.requiresBusinessName ? "Logo + business name" : "Ready-made stand"}
-                  </p>
-                  <p className="inline-flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-brand" />
-                    {option.requiresFinalProof ? "Proof before cart" : "One direct destination link"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="tr-button-primary mt-auto"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openBuilder(option.id);
-                  }}
-                >
-                  {option.id === "branded_qr_direct" ? "Build Branded Stand" : "Set up Standard"}
-                </button>
-              </article>
-            ))}
+            <label
+              key={option.id}
+              className={
+                selectedOptionId === option.id
+                  ? "grid cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg bg-[#f7fbfa] p-3 transition"
+                  : "grid cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg p-3 transition hover:bg-soft"
+              }
+            >
+              <input
+                type="radio"
+                name={`${product.slug}-setup-option`}
+                checked={selectedOptionId === option.id}
+                onChange={() => chooseOption(option.id)}
+                aria-label={`Select ${option.label}`}
+                className="mt-1 h-4 w-4 accent-brand"
+              />
+              <span className="min-w-0">
+                <span className="block text-base font-semibold leading-6 text-ink">{option.label}</span>
+                <span className="mt-1 block text-sm leading-6 text-muted">{getOptionSummary(option)}</span>
+              </span>
+              <span className="text-sm font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</span>
+            </label>
+          ))}
         </div>
 
         {options.some((option) => option.id === "hosted_multilink") ? (
-          <div className="tr-panel-muted border-dashed">
+          <div className="mt-4 rounded-lg border border-dashed border-line bg-soft p-3">
             <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
             <p className="mt-1 text-sm leading-6 text-muted">
               Multi-Link will be its own builder later. Choose an available direct checkout option today.
@@ -471,7 +428,15 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           </div>
         ) : null}
 
-        {error && !isBuilderOpen ? <p className="tr-status-error">{error}</p> : null}
+        <button
+          type="button"
+          className="tr-button-primary mt-6 w-full"
+          onClick={() => selectedOptionId && openBuilder(selectedOptionId)}
+        >
+          Set up stand · {selectedPrice}
+        </button>
+
+        {error && !isBuilderOpen ? <p className="tr-status-error mt-4">{error}</p> : null}
       </section>
 
       {isBuilderOpen ? (
@@ -582,12 +547,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <div>
                     <p className="text-sm font-semibold text-ink">Logo + business name</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Upload the logo and enter the exact business name for the printed front proof.
+                      Upload the logo and enter the exact business name for the front proof.
                     </p>
                   </div>
 
                   <label className="grid gap-2 text-sm font-semibold text-ink">
-                    Printed business name
+                    Business name
                     <input
                       className="tr-input"
                       value={businessName}
@@ -629,7 +594,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <p className="text-sm font-semibold text-ink">{selectedOption.id === "branded_qr_direct" ? "Proof preview" : "Confirm setup"}</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
                       {selectedOption.id === "branded_qr_direct"
-                        ? "This is the printed front proof. Confirm the logo, business name, and QR placement before adding to cart."
+                        ? "This is the front proof. Confirm the logo, business name, and QR placement before adding to cart."
                         : "Confirm the direct destination link before adding this stand to cart. QR and NFC use the same URL."}
                     </p>
                   </div>

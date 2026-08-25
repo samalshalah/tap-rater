@@ -16,7 +16,7 @@ export function getDefaultShippingSettings(): ShippingSettingsInput {
     handlingTimeText: "",
     supportedRegionsText: "United States",
     defaultCarrierNotes: "",
-    customerFacingShippingNote: "Production and shipping timelines are shown at checkout or shared after order review when applicable."
+    customerFacingShippingNote: "Shipping timelines are shown at checkout or shared after order review when applicable."
   };
 }
 

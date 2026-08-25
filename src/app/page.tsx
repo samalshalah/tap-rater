@@ -12,12 +12,12 @@ import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksCon
 export const metadata: Metadata = {
   title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More",
   description:
-    "Custom printed tabletop NFC and QR stands that let customers tap or scan to open your review, menu, booking, social media, feedback, or custom link instantly.",
+    "Custom tabletop NFC and QR stands that let customers tap or scan to open your review, menu, booking, social media, feedback, or custom link instantly.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More | Tap Rater",
     description:
-      "Custom printed tabletop NFC and QR stands for local businesses. Choose a stand, add your link, and Tap Rater prints and ships.",
+      "Custom tabletop NFC and QR stands for local businesses. Choose a stand, add your link, and Tap Rater prepares it for your counter.",
     url: "/"
   }
 };

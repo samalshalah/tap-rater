@@ -68,12 +68,18 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const title = activeStandType.title || category.title;
   const description = activeStandType.shortDescription || activeStandType.description || category.description;
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
+  const isMultiLinkCategory = category.slug === "website-links";
 
   return (
     <main className="bg-white text-ink">
       <section className="bg-white">
-        <div className="tr-container grid gap-8 py-12 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:py-16">
-          <div className="lg:pr-6">
+        <div className={isMultiLinkCategory ? "tr-container grid gap-8 py-12 lg:grid-cols-[0.94fr_1fr] lg:items-center lg:py-16" : "tr-container grid gap-8 py-12 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:py-16"}>
+          {isMultiLinkCategory ? (
+            <div className="tr-page-hero-media relative aspect-square overflow-hidden bg-white">
+              <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain" />
+            </div>
+          ) : null}
+          <div className={isMultiLinkCategory ? "" : "lg:pr-6"}>
             <Link href="/shop" className="text-sm font-semibold text-brand">
               Shop all stands
             </Link>
@@ -82,9 +88,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">{description}</p>
             {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
           </div>
-          <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
-            <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
-          </div>
+          {!isMultiLinkCategory ? (
+            <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
+              <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
+            </div>
+          ) : null}
         </div>
       </section>
 

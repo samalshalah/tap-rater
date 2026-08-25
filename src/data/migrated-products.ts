@@ -237,13 +237,13 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "custom-stands",
     title: "Custom Stands",
     eyebrow: "Custom",
-    description: "Custom printed NFC and QR tabletop stands for one direct destination link.",
+    description: "Custom NFC and QR tabletop stands for one direct destination link.",
     seoTitle: "Custom NFC Stands | Tap Rater",
     seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, custom headline, and one destination link.",
     buyerIntent: "For businesses that want a branded stand with custom wording or a custom center graphic.",
     aliases: ["custom-nfc-stands", "custom-qr-stands"],
     seoCopy:
-      "Custom stands use a locked production template so the customer can personalize the stand without breaking print layout."
+      "Custom stands use a locked approved layout so the customer can personalize the stand without breaking the design."
   }
 ];
 
@@ -608,9 +608,9 @@ export const migratedProducts: MigratedProduct[] = [
     categorySlug: "custom-stands",
     basePriceCents: 4900,
     stockStatus: "instock",
-    shortDescription: "Custom printed tabletop NFC and QR stand with your logo, business name, headline, and one destination link.",
+    shortDescription: "Custom tabletop NFC and QR stand with your logo, business name, headline, and one destination link.",
     description:
-      "Custom Direct Stand is a custom printed tabletop NFC and QR stand for one direct destination link. Add your logo, business name, custom headline or center graphic direction, and CTA sentence before approving the front proof.",
+      "Custom Direct Stand is a custom tabletop NFC and QR stand for one direct destination link. Add your logo, business name, custom headline or center graphic direction, and CTA sentence before approving the front proof.",
     productType: "physical_managed",
     serviceMode: "managed_redirect",
     checkoutMode: "buy_now",

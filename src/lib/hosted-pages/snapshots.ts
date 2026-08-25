@@ -166,7 +166,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
   if (resolution.state === "not_found") {
     return renderShell({
       title: "Tap Rater page not found",
-      body: `<p class="tr-copy">This Tap Rater page is not available. Check the printed code or contact the business for an updated link.</p>`,
+      body: `<p class="tr-copy">This Tap Rater page is not available. Check the code or contact the business for an updated link.</p>`,
       statusCode: "not-found"
     });
   }
@@ -179,7 +179,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
   if (resolution.state === "inactive") {
     return renderShell({
       title: `${escapeHtml(snapshot.businessName)} is unavailable`,
-      body: `<p class="tr-copy">This Tap Rater page is not active right now. The permanent URL has been preserved and can be reactivated without changing the printed QR or NFC destination.</p>`,
+      body: `<p class="tr-copy">This Tap Rater page is not active right now. The permanent URL has been preserved and can be reactivated without changing the QR or NFC destination.</p>`,
       logoUrl: snapshot.logoUrl,
       statusCode: "inactive"
     });

@@ -4,14 +4,14 @@ import { getShippingSettings } from "@/lib/shipping-settings";
 
 export const metadata: Metadata = {
   title: "Shipping",
-  description: "Tap Rater production and shipping information for printed NFC and QR stands."
+  description: "Tap Rater shipping information for NFC and QR stands."
 };
 
 export default async function ShippingPage() {
   const settings = await getShippingSettings();
   const sections = [
-    ["Printed on demand", "Tap Rater stands are prepared after checkout based on the selected stand and approved destination link."],
-    ["Production readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided and the order is paid."],
+    ["Prepared after checkout", "Tap Rater stands are prepared after checkout based on the selected stand and approved destination link."],
+    ["Order readiness", "Standard Direct orders can move toward fulfillment after the destination link is provided and the order is paid."],
     ["Shipping timelines", settings.customerFacingShippingNote],
     ["Supported regions", settings.supportedRegionsText || "United States"],
     ["Handling time", settings.handlingTimeText || "Handling timelines are confirmed during fulfillment review."],
@@ -25,9 +25,9 @@ export default async function ShippingPage() {
       <section className="border-b border-line bg-white">
         <div className="tr-container-narrow tr-section-compact">
           <p className="tr-eyebrow">Shipping</p>
-          <h1 className="tr-page-title mt-4">Production and shipping for Tap Rater stands.</h1>
+          <h1 className="tr-page-title mt-4">Shipping for Tap Rater stands.</h1>
           <p className="tr-body mt-4">
-            Tap Rater sells printed NFC stands that are prepared after setup details are complete and the order is ready for fulfillment.
+            Tap Rater stands are prepared after setup details are complete and the order is ready for fulfillment.
           </p>
         </div>
       </section>

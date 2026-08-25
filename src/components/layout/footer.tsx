@@ -13,7 +13,7 @@ type FooterContent = {
 };
 
 const defaultFooterContent: FooterContent = {
-  intro: "Custom printed NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
+  intro: "Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
   columns: [
     {
       label: "Shop",

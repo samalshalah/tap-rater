@@ -83,9 +83,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
         : "No. Standard Direct stands are one-time physical stand purchases."
     },
     {
-      question: "Can I change the link after printing?",
+      question: "Can I change the link after ordering?",
       answer:
-        "The stand is produced for the link you approve. If the destination changes after production, replacement or reprogramming may be required."
+        "The stand is prepared for the link you approve. If the destination changes after ordering, replacement or reprogramming may be required."
     }
   ];
 

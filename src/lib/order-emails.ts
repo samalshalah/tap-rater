@@ -68,7 +68,7 @@ export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = d
     body: [
       "Order summary:",
       ...order.line_items_json.flatMap(formatCustomerLineItem),
-      "What happens next: Tap Rater will review the production details before printing and shipping.",
+      "What happens next: Tap Rater will review the order details before shipping.",
       "Support: https://taprater.com/support",
       "Shipping: https://taprater.com/shipping",
       "Refund Policy: https://taprater.com/refund-policy",

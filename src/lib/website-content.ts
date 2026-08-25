@@ -31,7 +31,7 @@ export const headerNavigationSchema = z.object({
 });
 
 export const footerContentSchema = z.object({
-  intro: z.string().trim().max(500).default("Custom printed NFC and QR tabletop stands for local businesses."),
+  intro: z.string().trim().max(500).default("Custom NFC and QR tabletop stands for local businesses."),
   columns: z
     .array(
       z.object({
@@ -210,7 +210,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
 };
 
 export const defaultFooterContent: FooterContent = {
-  intro: "Custom printed NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
+  intro: "Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
   columns: [
     {
       label: "Shop",
@@ -360,14 +360,14 @@ export const defaultHomepageContent: HomepageThemeContent = {
     steps: [
       { title: "Choose Your Stand", description: "Pick the action, use case, or product style that fits your counter.", icon: "shop", order: 10 },
       { title: "Add Your Link / Branding", description: "Enter the destination and add approved branded details where supported.", icon: "link", order: 20 },
-      { title: "We Print & Ship", description: "Your configured stand is prepared for production and fulfillment.", icon: "truck", order: 30 }
+      { title: "We Prepare & Ship", description: "Your configured stand is prepared for fulfillment.", icon: "truck", order: 30 }
     ]
   },
   customBranding: {
     enabled: true,
     eyebrow: "Custom Branding",
     headline: "Make It Yours.",
-    body: "Add your business name, logo where supported, and destination. Preview your stand before ordering so you know what will be printed.",
+    body: "Add your business name, logo where supported, and destination. Preview your stand before ordering.",
     cta: { label: "Shop Branded Stands", href: "/custom-stands" },
     image: { src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "Finished River Cafe branded Tap Rater stand demo with logo and QR code" },
     bullets: ["Your logo", "Your business", "Your destination", "Preview before ordering"]
@@ -387,11 +387,13 @@ export async function getHeaderNavigationContent() {
 }
 
 export async function getFooterContent() {
-  return readContent("navigation.footer", "section", footerContentSchema, defaultFooterContent) as Promise<FooterContent>;
+  const content = await readContent("navigation.footer", "section", footerContentSchema, defaultFooterContent) as FooterContent;
+  return sanitizePublicWebsiteCopy(content);
 }
 
 export async function getFaqContent() {
-  return readContent("faqs.global", "section", faqContentSchema, defaultFaqContent) as Promise<FaqContent>;
+  const content = await readContent("faqs.global", "section", faqContentSchema, defaultFaqContent) as FaqContent;
+  return sanitizePublicWebsiteCopy(content);
 }
 
 export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
@@ -406,7 +408,7 @@ export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
     getFaqContent()
   ]);
 
-  return { hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs };
+  return sanitizePublicWebsiteCopy({ hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs });
 }
 
 export async function saveWebsiteContentRecord(key: string, type: "homepage" | "section" | "page" | "seo", payload: unknown) {
@@ -459,4 +461,35 @@ export function orderedEnabledFaqs(content: FaqContent, area?: FaqContent["items
   return content.items
     .filter((item) => item.enabled && (!area || item.area === area || item.area === "global"))
     .sort((first, second) => first.order - second.order || first.question.localeCompare(second.question));
+}
+
+function sanitizePublicWebsiteCopy<T>(value: T): T {
+  if (typeof value === "string") {
+    return value
+      .replace(/custom printed/gi, "custom")
+      .replace(/printed QR/gi, "QR")
+      .replace(/\bprinted\b/gi, "")
+      .replace(/\bprinting\b/gi, "ordering")
+      .replace(/\bprints and ships\b/gi, "prepares and ships")
+      .replace(/\bWe Print & Ship\b/g, "We Prepare & Ship")
+      .replace(/\bproduction and fulfillment\b/gi, "fulfillment")
+      .replace(/\bproduction purposes\b/gi, "order review")
+      .replace(/\bproduction-incompatible\b/gi, "order-incompatible")
+      .replace(/\bproduction\b/gi, "order prep")
+      .replace(/\s{2,}/g, " ")
+      .replace(/\s+\./g, ".")
+      .trim() as T;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => sanitizePublicWebsiteCopy(item)) as T;
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, sanitizePublicWebsiteCopy(item)])
+    ) as T;
+  }
+
+  return value;
 }

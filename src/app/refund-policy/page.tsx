@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "Tap Rater refund and replacement guidance for printed NFC stands, branded proofs, damaged items, and customer-provided setup details."
+  description: "Tap Rater refund and replacement guidance for NFC stands, branded proofs, damaged items, and customer-provided setup details."
 };
 
 const sections = [
-  ["Before production starts", "If you need to cancel or correct an order, contact Tap Rater as soon as possible. Standard Direct orders may be cancelable before production has started."],
-  ["Branded and customized products", "Branded + QR and other customized printed products are made with customer-provided logo, business name, destination, and proof details. Once a proof is approved or production begins, these items may not be refundable unless there is a production issue."],
+  ["Before fulfillment starts", "If you need to cancel or correct an order, contact Tap Rater as soon as possible. Standard Direct orders may be cancelable before fulfillment has started."],
+  ["Branded and customized products", "Branded + QR and other customized products use customer-provided logo, business name, destination, and proof details. Once a proof is approved or fulfillment begins, these items may not be refundable unless there is an order issue."],
   ["Damaged or defective items", "If an item arrives damaged or defective, contact support with the order information and photos of the issue. Tap Rater will review the problem and help with a replacement or appropriate next step."],
-  ["Customer-provided link or logo issues", "If the destination link, logo, business name, or proof details were provided or approved incorrectly, a replacement, reprint, or reprogramming may require an additional charge."],
+  ["Customer-provided link or logo issues", "If the destination link, logo, business name, or proof details were provided or approved incorrectly, a replacement or update may require an additional charge."],
   ["How to request help", "Use the support page for refund, cancellation, replacement, or order correction questions. Include your order email and a short description of the issue."]
 ];
 
@@ -22,7 +22,7 @@ export default function RefundPolicyPage() {
           <p className="tr-eyebrow">Refund Policy</p>
           <h1 className="tr-page-title mt-4">Refunds, replacements, and order changes.</h1>
           <p className="tr-body mt-4">
-            Tap Rater products are printed on demand. This policy explains how we handle cancellations, damaged items, and customer-provided setup details.
+            This policy explains how we handle cancellations, damaged items, and customer-provided setup details.
           </p>
         </div>
       </section>

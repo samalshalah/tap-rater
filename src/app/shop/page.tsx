@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ProductCard } from "@/components/product/product-card";
 import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -45,16 +46,38 @@ export default async function ShopPage() {
         </div>
       </section>
 
-      <section id="stand-categories" className="bg-[#f7f8f8]">
+      <section id="all-products" className="bg-[#f7f8f8]">
         <div className="tr-container py-10 sm:py-14">
           <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
             <div>
-              <p className="tr-eyebrow">Stand categories</p>
-              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Browse by stand type.</h2>
+              <p className="tr-eyebrow">All products</p>
+              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Shop every Tap Rater stand.</h2>
             </div>
             <p className="max-w-xl text-sm font-medium leading-6 text-muted">
-              Use categories when you already know the kind of counter action you need.
+              Compare every active product, then choose Standard Direct or a supported branded setup on the product page.
             </p>
+          </div>
+          <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {products.map((product) => (
+              <ProductCard key={product.slug} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="stand-categories" className="bg-[#f7f8f8]">
+        <div className="tr-container py-10 sm:py-14">
+          <div className="grid gap-8 rounded-[30px] bg-white p-6 md:grid-cols-[0.82fr_1fr] md:items-center lg:p-8">
+            <div>
+              <p className="tr-eyebrow">Stand categories</p>
+              <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Shop by type.</h2>
+              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-muted">
+                Use stand types when you already know the customer action you want at the counter.
+              </p>
+            </div>
+            <div className="relative min-h-[260px] overflow-hidden rounded-[26px] bg-[#f7f8f8]">
+              <img src="/uploads/products/google-review-stand.png" alt="Tap Rater stand type example" className="h-full min-h-[260px] w-full object-contain p-6 mix-blend-multiply" />
+            </div>
           </div>
           <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {categories.map((category) => (
@@ -75,15 +98,21 @@ export default async function ShopPage() {
 
       <section id="business-uses" className="bg-white">
         <div className="tr-container py-10 sm:py-14">
-          <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
+          <div className="grid gap-8 rounded-[30px] bg-[#f7f8f8] p-6 md:grid-cols-[0.82fr_1fr] md:items-center lg:p-8">
             <div>
               <p className="tr-eyebrow">Shop by use</p>
               <h2 className="mt-3 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.45rem]">Find stands for your business.</h2>
+              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-muted">
+                Start with your industry or environment, then choose the stand that fits the customer moment.
+              </p>
+              <Link href="/solutions" className="mt-5 tr-editorial-link">
+                View all use cases
+                <span aria-hidden="true">→</span>
+              </Link>
             </div>
-            <Link href="/solutions" className="tr-editorial-link">
-              View all use cases
-              <span aria-hidden="true">→</span>
-            </Link>
+            <div className="relative min-h-[260px] overflow-hidden rounded-[26px] bg-white">
+              <img src="/uploads/use-cases/restaurants-cafes.webp" alt="Restaurant business use example" className="h-full min-h-[260px] w-full object-cover" />
+            </div>
           </div>
           <div className="mt-7 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {visibleBusinessUses.slice(0, 8).map((useCase) => (

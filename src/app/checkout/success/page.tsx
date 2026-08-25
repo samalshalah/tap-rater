@@ -22,7 +22,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
         <h1 className="tr-page-title mt-3">Your order was received</h1>
         <p className="mt-4 leading-7 text-muted">
           Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details
-          before production starts.
+          before fulfillment starts.
         </p>
         <p className="mt-3 leading-7 text-muted">
           Standard Direct stands use QR and NFC pointed directly to the destination URL approved during setup.
