@@ -47,11 +47,12 @@ export function resolveProductSeo(product: MigratedProduct): ProductSeo {
   const generated = generateProductSeo(product);
   const customTitle = normalizeCustomSeo(product.seoTitle);
   const customDescription = normalizeCustomSeo(product.seoDescription);
+  const description = customDescription ? sanitizeRetiredPublicCopy(customDescription) : generated.generatedDescription;
 
   return {
     ...generated,
     title: customTitle ? clampSeoText(stripTapRaterSuffix(customTitle), MAX_TITLE_LENGTH) : generated.generatedTitle,
-    description: customDescription ? clampSeoText(customDescription, MAX_DESCRIPTION_LENGTH) : generated.generatedDescription,
+    description: clampSeoText(description, MAX_DESCRIPTION_LENGTH),
     isTitleCustom: Boolean(customTitle),
     isDescriptionCustom: Boolean(customDescription)
   };
@@ -157,6 +158,16 @@ function cleanProductTitle(title: string) {
 
 function normalizeCustomSeo(value?: string) {
   return value?.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeRetiredPublicCopy(value: string) {
+  return value
+    .replace(/\bNo monthly fee required for basic activation\.?/gi, "One-time physical product purchase.")
+    .replace(/\bdoes not require a monthly fee for basic activation\.?/gi, "connects as a one-time physical product purchase.")
+    .replace(/\bwith no monthly fee\.?/gi, "as a one-time physical product purchase.")
+    .replace(/\bNo monthly fee\.?/gi, "One-time physical product purchase.")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function stripTapRaterSuffix(value: string) {

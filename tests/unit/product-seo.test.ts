@@ -94,6 +94,17 @@ describe("product SEO generation", () => {
     expect(seo.isDescriptionCustom).toBe(true);
   });
 
+  it("normalizes retired public fee copy from custom backend SEO descriptions", () => {
+    const seo = resolveProductSeo(
+      productFixture({
+        seoDescription: "Buy a Google Review Stand that opens your Google review link with one tap or scan. No monthly fee required for basic activation."
+      })
+    );
+
+    expect(seo.description).not.toMatch(/monthly fee/i);
+    expect(seo.description).toContain("One-time physical product purchase");
+  });
+
   it("generates special hosted multi-link metadata separately from direct stands", () => {
     const seo = generateProductSeo(
       productFixture({
