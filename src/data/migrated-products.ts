@@ -342,7 +342,7 @@ export const migratedProducts: MigratedProduct[] = [
     displayText: "Review us on Google",
     image: googleStandImage,
     seoTitle: "Google Review Stand | NFC Review Stand for Local Businesses",
-    seoDescription: "Buy a Google Review Stand that opens your Google review link with one tap or scan. No monthly fee required for basic activation.",
+    seoDescription: "Buy a Google Review Stand that opens your Google review link with one tap or scan as a one-time physical product purchase.",
     searchKeywords: ["google review stand", "google nfc stand", "review us on google stand"]
   }),
   phaseOneProduct({
@@ -369,7 +369,7 @@ export const migratedProducts: MigratedProduct[] = [
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens your Yelp review or business profile destination.",
     description:
-      "Yelp Review Stand is a tabletop NFC display for businesses that want customers to open a Yelp review or business profile destination. It connects to one destination URL and does not require a monthly fee for basic activation.",
+      "Yelp Review Stand is a tabletop NFC display for businesses that want customers to open a Yelp review or business profile destination. It connects to one destination URL as a one-time physical product purchase.",
     supportedDestinations: ["yelp"],
     displayText: "Review us on Yelp",
     image: yelpStandImage,
@@ -417,7 +417,7 @@ export const migratedProducts: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for Facebook reviews, recommendations, or profile visits.",
     description:
-      "Facebook Review Plate is a flat NFC product for Facebook reviews, recommendations, or profile visits. It connects to one destination URL and does not require a monthly fee for basic activation.",
+      "Facebook Review Plate is a flat NFC product for Facebook reviews, recommendations, or profile visits. It connects to one destination URL as a one-time physical product purchase.",
     supportedDestinations: ["facebook"],
     displayText: "Review us on Facebook",
     image: facebookPlateImage,
