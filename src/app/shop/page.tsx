@@ -113,11 +113,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {filteredProducts.length > 0 ? (
-                filteredProducts.map((product) => <ProductCard key={product.slug} product={product} />)
+                filteredProducts.map((product) => <ProductCard key={product.slug} product={product} density="compact" />)
               ) : (
-                <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-3">
+                <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-4">
                   No products match these filters. Clear filters to view all stands.
                 </div>
               )}

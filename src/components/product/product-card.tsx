@@ -6,19 +6,24 @@ import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 
-export function ProductCard({ product }: { product: MigratedProduct }) {
+export function ProductCard({ product, density = "default" }: { product: MigratedProduct; density?: "default" | "compact" }) {
   const image = getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
   const purchaseLabel = getPurchaseLabel(product);
   const destination = getReviewDestination(product);
   const swatches = getColorSwatches(product);
+  const isCompact = density === "compact";
 
   return (
     <Link
       href={`/product/${product.slug}`}
-      className="group flex h-full min-h-[500px] flex-col overflow-hidden rounded-[28px] bg-white p-7 shadow-[0_16px_42px_rgba(16,32,30,0.08)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_22px_58px_rgba(16,32,30,0.1)]"
+      className={
+        isCompact
+          ? "group flex h-full min-h-[430px] flex-col overflow-hidden rounded-[24px] bg-white p-5 shadow-[0_14px_36px_rgba(16,32,30,0.07)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_18px_46px_rgba(16,32,30,0.09)]"
+          : "group flex h-full min-h-[500px] flex-col overflow-hidden rounded-[28px] bg-white p-7 shadow-[0_16px_42px_rgba(16,32,30,0.08)] ring-1 ring-black/[0.04] transition hover:-translate-y-0.5 hover:shadow-[0_22px_58px_rgba(16,32,30,0.1)]"
+      }
     >
-      <div className="relative h-64 bg-white sm:h-72">
+      <div className={isCompact ? "relative h-52 bg-white sm:h-56" : "relative h-64 bg-white sm:h-72"}>
         <Image
           src={image.src}
           alt={image.alt}
@@ -29,7 +34,7 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
         />
       </div>
       {swatches.length > 0 ? (
-        <div className="mt-3 flex min-h-5 items-center justify-center gap-2" aria-label="Available colors">
+        <div className={isCompact ? "mt-2 flex min-h-5 items-center justify-center gap-2" : "mt-3 flex min-h-5 items-center justify-center gap-2"} aria-label="Available colors">
           {swatches.slice(0, 6).map((swatch) => (
             <span
               key={swatch.label}
@@ -41,10 +46,10 @@ export function ProductCard({ product }: { product: MigratedProduct }) {
           {swatches.length > 6 ? <span className="text-sm font-medium text-[#53616d]">+</span> : null}
         </div>
       ) : null}
-      <div className="flex flex-1 flex-col pt-6">
+      <div className={isCompact ? "flex flex-1 flex-col pt-5" : "flex flex-1 flex-col pt-6"}>
         <p className="text-xs font-semibold text-accent">{category?.title ?? destination}</p>
-        <p className="mt-2 text-[1.12rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.2rem]">{product.title}</p>
-        <p className="mt-auto pt-8 text-base font-normal text-[#090b0f]">{purchaseLabel}</p>
+        <p className={isCompact ? "mt-2 text-[1.02rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.08rem]" : "mt-2 text-[1.12rem] font-semibold leading-[1.18] text-[#090b0f] sm:text-[1.2rem]"}>{product.title}</p>
+        <p className={isCompact ? "mt-auto pt-6 text-base font-normal text-[#090b0f]" : "mt-auto pt-8 text-base font-normal text-[#090b0f]"}>{purchaseLabel}</p>
       </div>
     </Link>
   );
