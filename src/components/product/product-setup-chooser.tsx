@@ -398,7 +398,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       <section className="tr-card grid gap-4 p-4 sm:p-5">
         <div>
           <p className="tr-eyebrow">Choose setup</p>
-          <h2 className="mt-2 text-xl font-semibold text-ink">Choose how to build this stand</h2>
+          <h3 className="mt-2 font-semibold text-ink">Choose how to build this stand</h3>
           <p className="mt-2 text-sm leading-6 text-muted">
             {hasBrandedOption
               ? "Choose a direct stand template or add branding. QR and NFC both use the customer destination URL."
@@ -410,16 +410,27 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           {directOptions.map((option) => (
               <article
                 key={option.id}
+                onClick={() => chooseOption(option.id)}
                 className={
                   selectedOptionId === option.id
-                    ? "grid gap-4 rounded-lg border border-brand bg-white p-4"
-                    : "grid gap-4 rounded-lg border border-line bg-white p-4"
+                    ? "grid cursor-pointer gap-4 rounded-lg border border-brand bg-white p-4 ring-2 ring-brand/10 transition"
+                    : "grid cursor-pointer gap-4 rounded-lg border border-line bg-white p-4 transition hover:border-brand/50"
                 }
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="flex min-w-0 gap-3">
+                    <input
+                      type="radio"
+                      name={`${product.slug}-setup-option`}
+                      checked={selectedOptionId === option.id}
+                      onChange={() => chooseOption(option.id)}
+                      aria-label={`Select ${option.label}`}
+                      className="mt-1 h-4 w-4 accent-brand"
+                    />
+                    <div className="min-w-0">
                     <h3 className="text-lg font-semibold text-ink">{option.label}</h3>
                     <p className="mt-1 text-sm leading-6 text-muted">{getOptionSummary(option)}</p>
+                    </div>
                   </div>
                   <p className="text-lg font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</p>
                 </div>
@@ -430,7 +441,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
-                    {option.requiresLogo || option.requiresBusinessName ? "Logo + business name" : "No logo required"}
+                    {option.requiresLogo || option.requiresBusinessName ? "Logo + business name" : "Ready-made stand"}
                   </p>
                   <p className="inline-flex items-center gap-2">
                     <CheckCircle2 size={16} className="text-brand" />
@@ -440,7 +451,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 <button
                   type="button"
                   className="tr-button-primary mt-auto"
-                  onClick={() => openBuilder(option.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openBuilder(option.id);
+                  }}
                 >
                   {option.id === "branded_qr_direct" ? "Build Branded Stand" : "Set up Standard"}
                 </button>

@@ -47,7 +47,6 @@ export function ProductHero({ product, category, destination, fromPrice }: Produ
           <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.09em]">
             {category ? <span className="tr-pill-brand">{category.title}</span> : null}
             <span className="tr-pill-neutral">{destination}</span>
-            <span className="tr-pill-neutral">No monthly fee</span>
           </div>
 
           <h1 className="mt-5 text-[2.35rem] font-semibold leading-[1.06] text-[#111317] md:text-[3.15rem]">{product.title}</h1>

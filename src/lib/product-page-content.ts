@@ -31,7 +31,7 @@ export function getProductServiceBadges(product: MigratedProduct): string[] {
   }
 
   const badges = new Set<string>();
-  badges.add("No monthly fee required");
+  badges.add("One-time direct setup");
   if (product.requiresAccount) {
     badges.add("Account required");
   }
@@ -57,7 +57,7 @@ export function getProductActivationCopy(product: MigratedProduct): ProductActiv
   return {
     title: "Direct link setup",
     body:
-      "This one-time product connects directly to your review, booking, social, menu, feedback, or business link. No monthly fee is required."
+      "This one-time product connects directly to your review, booking, social, menu, feedback, or business link."
   };
 }
 
@@ -122,7 +122,7 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     {
       label: "Direct link",
       bestFor: "One approved URL",
-      fit: "No subscription required",
+      fit: "One-time direct setup",
       active: product.serviceMode === "basic_redirect" || product.serviceMode === "managed_redirect"
     },
     {

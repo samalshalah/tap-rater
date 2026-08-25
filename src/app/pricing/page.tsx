@@ -20,7 +20,7 @@ export default function PricingPage() {
           <p className="tr-eyebrow">Pricing</p>
           <h1 className="tr-page-title mt-4 max-w-3xl">Simple pricing for direct stands.</h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-            Buy ready NFC stands from the shop. Standard Direct includes QR and NFC direct to one link with no monthly fee.
+            Buy ready stands from the shop. Standard Direct includes QR and NFC direct to one link as a one-time physical product purchase.
           </p>
         </div>
       </section>

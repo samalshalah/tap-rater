@@ -77,7 +77,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         "Customers tap their phone or scan the QR code. The stand opens the direct destination link configured for your business."
     },
     {
-      question: "Does this require a monthly fee?",
+      question: "Does this require a subscription?",
       answer: supportsBrandedDirect
         ? "No. Standard Direct and Branded + QR Direct stands are one-time physical stand purchases."
         : "No. Standard Direct stands are one-time physical stand purchases."

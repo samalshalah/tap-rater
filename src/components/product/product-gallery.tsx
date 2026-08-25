@@ -29,8 +29,8 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
 
   return (
     <div className="lg:sticky lg:top-24">
-      <div className="tr-premium-surface relative aspect-[4/3] bg-soft lg:max-h-[620px]">
-        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-2 sm:p-4 lg:p-5" />
+      <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] bg-white lg:max-h-[620px]">
+        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain" />
       </div>
       <div className="mt-3 grid gap-2 text-center text-[10px] font-bold uppercase tracking-[0.04em] text-muted sm:grid-cols-3 sm:text-[11px]">
         {activeOptionId === "branded_qr_direct" ? (
@@ -42,7 +42,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
         ) : (
           <>
             <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">QR + NFC direct</div>
-            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">No logo required</div>
+            <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">Ready-made stand</div>
             <div className="min-w-0 rounded-lg bg-soft px-2 py-2 sm:px-3">Direct link</div>
           </>
         )}

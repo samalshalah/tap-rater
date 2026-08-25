@@ -44,8 +44,8 @@ describe("product page content", () => {
     const stand = getProductBySlug("google-review-stand");
     const feedback = getProductBySlug("rate-your-experience-stand");
 
-    expect(getProductServiceBadges(stand!)).toEqual(["No monthly fee required", "Free basic activation"]);
-    expect(getProductServiceBadges(feedback!)).toEqual(["No monthly fee required", "Free basic activation"]);
+    expect(getProductServiceBadges(stand!)).toEqual(["One-time direct setup", "Free basic activation"]);
+    expect(getProductServiceBadges(feedback!)).toEqual(["One-time direct setup", "Free basic activation"]);
   });
 
   it("explains physical redirect activation", () => {
@@ -54,7 +54,7 @@ describe("product page content", () => {
 
     expect(getProductActivationCopy(stand!).body).toContain("connects directly");
     expect(getProductActivationCopy(feedback!).body).toContain("connects directly");
-    expect(getProductActivationCopy(feedback!).body).toContain("No monthly fee");
+    expect(getProductActivationCopy(feedback!).body).toContain("business link");
   });
 
   it.each([

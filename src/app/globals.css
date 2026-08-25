@@ -300,7 +300,7 @@ h2[class] {
 
 h3,
 h3[class] {
-  font-size: clamp(1.25rem, 1.7vw, 1.75rem) !important;
+  font-size: clamp(1.15rem, 1.35vw, 1.45rem) !important;
   font-weight: 600 !important;
   line-height: 1.16 !important;
 }
@@ -362,7 +362,7 @@ a {
 
   h3,
   h3[class] {
-    font-size: clamp(1.2rem, 5.6vw, 1.55rem) !important;
+    font-size: clamp(1.15rem, 5vw, 1.35rem) !important;
   }
 }
 
