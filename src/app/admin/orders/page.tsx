@@ -6,7 +6,6 @@ import {
   getAdminOrders,
   getOrderLineItemProductionSummary,
   type OrderLineItem,
-  type OrderLineItemProductionSummary,
   type OrderRecord
 } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
@@ -72,59 +71,60 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
         </div>
 
         <div className="tr-admin-table-shell mt-6 overflow-x-auto">
-          <table className="w-full min-w-[1160px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
-                <th className="p-4">Stripe session</th>
-                <th className="p-4">Customer</th>
-                <th className="p-4">Items</th>
-                <th className="p-4">Fulfillment</th>
-                <th className="p-4">Total</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Created</th>
+                <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Customer</th>
+                <th className="px-4 py-3">Items</th>
+                <th className="px-4 py-3">Fulfillment</th>
+                <th className="px-4 py-3">Total</th>
+                <th className="px-4 py-3">Created</th>
               </tr>
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
                 <tr key={order.stripe_checkout_session_id} className="border-b border-line last:border-b-0">
-                  <td className="p-4">
-                    <p className="font-mono text-xs text-ink">{order.stripe_checkout_session_id}</p>
+                  <td className="px-4 py-4 align-top">
+                    <p className="max-w-[210px] truncate font-mono text-xs text-ink" title={order.stripe_checkout_session_id}>
+                      {order.stripe_checkout_session_id}
+                    </p>
                     {order.id ? (
-                      <Link href={`/admin/orders/${order.id}`} className="mt-2 inline-flex rounded-md border border-line px-3 py-1 text-xs font-black text-ink">
+                      <Link href={`/admin/orders/${order.id}`} className="mt-2 inline-flex rounded-md border border-line px-3 py-1 text-xs font-semibold text-ink">
                         View order
                       </Link>
                     ) : null}
                   </td>
-                  <td className="p-4">
-                    <p className="font-bold text-ink">{order.customer_name ?? "Customer"}</p>
-                    <p className="text-muted">{order.email ?? "-"}</p>
+                  <td className="px-4 py-4 align-top">
+                    <p className="font-semibold text-ink">{order.customer_name ?? "Customer"}</p>
+                    <p className="max-w-[220px] truncate text-muted" title={order.email ?? undefined}>{order.email ?? "-"}</p>
                   </td>
-                  <td className="p-4 text-muted">
+                  <td className="px-4 py-4 align-top text-muted">
                     {order.line_items_json.length > 0
                       ? order.line_items_json.map((item) => (
                           <OrderLineItemSummary key={`${item.productId}-${item.optionId ?? "base"}`} item={item} />
                         ))
                       : "-"}
                   </td>
-                  <td className="p-4">
+                  <td className="px-4 py-4 align-top">
                     <OrderFulfillmentBadges order={order} />
                     <div className="mt-2 flex flex-wrap gap-2">
                       <StatusPill tone={order.production_status === "completed" ? "ready" : "neutral"}>{formatStatus(order.production_status)}</StatusPill>
                       <StatusPill tone={order.shipping_status === "shipped" || order.shipping_status === "delivered" ? "ready" : "neutral"}>{formatStatus(order.shipping_status)}</StatusPill>
                     </div>
                   </td>
-                  <td className="p-4 font-black text-ink">{formatPrice(order.total_cents)}</td>
-                  <td className="p-4">
-                    <span className={order.status === "paid" ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black uppercase text-brand" : "rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase text-ink"}>
-                      {order.status.replace("_", " ")}
-                    </span>
+                  <td className="px-4 py-4 align-top font-semibold text-ink">
+                    {formatPrice(order.total_cents)}
+                    <div className="mt-2">
+                      <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.status.replace("_", " ")}</StatusPill>
+                    </div>
                   </td>
-                  <td className="p-4 text-muted">{order.created_at ? new Date(order.created_at).toLocaleString() : "-"}</td>
+                  <td className="px-4 py-4 align-top text-muted">{order.created_at ? new Date(order.created_at).toLocaleString() : "-"}</td>
                 </tr>
               ))}
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-muted">
+                  <td colSpan={6} className="p-8 text-center text-muted">
                     No Stripe orders yet.
                   </td>
                 </tr>
@@ -171,59 +171,18 @@ function formatStatus(value: string) {
 
 function OrderLineItemSummary({ item }: { item: OrderLineItem }) {
   const summary = getOrderLineItemProductionSummary(item);
+  const hasWarnings = summary.warnings.length > 0 || summary.productionArtwork?.status === "generation_failed";
 
   return (
-    <div className="mb-3 rounded-lg border border-line bg-white p-3 text-xs text-ink shadow-sm last:mb-0">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm font-black text-ink">{item.quantity} x {item.title}</p>
-          <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <StatusPill tone="neutral">{summary.optionLabel}</StatusPill>
-            <StatusPill tone={summary.nfcBehavior === "DIRECT NFC" ? "neutral" : "ready"}>{summary.nfcBehavior}</StatusPill>
-            <StatusPill tone={summary.printedQrLabel === "DIRECT QR" ? "neutral" : "ready"}>{summary.printedQrLabel}</StatusPill>
-          </div>
-        </div>
-        <div className="text-left lg:text-right">
-          <p className="font-black text-ink">{formatPrice(item.lineSubtotalCents)}</p>
-          <p className="mt-1 text-muted">{formatPrice(item.unitAmountCents)} each</p>
-        </div>
+    <div className="mb-2 last:mb-0">
+      <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        <StatusPill tone="neutral">{summary.optionLabel}</StatusPill>
+        <StatusPill tone={summary.fulfillmentKind === "standard" ? "ready" : hasWarnings ? "warning" : "ready"}>
+          {summary.statusLabel}
+        </StatusPill>
       </div>
-
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        <FulfillmentField label="Destination URL" value={summary.destinationUrl} link />
-        <FulfillmentField label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link />
-        <FulfillmentField label="NFC target" value={summary.nfcTargetUrl ?? summary.destinationUrl} link />
-        <FulfillmentField label="Destination type" value={summary.destinationType} />
-        <FulfillmentField label="Platform" value={summary.platformSlug} />
-        {summary.fulfillmentKind !== "standard" ? (
-          <>
-            <FulfillmentField label="Business name" value={summary.businessName} />
-            <FulfillmentField label="Logo" value={summary.logoReference ? "Uploaded" : undefined} detail={summary.logoReference} />
-            <FulfillmentField label="QR production value" value={summary.generatedQrValue ? "Generated" : undefined} detail={summary.generatedQrValue} link />
-            <FulfillmentField label="Front template" value={summary.frontTemplateUrl ? "Attached" : undefined} detail={summary.frontTemplateUrl} link />
-            <FulfillmentField label="Proof confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
-            <FulfillmentField label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : undefined} />
-            <FulfillmentField
-              label="Production artwork"
-              value={summary.productionArtwork?.status === "generated" ? "Download Production Artwork" : summary.productionArtwork?.status === "generation_failed" ? "Generation failed" : undefined}
-              detail={summary.productionArtwork?.url ?? summary.productionArtwork?.error}
-              link={summary.productionArtwork?.status === "generated"}
-            />
-            <FulfillmentField
-              label="Artwork dimensions"
-              value={summary.productionArtwork ? `${summary.productionArtwork.widthPx} x ${summary.productionArtwork.heightPx}px @ ${summary.productionArtwork.dpi} DPI` : undefined}
-              detail={summary.productionArtwork ? `${summary.productionArtwork.widthIn.toFixed(2)} x ${summary.productionArtwork.heightIn.toFixed(2)} in` : undefined}
-            />
-          </>
-        ) : null}
-      </div>
-
-      {summary.fulfillmentKind !== "standard" ? <ProofAssetStrip summary={summary} /> : null}
-
-      <div className="mt-3">
-        <ProductionStatus summary={summary} />
-      </div>
+      <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
     </div>
   );
 }
@@ -240,123 +199,14 @@ function OrderFulfillmentBadges({ order }: { order: OrderRecord }) {
       <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>
         {order.status === "paid" ? "Paid" : "Payment pending"}
       </StatusPill>
-      {hasStandard ? <StatusPill tone="neutral">Standard Direct - QR + NFC</StatusPill> : null}
+      {hasStandard ? <StatusPill tone="neutral">Standard Direct</StatusPill> : null}
       {hasBranded ? (
         <StatusPill tone={hasWarnings ? "warning" : "ready"}>
           {hasWarnings ? "Needs production data" : "Branded + QR - artwork ready"}
         </StatusPill>
       ) : null}
       {hasHosted ? <StatusPill tone="warning">Hosted setup pending</StatusPill> : null}
-      {!hasWarnings && order.status === "paid" ? <StatusPill tone="ready">Ready for production review</StatusPill> : null}
-    </div>
-  );
-}
-
-function ProductionStatus({ summary }: { summary: OrderLineItemProductionSummary }) {
-  if (summary.fulfillmentKind === "standard") {
-    return (
-      <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
-        <p className="font-black">{summary.statusLabel}</p>
-        <p className="mt-1 text-ink">Standard Direct includes QR and NFC pointed to the customer destination URL. No logo or proof approval is required.</p>
-      </div>
-    );
-  }
-
-  if (summary.warnings.length === 0) {
-    return (
-      <div className="rounded-md border border-teal-100 bg-teal-50 p-2 text-xs text-brand">
-        <p className="font-black">{summary.statusLabel}</p>
-        <p className="mt-1 text-ink">Logo, business name, QR value, proof confirmation, and production artwork are present.</p>
-        {summary.productionArtwork?.url ? (
-          <a href={summary.productionArtwork.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex font-black text-brand">
-            Download Production Artwork
-          </a>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
-      <p className="font-black">Manual production review required</p>
-      <p className="mt-1">
-        {summary.fulfillmentKind === "custom"
-          ? "Collect/confirm custom design details before printing."
-          : "Collect/confirm logo, business details, QR, and proof before printing."}
-      </p>
-      <ul className="mt-2 list-disc space-y-1 pl-4">
-        {summary.warnings.map((warning) => (
-          <li key={warning}>{warning}</li>
-        ))}
-      </ul>
-      <p className="mt-2 font-black">Do not print until the missing setup data is resolved and proof is approved.</p>
-    </div>
-  );
-}
-
-function ProofAssetStrip({ summary }: { summary: OrderLineItemProductionSummary }) {
-  return (
-    <div className="mt-3 grid gap-2 rounded-md border border-line bg-gray-50 p-2 sm:grid-cols-3">
-      <AssetPreview label="Logo thumbnail" src={summary.logoMediaUrl} fallback={summary.logoReference} />
-      <AssetPreview label="Front template" src={summary.frontTemplateUrl} fallback={summary.frontTemplateUrl} />
-      <div className="rounded-md border border-line bg-white p-2">
-        <p className="text-[11px] font-black uppercase text-muted">QR value</p>
-        {summary.qrTargetUrl ?? summary.generatedQrValue ? (
-          <p className="mt-2 break-all font-mono text-[11px] text-ink">{summary.qrTargetUrl ?? summary.generatedQrValue}</p>
-        ) : (
-          <p className="mt-2 font-bold text-amber-700">Missing</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AssetPreview({ label, src, fallback }: { label: string; src?: string; fallback?: string }) {
-  const canRenderImage = src && (src.startsWith("/") || src.startsWith("http://") || src.startsWith("https://"));
-
-  return (
-    <div className="rounded-md border border-line bg-white p-2">
-      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
-      {canRenderImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={label} className="mt-2 h-20 w-full rounded border border-line object-contain p-1" />
-      ) : fallback ? (
-        <p className="mt-2 break-all font-mono text-[11px] text-ink">{fallback}</p>
-      ) : (
-        <p className="mt-2 font-bold text-amber-700">Missing</p>
-      )}
-    </div>
-  );
-}
-
-function FulfillmentField({
-  label,
-  value,
-  detail,
-  link = false
-}: {
-  label: string;
-  value?: string;
-  detail?: string;
-  link?: boolean;
-}) {
-  const href = link && detail && isHttpUrl(detail) ? detail : link && value && isHttpUrl(value) ? value : undefined;
-
-  return (
-    <div className="rounded-md border border-line bg-gray-50 p-2">
-      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
-      {value ? (
-        href ? (
-          <a href={href} className="mt-1 block break-all font-bold text-brand" target="_blank" rel="noreferrer">
-            {value}
-          </a>
-        ) : (
-          <p className="mt-1 break-words font-bold text-ink">{value}</p>
-        )
-      ) : (
-        <p className="mt-1 font-bold text-amber-700">Missing</p>
-      )}
-      {detail && detail !== value ? <p className="mt-1 break-all font-mono text-[11px] text-muted">{detail}</p> : null}
+      {!hasWarnings && order.status === "paid" ? <StatusPill tone="ready">Production ready</StatusPill> : null}
     </div>
   );
 }
@@ -370,15 +220,6 @@ function StatusPill({ children, tone }: { children: ReactNode; tone: "ready" | "
         : "bg-gray-100 text-muted";
 
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase ${className}`}>{children}</span>;
-}
-
-function isHttpUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
