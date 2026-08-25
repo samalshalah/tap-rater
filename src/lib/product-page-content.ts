@@ -212,6 +212,12 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "cargurus") return { label: "CarGurus review", highlightTarget: "CarGurus review destination", linkType: "CarGurus review link" };
   if (platform === "repairpal") return { label: "RepairPal review", highlightTarget: "RepairPal review destination", linkType: "RepairPal review link" };
   if (platform === "surecritic") return { label: "SureCritic review", highlightTarget: "SureCritic review destination", linkType: "SureCritic review link" };
+  if (platform === "bbb") return { label: "BBB review", highlightTarget: "Better Business Bureau review destination", linkType: "BBB review link" };
+  if (platform === "nextdoor") return { label: "Nextdoor review", highlightTarget: "Nextdoor review destination", linkType: "Nextdoor review link" };
+  if (platform === "homeadvisor") return { label: "HomeAdvisor review", highlightTarget: "HomeAdvisor review destination", linkType: "HomeAdvisor review link" };
+  if (platform === "thumbtack") return { label: "Thumbtack review", highlightTarget: "Thumbtack review destination", linkType: "Thumbtack review link" };
+  if (platform === "houzz") return { label: "Houzz review", highlightTarget: "Houzz review destination", linkType: "Houzz review link" };
+  if (platform === "porch") return { label: "Porch review", highlightTarget: "Porch review destination", linkType: "Porch review link" };
   if (platform === "airbnb") return { label: "Airbnb review", highlightTarget: "Airbnb review destination", linkType: "Airbnb review link" };
   if (platform === "agoda") return { label: "Agoda review", highlightTarget: "Agoda review destination", linkType: "Agoda review link" };
   if (platform === "vrbo") return { label: "Vrbo review", highlightTarget: "Vrbo review destination", linkType: "Vrbo review link" };
@@ -220,6 +226,8 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "vitals") return { label: "Vitals review", highlightTarget: "Vitals review destination", linkType: "Vitals review link" };
   if (platform === "zocdoc") return { label: "Zocdoc review", highlightTarget: "Zocdoc review destination", linkType: "Zocdoc review link" };
   if (platform === "ratemds") return { label: "RateMDs review", highlightTarget: "RateMDs review destination", linkType: "RateMDs review link" };
+  if (platform === "caredash") return { label: "CareDash review", highlightTarget: "CareDash review destination", linkType: "CareDash review link" };
+  if (platform === "opencare") return { label: "Opencare review", highlightTarget: "Opencare review destination", linkType: "Opencare review link" };
   if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile", linkType: "Instagram profile URL" };
   if (platform === "tiktok") return { label: "TikTok", highlightTarget: "TikTok profile", linkType: "TikTok profile URL" };
   if (platform === "linkedin") return { label: "LinkedIn", highlightTarget: "LinkedIn page", linkType: "LinkedIn page URL" };

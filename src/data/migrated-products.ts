@@ -14,6 +14,10 @@ export type SupportedDestination =
   | "cargurus"
   | "repairpal"
   | "surecritic"
+  | "homeadvisor"
+  | "thumbtack"
+  | "houzz"
+  | "porch"
   | "instagram"
   | "tiktok"
   | "linkedin"
@@ -28,6 +32,8 @@ export type SupportedDestination =
   | "healthgrades"
   | "vitals"
   | "ratemds"
+  | "caredash"
+  | "opencare"
   | "vagaro"
   | "booksy"
   | "fresha"
@@ -295,6 +301,12 @@ const carsReviewStandImage = { src: "/uploads/products/cars-review-stand.png", a
 const cargurusReviewStandImage = { src: "/uploads/products/cargurus-review-stand.png", alt: "Tap Rater CarGurus Review Stand" };
 const repairpalReviewStandImage = { src: "/uploads/products/repairpal-review-stand.png", alt: "Tap Rater RepairPal Review Stand" };
 const surecriticReviewStandImage = { src: "/uploads/products/surecritic-review-stand.png", alt: "Tap Rater SureCritic Review Stand" };
+const bbbReviewStandImage = { src: "/uploads/products/bbb-review-stand.png", alt: "Tap Rater BBB Review Stand" };
+const nextdoorReviewStandImage = { src: "/uploads/products/nextdoor-review-stand.png", alt: "Tap Rater Nextdoor Review Stand" };
+const homeadvisorReviewStandImage = { src: "/uploads/products/homeadvisor-review-stand.png", alt: "Tap Rater HomeAdvisor Review Stand" };
+const thumbtackReviewStandImage = { src: "/uploads/products/thumbtack-review-stand.png", alt: "Tap Rater Thumbtack Review Stand" };
+const houzzReviewStandImage = { src: "/uploads/products/houzz-review-stand.png", alt: "Tap Rater Houzz Review Stand" };
+const porchReviewStandImage = { src: "/uploads/products/porch-review-stand.png", alt: "Tap Rater Porch Review Stand" };
 const airbnbReviewStandImage = { src: "/uploads/products/airbnb-review-stand.png", alt: "Tap Rater Airbnb Review Stand" };
 const agodaReviewStandImage = { src: "/uploads/products/agoda-review-stand.png", alt: "Tap Rater Agoda Review Stand" };
 const vrboReviewStandImage = { src: "/uploads/products/vrbo-review-stand.png", alt: "Tap Rater Vrbo Review Stand" };
@@ -303,6 +315,8 @@ const healthgradesReviewStandImage = { src: "/uploads/products/healthgrades-revi
 const vitalsReviewStandImage = { src: "/uploads/products/vitals-review-stand.png", alt: "Tap Rater Vitals Review Stand" };
 const zocdocReviewStandImage = { src: "/uploads/products/zocdoc-review-stand.png", alt: "Tap Rater Zocdoc Review Stand" };
 const ratemdsReviewStandImage = { src: "/uploads/products/ratemds-review-stand.png", alt: "Tap Rater RateMDs Review Stand" };
+const caredashReviewStandImage = { src: "/uploads/products/caredash-review-stand.png", alt: "Tap Rater CareDash Review Stand" };
+const opencareReviewStandImage = { src: "/uploads/products/opencare-review-stand.png", alt: "Tap Rater Opencare Review Stand" };
 const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
 const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
@@ -710,6 +724,126 @@ export const migratedProducts: MigratedProduct[] = [
     searchKeywords: ["surecritic review stand", "surecritic nfc stand", "review us on surecritic stand"]
   }),
   phaseOneProduct({
+    slug: "bbb-review-stand",
+    title: "BBB Review Stand",
+    sku: "TR-BBB-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "bbb",
+    destinationType: "review",
+    businessUseSlugs: ["retail-local-business", "home-services", "legal", "automotive"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Better Business Bureau review destination.",
+    description:
+      "BBB Review Stand is a tabletop NFC and QR display for local businesses, service providers, and professional offices. It connects directly to one Better Business Bureau review destination URL and is tap or scan ready.",
+    supportedDestinations: ["bbb"],
+    displayText: "Review us on Better Business Bureau",
+    image: bbbReviewStandImage,
+    seoTitle: "BBB Review Stand | NFC and QR Local Business Review Stand",
+    seoDescription: "Buy a BBB Review Stand that opens your Better Business Bureau review destination with one tap or scan.",
+    searchKeywords: ["bbb review stand", "better business bureau nfc stand", "review us on bbb stand"]
+  }),
+  phaseOneProduct({
+    slug: "nextdoor-review-stand",
+    title: "Nextdoor Review Stand",
+    sku: "TR-NEXTDOOR-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "nextdoor",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "retail-local-business", "real-estate", "restaurant-food"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Nextdoor review destination.",
+    description:
+      "Nextdoor Review Stand is a tabletop NFC and QR display for neighborhood-facing businesses, local services, real estate teams, and restaurants. It connects directly to one Nextdoor review destination URL and is tap or scan ready.",
+    supportedDestinations: ["nextdoor"],
+    displayText: "Review us on Nextdoor",
+    image: nextdoorReviewStandImage,
+    seoTitle: "Nextdoor Review Stand | NFC and QR Local Business Review Stand",
+    seoDescription: "Buy a Nextdoor Review Stand that opens your Nextdoor review destination with one tap or scan.",
+    searchKeywords: ["nextdoor review stand", "nextdoor nfc stand", "review us on nextdoor stand"]
+  }),
+  phaseOneProduct({
+    slug: "homeadvisor-review-stand",
+    title: "HomeAdvisor Review Stand",
+    sku: "TR-HOMEADVISOR-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "homeadvisor",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your HomeAdvisor review destination.",
+    description:
+      "HomeAdvisor Review Stand is a tabletop NFC and QR display for contractors, installers, repair teams, and home service businesses. It connects directly to one HomeAdvisor review destination URL and is tap or scan ready.",
+    supportedDestinations: ["homeadvisor"],
+    displayText: "Review us on HomeAdvisor",
+    image: homeadvisorReviewStandImage,
+    seoTitle: "HomeAdvisor Review Stand | NFC and QR Home Services Review Stand",
+    seoDescription: "Buy a HomeAdvisor Review Stand that opens your HomeAdvisor review destination with one tap or scan.",
+    searchKeywords: ["homeadvisor review stand", "homeadvisor nfc stand", "review us on homeadvisor stand"]
+  }),
+  phaseOneProduct({
+    slug: "thumbtack-review-stand",
+    title: "Thumbtack Review Stand",
+    sku: "TR-THUMBTACK-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "thumbtack",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "retail-local-business"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Thumbtack review destination.",
+    description:
+      "Thumbtack Review Stand is a tabletop NFC and QR display for local service providers, contractors, and appointment-based businesses. It connects directly to one Thumbtack review destination URL and is tap or scan ready.",
+    supportedDestinations: ["thumbtack"],
+    displayText: "Review us on Thumbtack",
+    image: thumbtackReviewStandImage,
+    seoTitle: "Thumbtack Review Stand | NFC and QR Service Business Review Stand",
+    seoDescription: "Buy a Thumbtack Review Stand that opens your Thumbtack review destination with one tap or scan.",
+    searchKeywords: ["thumbtack review stand", "thumbtack nfc stand", "review us on thumbtack stand"]
+  }),
+  phaseOneProduct({
+    slug: "houzz-review-stand",
+    title: "Houzz Review Stand",
+    sku: "TR-HOUZZ-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "houzz",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Houzz review destination.",
+    description:
+      "Houzz Review Stand is a tabletop NFC and QR display for design, renovation, remodeling, and home improvement businesses. It connects directly to one Houzz review destination URL and is tap or scan ready.",
+    supportedDestinations: ["houzz"],
+    displayText: "Review us on Houzz",
+    image: houzzReviewStandImage,
+    seoTitle: "Houzz Review Stand | NFC and QR Home Improvement Review Stand",
+    seoDescription: "Buy a Houzz Review Stand that opens your Houzz review destination with one tap or scan.",
+    searchKeywords: ["houzz review stand", "houzz nfc stand", "review us on houzz stand"]
+  }),
+  phaseOneProduct({
+    slug: "porch-review-stand",
+    title: "Porch Review Stand",
+    sku: "TR-PORCH-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "porch",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Porch review destination.",
+    description:
+      "Porch Review Stand is a tabletop NFC and QR display for contractors, home service teams, and local improvement businesses. It connects directly to one Porch review destination URL and is tap or scan ready.",
+    supportedDestinations: ["porch"],
+    displayText: "Review us on Porch",
+    image: porchReviewStandImage,
+    seoTitle: "Porch Review Stand | NFC and QR Home Services Review Stand",
+    seoDescription: "Buy a Porch Review Stand that opens your Porch review destination with one tap or scan.",
+    searchKeywords: ["porch review stand", "porch nfc stand", "review us on porch stand"]
+  }),
+  phaseOneProduct({
     slug: "airbnb-review-stand",
     title: "Airbnb Review Stand",
     sku: "TR-AIRBNB-STAND",
@@ -868,6 +1002,46 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "RateMDs Review Stand | NFC and QR Healthcare Review Stand",
     seoDescription: "Buy a RateMDs Review Stand that opens your RateMDs review destination with one tap or scan.",
     searchKeywords: ["ratemds review stand", "ratemds nfc stand", "review us on ratemds stand"]
+  }),
+  phaseOneProduct({
+    slug: "caredash-review-stand",
+    title: "CareDash Review Stand",
+    sku: "TR-CAREDASH-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "caredash",
+    destinationType: "review",
+    businessUseSlugs: ["healthcare-dental"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your CareDash review destination.",
+    description:
+      "CareDash Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one CareDash review destination URL and is tap or scan ready.",
+    supportedDestinations: ["caredash"],
+    displayText: "Review us on CareDash",
+    image: caredashReviewStandImage,
+    seoTitle: "CareDash Review Stand | NFC and QR Healthcare Review Stand",
+    seoDescription: "Buy a CareDash Review Stand that opens your CareDash review destination with one tap or scan.",
+    searchKeywords: ["caredash review stand", "caredash nfc stand", "review us on caredash stand"]
+  }),
+  phaseOneProduct({
+    slug: "opencare-review-stand",
+    title: "Opencare Review Stand",
+    sku: "TR-OPENCARE-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "opencare",
+    destinationType: "review",
+    businessUseSlugs: ["healthcare-dental"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Opencare review destination.",
+    description:
+      "Opencare Review Stand is a tabletop NFC and QR display for dental, healthcare, and patient-facing reception counters. It connects directly to one Opencare review destination URL and is tap or scan ready.",
+    supportedDestinations: ["opencare"],
+    displayText: "Review us on Opencare",
+    image: opencareReviewStandImage,
+    seoTitle: "Opencare Review Stand | NFC and QR Dental Review Stand",
+    seoDescription: "Buy an Opencare Review Stand that opens your Opencare review destination with one tap or scan.",
+    searchKeywords: ["opencare review stand", "opencare nfc stand", "review us on opencare stand"]
   }),
   phaseOneProduct({
     slug: "rate-your-experience-stand",

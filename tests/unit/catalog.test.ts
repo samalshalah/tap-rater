@@ -108,14 +108,14 @@ describe("catalog categories", () => {
     const websiteProducts = getProductsByCategory("website-links");
     const customProducts = getProductsByCategory("custom-stands");
 
-    expect(reviewProducts).toHaveLength(22);
+    expect(reviewProducts).toHaveLength(30);
     expect(socialProducts).toHaveLength(9);
     expect(appointmentProducts).toHaveLength(1);
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
     expect(websiteProducts).toHaveLength(1);
     expect(customProducts).toHaveLength(0);
-    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(22);
+    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(30);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
 
@@ -123,7 +123,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(35);
+    expect(products).toHaveLength(43);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -140,6 +140,12 @@ describe("catalog categories", () => {
         "CarGurus Review Stand",
         "RepairPal Review Stand",
         "SureCritic Review Stand",
+        "BBB Review Stand",
+        "Nextdoor Review Stand",
+        "HomeAdvisor Review Stand",
+        "Thumbtack Review Stand",
+        "Houzz Review Stand",
+        "Porch Review Stand",
         "Airbnb Review Stand",
         "Agoda Review Stand",
         "Vrbo Review Stand",
@@ -148,6 +154,8 @@ describe("catalog categories", () => {
         "Vitals Review Stand",
         "Zocdoc Review Stand",
         "RateMDs Review Stand",
+        "CareDash Review Stand",
+        "Opencare Review Stand",
         "Rate Your Experience Stand",
         "Follow Us on Social Media Stand",
         "Facebook Follow Stand",
