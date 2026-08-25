@@ -108,14 +108,14 @@ describe("catalog categories", () => {
     const websiteProducts = getProductsByCategory("website-links");
     const customProducts = getProductsByCategory("custom-stands");
 
-    expect(reviewProducts).toHaveLength(30);
-    expect(socialProducts).toHaveLength(9);
+    expect(reviewProducts).toHaveLength(45);
+    expect(socialProducts).toHaveLength(11);
     expect(appointmentProducts).toHaveLength(1);
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
     expect(websiteProducts).toHaveLength(1);
     expect(customProducts).toHaveLength(0);
-    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(30);
+    expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(45);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
 
@@ -123,7 +123,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(43);
+    expect(products).toHaveLength(60);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -142,6 +142,21 @@ describe("catalog categories", () => {
         "SureCritic Review Stand",
         "BBB Review Stand",
         "Nextdoor Review Stand",
+        "Avvo Review Stand",
+        "Taskrabbit Review Stand",
+        "Martindale Review Stand",
+        "Justia Review Stand",
+        "FindLaw Review Stand",
+        "Lawyers.com Review Stand",
+        "Zillow Review Stand",
+        "Realtor.com Review Stand",
+        "Homes.com Review Stand",
+        "Fresha Review Stand",
+        "Booksy Review Stand",
+        "StyleSeat Review Stand",
+        "Vagaro Review Stand",
+        "Apartments.com Review Stand",
+        "Trulia Review Stand",
         "HomeAdvisor Review Stand",
         "Thumbtack Review Stand",
         "Houzz Review Stand",
@@ -166,6 +181,8 @@ describe("catalog categories", () => {
         "X Follow Stand",
         "Snapchat Follow Stand",
         "Pinterest Follow Stand",
+        "WhatsApp Message Stand",
+        "Telegram Message Stand",
         "Book Your Next Visit Stand",
         "View Our Menu Stand",
         "Visit Our Website Stand"

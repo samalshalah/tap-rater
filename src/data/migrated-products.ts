@@ -6,6 +6,17 @@ export type SupportedDestination =
   | "trustpilot"
   | "bbb"
   | "nextdoor"
+  | "avvo"
+  | "taskrabbit"
+  | "martindale"
+  | "justia"
+  | "findlaw"
+  | "lawyers"
+  | "zillow"
+  | "realtor"
+  | "homes"
+  | "apartments"
+  | "trulia"
   | "dealerrater"
   | "autotrader"
   | "carfax"
@@ -25,6 +36,8 @@ export type SupportedDestination =
   | "youtube"
   | "snapchat"
   | "pinterest"
+  | "whatsapp"
+  | "telegram"
   | "airbnb"
   | "agoda"
   | "vrbo"
@@ -34,6 +47,7 @@ export type SupportedDestination =
   | "ratemds"
   | "caredash"
   | "opencare"
+  | "styleseat"
   | "vagaro"
   | "booksy"
   | "fresha"
@@ -303,6 +317,15 @@ const repairpalReviewStandImage = { src: "/uploads/products/repairpal-review-sta
 const surecriticReviewStandImage = { src: "/uploads/products/surecritic-review-stand.png", alt: "Tap Rater SureCritic Review Stand" };
 const bbbReviewStandImage = { src: "/uploads/products/bbb-review-stand.png", alt: "Tap Rater BBB Review Stand" };
 const nextdoorReviewStandImage = { src: "/uploads/products/nextdoor-review-stand.png", alt: "Tap Rater Nextdoor Review Stand" };
+const avvoReviewStandImage = { src: "/uploads/products/avvo-review-stand.png", alt: "Tap Rater Avvo Review Stand" };
+const taskrabbitReviewStandImage = { src: "/uploads/products/taskrabbit-review-stand.png", alt: "Tap Rater Taskrabbit Review Stand" };
+const martindaleReviewStandImage = { src: "/uploads/products/martindale-review-stand.png", alt: "Tap Rater Martindale Review Stand" };
+const justiaReviewStandImage = { src: "/uploads/products/justia-review-stand.png", alt: "Tap Rater Justia Review Stand" };
+const findlawReviewStandImage = { src: "/uploads/products/findlaw-review-stand.png", alt: "Tap Rater FindLaw Review Stand" };
+const lawyersReviewStandImage = { src: "/uploads/products/lawyers-review-stand.png", alt: "Tap Rater Lawyers.com Review Stand" };
+const zillowReviewStandImage = { src: "/uploads/products/zillow-review-stand.png", alt: "Tap Rater Zillow Review Stand" };
+const realtorReviewStandImage = { src: "/uploads/products/realtor-review-stand.png", alt: "Tap Rater Realtor.com Review Stand" };
+const homesReviewStandImage = { src: "/uploads/products/homes-review-stand.png", alt: "Tap Rater Homes.com Review Stand" };
 const homeadvisorReviewStandImage = { src: "/uploads/products/homeadvisor-review-stand.png", alt: "Tap Rater HomeAdvisor Review Stand" };
 const thumbtackReviewStandImage = { src: "/uploads/products/thumbtack-review-stand.png", alt: "Tap Rater Thumbtack Review Stand" };
 const houzzReviewStandImage = { src: "/uploads/products/houzz-review-stand.png", alt: "Tap Rater Houzz Review Stand" };
@@ -317,6 +340,14 @@ const zocdocReviewStandImage = { src: "/uploads/products/zocdoc-review-stand.png
 const ratemdsReviewStandImage = { src: "/uploads/products/ratemds-review-stand.png", alt: "Tap Rater RateMDs Review Stand" };
 const caredashReviewStandImage = { src: "/uploads/products/caredash-review-stand.png", alt: "Tap Rater CareDash Review Stand" };
 const opencareReviewStandImage = { src: "/uploads/products/opencare-review-stand.png", alt: "Tap Rater Opencare Review Stand" };
+const freshaReviewStandImage = { src: "/uploads/products/fresha-review-stand.png", alt: "Tap Rater Fresha Review Stand" };
+const booksyReviewStandImage = { src: "/uploads/products/booksy-review-stand.png", alt: "Tap Rater Booksy Review Stand" };
+const styleseatReviewStandImage = { src: "/uploads/products/styleseat-review-stand.png", alt: "Tap Rater StyleSeat Review Stand" };
+const vagaroReviewStandImage = { src: "/uploads/products/vagaro-review-stand.png", alt: "Tap Rater Vagaro Review Stand" };
+const apartmentsReviewStandImage = { src: "/uploads/products/apartments-review-stand.png", alt: "Tap Rater Apartments.com Review Stand" };
+const truliaReviewStandImage = { src: "/uploads/products/trulia-review-stand.png", alt: "Tap Rater Trulia Review Stand" };
+const whatsappMessageStandImage = { src: "/uploads/products/whatsapp-message-stand.png", alt: "Tap Rater WhatsApp Message Stand" };
+const telegramMessageStandImage = { src: "/uploads/products/telegram-message-stand.png", alt: "Tap Rater Telegram Message Stand" };
 const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
 const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
@@ -1044,6 +1075,306 @@ export const migratedProducts: MigratedProduct[] = [
     searchKeywords: ["opencare review stand", "opencare nfc stand", "review us on opencare stand"]
   }),
   phaseOneProduct({
+    slug: "avvo-review-stand",
+    title: "Avvo Review Stand",
+    sku: "TR-AVVO-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "avvo",
+    destinationType: "review",
+    businessUseSlugs: ["legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Avvo review destination.",
+    description:
+      "Avvo Review Stand is a tabletop NFC and QR display for law firms, legal offices, and consultation desks. It connects directly to one Avvo review destination URL and is tap or scan ready.",
+    supportedDestinations: ["avvo"],
+    displayText: "Review us on Avvo",
+    image: avvoReviewStandImage,
+    seoTitle: "Avvo Review Stand | NFC and QR Legal Review Stand",
+    seoDescription: "Buy an Avvo Review Stand that opens your Avvo review destination with one tap or scan.",
+    searchKeywords: ["avvo review stand", "avvo nfc stand", "review us on avvo stand"]
+  }),
+  phaseOneProduct({
+    slug: "taskrabbit-review-stand",
+    title: "Taskrabbit Review Stand",
+    sku: "TR-TASKRABBIT-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "taskrabbit",
+    destinationType: "review",
+    businessUseSlugs: ["home-services", "retail-local-business"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Taskrabbit review destination.",
+    description:
+      "Taskrabbit Review Stand is a tabletop NFC and QR display for service pros, local teams, and customer-facing appointment counters. It connects directly to one Taskrabbit review destination URL and is tap or scan ready.",
+    supportedDestinations: ["taskrabbit"],
+    displayText: "Review us on Taskrabbit",
+    image: taskrabbitReviewStandImage,
+    seoTitle: "Taskrabbit Review Stand | NFC and QR Service Review Stand",
+    seoDescription: "Buy a Taskrabbit Review Stand that opens your Taskrabbit review destination with one tap or scan.",
+    searchKeywords: ["taskrabbit review stand", "taskrabbit nfc stand", "review us on taskrabbit stand"]
+  }),
+  phaseOneProduct({
+    slug: "martindale-review-stand",
+    title: "Martindale Review Stand",
+    sku: "TR-MARTINDALE-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "martindale",
+    destinationType: "review",
+    businessUseSlugs: ["legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Martindale review destination.",
+    description:
+      "Martindale Review Stand is a tabletop NFC and QR display for law firms and legal reception areas. It connects directly to one Martindale review destination URL and is tap or scan ready.",
+    supportedDestinations: ["martindale"],
+    displayText: "Review us on Martindale",
+    image: martindaleReviewStandImage,
+    seoTitle: "Martindale Review Stand | NFC and QR Legal Review Stand",
+    seoDescription: "Buy a Martindale Review Stand that opens your Martindale review destination with one tap or scan.",
+    searchKeywords: ["martindale review stand", "martindale nfc stand", "review us on martindale stand"]
+  }),
+  phaseOneProduct({
+    slug: "justia-review-stand",
+    title: "Justia Review Stand",
+    sku: "TR-JUSTIA-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "justia",
+    destinationType: "review",
+    businessUseSlugs: ["legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Justia review destination.",
+    description:
+      "Justia Review Stand is a tabletop NFC and QR display for attorneys, law firms, and client-facing legal offices. It connects directly to one Justia review destination URL and is tap or scan ready.",
+    supportedDestinations: ["justia"],
+    displayText: "Review us on Justia",
+    image: justiaReviewStandImage,
+    seoTitle: "Justia Review Stand | NFC and QR Legal Review Stand",
+    seoDescription: "Buy a Justia Review Stand that opens your Justia review destination with one tap or scan.",
+    searchKeywords: ["justia review stand", "justia nfc stand", "review us on justia stand"]
+  }),
+  phaseOneProduct({
+    slug: "findlaw-review-stand",
+    title: "FindLaw Review Stand",
+    sku: "TR-FINDLAW-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "findlaw",
+    destinationType: "review",
+    businessUseSlugs: ["legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your FindLaw review destination.",
+    description:
+      "FindLaw Review Stand is a tabletop NFC and QR display for law firm reception desks and consultation areas. It connects directly to one FindLaw review destination URL and is tap or scan ready.",
+    supportedDestinations: ["findlaw"],
+    displayText: "Review us on FindLaw",
+    image: findlawReviewStandImage,
+    seoTitle: "FindLaw Review Stand | NFC and QR Legal Review Stand",
+    seoDescription: "Buy a FindLaw Review Stand that opens your FindLaw review destination with one tap or scan.",
+    searchKeywords: ["findlaw review stand", "findlaw nfc stand", "review us on findlaw stand"]
+  }),
+  phaseOneProduct({
+    slug: "lawyers-review-stand",
+    title: "Lawyers.com Review Stand",
+    sku: "TR-LAWYERS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "lawyers",
+    destinationType: "review",
+    businessUseSlugs: ["legal"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Lawyers.com review destination.",
+    description:
+      "Lawyers.com Review Stand is a tabletop NFC and QR display for legal offices, attorney reception desks, and client consultation rooms. It connects directly to one Lawyers.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["lawyers"],
+    displayText: "Review us on Lawyers.com",
+    image: lawyersReviewStandImage,
+    seoTitle: "Lawyers.com Review Stand | NFC and QR Legal Review Stand",
+    seoDescription: "Buy a Lawyers.com Review Stand that opens your Lawyers.com review destination with one tap or scan.",
+    searchKeywords: ["lawyers.com review stand", "lawyers nfc stand", "review us on lawyers.com stand"]
+  }),
+  phaseOneProduct({
+    slug: "zillow-review-stand",
+    title: "Zillow Review Stand",
+    sku: "TR-ZILLOW-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "zillow",
+    destinationType: "review",
+    businessUseSlugs: ["real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Zillow review destination.",
+    description:
+      "Zillow Review Stand is a tabletop NFC and QR display for real estate teams, brokerages, and open-house desks. It connects directly to one Zillow review destination URL and is tap or scan ready.",
+    supportedDestinations: ["zillow"],
+    displayText: "Review us on Zillow",
+    image: zillowReviewStandImage,
+    seoTitle: "Zillow Review Stand | NFC and QR Real Estate Review Stand",
+    seoDescription: "Buy a Zillow Review Stand that opens your Zillow review destination with one tap or scan.",
+    searchKeywords: ["zillow review stand", "zillow nfc stand", "review us on zillow stand"]
+  }),
+  phaseOneProduct({
+    slug: "realtor-review-stand",
+    title: "Realtor.com Review Stand",
+    sku: "TR-REALTOR-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "realtor",
+    destinationType: "review",
+    businessUseSlugs: ["real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Realtor.com review destination.",
+    description:
+      "Realtor.com Review Stand is a tabletop NFC and QR display for agents, brokerages, and real estate offices. It connects directly to one Realtor.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["realtor"],
+    displayText: "Review us on Realtor.com",
+    image: realtorReviewStandImage,
+    seoTitle: "Realtor.com Review Stand | NFC and QR Real Estate Review Stand",
+    seoDescription: "Buy a Realtor.com Review Stand that opens your Realtor.com review destination with one tap or scan.",
+    searchKeywords: ["realtor.com review stand", "realtor nfc stand", "review us on realtor.com stand"]
+  }),
+  phaseOneProduct({
+    slug: "homes-review-stand",
+    title: "Homes.com Review Stand",
+    sku: "TR-HOMES-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "homes",
+    destinationType: "review",
+    businessUseSlugs: ["real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Homes.com review destination.",
+    description:
+      "Homes.com Review Stand is a tabletop NFC and QR display for real estate offices, agents, and housing professionals. It connects directly to one Homes.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["homes"],
+    displayText: "Review us on Homes.com",
+    image: homesReviewStandImage,
+    seoTitle: "Homes.com Review Stand | NFC and QR Real Estate Review Stand",
+    seoDescription: "Buy a Homes.com Review Stand that opens your Homes.com review destination with one tap or scan.",
+    searchKeywords: ["homes.com review stand", "homes nfc stand", "review us on homes.com stand"]
+  }),
+  phaseOneProduct({
+    slug: "fresha-review-stand",
+    title: "Fresha Review Stand",
+    sku: "TR-FRESHA-REVIEW-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "fresha",
+    destinationType: "review",
+    businessUseSlugs: ["beauty-salon-wellness"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Fresha review destination.",
+    description:
+      "Fresha Review Stand is a tabletop NFC and QR display for salons, spas, barbers, and wellness businesses. It connects directly to one Fresha review destination URL and is tap or scan ready.",
+    supportedDestinations: ["fresha"],
+    displayText: "Review us on Fresha",
+    image: freshaReviewStandImage,
+    seoTitle: "Fresha Review Stand | NFC and QR Salon Review Stand",
+    seoDescription: "Buy a Fresha Review Stand that opens your Fresha review destination with one tap or scan.",
+    searchKeywords: ["fresha review stand", "fresha nfc stand", "review us on fresha stand"]
+  }),
+  phaseOneProduct({
+    slug: "booksy-review-stand",
+    title: "Booksy Review Stand",
+    sku: "TR-BOOKSY-REVIEW-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "booksy",
+    destinationType: "review",
+    businessUseSlugs: ["beauty-salon-wellness"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Booksy review destination.",
+    description:
+      "Booksy Review Stand is a tabletop NFC and QR display for salons, barbers, beauty studios, and wellness desks. It connects directly to one Booksy review destination URL and is tap or scan ready.",
+    supportedDestinations: ["booksy"],
+    displayText: "Review us on Booksy",
+    image: booksyReviewStandImage,
+    seoTitle: "Booksy Review Stand | NFC and QR Salon Review Stand",
+    seoDescription: "Buy a Booksy Review Stand that opens your Booksy review destination with one tap or scan.",
+    searchKeywords: ["booksy review stand", "booksy nfc stand", "review us on booksy stand"]
+  }),
+  phaseOneProduct({
+    slug: "styleseat-review-stand",
+    title: "StyleSeat Review Stand",
+    sku: "TR-STYLESEAT-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "styleseat",
+    destinationType: "review",
+    businessUseSlugs: ["beauty-salon-wellness"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your StyleSeat review destination.",
+    description:
+      "StyleSeat Review Stand is a tabletop NFC and QR display for beauty pros, salons, barbers, and wellness appointment desks. It connects directly to one StyleSeat review destination URL and is tap or scan ready.",
+    supportedDestinations: ["styleseat"],
+    displayText: "Review us on StyleSeat",
+    image: styleseatReviewStandImage,
+    seoTitle: "StyleSeat Review Stand | NFC and QR Salon Review Stand",
+    seoDescription: "Buy a StyleSeat Review Stand that opens your StyleSeat review destination with one tap or scan.",
+    searchKeywords: ["styleseat review stand", "styleseat nfc stand", "review us on styleseat stand"]
+  }),
+  phaseOneProduct({
+    slug: "vagaro-review-stand",
+    title: "Vagaro Review Stand",
+    sku: "TR-VAGARO-REVIEW-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "vagaro",
+    destinationType: "review",
+    businessUseSlugs: ["beauty-salon-wellness"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Vagaro review destination.",
+    description:
+      "Vagaro Review Stand is a tabletop NFC and QR display for salons, spas, fitness studios, and wellness businesses. It connects directly to one Vagaro review destination URL and is tap or scan ready.",
+    supportedDestinations: ["vagaro"],
+    displayText: "Review us on Vagaro",
+    image: vagaroReviewStandImage,
+    seoTitle: "Vagaro Review Stand | NFC and QR Wellness Review Stand",
+    seoDescription: "Buy a Vagaro Review Stand that opens your Vagaro review destination with one tap or scan.",
+    searchKeywords: ["vagaro review stand", "vagaro nfc stand", "review us on vagaro stand"]
+  }),
+  phaseOneProduct({
+    slug: "apartments-review-stand",
+    title: "Apartments.com Review Stand",
+    sku: "TR-APARTMENTS-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "apartments",
+    destinationType: "review",
+    businessUseSlugs: ["real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Apartments.com review destination.",
+    description:
+      "Apartments.com Review Stand is a tabletop NFC and QR display for leasing offices, property managers, and apartment communities. It connects directly to one Apartments.com review destination URL and is tap or scan ready.",
+    supportedDestinations: ["apartments"],
+    displayText: "Review us on Apartments.com",
+    image: apartmentsReviewStandImage,
+    seoTitle: "Apartments.com Review Stand | NFC and QR Property Review Stand",
+    seoDescription: "Buy an Apartments.com Review Stand that opens your Apartments.com review destination with one tap or scan.",
+    searchKeywords: ["apartments.com review stand", "apartments nfc stand", "review us on apartments.com stand"]
+  }),
+  phaseOneProduct({
+    slug: "trulia-review-stand",
+    title: "Trulia Review Stand",
+    sku: "TR-TRULIA-STAND",
+    categorySlug: "reviews",
+    standTypeSlug: "review-stands",
+    primaryPlatformSlug: "trulia",
+    destinationType: "review",
+    businessUseSlugs: ["real-estate"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Trulia review destination.",
+    description:
+      "Trulia Review Stand is a tabletop NFC and QR display for real estate professionals, leasing teams, and property offices. It connects directly to one Trulia review destination URL and is tap or scan ready.",
+    supportedDestinations: ["trulia"],
+    displayText: "Review us on Trulia",
+    image: truliaReviewStandImage,
+    seoTitle: "Trulia Review Stand | NFC and QR Real Estate Review Stand",
+    seoDescription: "Buy a Trulia Review Stand that opens your Trulia review destination with one tap or scan.",
+    searchKeywords: ["trulia review stand", "trulia nfc stand", "review us on trulia stand"]
+  }),
+  phaseOneProduct({
     slug: "rate-your-experience-stand",
     title: "Rate Your Experience Stand",
     sku: "TR-EXPERIENCE-STAND",
@@ -1266,6 +1597,46 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "Pinterest Follow Stand | NFC and QR Social Media Stand",
     seoDescription: "Buy a Pinterest Follow Stand that opens your Pinterest profile with one tap or scan.",
     searchKeywords: ["pinterest follow stand", "pinterest nfc stand", "follow us on pinterest stand"]
+  }),
+  phaseOneProduct({
+    slug: "whatsapp-message-stand",
+    title: "WhatsApp Message Stand",
+    sku: "TR-WHATSAPP-MESSAGE-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "whatsapp",
+    destinationType: "social",
+    businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your WhatsApp message destination.",
+    description:
+      "WhatsApp Message Stand is a tabletop NFC and QR display for sending customers directly to a WhatsApp message destination. It connects directly to one WhatsApp URL and is tap or scan ready.",
+    supportedDestinations: ["whatsapp"],
+    displayText: "Message us on WhatsApp",
+    image: whatsappMessageStandImage,
+    seoTitle: "WhatsApp Message Stand | NFC and QR Messaging Stand",
+    seoDescription: "Buy a WhatsApp Message Stand that opens your WhatsApp message destination with one tap or scan.",
+    searchKeywords: ["whatsapp message stand", "whatsapp nfc stand", "message us on whatsapp stand"]
+  }),
+  phaseOneProduct({
+    slug: "telegram-message-stand",
+    title: "Telegram Message Stand",
+    sku: "TR-TELEGRAM-MESSAGE-STAND",
+    categorySlug: "social-media",
+    standTypeSlug: "social-media-stands",
+    primaryPlatformSlug: "telegram",
+    destinationType: "social",
+    businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services"],
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens your Telegram message destination.",
+    description:
+      "Telegram Message Stand is a tabletop NFC and QR display for sending customers directly to a Telegram message destination. It connects directly to one Telegram URL and is tap or scan ready.",
+    supportedDestinations: ["telegram"],
+    displayText: "Message us on Telegram",
+    image: telegramMessageStandImage,
+    seoTitle: "Telegram Message Stand | NFC and QR Messaging Stand",
+    seoDescription: "Buy a Telegram Message Stand that opens your Telegram message destination with one tap or scan.",
+    searchKeywords: ["telegram message stand", "telegram nfc stand", "message us on telegram stand"]
   }),
   phaseOneProduct({
     slug: "book-your-next-visit-stand",

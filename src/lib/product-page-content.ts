@@ -214,6 +214,17 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "surecritic") return { label: "SureCritic review", highlightTarget: "SureCritic review destination", linkType: "SureCritic review link" };
   if (platform === "bbb") return { label: "BBB review", highlightTarget: "Better Business Bureau review destination", linkType: "BBB review link" };
   if (platform === "nextdoor") return { label: "Nextdoor review", highlightTarget: "Nextdoor review destination", linkType: "Nextdoor review link" };
+  if (platform === "avvo") return { label: "Avvo review", highlightTarget: "Avvo review destination", linkType: "Avvo review link" };
+  if (platform === "taskrabbit") return { label: "Taskrabbit review", highlightTarget: "Taskrabbit review destination", linkType: "Taskrabbit review link" };
+  if (platform === "martindale") return { label: "Martindale review", highlightTarget: "Martindale review destination", linkType: "Martindale review link" };
+  if (platform === "justia") return { label: "Justia review", highlightTarget: "Justia review destination", linkType: "Justia review link" };
+  if (platform === "findlaw") return { label: "FindLaw review", highlightTarget: "FindLaw review destination", linkType: "FindLaw review link" };
+  if (platform === "lawyers") return { label: "Lawyers.com review", highlightTarget: "Lawyers.com review destination", linkType: "Lawyers.com review link" };
+  if (platform === "zillow") return { label: "Zillow review", highlightTarget: "Zillow review destination", linkType: "Zillow review link" };
+  if (platform === "realtor") return { label: "Realtor.com review", highlightTarget: "Realtor.com review destination", linkType: "Realtor.com review link" };
+  if (platform === "homes") return { label: "Homes.com review", highlightTarget: "Homes.com review destination", linkType: "Homes.com review link" };
+  if (platform === "apartments") return { label: "Apartments.com review", highlightTarget: "Apartments.com review destination", linkType: "Apartments.com review link" };
+  if (platform === "trulia") return { label: "Trulia review", highlightTarget: "Trulia review destination", linkType: "Trulia review link" };
   if (platform === "homeadvisor") return { label: "HomeAdvisor review", highlightTarget: "HomeAdvisor review destination", linkType: "HomeAdvisor review link" };
   if (platform === "thumbtack") return { label: "Thumbtack review", highlightTarget: "Thumbtack review destination", linkType: "Thumbtack review link" };
   if (platform === "houzz") return { label: "Houzz review", highlightTarget: "Houzz review destination", linkType: "Houzz review link" };
@@ -228,6 +239,10 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "ratemds") return { label: "RateMDs review", highlightTarget: "RateMDs review destination", linkType: "RateMDs review link" };
   if (platform === "caredash") return { label: "CareDash review", highlightTarget: "CareDash review destination", linkType: "CareDash review link" };
   if (platform === "opencare") return { label: "Opencare review", highlightTarget: "Opencare review destination", linkType: "Opencare review link" };
+  if (platform === "fresha") return { label: "Fresha review", highlightTarget: "Fresha review destination", linkType: "Fresha review link" };
+  if (platform === "booksy") return { label: "Booksy review", highlightTarget: "Booksy review destination", linkType: "Booksy review link" };
+  if (platform === "styleseat") return { label: "StyleSeat review", highlightTarget: "StyleSeat review destination", linkType: "StyleSeat review link" };
+  if (platform === "vagaro") return { label: "Vagaro review", highlightTarget: "Vagaro review destination", linkType: "Vagaro review link" };
   if (platform === "instagram") return { label: "Instagram", highlightTarget: "Instagram profile", linkType: "Instagram profile URL" };
   if (platform === "tiktok") return { label: "TikTok", highlightTarget: "TikTok profile", linkType: "TikTok profile URL" };
   if (platform === "linkedin") return { label: "LinkedIn", highlightTarget: "LinkedIn page", linkType: "LinkedIn page URL" };
@@ -235,6 +250,8 @@ function getPlatformDestinationCopy(platform: string, destinationType = ""): Pro
   if (platform === "youtube") return { label: "YouTube", highlightTarget: "YouTube channel", linkType: "YouTube channel URL" };
   if (platform === "snapchat") return { label: "Snapchat", highlightTarget: "Snapchat profile", linkType: "Snapchat profile URL" };
   if (platform === "pinterest") return { label: "Pinterest", highlightTarget: "Pinterest profile", linkType: "Pinterest profile URL" };
+  if (platform === "whatsapp") return { label: "WhatsApp", highlightTarget: "WhatsApp message destination", linkType: "WhatsApp URL" };
+  if (platform === "telegram") return { label: "Telegram", highlightTarget: "Telegram message destination", linkType: "Telegram URL" };
   if (platform === "website") return { label: "website", highlightTarget: "website link", linkType: "website URL" };
   if (platform === "custom-menu-url") return { label: "menu", highlightTarget: "menu URL", linkType: "menu URL" };
   if (platform === "custom-booking-url") return { label: "booking", highlightTarget: "booking URL", linkType: "booking URL" };

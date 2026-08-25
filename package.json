@@ -20,6 +20,7 @@
     "backend:email-test": "npm --workspace @tap-rater/backend run email-test",
     "start": "next start",
     "smoke": "node scripts/smoke.mjs",
+    "sync:products": "node scripts/sync-products.mjs",
     "check:platform-schema": "node scripts/check-platform-schema.mjs",
     "test": "vitest run"
   },
