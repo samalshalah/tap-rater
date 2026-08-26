@@ -253,7 +253,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
       </div>
 
       <div className="tr-admin-table-shell overflow-x-auto">
-        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
               <th className="px-4 py-3">
@@ -261,10 +261,11 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
               </th>
               <th className="px-4 py-3">Order</th>
               <th className="px-4 py-3">Customer</th>
-              <th className="px-4 py-3">Items</th>
-              <th className="px-4 py-3">Operations</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Created</th>
+              <th className="px-4 py-3">Production</th>
+              <th className="px-4 py-3">Shipping</th>
+              <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -286,7 +287,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
             })}
             {visibleOrders.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted">
+                <td colSpan={8} className="p-8 text-center text-muted">
                   No orders match the current filters.
                 </td>
               </tr>
@@ -324,48 +325,12 @@ function OrderRow({
           <input type="checkbox" checked={selected} onChange={onToggleSelected} className="h-4 w-4" aria-label={`Select ${order.checkoutSessionId}`} />
         </td>
         <td className="px-4 py-4 align-top">
-          <p className="max-w-[210px] truncate font-mono text-xs text-ink" title={order.checkoutSessionId}>{order.checkoutSessionId}</p>
-          <Link href={`/admin/orders/${order.id}`} className="mt-2 inline-flex rounded-md border border-line px-3 py-1 text-xs font-semibold text-ink">
-            View order
-          </Link>
+          <p className="max-w-[180px] truncate font-mono text-xs text-ink" title={order.checkoutSessionId}>{order.checkoutSessionId}</p>
+          <p className="mt-1 text-xs font-semibold text-muted">{order.items.length} item{order.items.length === 1 ? "" : "s"}</p>
         </td>
         <td className="px-4 py-4 align-top">
-          <p className="font-semibold text-ink">{order.customerName}</p>
+          <p className="max-w-[220px] truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
           <p className="max-w-[220px] truncate text-muted" title={order.email}>{order.email || "-"}</p>
-        </td>
-        <td className="px-4 py-4 align-top text-muted">
-          {order.items.map((item) => (
-            <div key={item.key} className="mb-2 last:mb-0">
-              <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                <StatusPill tone="neutral">{item.optionLabel}</StatusPill>
-                <StatusPill tone={item.statusTone}>{item.statusLabel}</StatusPill>
-              </div>
-              <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
-            </div>
-          ))}
-        </td>
-        <td className="px-4 py-4 align-top">
-          <div className="flex max-w-sm flex-wrap gap-2">
-            {order.fulfillmentBadges.map((badge) => (
-              <StatusPill key={badge.label} tone={badge.tone}>{badge.label}</StatusPill>
-            ))}
-            <StatusPill tone={order.productionStatus === "completed" ? "ready" : order.productionStatus === "blocked" ? "warning" : "neutral"}>
-              {formatStatus(order.productionStatus)}
-            </StatusPill>
-            <StatusPill tone={order.shippingStatus === "shipped" || order.shippingStatus === "delivered" ? "ready" : order.shippingStatus === "blocked" ? "warning" : "neutral"}>
-              {formatStatus(order.shippingStatus)}
-            </StatusPill>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("in_production")}>In production</QuickActionButton>
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
-            <button type="button" onClick={onToggleEditor} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-black text-ink">
-              {editorOpen ? "Close controls" : "More controls"}
-            </button>
-          </div>
         </td>
         <td className="px-4 py-4 align-top font-semibold text-ink">
           {order.total}
@@ -374,10 +339,33 @@ function OrderRow({
           </div>
         </td>
         <td className="px-4 py-4 align-top text-muted">{order.createdAt}</td>
+        <td className="px-4 py-4 align-top">
+          <StatusPill tone={order.productionStatus === "completed" ? "ready" : order.productionStatus === "blocked" ? "warning" : "neutral"}>
+            {formatStatus(order.productionStatus)}
+          </StatusPill>
+        </td>
+        <td className="px-4 py-4 align-top">
+          <StatusPill tone={order.shippingStatus === "shipped" || order.shippingStatus === "delivered" ? "ready" : order.shippingStatus === "blocked" ? "warning" : "neutral"}>
+            {formatStatus(order.shippingStatus)}
+          </StatusPill>
+        </td>
+        <td className="px-4 py-4 align-top">
+          <div className="flex flex-wrap gap-2">
+            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
+            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
+            <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
+            <button type="button" onClick={onToggleEditor} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-black text-ink">
+              {editorOpen ? "Close" : "Edit"}
+            </button>
+            <Link href={`/admin/orders/${order.id}`} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-black text-ink">
+              View
+            </Link>
+          </div>
+        </td>
       </tr>
       {editorOpen ? (
         <tr className="border-b border-line bg-gray-50">
-          <td colSpan={7} className="px-4 py-4">
+          <td colSpan={8} className="px-4 py-4">
             <OrderInlineEditor order={order} saving={saving} onSave={onSave} />
           </td>
         </tr>
@@ -408,39 +396,56 @@ function OrderInlineEditor({
   });
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-      <div className="grid gap-3 md:grid-cols-2">
-        <SelectField label="Production" value={form.productionStatus} onChange={(value) => setForm((current) => ({ ...current, productionStatus: value as OrderFulfillmentUpdateInput["productionStatus"] }))}>
-          <option value="not_started">Not started</option>
-          <option value="ready_for_production">Ready for production</option>
-          <option value="in_production">In production</option>
-          <option value="blocked">Blocked</option>
-          <option value="completed">Completed</option>
-        </SelectField>
-        <SelectField label="Shipping" value={form.shippingStatus} onChange={(value) => setForm((current) => ({ ...current, shippingStatus: value as OrderFulfillmentUpdateInput["shippingStatus"] }))}>
-          <option value="not_shipped">Not shipped</option>
-          <option value="ready_to_ship">Ready to ship</option>
-          <option value="shipped">Shipped</option>
-          <option value="delivered">Delivered</option>
-          <option value="blocked">Blocked</option>
-        </SelectField>
-        <TextField label="Shipping method" value={form.shippingMethod} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
-        <TextField label="Carrier" value={form.shippingCarrier} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
-        <TextField label="Tracking number" value={form.trackingNumber} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
-        <TextField label="Tracking URL" value={form.trackingUrl} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
+    <div className="space-y-4">
+      <div className="rounded-md border border-line bg-white p-4">
+        <p className="text-xs font-black uppercase text-muted">Order items</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          {order.items.map((item) => (
+            <div key={item.key} className="rounded-md border border-line p-3">
+              <p className="font-semibold text-ink">{item.quantity} x {item.title}</p>
+              <p className="mt-1 font-mono text-[11px] uppercase text-muted">SKU {item.sku}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <StatusPill tone="neutral">{item.optionLabel}</StatusPill>
+                <StatusPill tone={item.statusTone}>{item.statusLabel}</StatusPill>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
-        <TextArea label="Internal notes" value={form.internalNotes} onChange={(value) => setForm((current) => ({ ...current, internalNotes: value }))} />
-        <TextArea label="Fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
-      </div>
-      <div className="space-y-3">
-        <label className="flex items-center gap-2 text-sm font-bold text-ink">
-          <input type="checkbox" checked={form.markShipped} onChange={(event) => setForm((current) => ({ ...current, markShipped: event.target.checked }))} className="h-4 w-4" />
-          Set shipped date
-        </label>
-        <button type="button" disabled={saving} onClick={() => onSave(form)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-black text-white disabled:opacity-50">
-          {saving ? "Saving..." : "Save controls"}
-        </button>
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <div className="grid gap-3 md:grid-cols-2">
+          <SelectField label="Production" value={form.productionStatus} onChange={(value) => setForm((current) => ({ ...current, productionStatus: value as OrderFulfillmentUpdateInput["productionStatus"] }))}>
+            <option value="not_started">Not started</option>
+            <option value="ready_for_production">Ready for production</option>
+            <option value="in_production">In production</option>
+            <option value="blocked">Blocked</option>
+            <option value="completed">Completed</option>
+          </SelectField>
+          <SelectField label="Shipping" value={form.shippingStatus} onChange={(value) => setForm((current) => ({ ...current, shippingStatus: value as OrderFulfillmentUpdateInput["shippingStatus"] }))}>
+            <option value="not_shipped">Not shipped</option>
+            <option value="ready_to_ship">Ready to ship</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
+            <option value="blocked">Blocked</option>
+          </SelectField>
+          <TextField label="Shipping method" value={form.shippingMethod} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
+          <TextField label="Carrier" value={form.shippingCarrier} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
+          <TextField label="Tracking number" value={form.trackingNumber} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
+          <TextField label="Tracking URL" value={form.trackingUrl} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <TextArea label="Internal notes" value={form.internalNotes} onChange={(value) => setForm((current) => ({ ...current, internalNotes: value }))} />
+          <TextArea label="Fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
+        </div>
+        <div className="space-y-3">
+          <label className="flex items-center gap-2 text-sm font-bold text-ink">
+            <input type="checkbox" checked={form.markShipped} onChange={(event) => setForm((current) => ({ ...current, markShipped: event.target.checked }))} className="h-4 w-4" />
+            Set shipped date
+          </label>
+          <button type="button" disabled={saving} onClick={() => onSave(form)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-black text-white disabled:opacity-50">
+            {saving ? "Saving..." : "Save controls"}
+          </button>
+        </div>
       </div>
     </div>
   );
