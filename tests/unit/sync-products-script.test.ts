@@ -40,6 +40,7 @@ describe("sync-products safety script", () => {
     expect(FIELD_OWNERSHIP_POLICY.systemOwned).toContain("checkout_mode");
     expect(FIELD_OWNERSHIP_POLICY.systemOwned).toContain("requires_subscription");
     expect(FIELD_OWNERSHIP_POLICY.fillIfEmptyAssets).toContain("branded_front_template_url");
+    expect(FIELD_OWNERSHIP_POLICY.fillIfEmptyAssets).toContain("multilink_front_template_url");
   });
 
   it("proposes standard angled image fill from trusted existing image JSON only when empty", () => {
@@ -66,7 +67,8 @@ describe("sync-products safety script", () => {
     });
     expect(manual).toEqual([
       { slug: "google-review-stand", field: "branded_angled_image_url", action: "manual-asset-required" },
-      { slug: "google-review-stand", field: "branded_front_template_url", action: "manual-asset-required" }
+      { slug: "google-review-stand", field: "branded_front_template_url", action: "manual-asset-required" },
+      { slug: "google-review-stand", field: "multilink_front_template_url", action: "manual-asset-required" }
     ]);
   });
 

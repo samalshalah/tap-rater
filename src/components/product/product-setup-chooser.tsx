@@ -6,6 +6,7 @@ import { CheckCircle2, Search, UploadCloud, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
+import { brandedStandComposition, getCanonicalProductCtaText, type BrandedCompositionRegion } from "@/lib/branded-composition";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
@@ -79,8 +80,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const brandedCenterAssetUrl = product.assetSet?.centerAssetUrl ?? "";
   const directOptions = options.filter((option) => option.id !== "hosted_multilink");
-  const ctaText = product.defaultCtaText || product.displayText || inferCtaText(product);
+  const ctaText = getCanonicalProductCtaText(product);
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
   const currentApprovalSnapshot = selectedOption
@@ -92,7 +94,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         logoStorageKey: logo?.storageKey,
         logoMediaUrl: logo?.mediaUrl,
         generatedQrValue,
-        frontTemplateUrl: brandedFrontTemplateUrl || undefined
+        frontTemplateUrl: brandedFrontTemplateUrl || undefined,
+        centerAssetUrl: brandedCenterAssetUrl || undefined,
+        ctaText
       })
     : undefined;
   const isApprovedConfigurationCurrent =
@@ -282,6 +286,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       return;
     }
 
+    if (!brandedCenterAssetUrl) {
+      setError("Branded product identity is not configured for this product yet.");
+      return;
+    }
+
     setProofApproved(false);
     setApprovedProofSnapshot(null);
     setStep("review");
@@ -311,6 +320,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
       if (!brandedFrontTemplateUrl) {
         setError("Branded artwork is not configured for this product yet.");
+        setStep("design");
+        return;
+      }
+
+      if (!brandedCenterAssetUrl) {
+        setError("Branded product identity is not configured for this product yet.");
         setStep("design");
         return;
       }
@@ -346,6 +361,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         qrTargetUrl: directTargets.qrTargetUrl,
         nfcTargetUrl: directTargets.nfcTargetUrl,
         frontTemplateUrl: selectedOption.hasQr ? brandedFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
+        centerAssetUrl: selectedOption.id === "branded_qr_direct" ? brandedCenterAssetUrl || undefined : undefined,
+        ctaText: selectedOption.id === "branded_qr_direct" ? ctaText : undefined,
         proofApprovalSnapshot: selectedOption.id === "branded_qr_direct" ? approvedProofSnapshot ?? currentApprovalSnapshot : undefined,
         proofApprovedAt: selectedOption.id === "branded_qr_direct" ? new Date().toISOString() : undefined,
         proofPreviewData:
@@ -356,7 +373,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 logoMediaUrl: logo?.mediaUrl,
                 qrValue: directTargets.qrTargetUrl,
                 ctaText,
-                frontTemplateUrl: brandedFrontTemplateUrl || undefined
+                frontTemplateUrl: brandedFrontTemplateUrl || undefined,
+                centerAssetUrl: brandedCenterAssetUrl || undefined
               }
             : undefined,
         hasQr: true,
@@ -624,6 +642,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         logo={logo}
                         product={product}
                         qrValue={generatedQrValue}
+                        centerAssetUrl={brandedCenterAssetUrl}
                         templateUrl={brandedFrontTemplateUrl}
                       />
                       <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
@@ -707,6 +726,7 @@ function BuilderSummary({ image, productTitle, option }: { image: { src: string;
 function ProofPreview({
   businessName,
   ctaText,
+  centerAssetUrl,
   logo,
   product,
   qrValue,
@@ -714,6 +734,7 @@ function ProofPreview({
 }: {
   businessName: string;
   ctaText: string;
+  centerAssetUrl: string;
   logo: UploadedLogo | null;
   product: ProductSetupChooserProduct;
   qrValue: string;
@@ -727,12 +748,13 @@ function ProofPreview({
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_180px] md:items-start">
         {templateUrl ? (
-          <TemplateProofPreview businessName={businessName} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
+          <TemplateProofPreview businessName={businessName} centerAssetUrl={centerAssetUrl} ctaText={ctaText} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
         ) : (
-          <CleanProofPreview businessName={businessName} ctaText={ctaText} logo={logo} product={product} qrValue={qrValue} />
+          <CleanProofPreview businessName={businessName} ctaText={ctaText} centerAssetUrl={centerAssetUrl} logo={logo} product={product} qrValue={qrValue} />
         )}
         <div className="grid gap-3 text-sm text-muted">
           {templateUrl ? <ReviewLine label="Template" value="Branded front template attached" /> : <ReviewLine label="Template" value="Clean proof layout shown" />}
+          <ReviewLine label="Center asset" value={centerAssetUrl ? "Product identity attached" : "Missing"} />
           <ReviewLine label="Logo" value={logo ? "Logo uploaded" : "Upload required"} />
           <ReviewLine label="QR" value={qrValue ? "QR generated from destination link" : "Add destination first"} />
         </div>
@@ -743,11 +765,15 @@ function ProofPreview({
 
 function TemplateProofPreview({
   businessName,
+  centerAssetUrl,
+  ctaText,
   logo,
   qrValue,
   templateUrl
 }: {
   businessName: string;
+  centerAssetUrl: string;
+  ctaText: string;
   logo: UploadedLogo | null;
   qrValue: string;
   templateUrl: string;
@@ -755,17 +781,27 @@ function TemplateProofPreview({
   return (
     <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute left-[13%] top-[4.5%] grid h-[9.5%] w-[74%] place-items-center">
+      <div className="absolute grid place-items-center" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logo ? (
           <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-full max-w-full object-contain" />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
-      <p className="absolute left-[8%] top-[17.1%] w-[84%] overflow-hidden text-center text-[11px] font-black uppercase leading-tight text-ink">
+      <p className="absolute overflow-hidden text-center text-[11px] font-black uppercase leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
         {businessName || "Business name"}
       </p>
-      <div className="absolute left-[65.2%] top-[73.1%] aspect-square w-[16.2%]">
+      <div className="absolute grid place-items-center" style={regionStyle(brandedStandComposition.centerAssetRegion)}>
+        {centerAssetUrl ? (
+          <img src={centerAssetUrl} alt="Product identity" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Product zone</span>
+        )}
+      </div>
+      <p className="absolute overflow-hidden text-center text-[10px] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.ctaRegion)}>
+        {ctaText}
+      </p>
+      <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>
         <QrPreview value={qrValue} variant="template" />
       </div>
     </div>
@@ -774,12 +810,14 @@ function TemplateProofPreview({
 
 function CleanProofPreview({
   businessName,
+  centerAssetUrl,
   ctaText,
   logo,
   product,
   qrValue
 }: {
   businessName: string;
+  centerAssetUrl: string;
   ctaText: string;
   logo: UploadedLogo | null;
   product: ProductSetupChooserProduct;
@@ -792,7 +830,11 @@ function CleanProofPreview({
       </div>
       <p className="mt-3 max-w-full break-words text-sm font-black uppercase text-ink">{businessName || "Business name"}</p>
       <div className="mt-5 grid justify-items-center gap-2">
-        <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
+        {centerAssetUrl ? (
+          <img src={centerAssetUrl} alt="Product identity" className="h-16 max-w-[80%] object-contain" />
+        ) : (
+          <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
+        )}
         <p className="text-sm font-black text-ink">{ctaText}</p>
       </div>
       <div className="mt-5 grid w-full grid-cols-2 items-end gap-5">
@@ -876,16 +918,18 @@ function getSelectedOptionImage(product: ProductSetupChooserProduct, option: Pur
   return product.images[0] ?? { src: "/uploads/products/no-photo-available.png", alt: product.title };
 }
 
-function inferCtaText(product: ProductSetupChooserProduct) {
-  if (product.primaryPlatformSlug === "google") return "Review us on Google";
-  if (product.destinationType === "booking") return "Book your appointment";
-  if (product.categorySlug === "menu") return "View our menu";
-  return product.title.replace(/\s+Stand$/i, "");
-}
-
 function isGoogleReviewStand(product: ProductSetupChooserProduct) {
   const searchableText = `${product.slug} ${product.title} ${product.categorySlug} ${product.destinationType ?? ""} ${product.primaryPlatformSlug ?? ""}`.toLowerCase();
   return searchableText.includes("google") && searchableText.includes("review");
+}
+
+function regionStyle(region: BrandedCompositionRegion) {
+  return {
+    left: `${region.xPercent}%`,
+    top: `${region.yPercent}%`,
+    width: `${region.widthPercent}%`,
+    height: `${region.heightPercent}%`
+  };
 }
 
 function getOptionSummary(option: PurchaseOption) {

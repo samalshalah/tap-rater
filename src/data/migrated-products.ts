@@ -377,6 +377,7 @@ type PhaseOneProductInput = {
   supportedDestinations: SupportedDestination[];
   displayText: string;
   image: { src: string; alt: string };
+  assetSet?: ProductAssetSet;
   seoTitle: string;
   seoDescription: string;
   searchKeywords: string[];
@@ -411,6 +412,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     allowsCustomDesign: false,
     designMode: "standard",
     displayText: input.displayText,
+    assetSet: input.assetSet,
     images: [input.image],
     variants: colors.map((color) => ({
       id: color.id,
@@ -438,6 +440,10 @@ export const migratedProducts: MigratedProduct[] = [
     supportedDestinations: ["google"],
     displayText: "Review us on Google",
     image: googleStandImage,
+    assetSet: {
+      brandedFrontTemplateUrl: "/uploads/products/google-review-stand-branded-front-template.jpg",
+      multiLinkFrontTemplateUrl: "/uploads/products/google-review-stand-multilink-front-template.jpg"
+    },
     seoTitle: "Google Review Stand | NFC Review Stand for Local Businesses",
     seoDescription: "Buy a Google Review Stand that opens your Google review link with one tap or scan as a one-time physical product purchase.",
     searchKeywords: ["google review stand", "google nfc stand", "review us on google stand"]

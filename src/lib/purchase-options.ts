@@ -83,11 +83,11 @@ type ProductForPurchaseOptions = Pick<
   | "requiresLandingPage"
   | "requiresSubscription"
 > & {
-  assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl">;
+  assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl" | "centerAssetUrl">;
 };
 
 export function hasBrandedDirectProductionTemplate(product: ProductForPurchaseOptions): boolean {
-  return Boolean(product.assetSet?.brandedFrontTemplateUrl?.trim());
+  return Boolean(product.assetSet?.brandedFrontTemplateUrl?.trim() && product.assetSet?.centerAssetUrl?.trim());
 }
 
 export function isHostedPurchaseOptionEnabled(): boolean {
@@ -170,7 +170,7 @@ export function getLowestPurchasePriceCents(
     | "requiresLandingPage"
     | "requiresSubscription"
   > & {
-    assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl">;
+    assetSet?: Pick<NonNullable<MigratedProduct["assetSet"]>, "brandedFrontTemplateUrl" | "centerAssetUrl">;
   }
 ) {
   const optionPrices = getProductPurchaseOptions(product).map((option) => option.priceCents);

@@ -11,6 +11,7 @@ import {
   type OrdersDbClient
 } from "@/lib/orders";
 import { orderFulfillmentUpdateSchema } from "@/lib/validators";
+import type { EmbeddedProductionAsset, ProductionArtworkAssetResolver } from "@/lib/production-artwork";
 
 const generatedProductionArtwork = {
   status: "generated",
@@ -24,9 +25,36 @@ const generatedProductionArtwork = {
   widthIn: 4.26,
   heightIn: 6.4967,
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-23.1",
+  templateVersion: "2026-08-27.1",
   approvalSnapshotHash: "hash",
+  baseTemplateContentHash: "base-template-hash",
+  centerAssetContentHash: "center-hash",
+  logoContentHash: "logo-hash",
   generatedAt: "2026-08-23T14:00:00.000Z"
+};
+
+const embeddedAssets: Record<string, EmbeddedProductionAsset> = {
+  "/api/media/product/products/google-review/front-template.png": {
+    dataUri: "data:image/svg+xml;base64,PHN2Zy8+",
+    contentType: "image/svg+xml",
+    contentHash: "base-template-hash"
+  },
+  "/api/media/product/products/customer-setup/logo.png": {
+    dataUri: "data:image/png;base64,iVBORw0KGgo=",
+    contentType: "image/png",
+    contentHash: "logo-hash"
+  },
+  "/api/media/product/products/google-review/center/google.svg": {
+    dataUri: "data:image/svg+xml;base64,PHN2Zy8+",
+    contentType: "image/svg+xml",
+    contentHash: "center-hash"
+  }
+};
+
+const memoryAssetResolver: ProductionArtworkAssetResolver = async (url) => {
+  const asset = embeddedAssets[url];
+  if (!asset) throw new Error(`Missing test asset: ${url}`);
+  return asset;
 };
 
 describe("orders repository", () => {
@@ -111,6 +139,8 @@ describe("orders repository", () => {
             qrTargetUrl: "https://g.page/example/review",
             nfcTargetUrl: "https://g.page/example/review",
             frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+            centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
+            ctaText: "Review us on Google",
             proofApproved: true,
             proofApprovalSnapshot: {
               productSlug: "google-review-stand",
@@ -120,11 +150,15 @@ describe("orders repository", () => {
               logoStorageKey: "products/customer-setup/logo.png",
               logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
               generatedQrValue: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
+              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+              centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
+              ctaText: "Review us on Google"
             },
             proofPreviewData: {
               businessName: "Nova Implant",
-              qrValue: "https://g.page/example/review"
+              qrValue: "https://g.page/example/review",
+              centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
+              ctaText: "Review us on Google"
             }
           },
           logoRequired: true,
@@ -142,7 +176,8 @@ describe("orders repository", () => {
         async put(key, value) {
           writes.set(key, value);
         }
-      }
+      },
+      memoryAssetResolver
     );
 
     expect(items[0]).toMatchObject({
@@ -153,7 +188,10 @@ describe("orders repository", () => {
     expect(items[0].setup?.productionArtwork).toMatchObject({
       status: "generated",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-23.1"
+      templateVersion: "2026-08-27.1",
+      baseTemplateContentHash: "base-template-hash",
+      centerAssetContentHash: "center-hash",
+      logoContentHash: "logo-hash"
     });
     expect(writes.size).toBe(1);
   });
@@ -310,6 +348,8 @@ describe("orders repository", () => {
         logoStorageKey: "products/customer-setup/logo.png",
         generatedQrValue: "https://g.page/example/review",
         frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
+        centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
+        ctaText: "Review us on Google",
         productionArtwork: generatedProductionArtwork
       },
       logoReference: "products/customer-setup/logo.png",
@@ -356,6 +396,9 @@ describe("orders repository", () => {
     expect(summary.warnings).toEqual([
       "Missing business name",
       "Missing logo",
+      "Missing branded front template",
+      "Missing center asset",
+      "Missing CTA text",
       "Proof not confirmed",
       "Production artwork not generated"
     ]);

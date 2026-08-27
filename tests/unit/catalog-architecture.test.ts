@@ -101,7 +101,7 @@ describe("catalog architecture", () => {
 
     expect(getProductAssetReadiness({ productKind: "normal_direct", assetSet: {} }, [brandedQrDirectProductOption])).toEqual({
       status: "draft_missing_assets",
-      missing: ["Branded + QR angled image", "Branded + QR front template"]
+      missing: ["Branded + QR front template", "Missing center asset"]
     });
 
     expect(
@@ -123,7 +123,8 @@ describe("catalog architecture", () => {
           assetSet: {
             standardAngledImageUrl: "/standard.png",
             brandedAngledImageUrl: "/branded.png",
-            brandedFrontTemplateUrl: "/front.png"
+            brandedFrontTemplateUrl: "/front.png",
+            centerAssetUrl: "/center.svg"
           }
         },
         [standardDirectProductOption, brandedQrDirectProductOption]

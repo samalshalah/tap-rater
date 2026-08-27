@@ -6,6 +6,7 @@ import { sendShippingNotificationEmail, type ShippingEmailInput } from "@/lib/sh
 import {
   generateProductionArtworkForOrderLineItem,
   readProductionArtworkReference,
+  type ProductionArtworkAssetResolver,
   type ProductionArtworkReference,
   type ProductionArtworkStorage
 } from "@/lib/production-artwork";
@@ -54,6 +55,8 @@ export type OrderLineItemProductionSummary = {
   qrTargetUrl?: string;
   nfcTargetUrl?: string;
   frontTemplateUrl?: string;
+  centerAssetUrl?: string;
+  ctaText?: string;
   productionArtwork?: ProductionArtworkReference;
   proofRequired: boolean;
   proofConfirmed: boolean;
@@ -179,14 +182,15 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
 export async function mapCheckoutRowsToProductionReadyOrderLineItems(
   rows: CheckoutCartRow[],
   orderReference: string,
-  storage?: ProductionArtworkStorage
+  storage?: ProductionArtworkStorage,
+  assetResolver?: ProductionArtworkAssetResolver
 ): Promise<OrderLineItem[]> {
   const items = mapCheckoutRowsToOrderLineItems(rows);
 
   return Promise.all(
     items.map((item, index) =>
       item.optionId === "branded_qr_direct"
-        ? generateProductionArtworkForOrderLineItem({ orderReference, lineItemIndex: index, item }, storage)
+        ? generateProductionArtworkForOrderLineItem({ orderReference, lineItemIndex: index, item, assetResolver }, storage)
         : item
     )
   );
@@ -319,6 +323,8 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? generatedQrValue ?? directTargets?.qrTargetUrl;
   const nfcTargetUrl = readSetupString(item.setup, "nfcTargetUrl") ?? directTargets?.nfcTargetUrl;
   const frontTemplateUrl = readSetupString(item.setup, "frontTemplateUrl") ?? readProofPreviewString(item.setup, "frontTemplateUrl");
+  const centerAssetUrl = readSetupString(item.setup, "centerAssetUrl") ?? readProofPreviewString(item.setup, "centerAssetUrl");
+  const ctaText = readSetupString(item.setup, "ctaText") ?? readSetupString(item.setup, "cta") ?? readProofPreviewString(item.setup, "ctaText");
   const productionArtwork = readProductionArtworkReference(item);
 
   if (fulfillmentKind === "standard") {
@@ -381,6 +387,9 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   if (fulfillmentKind === "branded" && !generatedQrValue) warnings.push("Missing QR value");
   if (fulfillmentKind === "branded" && !qrTargetUrl) warnings.push("Missing QR target URL");
   if (fulfillmentKind === "branded" && !nfcTargetUrl) warnings.push("Missing NFC target URL");
+  if (fulfillmentKind === "branded" && !frontTemplateUrl) warnings.push("Missing branded front template");
+  if (fulfillmentKind === "branded" && !centerAssetUrl) warnings.push("Missing center asset");
+  if (fulfillmentKind === "branded" && !ctaText) warnings.push("Missing CTA text");
   if (!proofConfirmed) warnings.push("Proof not confirmed");
   if (fulfillmentKind === "branded" && productionArtwork?.status !== "generated") warnings.push(productionArtwork?.error ?? "Production artwork not generated");
 
@@ -401,6 +410,8 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
     qrTargetUrl,
     nfcTargetUrl,
     frontTemplateUrl,
+    centerAssetUrl,
+    ctaText,
     productionArtwork,
     proofRequired: true,
     proofConfirmed,

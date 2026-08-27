@@ -173,9 +173,13 @@ describe("Stripe checkout helpers", () => {
             qrTargetUrl: "https://g.page/example/review",
             nfcTargetUrl: "https://g.page/example/review",
             frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+            centerAssetUrl: "/api/media/product/products/google-review-stand/center_asset/google.svg",
+            ctaText: "Review us on Google",
             proofPreviewData: {
               businessName: "Nova Implant",
-              qrValue: "https://g.page/example/review"
+              qrValue: "https://g.page/example/review",
+              centerAssetUrl: "/api/media/product/products/google-review-stand/center_asset/google.svg",
+              ctaText: "Review us on Google"
             },
             proofApproved: true,
             proofApprovalSnapshot: {
@@ -186,7 +190,9 @@ describe("Stripe checkout helpers", () => {
               logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
               logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
               generatedQrValue: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
+              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+              centerAssetUrl: "/api/media/product/products/google-review-stand/center_asset/google.svg",
+              ctaText: "Review us on Google"
             }
           }
         }
@@ -214,6 +220,8 @@ describe("Stripe checkout helpers", () => {
       generatedQrValue: "https://g.page/example/review",
       qrTargetUrl: "https://g.page/example/review",
       nfcTargetUrl: "https://g.page/example/review",
+      centerAssetUrl: "/api/media/product/products/google-review-stand/center_asset/google.svg",
+      ctaText: "Review us on Google",
       proofApproved: true
     });
   });
@@ -778,7 +786,8 @@ function productsWithBrandedGoogleTemplate(): MigratedProduct[] {
       ...product,
       assetSet: {
         ...product.assetSet,
-        brandedFrontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
+        brandedFrontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+        centerAssetUrl: "/api/media/product/products/google-review-stand/center_asset/google.svg"
       }
     };
   });

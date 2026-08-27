@@ -1492,11 +1492,11 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
     return [
       {
         label: "Branded + QR angled image",
-        description: "Shows the branded stand option with QR code in the storefront.",
+        description: "Optional storefront preview for the branded stand option.",
         assetKey: "brandedAngledImageUrl" as const,
         role: "branded_angled" as const,
         value: assetSet.brandedAngledImageUrl,
-        required: true
+        required: false
       },
       {
         label: "Branded front template",
@@ -1508,11 +1508,11 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
       },
       {
         label: "Center platform/icon asset",
-        description: "Optional locked platform logo or icon used in branded proof generation.",
+        description: "Required isolated product or platform identity rendered in branded proof and production artwork.",
         assetKey: "centerAssetUrl" as const,
         role: "center_asset" as const,
         value: assetSet.centerAssetUrl,
-        required: false
+        required: true
       }
     ];
   }

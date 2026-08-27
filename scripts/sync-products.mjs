@@ -51,6 +51,7 @@ export const FIELD_OWNERSHIP_POLICY = {
     "branded_angled_image_url",
     "standard_front_template_url",
     "branded_front_template_url",
+    "multilink_front_template_url",
     "center_asset_url"
   ]
 };
@@ -211,6 +212,7 @@ export function getFillIfEmptyAssetUpdates(databaseProduct, approvedProduct) {
     branded_angled_image_url: [readString(databaseProduct.branded_angled_image_url), approvedProduct.assetSet?.brandedAngledImageUrl],
     standard_front_template_url: [readString(databaseProduct.standard_front_template_url), approvedProduct.assetSet?.standardFrontTemplateUrl],
     branded_front_template_url: [readString(databaseProduct.branded_front_template_url), approvedProduct.assetSet?.brandedFrontTemplateUrl],
+    multilink_front_template_url: [readString(databaseProduct.multilink_front_template_url), approvedProduct.assetSet?.multiLinkFrontTemplateUrl],
     center_asset_url: [readString(databaseProduct.center_asset_url), approvedProduct.assetSet?.centerAssetUrl]
   };
 
@@ -228,7 +230,7 @@ export function getFillIfEmptyAssetUpdates(databaseProduct, approvedProduct) {
         value: candidate,
         action: "fill-if-empty"
       });
-    } else if (field === "branded_angled_image_url" || field === "branded_front_template_url") {
+    } else if (field === "branded_angled_image_url" || field === "branded_front_template_url" || field === "multilink_front_template_url") {
       manual.push({
         slug: approvedProduct.slug,
         field,

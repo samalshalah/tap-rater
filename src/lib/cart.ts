@@ -32,6 +32,8 @@ export type CartItem = {
     qrTargetUrl?: string;
     nfcTargetUrl?: string;
     frontTemplateUrl?: string;
+    centerAssetUrl?: string;
+    ctaText?: string;
     proofApprovalSnapshot?: Record<string, unknown>;
     proofApprovedAt?: string;
     proofPreviewData?: Record<string, unknown>;
@@ -206,7 +208,10 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.logoStorageKey ?? "",
     setup.generatedQrValue ?? "",
     setup.qrTargetUrl ?? "",
-    setup.nfcTargetUrl ?? ""
+    setup.nfcTargetUrl ?? "",
+    setup.frontTemplateUrl ?? "",
+    setup.centerAssetUrl ?? "",
+    setup.ctaText ?? ""
   ].join("|");
 }
 
@@ -230,6 +235,8 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     qrTargetUrl: readString(row.qrTargetUrl),
     nfcTargetUrl: readString(row.nfcTargetUrl),
     frontTemplateUrl: readString(row.frontTemplateUrl),
+    centerAssetUrl: readString(row.centerAssetUrl),
+    ctaText: readString(row.ctaText),
     proofApprovalSnapshot: readRecord(row.proofApprovalSnapshot),
     proofApprovedAt: readString(row.proofApprovedAt),
     proofPreviewData: readRecord(row.proofPreviewData),
