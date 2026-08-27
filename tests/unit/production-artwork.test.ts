@@ -19,9 +19,7 @@ const approvedSnapshot = {
   logoStorageKey: "products/customer-setup/logo.png",
   logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
   generatedQrValue: "https://g.page/example/review",
-  frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-  centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-  ctaText: "Review us on Google"
+  frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
 };
 
 const brandedItem: OrderLineItem = {
@@ -46,8 +44,6 @@ const brandedItem: OrderLineItem = {
     qrTargetUrl: "https://g.page/example/review",
     nfcTargetUrl: "https://g.page/example/review",
     frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-    centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-    ctaText: "Review us on Google",
     proofApprovalSnapshot: approvedSnapshot,
     proofApprovedAt: "2026-08-23T14:00:00.000Z",
     proofPreviewData: {
@@ -55,9 +51,7 @@ const brandedItem: OrderLineItem = {
       businessName: "Nova Implant",
       logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
       qrValue: "https://g.page/example/review",
-      frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-      centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-      ctaText: "Review us on Google"
+      frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
     }
   },
   logoRequired: true,
@@ -91,11 +85,6 @@ const embeddedAssets: Record<string, EmbeddedProductionAsset> = {
     dataUri: "data:image/png;base64,iVBORw0KGgo=",
     contentType: "image/png",
     contentHash: "logo-hash"
-  },
-  "/api/media/product/products/google-review/center/google.svg": {
-    dataUri: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0ZXh0Pkdvb2dsZTwvdGV4dD48L3N2Zz4=",
-    contentType: "image/svg+xml",
-    contentHash: "center-hash"
   }
 };
 
@@ -111,7 +100,7 @@ describe("production artwork", () => {
 
     expect(template).toMatchObject({
       id: "taprater-branded-stand-front",
-      version: "2026-08-27.1",
+      version: "2026-08-27.2",
       format: "svg",
       widthPx: 1278,
       heightPx: 1949,
@@ -120,7 +109,7 @@ describe("production artwork", () => {
     });
   });
 
-  it("keeps production geometry sourced from the shared branded composition", () => {
+  it("keeps production geometry sourced from the owner-defined dynamic zones", () => {
     const template = getProductionArtworkTemplate(brandedItem);
 
     expect(template).toMatchObject({
@@ -129,15 +118,14 @@ describe("production artwork", () => {
       widthPx: brandedStandComposition.widthPx,
       heightPx: brandedStandComposition.heightPx,
       dpi: brandedStandComposition.dpi,
-      logoRegion: regionToPixels(brandedStandComposition.logoRegion),
-      businessNameRegion: regionToPixels(brandedStandComposition.businessNameRegion),
-      qrRegion: regionToPixels(brandedStandComposition.qrRegion)
+      logoRegion: { x: 391, y: 113, width: 496, height: 139 },
+      businessNameRegion: { x: 333, y: 313, width: 612, height: 95 },
+      qrRegion: { x: 814, y: 1352, width: 246, height: 246 }
     });
-    expect(regionToPixels(brandedStandComposition.centerAssetRegion)).toMatchObject({ width: 971, height: 351 });
-    expect(regionToPixels(brandedStandComposition.ctaRegion)).toMatchObject({ width: 1074, height: 127 });
+    expect(regionToPixels(brandedStandComposition.logoRegion)).toMatchObject({ x: 391, y: 113, width: 496, height: 139 });
   });
 
-  it("generates SVG artwork from the approved snapshot and stores a durable reference", async () => {
+  it("generates self-contained SVG artwork from only template, logo, business name, and QR", async () => {
     const { storage, writes } = memoryStorage();
     const item = await generateProductionArtworkForOrderLineItem({ orderReference: "cs_test_123", lineItemIndex: 0, item: brandedItem, assetResolver: memoryAssetResolver }, storage);
     const artwork = readProductionArtworkReference(item);
@@ -151,13 +139,12 @@ describe("production artwork", () => {
       dpi: 300,
       widthIn: 4.26,
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.1",
+      templateVersion: "2026-08-27.2",
       baseTemplateContentHash: "base-template-hash",
-      centerAssetContentHash: "center-hash",
       logoContentHash: "logo-hash"
     });
+    expect(artwork).not.toHaveProperty("centerAssetContentHash");
     expect(artwork?.storageKey).toContain("products/google-review-stand/production_artwork/cs-test-123/line-1-");
-    expect(artwork?.url).toContain("/api/media/product/products/google-review-stand/production_artwork/cs-test-123/line-1-");
     expect(item.productionStatus).toBe("ready_for_direct_fulfillment");
     expect(item.manualProductionRequired).toBe(false);
     expect(item.productionWarningCodes).toEqual([]);
@@ -169,24 +156,22 @@ describe("production artwork", () => {
       productId: "google-review-stand",
       optionId: "branded_qr_direct",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.1",
+      templateVersion: "2026-08-27.2",
       approvalSnapshotHash: artwork?.approvalSnapshotHash,
       baseTemplateContentHash: "base-template-hash",
-      centerAssetContentHash: "center-hash",
       logoContentHash: "logo-hash"
     });
-    expect(stored?.value).toContain("NOVA IMPLANT");
+    expect(stored?.metadata).not.toHaveProperty("centerAssetContentHash");
+    expect(stored?.value).toContain("Nova Implant");
     expect(stored?.value).toContain("https://g.page/example/review");
     expect(stored?.value).toContain(embeddedAssets["/api/media/product/products/customer-setup/logo.png"].dataUri);
     expect(stored?.value).toContain(embeddedAssets["/api/media/product/products/google-review/front-template.png"].dataUri);
-    expect(stored?.value).toContain(embeddedAssets["/api/media/product/products/google-review/center/google.svg"].dataUri);
-    expect(stored?.value).toContain("Review us on Google");
+    expect(stored?.value).not.toContain("Review us on Google</text>");
     expect(stored?.value).not.toContain('href="/api/media/product');
-    expect(stored?.value).not.toContain("2026-08-23.1");
     expect(stored?.value).toContain("<svg x=");
   });
 
-  it("does not alter the approved NFC target while generating artwork", async () => {
+  it("keeps QR and NFC targets identical to the Direct destination", async () => {
     const { storage } = memoryStorage();
     const item = await generateProductionArtworkForOrderLineItem({ orderReference: "cs_test_123", lineItemIndex: 0, item: brandedItem, assetResolver: memoryAssetResolver }, storage);
 
@@ -251,7 +236,6 @@ describe("production artwork", () => {
 
   it.each([
     ["base asset", "/api/media/product/products/google-review/front-template.png"],
-    ["center asset", "/api/media/product/products/google-review/center/google.svg"],
     ["logo asset", "/api/media/product/products/customer-setup/logo.png"]
   ])("fails safely when the %s cannot be embedded", async (_, missingUrl) => {
     const { storage } = memoryStorage();
@@ -269,6 +253,52 @@ describe("production artwork", () => {
     });
     expect(item.productionStatus).toBe("artwork_generation_failed");
     expect(item.manualProductionRequired).toBe(true);
+  });
+
+  it("fails safely when the front template metadata is missing", async () => {
+    const { storage } = memoryStorage();
+    const item = await generateProductionArtworkForOrderLineItem(
+      {
+        orderReference: "cs_test_123",
+        lineItemIndex: 0,
+        item: {
+          ...brandedItem,
+          setup: {
+            ...brandedItem.setup,
+            frontTemplateUrl: undefined
+          }
+        }
+      },
+      storage
+    );
+
+    expect(readProductionArtworkReference(item)).toMatchObject({
+      status: "generation_failed",
+      error: "Production artwork template metadata is missing."
+    });
+  });
+
+  it("does not fetch or render legacy center asset and CTA values", async () => {
+    const template = getProductionArtworkTemplate(brandedItem);
+    if (!template) throw new Error("Expected template");
+
+    const svg = await composeProductionArtworkSvg(
+      {
+        ...brandedItem,
+        setup: {
+          ...brandedItem.setup,
+          centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
+          ctaText: "Review us on Google"
+        }
+      },
+      template,
+      "snapshot-hash",
+      "2026-08-23T14:00:00.000Z",
+      memoryAssetResolver
+    );
+
+    expect(svg).not.toContain("center/google.svg");
+    expect(svg).not.toContain("Review us on Google</text>");
   });
 
   it("leaves Standard Direct independent of production artwork and HOSTED infrastructure", async () => {

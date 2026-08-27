@@ -7,10 +7,10 @@ describe("purchase option readiness", () => {
     const product = migratedProducts.find((item) => item.slug === "google-review-stand");
 
     expect(product).toBeDefined();
-    expect(getProductPurchaseOptions(product!).map((option) => option.id)).toEqual(["standard_direct"]);
+    expect(getProductPurchaseOptions({ ...product!, assetSet: {} }).map((option) => option.id)).toEqual(["standard_direct"]);
   });
 
-  it("does not offer Branded Direct when only the base production template is configured", () => {
+  it("offers Branded Direct when the front template is configured and center asset is null", () => {
     const product = {
       ...migratedProducts.find((item) => item.slug === "google-review-stand")!,
       assetSet: {
@@ -18,21 +18,20 @@ describe("purchase option readiness", () => {
       }
     } satisfies MigratedProduct;
 
-    expect(hasBrandedDirectProductionTemplate(product)).toBe(false);
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct"]);
+    expect(hasBrandedDirectProductionTemplate(product)).toBe(true);
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct", "branded_qr_direct"]);
   });
 
-  it("offers Branded Direct only when base template and center asset are configured", () => {
+  it("does not offer Branded Direct when only a center asset is configured", () => {
     const product = {
       ...migratedProducts.find((item) => item.slug === "google-review-stand")!,
       assetSet: {
-        brandedFrontTemplateUrl: "/uploads/templates/google-branded-front.png",
         centerAssetUrl: "/uploads/center/google.svg"
       }
     } satisfies MigratedProduct;
 
-    expect(hasBrandedDirectProductionTemplate(product)).toBe(true);
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct", "branded_qr_direct"]);
+    expect(hasBrandedDirectProductionTemplate(product)).toBe(false);
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct"]);
   });
 
   it("keeps HOSTED subscription checkout structurally available outside the public storefront filter", () => {

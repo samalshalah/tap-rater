@@ -22,19 +22,12 @@ export function getBrandedProductionTemplateReadiness(
     };
   }
 
-  if (!product.assetSet?.centerAssetUrl) {
-    return {
-      status: "missing",
-      reason: "Missing center asset"
-    };
-  }
-
-  if (product.assetSet.brandedFrontTemplateUrl && product.assetSet.centerAssetUrl) {
+  if (product.assetSet.brandedFrontTemplateUrl) {
     return { status: "ready" };
   }
 
   return {
     status: "missing",
-    reason: "Branded Direct requires a branded front template and center asset before it can generate production artwork."
+    reason: "Branded Direct requires a branded front template before it can generate production artwork."
   };
 }

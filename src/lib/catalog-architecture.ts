@@ -462,7 +462,6 @@ export function getProductAssetReadiness(product: {
     }
     if (enabledOptionCodes.has("branded_qr_direct")) {
       if (!assetSet.brandedFrontTemplateUrl) missing.push("Branded + QR front template");
-      if (!assetSet.centerAssetUrl) missing.push("Missing center asset");
     }
     if (enabledOptionCodes.has("hosted_multilink")) {
       if (!assetSet.multiLinkAngledImageUrl) missing.push("Multi-Link angled image");

@@ -43,7 +43,6 @@ export type ProductionArtworkReference = {
   templateVersion: string;
   approvalSnapshotHash: string;
   baseTemplateContentHash?: string;
-  centerAssetContentHash?: string;
   logoContentHash?: string;
   generatedAt: string;
   error?: string;
@@ -83,9 +82,6 @@ const standFrontTemplate: Omit<ProductionArtworkTemplate, "templateUrl"> = {
   qrRegion: regionToPixels(brandedStandComposition.qrRegion),
   safeMarginPx: brandedStandComposition.safeMarginPx
 };
-
-const centerAssetRegion = regionToPixels(brandedStandComposition.centerAssetRegion);
-const ctaRegion = regionToPixels(brandedStandComposition.ctaRegion);
 
 export function getProductionArtworkTemplate(item: OrderLineItem): ProductionArtworkTemplate | null {
   if (item.optionId !== "branded_qr_direct") return null;
@@ -136,7 +132,6 @@ export async function generateProductionArtworkForOrderLineItem(
         templateVersion: template.version,
         approvalSnapshotHash,
         baseTemplateContentHash: composed.assetHashes.baseTemplateContentHash,
-        centerAssetContentHash: composed.assetHashes.centerAssetContentHash,
         logoContentHash: composed.assetHashes.logoContentHash
       }
     });
@@ -156,7 +151,6 @@ export async function generateProductionArtworkForOrderLineItem(
       templateVersion: template.version,
       approvalSnapshotHash,
       baseTemplateContentHash: composed.assetHashes.baseTemplateContentHash,
-      centerAssetContentHash: composed.assetHashes.centerAssetContentHash,
       logoContentHash: composed.assetHashes.logoContentHash,
       generatedAt
     };
@@ -224,26 +218,20 @@ export async function composeProductionArtworkDocument(
   const businessName = readSetupString(item.setup, "businessName");
   const logoHref = readSetupString(item.setup, "logoMediaUrl");
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? readSetupString(item.setup, "generatedQrValue");
-  const centerAssetHref = readSetupString(item.setup, "centerAssetUrl");
-  const ctaText = readSetupString(item.setup, "ctaText") ?? readSetupString(item.setup, "cta");
 
   if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
   if (!qrTargetUrl) throw new Error("QR target URL is missing.");
-  if (!centerAssetHref) throw new Error("Center asset URL is missing.");
-  if (!ctaText) throw new Error("CTA text is missing.");
 
-  const [baseTemplateAsset, logoAsset, centerAsset] = await Promise.all([
+  const [baseTemplateAsset, logoAsset] = await Promise.all([
     assetResolver(template.templateUrl),
-    assetResolver(logoHref),
-    assetResolver(centerAssetHref)
+    assetResolver(logoHref)
   ]);
 
   const qrSvg = await createQrSvg(qrTargetUrl);
   const qrBody = extractSvgBody(qrSvg);
   const qrViewBox = extractViewBox(qrSvg) ?? "0 0 512 512";
-  const nameFontSize = fitSingleLineFontSize(businessName, template.businessNameRegion.width, 42, 22);
-  const ctaFontSize = fitSingleLineFontSize(ctaText, ctaRegion.width, 46, 22);
+  const nameFontSize = fitSingleLineFontSize(businessName, template.businessNameRegion.width, 56, 24);
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${template.widthPx}" height="${template.heightPx}" viewBox="0 0 ${template.widthPx} ${template.heightPx}" role="img" aria-label="${escapeXml(item.title)} production artwork">`,
@@ -256,18 +244,13 @@ export async function composeProductionArtworkDocument(
       approvalSnapshotHash,
       generatedAt,
       qrTargetUrl,
-      centerAssetHref,
-      ctaText,
       baseTemplateContentHash: baseTemplateAsset.contentHash,
-      centerAssetContentHash: centerAsset.contentHash,
       logoContentHash: logoAsset.contentHash
     }))}</metadata>`,
     `<rect width="${template.widthPx}" height="${template.heightPx}" fill="#ffffff"/>`,
     `<image href="${escapeXml(baseTemplateAsset.dataUri)}" x="0" y="0" width="${template.widthPx}" height="${template.heightPx}" preserveAspectRatio="xMidYMid meet"/>`,
     `<image href="${escapeXml(logoAsset.dataUri)}" x="${template.logoRegion.x}" y="${template.logoRegion.y}" width="${template.logoRegion.width}" height="${template.logoRegion.height}" preserveAspectRatio="xMidYMid meet"/>`,
-    `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName.toUpperCase())}</text>`,
-    `<image href="${escapeXml(centerAsset.dataUri)}" x="${centerAssetRegion.x}" y="${centerAssetRegion.y}" width="${centerAssetRegion.width}" height="${centerAssetRegion.height}" preserveAspectRatio="xMidYMid meet"/>`,
-    `<text x="${ctaRegion.x + ctaRegion.width / 2}" y="${ctaRegion.y + ctaRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${ctaFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(ctaRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(ctaText)}</text>`,
+    `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`,
     `<svg x="${template.qrRegion.x}" y="${template.qrRegion.y}" width="${template.qrRegion.width}" height="${template.qrRegion.height}" viewBox="${escapeXml(qrViewBox)}">${qrBody}</svg>`,
     `</svg>`
   ].join("");
@@ -276,7 +259,6 @@ export async function composeProductionArtworkDocument(
     svg,
     assetHashes: {
       baseTemplateContentHash: baseTemplateAsset.contentHash,
-      centerAssetContentHash: centerAsset.contentHash,
       logoContentHash: logoAsset.contentHash
     }
   };
@@ -291,9 +273,7 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
     logoStorageKey: readSetupString(item.setup, "logoStorageKey"),
     logoMediaUrl: readSetupString(item.setup, "logoMediaUrl"),
     generatedQrValue: readSetupString(item.setup, "generatedQrValue"),
-    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl"),
-    centerAssetUrl: readSetupString(item.setup, "centerAssetUrl"),
-    ctaText: readSetupString(item.setup, "ctaText") ?? readSetupString(item.setup, "cta")
+    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl")
   };
 }
 

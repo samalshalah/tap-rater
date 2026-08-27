@@ -82,10 +82,9 @@ const paidOrder: OrderRecord = {
           widthIn: 4.26,
           heightIn: 6.4967,
           templateId: "taprater-branded-stand-front",
-          templateVersion: "2026-08-27.1",
+          templateVersion: "2026-08-27.2",
           approvalSnapshotHash: "hash",
           baseTemplateContentHash: "base-template-hash",
-          centerAssetContentHash: "center-hash",
           logoContentHash: "logo-hash",
           generatedAt: "2026-08-23T14:00:00.000Z"
         }
@@ -137,7 +136,7 @@ describe("paid order emails", () => {
     expect(html).toContain("QR value: https://example.com/menu");
     expect(html).toContain("Front template: /api/media/product/products/view-menu/front-template.png");
     expect(html).toContain("Production artwork status: generated");
-    expect(html).toContain("Production template: taprater-branded-stand-front / 2026-08-27.1");
+    expect(html).toContain("Production template: taprater-branded-stand-front / 2026-08-27.2");
     expect(html).toContain("Production artwork: /api/media/product/products/view-menu-stand/production_artwork/order-123/line-2-hash.svg");
     expect(html).toContain("Production readiness: Ready for production review");
   });

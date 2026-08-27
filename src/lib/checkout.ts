@@ -409,14 +409,6 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
       return false;
     }
 
-    if (!setup.centerAssetUrl) {
-      return false;
-    }
-
-    if (!setup.ctaText) {
-      return false;
-    }
-
     if (!setup.proofPreviewData || !isApprovedProofCurrent(option, setup)) {
       return false;
     }
@@ -438,9 +430,7 @@ function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartI
     logoStorageKey: setup.logoStorageKey,
     logoMediaUrl: setup.logoMediaUrl,
     generatedQrValue: setup.generatedQrValue,
-    frontTemplateUrl: setup.frontTemplateUrl,
-    centerAssetUrl: setup.centerAssetUrl,
-    ctaText: setup.ctaText
+    frontTemplateUrl: setup.frontTemplateUrl
   }, setup.proofApprovalSnapshot);
 }
 

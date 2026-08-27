@@ -1,5 +1,3 @@
-import type { MigratedProduct } from "@/data/migrated-products";
-
 export type BrandedCompositionRegion = {
   xPercent: number;
   yPercent: number;
@@ -18,25 +16,21 @@ export type BrandedCompositionGeometry = {
   safeMarginPx: number;
   logoRegion: BrandedCompositionRegion;
   businessNameRegion: BrandedCompositionRegion;
-  centerAssetRegion: BrandedCompositionRegion;
-  ctaRegion: BrandedCompositionRegion;
   qrRegion: BrandedCompositionRegion;
 };
 
 export const brandedStandComposition: BrandedCompositionGeometry = {
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-27.1",
+  templateVersion: "2026-08-27.2",
   widthPx: 1278,
   heightPx: 1949,
   dpi: 300,
   widthIn: 4.26,
   heightIn: 6.4967,
   safeMarginPx: 64,
-  logoRegion: { xPercent: 13, yPercent: 4.5, widthPercent: 74, heightPercent: 9.5 },
-  businessNameRegion: { xPercent: 8, yPercent: 17.1, widthPercent: 84, heightPercent: 6.5 },
-  centerAssetRegion: { xPercent: 12, yPercent: 29, widthPercent: 76, heightPercent: 18 },
-  ctaRegion: { xPercent: 8, yPercent: 49.5, widthPercent: 84, heightPercent: 6.5 },
-  qrRegion: { xPercent: 65.2, yPercent: 73.1, widthPercent: 16.2, heightPercent: 10.63 }
+  logoRegion: { xPercent: 30.5946791862, yPercent: 5.7978450487, widthPercent: 38.8106416275, heightPercent: 7.1328886609 },
+  businessNameRegion: { xPercent: 26.0563380282, yPercent: 16.0595177014, widthPercent: 47.8873239437, heightPercent: 4.87429451 },
+  qrRegion: { xPercent: 63.6932707355, yPercent: 69.3689061057, widthPercent: 19.2488262911, heightPercent: 12.6218573628 }
 };
 
 export function regionToPixels(
@@ -50,19 +44,4 @@ export function regionToPixels(
     width: Math.round((region.widthPercent / 100) * widthPx),
     height: Math.round((region.heightPercent / 100) * heightPx)
   };
-}
-
-export function getCanonicalProductCtaText(
-  product: Pick<MigratedProduct, "defaultCtaText" | "displayText" | "primaryPlatformSlug" | "destinationType" | "categorySlug" | "title">
-) {
-  const explicit = product.defaultCtaText?.trim();
-  if (explicit) return explicit;
-
-  const displayText = product.displayText?.trim();
-  if (displayText) return displayText;
-
-  if (product.primaryPlatformSlug === "google") return "Review us on Google";
-  if (product.destinationType === "booking") return "Book your appointment";
-  if (product.categorySlug === "menu") return "View our menu";
-  return product.title.replace(/\s+Stand$/i, "");
 }

@@ -441,6 +441,7 @@ export const migratedProducts: MigratedProduct[] = [
     displayText: "Review us on Google",
     image: googleStandImage,
     assetSet: {
+      brandedAngledImageUrl: "/uploads/products/google-review-stand-branded-angled.jpg",
       brandedFrontTemplateUrl: "/uploads/products/google-review-stand-branded-front-template.jpg",
       multiLinkFrontTemplateUrl: "/uploads/products/google-review-stand-multilink-front-template.jpg"
     },

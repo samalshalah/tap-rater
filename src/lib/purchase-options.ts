@@ -87,7 +87,7 @@ type ProductForPurchaseOptions = Pick<
 };
 
 export function hasBrandedDirectProductionTemplate(product: ProductForPurchaseOptions): boolean {
-  return Boolean(product.assetSet?.brandedFrontTemplateUrl?.trim() && product.assetSet?.centerAssetUrl?.trim());
+  return Boolean(product.assetSet?.brandedFrontTemplateUrl?.trim());
 }
 
 export function isHostedPurchaseOptionEnabled(): boolean {

@@ -388,8 +388,6 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   if (fulfillmentKind === "branded" && !qrTargetUrl) warnings.push("Missing QR target URL");
   if (fulfillmentKind === "branded" && !nfcTargetUrl) warnings.push("Missing NFC target URL");
   if (fulfillmentKind === "branded" && !frontTemplateUrl) warnings.push("Missing branded front template");
-  if (fulfillmentKind === "branded" && !centerAssetUrl) warnings.push("Missing center asset");
-  if (fulfillmentKind === "branded" && !ctaText) warnings.push("Missing CTA text");
   if (!proofConfirmed) warnings.push("Proof not confirmed");
   if (fulfillmentKind === "branded" && productionArtwork?.status !== "generated") warnings.push(productionArtwork?.error ?? "Production artwork not generated");
 

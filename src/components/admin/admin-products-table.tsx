@@ -518,7 +518,7 @@ function getMediaWarnings(product: MigratedProduct) {
     warnings.add("branded angled image matches standard image");
   }
 
-  if (brandedTemplate.includes("/products/") && !brandedTemplate.includes(`/products/${product.slug}/`)) {
+  if (brandedTemplate.includes("/api/media/product/products/") && !brandedTemplate.includes(`/products/${product.slug}/`)) {
     warnings.add("front template reused from another product");
   }
 

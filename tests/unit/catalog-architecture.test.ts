@@ -101,7 +101,7 @@ describe("catalog architecture", () => {
 
     expect(getProductAssetReadiness({ productKind: "normal_direct", assetSet: {} }, [brandedQrDirectProductOption])).toEqual({
       status: "draft_missing_assets",
-      missing: ["Branded + QR front template", "Missing center asset"]
+      missing: ["Branded + QR front template"]
     });
 
     expect(

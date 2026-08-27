@@ -14,19 +14,16 @@ describe("admin product readiness", () => {
     });
   });
 
-  it("marks Branded Direct unavailable when the center asset is missing", () => {
+  it("marks Branded Direct ready when the front template exists and center asset is null", () => {
     expect(
       getBrandedProductionTemplateReadiness(
         { assetSet: { brandedFrontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png" } },
         [{ optionCode: "branded_qr_direct", isActive: true }]
       )
-    ).toMatchObject({
-      status: "missing",
-      reason: "Missing center asset"
-    });
+    ).toEqual({ status: "ready" });
   });
 
-  it("marks Branded Direct ready only when the front template and center asset exist", () => {
+  it("keeps center asset optional for compatibility when present", () => {
     expect(
       getBrandedProductionTemplateReadiness(
         {

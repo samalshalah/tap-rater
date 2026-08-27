@@ -9,9 +9,7 @@ const approvedSnapshot = buildProofApprovalSnapshot({
   logoStorageKey: "products/customer-setup/logo.png",
   logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
   generatedQrValue: "https://g.page/example/review",
-  frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-  centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-  ctaText: "Review us on Google"
+  frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
 });
 
 describe("direct production approval snapshots", () => {
@@ -24,13 +22,25 @@ describe("direct production approval snapshots", () => {
   });
 
   it.each([
-    ["center asset", { centerAssetUrl: "/api/media/product/products/yelp-review/center/yelp.svg" }],
-    ["CTA", { ctaText: "Review us on Yelp" }],
     ["logo", { logoMediaUrl: "/api/media/product/products/customer-setup/new-logo.png" }],
     ["business name", { businessName: "Changed Business" }],
-    ["destination", { destinationUrl: "https://example.com/changed", generatedQrValue: "https://example.com/changed" }]
+    ["destination", { destinationUrl: "https://example.com/changed", generatedQrValue: "https://example.com/changed" }],
+    ["front template", { frontTemplateUrl: "/api/media/product/products/google-review/new-template.png" }]
   ])("invalidates approval when %s changes", (_, patch) => {
     expect(isProofApprovalSnapshotCurrent({ ...approvedSnapshot, ...patch }, approvedSnapshot)).toBe(false);
+  });
+
+  it("ignores legacy center asset and CTA values because the owner template owns those layers", () => {
+    expect(
+      isProofApprovalSnapshotCurrent(
+        {
+          ...approvedSnapshot,
+          centerAssetUrl: "/api/media/product/products/yelp-review/center/yelp.svg",
+          ctaText: "Review us on Yelp"
+        },
+        approvedSnapshot
+      )
+    ).toBe(true);
   });
 
   it("keeps approval current when all visual production inputs match", () => {

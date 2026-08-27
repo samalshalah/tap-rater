@@ -25,10 +25,9 @@ const generatedProductionArtwork = {
   widthIn: 4.26,
   heightIn: 6.4967,
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-27.1",
+  templateVersion: "2026-08-27.2",
   approvalSnapshotHash: "hash",
   baseTemplateContentHash: "base-template-hash",
-  centerAssetContentHash: "center-hash",
   logoContentHash: "logo-hash",
   generatedAt: "2026-08-23T14:00:00.000Z"
 };
@@ -139,8 +138,6 @@ describe("orders repository", () => {
             qrTargetUrl: "https://g.page/example/review",
             nfcTargetUrl: "https://g.page/example/review",
             frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-            centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-            ctaText: "Review us on Google",
             proofApproved: true,
             proofApprovalSnapshot: {
               productSlug: "google-review-stand",
@@ -150,15 +147,12 @@ describe("orders repository", () => {
               logoStorageKey: "products/customer-setup/logo.png",
               logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
               generatedQrValue: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-              centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-              ctaText: "Review us on Google"
+              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
             },
             proofPreviewData: {
               businessName: "Nova Implant",
               qrValue: "https://g.page/example/review",
-              centerAssetUrl: "/api/media/product/products/google-review/center/google.svg",
-              ctaText: "Review us on Google"
+              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
             }
           },
           logoRequired: true,
@@ -188,9 +182,8 @@ describe("orders repository", () => {
     expect(items[0].setup?.productionArtwork).toMatchObject({
       status: "generated",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.1",
+      templateVersion: "2026-08-27.2",
       baseTemplateContentHash: "base-template-hash",
-      centerAssetContentHash: "center-hash",
       logoContentHash: "logo-hash"
     });
     expect(writes.size).toBe(1);
@@ -397,8 +390,6 @@ describe("orders repository", () => {
       "Missing business name",
       "Missing logo",
       "Missing branded front template",
-      "Missing center asset",
-      "Missing CTA text",
       "Proof not confirmed",
       "Production artwork not generated"
     ]);
