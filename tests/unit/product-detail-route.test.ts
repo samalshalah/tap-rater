@@ -12,4 +12,11 @@ describe("product detail route", () => {
     expect(source).not.toMatch(/export\s+(async\s+)?function\s+generateStaticParams/);
     expect(source).not.toContain("@/data/migrated-products");
   });
+
+  it("permanently redirects legacy product slugs through the canonical slug helper", () => {
+    expect(source).toContain("getCanonicalProductSlug");
+    expect(source).toContain("permanentRedirect(`/product/${canonicalSlug}`)");
+    expect(source).not.toContain('"book-your-next-visit-stand": "book-appointment-stand"');
+    expect(source).not.toContain('"view-our-menu-stand": "view-menu-stand"');
+  });
 });

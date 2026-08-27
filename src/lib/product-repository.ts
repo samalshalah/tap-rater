@@ -116,9 +116,12 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
 
   try {
     const databaseProducts = await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
-    return mergeWithStaticStorefrontProducts(databaseProducts);
-  } catch {
-    return [];
+    return databaseProducts;
+  } catch (error) {
+    console.warn("[product-repository] storefront_static_fallback_used", {
+      reason: error instanceof Error ? error.message : "unknown database query failure"
+    });
+    return staticStorefrontProducts();
   }
 }
 
@@ -133,13 +136,15 @@ export const getStorefrontProductBySlug = cache(async (slug: string): Promise<Mi
       return cachedProduct;
     }
 
-    const product =
-      (await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug)) ??
-      getStaticStorefrontProductBySlug(slug);
+    const product = await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
     writeCache(productBySlugCache, slug, product);
     return product;
-  } catch {
-    return undefined;
+  } catch (error) {
+    console.warn("[product-repository] storefront_product_static_fallback_used", {
+      slug,
+      reason: error instanceof Error ? error.message : "unknown database query failure"
+    });
+    return getStaticStorefrontProductBySlug(slug);
   }
 });
 
@@ -303,18 +308,6 @@ function getStaticStorefrontProductBySlug(slug: string) {
   const product = getProductBySlug(slug);
 
   return product && isPublicLaunchStorefrontProduct(product) ? product : undefined;
-}
-
-function mergeWithStaticStorefrontProducts(databaseProducts: MigratedProduct[]): MigratedProduct[] {
-  const productsBySlug = new Map(databaseProducts.map((product) => [product.slug, product]));
-
-  for (const staticProduct of staticStorefrontProducts()) {
-    if (!productsBySlug.has(staticProduct.slug)) {
-      productsBySlug.set(staticProduct.slug, staticProduct);
-    }
-  }
-
-  return Array.from(productsBySlug.values());
 }
 
 function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {

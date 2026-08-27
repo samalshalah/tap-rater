@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
@@ -11,6 +11,7 @@ import { getProductPageHighlights, getReviewDestination } from "@/lib/product-pa
 import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { resolveProductSeo } from "@/lib/product-seo";
+import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -20,14 +21,9 @@ type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-const productSlugAliases: Record<string, string> = {
-  "view-our-menu-stand": "view-menu-stand",
-  "book-your-next-visit-stand": "book-appointment-stand"
-};
-
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const canonicalSlug = productSlugAliases[slug] ?? slug;
+  const canonicalSlug = getCanonicalProductSlug(slug);
   const product = await getStorefrontProductBySlug(canonicalSlug);
 
   if (!product) {
@@ -52,12 +48,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
+  const canonicalSlug = getCanonicalProductSlug(slug);
 
-  if (productSlugAliases[slug]) {
-    redirect(`/product/${productSlugAliases[slug]}`);
+  if (canonicalSlug !== slug) {
+    permanentRedirect(`/product/${canonicalSlug}`);
   }
 
-  const product = await getStorefrontProductBySlug(slug);
+  const product = await getStorefrontProductBySlug(canonicalSlug);
 
   if (!product) {
     notFound();
