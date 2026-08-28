@@ -119,7 +119,7 @@ describe("production artwork", () => {
       heightPx: brandedStandComposition.heightPx,
       dpi: brandedStandComposition.dpi,
       logoRegion: { x: 335, y: 95, width: 610, height: 140 },
-      businessNameRegion: { x: 286, y: 310, width: 706, height: 100 },
+      businessNameRegion: { x: 286, y: 380, width: 706, height: 85 },
       qrRegion: { x: 814, y: 1352, width: 246, height: 246 }
     });
     expect(regionToPixels(brandedStandComposition.logoRegion)).toMatchObject({ x: 335, y: 95, width: 610, height: 140 });
