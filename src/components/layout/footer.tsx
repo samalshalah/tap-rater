@@ -12,6 +12,18 @@ type FooterContent = {
   }>;
 };
 
+const footerLinkOverrides: Record<string, { label?: string; href?: string }> = {
+  "/category/website-link-stands|Multi-Link Stands": { label: "Website Link Stands" },
+  "/solutions/auto-dealerships|Automotive": { href: "/solutions/automotive" },
+  "/solutions/restaurants-cafes|Restaurants": { href: "/solutions/restaurant-food" },
+  "/solutions/beauty-wellness|Beauty & Wellness": { href: "/solutions/beauty-salon-wellness" }
+};
+
+function normalizeFooterLink(link: FooterContent["columns"][number]["links"][number]) {
+  const override = footerLinkOverrides[`${link.href}|${link.label}`];
+  return override ? { ...link, ...override } : link;
+}
+
 const defaultFooterContent: FooterContent = {
   intro: "Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
   columns: [
@@ -66,7 +78,10 @@ export function Footer() {
       .sort((first, second) => first.order - second.order || first.label.localeCompare(second.label))
       .map((column) => ({
         ...column,
-        links: column.links.filter((link) => link.enabled).sort((first, second) => first.order - second.order || first.label.localeCompare(second.label))
+        links: column.links
+          .filter((link) => link.enabled && link.href !== "/multi-link")
+          .map(normalizeFooterLink)
+          .sort((first, second) => first.order - second.order || first.label.localeCompare(second.label))
       })),
     [content]
   );

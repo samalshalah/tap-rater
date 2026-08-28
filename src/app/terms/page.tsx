@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Terms",
@@ -18,19 +19,19 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <main className="bg-white text-ink">
-      <section className="border-b border-line bg-white">
-        <div className="tr-container-narrow tr-section-compact">
+    <main className="tr-public-shell text-ink">
+      <SectionShell spacing="compact">
+        <div className="tr-container-narrow">
           <p className="tr-eyebrow">Terms</p>
           <h1 className="tr-page-title mt-4">Simple terms for Tap Rater orders.</h1>
           <p className="tr-body mt-4">
             These terms explain the customer responsibilities that matter for NFC stands, QR proofs, destination links, and uploaded brand assets.
           </p>
         </div>
-      </section>
+      </SectionShell>
 
-      <section className="bg-soft">
-        <div className="tr-container-narrow grid gap-4 py-10">
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container-narrow grid gap-4">
           {sections.map(([title, body]) => (
             <article key={title} className="tr-card p-5">
               <h2 className="tr-card-title">{title}</h2>
@@ -39,11 +40,11 @@ export default function TermsPage() {
           ))}
           <div className="tr-card p-5">
             <p className="tr-body-sm">
-              Questions before ordering? <Link href="/support" className="font-black text-brand">Contact support</Link>.
+              Questions before ordering? <Link href="/support" className="font-semibold text-brand hover:text-brand-dark">Contact support</Link>.
             </p>
           </div>
         </div>
-      </section>
+      </SectionShell>
     </main>
   );
 }

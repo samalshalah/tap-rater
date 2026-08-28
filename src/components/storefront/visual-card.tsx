@@ -17,7 +17,7 @@ type VisualCardProps = {
 
 export function VisualCard({ cta = "View options", density = "editorial", description, eyebrow, href, image, imageFit = "contain", title, variant = "story" }: VisualCardProps) {
   if (variant === "use-case") {
-    return <UseCaseCard description={description} eyebrow={eyebrow} href={href} image={image} title={title} />;
+    return <UseCaseCard density={density} description={description} eyebrow={eyebrow} href={href} image={image} title={title} />;
   }
 
   if (variant === "type") {
@@ -92,15 +92,17 @@ function ProductStoryCard({
   );
 }
 
-function UseCaseCard({ description, eyebrow, href, image, title }: Pick<VisualCardProps, "description" | "eyebrow" | "href" | "image" | "title">) {
+function UseCaseCard({ density, description, eyebrow, href, image, title }: Pick<VisualCardProps, "density" | "description" | "eyebrow" | "href" | "image" | "title">) {
+  const compact = density === "compact";
+
   return (
-    <Link href={href} className="tr-hover-card group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden">
-      <div className="min-h-0 flex-[0.86] px-5 pb-4 pt-6 sm:px-6 sm:pt-7">
+    <Link href={href} className={compact ? "tr-hover-card group flex h-full min-h-[300px] flex-col overflow-hidden sm:aspect-[4/5] sm:min-h-[360px]" : "tr-hover-card group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden"}>
+      <div className={compact ? "px-5 pb-4 pt-6 sm:min-h-0 sm:flex-[0.86] sm:px-6 sm:pt-7" : "min-h-0 flex-[0.86] px-5 pb-4 pt-6 sm:px-6 sm:pt-7"}>
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
         <h3 className="tr-card-title mt-3 text-[1.32rem] sm:text-[1.5rem]">{title}</h3>
         <p className="tr-body-sm mt-3 max-w-xl">{description}</p>
       </div>
-      <div className="relative mt-auto min-h-0 flex-[1.14] overflow-hidden bg-white">
+      <div className={compact ? "relative mt-auto min-h-[160px] overflow-hidden bg-white sm:min-h-0 sm:flex-[1.14]" : "relative mt-auto min-h-0 flex-[1.14] overflow-hidden bg-white"}>
         <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
       </div>
     </Link>

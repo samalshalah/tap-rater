@@ -49,7 +49,7 @@ const mobileNavigationDescriptions: Record<string, string> = {
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
   const enabledItems = items.filter(
-    (item) => item.enabled && item.label.toLowerCase() !== "custom branding",
+    (item) => item.enabled && item.label.toLowerCase() !== "custom branding" && item.href !== "/multi-link",
   );
   const hasShopByType = enabledItems.some(
     (item) => item.label.toLowerCase() === "shop by type",
@@ -79,6 +79,8 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
     .map((item) =>
       item.label.toLowerCase() === "shop by type"
         ? { ...item, href: "/shop#stand-types" }
+        : item.label.toLowerCase() === "multi-link" && item.href === "/category/website-link-stands"
+          ? { ...item, label: "Website Links" }
         : item,
     )
     .sort(

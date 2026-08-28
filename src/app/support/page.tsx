@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
+import { SectionHeader, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Tap Rater Support",
@@ -18,28 +20,38 @@ const supportLinks = [
 
 export default function SupportPage() {
   return (
-    <main className="bg-white text-ink">
-      <section className="border-b border-line bg-white">
-        <div className="tr-container tr-section-compact">
+    <main className="tr-public-shell text-ink">
+      <SectionShell spacing="compact">
+        <div className="tr-container">
           <p className="tr-eyebrow">Support</p>
           <h1 className="tr-page-title mt-4 max-w-3xl">Need help with a stand order?</h1>
           <p className="tr-body mt-4 max-w-2xl">
             Use support for custom stand requests, order help, logo or design questions, link setup questions, and link-change help.
           </p>
         </div>
-      </section>
+      </SectionShell>
 
-      <section className="bg-soft">
-        <div className="tr-container grid gap-4 py-10 md:grid-cols-2 lg:grid-cols-4">
+      <SectionShell tone="soft">
+        <div className="tr-container">
+          <SectionHeader
+            eyebrow="Help topics"
+            title="Choose the support path that matches the question."
+            body="Start with the topic closest to the order, setup, shipping, or proof issue."
+          />
+        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {supportLinks.map(([title, body, href]) => (
             <Link key={title} href={href} className="tr-hover-card flex min-h-[180px] flex-col p-5">
               <h2 className="tr-card-title">{title}</h2>
               <p className="tr-body-sm mt-2">{body}</p>
-              <span className="mt-auto text-sm font-black text-brand">Open</span>
+              <span className="mt-auto inline-flex items-center gap-2 pt-6 text-sm font-semibold text-brand">
+                Open
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </span>
             </Link>
           ))}
         </div>
-      </section>
+        </div>
+      </SectionShell>
     </main>
   );
 }
