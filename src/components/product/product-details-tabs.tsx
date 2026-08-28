@@ -82,16 +82,14 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
           <div>
             <h2 className="text-2xl font-black text-ink">Specifications</h2>
             {specifications.length > 0 ? (
-              <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {specifications.map((specification, index) => (
-                  <InfoCard
-                    key={specification.label}
-                    eyebrow={`Spec ${String(index + 1).padStart(2, "0")}`}
-                    title={specification.label}
-                    body={specification.value}
-                  />
+              <dl className="tr-card mt-5 overflow-hidden p-0">
+                {specifications.map((specification) => (
+                  <div key={specification.label} className="grid gap-2 border-b border-line px-4 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(160px,0.6fr)_1fr] sm:gap-4 sm:px-5 sm:py-4">
+                    <dt className="font-semibold text-ink">{specification.label}</dt>
+                    <dd className="leading-6 text-muted">{specification.value}</dd>
+                  </div>
                 ))}
-              </div>
+              </dl>
             ) : null}
 
             {includedItems.length > 0 ? (
