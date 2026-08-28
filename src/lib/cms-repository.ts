@@ -114,6 +114,7 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     allows_logo_upload: input.allowsLogoUpload,
     allows_custom_design: input.allowsCustomDesign,
     design_mode: input.designMode,
+    display_text: input.displayText ?? null,
     images: input.images,
     standard_angled_image_url: input.assetSet.standardAngledImageUrl ?? null,
     branded_angled_image_url: input.assetSet.brandedAngledImageUrl ?? null,
@@ -181,6 +182,11 @@ async function replaceProductBusinessUses(client: CmsDbClient, productSlug: stri
 }
 
 async function saveProductOptions(client: CmsDbClient, productSlug: string, productOptions: ProductContentInput["productOptions"]) {
+  const deleteResult = await client.from("product_options").delete().eq("product_slug", productSlug);
+  if (deleteResult.error) {
+    throw new Error(deleteResult.error.message);
+  }
+
   if (productOptions.length === 0) {
     return;
   }

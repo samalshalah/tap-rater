@@ -319,6 +319,7 @@ alter table products add column if not exists customization_options text[] not n
 alter table products add column if not exists allows_logo_upload boolean not null default true;
 alter table products add column if not exists allows_custom_design boolean not null default false;
 alter table products add column if not exists design_mode text not null default 'standard';
+alter table products add column if not exists display_text text;
 alter table products add column if not exists images jsonb not null default '[]'::jsonb;
 alter table products add column if not exists standard_angled_image_url text;
 alter table products add column if not exists branded_angled_image_url text;

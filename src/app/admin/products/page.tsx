@@ -1,8 +1,8 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminProducts } from "@/lib/admin-products";
 import { hasSupabaseAdminConfig } from "@/lib/db";
-import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminProductCsvActions } from "@/components/admin/admin-product-csv-actions";
 import { AdminProductsTable } from "@/components/admin/admin-products-table";
 import { getBusinessUses, getPlatforms, getStandTypes } from "@/lib/catalog-architecture-repository";
 
@@ -27,9 +27,7 @@ export default async function AdminProductsPage() {
               Manage sellable products, DIRECT/HOSTED mode, Standard/Branded availability, pricing, and production template readiness.
             </p>
           </div>
-          <Link href="/admin/products/new" className="rounded-md bg-brand px-5 py-3 text-sm font-semibold text-white">
-            Create product
-          </Link>
+          <AdminProductCsvActions canImportExport={canSave} />
         </div>
         {!canSave ? (
           <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-ink">

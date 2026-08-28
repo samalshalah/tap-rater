@@ -62,6 +62,7 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "allows_logo_upload",
   "allows_custom_design",
   "design_mode",
+  "display_text",
   "images",
   "standard_angled_image_url",
   "branded_angled_image_url",
@@ -397,7 +398,7 @@ function primeStorefrontProductCaches(products: MigratedProduct[]) {
   }
 }
 
-export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | null {
+export function normalizeStorefrontProductRow(row: unknown, options: { sanitizePublicCopy?: boolean } = {}): MigratedProduct | null {
   if (!row || typeof row !== "object") {
     return null;
   }
@@ -517,7 +518,7 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     return null;
   }
 
-  return sanitizePublicStorefrontProduct({
+  const product = {
     slug,
     title,
     sku,
@@ -561,7 +562,9 @@ export function normalizeStorefrontProductRow(row: unknown): MigratedProduct | n
     searchKeywords:
       readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
     updatedAt: readString(productRow.updated_at) ?? readString(productRow.updatedAt) ?? staticProduct?.updatedAt
-  });
+  };
+
+  return options.sanitizePublicCopy === false ? product : sanitizePublicStorefrontProduct(product);
 }
 
 function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {

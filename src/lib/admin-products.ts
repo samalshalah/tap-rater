@@ -77,7 +77,7 @@ export async function getAdminProductsFromClient(client: AdminProductClient): Pr
   const businessUseSlugsByProductSlug = await getProductBusinessUseSlugsByProductSlug(client);
 
   return data
-    .map((row) => normalizeStorefrontProductRow(row))
+    .map((row) => normalizeStorefrontProductRow(row, { sanitizePublicCopy: false }))
     .filter((product): product is MigratedProduct => Boolean(product))
     .map((product) => ({
       ...product,
