@@ -100,7 +100,7 @@ describe("production artwork", () => {
 
     expect(template).toMatchObject({
       id: "taprater-branded-stand-front",
-      version: "2026-08-27.2",
+      version: "2026-08-27.3",
       format: "svg",
       widthPx: 1278,
       heightPx: 1949,
@@ -118,11 +118,11 @@ describe("production artwork", () => {
       widthPx: brandedStandComposition.widthPx,
       heightPx: brandedStandComposition.heightPx,
       dpi: brandedStandComposition.dpi,
-      logoRegion: { x: 391, y: 113, width: 496, height: 139 },
-      businessNameRegion: { x: 333, y: 313, width: 612, height: 95 },
+      logoRegion: { x: 335, y: 96, width: 610, height: 170 },
+      businessNameRegion: { x: 286, y: 292, width: 706, height: 116 },
       qrRegion: { x: 814, y: 1352, width: 246, height: 246 }
     });
-    expect(regionToPixels(brandedStandComposition.logoRegion)).toMatchObject({ x: 391, y: 113, width: 496, height: 139 });
+    expect(regionToPixels(brandedStandComposition.logoRegion)).toMatchObject({ x: 335, y: 96, width: 610, height: 170 });
   });
 
   it("generates self-contained SVG artwork from only template, logo, business name, and QR", async () => {
@@ -139,7 +139,7 @@ describe("production artwork", () => {
       dpi: 300,
       widthIn: 4.26,
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.2",
+      templateVersion: "2026-08-27.3",
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
     });
@@ -156,7 +156,7 @@ describe("production artwork", () => {
       productId: "google-review-stand",
       optionId: "branded_qr_direct",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.2",
+      templateVersion: "2026-08-27.3",
       approvalSnapshotHash: artwork?.approvalSnapshotHash,
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"

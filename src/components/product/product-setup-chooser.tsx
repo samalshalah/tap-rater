@@ -758,7 +758,7 @@ function TemplateProofPreview({
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
-      <p className="absolute overflow-hidden text-center text-[11px] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
+      <p className="absolute overflow-hidden text-center text-[13px] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
         {businessName || "Business name"}
       </p>
       <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>

@@ -21,15 +21,15 @@ export type BrandedCompositionGeometry = {
 
 export const brandedStandComposition: BrandedCompositionGeometry = {
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-27.2",
+  templateVersion: "2026-08-27.3",
   widthPx: 1278,
   heightPx: 1949,
   dpi: 300,
   widthIn: 4.26,
   heightIn: 6.4967,
   safeMarginPx: 64,
-  logoRegion: { xPercent: 30.5946791862, yPercent: 5.7978450487, widthPercent: 38.8106416275, heightPercent: 7.1328886609 },
-  businessNameRegion: { xPercent: 26.0563380282, yPercent: 16.0595177014, widthPercent: 47.8873239437, heightPercent: 4.87429451 },
+  logoRegion: { xPercent: 26.2128325509, yPercent: 4.9256028738, widthPercent: 47.7308294209, heightPercent: 8.7224217547 },
+  businessNameRegion: { xPercent: 22.3787167449, yPercent: 14.9820420739, widthPercent: 55.2425665102, heightPercent: 5.9517701385 },
   qrRegion: { xPercent: 63.6932707355, yPercent: 69.3689061057, widthPercent: 19.2488262911, heightPercent: 12.6218573628 }
 };
 

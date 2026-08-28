@@ -231,7 +231,7 @@ export async function composeProductionArtworkDocument(
   const qrSvg = await createQrSvg(qrTargetUrl);
   const qrBody = extractSvgBody(qrSvg);
   const qrViewBox = extractViewBox(qrSvg) ?? "0 0 512 512";
-  const nameFontSize = fitSingleLineFontSize(businessName, template.businessNameRegion.width, 56, 24);
+  const nameFontSize = fitSingleLineFontSize(businessName, template.businessNameRegion.width, 68, 26);
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${template.widthPx}" height="${template.heightPx}" viewBox="0 0 ${template.widthPx} ${template.heightPx}" role="img" aria-label="${escapeXml(item.title)} production artwork">`,
