@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit3, Search, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Edit3, ExternalLink, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import type { MigratedProduct, ProductKind } from "@/data/migrated-products";
 import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
@@ -14,6 +14,7 @@ import {
   AdminAlert,
   AdminBadge,
   AdminButton,
+  AdminExternalButton,
   AdminIconButton,
   AdminInput,
   AdminLinkButton,
@@ -348,6 +349,10 @@ export function AdminProductsTable({
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                         Edit
                       </AdminLinkButton>
+                      <AdminExternalButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/product/${product.slug}`} target="_blank" rel="noreferrer">
+                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                        View in store
+                      </AdminExternalButton>
                       <AdminIconButton
                         type="button"
                         className="h-9 w-9"
@@ -418,6 +423,10 @@ export function AdminProductsTable({
                       <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       Edit
                     </AdminLinkButton>
+                    <AdminExternalButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/product/${product.slug}`} target="_blank" rel="noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                      View in store
+                    </AdminExternalButton>
                     <AdminButton
                       className="min-h-9 px-3 py-1.5 text-xs"
                       type="button"

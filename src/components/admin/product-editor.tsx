@@ -13,7 +13,7 @@ import type {
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
 import { formatPrice } from "@/lib/products";
 import { generateProductSeo } from "@/lib/product-seo";
-import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminSelect, AdminSoftPanel, AdminTextarea } from "./admin-ui";
+import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminExternalButton, AdminInput, AdminLinkButton, AdminSelect, AdminSoftPanel, AdminTextarea } from "./admin-ui";
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -756,6 +756,12 @@ export function ProductEditor({
         <AdminLinkButton className="w-full" variant="outline" href="/admin/products">
           Back to products
         </AdminLinkButton>
+        {mode === "edit" && slug ? (
+          <AdminExternalButton className="w-full" variant="outline" href={`/product/${slug}`} target="_blank" rel="noreferrer">
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            View in store
+          </AdminExternalButton>
+        ) : null}
       </aside>
     </form>
   );
