@@ -30,10 +30,11 @@ type ProductDetailsTabsProps = {
   brandedPrice: string;
 };
 
-type TabId = "details" | "compare" | "how";
+type TabId = "details" | "specifications" | "compare" | "how";
 
 const tabs: Array<{ id: TabId; label: string }> = [
   { id: "details", label: "Product details" },
+  { id: "specifications", label: "Specifications" },
   { id: "compare", label: "Standard vs. Branded" },
   { id: "how", label: "How it works" }
 ];
@@ -62,48 +63,52 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
 
       <div className="py-7">
         {activeTab === "details" ? (
-          <div className="grid gap-6 lg:grid-cols-[1fr_0.95fr]">
-            <div>
-              <h2 className="text-2xl font-black text-ink">Product details</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {highlights.map((highlight) => (
-                  <article key={highlight.title} className="tr-card p-5">
-                    <h3 className="tr-card-title">{highlight.title}</h3>
-                    <p className="tr-body-sm mt-3">{highlight.body}</p>
-                  </article>
+          <div>
+            <h2 className="text-2xl font-black text-ink">Product details</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {highlights.map((highlight, index) => (
+                <InfoCard
+                  key={highlight.title}
+                  eyebrow={String(index + 1).padStart(2, "0")}
+                  title={highlight.title}
+                  body={highlight.body}
+                />
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {activeTab === "specifications" ? (
+          <div>
+            <h2 className="text-2xl font-black text-ink">Specifications</h2>
+            {specifications.length > 0 ? (
+              <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {specifications.map((specification, index) => (
+                  <InfoCard
+                    key={specification.label}
+                    eyebrow={`Spec ${String(index + 1).padStart(2, "0")}`}
+                    title={specification.label}
+                    body={specification.value}
+                  />
                 ))}
               </div>
-            </div>
+            ) : null}
 
-            <div className="grid gap-5">
-              {specifications.length > 0 ? (
-                <div>
-                  <h3 className="text-lg font-black text-ink">Specifications</h3>
-                  <dl className="tr-card mt-3 overflow-hidden p-0">
-                    {specifications.map((specification) => (
-                      <div key={specification.label} className="grid grid-cols-[minmax(120px,0.75fr)_1fr] gap-3 border-b border-line px-4 py-3 text-sm last:border-b-0">
-                        <dt className="font-semibold text-ink">{specification.label}</dt>
-                        <dd className="leading-6 text-muted">{specification.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
+            {includedItems.length > 0 ? (
+              <div className="mt-8">
+                <h3 className="text-lg font-black text-ink">Included</h3>
+                <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {includedItems.map((item, index) => (
+                    <InfoCard
+                      key={item.label}
+                      eyebrow={item.appliesTo === "branded" ? "Branded" : String(index + 1).padStart(2, "0")}
+                      title={item.label}
+                      body={item.appliesTo === "branded" ? "Included with Branded + QR." : "Included with this stand."}
+                    />
+                  ))}
                 </div>
-              ) : null}
-
-              {includedItems.length > 0 ? (
-                <div>
-                  <h3 className="text-lg font-black text-ink">Included</h3>
-                  <ul className="mt-3 grid gap-2">
-                    {includedItems.map((item) => (
-                      <li key={item.label} className="tr-card flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
-                        <span>{item.label}</span>
-                        {item.appliesTo === "branded" ? <span className="text-xs font-black uppercase tracking-[0.05em] text-brand">Branded</span> : null}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -135,6 +140,16 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
         ) : null}
       </div>
     </section>
+  );
+}
+
+function InfoCard({ eyebrow, title, body }: { eyebrow: string; title: string; body: string }) {
+  return (
+    <article className="tr-process-step-card">
+      <p className="text-xs font-semibold uppercase text-accent">{eyebrow}</p>
+      <h3 className="mt-3 max-w-[18rem] text-[1.35rem] font-semibold leading-[1.12] text-ink sm:text-[1.45rem]">{title}</h3>
+      <p className="mt-4 text-[0.95rem] leading-7 text-muted">{body}</p>
+    </article>
   );
 }
 
