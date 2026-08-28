@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { OrderRecord } from "@/lib/orders";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
+import { AdminAlert, AdminButton, AdminCard, AdminInput, AdminSelect, AdminTextarea } from "./admin-ui";
 
 export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
   const router = useRouter();
@@ -58,41 +59,38 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5 rounded-md border border-line bg-white p-5 shadow-sm">
-      <div>
-        <h2 className="text-lg font-black text-ink">Fulfillment operations</h2>
-        <p className="mt-1 text-sm text-muted">Update production and shipping state. Marking an order shipped with tracking sends the customer shipping notification once.</p>
-      </div>
-
+    <form onSubmit={onSubmit}>
+      <AdminCard title="Fulfillment operations" description="Update production and shipping state. Marking an order shipped with tracking sends the customer shipping notification once.">
+      <div className="space-y-5">
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-sm font-bold text-ink">
+        <label className="block text-sm font-semibold text-ink">
           Production status
-          <select
+          <AdminSelect
             value={form.productionStatus}
             onChange={(event) => setForm((current) => ({ ...current, productionStatus: event.target.value as OrderFulfillmentUpdateInput["productionStatus"] }))}
-            className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+            className="mt-2"
           >
             <option value="not_started">Not started</option>
             <option value="ready_for_production">Ready for production</option>
             <option value="in_production">In production</option>
             <option value="blocked">Blocked</option>
             <option value="completed">Completed</option>
-          </select>
+          </AdminSelect>
         </label>
 
-        <label className="block text-sm font-bold text-ink">
+        <label className="block text-sm font-semibold text-ink">
           Shipping status
-          <select
+          <AdminSelect
             value={form.shippingStatus}
             onChange={(event) => setForm((current) => ({ ...current, shippingStatus: event.target.value as OrderFulfillmentUpdateInput["shippingStatus"] }))}
-            className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+            className="mt-2"
           >
             <option value="not_shipped">Not shipped</option>
             <option value="ready_to_ship">Ready to ship</option>
             <option value="shipped">Shipped</option>
             <option value="delivered">Delivered</option>
             <option value="blocked">Blocked</option>
-          </select>
+          </AdminSelect>
         </label>
       </div>
 
@@ -108,7 +106,7 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
         <TextArea name="adminFulfillmentNotes" label="Admin fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
       </div>
 
-      <label className="flex items-center gap-3 rounded-md border border-line bg-gray-50 p-3 text-sm font-bold text-ink">
+      <label className="mt-4 flex items-center gap-3 rounded-md border border-line bg-gray-50 p-3 text-sm font-semibold text-ink">
         <input
           type="checkbox"
           checked={form.markShipped}
@@ -118,47 +116,49 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
         Mark shipped and set shipped date if empty
       </label>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <div className="text-sm">
-          {message ? <p className="font-bold text-brand">{message}</p> : null}
-          {error ? <p className="font-bold text-red-600">{error}</p> : null}
+          {message ? <AdminAlert tone="success">{message}</AdminAlert> : null}
+          {error ? <AdminAlert tone="danger">{error}</AdminAlert> : null}
         </div>
-        <button type="submit" disabled={isSaving} className="rounded-md bg-ink px-5 py-3 text-sm font-black text-white disabled:opacity-60">
+        <AdminButton type="submit" disabled={isSaving} loading={isSaving} variant="primary">
           {isSaving ? "Saving..." : "Save fulfillment"}
-        </button>
+        </AdminButton>
       </div>
+      </div>
+      </AdminCard>
     </form>
   );
 }
 
 function TextField({ name, label, value, onChange }: { name: string; label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       <span className="flex items-center justify-between gap-3">
         {label}
         {value ? (
-          <button type="button" onClick={() => onChange("")} className="text-xs font-black text-brand hover:text-ink">
+          <button type="button" onClick={() => onChange("")} className="text-xs font-semibold text-brand hover:text-ink">
             Clear
           </button>
         ) : null}
       </span>
-      <input name={name} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
+      <AdminInput name={name} value={value} onChange={(event) => onChange(event.target.value)} className="mt-2" />
     </label>
   );
 }
 
 function TextArea({ name, label, value, onChange }: { name: string; label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       <span className="flex items-center justify-between gap-3">
         {label}
         {value ? (
-          <button type="button" onClick={() => onChange("")} className="text-xs font-black text-brand hover:text-ink">
+          <button type="button" onClick={() => onChange("")} className="text-xs font-semibold text-brand hover:text-ink">
             Clear
           </button>
         ) : null}
       </span>
-      <textarea name={name} value={value} onChange={(event) => onChange(event.target.value)} rows={4} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
+      <AdminTextarea name={name} value={value} onChange={(event) => onChange(event.target.value)} rows={4} className="mt-2" />
     </label>
   );
 }

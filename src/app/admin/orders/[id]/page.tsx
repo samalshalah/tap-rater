@@ -1,6 +1,6 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -23,7 +23,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <Link href="/admin/orders" className="text-sm font-bold text-brand">Back to orders</Link>
+        <AdminLinkButton href="/admin/orders" className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Back to orders</AdminLinkButton>
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">Order detail</p>
@@ -77,12 +77,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 }
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="tr-admin-card p-5">
-      <h2 className="tr-admin-card-title">{title}</h2>
-      <div className="mt-4 space-y-3">{children}</div>
-    </div>
-  );
+  return <AdminCard title={title}><div className="space-y-3">{children}</div></AdminCard>;
 }
 
 function Field({ label, value, link = false }: { label: string; value?: string | null; link?: boolean }) {
@@ -123,12 +118,16 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
   const summary = getOrderLineItemProductionSummary(item);
 
   return (
-    <div className="rounded-md border border-line bg-gray-50 p-4">
+    <AdminSoftPanel>
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="font-black text-ink">{item.quantity} x {item.title}</p>
           <p className="mt-1 font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
-          <p className="mt-1 text-sm text-muted">{summary.optionLabel} - {summary.nfcBehavior} - {summary.printedQrLabel}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <AdminBadge tone="neutral">{summary.optionLabel}</AdminBadge>
+            <AdminBadge tone="neutral">{summary.nfcBehavior}</AdminBadge>
+            <AdminBadge tone="neutral">{summary.printedQrLabel}</AdminBadge>
+          </div>
         </div>
         <p className="font-black text-ink">{formatPrice(item.lineSubtotalCents)}</p>
       </div>
@@ -154,7 +153,7 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
           }
         />
       </div>
-    </div>
+    </AdminSoftPanel>
   );
 }
 

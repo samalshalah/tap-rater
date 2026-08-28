@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderActionSource } from "@/lib/admin-order-actions";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
+import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminResponsiveTable, AdminSelect, AdminSummaryCard, AdminTextarea } from "./admin-ui";
 
 export type AdminOrdersWorkspaceOrder = AdminOrderActionSource & {
   id: string;
@@ -187,27 +187,27 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
   return (
     <div className="mt-8 space-y-5">
       {!configured ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-ink">
+        <AdminAlert tone="warning">
           Database persistence is not configured yet. Stripe checkout stays disabled until orders can be persisted.
-        </div>
+        </AdminAlert>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-4">
-        <SummaryCard label="Total orders" value={String(orderRows.length)} />
-        <SummaryCard label="Needs production" value={String(orderRows.filter((order) => order.productionStatus !== "completed").length)} />
-        <SummaryCard label="Ready to ship" value={String(orderRows.filter((order) => order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship").length)} />
-        <SummaryCard label="Shipped / delivered" value={String(orderRows.filter((order) => order.shippingStatus === "shipped" || order.shippingStatus === "delivered").length)} />
+        <AdminSummaryCard label="Total orders" value={String(orderRows.length)} />
+        <AdminSummaryCard label="Needs production" value={String(orderRows.filter((order) => order.productionStatus !== "completed").length)} />
+        <AdminSummaryCard label="Ready to ship" value={String(orderRows.filter((order) => order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship").length)} />
+        <AdminSummaryCard label="Shipped / delivered" value={String(orderRows.filter((order) => order.shippingStatus === "shipped" || order.shippingStatus === "delivered").length)} />
       </div>
 
-      <div className="tr-admin-card p-4">
+      <AdminCard>
         <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-          <label className="block text-sm font-bold text-ink">
+          <label className="block text-sm font-semibold text-ink">
             Search orders
-            <input
+            <AdminInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Customer, email, SKU, order id"
-              className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+              className="mt-2"
             />
           </label>
           <div className="flex flex-wrap gap-2">
@@ -216,7 +216,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
                 key={value}
                 type="button"
                 onClick={() => setFilter(value)}
-                className={filter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-black uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-black uppercase text-ink"}
+                className={filter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-semibold uppercase text-ink"}
               >
                 {label}
               </button>
@@ -229,30 +229,31 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
             Showing {visibleOrders.length} of {orderRows.length} orders. {selectedIds.length} selected.
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <select
+            <AdminSelect
               value={bulkAction}
               onChange={(event) => setBulkAction(event.target.value as AdminOrderAction)}
-              className="rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold"
             >
               {bulkActions.map((action) => (
                 <option key={action.value} value={action.value}>{action.label}</option>
               ))}
-            </select>
-            <button
+            </AdminSelect>
+            <AdminButton
               type="button"
               onClick={applyBulkAction}
               disabled={selectedIds.length === 0 || savingIds.length > 0}
-              className="rounded-md bg-ink px-4 py-2 text-sm font-black text-white disabled:opacity-50"
+              loading={savingIds.length > 0}
+              variant="primary"
             >
               Apply to selected
-            </button>
+            </AdminButton>
           </div>
         </div>
-        {message ? <p className="mt-3 text-sm font-bold text-brand">{message}</p> : null}
-        {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
-      </div>
+        {message ? <AdminAlert className="mt-3" tone="success">{message}</AdminAlert> : null}
+        {error ? <AdminAlert className="mt-3" tone="danger">{error}</AdminAlert> : null}
+      </AdminCard>
 
-      <div className="tr-admin-table-shell overflow-x-auto">
+      <AdminResponsiveTable
+        table={
         <table className="w-full min-w-[960px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-gray-50 text-xs uppercase text-muted">
@@ -294,7 +295,30 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
             ) : null}
           </tbody>
         </table>
-      </div>
+        }
+        cards={
+          visibleOrders.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted">No orders match the current filters.</p>
+          ) : (
+            visibleOrders.map((order) => {
+              const saving = savingIds.includes(order.id);
+              return (
+                <OrderMobileCard
+                  key={order.id}
+                  order={order}
+                  saving={saving}
+                  selected={selectedIds.includes(order.id)}
+                  editorOpen={openEditorId === order.id}
+                  onToggleSelected={() => toggleSelected(order.id)}
+                  onToggleEditor={() => setOpenEditorId((current) => current === order.id ? null : order.id)}
+                  onApplyAction={(action) => applyAction(order, action)}
+                  onSave={(payload) => saveOrder(order, payload)}
+                />
+              );
+            })
+          )
+        }
+      />
     </div>
   );
 }
@@ -354,12 +378,12 @@ function OrderRow({
             <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
             <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
             <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
-            <button type="button" onClick={onToggleEditor} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-black text-ink">
+            <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
               {editorOpen ? "Close" : "Edit"}
-            </button>
-            <Link href={`/admin/orders/${order.id}`} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs font-black text-ink">
+            </AdminButton>
+            <AdminLinkButton href={`/admin/orders/${order.id}`} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
               View
-            </Link>
+            </AdminLinkButton>
           </div>
         </td>
       </tr>
@@ -397,8 +421,7 @@ function OrderInlineEditor({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-line bg-white p-4">
-        <p className="text-xs font-black uppercase text-muted">Order items</p>
+      <AdminCard title="Order items" className="p-4">
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {order.items.map((item) => (
             <div key={item.key} className="rounded-md border border-line p-3">
@@ -411,7 +434,7 @@ function OrderInlineEditor({
             </div>
           ))}
         </div>
-      </div>
+      </AdminCard>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <div className="grid gap-3 md:grid-cols-2">
           <SelectField label="Production" value={form.productionStatus} onChange={(value) => setForm((current) => ({ ...current, productionStatus: value as OrderFulfillmentUpdateInput["productionStatus"] }))}>
@@ -442,9 +465,9 @@ function OrderInlineEditor({
             <input type="checkbox" checked={form.markShipped} onChange={(event) => setForm((current) => ({ ...current, markShipped: event.target.checked }))} className="h-4 w-4" />
             Set shipped date
           </label>
-          <button type="button" disabled={saving} onClick={() => onSave(form)} className="w-full rounded-md bg-ink px-4 py-3 text-sm font-black text-white disabled:opacity-50">
+          <AdminButton type="button" disabled={saving} loading={saving} onClick={() => onSave(form)} className="w-full" variant="primary">
             {saving ? "Saving..." : "Save controls"}
-          </button>
+          </AdminButton>
         </div>
       </div>
     </div>
@@ -453,38 +476,38 @@ function OrderInlineEditor({
 
 function SelectField({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       {label}
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm">
+      <AdminSelect value={value} onChange={(event) => onChange(event.target.value)} className="mt-2">
         {children}
-      </select>
+      </AdminSelect>
     </label>
   );
 }
 
 function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       {label}
-      <input value={value} onChange={(event) => onChange(event.target.value)} className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm" />
+      <AdminInput value={value} onChange={(event) => onChange(event.target.value)} className="mt-2" />
     </label>
   );
 }
 
 function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       {label}
-      <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={3} className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm" />
+      <AdminTextarea value={value} onChange={(event) => onChange(event.target.value)} rows={3} className="mt-2" />
     </label>
   );
 }
 
 function QuickActionButton({ children, disabled, onClick }: { children: ReactNode; disabled: boolean; onClick: () => void }) {
   return (
-    <button type="button" disabled={disabled} onClick={onClick} className="rounded-md bg-ink px-3 py-1.5 text-xs font-black text-white disabled:opacity-50">
+    <AdminButton type="button" disabled={disabled} onClick={onClick} className="min-h-8 px-3 py-1.5 text-xs" variant="primary">
       {children}
-    </button>
+    </AdminButton>
   );
 }
 
@@ -497,25 +520,74 @@ function formatStatus(value: string) {
 }
 
 function StatusPill({ children, tone }: { children: ReactNode; tone: "ready" | "warning" | "neutral" }) {
-  const className =
-    tone === "ready"
-      ? "bg-teal-50 text-brand"
-      : tone === "warning"
-        ? "bg-amber-50 text-amber-800"
-        : "bg-gray-100 text-muted";
-
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase ${className}`}>{children}</span>;
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-line bg-white p-4 shadow-sm">
-      <p className="text-xs font-black uppercase text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-black text-ink">{value}</p>
-    </div>
-  );
+  return <AdminBadge tone={tone === "ready" ? "success" : tone === "warning" ? "warning" : "neutral"}>{children}</AdminBadge>;
 }
 
 function isAdminOrdersFilter(value: string): value is AdminOrdersFilter {
   return filterOptions.some(([filter]) => filter === value);
+}
+
+function OrderMobileCard({
+  order,
+  saving,
+  selected,
+  editorOpen,
+  onToggleSelected,
+  onToggleEditor,
+  onApplyAction,
+  onSave
+}: {
+  order: AdminOrdersWorkspaceOrder;
+  saving: boolean;
+  selected: boolean;
+  editorOpen: boolean;
+  onToggleSelected: () => void;
+  onToggleEditor: () => void;
+  onApplyAction: (action: AdminOrderAction) => void;
+  onSave: (payload: OrderFulfillmentUpdateInput) => void;
+}) {
+  return (
+    <article className={selected ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
+      <div className="flex items-start gap-3">
+        <input type="checkbox" checked={selected} onChange={onToggleSelected} className="mt-1 h-4 w-4" aria-label={`Select ${order.checkoutSessionId}`} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
+          <p className="mt-1 truncate text-sm text-muted" title={order.email}>{order.email || "-"}</p>
+          <p className="mt-2 truncate font-mono text-xs text-muted" title={order.checkoutSessionId}>{order.checkoutSessionId}</p>
+        </div>
+        <p className="shrink-0 font-semibold text-ink">{order.total}</p>
+      </div>
+      <div className="mt-4 grid gap-2 text-sm">
+        <OrderMobileField label="Payment"><StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{formatStatus(order.status)}</StatusPill></OrderMobileField>
+        <OrderMobileField label="Production"><StatusPill tone={order.productionStatus === "completed" ? "ready" : order.productionStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.productionStatus)}</StatusPill></OrderMobileField>
+        <OrderMobileField label="Fulfillment"><StatusPill tone={order.shippingStatus === "shipped" || order.shippingStatus === "delivered" ? "ready" : order.shippingStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.shippingStatus)}</StatusPill></OrderMobileField>
+        <OrderMobileField label="Date">{order.createdAt}</OrderMobileField>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
+        <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
+        <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
+        <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
+          {editorOpen ? "Close" : "Edit"}
+        </AdminButton>
+        <AdminLinkButton href={`/admin/orders/${order.id}`} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
+          View
+        </AdminLinkButton>
+      </div>
+      {editorOpen ? (
+        <div className="mt-4 border-t border-line pt-4">
+          <OrderInlineEditor order={order} saving={saving} onSave={onSave} />
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function OrderMobileField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[96px_1fr] items-center gap-3">
+      <span className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{label}</span>
+      <span className="min-w-0 text-ink">{children}</span>
+    </div>
+  );
 }

@@ -63,11 +63,11 @@ export function AdminSidebar() {
           <h2 className="mt-1 text-base font-semibold text-ink">Admin</h2>
         </Link>
       </div>
-      <nav className="flex gap-3 overflow-x-auto px-4 pb-4 lg:block lg:space-y-5 lg:overflow-visible">
+      <nav className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-5 lg:overflow-visible">
         {adminNavigationGroups.map((group) => (
-          <div key={group.label} className="min-w-64 lg:min-w-0">
-            <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{group.label}</p>
-            <div className="grid gap-1">
+          <div key={group.label} className="contents lg:block">
+            <p className="mb-2 hidden px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted lg:block">{group.label}</p>
+            <div className="contents lg:grid lg:gap-1">
               {group.items.map((item) => {
                 const Icon = icons[item.label as keyof typeof icons] ?? Megaphone;
                 const itemPathname = item.href.split("?")[0];
@@ -86,8 +86,8 @@ export function AdminSidebar() {
                     href={item.href}
                     className={
                       active
-                        ? "flex items-center gap-3 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white"
-                        : "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-soft hover:text-ink"
+                        ? "flex shrink-0 items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white lg:gap-3"
+                        : "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-muted hover:bg-soft hover:text-ink lg:gap-3"
                     }
                   >
                     <Icon className="h-4 w-4 shrink-0" />

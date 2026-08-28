@@ -1,7 +1,6 @@
 "use client";
 
 import { type FormEvent, type ReactNode, useMemo, useState } from "react";
-import Link from "next/link";
 import { CheckCircle2, Copy, ExternalLink, Loader2, MoreHorizontal, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
 import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
 import type {
@@ -14,6 +13,7 @@ import type {
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
 import { formatPrice } from "@/lib/products";
 import { generateProductSeo } from "@/lib/product-seo";
+import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminSelect, AdminSoftPanel, AdminTextarea } from "./admin-ui";
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -395,7 +395,7 @@ export function ProductEditor({
   return (
     <form className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]" onSubmit={submit}>
       <div className="grid gap-4">
-        <EditorCard title="Product Identity" description="The public name, URL handle, and product copy for this canonical stand product.">
+        <EditorCard title="Basic" description="The public name, URL handle, SKU, stock, and customer-facing product copy.">
           <div className="grid gap-4 md:grid-cols-2">
             <ControlledInput
               name="title"
@@ -423,22 +423,22 @@ export function ProductEditor({
               helper={skuEdited ? "Edited manually" : "Auto-generated from title"}
               onChange={updateSku}
             />
-            <label className="grid gap-2 text-sm font-bold text-ink">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
               Stock
-              <select className="rounded-md border border-line bg-white px-3 py-2.5 font-normal" name="stockStatus" defaultValue={product.stockStatus}>
+              <AdminSelect name="stockStatus" defaultValue={product.stockStatus}>
                 <option value="instock">In stock</option>
                 <option value="outofstock">Out of stock</option>
-              </select>
+              </AdminSelect>
             </label>
           </div>
           <Textarea name="shortDescription" label="Short description" defaultValue={product.shortDescription} required={false} />
           <Textarea name="description" label="Full description" defaultValue={product.description} required={false} tall />
-          <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs font-semibold text-muted">
-            Current status: <span className="font-black text-ink">{publishStatus}</span>
-          </div>
+          <AdminSoftPanel className="px-3 py-2 text-xs font-semibold text-muted">
+            Current status: <span className="font-semibold text-ink">{publishStatus}</span>
+          </AdminSoftPanel>
         </EditorCard>
 
-        <EditorCard title="Product Media" description="Storefront media for product cards and product pages. Drag images onto a tile or click to upload.">
+        <EditorCard title="Media" description="Storefront media for product cards and product pages. Drag images onto a tile or click to upload.">
           <ProductMediaGrid
             title={title}
             mainImage={mainImage}
@@ -455,7 +455,7 @@ export function ProductEditor({
           />
         </EditorCard>
 
-        <EditorCard title="Setup / Purchase Options" description="Customer purchase options live inside one canonical product. They are not separate products.">
+        <EditorCard title="Purchase Options" description="Customer purchase options live inside one canonical product. They are not separate products.">
           <div className="grid gap-3">
             {visibleOptions.map((option) => (
               <SetupOptionEditor
@@ -474,12 +474,11 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="Destination / Platform" description="Stand type is what the stand does. Platform is where the customer is sent.">
+        <EditorCard title="Destination" description="Stand type is what the stand does. Platform is where the customer is sent.">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="grid gap-2 text-sm font-bold text-ink">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
               Destination type
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              <AdminSelect
                 value={destinationType}
                 onChange={(event) => setDestinationType(event.target.value)}
               >
@@ -495,12 +494,11 @@ export function ProductEditor({
                 <option value="payment">Payment</option>
                 <option value="loyalty">Loyalty</option>
                 <option value="custom">Custom URL</option>
-              </select>
+              </AdminSelect>
             </label>
-            <label className="grid gap-2 text-sm font-bold text-ink">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
               Platform / destination
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              <AdminSelect
                 value={primaryPlatformSlug}
                 onChange={(event) => {
                   setPrimaryPlatformSlug(event.target.value);
@@ -512,7 +510,7 @@ export function ProductEditor({
                     {platform.title}
                   </option>
                 ))}
-              </select>
+              </AdminSelect>
             </label>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -521,7 +519,7 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="Template / Proof Settings" description="Controls the default stand wording and production proof expectations.">
+        <EditorCard title="Production Assets" description="Controls the default stand wording and production proof expectations.">
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               name="defaultCtaText"
@@ -529,16 +527,15 @@ export function ProductEditor({
               defaultValue={product.defaultCtaText ?? defaultCtaForProduct(productKind)}
               required={false}
             />
-            <label className="grid gap-2 text-sm font-bold text-ink">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
               CTA editable
-              <select
-                className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+              <AdminSelect
                 value={ctaEditable ? "true" : "false"}
                 onChange={(event) => setCtaEditable(event.target.value === "true")}
               >
                 <option value="true">Yes</option>
                 <option value="false">No</option>
-              </select>
+              </AdminSelect>
             </label>
           </div>
           <div className="grid gap-2 text-sm text-muted">
@@ -579,10 +576,9 @@ export function ProductEditor({
 
       <aside className="grid content-start gap-4">
         <SidebarCard title="Status">
-          <label className="grid gap-2 text-sm font-bold text-ink">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
             Product status
-            <select
-              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+            <AdminSelect
               value={publishStatus}
               onChange={(event) => setPublishStatus(event.target.value as "draft" | "active" | "archived")}
             >
@@ -591,13 +587,13 @@ export function ProductEditor({
                 Active
               </option>
               <option value="archived">Archived</option>
-            </select>
+            </AdminSelect>
           </label>
           {!canActivate ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-ink">
-              <p className="font-black">Required assets are missing. This product cannot be activated yet.</p>
+            <AdminAlert tone="warning" className="text-xs leading-5">
+              <p className="font-semibold">Required assets are missing. This product cannot be activated yet.</p>
               {brandedProductionTemplateMissing ? (
-                <p className="mt-2 font-black text-red-700">
+                <p className="mt-2 font-semibold text-red-700">
                   Branded Direct is unavailable until a branded front template is attached for production artwork.
                 </p>
               ) : null}
@@ -606,12 +602,12 @@ export function ProductEditor({
                   <li key={issue}>{issue}</li>
                 ))}
               </ul>
-            </div>
+            </AdminAlert>
           ) : (
-            <div className="flex items-center gap-2 rounded-md border border-teal-100 bg-teal-50 p-3 text-xs font-bold text-brand">
+            <AdminAlert tone="success" className="flex items-center gap-2 text-xs">
               <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
               Ready to publish.
-            </div>
+            </AdminAlert>
           )}
         </SidebarCard>
 
@@ -622,11 +618,10 @@ export function ProductEditor({
           </div>
         </SidebarCard>
 
-        <SidebarCard title="Product Model">
-          <label className="grid gap-2 text-sm font-bold text-ink">
+        <SidebarCard title="Commerce">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
             Operational product type
-            <select
-              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+            <AdminSelect
               value={productKind}
               onChange={(event) => updateProductKind(event.target.value as ProductKind)}
             >
@@ -634,12 +629,11 @@ export function ProductEditor({
               <option value="custom_direct">Custom stand product</option>
               <option value="hosted_multilink">Hosted Multi-Link</option>
               <option value="bundle">Bundle</option>
-            </select>
+            </AdminSelect>
           </label>
-          <label className="grid gap-2 text-sm font-bold text-ink">
+          <label className="grid gap-2 text-sm font-semibold text-ink">
             Stand Type
-            <select
-              className="rounded-md border border-line bg-white px-3 py-2.5 font-normal"
+            <AdminSelect
               value={standTypeSlug}
               onChange={(event) => setStandTypeSlug(event.target.value)}
             >
@@ -648,10 +642,13 @@ export function ProductEditor({
                   {standType.title}
                 </option>
               ))}
-            </select>
+            </AdminSelect>
           </label>
+        </SidebarCard>
+
+        <SidebarCard title="Business Uses">
           <fieldset className="grid gap-2">
-            <legend className="text-sm font-bold text-ink">Business Uses</legend>
+            <legend className="text-sm font-semibold text-ink">Available uses</legend>
             <div className="grid max-h-56 gap-2 overflow-auto rounded-md border border-line bg-white p-2">
               {businessUses.map((businessUse) => (
                 <label key={businessUse.slug} className="flex items-center gap-2 rounded px-2 py-1.5 text-sm text-ink hover:bg-gray-50">
@@ -666,7 +663,7 @@ export function ProductEditor({
               ))}
             </div>
           </fieldset>
-          <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-bold text-ink">
+          <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm font-semibold text-ink">
             Special solution
             <input
               type="checkbox"
@@ -694,16 +691,16 @@ export function ProductEditor({
 
         <SidebarCard title="Asset Readiness">
           <div className="grid gap-3">
-            <div className="rounded-md border border-line bg-[#f7f8fa] p-3">
-              <p className="text-[11px] font-black uppercase text-muted">Product media</p>
+            <AdminSoftPanel className="p-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">Product media</p>
               <ReadinessLine label="Primary product image" ready={productMediaReady} />
-            </div>
-            <div className="rounded-md border border-line bg-[#f7f8fa] p-3">
+            </AdminSoftPanel>
+            <AdminSoftPanel className="p-3">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-black uppercase text-muted">Setup option media</p>
-                <span className={missingOptionMedia.length === 0 ? "text-xs font-black text-brand" : "text-xs font-black text-red-700"}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">Setup option media</p>
+                <AdminBadge tone={missingOptionMedia.length === 0 ? "success" : "danger"}>
                   {missingOptionMedia.length === 0 ? "Ready" : `${missingOptionMedia.length} missing`}
-                </span>
+                </AdminBadge>
               </div>
               <div className="mt-2 grid gap-2">
                 {optionReadinessRows.length > 0 ? (
@@ -714,7 +711,7 @@ export function ProductEditor({
                   <ReadinessLine label="Active product option" ready={false} />
                 )}
               </div>
-            </div>
+            </AdminSoftPanel>
           </div>
           {activeVisibleOptions.some((option) => option.optionCode === "hosted_multilink") ? (
             <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
@@ -728,14 +725,14 @@ export function ProductEditor({
             ) : null}
           </div>
           {mediaWarnings.length > 0 ? (
-            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-              <p className="text-[11px] font-black uppercase text-amber-800">Media warnings</p>
+            <AdminAlert tone="warning" className="mt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-amber-800">Media warnings</p>
               <ul className="mt-2 grid gap-1 text-xs leading-5 text-amber-800">
                 {mediaWarnings.map((warning) => (
                   <li key={warning}>{warning}</li>
                 ))}
               </ul>
-            </div>
+            </AdminAlert>
           ) : null}
         </SidebarCard>
 
@@ -747,21 +744,18 @@ export function ProductEditor({
           </ul>
         </SidebarCard>
 
-        <button
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
-          disabled={isSaving}
-        >
+        <AdminButton type="submit" className="w-full" variant="primary" loading={isSaving} disabled={isSaving}>
           <Save className="h-4 w-4" aria-hidden="true" />
           {isSaving ? "Saving..." : mode === "create" ? "Save draft" : "Save product"}
-        </button>
+        </AdminButton>
         {status ? (
-          <p className={status.tone === "success" ? "text-sm font-bold text-brand" : "text-sm font-bold text-red-600"}>
+          <AdminAlert tone={status.tone === "success" ? "success" : "danger"}>
             {status.message}
-          </p>
+          </AdminAlert>
         ) : null}
-        <Link className="text-center text-sm font-bold text-muted hover:text-ink" href="/admin/products">
+        <AdminLinkButton className="w-full" variant="outline" href="/admin/products">
           Back to products
-        </Link>
+        </AdminLinkButton>
       </aside>
     </form>
   );
@@ -769,22 +763,17 @@ export function ProductEditor({
 
 function EditorCard({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <section className="tr-admin-card grid gap-4 p-4 md:p-5">
-      <div>
-        <h2 className="tr-admin-card-title text-ink">{title}</h2>
-        <p className="mt-1 text-sm leading-6 text-muted">{description}</p>
-      </div>
-      {children}
-    </section>
+    <AdminCard title={title} description={description}>
+      <div className="grid gap-4">{children}</div>
+    </AdminCard>
   );
 }
 
 function SidebarCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="tr-admin-card grid gap-3 p-4">
-      <h2 className="text-sm font-semibold text-ink">{title}</h2>
+    <AdminCard title={title} className="grid gap-3 p-4">
       {children}
-    </section>
+    </AdminCard>
   );
 }
 
@@ -875,20 +864,21 @@ function ProductMediaGrid({
         {selectedCount > 0 ? (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-line bg-[#f7f8fa] px-2 py-1.5 text-xs font-bold text-ink">
             <span>{selectedCount} selected</span>
-            <button
+            <AdminButton
               type="button"
-              className="rounded-md border border-line bg-white px-2 py-1 disabled:cursor-not-allowed disabled:text-muted"
+              className="min-h-8 px-2 py-1 text-xs"
+              variant="outline"
               disabled={!canSetAsMain}
               onClick={setSelectedGalleryAsMain}
             >
               Set as main
-            </button>
-            <button type="button" className="rounded-md border border-red-100 bg-white px-2 py-1 text-red-700" onClick={deleteSelectedMedia}>
+            </AdminButton>
+            <AdminButton type="button" className="min-h-8 px-2 py-1 text-xs" variant="danger" onClick={deleteSelectedMedia}>
               Delete
-            </button>
-            <button type="button" className="rounded-md border border-line bg-white px-2 py-1" onClick={clearSelection}>
+            </AdminButton>
+            <AdminButton type="button" className="min-h-8 px-2 py-1 text-xs" variant="outline" onClick={clearSelection}>
               Clear
-            </button>
+            </AdminButton>
           </div>
         ) : null}
       </div>
@@ -972,8 +962,8 @@ function SetupOptionEditor({
       <summary className="grid cursor-pointer list-none gap-3 p-3 md:grid-cols-[minmax(0,1fr)_140px_150px_120px] md:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-black text-ink">{option.title}</h3>
-            <span className="rounded-full bg-[#f7f8fa] px-2 py-1 text-[11px] font-black uppercase text-muted">{optionMeta.badge}</span>
+            <h3 className="text-sm font-semibold text-ink">{option.title}</h3>
+            <AdminBadge tone="neutral">{optionMeta.badge}</AdminBadge>
             <OptionReadinessBadge ready={optionReady} missingCount={missingRequiredMedia.length} />
           </div>
           <p className="mt-1 text-xs leading-5 text-muted">{optionMeta.summary}</p>
@@ -1228,9 +1218,9 @@ function MediaUploadCard({
           <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted">{description}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-black text-brand" : "rounded-full bg-red-50 px-2 py-1 text-xs font-black text-red-700"}>
+          <AdminBadge tone={ready ? "success" : required ? "danger" : "neutral"}>
             {ready ? "Ready" : required ? "Missing" : "Optional"}
-          </span>
+          </AdminBadge>
           {ready ? (
             <details className="relative">
               <summary className="grid h-7 w-7 cursor-pointer list-none place-items-center rounded-md border border-line text-muted hover:text-ink">
@@ -1302,7 +1292,7 @@ function MediaUploadCard({
           </span>
         )}
       </label>
-      {error ? <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{error}</p> : null}
+      {error ? <AdminAlert tone="danger">{error}</AdminAlert> : null}
       {isUploading && ready ? <p className="text-xs font-bold text-brand">Uploading replacement...</p> : null}
       <input type="hidden" name={`media-${role}`} value={value} readOnly />
     </div>
@@ -1327,10 +1317,9 @@ function ControlledInput({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-2 text-sm font-semibold text-ink">
       {label}
-      <input
-        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
+      <AdminInput
         name={name}
         value={value}
         placeholder={placeholder}
@@ -1356,10 +1345,9 @@ function Input({
   required?: boolean;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-2 text-sm font-semibold text-ink">
       {label}
-      <input
-        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
+      <AdminInput
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
@@ -1371,10 +1359,9 @@ function Input({
 
 function NumberInput({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-2 text-sm font-semibold text-ink">
       {label}
-      <input
-        className="rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink"
+      <AdminInput
         inputMode="numeric"
         value={String(value)}
         onChange={(event) => onChange(Number(event.target.value) || 0)}
@@ -1399,10 +1386,10 @@ function Textarea({
   required?: boolean;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-bold text-ink">
+    <label className="grid gap-2 text-sm font-semibold text-ink">
       {label}
-      <textarea
-        className={`${tall ? "min-h-36" : "min-h-20"} rounded-md border border-line bg-white px-3 py-2.5 font-normal text-ink`}
+      <AdminTextarea
+        className={tall ? "min-h-36" : "min-h-20"}
         name={name}
         defaultValue={defaultValue}
         placeholder={placeholder}
@@ -1414,10 +1401,10 @@ function Textarea({
 
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2">
-      <p className="text-[11px] font-black uppercase text-muted">{label}</p>
-      <p className="mt-1 text-sm font-bold text-ink">{value}</p>
-    </div>
+    <AdminSoftPanel className="px-3 py-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-ink">{value}</p>
+    </AdminSoftPanel>
   );
 }
 
@@ -1432,17 +1419,17 @@ function RuleRow({ label, value }: { label: string; value: string }) {
 
 function RulePill({ active, label }: { active: boolean; label: string }) {
   return (
-    <span className={active ? "rounded-full bg-teal-50 px-3 py-1 text-xs font-black text-brand" : "rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-muted"}>
+    <AdminBadge tone={active ? "success" : "neutral"}>
       {label}
-    </span>
+    </AdminBadge>
   );
 }
 
 function OptionReadinessBadge({ ready, missingCount }: { ready: boolean; missingCount: number }) {
   return (
-    <span className={ready ? "rounded-full bg-teal-50 px-2 py-1 text-xs font-black text-brand" : "rounded-full bg-amber-50 px-2 py-1 text-xs font-black text-ink"}>
+    <AdminBadge tone={ready ? "success" : "warning"}>
       {ready ? "Ready" : `${missingCount} media missing`}
-    </span>
+    </AdminBadge>
   );
 }
 

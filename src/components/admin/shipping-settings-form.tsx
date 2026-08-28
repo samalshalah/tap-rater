@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import type { ShippingSettingsInput } from "@/lib/validators";
+import { AdminAlert, AdminButton, AdminCard, AdminInput, AdminSelect, AdminTextarea } from "./admin-ui";
 
 type ShippingSettingsFormProps = {
   settings: ShippingSettingsInput;
@@ -59,22 +60,19 @@ export function ShippingSettingsForm({ settings }: ShippingSettingsFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div className="rounded-md border border-line bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-black text-ink">Checkout shipping</h2>
-        <p className="mt-1 text-sm text-muted">Manual mode collects the address but does not add a shipping fee.</p>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-3">
-          <label className="block text-sm font-bold text-ink">
+      <AdminCard title="Checkout shipping" description="Manual mode collects the address but does not add a shipping fee.">
+        <div className="grid gap-4 md:grid-cols-3">
+          <label className="block text-sm font-semibold text-ink">
             Shipping mode
-            <select
+            <AdminSelect
               value={form.shippingMode}
               onChange={(event) => setForm((current) => ({ ...current, shippingMode: event.target.value as ShippingSettingsInput["shippingMode"] }))}
-              className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm"
+              className="mt-2"
             >
               <option value="manual">Manual review</option>
               <option value="free">Free shipping</option>
               <option value="flat">Flat rate</option>
-            </select>
+            </AdminSelect>
           </label>
 
           <TextField
@@ -91,11 +89,10 @@ export function ShippingSettingsForm({ settings }: ShippingSettingsFormProps) {
             placeholder="US"
           />
         </div>
-      </div>
+      </AdminCard>
 
-      <div className="rounded-md border border-line bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-black text-ink">Fulfillment notes</h2>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <AdminCard title="Fulfillment notes">
+        <div className="grid gap-4 md:grid-cols-2">
           <TextArea
             label="Handling time"
             value={form.handlingTimeText}
@@ -121,16 +118,16 @@ export function ShippingSettingsForm({ settings }: ShippingSettingsFormProps) {
             placeholder="Shown internally for now and ready for customer surfaces."
           />
         </div>
-      </div>
+      </AdminCard>
 
       <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-4 shadow-lg">
         <div className="text-sm">
-          {message ? <p className="font-bold text-brand">{message}</p> : null}
-          {error ? <p className="font-bold text-red-600">{error}</p> : null}
+          {message ? <AdminAlert tone="success">{message}</AdminAlert> : null}
+          {error ? <AdminAlert tone="danger">{error}</AdminAlert> : null}
         </div>
-        <button type="submit" disabled={isSaving} className="rounded-md bg-ink px-5 py-3 text-sm font-black text-white disabled:opacity-60">
+        <AdminButton type="submit" disabled={isSaving} loading={isSaving} variant="primary">
           {isSaving ? "Saving..." : "Save shipping settings"}
-        </button>
+        </AdminButton>
       </div>
     </form>
   );
@@ -148,9 +145,9 @@ function TextField({
   placeholder?: string;
 }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       {label}
-      <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm" />
+      <AdminInput value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} className="mt-2" />
     </label>
   );
 }
@@ -167,14 +164,14 @@ function TextArea({
   placeholder?: string;
 }) {
   return (
-    <label className="block text-sm font-bold text-ink">
+    <label className="block text-sm font-semibold text-ink">
       {label}
-      <textarea
+      <AdminTextarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         rows={4}
-        className="mt-2 w-full rounded-md border border-line px-3 py-2 text-sm"
+        className="mt-2"
       />
     </label>
   );

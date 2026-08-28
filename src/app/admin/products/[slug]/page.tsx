@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminAlert } from "@/components/admin/admin-ui";
 import { ProductEditor } from "@/components/admin/product-editor";
 import { createBlankAdminProduct, getAdminProductBySlug } from "@/lib/admin-products";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -44,9 +45,9 @@ export default async function AdminProductEditorPage({ params }: AdminProductEdi
           Manage one canonical stand product, its allowed setup options, required assets, destination metadata, and storefront publishing status.
         </p>
         {!canSave ? (
-          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-ink">
+          <AdminAlert className="mt-6" tone="warning">
             Database persistence is not configured yet. Product edits cannot be saved.
-          </div>
+          </AdminAlert>
         ) : null}
         <ProductEditor
           product={product}

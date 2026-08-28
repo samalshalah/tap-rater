@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminAlert } from "@/components/admin/admin-ui";
 import { RequestInbox } from "@/components/admin/request-inbox";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
@@ -29,9 +30,9 @@ export default async function AdminRequestsPage() {
         </div>
 
         {!isConfigured ? (
-          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-ink">
+          <AdminAlert className="mt-6" tone="warning">
             Database persistence is not configured yet. Add DATABASE_URL for Neon, or Supabase server credentials, to view saved requests.
-          </div>
+          </AdminAlert>
         ) : null}
 
         <div className="mt-8">

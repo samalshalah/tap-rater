@@ -11,6 +11,16 @@ import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProduct
 import { getBrandedProductionTemplateReadiness, type BrandedTemplateReadiness } from "@/lib/admin-product-readiness";
 import { getCanonicalProductModel } from "@/lib/product-model";
 import { formatPrice } from "@/lib/products";
+import {
+  AdminAlert,
+  AdminBadge,
+  AdminButton,
+  AdminIconButton,
+  AdminInput,
+  AdminLinkButton,
+  AdminResponsiveTable,
+  AdminSelect
+} from "./admin-ui";
 
 type AdminProductsTableProps = {
   products: MigratedProduct[];
@@ -175,9 +185,9 @@ export function AdminProductsTable({
         <p className="text-xs font-black uppercase tracking-[0.2em] text-brand">Catalog</p>
         <h2 className="mt-3 text-2xl font-black text-ink">No products yet</h2>
         <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Create your first Tap Rater stand product.</p>
-        <Link className="mt-6 inline-flex rounded-md bg-ink px-5 py-3 text-sm font-bold text-white" href="/admin/products/new">
+        <AdminLinkButton className="mt-6" variant="primary" href="/admin/products/new">
           Add product
-        </Link>
+        </AdminLinkButton>
       </div>
     );
   }
@@ -188,8 +198,8 @@ export function AdminProductsTable({
         <label className="relative block text-xs font-black uppercase text-muted">
           Search
           <Search className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-muted" aria-hidden="true" />
-          <input
-            className="mt-2 w-full rounded-md border border-line bg-white py-2.5 pl-9 pr-3 text-sm font-normal text-ink"
+          <AdminInput
+            className="mt-2 py-2.5 pl-9 pr-3 font-normal"
             value={filters.search}
             placeholder="Name, SKU, slug"
             onChange={(event) => updateFilter("search", event.target.value)}
@@ -243,32 +253,28 @@ export function AdminProductsTable({
           {selectedSlugs.size > 0 ? <span> {selectedSlugs.size} selected.</span> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="rounded-md border border-line px-4 py-2 text-sm font-bold text-ink" onClick={resetFilters}>
+          <AdminButton type="button" variant="outline" onClick={resetFilters}>
             Reset filters
-          </button>
-          <button
+          </AdminButton>
+          <AdminButton
             type="button"
-            className="inline-flex items-center gap-2 rounded-md border border-red-200 px-4 py-2 text-sm font-bold text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            variant="danger"
             disabled={!canDelete || selectedSlugs.size === 0 || isDeleting}
             onClick={() => deleteProducts([...selectedSlugs], selectedProductTitles.slice(0, 2).join(", "))}
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
             Delete selected
-          </button>
+          </AdminButton>
         </div>
       </div>
       {status ? (
-        <div
-          className={
-            status.tone === "success"
-              ? "border-b border-teal-100 bg-teal-50 px-4 py-3 text-sm font-semibold text-brand"
-              : "border-b border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
-          }
-        >
+        <AdminAlert tone={status.tone === "success" ? "success" : "danger"} className="rounded-none border-x-0 border-t-0 px-4 py-3">
           {status.message}
-        </div>
+        </AdminAlert>
       ) : null}
-      <div className="overflow-x-auto">
+      <AdminResponsiveTable
+        className="rounded-none border-0 shadow-none"
+        table={
         <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-[#f7f8fa] text-xs uppercase text-muted">
@@ -354,23 +360,20 @@ export function AdminProductsTable({
                   <td className="px-4 py-3 text-muted">{formatDate(product.updatedAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      <Link
-                        className="inline-flex items-center gap-2 rounded-md border border-line px-3 py-2 text-xs font-bold text-ink hover:border-brand hover:text-brand"
-                        href={`/admin/products/${product.slug}`}
-                      >
+                      <AdminLinkButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/admin/products/${product.slug}`}>
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                         Edit
-                      </Link>
-                      <button
+                      </AdminLinkButton>
+                      <AdminIconButton
                         type="button"
-                        className="rounded-md border border-red-100 p-2 text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-9 w-9"
+                        variant="danger"
                         disabled={!canDelete || isDeleting}
-                        aria-label={`Delete ${product.title}`}
-                        title={`Delete ${product.title}`}
+                        label={`Delete ${product.title}`}
                         onClick={() => deleteProducts([product.slug], product.title)}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
+                      </AdminIconButton>
                     </div>
                   </td>
                 </tr>
@@ -385,7 +388,76 @@ export function AdminProductsTable({
             ) : null}
           </tbody>
         </table>
-      </div>
+        }
+        cards={
+          filteredProducts.length === 0 ? (
+            <p className="p-6 text-center text-sm text-muted">No products match these filters.</p>
+          ) : (
+            filteredProducts.map((product) => {
+              const productKind = getProductKind(product);
+              const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
+              const readiness = getProductAssetReadiness(product, options);
+              const model = getCanonicalProductModel(product);
+              const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
+
+              return (
+                <article key={product.slug} className={selectedSlugs.has(product.slug) ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
+                  <div className="flex gap-3">
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 rounded border-line accent-brand"
+                      checked={selectedSlugs.has(product.slug)}
+                      disabled={isDeleting}
+                      aria-label={`Select ${product.title}`}
+                      onChange={() => toggleProduct(product.slug)}
+                    />
+                    <ProductThumbnail product={product} />
+                    <div className="min-w-0 flex-1">
+                      <Link className="block font-semibold leading-5 text-ink hover:text-brand" href={`/admin/products/${product.slug}`}>
+                        {product.title}
+                      </Link>
+                      <p className="mt-1 text-xs text-muted">{product.sku || product.slug}</p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        <StatusBadge status={model.destinationMode} />
+                        <StatusBadge status={getProductStatus(product)} />
+                        <StockBadge stockStatus={product.stockStatus} />
+                      </div>
+                    </div>
+                  </div>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <ProductMobileField label="Type" value={findTitle(standTypes, product.standTypeSlug) ?? "-"} />
+                    <ProductMobileField label="Uses" value={formatBusinessUses(product, businessUses)} />
+                    <ProductMobileField label="Destination" value={findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"} />
+                    <ProductMobileField label="Options" value={formatOptionSummary(options, model.customizationLevel)} />
+                    <ProductMobileField label="Price" value={formatPriceRange(options, product)} strong />
+                  </dl>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <TemplateReadinessBadge readiness={brandedReadiness} />
+                    <ReadinessBadge status={readiness.status} missing={readiness.missing} />
+                    <MediaWarningList warnings={getMediaWarnings(product)} />
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                    <AdminLinkButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/admin/products/${product.slug}`}>
+                      <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Edit
+                    </AdminLinkButton>
+                    <AdminButton
+                      className="min-h-9 px-3 py-1.5 text-xs"
+                      type="button"
+                      variant="danger"
+                      disabled={!canDelete || isDeleting}
+                      onClick={() => deleteProducts([product.slug], product.title)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      Delete
+                    </AdminButton>
+                  </div>
+                </article>
+              );
+            })
+          )
+        }
+      />
     </div>
   );
 }
@@ -402,16 +474,16 @@ function FilterSelect({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="block text-xs font-black uppercase text-muted">
+    <label className="block text-xs font-semibold uppercase tracking-[0.04em] text-muted">
       {label}
-      <select
-        className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2.5 text-sm font-normal text-ink"
+      <AdminSelect
+        className="mt-2 px-3 py-2.5 font-normal"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >
         <option value="">All</option>
         {children}
-      </select>
+      </AdminSelect>
     </label>
   );
 }
@@ -429,49 +501,43 @@ function ProductThumbnail({ product }: { product: MigratedProduct }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const classes =
+  const tone =
     status === "active" || status === "DIRECT" || status === "STANDARD"
-      ? "bg-teal-50 text-brand"
+      ? "success"
       : status === "archived" || status === "HOSTED"
-        ? "bg-gray-100 text-muted"
-        : "bg-amber-50 text-ink";
+        ? "neutral"
+        : "warning";
 
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase ${classes}`}>{status}</span>;
+  return <AdminBadge tone={tone}>{status}</AdminBadge>;
 }
 
 function TemplateReadinessBadge({ readiness }: { readiness: BrandedTemplateReadiness }) {
   if (readiness.status === "not_offered") {
-    return <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold uppercase text-muted">No branded</span>;
+    return <AdminBadge tone="neutral">No branded</AdminBadge>;
   }
 
   if (readiness.status === "ready") {
-    return <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand">Template ready</span>;
+    return <AdminBadge tone="success">Template ready</AdminBadge>;
   }
 
   return (
-    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-red-700" title={readiness.reason}>
+    <AdminBadge tone="danger" title={readiness.reason}>
       Template missing
-    </span>
+    </AdminBadge>
   );
 }
 
 function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus"] }) {
   return (
-    <span
-      className={
-        stockStatus === "instock"
-          ? "ml-2 inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand"
-          : "ml-2 inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold uppercase text-muted"
-      }
-    >
+    <AdminBadge tone={stockStatus === "instock" ? "success" : "neutral"}>
       {stockStatus === "instock" ? "In stock" : "Out of stock"}
-    </span>
+    </AdminBadge>
   );
 }
 
 function ReadinessBadge({ status, missing }: { status: string; missing: string[] }) {
   if (status === "ready") {
-    return <span className="inline-flex rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-brand">Assets ready</span>;
+    return <AdminBadge tone="success">Assets ready</AdminBadge>;
   }
 
   const label =
@@ -482,9 +548,9 @@ function ReadinessBadge({ status, missing }: { status: string; missing: string[]
         : "Blocked";
 
   return (
-    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-red-700" title={missing.join(", ")}>
+    <AdminBadge tone="danger" title={missing.join(", ")}>
       {label}
-    </span>
+    </AdminBadge>
   );
 }
 
@@ -492,9 +558,18 @@ function MediaWarningList({ warnings }: { warnings: string[] }) {
   if (warnings.length === 0) return null;
 
   return (
-    <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase text-amber-700" title={warnings.join("; ")}>
+    <AdminBadge tone="warning" title={warnings.join("; ")}>
       {warnings.length} warning{warnings.length === 1 ? "" : "s"}
-    </span>
+    </AdminBadge>
+  );
+}
+
+function ProductMobileField({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div className="grid grid-cols-[96px_1fr] gap-3">
+      <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{label}</dt>
+      <dd className={strong ? "font-semibold text-ink" : "text-muted"}>{value}</dd>
+    </div>
   );
 }
 

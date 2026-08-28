@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminAlert, AdminCard, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 import { getAdminProducts } from "@/lib/admin-products";
@@ -25,9 +26,9 @@ export default async function AdminPage() {
           Review the orders, production work, fulfillment status, and sellable product readiness that staff need today.
         </p>
         {!configured ? (
-          <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-ink">
+          <AdminAlert className="mt-6" tone="warning">
             Order persistence is not configured. Order and production counts will stay empty until database configuration is available.
-          </div>
+          </AdminAlert>
         ) : null}
         <div className="mt-8 grid gap-5 lg:grid-cols-4">
           {[
@@ -36,20 +37,18 @@ export default async function AdminPage() {
             ["Ready to ship", String(readyToShip.length), "Produced orders awaiting shipment handling"],
             ["Active products", String(activeProducts.length), "Sellable products currently visible to customers"]
           ].map(([label, value, copy]) => (
-            <article key={label} className="tr-admin-card p-5">
-              <p className="text-sm font-bold text-muted">{label}</p>
-              <p className="mt-2 text-3xl font-semibold text-ink">{value}</p>
-              <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-            </article>
+            <AdminSummaryCard key={label} label={label} value={value} description={copy} />
           ))}
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {adminNavigationGroups.flatMap((group) => group.items).map((item) => (
-            <Link key={item.href} className="tr-admin-card p-5 transition hover:-translate-y-0.5" href={item.href}>
+            <Link key={item.href} href={item.href}>
+              <AdminCard className="h-full transition hover:-translate-y-0.5">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="font-semibold text-ink">{item.label}</h2>
               </div>
               <p className="mt-2 text-sm leading-6 text-muted">{item.description}</p>
+              </AdminCard>
             </Link>
           ))}
         </div>

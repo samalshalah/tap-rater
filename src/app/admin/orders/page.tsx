@@ -1,5 +1,6 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOrdersWorkspace, type AdminOrdersWorkspaceOrder } from "@/components/admin/admin-orders-workspace";
+import { AdminBadge } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
   getAdminOrders,
@@ -29,8 +30,9 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
               Manage paid orders from checkout through production, tracking, shipment, delivery, and fulfillment notes.
             </p>
           </div>
-          <div className="rounded-md border border-line bg-white px-4 py-3 text-sm font-bold text-ink">
+          <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">
             {workspaceOrders.length} orders
+            {params?.filter === "production" ? <span className="ml-2"><AdminBadge tone="warning">Production queue</AdminBadge></span> : null}
           </div>
         </div>
 
