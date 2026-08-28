@@ -764,14 +764,14 @@ function TemplateProofPreview({
   return (
     <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[390px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute grid place-items-center" style={regionStyle(brandedStandComposition.logoRegion)}>
+      <div className="absolute grid place-items-center p-[1.5%]" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logo ? (
           <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-full max-w-full object-contain" />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
-      <p className="absolute overflow-hidden text-center text-[13px] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
+      <p className="absolute overflow-hidden text-center text-[clamp(15px,4.2vw,21px)] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
         {businessName || "Business name"}
       </p>
       <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>

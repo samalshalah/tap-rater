@@ -190,6 +190,10 @@ export async function uploadProductMedia({
     throw new ProductMediaStorageError("Image dimensions are too large.", 400);
   }
 
+  if (role === "center_asset" && isLikelyFullStandArtworkUpload(dimensions)) {
+    throw new ProductMediaStorageError("Upload the customer logo only, not a full stand proof or template image.", 400);
+  }
+
   const bucket = await getProductMediaBucket();
   if (!bucket) {
     throw new ProductMediaStorageError("Product media storage is not configured.", 503);
@@ -229,6 +233,12 @@ export function getProductMediaUrl(storageKey: string) {
   }
 
   return `/api/media/product/${storageKey}`;
+}
+
+export function isLikelyFullStandArtworkUpload({ width, height }: { width: number; height: number }) {
+  const aspectRatio = width / height;
+  const pixelCount = width * height;
+  return height > width && pixelCount >= 1_000_000 && aspectRatio >= 0.58 && aspectRatio <= 0.78;
 }
 
 function slugSegment(value: string) {
