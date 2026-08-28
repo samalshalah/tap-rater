@@ -8,7 +8,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
 import { formatPrice } from "@/lib/products";
-import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, hostedMultiLinkOption, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
@@ -59,7 +59,14 @@ type GooglePlaceResult = {
 };
 
 export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
-  const options = useMemo(() => getProductPurchaseOptions(product), [product]);
+  const options = useMemo(() => {
+    const purchaseOptions = getProductPurchaseOptions(product);
+    if (purchaseOptions.length === 0 && (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.requiresSubscription)) {
+      return [hostedMultiLinkOption];
+    }
+
+    return purchaseOptions;
+  }, [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [step, setStep] = useState<SetupStep>("choose");
   const [destinationUrl, setDestinationUrl] = useState("");
@@ -100,7 +107,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
-  const directOptions = options.filter((option) => option.id !== "hosted_multilink");
+  const setupOptions = options;
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
   const currentApprovalSnapshot = selectedOption
@@ -438,8 +445,18 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     router.push("/cart");
   }
 
-  const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build your Branded QR stand" : "Set up your Standard Direct stand";
-  const selectedPrice = configuredUnitPriceCents === null ? "Unavailable" : formatPrice(configuredUnitPriceCents).replace(".00", "");
+  const modalTitle =
+    selectedOption.id === "hosted_multilink"
+      ? "Build your Multi-Link stand"
+      : selectedOption.id === "branded_qr_direct"
+        ? "Build your Branded QR stand"
+        : "Set up your Standard Direct stand";
+  const selectedPrice =
+    selectedOption.id === "hosted_multilink"
+      ? `${formatPrice(selectedOption.priceCents).replace(".00", "")} + ${formatPrice(selectedOption.monthlyPriceCents ?? 0).replace(".00", "")}/mo`
+      : configuredUnitPriceCents === null
+        ? "Unavailable"
+        : formatPrice(configuredUnitPriceCents).replace(".00", "");
   const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
   const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-3" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
@@ -458,7 +475,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         <div className="grid gap-2">
           <p className="text-sm font-black text-ink">Design</p>
           <div className="grid gap-3 sm:grid-cols-2">
-          {directOptions.map((option) => (
+          {setupOptions.map((option) => (
             <label
               key={option.id}
               className={
@@ -578,7 +595,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           <div className="mt-4 rounded-lg border border-dashed border-line bg-soft p-3">
             <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
             <p className="mt-1 text-sm leading-6 text-muted">
-              Multi-Link will be its own builder later. Choose an available direct checkout option today.
+              Multi-Link is shown as its own product, and checkout will open when hosted setup is enabled.
             </p>
           </div>
         ) : null}
@@ -586,15 +603,24 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         <button
           type="button"
           className="tr-button-primary w-full"
-          disabled={configuredUnitPriceCents === null}
+          disabled={configuredUnitPriceCents === null || selectedOption?.id === "hosted_multilink"}
           onClick={() => selectedOptionId && openBuilder(selectedOptionId)}
         >
-          Set Up My Stand - {selectedPrice}
+          {selectedOption?.id === "hosted_multilink" ? "Multi-Link Coming Soon" : `Set Up My Stand - ${selectedPrice}`}
         </button>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
           <span>QR + NFC</span>
-          <span>No subscription</span>
-          <span>Arrives ready to use</span>
+          {selectedOption?.id === "hosted_multilink" ? (
+            <>
+              <span>Hosted Multi-Link</span>
+              <span>{formatPrice(selectedOption.monthlyPriceCents ?? 0).replace(".00", "")}/mo hosting</span>
+            </>
+          ) : (
+            <>
+              <span>No subscription</span>
+              <span>Arrives ready to use</span>
+            </>
+          )}
         </div>
 
         {error && !isBuilderOpen ? <p className="tr-status-error mt-4" role="alert">{error}</p> : null}
@@ -1065,6 +1091,10 @@ function regionStyle(region: BrandedCompositionRegion) {
 }
 
 function getOptionSummary(option: PurchaseOption) {
+  if (option.id === "hosted_multilink") {
+    return "Hosted page with up to 10 links";
+  }
+
   if (option.id === "branded_qr_direct") {
     return "Front proof included";
   }
@@ -1073,6 +1103,10 @@ function getOptionSummary(option: PurchaseOption) {
 }
 
 function getOptionShortSummary(option: PurchaseOption) {
+  if (option.id === "hosted_multilink") {
+    return "Review, menu, booking, social, and website links";
+  }
+
   if (option.id === "branded_qr_direct") {
     return "Your logo + business name + QR";
   }
@@ -1081,6 +1115,10 @@ function getOptionShortSummary(option: PurchaseOption) {
 }
 
 function getOptionDisplayLabel(option: PurchaseOption) {
+  if (option.id === "hosted_multilink") {
+    return "Multi-Link";
+  }
+
   if (option.id === "branded_qr_direct") {
     return "Branded + QR";
   }

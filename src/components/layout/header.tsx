@@ -28,7 +28,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     {
-      label: "Website Links",
+      label: "Multi-Link Stands",
       href: "/category/website-link-stands",
       order: 40,
       enabled: true,
@@ -40,10 +40,10 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
 const mobileNavigationDescriptions: Record<string, string> = {
   Home: "Start from the main Tap Rater storefront.",
   Shop: "Browse all stands with filters.",
-  "Shop by Type": "Choose review, menu, website, and other stand types.",
+  "Shop by Type": "Choose review, menu, multi-link, and other stand types.",
   "By Use": "Shop by business or customer action.",
   "How It Works": "See the buying and setup flow.",
-  "Website Links": "Open websites, catalogs, apps, and custom direct URLs.",
+  "Multi-Link Stands": "Open a hosted page with multiple customer links.",
   Resources: "FAQ, support, and help pages.",
 };
 
@@ -79,8 +79,8 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
     .map((item) =>
       item.label.toLowerCase() === "shop by type"
         ? { ...item, href: "/shop#stand-types" }
-        : item.label.toLowerCase() === "multi-link" && item.href === "/category/website-link-stands"
-          ? { ...item, label: "Website Links" }
+        : (item.label.toLowerCase() === "multi-link" || item.label.toLowerCase() === "website links") && item.href === "/category/website-link-stands"
+          ? { ...item, label: "Multi-Link Stands" }
         : item,
     )
     .sort(

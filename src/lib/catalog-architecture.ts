@@ -150,8 +150,8 @@ export const lockedStandTypes: StandType[] = [
   },
   {
     slug: "website-link-stands",
-    title: "Website & Link Stands",
-    description: "Stands that open websites, catalogs, apps, locations, or custom direct URLs.",
+    title: "Multi-Link Stands",
+    description: "Branded stands that open a hosted Tap Rater page with multiple customer links.",
     imageUrl: "/uploads/products/visit-website-stand.png",
     sortOrder: 60,
     isActive: true

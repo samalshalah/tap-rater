@@ -342,6 +342,10 @@ export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boole
     return false;
   }
 
+  if (product.productKind === "hosted_multilink" || product.serviceMode === "hosted_landing_page" || product.requiresLandingPage) {
+    return true;
+  }
+
   if (product.checkoutMode !== "buy_now") {
     return false;
   }

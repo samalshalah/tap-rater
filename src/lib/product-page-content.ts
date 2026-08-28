@@ -66,6 +66,27 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
     return product.keyFeatures;
   }
 
+  if (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
+    return [
+      {
+        title: "Tap or scan ready",
+        body: "Customers tap NFC or scan the printed QR code to open your hosted Tap Rater page."
+      },
+      {
+        title: "Multiple customer links",
+        body: "Use one stand for review, menu, booking, social, website, offer, and other important links."
+      },
+      {
+        title: "Hosted Tap Rater page",
+        body: "Your links live on a hosted page designed for quick customer actions from a phone."
+      },
+      {
+        title: "Branded stand setup",
+        body: "Add your business name and logo so the stand matches the customer-facing page."
+      }
+    ];
+  }
+
   const destination = getProductDestinationCopy(product);
 
   return [
@@ -143,6 +164,18 @@ export function getReviewDestination(product: MigratedProduct): string {
 }
 
 export function getProductHowItWorks(product: MigratedProduct): Array<ProductPageContentItem & { step: number }> {
+  if (product.howItWorks?.length) {
+    return product.howItWorks;
+  }
+
+  if (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
+    return [
+      { step: 1, title: "Choose Multi-Link", body: "Start with the hosted Multi-Link stand product." },
+      { step: 2, title: "Add your links", body: "Prepare the review, menu, booking, social, website, offer, or custom links you want customers to open." },
+      { step: 3, title: "Approve branded setup", body: "Add your business details and approve the stand and hosted page before launch." }
+    ];
+  }
+
   return product.howItWorks?.length
     ? product.howItWorks
     : [

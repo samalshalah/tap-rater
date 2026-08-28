@@ -316,15 +316,15 @@ export const catalogCategories: CatalogCategory[] = [
   },
   {
     slug: "website-links",
-    title: "Website & Link Stands",
-    eyebrow: "Links",
-    description: "NFC and QR tabletop stands that open a website, landing page, app download, offer, or custom link.",
-    seoTitle: "Website and Link NFC Stands | Tap Rater",
-    seoDescription: "Shop NFC website and link stands that open a business website, landing page, app download, offer, or custom link.",
-    buyerIntent: "For businesses that want customers to open one important link instantly.",
-    aliases: ["website-link-stands", "link-stands"],
+    title: "Multi-Link Stands",
+    eyebrow: "Multi-Link",
+    description: "Branded NFC and QR tabletop stands that open a hosted Tap Rater page with multiple customer links.",
+    seoTitle: "Multi-Link NFC Stands | Tap Rater",
+    seoDescription: "Shop Multi-Link NFC and QR stands that open a hosted Tap Rater page with review, menu, booking, social, and website links.",
+    buyerIntent: "For businesses that want one stand to open multiple important customer links.",
+    aliases: ["website-link-stands", "link-stands", "website-links", "multi-link-stands", "multilink-stands"],
     seoCopy:
-      "Website and link stands are direct-link products for one clear destination."
+      "Multi-Link stands open a hosted Tap Rater page so one stand can connect customers to several business links."
   },
   {
     slug: "custom-stands",
@@ -1844,22 +1844,48 @@ export const migratedProducts: MigratedProduct[] = [
     seoDescription: "Low-profile NFC plate that opens a restaurant, cafe, or service menu.",
     searchKeywords: ["view our menu plate", "nfc menu plate", "restaurant menu nfc plate"]
   }),
-  phaseOneProduct({
-    slug: "visit-our-website-stand",
-    title: "Visit Our Website Stand",
-    sku: "TR-WEBSITE-STAND",
+  {
+  ...phaseOneProduct({
+    slug: "multi-link-stand",
+    title: "Multi-Link Stand",
+    sku: "TR-MULTILINK-STAND",
     categorySlug: "website-links",
-    basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your website, landing page, offer, or custom link.",
+    standTypeSlug: "website-link-stands",
+    destinationType: "website",
+    basePriceCents: 4900,
+    shortDescription: "Branded NFC and QR stand that opens a hosted Tap Rater page with multiple customer links.",
     description:
-      "Visit Our Website Stand is a tabletop NFC and QR display for one important business link. It opens your website, landing page, offer, app download, or custom URL with one tap or scan.",
-    supportedDestinations: ["website", "custom"],
-    displayText: "Visit Our Website",
-    image: { src: "/uploads/products/visit-website-stand.png", alt: "Tap Rater Visit Our Website Stand" },
-    seoTitle: "Visit Our Website Stand | NFC Website Link Stand",
-    seoDescription: "Buy a website link NFC stand that opens your business website, landing page, offer, app download, or custom URL.",
-    searchKeywords: ["website nfc stand", "visit website stand", "custom link nfc stand"]
+      "Multi-Link Stand is a branded tabletop NFC and QR display that opens a hosted Tap Rater page. Use one stand for review links, menus, booking, social profiles, websites, offers, and other important customer actions.",
+    supportedDestinations: ["website", "custom", "google", "facebook", "yelp", "tripadvisor", "booking", "menu", "feedback"],
+    displayText: "Connect With Us",
+    image: { src: "/uploads/products/visit-website-stand.png", alt: "Tap Rater Multi-Link Stand" },
+    assetSet: {
+      standardAngledImageUrl: "/uploads/products/visit-website-stand.png",
+      brandedAngledImageUrl: "/uploads/products/visit-website-stand-branded-angled.png",
+      brandedFrontTemplateUrl: "/uploads/products/visit-website-stand-branded-front-template.png",
+      multiLinkAngledImageUrl: "/uploads/products/visit-website-stand-branded-angled.png",
+      multiLinkFrontTemplateUrl: "/uploads/products/visit-website-stand-branded-front-template.png"
+    },
+    seoTitle: "Multi-Link Stand | Hosted NFC and QR Link Stand",
+    seoDescription: "Buy a Multi-Link NFC and QR stand that opens a hosted Tap Rater page for review, menu, booking, social, website, and offer links.",
+    searchKeywords: ["multi-link stand", "multilink nfc stand", "qr multi link stand", "hosted link stand"]
   }),
+    productKind: "hosted_multilink",
+    productType: "platform_landing_page",
+    serviceMode: "hosted_landing_page",
+    checkoutMode: "subscription",
+    requiresAccount: true,
+    requiresSubscription: true,
+    requiresLandingPage: true,
+    activationType: "premium_hosted_activation",
+    includedServiceLabel: "Hosted Tap Rater page",
+    description:
+      "Multi-Link Stand is a branded tabletop NFC and QR display that opens a hosted Tap Rater page. Use one stand for review links, menus, booking, social profiles, websites, offers, and other important customer actions.",
+    customizationOptions: ["standard_design", "add_logo"],
+    allowsLogoUpload: true,
+    allowsCustomDesign: false,
+    designMode: "logo"
+  },
   {
     slug: "custom-direct-stand",
     title: "Custom Direct Stand",

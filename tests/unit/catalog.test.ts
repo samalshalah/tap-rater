@@ -17,7 +17,7 @@ describe("catalog categories", () => {
       "Appointment & Reservation Stands",
       "Menu & Info Stands",
       "Feedback Stands",
-      "Website & Link Stands"
+      "Multi-Link Stands"
     ]);
   });
 
@@ -185,7 +185,7 @@ describe("catalog categories", () => {
         "Telegram Message Stand",
         "Book Your Next Visit Stand",
         "View Our Menu Stand",
-        "Visit Our Website Stand"
+        "Multi-Link Stand"
       ])
     );
     expect(titles).not.toContain("Custom Direct Stand");

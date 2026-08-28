@@ -47,7 +47,7 @@ const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
   },
   "website-links": {
     src: "/uploads/products/visit-website-stand.png",
-    alt: "Website and Link Stand"
+    alt: "Multi-Link Stand"
   },
   "custom-stands": {
     src: "/uploads/products/business-google-white-stands-bundle.jpg",
@@ -144,10 +144,10 @@ export const customerActionCards: CustomerActionCard[] = [
     image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Rate Your Experience Stand" }
   },
   {
-    title: "Visit Website",
-    description: "Connect to your site, catalog, offer, app, location, or link page.",
+    title: "Multi-Link",
+    description: "Open a hosted page with review, menu, booking, social, website, and offer links.",
     href: "/category/website-link-stands",
-    image: { src: "/uploads/products/visit-website-stand.png", alt: "Website link stand" }
+    image: { src: "/uploads/products/visit-website-stand.png", alt: "Multi-Link stand" }
   }
 ];
 

@@ -89,7 +89,8 @@ function getTitleIntent(product: MigratedProduct, standType: string) {
   if (destinationType.includes("social") || product.categorySlug === "social-media") return "Social Media Stand";
   if (destinationType.includes("payment")) return "Payment Stand";
   if (destinationType.includes("loyalty")) return "Loyalty Stand";
-  if (destinationType.includes("website") || product.categorySlug === "website-links") return "Website Link Stand";
+  if (product.productKind === "hosted_multilink" || destinationType.includes("hosted_multilink")) return "Multi-Link Stand";
+  if (destinationType.includes("website") || product.categorySlug === "website-links") return "Multi-Link Stand";
   if (destinationType.includes("feedback") || product.categorySlug === "feedback") return "Feedback Stand";
   if (destinationType.includes("review") || product.categorySlug === "reviews") return "Review Stand";
 

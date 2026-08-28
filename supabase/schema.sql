@@ -655,7 +655,7 @@ values
   ('appointment-reservation-stands', 'Appointment & Reservation Stands', 'Stands that open booking, scheduling, reservation, or service links.', '/uploads/products/book-next-visit-stand.png', 30, true),
   ('feedback-survey-stands', 'Feedback & Survey Stands', 'Stands that collect private feedback or survey responses.', '/uploads/products/rate-your-experience-stand.png', 40, true),
   ('menu-info-stands', 'Menu & Info Stands', 'Stands that open menus, services, pricing, or information pages.', '/uploads/products/view-menu-stand.png', 50, true),
-  ('website-link-stands', 'Website & Link Stands', 'Stands that open websites, catalogs, apps, locations, or custom direct URLs.', '/uploads/products/no-photo-available.png', 60, true),
+  ('website-link-stands', 'Multi-Link Stands', 'Branded stands that open a hosted Tap Rater page with multiple customer links.', '/uploads/products/visit-website-stand.png', 60, true),
   ('payment-tip-donation-stands', 'Payment, Tip & Donation Stands', 'Stands that open payment, tip, donation, or support links.', '/uploads/products/no-photo-available.png', 70, true),
   ('loyalty-rewards-stands', 'Loyalty & Rewards Stands', 'Stands that open loyalty, rewards, signup, or membership destinations.', '/uploads/products/no-photo-available.png', 80, true),
   ('custom-stands', 'Custom Stands', 'Custom Tap Rater stand products and special printed solutions.', '/uploads/products/business-google-white-stands-bundle.jpg', 90, true)
