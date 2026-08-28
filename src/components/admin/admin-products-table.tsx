@@ -43,7 +43,6 @@ type Filters = {
   status: string;
   assetReadiness: string;
   specialSolution: string;
-  destinationMode: string;
 };
 
 const defaultFilters: Filters = {
@@ -53,8 +52,7 @@ const defaultFilters: Filters = {
   platform: "",
   status: "",
   assetReadiness: "",
-  specialSolution: "",
-  destinationMode: ""
+  specialSolution: ""
 };
 
 export function AdminProductsTable({
@@ -75,7 +73,6 @@ export function AdminProductsTable({
     return products.filter((product) => {
       const productStatus = getProductStatus(product);
       const productKind = getProductKind(product);
-      const model = getCanonicalProductModel(product);
       const assetStatus = getProductAssetReadiness(product, getDefaultOptionsForProductKind(productKind)).status;
       const businessUseSlugs = product.businessUseSlugs ?? [];
       const searchText = [product.title, product.slug, product.sku, product.primaryPlatformSlug, product.destinationType]
@@ -91,8 +88,7 @@ export function AdminProductsTable({
         (!filters.status || productStatus === filters.status) &&
         (!filters.assetReadiness || assetStatus === filters.assetReadiness) &&
         (!filters.specialSolution ||
-          (filters.specialSolution === "yes" ? product.isSpecialSolution === true : product.isSpecialSolution !== true)) &&
-        (!filters.destinationMode || model.destinationMode === filters.destinationMode)
+          (filters.specialSolution === "yes" ? product.isSpecialSolution === true : product.isSpecialSolution !== true))
       );
     });
   }, [filters, products]);
@@ -194,7 +190,7 @@ export function AdminProductsTable({
 
   return (
     <div className="tr-admin-table-shell mt-6 overflow-hidden">
-      <div className="grid gap-3 border-b border-line p-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
+      <div className="grid gap-3 border-b border-line p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
         <label className="relative block text-xs font-black uppercase text-muted">
           Search
           <Search className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-muted" aria-hidden="true" />
@@ -240,10 +236,6 @@ export function AdminProductsTable({
           <option value="yes">Special solution</option>
           <option value="no">Normal product</option>
         </FilterSelect>
-        <FilterSelect label="Destination mode" value={filters.destinationMode} onChange={(value) => updateFilter("destinationMode", value)}>
-          <option value="DIRECT">DIRECT</option>
-          <option value="HOSTED">HOSTED</option>
-        </FilterSelect>
       </div>
 
       <div className="flex flex-col gap-3 border-b border-line px-4 py-3 md:flex-row md:items-center md:justify-between">
@@ -275,7 +267,7 @@ export function AdminProductsTable({
       <AdminResponsiveTable
         className="rounded-none border-0 shadow-none"
         table={
-        <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-[#f7f8fa] text-xs uppercase text-muted">
               <th className="w-10 px-4 py-3">
@@ -288,13 +280,12 @@ export function AdminProductsTable({
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="px-4 py-3">Image</th>
-              <th className="px-4 py-3">Product</th>
+              <th className="px-4 py-3 w-[92px]">Image</th>
+              <th className="px-4 py-3 w-[230px]">Product</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Uses</th>
-              <th className="px-4 py-3">Destination</th>
-              <th className="px-4 py-3">Options</th>
-              <th className="px-4 py-3">Price</th>
+              <th className="px-4 py-3 w-[190px]">Options</th>
+              <th className="px-4 py-3 w-[130px]">Price</th>
               <th className="px-4 py-3">Readiness</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3">Updated</th>
@@ -339,11 +330,6 @@ export function AdminProductsTable({
                   </td>
                   <td className="px-4 py-3 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
                   <td className="px-4 py-3 text-muted">{formatBusinessUses(product, businessUses)}</td>
-                  <td className="px-4 py-3 text-muted">
-                    <StatusBadge status={model.destinationMode} />
-                    <span className="mt-2 block font-semibold text-ink">{findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"}</span>
-                    <span className="text-xs">{product.destinationType ?? "custom"}</span>
-                  </td>
                   <td className="px-4 py-3 text-muted">{formatOptionSummary(options, model.customizationLevel)}</td>
                   <td className="px-4 py-3 font-semibold text-ink">{formatPriceRange(options, product)}</td>
                   <td className="px-4 py-3">
@@ -381,7 +367,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={12}>
+                <td className="p-10 text-center text-muted" colSpan={11}>
                   No products match these filters.
                 </td>
               </tr>
@@ -418,7 +404,6 @@ export function AdminProductsTable({
                       </Link>
                       <p className="mt-1 text-xs text-muted">{product.sku || product.slug}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
-                        <StatusBadge status={model.destinationMode} />
                         <StatusBadge status={getProductStatus(product)} />
                         <StockBadge stockStatus={product.stockStatus} />
                       </div>
@@ -427,7 +412,6 @@ export function AdminProductsTable({
                   <dl className="mt-4 grid gap-3 text-sm">
                     <ProductMobileField label="Type" value={findTitle(standTypes, product.standTypeSlug) ?? "-"} />
                     <ProductMobileField label="Uses" value={formatBusinessUses(product, businessUses)} />
-                    <ProductMobileField label="Destination" value={findTitle(platforms, product.primaryPlatformSlug) ?? "Manual URL"} />
                     <ProductMobileField label="Options" value={formatOptionSummary(options, model.customizationLevel)} />
                     <ProductMobileField label="Price" value={formatPriceRange(options, product)} strong />
                   </dl>

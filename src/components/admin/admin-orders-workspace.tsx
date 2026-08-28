@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderActionSource } from "@/lib/admin-order-actions";
+import { formatOrderItemSummary } from "@/lib/admin-list-display";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminResponsiveTable, AdminSelect, AdminSummaryCard, AdminTextarea } from "./admin-ui";
@@ -206,7 +207,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
             <AdminInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Customer, email, SKU, order id"
+              placeholder="Customer, email, SKU, product"
               className="mt-2"
             />
           </label>
@@ -260,7 +261,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
               <th className="px-4 py-3">
                 <input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} className="h-4 w-4" aria-label="Select all visible orders" />
               </th>
-              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Items</th>
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Created</th>
@@ -342,15 +343,17 @@ function OrderRow({
   onApplyAction: (action: AdminOrderAction) => void;
   onSave: (payload: OrderFulfillmentUpdateInput) => void;
 }) {
+  const itemSummary = formatOrderItemSummary(order.items);
+
   return (
     <>
       <tr className="border-b border-line last:border-b-0">
         <td className="px-4 py-4 align-top">
-          <input type="checkbox" checked={selected} onChange={onToggleSelected} className="h-4 w-4" aria-label={`Select ${order.checkoutSessionId}`} />
+          <input type="checkbox" checked={selected} onChange={onToggleSelected} className="h-4 w-4" aria-label={`Select ${itemSummary.title}`} />
         </td>
         <td className="px-4 py-4 align-top">
-          <p className="max-w-[180px] truncate font-mono text-xs text-ink" title={order.checkoutSessionId}>{order.checkoutSessionId}</p>
-          <p className="mt-1 text-xs font-semibold text-muted">{order.items.length} item{order.items.length === 1 ? "" : "s"}</p>
+          <p className="max-w-[240px] truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
+          <p className="mt-1 text-xs font-semibold text-muted">{itemSummary.count}</p>
         </td>
         <td className="px-4 py-4 align-top">
           <p className="max-w-[220px] truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
@@ -546,14 +549,17 @@ function OrderMobileCard({
   onApplyAction: (action: AdminOrderAction) => void;
   onSave: (payload: OrderFulfillmentUpdateInput) => void;
 }) {
+  const itemSummary = formatOrderItemSummary(order.items);
+
   return (
     <article className={selected ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
       <div className="flex items-start gap-3">
-        <input type="checkbox" checked={selected} onChange={onToggleSelected} className="mt-1 h-4 w-4" aria-label={`Select ${order.checkoutSessionId}`} />
+        <input type="checkbox" checked={selected} onChange={onToggleSelected} className="mt-1 h-4 w-4" aria-label={`Select ${itemSummary.title}`} />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
+          <p className="truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
+          <p className="mt-1 text-sm font-semibold text-muted">{itemSummary.count}</p>
+          <p className="mt-2 truncate text-sm text-ink" title={order.customerName}>{order.customerName}</p>
           <p className="mt-1 truncate text-sm text-muted" title={order.email}>{order.email || "-"}</p>
-          <p className="mt-2 truncate font-mono text-xs text-muted" title={order.checkoutSessionId}>{order.checkoutSessionId}</p>
         </div>
         <p className="shrink-0 font-semibold text-ink">{order.total}</p>
       </div>
