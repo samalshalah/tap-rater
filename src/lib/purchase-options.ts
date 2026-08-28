@@ -124,16 +124,14 @@ export function getProductPurchaseOptions(
       .filter((option) => option.isActive && isPurchaseOptionSellableForProduct(product, option.optionCode))
       .sort((first, second) => first.sortOrder - second.sortOrder)
       .map((option) => {
-        const isStandardDirect = option.optionCode === "standard_direct";
-
         return {
           id: option.optionCode,
           label: option.title,
           priceCents: option.priceCents,
           monthlyPriceCents: option.monthlyPriceCents,
-          summary: isStandardDirect ? standardDirectOption.summary : option.description,
+          summary: option.description,
           requiresDestinationUrl: option.requiresDestinationUrl,
-          hasQr: isStandardDirect ? false : option.hasQr,
+          hasQr: option.hasQr,
           requiresBusinessName: option.requiresBusinessName,
           requiresLogo: option.requiresLogo,
           requiresDesignStep: option.requiresDesignStep,

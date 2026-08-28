@@ -62,6 +62,10 @@ export function getProductActivationCopy(product: MigratedProduct): ProductActiv
 }
 
 export function getProductPageHighlights(product: MigratedProduct): ProductPageContentItem[] {
+  if (product.keyFeatures?.length) {
+    return product.keyFeatures;
+  }
+
   const destination = getProductDestinationCopy(product);
 
   return [
@@ -136,6 +140,39 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
 
 export function getReviewDestination(product: MigratedProduct): string {
   return getProductDestinationCopy(product).label;
+}
+
+export function getProductHowItWorks(product: MigratedProduct): Array<ProductPageContentItem & { step: number }> {
+  return product.howItWorks?.length
+    ? product.howItWorks
+    : [
+        { step: 1, title: "Choose your setup", body: "Select the available design option for this product." },
+        { step: 2, title: "Add your destination link", body: "Provide the URL customers should open." },
+        { step: 3, title: "Place it on your counter", body: "Use the finished stand where customers already pause." }
+      ];
+}
+
+export function getProductSpecifications(product: MigratedProduct) {
+  return product.specifications ?? [];
+}
+
+export function getProductIncludedItems(product: MigratedProduct) {
+  return product.includedItems ?? [];
+}
+
+export function getProductFaqs(product: MigratedProduct) {
+  return product.productFaqs?.length
+    ? product.productFaqs
+    : [
+        {
+          question: `How does ${product.title} work?`,
+          answer: "Customers tap or scan the stand. It opens the direct destination link configured for your business."
+        },
+        {
+          question: "Does this require a subscription?",
+          answer: "No. Direct stands are one-time physical product purchases."
+        }
+      ];
 }
 
 type ProductDestinationCopy = {

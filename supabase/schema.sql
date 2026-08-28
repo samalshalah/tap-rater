@@ -294,6 +294,14 @@ create table if not exists products (
   asset_readiness_status text not null default 'draft_missing_assets' check (asset_readiness_status in ('draft_missing_assets', 'ready', 'blocked')),
   seo_title text,
   seo_description text,
+  search_keywords text[] not null default '{}',
+  size_options jsonb not null default '[]'::jsonb,
+  color_options jsonb not null default '[]'::jsonb,
+  key_features jsonb not null default '[]'::jsonb,
+  how_it_works jsonb not null default '[]'::jsonb,
+  specifications jsonb not null default '[]'::jsonb,
+  included_items jsonb not null default '[]'::jsonb,
+  product_faqs jsonb not null default '[]'::jsonb,
   is_active boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -332,6 +340,14 @@ alter table products add column if not exists default_cta_text text;
 alter table products add column if not exists cta_editable boolean not null default false;
 alter table products add column if not exists landing_page_preview_config jsonb not null default '{}'::jsonb;
 alter table products add column if not exists asset_readiness_status text not null default 'draft_missing_assets';
+alter table products add column if not exists search_keywords text[] not null default '{}';
+alter table products add column if not exists size_options jsonb not null default '[]'::jsonb;
+alter table products add column if not exists color_options jsonb not null default '[]'::jsonb;
+alter table products add column if not exists key_features jsonb not null default '[]'::jsonb;
+alter table products add column if not exists how_it_works jsonb not null default '[]'::jsonb;
+alter table products add column if not exists specifications jsonb not null default '[]'::jsonb;
+alter table products add column if not exists included_items jsonb not null default '[]'::jsonb;
+alter table products add column if not exists product_faqs jsonb not null default '[]'::jsonb;
 alter table products alter column is_active set default false;
 
 do $$

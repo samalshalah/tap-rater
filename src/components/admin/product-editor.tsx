@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useMemo, useState } from "react";
+import { type ChangeEventHandler, type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { CheckCircle2, Copy, ExternalLink, Loader2, MoreHorizontal, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
 import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
 import type {
@@ -104,6 +104,7 @@ export function ProductEditor({
     buildInitialOptions(productKind, productOptions, optionTemplates)
   );
   const [ctaEditable, setCtaEditable] = useState(product.ctaEditable ?? true);
+  const [searchTermsText, setSearchTermsText] = useState((product.searchKeywords ?? []).join("\n"));
 
   const isHostedProduct = productKind === "hosted_multilink";
   const visibleOptions = useMemo(
@@ -369,6 +370,14 @@ export function ProductEditor({
           images: collectImagesFromMedia(mainImage, galleryImages, assetSet, finalTitle),
           seoTitle: readOptionalString(String(form.get("seoTitle") ?? "")),
           seoDescription: readOptionalString(String(form.get("seoDescription") ?? "")),
+          searchKeywords: parseMultiline(searchTermsText),
+          sizeOptions: product.sizeOptions ?? [],
+          colorOptions: product.colorOptions ?? [],
+          keyFeatures: product.keyFeatures ?? [],
+          howItWorks: product.howItWorks ?? [],
+          specifications: product.specifications ?? [],
+          includedItems: product.includedItems ?? [],
+          productFaqs: product.productFaqs ?? [],
           isActive: finalIsActive
         })
       });
@@ -545,7 +554,50 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="SEO" description="Leave fields blank to use generated search metadata from the stand type, platform, use, and price.">
+        <EditorCard title="Variants" description="Structured size and color options. A price-pending size is visible for QA but blocked from checkout.">
+          <div className="grid gap-4">
+            <div>
+              <p className="text-sm font-black text-ink">Size options</p>
+              <div className="mt-3 grid gap-3">
+                {(product.sizeOptions ?? []).map((size) => (
+                  <div key={size.code} className="grid gap-2 rounded-md border border-line bg-white p-3 text-sm md:grid-cols-4">
+                    <InfoPill label="Label" value={size.label} />
+                    <InfoPill label="Code" value={size.code} />
+                    <InfoPill label="Front" value={`${size.frontWidthMm} x ${size.frontHeightMm} mm / ${size.frontWidthIn.toFixed(2)} x ${size.frontHeightIn.toFixed(2)} in`} />
+                    <InfoPill label="Base" value={`${size.baseDepthMm} mm / ${size.baseDepthIn.toFixed(2)} in`} />
+                    <InfoPill label="SKU suffix" value={size.skuSuffix} />
+                    <InfoPill label="Price adjustment" value={size.priceAdjustmentCents === null ? "Pending" : formatPrice(size.priceAdjustmentCents)} />
+                    <InfoPill label="Default" value={size.isDefault ? "Yes" : "No"} />
+                    <InfoPill label="Active" value={size.isActive ? "Yes" : "No"} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-black text-ink">Color options</p>
+              <div className="mt-3 grid gap-3">
+                {(product.colorOptions ?? []).map((color) => (
+                  <div key={color.code} className="grid gap-2 rounded-md border border-line bg-white p-3 text-sm md:grid-cols-4">
+                    <InfoPill label="Label" value={color.label} />
+                    <InfoPill label="Code" value={color.code} />
+                    <InfoPill label="SKU suffix" value={color.skuSuffix} />
+                    <InfoPill label="Default" value={color.isDefault ? "Yes" : "No"} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </EditorCard>
+
+        <EditorCard title="Product Details" description="Structured product content used by the storefront and JSON-LD.">
+          <StructuredPreview title="Key Features" rows={(product.keyFeatures ?? []).map((item) => [item.title, item.body])} />
+          <StructuredPreview title="How It Works" rows={(product.howItWorks ?? []).map((item) => [String(item.step), `${item.title}: ${item.body}`])} />
+          <StructuredPreview title="Specifications" rows={(product.specifications ?? []).map((item) => [item.label, item.value])} />
+          <StructuredPreview title="What's Included" rows={(product.includedItems ?? []).map((item) => [item.appliesTo === "branded" ? "Branded" : "All", item.label])} />
+          <StructuredPreview title="Product FAQ" rows={(product.productFaqs ?? []).map((item) => [item.question, item.answer])} />
+        </EditorCard>
+
+        <EditorCard title="SEO" description="Metadata, internal search terms, canonical preview, and Google-style search preview.">
           <Input
             name="seoTitle"
             label="SEO title override"
@@ -560,6 +612,14 @@ export function ProductEditor({
             placeholder={seoPreview.generatedDescription}
             required={false}
           />
+          <Textarea
+            name="searchTerms"
+            label="Search terms"
+            defaultValue={searchTermsText}
+            placeholder="One internal search term per line"
+            required={false}
+            onChange={(event) => setSearchTermsText(event.currentTarget.value)}
+          />
           <div className="grid gap-2 rounded-md border border-line bg-[#f7f8fa] px-3 py-3 text-xs text-muted">
             <p>
               <span className="font-black text-ink">URL:</span> /product/{slug || "product-handle"}
@@ -570,6 +630,11 @@ export function ProductEditor({
             <p>
               <span className="font-black text-ink">Generated meta:</span> {seoPreview.generatedDescription}
             </p>
+          </div>
+          <div className="rounded-md border border-line bg-white p-4">
+            <p className="text-lg font-semibold leading-6 text-[#1a0dab]">{readOptionalString(String(product.seoTitle ?? "")) ?? seoPreview.generatedTitle}</p>
+            <p className="mt-1 text-sm text-[#006621]">taprater.com/product/{slug || "product-handle"}</p>
+            <p className="mt-1 text-sm leading-5 text-[#545454]">{readOptionalString(String(product.seoDescription ?? "")) ?? seoPreview.generatedDescription}</p>
           </div>
         </EditorCard>
       </div>
@@ -1382,7 +1447,8 @@ function Textarea({
   defaultValue,
   placeholder,
   tall = false,
-  required = true
+  required = true,
+  onChange
 }: {
   name: string;
   label: string;
@@ -1390,6 +1456,7 @@ function Textarea({
   placeholder?: string;
   tall?: boolean;
   required?: boolean;
+  onChange?: ChangeEventHandler<HTMLTextAreaElement>;
 }) {
   return (
     <label className="grid gap-2 text-sm font-semibold text-ink">
@@ -1400,8 +1467,29 @@ function Textarea({
         defaultValue={defaultValue}
         placeholder={placeholder}
         required={required}
+        onChange={onChange}
       />
     </label>
+  );
+}
+
+function StructuredPreview({ title, rows }: { title: string; rows: [string, string][] }) {
+  return (
+    <div className="grid gap-2">
+      <p className="text-sm font-black text-ink">{title}</p>
+      <div className="grid gap-2">
+        {rows.length > 0 ? (
+          rows.map(([label, value], index) => (
+            <div key={`${title}-${index}`} className="grid gap-1 rounded-md border border-line bg-white px-3 py-2 text-sm md:grid-cols-[180px_1fr]">
+              <span className="font-semibold text-ink">{label}</span>
+              <span className="leading-6 text-muted">{value}</span>
+            </div>
+          ))
+        ) : (
+          <p className="rounded-md border border-line bg-white px-3 py-2 text-sm text-muted">No structured rows yet.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -1501,11 +1589,11 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
       },
       {
         label: "Center platform/icon asset",
-        description: "Required isolated product or platform identity rendered in branded proof and production artwork.",
+        description: "Optional legacy asset. Google branded production does not require a separate center asset.",
         assetKey: "centerAssetUrl" as const,
         role: "center_asset" as const,
         value: assetSet.centerAssetUrl,
-        required: true
+        required: false
       }
     ];
   }
@@ -1735,15 +1823,17 @@ function defaultCtaForProduct(productKind: ProductKind) {
 }
 
 function generateProductSku(title: string) {
-  const words = title
-    .replace(/&/g, " and ")
-    .replace(/[^A-Za-z0-9]+/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const normalized = title.toLowerCase();
+  if (normalized.includes("google") && normalized.includes("review") && normalized.includes("stand")) {
+    return "TR-GOOGLE-REV-ST";
+  }
 
-  const acronym = words.map((word) => word[0]).join("").toUpperCase();
-  return formatSku(acronym || "PRODUCT");
+  const cleaned = normalized
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toUpperCase();
+  return formatSku(`TR-${cleaned || "PRODUCT"}`);
 }
 
 function getOptionDisplayMeta(option: ProductOption) {
@@ -1768,7 +1858,7 @@ function getOptionDisplayMeta(option: ProductOption) {
 function optionSkuSuffix(optionCode: ProductOptionCode) {
   const map: Record<ProductOptionCode, string> = {
     standard_direct: "STD",
-    branded_qr_direct: "BQR",
+    branded_qr_direct: "BRD",
     hosted_multilink: "HML"
   };
 
@@ -1777,6 +1867,10 @@ function optionSkuSuffix(optionCode: ProductOptionCode) {
 
 function formatSku(value: string) {
   return value.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+}
+
+function parseMultiline(value: string) {
+  return Array.from(new Set(value.split(/\r?\n|\|/).map((item) => item.trim()).filter(Boolean)));
 }
 
 function slugify(value: string) {

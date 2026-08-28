@@ -56,7 +56,15 @@ export const PRODUCT_CSV_HEADERS = [
   "seo_title",
   "seo_description",
   "is_active",
-  "updated_at"
+  "updated_at",
+  "search_keywords",
+  "size_options_json",
+  "color_options_json",
+  "key_features_json",
+  "how_it_works_json",
+  "specifications_json",
+  "included_items_json",
+  "product_faqs_json"
 ] as const;
 
 type QueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
@@ -309,7 +317,15 @@ function productToCsvRow(product: MigratedProduct): Record<string, string> {
     seo_title: product.seoTitle ?? "",
     seo_description: product.seoDescription ?? "",
     is_active: serializeBoolean(product.isActive),
-    updated_at: product.updatedAt ?? ""
+    updated_at: product.updatedAt ?? "",
+    search_keywords: serializeList(product.searchKeywords ?? []),
+    size_options_json: JSON.stringify(product.sizeOptions ?? []),
+    color_options_json: JSON.stringify(product.colorOptions ?? []),
+    key_features_json: JSON.stringify(product.keyFeatures ?? []),
+    how_it_works_json: JSON.stringify(product.howItWorks ?? []),
+    specifications_json: JSON.stringify(product.specifications ?? []),
+    included_items_json: JSON.stringify(product.includedItems ?? []),
+    product_faqs_json: JSON.stringify(product.productFaqs ?? [])
   };
 }
 
@@ -317,6 +333,13 @@ function csvRowToProduct(row: Record<string, string>, rowNumber: number, errors:
   const productOptions = readJson<ProductPurchaseOptionSnapshot[]>(row.product_options_json, rowNumber, "product_options_json", errors, []);
   const images = readJson<{ src: string; alt: string }[]>(row.images_json, rowNumber, "images_json", errors, []);
   const landingPagePreviewConfig = readJson<Record<string, unknown>>(row.landing_page_preview_config_json, rowNumber, "landing_page_preview_config_json", errors, {});
+  const sizeOptions = readJson<unknown[]>(row.size_options_json, rowNumber, "size_options_json", errors, []);
+  const colorOptions = readJson<unknown[]>(row.color_options_json, rowNumber, "color_options_json", errors, []);
+  const keyFeatures = readJson<unknown[]>(row.key_features_json, rowNumber, "key_features_json", errors, []);
+  const howItWorks = readJson<unknown[]>(row.how_it_works_json, rowNumber, "how_it_works_json", errors, []);
+  const specifications = readJson<unknown[]>(row.specifications_json, rowNumber, "specifications_json", errors, []);
+  const includedItems = readJson<unknown[]>(row.included_items_json, rowNumber, "included_items_json", errors, []);
+  const productFaqs = readJson<unknown[]>(row.product_faqs_json, rowNumber, "product_faqs_json", errors, []);
   const booleans = {
     isSpecialSolution: readBoolean(row.is_special_solution, rowNumber, "is_special_solution", errors),
     requiresAccount: readBoolean(row.requires_account, rowNumber, "requires_account", errors),
@@ -379,6 +402,14 @@ function csvRowToProduct(row: Record<string, string>, rowNumber: number, errors:
     images,
     seoTitle: optionalString(row.seo_title),
     seoDescription: optionalString(row.seo_description),
+    searchKeywords: parseList(row.search_keywords),
+    sizeOptions,
+    colorOptions,
+    keyFeatures,
+    howItWorks,
+    specifications,
+    includedItems,
+    productFaqs,
     isActive: booleans.isActive
   });
 

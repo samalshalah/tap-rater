@@ -3,6 +3,11 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import type { CartItem } from "@/lib/cart";
 import {
   cartItemRequestsPermanentHostedCode,
+  generateProductVariantSku,
+  getConfiguredUnitPriceCents,
+  getDefaultProductColor,
+  getDefaultProductSize,
+  getProductBaseSku,
   getPurchaseOptionCustomizationLevel,
   getPurchaseOptionDestinationMode,
   isProductOptionArchitectureConsistent,
@@ -50,6 +55,7 @@ export type CheckoutCartRow = {
   optionLabel: string;
   title: string;
   sku: string;
+  baseSku?: string;
   destinationMode: DestinationMode;
   customizationLevel: CustomizationLevel;
   quantity: number;
@@ -146,10 +152,32 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     }
 
     const customizationLevel = getPurchaseOptionCustomizationLevel(option);
+    const selectedSize = product.sizeOptions?.find((size) => size.code === setup.sizeCode) ?? getDefaultProductSize(product);
+    const selectedColor = product.colorOptions?.find((color) => color.code === setup.colorCode) ?? getDefaultProductColor(product);
+    const unitPriceCents = getConfiguredUnitPriceCents(product, option, {
+      sizeCode: selectedSize?.code,
+      colorCode: selectedColor?.code
+    });
+    if (unitPriceCents === null) {
+      continue;
+    }
+    const baseSku = getProductBaseSku(product);
+    const finalSku = generateProductVariantSku(product, {
+      purchaseOptionId: option.id,
+      sizeCode: selectedSize?.code,
+      colorCode: selectedColor?.code
+    });
     const directTargets = destinationMode === "DIRECT" ? buildDirectProductionTargets(setup.destinationUrl) : null;
     const rowSetup = directTargets
       ? {
           ...setup,
+          baseSku,
+          finalSku,
+          purchaseOptionLabel: option.label,
+          sizeCode: selectedSize?.code,
+          sizeLabel: selectedSize?.label,
+          colorCode: selectedColor?.code,
+          colorLabel: selectedColor?.label,
           destinationUrl: directTargets.destinationUrl,
           generatedQrValue: setup.generatedQrValue ?? directTargets.qrTargetUrl,
           qrTargetUrl: directTargets.qrTargetUrl,
@@ -173,12 +201,13 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       optionId: option.id,
       optionLabel: option.label,
       title: product.title,
-      sku: product.sku,
+      sku: finalSku,
+      baseSku,
       destinationMode,
       customizationLevel,
       quantity: item.quantity,
-      unitAmountCents: option.priceCents,
-      lineSubtotalCents: option.priceCents * item.quantity,
+      unitAmountCents: unitPriceCents,
+      lineSubtotalCents: unitPriceCents * item.quantity,
       monthlyAmountCents: option.monthlyPriceCents,
       shortDescription: product.shortDescription,
       setup: rowSetup,
@@ -326,6 +355,13 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
   return {
     productSlug: setup?.productSlug?.trim(),
     optionCode: setup?.optionCode,
+    baseSku: setup?.baseSku?.trim(),
+    finalSku: setup?.finalSku?.trim(),
+    purchaseOptionLabel: setup?.purchaseOptionLabel?.trim(),
+    sizeCode: setup?.sizeCode?.trim(),
+    sizeLabel: setup?.sizeLabel?.trim(),
+    colorCode: setup?.colorCode?.trim(),
+    colorLabel: setup?.colorLabel?.trim(),
     destinationUrl: setup?.destinationUrl?.trim(),
     destinationType: setup?.destinationType?.trim(),
     platformSlug: setup?.platformSlug?.trim(),

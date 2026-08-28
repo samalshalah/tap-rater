@@ -174,6 +174,29 @@ describe("cms repository", () => {
       images: [{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }],
       seoTitle: "SEO title",
       seoDescription: "SEO description",
+      searchKeywords: ["google review stand"],
+      sizeOptions: [
+        {
+          code: "regular",
+          label: "Standard",
+          frontWidthMm: 108,
+          frontHeightMm: 165,
+          frontWidthIn: 4.25,
+          frontHeightIn: 6.5,
+          baseDepthMm: 50,
+          baseDepthIn: 1.97,
+          skuSuffix: "REG",
+          priceAdjustmentCents: 0,
+          isDefault: true,
+          isActive: true
+        }
+      ],
+      colorOptions: [{ code: "white", label: "White", skuSuffix: "WHT", priceAdjustmentCents: 0, isDefault: true, isActive: true }],
+      keyFeatures: [{ title: "Tap + Scan", body: "NFC and QR." }],
+      howItWorks: [{ step: 1, title: "Add link", body: "Provide destination." }],
+      specifications: [{ label: "Material", value: "Acrylic" }],
+      includedItems: [{ label: "Programmed NFC chip", appliesTo: "all" }],
+      productFaqs: [{ question: "Ready to use?", answer: "Yes." }],
       isActive: true
     });
 
@@ -218,6 +241,14 @@ describe("cms repository", () => {
       images: [{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }],
       seo_title: "SEO title",
       seo_description: "SEO description",
+      search_keywords: ["google review stand"],
+      size_options: expect.any(Array),
+      color_options: expect.any(Array),
+      key_features: expect.any(Array),
+      how_it_works: expect.any(Array),
+      specifications: expect.any(Array),
+      included_items: expect.any(Array),
+      product_faqs: expect.any(Array),
       is_active: true
     }));
     expect(db.from).toHaveBeenCalledWith("product_business_uses");

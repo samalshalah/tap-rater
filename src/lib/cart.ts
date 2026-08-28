@@ -11,6 +11,8 @@ import {
 export type CartProductSnapshot = {
   title: string;
   sku: string;
+  baseSku?: string;
+  finalSku?: string;
   shortDescription: string;
 };
 
@@ -24,6 +26,13 @@ export type CartItem = {
   setup?: {
     productSlug?: string;
     optionCode?: PurchaseOptionId;
+    baseSku?: string;
+    finalSku?: string;
+    purchaseOptionLabel?: string;
+    sizeCode?: string;
+    sizeLabel?: string;
+    colorCode?: string;
+    colorLabel?: string;
     destinationUrl?: string;
     destinationType?: string;
     platformSlug?: string;
@@ -185,6 +194,7 @@ function productToSnapshot(product: NonNullable<ReturnType<typeof getProductBySl
   return {
     title: product.title,
     sku: product.sku,
+    baseSku: product.sku,
     shortDescription: product.shortDescription
   };
 }
@@ -199,6 +209,8 @@ function normalizeProductSnapshot(value: unknown): CartProductSnapshot | undefin
     ? {
         title,
         sku,
+        baseSku: readString(row.baseSku),
+        finalSku: readString(row.finalSku),
         shortDescription
       }
     : undefined;
@@ -209,6 +221,11 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
   return [
     item.productId,
     item.optionId ?? standardDirectOption.id,
+    setup.baseSku ?? "",
+    setup.finalSku ?? "",
+    setup.purchaseOptionLabel ?? "",
+    setup.sizeCode ?? "",
+    setup.colorCode ?? "",
     setup.destinationUrl ?? "",
     setup.destinationType ?? "",
     setup.platformSlug ?? "",
@@ -246,6 +263,13 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
   return {
     productSlug: readString(row.productSlug),
     optionCode: readPurchaseOptionId(row.optionCode),
+    baseSku: readString(row.baseSku),
+    finalSku: readString(row.finalSku),
+    purchaseOptionLabel: readString(row.purchaseOptionLabel),
+    sizeCode: readString(row.sizeCode),
+    sizeLabel: readString(row.sizeLabel),
+    colorCode: readString(row.colorCode),
+    colorLabel: readString(row.colorLabel),
     destinationUrl: readString(row.destinationUrl),
     destinationType: readString(row.destinationType),
     platformSlug: readString(row.platformSlug),

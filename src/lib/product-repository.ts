@@ -77,7 +77,15 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "asset_readiness_status",
   "is_active",
   "seo_title",
-  "seo_description"
+  "seo_description",
+  "search_keywords",
+  "size_options",
+  "color_options",
+  "key_features",
+  "how_it_works",
+  "specifications",
+  "included_items",
+  "product_faqs"
 ].join(",");
 const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
   "id",
@@ -561,6 +569,13 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     seoDescription: readString(productRow.seo_description) ?? readString(productRow.seoDescription) ?? staticProduct?.seoDescription,
     searchKeywords:
       readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
+    sizeOptions: readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.size_options) ?? readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.sizeOptions) ?? staticProduct?.sizeOptions,
+    colorOptions: readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.color_options) ?? readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.colorOptions) ?? staticProduct?.colorOptions,
+    keyFeatures: readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.key_features) ?? readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.keyFeatures) ?? staticProduct?.keyFeatures,
+    howItWorks: readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.how_it_works) ?? readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.howItWorks) ?? staticProduct?.howItWorks,
+    specifications: readArray<NonNullable<MigratedProduct["specifications"]>[number]>(productRow.specifications) ?? staticProduct?.specifications,
+    includedItems: readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.included_items) ?? readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.includedItems) ?? staticProduct?.includedItems,
+    productFaqs: readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.product_faqs) ?? readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.productFaqs) ?? staticProduct?.productFaqs,
     updatedAt: readString(productRow.updated_at) ?? readString(productRow.updatedAt) ?? staticProduct?.updatedAt
   };
 
@@ -597,7 +612,7 @@ function sanitizeRetiredPublicCopy(value: string) {
 }
 
 function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): ProductPurchaseOptionSnapshot {
-  if (option.optionCode !== "standard_direct") {
+  if (option.optionCode !== "standard_direct" || option.hasQr) {
     return option;
   }
 
@@ -818,6 +833,10 @@ function inferProductFormatFromTitle(title: string | undefined): MigratedProduct
 
 function readStringArray(value: unknown) {
   return Array.isArray(value) && value.every((item) => typeof item === "string") ? value : undefined;
+}
+
+function readArray<T = unknown>(value: unknown): T[] | undefined {
+  return Array.isArray(value) ? (value as T[]) : undefined;
 }
 
 function readRecord(value: unknown) {

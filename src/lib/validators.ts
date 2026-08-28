@@ -134,6 +134,54 @@ const productAssetSetSchema = z.object({
   landingPagePreviewConfig: z.record(z.string(), z.unknown()).optional()
 });
 
+const productSizeOptionSchema = z.object({
+  code: z.string().trim().min(1).max(40).regex(/^[a-z0-9-]+$/),
+  label: z.string().trim().min(1).max(120),
+  frontWidthMm: z.number().positive(),
+  frontHeightMm: z.number().positive(),
+  frontWidthIn: z.number().positive(),
+  frontHeightIn: z.number().positive(),
+  baseDepthMm: z.number().positive(),
+  baseDepthIn: z.number().positive(),
+  skuSuffix: z.string().trim().min(1).max(16).regex(/^[A-Z0-9-]+$/),
+  priceAdjustmentCents: z.number().int().min(0).nullable(),
+  isDefault: z.boolean().default(false),
+  isActive: z.boolean().default(true)
+});
+
+const productColorOptionSchema = z.object({
+  code: z.string().trim().min(1).max(40).regex(/^[a-z0-9-]+$/),
+  label: z.string().trim().min(1).max(80),
+  skuSuffix: z.string().trim().min(1).max(16).regex(/^[A-Z0-9-]+$/),
+  priceAdjustmentCents: z.number().int().min(0).default(0),
+  isDefault: z.boolean().default(false),
+  isActive: z.boolean().default(true)
+});
+
+const productContentBlockSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  body: z.string().trim().min(1).max(500)
+});
+
+const productHowItWorksSchema = productContentBlockSchema.extend({
+  step: z.number().int().min(1).max(20)
+});
+
+const productSpecificationSchema = z.object({
+  label: z.string().trim().min(1).max(120),
+  value: z.string().trim().min(1).max(300)
+});
+
+const productIncludedItemSchema = z.object({
+  label: z.string().trim().min(1).max(200),
+  appliesTo: z.enum(["all", "branded"]).optional().default("all")
+});
+
+const productFaqSchema = z.object({
+  question: z.string().trim().min(1).max(220),
+  answer: z.string().trim().min(1).max(800)
+});
+
 export const contactFormSchema = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(180),
@@ -254,6 +302,14 @@ export const productContentSchema = z.object({
   images: z.array(productImageSchema).max(8).default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
+  searchKeywords: z.array(z.string().trim().min(1).max(120)).max(100).default([]),
+  sizeOptions: z.array(productSizeOptionSchema).max(12).default([]),
+  colorOptions: z.array(productColorOptionSchema).max(24).default([]),
+  keyFeatures: z.array(productContentBlockSchema).max(20).default([]),
+  howItWorks: z.array(productHowItWorksSchema).max(20).default([]),
+  specifications: z.array(productSpecificationSchema).max(40).default([]),
+  includedItems: z.array(productIncludedItemSchema).max(40).default([]),
+  productFaqs: z.array(productFaqSchema).max(30).default([]),
   isActive: z.boolean()
 });
 
@@ -452,6 +508,13 @@ export const checkoutCartSchema = z.object({
           .object({
             productSlug: z.string().trim().max(160).optional(),
             optionCode: z.enum(["standard_direct", "branded_qr_direct", "hosted_multilink"]).optional(),
+            baseSku: z.string().trim().max(120).optional(),
+            finalSku: z.string().trim().max(160).optional(),
+            purchaseOptionLabel: z.string().trim().max(120).optional(),
+            sizeCode: z.string().trim().max(40).optional(),
+            sizeLabel: z.string().trim().max(120).optional(),
+            colorCode: z.string().trim().max(40).optional(),
+            colorLabel: z.string().trim().max(80).optional(),
             destinationUrl: z.string().trim().max(500).optional(),
             destinationType: z.string().trim().max(80).optional(),
             platformSlug: z.string().trim().max(120).optional(),

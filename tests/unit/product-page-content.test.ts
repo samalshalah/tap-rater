@@ -18,10 +18,12 @@ describe("product page content", () => {
 
     expect(product).toBeDefined();
     expect(getProductPageHighlights(product!).map((highlight) => highlight.title)).toEqual([
-      "Tap or scan ready",
-      "Connects to one destination URL",
-      "Countertop physical product",
-      "Simple customer prompt"
+      "Tap + Scan",
+      "Direct to Google",
+      "No App Required",
+      "No Subscription",
+      "Ready to Use",
+      "Standard or Branded"
     ]);
   });
 

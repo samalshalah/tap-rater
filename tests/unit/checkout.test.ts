@@ -52,7 +52,7 @@ describe("Stripe checkout helpers", () => {
     expect(result.rows[0]).toMatchObject({
       productId: "google-review-stand",
       optionId: "standard_direct",
-      optionLabel: "Standard Direct Stand",
+      optionLabel: "Standard",
       destinationMode: "DIRECT",
       customizationLevel: "STANDARD",
       manualProductionRequired: false,
@@ -86,6 +86,37 @@ describe("Stripe checkout helpers", () => {
       hasQr: true,
       nfcOnly: false
     });
+    expect(result.rows[0]).toMatchObject({
+      sku: "TR-GOOGLE-REV-ST-STD-REG-WHT",
+      baseSku: "TR-GOOGLE-REV-ST"
+    });
+    expect(result.rows[0].setup).toMatchObject({
+      baseSku: "TR-GOOGLE-REV-ST",
+      finalSku: "TR-GOOGLE-REV-ST-STD-REG-WHT",
+      purchaseOptionLabel: "Standard",
+      sizeCode: "regular",
+      sizeLabel: "Standard",
+      colorCode: "white",
+      colorLabel: "White"
+    });
+  });
+
+  it("rejects A4 checkout while its price is pending", () => {
+    expect(
+      validateCheckoutCart(
+        [
+          {
+            ...configuredStandardItem,
+            setup: {
+              ...configuredStandardItem.setup,
+              sizeCode: "a4",
+              colorCode: "white"
+            }
+          }
+        ],
+        migratedProducts
+      )
+    ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("rejects DIRECT checkout setup when QR or NFC targets differ from the destination URL", () => {
@@ -650,11 +681,11 @@ describe("Stripe checkout helpers", () => {
           currency: "usd",
           product_data: {
             name: "Google Review Stand",
-            description: "Standard Direct Stand - Countertop NFC stand that opens your Google review link with one tap or scan.",
+            description: "Standard - Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
             metadata: {
               product_id: "google-review-stand",
               option_id: "standard_direct",
-              sku: "TR-GOOGLE-STAND"
+              sku: "TR-GOOGLE-REV-ST-STD-REG-WHT"
             }
           },
           unit_amount: 3900

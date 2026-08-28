@@ -80,7 +80,7 @@ describe("catalog categories", () => {
       requiresSubscription: false,
       requiresLandingPage: false,
       supportedDestinations: ["google"],
-      includedServiceLabel: "Free basic activation",
+      includedServiceLabel: "Programmed and ready to use",
       format: "stand",
       customizationOptions: ["standard_design", "add_logo"],
       allowsLogoUpload: true,

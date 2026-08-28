@@ -9,6 +9,7 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
 
@@ -31,6 +32,8 @@ export type ProductSetupChooserProduct = Pick<
   | "defaultCtaText"
   | "images"
   | "assetSet"
+  | "sizeOptions"
+  | "colorOptions"
 >;
 
 type SetupStep = "choose" | "destination" | "design" | "review";
@@ -67,6 +70,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [googlePlaceName, setGooglePlaceName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
+  const [selectedSizeCode, setSelectedSizeCode] = useState(() => getDefaultProductSize(product)?.code ?? "");
+  const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [proofApproved, setProofApproved] = useState(false);
   const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
@@ -77,6 +82,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
   const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0];
   const selectedOptionId = selectedOption?.id;
+  const selectedSize = product.sizeOptions?.find((size) => size.code === selectedSizeCode) ?? getDefaultProductSize(product);
+  const selectedColor = product.colorOptions?.find((color) => color.code === selectedColorCode) ?? getDefaultProductColor(product);
+  const configuredUnitPriceCents = selectedOption
+    ? getConfiguredUnitPriceCents(product, selectedOption, { sizeCode: selectedSize?.code, colorCode: selectedColor?.code })
+    : null;
+  const finalSku = selectedOption
+    ? generateProductVariantSku(product, { purchaseOptionId: selectedOption.id, sizeCode: selectedSize?.code, colorCode: selectedColor?.code })
+    : product.sku;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
@@ -221,6 +234,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   function continueFromDestination() {
     setError("");
 
+    if (configuredUnitPriceCents === null) {
+      setError("This size is not available for purchase yet.");
+      return;
+    }
+
     if (!isHttpUrl(destinationUrl)) {
       setError("Enter a valid destination link starting with http or https.");
       return;
@@ -313,6 +331,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   function addConfiguredItemToCart() {
     setError("");
 
+    if (configuredUnitPriceCents === null) {
+      setError("This size is not available for purchase yet.");
+      return;
+    }
+
     if (!directTargets) {
       setError("Enter a valid destination link starting with http or https.");
       setStep("destination");
@@ -350,12 +373,21 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       quantity: 1,
       productSnapshot: {
         title: product.title,
-        sku: product.sku,
+        sku: finalSku,
+        baseSku: getProductBaseSku(product),
+        finalSku,
         shortDescription: product.shortDescription
       },
       setup: {
         productSlug: product.slug,
         optionCode: selectedOption.id,
+        baseSku: getProductBaseSku(product),
+        finalSku,
+        purchaseOptionLabel: selectedOption.label,
+        sizeCode: selectedSize?.code,
+        sizeLabel: selectedSize?.label,
+        colorCode: selectedColor?.code,
+        colorLabel: selectedColor?.label,
         destinationUrl: directTargets.destinationUrl,
         destinationType: product.destinationType,
         platformSlug: product.primaryPlatformSlug,
@@ -383,7 +415,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             : undefined,
         hasQr: true,
         nfcOnly: false,
-        priceCents: selectedOption.priceCents,
+        priceCents: configuredUnitPriceCents,
         proofApproved: selectedOption.id === "branded_qr_direct" ? proofApproved : true
       }
     });
@@ -391,7 +423,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   }
 
   const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build your Branded QR stand" : "Set up your Standard Direct stand";
-  const selectedPrice = formatPrice(selectedOption.priceCents).replace(".00", "");
+  const selectedPrice = configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents).replace(".00", "");
   const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
   const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-3" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
@@ -443,6 +475,70 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           ))}
         </div>
 
+        {product.sizeOptions?.length ? (
+          <div className="mt-5 grid gap-3">
+            <p className="text-sm font-semibold text-ink">Size</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {product.sizeOptions.filter((size) => size.isActive).map((size) => {
+                const pending = size.priceAdjustmentCents === null;
+                return (
+                  <label
+                    key={size.code}
+                    className={
+                      selectedSize?.code === size.code
+                        ? "grid cursor-pointer gap-1 rounded-lg border border-brand bg-panel p-3"
+                        : "grid cursor-pointer gap-1 rounded-lg border border-line bg-white p-3 hover:border-brand/50"
+                    }
+                  >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                      <input
+                        type="radio"
+                        name={`${product.slug}-size`}
+                        checked={selectedSize?.code === size.code}
+                        onChange={() => setSelectedSizeCode(size.code)}
+                        className="h-4 w-4 accent-brand"
+                      />
+                      {size.label}
+                    </span>
+                    <span className="text-xs leading-5 text-muted">
+                      {size.frontWidthMm} x {size.frontHeightMm} mm / {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
+                    </span>
+                    <span className="text-xs font-semibold text-brand">{pending ? "Price pending - not purchasable" : "Available"}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {product.colorOptions?.length ? (
+          <div className="mt-5 grid gap-3">
+            <p className="text-sm font-semibold text-ink">Color</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {product.colorOptions.filter((color) => color.isActive).map((color) => (
+                <label
+                  key={color.code}
+                  className={
+                    selectedColor?.code === color.code
+                      ? "flex cursor-pointer items-center gap-3 rounded-lg border border-brand bg-panel p-3"
+                      : "flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-white p-3 hover:border-brand/50"
+                  }
+                >
+                  <input
+                    type="radio"
+                    name={`${product.slug}-color`}
+                    checked={selectedColor?.code === color.code}
+                    onChange={() => setSelectedColorCode(color.code)}
+                    className="h-4 w-4 accent-brand"
+                  />
+                  <span className="inline-flex h-5 w-5 rounded-full border border-line bg-white" aria-hidden="true" />
+                  <span className="text-sm font-semibold text-ink">{color.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {options.some((option) => option.id === "hosted_multilink") ? (
           <div className="mt-4 rounded-lg border border-dashed border-line bg-soft p-3">
             <p className="text-sm font-semibold text-ink">Hosted Multi-Link is coming soon</p>
@@ -455,6 +551,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         <button
           type="button"
           className="tr-button-primary mt-6 w-full"
+          disabled={configuredUnitPriceCents === null}
           onClick={() => selectedOptionId && openBuilder(selectedOptionId)}
         >
           Set up stand · {selectedPrice}
@@ -644,7 +741,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
-                    <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
+                    <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
+                    <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
+                    <ReviewLine label="SKU" value={finalSku} />
+                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
                     <ReviewLine label="Destination link" value={destinationUrl || "-"} />
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                     {selectedOption.id === "branded_qr_direct" ? (

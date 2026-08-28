@@ -10,6 +10,22 @@ export type CanonicalProductModel = {
   customizationLevel: CustomizationLevel;
 };
 
+export type ProductVariantSelection = {
+  purchaseOptionId: PurchaseOptionId;
+  sizeCode?: string;
+  colorCode?: string;
+};
+
+const controlledProductSkuBases: Record<string, string> = {
+  "google-review-stand": "TR-GOOGLE-REV-ST"
+};
+
+const purchaseOptionSkuCodes: Record<PurchaseOptionId, string> = {
+  standard_direct: "STD",
+  branded_qr_direct: "BRD",
+  hosted_multilink: "HML"
+};
+
 export type ProductDestinationTargets =
   | {
       ok: true;
@@ -157,6 +173,38 @@ export function cartItemRequestsPermanentHostedCode(item: Pick<CartItem, "setup"
 
 export function purchaseOptionIdToCustomizationLevel(optionId: PurchaseOptionId | string | undefined): CustomizationLevel {
   return optionId === "branded_qr_direct" || optionId === "hosted_multilink" ? "BRANDED" : "STANDARD";
+}
+
+export function getProductBaseSku(product: Pick<MigratedProduct, "slug" | "sku">): string {
+  return controlledProductSkuBases[product.slug] ?? product.sku;
+}
+
+export function getDefaultProductSize(product: Pick<MigratedProduct, "sizeOptions">) {
+  return product.sizeOptions?.find((size) => size.isDefault && size.isActive) ?? product.sizeOptions?.find((size) => size.isActive);
+}
+
+export function getDefaultProductColor(product: Pick<MigratedProduct, "colorOptions">) {
+  return product.colorOptions?.find((color) => color.isDefault && color.isActive) ?? product.colorOptions?.find((color) => color.isActive);
+}
+
+export function getConfiguredUnitPriceCents(product: Pick<MigratedProduct, "sizeOptions" | "colorOptions">, option: Pick<PurchaseOption, "priceCents">, selection: Pick<ProductVariantSelection, "sizeCode" | "colorCode">) {
+  if (!product.sizeOptions?.length) {
+    return option.priceCents;
+  }
+
+  const size = product.sizeOptions?.find((item) => item.code === selection.sizeCode) ?? getDefaultProductSize(product);
+  const color = product.colorOptions?.find((item) => item.code === selection.colorCode) ?? getDefaultProductColor(product);
+  if (!size?.isActive || size.priceAdjustmentCents === null) {
+    return null;
+  }
+
+  return option.priceCents + size.priceAdjustmentCents + (color?.priceAdjustmentCents ?? 0);
+}
+
+export function generateProductVariantSku(product: Pick<MigratedProduct, "slug" | "sku" | "sizeOptions" | "colorOptions">, selection: ProductVariantSelection) {
+  const size = product.sizeOptions?.find((item) => item.code === selection.sizeCode) ?? getDefaultProductSize(product);
+  const color = product.colorOptions?.find((item) => item.code === selection.colorCode) ?? getDefaultProductColor(product);
+  return [getProductBaseSku(product), purchaseOptionSkuCodes[selection.purchaseOptionId], size?.skuSuffix, color?.skuSuffix].filter(Boolean).join("-");
 }
 
 function isHttpUrl(value: string) {

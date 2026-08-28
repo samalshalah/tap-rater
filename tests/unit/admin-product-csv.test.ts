@@ -18,6 +18,8 @@ describe("admin product CSV", () => {
     expect(csv).toBe(PRODUCT_CSV_HEADERS.join(","));
     expect(PRODUCT_CSV_HEADERS).toContain("product_options_json");
     expect(PRODUCT_CSV_HEADERS).toContain("images_json");
+    expect(PRODUCT_CSV_HEADERS).toContain("size_options_json");
+    expect(PRODUCT_CSV_HEADERS).toContain("product_faqs_json");
   });
 
   it("round-trips product options, images, business uses, assets, SEO, multiline copy, unicode, and inactive rows", () => {
@@ -46,6 +48,10 @@ describe("admin product CSV", () => {
     });
     expect(plan.products[0].productOptions).toHaveLength(2);
     expect(plan.products[0].images).toEqual([{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }]);
+    expect(plan.products[0].sizeOptions?.[0]).toMatchObject({ code: "regular", skuSuffix: "REG", priceAdjustmentCents: 0 });
+    expect(plan.products[0].sizeOptions?.[1]).toMatchObject({ code: "a4", skuSuffix: "A4", priceAdjustmentCents: null });
+    expect(plan.products[0].colorOptions).toEqual([{ code: "white", label: "White", skuSuffix: "WHT", priceAdjustmentCents: 0, isDefault: true, isActive: true }]);
+    expect(plan.products[0].productFaqs?.[0].question).toBe("How does the Google Review Stand work?");
   });
 
   it("creates new products and updates existing products by slug without deleting omitted products", () => {
@@ -174,6 +180,43 @@ function googleProduct(overrides: Partial<MigratedProduct> = {}): MigratedProduc
     isActive: true,
     seoTitle: "Google Review Stand SEO",
     seoDescription: "Review us on Google.",
+    searchKeywords: ["google review stand"],
+    sizeOptions: [
+      {
+        code: "regular",
+        label: "Standard",
+        frontWidthMm: 108,
+        frontHeightMm: 165,
+        frontWidthIn: 4.25,
+        frontHeightIn: 6.5,
+        baseDepthMm: 50,
+        baseDepthIn: 1.97,
+        skuSuffix: "REG",
+        priceAdjustmentCents: 0,
+        isDefault: true,
+        isActive: true
+      },
+      {
+        code: "a4",
+        label: "Large - A4",
+        frontWidthMm: 210,
+        frontHeightMm: 297,
+        frontWidthIn: 8.27,
+        frontHeightIn: 11.69,
+        baseDepthMm: 80,
+        baseDepthIn: 3.15,
+        skuSuffix: "A4",
+        priceAdjustmentCents: null,
+        isDefault: false,
+        isActive: true
+      }
+    ],
+    colorOptions: [{ code: "white", label: "White", skuSuffix: "WHT", priceAdjustmentCents: 0, isDefault: true, isActive: true }],
+    keyFeatures: [{ title: "Tap + Scan", body: "Customers can tap with NFC or scan the printed QR code." }],
+    howItWorks: [{ step: 1, title: "Choose your design and size", body: "Select Standard or Branded." }],
+    specifications: [{ label: "NFC chip", value: "NTAG213" }],
+    includedItems: [{ label: "Acrylic NFC + QR stand", appliesTo: "all" }],
+    productFaqs: [{ question: "How does the Google Review Stand work?", answer: "Customers tap or scan." }],
     updatedAt: "2026-08-28T00:00:00.000Z",
     ...overrides
   };

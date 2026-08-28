@@ -23,6 +23,7 @@ export type OrderLineItem = {
   destinationMode?: DestinationMode;
   customizationLevel?: CustomizationLevel;
   title: string;
+  baseSku?: string;
   sku: string;
   quantity: number;
   unitAmountCents: number;
@@ -162,6 +163,7 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       destinationMode: row.destinationMode,
       customizationLevel: row.customizationLevel,
       title: row.title,
+      baseSku: row.baseSku,
       sku: row.sku,
       quantity: row.quantity,
       unitAmountCents: row.unitAmountCents,

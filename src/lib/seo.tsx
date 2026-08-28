@@ -1,4 +1,5 @@
 import type { MigratedProduct } from "@/data/migrated-products";
+import { getProductBaseSku } from "@/lib/product-model";
 import { resolveProductSeo } from "@/lib/product-seo";
 import { getProductPriceCents } from "@/lib/products";
 
@@ -16,7 +17,7 @@ export function productJsonLd(product: MigratedProduct) {
     "@type": "Product",
     name: product.title,
     description: seo.description,
-    sku: product.sku,
+    sku: getProductBaseSku(product),
     brand: {
       "@type": "Brand",
       name: "Tap Rater"

@@ -129,6 +129,14 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     asset_readiness_status: input.assetReadinessStatus,
     seo_title: input.seoTitle ?? null,
     seo_description: input.seoDescription ?? null,
+    search_keywords: input.searchKeywords,
+    size_options: input.sizeOptions,
+    color_options: input.colorOptions,
+    key_features: input.keyFeatures,
+    how_it_works: input.howItWorks,
+    specifications: input.specifications,
+    included_items: input.includedItems,
+    product_faqs: input.productFaqs,
     is_active: input.isActive,
     updated_at: new Date().toISOString()
   });
