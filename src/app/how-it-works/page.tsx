@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { ProcessStepCard } from "@/components/storefront/process-step-card";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
@@ -45,15 +46,11 @@ export default function HowItWorksPage() {
             title="Choose, connect, confirm, and receive."
             body="The buying path stays simple for Standard Direct QR + NFC stands."
           />
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {steps.map(([title, body], index) => (
-            <article key={title} className="tr-card p-5">
-              <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-sm font-semibold text-white">{index + 1}</span>
-              <h2 className="mt-5 text-lg font-semibold text-ink">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">{body}</p>
-            </article>
+            <ProcessStepCard key={title} description={body} index={index} title={title} />
           ))}
-        </div>
+          </div>
           <div className="my-6 grid gap-4 md:grid-cols-2">
             {flows.map(([title, body, note]) => (
               <article key={title} className="tr-card p-5">

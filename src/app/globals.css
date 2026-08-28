@@ -193,8 +193,9 @@ main h3 {
   }
 
   .tr-process-step-card {
-    @apply border border-line bg-white p-6 shadow-sm sm:p-7;
+    @apply min-h-[220px] border border-line bg-white p-6 sm:p-7;
     border-radius: var(--tr-radius-card);
+    box-shadow: 0 10px 28px rgba(17, 24, 39, 0.045);
   }
 
   .tr-editorial-link {
