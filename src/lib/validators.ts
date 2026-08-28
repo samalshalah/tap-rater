@@ -282,6 +282,7 @@ export const productContentSchema = z.object({
   requiresAccount: z.boolean().default(false),
   requiresSubscription: z.boolean().default(false),
   requiresLandingPage: z.boolean().default(false),
+  supportsMultiLink: z.boolean().default(false),
   supportedDestinations: z
     .array(z.enum(supportedDestinationValues))
     .min(1)

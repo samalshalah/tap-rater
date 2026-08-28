@@ -17,7 +17,8 @@ describe("catalog categories", () => {
       "Appointment & Reservation Stands",
       "Menu & Info Stands",
       "Feedback Stands",
-      "Multi-Link Stands"
+      "Website & Link Stands",
+      "Custom Stands"
     ]);
   });
 
@@ -92,11 +93,17 @@ describe("catalog categories", () => {
 
   it("keeps regular launch products in standard/branded setup and reserves custom design for the custom stand", () => {
     const products = getActiveProducts();
+    const customStand = getProductBySlug("custom-direct-stand");
+    const regularProducts = products.filter((product) => product.slug !== "custom-direct-stand");
 
-    expect(products.every((product) => product.customizationOptions.includes("standard_design"))).toBe(true);
-    expect(products.every((product) => product.customizationOptions.includes("add_logo"))).toBe(true);
-    expect(products.every((product) => !product.customizationOptions.includes("custom_design"))).toBe(true);
-    expect(getProductBySlug("custom-direct-stand")).toBeUndefined();
+    expect(regularProducts.every((product) => product.customizationOptions.includes("standard_design"))).toBe(true);
+    expect(regularProducts.every((product) => product.customizationOptions.includes("add_logo"))).toBe(true);
+    expect(regularProducts.every((product) => !product.customizationOptions.includes("custom_design"))).toBe(true);
+    expect(customStand).toMatchObject({
+      title: "Custom Stand",
+      allowsCustomDesign: true,
+      supportsMultiLink: true
+    });
   });
 
   it("groups active launch stands by customer use case", () => {
@@ -114,7 +121,7 @@ describe("catalog categories", () => {
     expect(menuProducts).toHaveLength(1);
     expect(feedbackProducts).toHaveLength(1);
     expect(websiteProducts).toHaveLength(1);
-    expect(customProducts).toHaveLength(0);
+    expect(customProducts).toHaveLength(1);
     expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(45);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
   });
@@ -123,7 +130,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(60);
+    expect(products).toHaveLength(61);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -185,9 +192,11 @@ describe("catalog categories", () => {
         "Telegram Message Stand",
         "Book Your Next Visit Stand",
         "View Our Menu Stand",
-        "Multi-Link Stand"
+        "Visit Our Website Stand",
+        "Custom Stand"
       ])
     );
+    expect(titles).not.toContain("Multi-Link Stand");
     expect(titles).not.toContain("Custom Direct Stand");
     expect(titles.some((title) => title.includes("Plate"))).toBe(false);
     expect(titles).not.toContain("Google Review NFC Card");

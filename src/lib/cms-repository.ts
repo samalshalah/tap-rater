@@ -106,6 +106,7 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     requires_account: input.requiresAccount,
     requires_subscription: input.requiresSubscription,
     requires_landing_page: input.requiresLandingPage,
+    supports_multilink: input.supportsMultiLink,
     supported_destinations: input.supportedDestinations,
     activation_type: input.activationType,
     included_service_label: input.includedServiceLabel,

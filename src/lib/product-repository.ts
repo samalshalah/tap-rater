@@ -55,6 +55,7 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "requires_account",
   "requires_subscription",
   "requires_landing_page",
+  "supports_multilink",
   "supported_destinations",
   "activation_type",
   "included_service_label",
@@ -342,8 +343,8 @@ export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boole
     return false;
   }
 
-  if (product.productKind === "hosted_multilink" || product.serviceMode === "hosted_landing_page" || product.requiresLandingPage) {
-    return true;
+  if (product.slug === "multi-link-stand" || product.productKind === "hosted_multilink" || product.serviceMode === "hosted_landing_page" || product.requiresLandingPage) {
+    return false;
   }
 
   if (product.checkoutMode !== "buy_now") {
@@ -453,6 +454,8 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     readBoolean(productRow.requires_subscription) ?? readBoolean(productRow.requiresSubscription) ?? staticProduct?.requiresSubscription ?? false;
   const requiresLandingPage =
     readBoolean(productRow.requires_landing_page) ?? readBoolean(productRow.requiresLandingPage) ?? staticProduct?.requiresLandingPage ?? false;
+  const supportsMultiLink =
+    readBoolean(productRow.supports_multilink) ?? readBoolean(productRow.supportsMultiLink) ?? staticProduct?.supportsMultiLink ?? false;
   const supportedDestinations =
     readSupportedDestinations(productRow.supported_destinations) ??
     readSupportedDestinations(productRow.supportedDestinations) ??
@@ -553,6 +556,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     requiresAccount,
     requiresSubscription,
     requiresLandingPage,
+    supportsMultiLink,
     supportedDestinations,
     activationType,
     includedServiceLabel,

@@ -14,6 +14,7 @@ import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProduct
 import { formatPrice } from "@/lib/products";
 import { generateProductSeo } from "@/lib/product-seo";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminExternalButton, AdminInput, AdminLinkButton, AdminSelect, AdminSoftPanel, AdminTextarea } from "./admin-ui";
+import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -85,6 +86,7 @@ export function ProductEditor({
   const [destinationType, setDestinationType] = useState(product.destinationType ?? selectedPlatformDestinationType(platforms, primaryPlatformSlug));
   const [businessUseSlugs, setBusinessUseSlugs] = useState<string[]>(product.businessUseSlugs ?? []);
   const [isSpecialSolution, setIsSpecialSolution] = useState(product.isSpecialSolution ?? productKind === "hosted_multilink");
+  const [supportsMultiLink, setSupportsMultiLink] = useState(product.supportsMultiLink ?? false);
   const [publishStatus, setPublishStatus] = useState(product.status ?? (product.isActive ? "active" : "draft"));
   const [assetSet, setAssetSet] = useState<AssetSetState>(() => ({
     standardAngledImageUrl: product.assetSet?.standardAngledImageUrl ?? product.images[0]?.src ?? "",
@@ -167,6 +169,7 @@ export function ProductEditor({
         businessUseSlugs,
         isSpecialSolution: isSpecialSolution || productKind === "hosted_multilink",
         productKind,
+        supportsMultiLink,
         basePriceCents,
         salePriceCents: undefined,
         requiresAccount: productKind === "hosted_multilink",
@@ -187,6 +190,7 @@ export function ProductEditor({
       businessUseSlugs,
       isSpecialSolution,
       productKind,
+      supportsMultiLink,
       basePriceCents
     ]
   );
@@ -364,6 +368,7 @@ export function ProductEditor({
           requiresAccount: productKind === "hosted_multilink",
           requiresSubscription: productKind === "hosted_multilink",
           requiresLandingPage: productKind === "hosted_multilink",
+          supportsMultiLink: productKind === "hosted_multilink" ? false : supportsMultiLink,
           supportedDestinations,
           activationType: productKind === "hosted_multilink" ? "premium_hosted_activation" : "free_basic_activation",
           includedServiceLabel: productKind === "hosted_multilink" ? "Hosted Tap Rater page" : "Free basic activation",
@@ -755,6 +760,21 @@ export function ProductEditor({
               <option value="hosted_multilink">Hosted Multi-Link</option>
               <option value="bundle">Bundle</option>
             </AdminSelect>
+          </label>
+          <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-brand"
+              checked={supportsMultiLink}
+              disabled={productKind === "hosted_multilink"}
+              onChange={(event) => setSupportsMultiLink(event.target.checked)}
+            />
+            <span>
+              <span className="block font-semibold">Supports Multi-Link</span>
+              <span className="mt-1 block text-xs leading-5 text-muted">
+                {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/month and {hostedMultiLinkServiceAddon.maxLinks} links are locked by the global service definition.
+              </span>
+            </span>
           </label>
           <label className="grid gap-2 text-sm font-semibold text-ink">
             Stand Type

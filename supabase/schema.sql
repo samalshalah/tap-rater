@@ -272,6 +272,7 @@ create table if not exists products (
   requires_account boolean not null default false,
   requires_subscription boolean not null default false,
   requires_landing_page boolean not null default false,
+  supports_multilink boolean not null default false,
   supported_destinations text[] not null default array['custom']::text[],
   activation_type text not null default 'free_basic_activation' check (activation_type in ('free_basic_activation', 'managed_setup', 'premium_hosted_activation')),
   included_service_label text not null default 'Free basic activation',
@@ -319,6 +320,7 @@ alter table products add column if not exists checkout_mode text not null defaul
 alter table products add column if not exists requires_account boolean not null default false;
 alter table products add column if not exists requires_subscription boolean not null default false;
 alter table products add column if not exists requires_landing_page boolean not null default false;
+alter table products add column if not exists supports_multilink boolean not null default false;
 alter table products add column if not exists supported_destinations text[] not null default array['custom']::text[];
 alter table products add column if not exists activation_type text not null default 'free_basic_activation' check (activation_type in ('free_basic_activation', 'managed_setup', 'premium_hosted_activation'));
 alter table products add column if not exists included_service_label text not null default 'Free basic activation';
@@ -625,6 +627,27 @@ alter table product_option_templates add constraint product_option_templates_opt
 alter table product_option_templates drop constraint if exists product_option_templates_max_links_check;
 alter table product_option_templates add constraint product_option_templates_max_links_check check (max_links is null or max_links > 0);
 
+create table if not exists service_addons (
+  code text primary key,
+  title text not null,
+  monthly_price_cents integer not null check (monthly_price_cents >= 0),
+  requires_account boolean not null default false,
+  requires_hosted_page boolean not null default false,
+  max_links integer check (max_links is null or max_links > 0),
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists product_service_addons (
+  product_slug text not null references products(slug) on delete cascade,
+  service_addon_code text not null references service_addons(code) on delete cascade,
+  enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (product_slug, service_addon_code)
+);
+
 alter table products drop constraint if exists products_stand_type_slug_fkey;
 alter table products
   add constraint products_stand_type_slug_fkey
@@ -655,7 +678,7 @@ values
   ('appointment-reservation-stands', 'Appointment & Reservation Stands', 'Stands that open booking, scheduling, reservation, or service links.', '/uploads/products/book-next-visit-stand.png', 30, true),
   ('feedback-survey-stands', 'Feedback & Survey Stands', 'Stands that collect private feedback or survey responses.', '/uploads/products/rate-your-experience-stand.png', 40, true),
   ('menu-info-stands', 'Menu & Info Stands', 'Stands that open menus, services, pricing, or information pages.', '/uploads/products/view-menu-stand.png', 50, true),
-  ('website-link-stands', 'Multi-Link Stands', 'Branded stands that open a hosted Tap Rater page with multiple customer links.', '/uploads/products/visit-website-stand.png', 60, true),
+  ('website-link-stands', 'Website & Link Stands', 'Stands that open one website, link hub, information page, or custom URL.', '/uploads/products/visit-website-stand.png', 60, true),
   ('payment-tip-donation-stands', 'Payment, Tip & Donation Stands', 'Stands that open payment, tip, donation, or support links.', '/uploads/products/no-photo-available.png', 70, true),
   ('loyalty-rewards-stands', 'Loyalty & Rewards Stands', 'Stands that open loyalty, rewards, signup, or membership destinations.', '/uploads/products/no-photo-available.png', 80, true),
   ('custom-stands', 'Custom Stands', 'Custom Tap Rater stand products and special printed solutions.', '/uploads/products/business-google-white-stands-bundle.jpg', 90, true)
@@ -792,7 +815,7 @@ insert into product_option_templates (
 values
   ('standard_direct', 'Standard Direct', 'Ready-made direct stand with NFC only and one required destination link.', 3900, null, null, true, false, false, false, false, false, false, false, false, false, null, null, 10, true),
   ('branded_qr_direct', 'Branded + QR Direct', 'Branded direct stand with NFC, printed QR, business name, logo collection, and front proof.', 4900, null, null, true, true, true, true, true, true, false, false, false, false, null, null, 20, true),
-  ('hosted_multilink', 'Hosted Multi-Link', 'Branded NFC and QR stand connected to a hosted Tap Rater multi-link landing page.', 4900, 990, 10, false, true, true, true, true, true, true, true, true, true, 'https://taprater.com/p/{code}', 'Powered by Tap Rater', 30, true)
+  ('hosted_multilink', 'Multi-Link', 'Recurring hosted service add-on for a compatible physical stand.', 0, 999, 10, false, true, true, true, true, true, true, true, true, true, 'https://taprater.com/p/{code}', 'Powered by Tap Rater', 30, true)
 on conflict (option_code) do update set
   title = excluded.title,
   description = excluded.description,
@@ -813,6 +836,31 @@ on conflict (option_code) do update set
   footer_label = excluded.footer_label,
   sort_order = excluded.sort_order,
   is_active = excluded.is_active,
+  updated_at = now();
+
+insert into service_addons (code, title, monthly_price_cents, requires_account, requires_hosted_page, max_links, active)
+values ('hosted_multilink', 'Multi-Link', 999, true, true, 10, true)
+on conflict (code) do update set
+  title = excluded.title,
+  monthly_price_cents = excluded.monthly_price_cents,
+  requires_account = excluded.requires_account,
+  requires_hosted_page = excluded.requires_hosted_page,
+  max_links = excluded.max_links,
+  active = excluded.active,
+  updated_at = now();
+
+insert into product_service_addons (product_slug, service_addon_code, enabled)
+select product_slug, 'hosted_multilink', true
+from (
+  values
+    ('follow-us-social-media-stand'),
+    ('rate-your-experience-stand'),
+    ('visit-our-website-stand'),
+    ('custom-direct-stand')
+) as compatible_products(product_slug)
+where exists (select 1 from products where slug = compatible_products.product_slug)
+on conflict (product_slug, service_addon_code) do update set
+  enabled = excluded.enabled,
   updated_at = now();
 
 create table if not exists product_images (

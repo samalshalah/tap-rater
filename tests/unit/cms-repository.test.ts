@@ -135,6 +135,7 @@ describe("cms repository", () => {
       requiresAccount: false,
       requiresSubscription: false,
       requiresLandingPage: false,
+      supportsMultiLink: false,
       supportedDestinations: ["google"],
       activationType: "free_basic_activation",
       includedServiceLabel: "Free basic activation",

@@ -17,6 +17,7 @@ import {
 import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
+import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -137,13 +138,15 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     }
 
     const setup = normalizeCheckoutSetup(item.setup);
+    const hasMultiLinkAddon =
+      setup.serviceAddon === hostedMultiLinkServiceAddon.code && productSupportsMultiLink(product) && process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING === "true";
 
-    if (!isProductOptionArchitectureConsistent(product, option) || cartItemRequestsPermanentHostedCode(item) || !isValidCheckoutSetup(option, setup)) {
+    if (!isProductOptionArchitectureConsistent(product, option) || cartItemRequestsPermanentHostedCode(item) || !isValidCheckoutSetup(option, setup, hasMultiLinkAddon)) {
       continue;
     }
 
-    const destinationMode = getPurchaseOptionDestinationMode(option);
-    if (destinationMode === "HOSTED" && (product.checkoutMode !== "subscription" || !option.requiresSubscription || !option.monthlyPriceCents)) {
+    const destinationMode = hasMultiLinkAddon ? "HOSTED" : getPurchaseOptionDestinationMode(option);
+    if (!hasMultiLinkAddon && destinationMode === "HOSTED" && (product.checkoutMode !== "subscription" || !option.requiresSubscription || !option.monthlyPriceCents)) {
       continue;
     }
 
@@ -208,7 +211,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       quantity: item.quantity,
       unitAmountCents: unitPriceCents,
       lineSubtotalCents: unitPriceCents * item.quantity,
-      monthlyAmountCents: option.monthlyPriceCents,
+      monthlyAmountCents: hasMultiLinkAddon ? hostedMultiLinkServiceAddon.monthlyPriceCents : option.monthlyPriceCents,
       shortDescription: product.shortDescription,
       setup: rowSetup,
       logoRequired,
@@ -364,6 +367,9 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     colorLabel: setup?.colorLabel?.trim(),
     destinationUrl: setup?.destinationUrl?.trim(),
     destinationType: setup?.destinationType?.trim(),
+    serviceMode: setup?.serviceMode,
+    serviceAddon: setup?.serviceAddon?.trim(),
+    monthlyPriceCents: setup?.monthlyPriceCents,
     platformSlug: setup?.platformSlug?.trim(),
     googlePlaceId: setup?.googlePlaceId?.trim(),
     googlePlaceName: setup?.googlePlaceName?.trim(),
@@ -391,7 +397,7 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
   };
 }
 
-function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {
+function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>, hasMultiLinkAddon = false) {
   if (getPurchaseOptionDestinationMode(option) === "DIRECT" && !option.requiresDestinationUrl) {
     return false;
   }
@@ -400,13 +406,13 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
     return false;
   }
 
-  if (option.requiresDestinationUrl && !isHttpUrl(setup.destinationUrl)) {
+  if (!hasMultiLinkAddon && option.requiresDestinationUrl && !isHttpUrl(setup.destinationUrl)) {
     return false;
   }
 
-  const directTargets = getPurchaseOptionDestinationMode(option) === "DIRECT" ? buildDirectProductionTargets(setup.destinationUrl) : null;
+  const directTargets = getPurchaseOptionDestinationMode(option) === "DIRECT" && !hasMultiLinkAddon ? buildDirectProductionTargets(setup.destinationUrl) : null;
 
-  if (getPurchaseOptionDestinationMode(option) === "DIRECT" && !directTargets) {
+  if (getPurchaseOptionDestinationMode(option) === "DIRECT" && !hasMultiLinkAddon && !directTargets) {
     return false;
   }
 

@@ -9,13 +9,12 @@ describe("product slug aliases", () => {
     ["book-appointment-stand", "book-your-next-visit-stand"],
     ["view-menu-stand", "view-our-menu-stand"],
     ["follow-us-stand", "follow-us-social-media-stand"],
-    ["visit-website-stand", "multi-link-stand"],
-    ["visit-our-website-stand", "multi-link-stand"]
+    ["visit-website-stand", "visit-our-website-stand"]
   ])("resolves legacy %s to canonical active %s", (legacySlug, canonicalSlug) => {
     expect(getCanonicalProductSlug(legacySlug)).toBe(canonicalSlug);
   });
 
-  it.each(["book-your-next-visit-stand", "view-our-menu-stand", "follow-us-social-media-stand", "multi-link-stand"])(
+  it.each(["book-your-next-visit-stand", "view-our-menu-stand", "follow-us-social-media-stand", "visit-our-website-stand"])(
     "keeps canonical product slug %s unchanged",
     (canonicalSlug) => {
       expect(getCanonicalProductSlug(canonicalSlug)).toBe(canonicalSlug);

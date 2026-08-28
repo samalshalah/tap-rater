@@ -204,7 +204,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "Shop by Type", href: "/shop#stand-categories", order: 15, enabled: true },
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
-    { label: "Multi-Link Stands", href: "/category/website-link-stands", order: 40, enabled: true },
+    { label: "Multi-Link", href: "/multi-link", order: 40, enabled: true },
     { label: "Resources", href: "/support", order: 60, enabled: true }
   ]
 };
@@ -219,7 +219,8 @@ export const defaultFooterContent: FooterContent = {
         { label: "All Stands", href: "/shop", order: 10, enabled: true },
         { label: "Review Stands", href: "/category/reviews", order: 20, enabled: true },
         { label: "Menu Stands", href: "/category/menu", order: 30, enabled: true },
-        { label: "Multi-Link Stands", href: "/category/website-link-stands", order: 40, enabled: true }
+        { label: "Website & Link Stands", href: "/category/website-link-stands", order: 40, enabled: true },
+        { label: "Multi-Link", href: "/multi-link", order: 50, enabled: true }
       ]
     },
     {
@@ -347,9 +348,9 @@ export const defaultHomepageContent: HomepageThemeContent = {
   multilink: {
     enabled: true,
     eyebrow: "Multi-Link",
-    headline: "One Stand. Unlimited Possibilities.",
-    body: "Create one branded page with reviews, appointments, menus, social media, your website, contact details, and more.",
-    cta: { label: "Explore Multi-Link", href: "/category/website-link-stands" },
+    headline: "One stand. Up to 10 links. Update them anytime.",
+    body: "Add Multi-Link to a compatible Tap Rater stand for an editable hosted page with reviews, appointments, menus, social media, your website, contact details, and more.",
+    cta: { label: "Explore Multi-Link", href: "/multi-link" },
     image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Multi-Link Tap Rater stand" },
     bullets: ["Reviews", "Appointments", "Menu", "Social Media", "Website", "Contact"]
   },

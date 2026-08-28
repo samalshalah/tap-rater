@@ -150,8 +150,8 @@ export const lockedStandTypes: StandType[] = [
   },
   {
     slug: "website-link-stands",
-    title: "Multi-Link Stands",
-    description: "Branded stands that open a hosted Tap Rater page with multiple customer links.",
+    title: "Website & Link Stands",
+    description: "Stands that open one website, link hub, information page, or custom URL.",
     imageUrl: "/uploads/products/visit-website-stand.png",
     sortOrder: 60,
     isActive: true
@@ -376,10 +376,10 @@ export const brandedQrDirectProductOption: ProductOption = {
 
 export const hostedMultiLinkProductOption: ProductOption = {
   optionCode: "hosted_multilink",
-  title: "Hosted Multi-Link",
-  description: "Branded NFC and QR stand connected to a hosted Tap Rater multi-link landing page.",
-  priceCents: 4900,
-  monthlyPriceCents: 990,
+  title: "Multi-Link",
+  description: "Recurring hosted service add-on for a compatible physical stand.",
+  priceCents: 0,
+  monthlyPriceCents: 999,
   maxLinks: 10,
   requiresDestinationUrl: false,
   hasQr: true,
@@ -391,7 +391,7 @@ export const hostedMultiLinkProductOption: ProductOption = {
   accountRequired: true,
   supportsReorderableLinks: true,
   supportsLinkVisibility: true,
-  landingPageUrlPattern: "/l/:client-name",
+  landingPageUrlPattern: "https://taprater.com/p/{code}",
   footerLabel: "Powered by Tap Rater",
   isActive: true,
   sortOrder: 30

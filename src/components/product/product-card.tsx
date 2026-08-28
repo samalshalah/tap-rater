@@ -42,10 +42,6 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
 }
 
 function getPurchaseLabel(product: MigratedProduct) {
-  if (product.productKind === "hosted_multilink") {
-    return "Multi-Link coming soon";
-  }
-
   const options = getProductPurchaseOptions(product);
   if (options.length === 0) {
     return "Unavailable";

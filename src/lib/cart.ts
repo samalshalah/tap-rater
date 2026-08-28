@@ -35,6 +35,9 @@ export type CartItem = {
     colorLabel?: string;
     destinationUrl?: string;
     destinationType?: string;
+    serviceMode?: "DIRECT" | "HOSTED";
+    serviceAddon?: string;
+    monthlyPriceCents?: number;
     platformSlug?: string;
     googlePlaceId?: string;
     googlePlaceName?: string;
@@ -228,6 +231,9 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.colorCode ?? "",
     setup.destinationUrl ?? "",
     setup.destinationType ?? "",
+    setup.serviceMode ?? "",
+    setup.serviceAddon ?? "",
+    setup.monthlyPriceCents === undefined ? "" : String(setup.monthlyPriceCents),
     setup.platformSlug ?? "",
     setup.googlePlaceId ?? "",
     setup.businessName ?? "",
@@ -272,6 +278,9 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     colorLabel: readString(row.colorLabel),
     destinationUrl: readString(row.destinationUrl),
     destinationType: readString(row.destinationType),
+    serviceMode: row.serviceMode === "DIRECT" || row.serviceMode === "HOSTED" ? row.serviceMode : undefined,
+    serviceAddon: readString(row.serviceAddon),
+    monthlyPriceCents: typeof row.monthlyPriceCents === "number" && Number.isInteger(row.monthlyPriceCents) ? row.monthlyPriceCents : undefined,
     platformSlug: readString(row.platformSlug),
     googlePlaceId: readString(row.googlePlaceId),
     googlePlaceName: readString(row.googlePlaceName),

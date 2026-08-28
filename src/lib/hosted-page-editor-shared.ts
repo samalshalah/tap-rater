@@ -1,8 +1,18 @@
 import type { HostedPageButtonType, HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 
-export const hostedPageButtonLimit = 8;
+export const hostedPageButtonLimit = 10;
 
-export type HostedPageEditorButtonType = "google_review" | "yelp" | "facebook" | "instagram" | "website" | "appointment" | "menu" | "contact";
+export type HostedPageEditorButtonType =
+  | "google_review"
+  | "yelp"
+  | "facebook"
+  | "instagram"
+  | "website"
+  | "appointment"
+  | "menu"
+  | "contact"
+  | "whatsapp"
+  | "custom_link";
 export type HostedPageEditorAppearance = {
   theme: "light" | "warm" | "bold";
   accentColor: "#0f766e" | "#1d4ed8" | "#7c3aed" | "#be123c";
@@ -45,5 +55,7 @@ export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonTyp
   { type: "website", label: "Website", snapshotType: "website" },
   { type: "appointment", label: "Appointment", snapshotType: "booking" },
   { type: "menu", label: "Menu", snapshotType: "menu" },
-  { type: "contact", label: "Contact", snapshotType: "website" }
+  { type: "contact", label: "Contact", snapshotType: "website" },
+  { type: "whatsapp", label: "WhatsApp", snapshotType: "social" },
+  { type: "custom_link", label: "Custom Link", snapshotType: "website" }
 ];

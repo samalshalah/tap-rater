@@ -30,6 +30,11 @@ type ProductPageProps = {
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
+
+  if (slug === "multi-link-stand") {
+    permanentRedirect("/multi-link");
+  }
+
   const canonicalSlug = getCanonicalProductSlug(slug);
   const product = await getStorefrontProductBySlug(canonicalSlug);
 
@@ -55,6 +60,11 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
+
+  if (slug === "multi-link-stand") {
+    permanentRedirect("/multi-link");
+  }
+
   const canonicalSlug = getCanonicalProductSlug(slug);
 
   if (canonicalSlug !== slug) {

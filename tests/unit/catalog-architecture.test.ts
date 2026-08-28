@@ -66,18 +66,18 @@ describe("catalog architecture", () => {
     });
   });
 
-  it("models Hosted Multi-Link as a special subscribed option template", () => {
+  it("keeps the legacy Multi-Link option template non-physical for compatibility", () => {
     expect(hostedMultiLinkProductOption).toMatchObject({
       optionCode: "hosted_multilink",
-      priceCents: 4900,
-      monthlyPriceCents: 990,
+      priceCents: 0,
+      monthlyPriceCents: 999,
       requiresSubscription: true,
       accountRequired: true,
       hasQr: true,
       maxLinks: 10,
       supportsReorderableLinks: true,
       supportsLinkVisibility: true,
-      landingPageUrlPattern: "/l/:client-name",
+      landingPageUrlPattern: "https://taprater.com/p/{code}",
       footerLabel: "Powered by Tap Rater"
     });
     expect(getDefaultOptionsForProductKind("hosted_multilink")).toEqual([hostedMultiLinkProductOption]);

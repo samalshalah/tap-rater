@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
 import { getProductPurchaseOptions, hasBrandedDirectProductionTemplate, isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
+import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 describe("purchase option readiness", () => {
   afterEach(() => {
@@ -38,31 +39,31 @@ describe("purchase option readiness", () => {
     expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct"]);
   });
 
-  it("keeps HOSTED purchase options disabled by default", () => {
-    const product = {
-      ...migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!,
-      productKind: "hosted_multilink",
-      requiresLandingPage: true,
-      requiresSubscription: true,
-      checkoutMode: "subscription",
-      requiresAccount: true
-    } satisfies MigratedProduct;
+  it("keeps Multi-Link out of physical purchase options", () => {
+    const product = migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!;
 
     expect(isHostedPurchaseOptionEnabled()).toBe(false);
-    expect(getProductPurchaseOptions(product)).toEqual([]);
+    expect(productSupportsMultiLink(product)).toBe(true);
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).not.toContain("hosted_multilink");
   });
 
-  it("keeps HOSTED subscription checkout structurally available only when explicitly enabled", () => {
-    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const product = {
-      ...migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!,
-      productKind: "hosted_multilink",
-      requiresLandingPage: true,
-      requiresSubscription: true,
-      checkoutMode: "subscription",
-      requiresAccount: true
-    } satisfies MigratedProduct;
+  it("models Multi-Link as a reusable $9.99 monthly service add-on", () => {
+    expect(hostedMultiLinkServiceAddon).toMatchObject({
+      code: "hosted_multilink",
+      title: "Multi-Link",
+      monthlyPriceCents: 999,
+      maxLinks: 10,
+      requiresAccount: true,
+      requiresHostedPage: true,
+      active: true
+    });
+  });
 
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["hosted_multilink"]);
+  it("uses explicit product compatibility for Multi-Link", () => {
+    expect(productSupportsMultiLink(migratedProducts.find((item) => item.slug === "google-review-stand")!)).toBe(false);
+    expect(productSupportsMultiLink(migratedProducts.find((item) => item.slug === "yelp-review-stand")!)).toBe(false);
+    expect(productSupportsMultiLink(migratedProducts.find((item) => item.slug === "follow-us-social-media-stand")!)).toBe(true);
+    expect(productSupportsMultiLink(migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!)).toBe(true);
+    expect(productSupportsMultiLink(migratedProducts.find((item) => item.slug === "custom-direct-stand")!)).toBe(true);
   });
 });

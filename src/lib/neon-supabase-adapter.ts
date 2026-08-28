@@ -148,6 +148,7 @@ const tableColumns = {
     "requires_account",
     "requires_subscription",
     "requires_landing_page",
+    "supports_multilink",
     "supported_destinations",
     "activation_type",
     "included_service_label",

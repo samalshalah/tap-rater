@@ -1,4 +1,5 @@
 import type { MigratedProduct } from "@/data/migrated-products";
+import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 
 export type PurchaseOptionId = "standard_direct" | "branded_qr_direct" | "hosted_multilink";
 
@@ -56,10 +57,10 @@ export const brandedQrDirectOption: PurchaseOption = {
 
 export const hostedMultiLinkOption: PurchaseOption = {
   id: "hosted_multilink",
-  label: "Hosted Multi-Link Stand",
-  priceCents: 4900,
-  monthlyPriceCents: 990,
-  summary: "Branded stand connected to a hosted Tap Rater page with up to 10 managed links.",
+  label: "Multi-Link",
+  priceCents: 0,
+  monthlyPriceCents: hostedMultiLinkServiceAddon.monthlyPriceCents,
+  summary: "Editable Tap Rater page with up to 10 links.",
   requiresDestinationUrl: false,
   hasQr: true,
   requiresBusinessName: true,
@@ -102,7 +103,7 @@ export function isPurchaseOptionSellableForProduct(product: ProductForPurchaseOp
     product.requiresSubscription;
 
   if (optionId === "hosted_multilink") {
-    return isHostedPurchaseOptionEnabled();
+    return false;
   }
 
   if (isHostedProduct) {
@@ -121,7 +122,7 @@ export function getProductPurchaseOptions(
 ): PurchaseOption[] {
   if (Array.isArray(product.purchaseOptions)) {
     return product.purchaseOptions
-      .filter((option) => option.isActive && isPurchaseOptionSellableForProduct(product, option.optionCode))
+      .filter((option) => option.optionCode !== "hosted_multilink" && option.isActive && isPurchaseOptionSellableForProduct(product, option.optionCode))
       .sort((first, second) => first.sortOrder - second.sortOrder)
       .map((option) => {
         return {
@@ -145,7 +146,7 @@ export function getProductPurchaseOptions(
   }
 
   if (product.productKind === "hosted_multilink" || product.isSpecialSolution || product.requiresLandingPage || product.requiresSubscription) {
-    return isHostedPurchaseOptionEnabled() ? [hostedMultiLinkOption] : [];
+    return [];
   }
 
   return hasBrandedDirectProductionTemplate(product) ? [standardDirectOption, brandedQrDirectOption] : [standardDirectOption];

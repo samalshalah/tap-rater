@@ -526,45 +526,35 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("accepts Hosted Multi-Link through subscription checkout without assigning a permanent code when explicitly enabled", () => {
+  it("accepts Multi-Link as a service add-on without assigning a permanent code when explicitly enabled", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const hostedProduct = {
-      ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
-      slug: "hosted-multilink-stand",
-      productKind: "hosted_multilink" as const,
-      productType: "platform_landing_page" as const,
-      serviceMode: "hosted_landing_page" as const,
-      checkoutMode: "subscription" as const,
-      requiresAccount: true,
-      requiresSubscription: true,
-      requiresLandingPage: true,
-      isActive: true
-    };
+    const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
     const result = validateCheckoutCart(
       [
         {
-          productId: "hosted-multilink-stand",
-          optionId: "hosted_multilink",
+          productId: "follow-us-social-media-stand",
+          optionId: "standard_direct",
           quantity: 1,
           setup: {
-            businessName: "Nova Implant",
+            serviceMode: "HOSTED",
+            serviceAddon: "hosted_multilink",
             manualCollectionAcknowledged: true
           }
         }
       ],
-      [hostedProduct]
+      [compatibleProduct]
     );
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.checkoutMode).toBe("subscription");
-    expect(result.totalCents).toBe(4900);
-    expect(result.recurringTotalCents).toBe(990);
+    expect(result.totalCents).toBe(3900);
+    expect(result.recurringTotalCents).toBe(999);
     expect(result.rows[0]).toMatchObject({
-      optionId: "hosted_multilink",
+      optionId: "standard_direct",
       destinationMode: "HOSTED",
-      customizationLevel: "BRANDED",
-      monthlyAmountCents: 990
+      customizationLevel: "STANDARD",
+      monthlyAmountCents: 999
     });
     expect(result.rows[0].setup).not.toHaveProperty("hostedPageCode");
   });
@@ -772,33 +762,23 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 
-  it("creates card-only subscription Checkout Session params for hosted products with one-time and monthly lines when explicitly enabled", () => {
+  it("creates card-only subscription Checkout Session params for Multi-Link add-ons with one-time and monthly lines when explicitly enabled", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const hostedProduct = {
-      ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
-      slug: "hosted-multilink-stand",
-      productKind: "hosted_multilink" as const,
-      productType: "platform_landing_page" as const,
-      serviceMode: "hosted_landing_page" as const,
-      checkoutMode: "subscription" as const,
-      requiresAccount: true,
-      requiresSubscription: true,
-      requiresLandingPage: true,
-      isActive: true
-    };
+    const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
     const result = validateCheckoutCart(
       [
         {
-          productId: "hosted-multilink-stand",
-          optionId: "hosted_multilink",
+          productId: "follow-us-social-media-stand",
+          optionId: "standard_direct",
           quantity: 1,
           setup: {
-            businessName: "Nova Implant",
+            serviceMode: "HOSTED",
+            serviceAddon: "hosted_multilink",
             manualCollectionAcknowledged: true
           }
         }
       ],
-      [hostedProduct]
+      [compatibleProduct]
     );
 
     expect(result.ok).toBe(true);
@@ -811,16 +791,16 @@ describe("Stripe checkout helpers", () => {
     expect(params.mode).toBe("subscription");
     expect(params.payment_method_types).toEqual(["card"]);
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
-    expect(params.metadata?.recurring_total_cents).toBe("990");
+    expect(params.metadata?.recurring_total_cents).toBe("999");
     expect(params.line_items).toHaveLength(2);
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
-        unit_amount: 4900
+        unit_amount: 3900
       }
     });
     expect(params.line_items?.[1]).toMatchObject({
       price_data: {
-        unit_amount: 990,
+        unit_amount: 999,
         recurring: {
           interval: "month"
         }

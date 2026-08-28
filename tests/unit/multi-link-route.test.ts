@@ -1,12 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { GET } from "@/app/multi-link/route";
 
-describe("Multi-Link public route", () => {
-  it("is intentionally unavailable while Hosted purchasing is deferred", async () => {
-    const response = await GET();
+describe("Multi-Link public page", () => {
+  const source = readFileSync(join(process.cwd(), "src/app/multi-link/page.tsx"), "utf8");
 
-    expect(response.status).toBe(404);
-    expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow");
-    expect(response.headers.get("X-Tap-Rater-Multi-Link-State")).toBe("inactive");
+  it("markets Multi-Link as a service add-on and only lists compatible products", () => {
+    expect(source).toContain("One stand. Up to 10 links. Update them anytime.");
+    expect(source).toContain("productSupportsMultiLink");
+    expect(source).toContain("Shop Compatible Stands");
+    expect(source).not.toContain("Multi-Link Stand");
   });
 });
