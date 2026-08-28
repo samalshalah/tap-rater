@@ -156,6 +156,7 @@ const tableColumns = {
     "allows_logo_upload",
     "allows_custom_design",
     "design_mode",
+    "display_text",
     "images",
     "standard_angled_image_url",
     "branded_angled_image_url",
