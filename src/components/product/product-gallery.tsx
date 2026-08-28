@@ -35,12 +35,12 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
   }, [product.slug]);
 
   return (
-    <div className="grid gap-3 lg:sticky lg:top-24">
-      <div className="tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[540px]">
+    <div className="grid content-center gap-3 lg:sticky lg:top-24">
+      <div className="tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
         <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-4 mix-blend-multiply sm:p-6" />
       </div>
       {galleryImages.length > 1 ? (
-        <div className="mx-auto flex w-full max-w-[292px] gap-2 overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[540px]">
+        <div className="mx-auto flex w-full max-w-[292px] justify-center gap-2 overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
           {galleryImages.map((thumbnail) => (
             <button
               key={thumbnail.src}

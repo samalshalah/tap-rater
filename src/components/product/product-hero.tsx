@@ -24,7 +24,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
   const pricePrefix = selectedPriceCents === null ? "From " : "";
 
   return (
-    <div className="tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
+    <div className="tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-4 sm:gap-5">
@@ -44,7 +44,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
 
         <div>
           <p className="tr-eyebrow">{category?.title ?? "Tap Rater stand"}</p>
-          <h1 className="tr-page-title mt-2 max-w-3xl text-[2rem] sm:text-[2.45rem] md:text-[2.9rem]">{product.title}</h1>
+          <h1 className="mt-2 max-w-3xl text-[1.6rem] font-semibold leading-tight text-ink sm:text-[2rem] md:text-[2.25rem]">{product.title}</h1>
           <p className="tr-body mt-3 max-w-2xl text-base">{product.shortDescription}</p>
           <p className="mt-3 text-xl font-semibold text-ink">{pricePrefix}{displayPrice}</p>
         </div>

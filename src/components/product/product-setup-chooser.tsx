@@ -477,7 +477,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               />
               <span className="min-w-0">
                 <span className="flex items-start justify-between gap-2">
-                  <span className="text-base font-black leading-5 text-ink">{option.label}</span>
+                  <span className="text-base font-black leading-5 text-ink">{getOptionDisplayLabel(option)}</span>
                   <span className="shrink-0 text-sm font-black text-ink">{formatPrice(option.priceCents).replace(".00", "")}</span>
                 </span>
                 <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{getOptionShortSummary(option)}</span>
@@ -491,7 +491,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         {activeSizes.length ? (
           <div className="grid gap-2">
             <p className="text-sm font-semibold text-ink">Size</p>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2">
               {activeSizes.map((size) => {
                 const pending = size.priceAdjustmentCents === null;
                 return (
@@ -499,14 +499,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     key={size.code}
                     className={
                       pending
-                        ? "grid cursor-not-allowed gap-1 rounded-md border border-line bg-white p-3 opacity-55"
+                        ? "flex cursor-not-allowed items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 opacity-55"
                         : selectedSize?.code === size.code
-                          ? "grid cursor-pointer gap-1 rounded-md border border-brand bg-panel p-3"
-                          : "grid cursor-pointer gap-1 rounded-md border border-line bg-white p-3 hover:border-brand/50"
+                          ? "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-brand bg-panel px-3 py-2"
+                          : "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 hover:border-brand/50"
                     }
                     aria-disabled={pending}
                   >
-                    <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
                       <input
                         type="radio"
                         name={`${product.slug}-size`}
@@ -517,13 +517,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         }}
                         className="h-4 w-4 accent-brand"
                       />
-                      {formatSizeLabel(size.label)}
+                      <span className="shrink-0">{formatSizeLabel(size.label)}</span>
                     </span>
-                    <span className="text-xs leading-5 text-muted">{size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in</span>
-                    <span className="text-xs leading-5 text-muted">
+                    <span className="min-w-0 text-right text-xs leading-5 text-muted">
+                      {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
+                      <span className="mx-1 text-line">/</span>
                       {size.frontWidthMm} x {size.frontHeightMm} mm
                     </span>
-                    <span className={pending ? "text-xs font-semibold text-muted" : "text-xs font-semibold text-brand"}>
+                    <span className={pending ? "shrink-0 text-xs font-semibold text-muted" : "shrink-0 text-xs font-semibold text-brand"}>
                       {pending ? "Price coming soon" : "Included"}
                     </span>
                   </label>
@@ -1063,18 +1064,26 @@ function regionStyle(region: BrandedCompositionRegion) {
 
 function getOptionSummary(option: PurchaseOption) {
   if (option.id === "branded_qr_direct") {
-    return "QR + NFC · front proof included";
+    return "Front proof included";
   }
 
-  return "QR + NFC direct to your review link";
+  return "Direct to your review link";
 }
 
 function getOptionShortSummary(option: PurchaseOption) {
   if (option.id === "branded_qr_direct") {
-    return "Your logo + business name";
+    return "Your logo + business name + QR";
   }
 
   return "Ready-made Google design";
+}
+
+function getOptionDisplayLabel(option: PurchaseOption) {
+  if (option.id === "branded_qr_direct") {
+    return "Branded + QR";
+  }
+
+  return option.label;
 }
 
 function formatSizeLabel(label: string) {
