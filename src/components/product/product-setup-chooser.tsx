@@ -298,6 +298,18 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setStep("review");
   }
 
+  function goToPreviousStep() {
+    setError("");
+    if (step === "review") {
+      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination");
+      return;
+    }
+
+    if (step === "design") {
+      setStep("destination");
+    }
+  }
+
   function addConfiguredItemToCart() {
     setError("");
 
@@ -467,15 +479,31 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             <div className="border-b border-line px-4 py-3 sm:px-6">
               <ol className={`grid gap-2 text-xs font-semibold uppercase text-muted ${stepGridClassName}`}>
                 {stepLabels.map((label, index) => (
-                  <li key={label} className={index < activeStepIndex ? "rounded-lg bg-panel px-3 py-2 text-brand" : index === activeStepIndex ? "rounded-lg bg-ink px-3 py-2 text-white" : "rounded-lg border border-line px-3 py-2"}>
-                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
-                    <span>{label}</span>
+                  <li key={label} className={index < activeStepIndex ? "rounded-lg bg-panel text-brand" : index === activeStepIndex ? "rounded-lg bg-ink text-white" : "rounded-lg border border-line"}>
+                    <button
+                      type="button"
+                      className="flex w-full items-center px-3 py-2 text-left disabled:cursor-default"
+                      disabled={index >= activeStepIndex}
+                      onClick={() => {
+                        if (index === 0) setStep("destination");
+                        if (index === 1 && selectedOption.id === "branded_qr_direct") setStep("design");
+                      }}
+                    >
+                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
+                      <span>{label}</span>
+                    </button>
                   </li>
                 ))}
               </ol>
             </div>
 
             <div className="overflow-y-auto px-4 py-3 sm:px-6">
+              {step !== "destination" ? (
+                <button type="button" className="mb-3 text-sm font-semibold text-brand hover:text-ink" onClick={goToPreviousStep}>
+                  Back to previous step
+                </button>
+              ) : null}
+
               {step === "destination" ? (
                 <div className="grid gap-4">
                   <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} />
@@ -668,7 +696,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   className="tr-button-outline"
                   onClick={() => {
                     if (step === "destination") closeBuilder();
-                    else setStep(selectedOption.id === "branded_qr_direct" && step === "review" ? "design" : "destination");
+                    else goToPreviousStep();
                   }}
                 >
                   {step === "destination" ? "Cancel" : "Back"}
