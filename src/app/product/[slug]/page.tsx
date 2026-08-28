@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <JsonLd data={productJsonLd(product)} />
       <JsonLd data={faqJsonLd(productFaqs)} />
 
-      <SectionShell spacing="compact">
+      <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
         <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} />
       </SectionShell>
 

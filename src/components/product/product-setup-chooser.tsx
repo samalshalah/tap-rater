@@ -42,6 +42,7 @@ type ProductSetupChooserProps = {
   product: ProductSetupChooserProduct;
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
+  onSelectedPriceChange?: (priceCents: number | null) => void;
 };
 
 type UploadedLogo = {
@@ -57,7 +58,7 @@ type GooglePlaceResult = {
   reviewUrl: string;
 };
 
-export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [step, setStep] = useState<SetupStep>("choose");
@@ -82,8 +83,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
   const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0];
   const selectedOptionId = selectedOption?.id;
-  const selectedSize = product.sizeOptions?.find((size) => size.code === selectedSizeCode) ?? getDefaultProductSize(product);
-  const selectedColor = product.colorOptions?.find((color) => color.code === selectedColorCode) ?? getDefaultProductColor(product);
+  const activeSizes = product.sizeOptions?.filter((size) => size.isActive) ?? [];
+  const purchasableSizes = activeSizes.filter((size) => size.priceAdjustmentCents !== null);
+  const defaultPurchasableSize =
+    purchasableSizes.find((size) => size.isDefault) ?? purchasableSizes[0] ?? getDefaultProductSize(product);
+  const selectedSize =
+    purchasableSizes.find((size) => size.code === selectedSizeCode) ?? defaultPurchasableSize;
+  const activeColors = product.colorOptions?.filter((color) => color.isActive) ?? [];
+  const selectedColor = activeColors.find((color) => color.code === selectedColorCode) ?? getDefaultProductColor(product);
   const configuredUnitPriceCents = selectedOption
     ? getConfiguredUnitPriceCents(product, selectedOption, { sizeCode: selectedSize?.code, colorCode: selectedColor?.code })
     : null;
@@ -141,6 +148,15 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       setApprovedProofSnapshot(null);
     }
   }, [approvedProofSnapshot, currentApprovalSnapshot, proofApproved, selectedOption?.id]);
+
+  useEffect(() => {
+    if (!selectedSize || selectedSize.code === selectedSizeCode) return;
+    setSelectedSizeCode(selectedSize.code);
+  }, [selectedSize, selectedSizeCode]);
+
+  useEffect(() => {
+    onSelectedPriceChange?.(configuredUnitPriceCents);
+  }, [configuredUnitPriceCents, onSelectedPriceChange]);
 
   if (!selectedOption || !selectedImage) {
     return (
@@ -423,7 +439,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   }
 
   const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build your Branded QR stand" : "Set up your Standard Direct stand";
-  const selectedPrice = configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents).replace(".00", "");
+  const selectedPrice = configuredUnitPriceCents === null ? "Unavailable" : formatPrice(configuredUnitPriceCents).replace(".00", "");
   const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
   const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-3" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
@@ -438,23 +454,17 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
   return (
     <>
-      <section className="tr-card p-5 sm:p-6">
-        <div>
-          <p className="tr-eyebrow">Select your stand</p>
-          <p className="mt-2 text-3xl font-semibold leading-none text-ink">{selectedPrice}</p>
-          <p className="tr-body-sm mt-2">{selectedOption.id === "branded_qr_direct" ? "One-time branded QR + NFC purchase" : "One-time NFC tap purchase"}</p>
-        </div>
-
-        <div className="my-5 h-px bg-line" />
-
-        <div className="grid gap-3">
+      <section className="grid gap-4 border-t border-line pt-4">
+        <div className="grid gap-2">
+          <p className="text-sm font-black text-ink">Design</p>
+          <div className="grid gap-3 sm:grid-cols-2">
           {directOptions.map((option) => (
             <label
               key={option.id}
               className={
                 selectedOptionId === option.id
-                  ? "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-lg border border-brand bg-panel p-4 transition sm:grid-cols-[auto_1fr_auto]"
-                  : "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-lg border border-line bg-white p-4 transition hover:border-brand/50 hover:bg-soft sm:grid-cols-[auto_1fr_auto]"
+                  ? "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
+                  : "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
               }
             >
               <input
@@ -466,44 +476,56 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 className="mt-1 h-4 w-4 accent-brand"
               />
               <span className="min-w-0">
-                <span className="block text-base font-semibold leading-6 text-ink">{option.label}</span>
-                <span className="mt-1 block text-sm leading-6 text-muted">{getOptionSummary(option)}</span>
-                <span className="mt-2 inline-flex text-xs font-semibold uppercase tracking-[0.06em] text-brand">Available today</span>
+                <span className="flex items-start justify-between gap-2">
+                  <span className="text-base font-black leading-5 text-ink">{option.label}</span>
+                  <span className="shrink-0 text-sm font-black text-ink">{formatPrice(option.priceCents).replace(".00", "")}</span>
+                </span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{getOptionShortSummary(option)}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">{getOptionSummary(option)}</span>
               </span>
-              <span className="text-sm font-semibold text-ink sm:text-right">{formatPrice(option.priceCents).replace(".00", "")}</span>
             </label>
           ))}
+          </div>
         </div>
 
-        {product.sizeOptions?.length ? (
-          <div className="mt-5 grid gap-3">
+        {activeSizes.length ? (
+          <div className="grid gap-2">
             <p className="text-sm font-semibold text-ink">Size</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              {product.sizeOptions.filter((size) => size.isActive).map((size) => {
+              {activeSizes.map((size) => {
                 const pending = size.priceAdjustmentCents === null;
                 return (
                   <label
                     key={size.code}
                     className={
-                      selectedSize?.code === size.code
-                        ? "grid cursor-pointer gap-1 rounded-lg border border-brand bg-panel p-3"
-                        : "grid cursor-pointer gap-1 rounded-lg border border-line bg-white p-3 hover:border-brand/50"
+                      pending
+                        ? "grid cursor-not-allowed gap-1 rounded-md border border-line bg-white p-3 opacity-55"
+                        : selectedSize?.code === size.code
+                          ? "grid cursor-pointer gap-1 rounded-md border border-brand bg-panel p-3"
+                          : "grid cursor-pointer gap-1 rounded-md border border-line bg-white p-3 hover:border-brand/50"
                     }
+                    aria-disabled={pending}
                   >
                     <span className="flex items-center gap-2 text-sm font-semibold text-ink">
                       <input
                         type="radio"
                         name={`${product.slug}-size`}
                         checked={selectedSize?.code === size.code}
-                        onChange={() => setSelectedSizeCode(size.code)}
+                        disabled={pending}
+                        onChange={() => {
+                          if (!pending) setSelectedSizeCode(size.code);
+                        }}
                         className="h-4 w-4 accent-brand"
                       />
-                      {size.label}
+                      {formatSizeLabel(size.label)}
                     </span>
+                    <span className="text-xs leading-5 text-muted">{size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in</span>
                     <span className="text-xs leading-5 text-muted">
-                      {size.frontWidthMm} x {size.frontHeightMm} mm / {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
+                      {size.frontWidthMm} x {size.frontHeightMm} mm
                     </span>
-                    <span className="text-xs font-semibold text-brand">{pending ? "Price pending - not purchasable" : "Available"}</span>
+                    <span className={pending ? "text-xs font-semibold text-muted" : "text-xs font-semibold text-brand"}>
+                      {pending ? "Price coming soon" : "Included"}
+                    </span>
                   </label>
                 );
               })}
@@ -511,17 +533,25 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           </div>
         ) : null}
 
-        {product.colorOptions?.length ? (
-          <div className="mt-5 grid gap-3">
-            <p className="text-sm font-semibold text-ink">Color</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {product.colorOptions.filter((color) => color.isActive).map((color) => (
+        {activeColors.length ? (
+          <div className="grid gap-2">
+            {activeColors.length === 1 ? (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-ink">Color</span>
+                <span className="inline-flex h-4 w-4 rounded-full border border-line bg-white shadow-sm" aria-hidden="true" />
+                <span className="font-semibold text-ink">{activeColors[0].label}</span>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-ink">Color</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+              {activeColors.map((color) => (
                 <label
                   key={color.code}
                   className={
                     selectedColor?.code === color.code
-                      ? "flex cursor-pointer items-center gap-3 rounded-lg border border-brand bg-panel p-3"
-                      : "flex cursor-pointer items-center gap-3 rounded-lg border border-line bg-white p-3 hover:border-brand/50"
+                      ? "flex cursor-pointer items-center gap-3 rounded-md border border-brand bg-panel p-3"
+                      : "flex cursor-pointer items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-brand/50"
                   }
                 >
                   <input
@@ -535,7 +565,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <span className="text-sm font-semibold text-ink">{color.label}</span>
                 </label>
               ))}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         ) : null}
 
@@ -550,12 +582,17 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
         <button
           type="button"
-          className="tr-button-primary mt-6 w-full"
+          className="tr-button-primary w-full"
           disabled={configuredUnitPriceCents === null}
           onClick={() => selectedOptionId && openBuilder(selectedOptionId)}
         >
-          Set up stand · {selectedPrice}
+          Set Up My Stand - {selectedPrice}
         </button>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
+          <span>QR + NFC</span>
+          <span>No subscription</span>
+          <span>Arrives ready to use</span>
+        </div>
 
         {error && !isBuilderOpen ? <p className="tr-status-error mt-4" role="alert">{error}</p> : null}
       </section>
@@ -1026,10 +1063,26 @@ function regionStyle(region: BrandedCompositionRegion) {
 
 function getOptionSummary(option: PurchaseOption) {
   if (option.id === "branded_qr_direct") {
-    return "QR and NFC direct stand with logo, business name, and front proof before cart.";
+    return "QR + NFC · front proof included";
   }
 
-  return "Ready-made stand with NFC tap connected to one direct destination link.";
+  return "QR + NFC direct to your review link";
+}
+
+function getOptionShortSummary(option: PurchaseOption) {
+  if (option.id === "branded_qr_direct") {
+    return "Your logo + business name";
+  }
+
+  return "Ready-made Google design";
+}
+
+function formatSizeLabel(label: string) {
+  if (label.toLowerCase().includes("a4")) {
+    return "Large - A4";
+  }
+
+  return label;
 }
 
 function platformMark(product: ProductSetupChooserProduct) {
