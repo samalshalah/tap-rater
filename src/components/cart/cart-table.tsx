@@ -69,7 +69,7 @@ export function CartTable({
       <div className="tr-card p-8 text-center sm:p-10">
         <p className="text-2xl font-semibold text-ink">Your cart is empty</p>
         <p className="tr-body-sm mx-auto mt-3 max-w-md">
-          Choose a ready QR + NFC stand and set the destination link before checkout.
+          Choose a ready NFC stand and set the destination link before checkout.
         </p>
         <div className="mt-5 grid justify-center gap-3 sm:flex sm:flex-wrap">
           <Link href="/shop" className="tr-button-primary w-full sm:w-auto">
@@ -88,6 +88,11 @@ export function CartTable({
       <div className="tr-card grid gap-0 p-4 sm:p-6">
         {rows.map((row) => {
           const cartKey = getCartItemKey(row.item);
+          const connectionLabel = row.option.hasQr
+            ? "QR + NFC direct"
+            : row.option.requiresDestinationUrl
+              ? "NFC direct"
+              : "";
           return (
             <div
               key={cartKey}
@@ -120,9 +125,9 @@ export function CartTable({
                         : "Missing"}
                     </p>
                   ) : null}
-                  {row.option.hasQr ? (
+                  {connectionLabel ? (
                     <p>
-                      <strong className="text-ink">Connection:</strong> QR + NFC direct
+                      <strong className="text-ink">Connection:</strong> {connectionLabel}
                     </p>
                   ) : null}
                   {row.option.requiresFinalProof ? (

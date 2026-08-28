@@ -539,7 +539,7 @@ export function ProductEditor({
             </label>
           </div>
           <div className="grid gap-2 text-sm text-muted">
-            <RuleRow label="Standard Direct" value="QR and NFC direct. No logo zone, business name zone, or design step." />
+            <RuleRow label="Standard Direct" value="NFC direct. No logo zone, business name zone, QR zone, or design step." />
             <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and front proof required." />
             <RuleRow label="Hosted Multi-Link" value="Logo, business name, QR, hosted page preview, account, and subscription readiness required." />
           </div>
@@ -738,7 +738,7 @@ export function ProductEditor({
 
         <SidebarCard title="Production Notes">
           <ul className="grid gap-2 text-xs leading-5 text-muted">
-            <li>Standard Direct includes QR and NFC pointed to the customer-provided URL.</li>
+            <li>Standard Direct includes NFC pointed to the customer-provided URL.</li>
             <li>Branded + QR requires logo collection, business name, QR generation, front proof, and a branded front template before publishing.</li>
             <li>Hosted Multi-Link requires account, hosted page, subscription readiness, and landing page preview.</li>
           </ul>
@@ -1513,7 +1513,7 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
   return [
     {
       label: "Standard Direct angled image",
-      description: "Ready-made QR and NFC stand image for Standard Direct.",
+      description: "Ready-made NFC stand image for Standard Direct.",
       assetKey: "standardAngledImageUrl" as const,
       role: "standard_angled" as const,
       value: assetSet.standardAngledImageUrl,
@@ -1749,8 +1749,8 @@ function generateProductSku(title: string) {
 function getOptionDisplayMeta(option: ProductOption) {
   const map: Record<ProductOptionCode, { badge: string; summary: string }> = {
     standard_direct: {
-      badge: "STD / QR + NFC",
-      summary: "Standard Direct uses the ready-made angled stand image with QR and NFC pointed to one direct URL."
+      badge: "STD / NFC",
+      summary: "Standard Direct uses the ready-made angled stand image with NFC pointed to one direct URL."
     },
     branded_qr_direct: {
       badge: "BQR / NFC + QR",

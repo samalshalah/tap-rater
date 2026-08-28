@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const prices = [
-  ["Standard Direct", "$39", "One-time. QR and NFC pointed directly to one destination link.", "/shop"],
+  ["Standard Direct", "$39", "One-time. NFC pointed directly to one destination link.", "/shop"],
   ["DIRECT mode", "No account", "No hosted page, activation step, customer account, or subscription is required.", "/shop"],
   ["Custom request", "Request", "For custom stand work that needs review before checkout.", "/contact-us"]
 ];
@@ -21,7 +21,7 @@ export default function PricingPage() {
           <p className="tr-eyebrow">Pricing</p>
           <h1 className="tr-page-title mt-4 max-w-3xl">Simple pricing for direct stands.</h1>
           <p className="tr-body mt-4 max-w-2xl">
-            Buy ready stands from the shop. Standard Direct includes QR and NFC direct to one link as a one-time physical product purchase.
+            Buy ready stands from the shop. Standard Direct includes NFC direct to one link as a one-time physical product purchase.
           </p>
         </div>
       </SectionShell>

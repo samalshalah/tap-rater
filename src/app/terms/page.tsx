@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const sections = [
-  ["Product use", "Tap Rater sells QR and NFC stands for local businesses. Standard Direct stands use QR and NFC with one destination link. Branded + QR stands include customer logo, business name, and proof review before checkout."],
+  ["Product use", "Tap Rater sells NFC and Branded + QR stands for local businesses. Standard Direct stands use NFC with one destination link. Branded + QR stands include customer logo, business name, QR code, and proof review before checkout."],
   ["Destination links", "You are responsible for providing an accurate destination URL. Tap Rater may review links for order purposes, but you should test the destination before placing an order and before using the stand with customers."],
   ["Uploaded logos and content", "You are responsible for having the rights to use any logo, image, brand name, business name, or other content you upload or provide. Tap Rater may reject inappropriate, invalid, low-quality, or order-incompatible content."],
   ["Proof approval", "For Branded + QR orders, the proof preview is used to confirm the customer-provided logo, business name, destination, and generated QR. Do not approve a proof unless the visible details are correct."],

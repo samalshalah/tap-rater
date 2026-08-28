@@ -572,7 +572,7 @@ function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProd
     return product;
   }
 
-  const cleanDescription = `${product.title} connects QR and NFC directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
+  const cleanDescription = `${product.title} connects NFC taps directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
   return {
     ...product,
     shortDescription: sanitizeRetiredPublicCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription),
@@ -604,17 +604,17 @@ function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): 
   return {
     ...option,
     title: "Standard Direct",
-    description: "Ready-made stand with QR and NFC connected directly to one destination link.",
+    description: "Ready-made stand with NFC tap connected directly to one destination link.",
     priceCents: 3900,
     requiresDestinationUrl: true,
-    hasQr: true,
+    hasQr: false,
     requiresLogo: false,
     requiresBusinessName: false,
     requiresDesignStep: false,
     requiresFrontProof: false,
     requiresSubscription: false,
     accountRequired: false,
-    footerLabel: "QR + NFC direct"
+    footerLabel: "NFC direct"
   };
 }
 

@@ -235,10 +235,10 @@ describe("product repository", () => {
       expect.objectContaining({
         optionCode: "standard_direct",
         title: "Standard Direct",
-        description: "Ready-made stand with QR and NFC connected directly to one destination link.",
+        description: "Ready-made stand with NFC tap connected directly to one destination link.",
         priceCents: 3900,
-        hasQr: true,
-        footerLabel: "QR + NFC direct",
+        hasQr: false,
+        footerLabel: "NFC direct",
         isActive: true
       })
     ]);
@@ -272,7 +272,7 @@ describe("product repository", () => {
       is_active: true
     });
 
-    expect(product?.shortDescription).toContain("QR and NFC directly");
+    expect(product?.shortDescription).toContain("NFC taps directly");
     expect(product?.description).toContain("No subscription, account, hosted page, or activation is required.");
     expect(product?.seoDescription).toContain("One-time physical product purchase");
     expect(`${product?.shortDescription} ${product?.description} ${product?.seoDescription}`).not.toMatch(/NFC only|No printed QR|monthly fee/i);

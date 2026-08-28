@@ -25,7 +25,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           before fulfillment starts.
         </p>
         <p className="mt-3 leading-7 text-muted">
-          Standard Direct stands use QR and NFC pointed directly to the destination URL approved during setup.
+          Standard Direct stands use NFC pointed directly to the destination URL approved during setup.
           Tap Rater reviews the order before fulfillment.
         </p>
         {sessionId ? (
