@@ -18,7 +18,6 @@ export const adminProductListColumnLabels = [
   "Price",
   "Readiness",
   "Status",
-  "Updated",
   "Actions"
 ] as const;
 

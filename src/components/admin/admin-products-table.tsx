@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit3, Search, Trash2 } from "lucide-react";
+import { Edit3, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import type { MigratedProduct, ProductKind } from "@/data/migrated-products";
 import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
@@ -64,9 +64,14 @@ export function AdminProductsTable({
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [mobileFilters, setMobileFilters] = useState<Filters>(defaultFilters);
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [status, setStatus] = useState<DeleteStatus>(null);
+
+  useEffect(() => {
+    setMobileFilters(filters);
+  }, [filters]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -105,6 +110,16 @@ export function AdminProductsTable({
 
   function resetFilters() {
     setFilters(defaultFilters);
+    setMobileFilters(defaultFilters);
+  }
+
+  function updateMobileFilter<K extends keyof Filters>(key: K, value: Filters[K]) {
+    setMobileFilters((current) => ({ ...current, [key]: value }));
+  }
+
+  function applyMobileFilters() {
+    setFilters(mobileFilters);
+    setStatus(null);
   }
 
   function toggleSelectAll() {
@@ -189,52 +204,44 @@ export function AdminProductsTable({
 
   return (
     <div className="tr-admin-table-shell mt-6 overflow-hidden">
-      <div className="grid gap-3 border-b border-line p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-        <label className="relative block text-xs font-black uppercase text-muted">
-          Search
-          <Search className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-muted" aria-hidden="true" />
-          <AdminInput
-            className="mt-2 py-2.5 pl-9 pr-3 font-normal"
-            value={filters.search}
-            placeholder="Name, SKU, slug"
-            onChange={(event) => updateFilter("search", event.target.value)}
-          />
-        </label>
-        <FilterSelect label="Stand Type" value={filters.standType} onChange={(value) => updateFilter("standType", value)}>
-          {standTypes.map((standType) => (
-            <option key={standType.slug} value={standType.slug}>
-              {standType.title}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label="Business Use" value={filters.businessUse} onChange={(value) => updateFilter("businessUse", value)}>
-          {businessUses.map((businessUse) => (
-            <option key={businessUse.slug} value={businessUse.slug}>
-              {businessUse.title}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label="Platform" value={filters.platform} onChange={(value) => updateFilter("platform", value)}>
-          {platforms.map((platform) => (
-            <option key={platform.slug} value={platform.slug}>
-              {platform.title}
-            </option>
-          ))}
-        </FilterSelect>
-        <FilterSelect label="Status" value={filters.status} onChange={(value) => updateFilter("status", value)}>
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </FilterSelect>
-        <FilterSelect label="Asset readiness" value={filters.assetReadiness} onChange={(value) => updateFilter("assetReadiness", value)}>
-          <option value="ready">Ready</option>
-          <option value="draft_missing_assets">Missing</option>
-          <option value="blocked">Blocked</option>
-        </FilterSelect>
-        <FilterSelect label="Special solution" value={filters.specialSolution} onChange={(value) => updateFilter("specialSolution", value)}>
-          <option value="yes">Special solution</option>
-          <option value="no">Normal product</option>
-        </FilterSelect>
+      <div className="border-b border-line p-4 lg:hidden">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 py-3 text-sm font-semibold text-ink">
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Filters
+            </span>
+            <span className="text-xs uppercase tracking-[0.04em] text-muted group-open:hidden">Open</span>
+            <span className="hidden text-xs uppercase tracking-[0.04em] text-muted group-open:inline">Close</span>
+          </summary>
+          <div className="mt-3 grid gap-3">
+            <ProductFilters
+              filters={mobileFilters}
+              standTypes={standTypes}
+              businessUses={businessUses}
+              platforms={platforms}
+              onChange={updateMobileFilter}
+            />
+            <div className="flex flex-wrap gap-2 pt-1">
+              <AdminButton type="button" variant="primary" onClick={applyMobileFilters}>
+                Apply filters
+              </AdminButton>
+              <AdminButton type="button" variant="outline" onClick={resetFilters}>
+                Reset
+              </AdminButton>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div className="hidden gap-3 border-b border-line p-4 lg:grid lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+        <ProductFilters
+          filters={filters}
+          standTypes={standTypes}
+          businessUses={businessUses}
+          platforms={platforms}
+          onChange={updateFilter}
+        />
       </div>
 
       <div className="flex flex-col gap-3 border-b border-line px-4 py-3 md:flex-row md:items-center md:justify-between">
@@ -286,7 +293,6 @@ export function AdminProductsTable({
               <th className="px-4 py-3 w-[130px]">Price</th>
               <th className="px-4 py-3">Readiness</th>
               <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Updated</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -336,7 +342,6 @@ export function AdminProductsTable({
                     <StatusBadge status={getProductStatus(product)} />
                     <StockBadge stockStatus={product.stockStatus} />
                   </td>
-                  <td className="px-4 py-3 text-muted">{formatDate(product.updatedAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <AdminLinkButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/admin/products/${product.slug}`}>
@@ -360,7 +365,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={10}>
+                <td className="p-10 text-center text-muted" colSpan={9}>
                   No products match these filters.
                 </td>
               </tr>
@@ -431,6 +436,70 @@ export function AdminProductsTable({
         }
       />
     </div>
+  );
+}
+
+function ProductFilters({
+  filters,
+  standTypes,
+  businessUses,
+  platforms,
+  onChange
+}: {
+  filters: Filters;
+  standTypes: StandType[];
+  businessUses: BusinessUse[];
+  platforms: PlatformDestination[];
+  onChange: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
+}) {
+  return (
+    <>
+      <label className="relative block text-xs font-black uppercase text-muted">
+        Search
+        <Search className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-muted" aria-hidden="true" />
+        <AdminInput
+          className="mt-2 py-2.5 pl-9 pr-3 font-normal"
+          value={filters.search}
+          placeholder="Name, SKU, slug"
+          onChange={(event) => onChange("search", event.target.value)}
+        />
+      </label>
+      <FilterSelect label="Stand Type" value={filters.standType} onChange={(value) => onChange("standType", value)}>
+        {standTypes.map((standType) => (
+          <option key={standType.slug} value={standType.slug}>
+            {standType.title}
+          </option>
+        ))}
+      </FilterSelect>
+      <FilterSelect label="Business Use" value={filters.businessUse} onChange={(value) => onChange("businessUse", value)}>
+        {businessUses.map((businessUse) => (
+          <option key={businessUse.slug} value={businessUse.slug}>
+            {businessUse.title}
+          </option>
+        ))}
+      </FilterSelect>
+      <FilterSelect label="Platform" value={filters.platform} onChange={(value) => onChange("platform", value)}>
+        {platforms.map((platform) => (
+          <option key={platform.slug} value={platform.slug}>
+            {platform.title}
+          </option>
+        ))}
+      </FilterSelect>
+      <FilterSelect label="Status" value={filters.status} onChange={(value) => onChange("status", value)}>
+        <option value="draft">Draft</option>
+        <option value="active">Active</option>
+        <option value="archived">Archived</option>
+      </FilterSelect>
+      <FilterSelect label="Asset readiness" value={filters.assetReadiness} onChange={(value) => onChange("assetReadiness", value)}>
+        <option value="ready">Ready</option>
+        <option value="draft_missing_assets">Missing</option>
+        <option value="blocked">Blocked</option>
+      </FilterSelect>
+      <FilterSelect label="Special solution" value={filters.specialSolution} onChange={(value) => onChange("specialSolution", value)}>
+        <option value="yes">Special solution</option>
+        <option value="no">Normal product</option>
+      </FilterSelect>
+    </>
   );
 }
 
@@ -571,13 +640,4 @@ function formatPriceRange(options: ReturnType<typeof getDefaultOptionsForProduct
 
 function isProductListReady(status: string, brandedReadiness: BrandedTemplateReadiness, warnings: string[]) {
   return status === "ready" && brandedReadiness.status !== "missing" && warnings.length === 0;
-}
-
-function formatDate(value?: string) {
-  if (!value) return "-";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
 }

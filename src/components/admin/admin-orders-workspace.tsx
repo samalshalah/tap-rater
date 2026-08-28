@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { SlidersHorizontal } from "lucide-react";
 import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderActionSource } from "@/lib/admin-order-actions";
 import { formatOrderItemSummary, getPrimaryOrderAction } from "@/lib/admin-list-display";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
@@ -64,12 +65,19 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
   const [orderRows, setOrderRows] = useState(orders);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<AdminOrdersFilter>(isAdminOrdersFilter(initialFilter) ? initialFilter : "all");
+  const [mobileQuery, setMobileQuery] = useState(query);
+  const [mobileFilter, setMobileFilter] = useState<AdminOrdersFilter>(filter);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [bulkAction, setBulkAction] = useState<AdminOrderAction>("ready_for_production");
   const [openEditorId, setOpenEditorId] = useState<string | null>(null);
   const [savingIds, setSavingIds] = useState<string[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMobileQuery(query);
+    setMobileFilter(filter);
+  }, [filter, query]);
 
   const visibleOrders = useMemo(() => {
     const search = query.trim().toLowerCase();
@@ -193,6 +201,52 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
         </AdminAlert>
       ) : null}
 
+      <div className="lg:hidden">
+        <details className="group tr-admin-card p-4">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-line bg-white px-4 py-3 text-sm font-semibold text-ink">
+            <span className="inline-flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              Filters
+            </span>
+            <span className="text-xs uppercase tracking-[0.04em] text-muted group-open:hidden">Open</span>
+            <span className="hidden text-xs uppercase tracking-[0.04em] text-muted group-open:inline">Close</span>
+          </summary>
+          <div className="mt-3 grid gap-3">
+            <label className="block text-sm font-semibold text-ink">
+              Search orders
+              <AdminInput
+                value={mobileQuery}
+                onChange={(event) => setMobileQuery(event.target.value)}
+                placeholder="Customer, SKU, product"
+                className="mt-2"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {filterOptions.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMobileFilter(value)}
+                  className={mobileFilter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-semibold uppercase text-ink"}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <AdminButton
+              type="button"
+              variant="primary"
+              onClick={() => {
+                setQuery(mobileQuery);
+                setFilter(mobileFilter);
+              }}
+            >
+              Apply filters
+            </AdminButton>
+          </div>
+        </details>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-4">
         <AdminSummaryCard label="Total orders" value={String(orderRows.length)} />
         <AdminSummaryCard label="Needs production" value={String(orderRows.filter((order) => order.productionStatus !== "completed").length)} />
@@ -200,14 +254,14 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
         <AdminSummaryCard label="Shipped / delivered" value={String(orderRows.filter((order) => order.shippingStatus === "shipped" || order.shippingStatus === "delivered").length)} />
       </div>
 
-      <AdminCard>
+      <AdminCard className="hidden lg:block">
         <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
           <label className="block text-sm font-semibold text-ink">
             Search orders
             <AdminInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Customer, email, SKU, product"
+              placeholder="Customer, SKU, product"
               className="mt-2"
             />
           </label>
@@ -358,7 +412,6 @@ function OrderRow({
         </td>
         <td className="px-4 py-4 align-top">
           <p className="max-w-[220px] truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
-          <p className="max-w-[220px] truncate text-muted" title={order.email}>{order.email || "-"}</p>
         </td>
         <td className="px-4 py-4 align-top font-semibold text-ink">
           {order.total}
@@ -565,7 +618,6 @@ function OrderMobileCard({
           <p className="truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
           <p className="mt-1 text-sm font-semibold text-muted">{itemSummary.count}</p>
           <p className="mt-2 truncate text-sm text-ink" title={order.customerName}>{order.customerName}</p>
-          <p className="mt-1 truncate text-sm text-muted" title={order.email}>{order.email || "-"}</p>
         </div>
         <p className="shrink-0 font-semibold text-ink">{order.total}</p>
       </div>

@@ -25,6 +25,10 @@ describe("admin list UI display rules", () => {
     expect(adminProductListColumnLabels).not.toContain("Options");
   });
 
+  it("keeps product update timestamps out of the products list columns", () => {
+    expect(adminProductListColumnLabels).not.toContain("Updated");
+  });
+
   it("summarizes one order item for the orders list", () => {
     expect(formatOrderItemSummary([item()])).toEqual({
       title: "Google Review Stand",
