@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminProductListColumnLabels, adminProductListFilterLabels, formatOrderItemSummary } from "@/lib/admin-list-display";
+import { adminProductListColumnLabels, adminProductListFilterLabels, formatOrderItemSummary, getPrimaryOrderAction } from "@/lib/admin-list-display";
 import type { AdminOrdersWorkspaceItem } from "@/components/admin/admin-orders-workspace";
 
 function item(overrides: Partial<AdminOrdersWorkspaceItem> = {}): AdminOrdersWorkspaceItem {
@@ -21,6 +21,10 @@ describe("admin list UI display rules", () => {
     expect(adminProductListFilterLabels).not.toContain("Destination mode");
   });
 
+  it("keeps product options out of the products list columns", () => {
+    expect(adminProductListColumnLabels).not.toContain("Options");
+  });
+
   it("summarizes one order item for the orders list", () => {
     expect(formatOrderItemSummary([item()])).toEqual({
       title: "Google Review Stand",
@@ -40,5 +44,27 @@ describe("admin list UI display rules", () => {
       count: "3 items"
     });
     expect(summary.title).not.toContain("manual_");
+  });
+
+  it("chooses one order action from the current workflow state", () => {
+    expect(getPrimaryOrderAction({ productionStatus: "not_started", shippingStatus: "not_shipped" })).toMatchObject({
+      kind: "action",
+      action: "ready_for_production",
+      label: "Ready"
+    });
+    expect(getPrimaryOrderAction({ productionStatus: "ready_for_production", shippingStatus: "not_shipped" })).toMatchObject({
+      kind: "action",
+      action: "in_production",
+      label: "In production"
+    });
+    expect(getPrimaryOrderAction({ productionStatus: "completed", shippingStatus: "ready_to_ship" })).toMatchObject({
+      kind: "action",
+      action: "mark_shipped",
+      label: "Shipped"
+    });
+    expect(getPrimaryOrderAction({ productionStatus: "completed", shippingStatus: "shipped" })).toEqual({
+      kind: "status",
+      label: "Shipped"
+    });
   });
 });

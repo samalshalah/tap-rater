@@ -9,7 +9,6 @@ import type { MigratedProduct, ProductKind } from "@/data/migrated-products";
 import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
 import { getBrandedProductionTemplateReadiness, type BrandedTemplateReadiness } from "@/lib/admin-product-readiness";
-import { getCanonicalProductModel } from "@/lib/product-model";
 import { formatPrice } from "@/lib/products";
 import {
   AdminAlert,
@@ -267,7 +266,7 @@ export function AdminProductsTable({
       <AdminResponsiveTable
         className="rounded-none border-0 shadow-none"
         table={
-        <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[920px] border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-line bg-[#f7f8fa] text-xs uppercase text-muted">
               <th className="w-10 px-4 py-3">
@@ -284,7 +283,6 @@ export function AdminProductsTable({
               <th className="px-4 py-3 w-[230px]">Product</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Uses</th>
-              <th className="px-4 py-3 w-[190px]">Options</th>
               <th className="px-4 py-3 w-[130px]">Price</th>
               <th className="px-4 py-3">Readiness</th>
               <th className="px-4 py-3">Status</th>
@@ -297,8 +295,8 @@ export function AdminProductsTable({
               const productKind = getProductKind(product);
               const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
               const readiness = getProductAssetReadiness(product, options);
-              const model = getCanonicalProductModel(product);
               const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
+              const productReady = isProductListReady(readiness.status, brandedReadiness, getMediaWarnings(product));
 
               return (
                 <tr
@@ -330,14 +328,9 @@ export function AdminProductsTable({
                   </td>
                   <td className="px-4 py-3 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
                   <td className="px-4 py-3 text-muted">{formatBusinessUses(product, businessUses)}</td>
-                  <td className="px-4 py-3 text-muted">{formatOptionSummary(options, model.customizationLevel)}</td>
                   <td className="px-4 py-3 font-semibold text-ink">{formatPriceRange(options, product)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <TemplateReadinessBadge readiness={brandedReadiness} />
-                      <ReadinessBadge status={readiness.status} missing={readiness.missing} />
-                      <MediaWarningList warnings={getMediaWarnings(product)} />
-                    </div>
+                    <ReadinessYesNoBadge ready={productReady} />
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={getProductStatus(product)} />
@@ -367,7 +360,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={11}>
+                <td className="p-10 text-center text-muted" colSpan={10}>
                   No products match these filters.
                 </td>
               </tr>
@@ -383,8 +376,8 @@ export function AdminProductsTable({
               const productKind = getProductKind(product);
               const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
               const readiness = getProductAssetReadiness(product, options);
-              const model = getCanonicalProductModel(product);
               const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
+              const productReady = isProductListReady(readiness.status, brandedReadiness, getMediaWarnings(product));
 
               return (
                 <article key={product.slug} className={selectedSlugs.has(product.slug) ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
@@ -412,14 +405,9 @@ export function AdminProductsTable({
                   <dl className="mt-4 grid gap-3 text-sm">
                     <ProductMobileField label="Type" value={findTitle(standTypes, product.standTypeSlug) ?? "-"} />
                     <ProductMobileField label="Uses" value={formatBusinessUses(product, businessUses)} />
-                    <ProductMobileField label="Options" value={formatOptionSummary(options, model.customizationLevel)} />
                     <ProductMobileField label="Price" value={formatPriceRange(options, product)} strong />
+                    <ProductMobileField label="Readiness" value={productReady ? "Yes" : "No"} strong={productReady} />
                   </dl>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <TemplateReadinessBadge readiness={brandedReadiness} />
-                    <ReadinessBadge status={readiness.status} missing={readiness.missing} />
-                    <MediaWarningList warnings={getMediaWarnings(product)} />
-                  </div>
                   <div className="mt-4 flex flex-wrap justify-end gap-2">
                     <AdminLinkButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/admin/products/${product.slug}`}>
                       <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -495,22 +483,6 @@ function StatusBadge({ status }: { status: string }) {
   return <AdminBadge tone={tone}>{status}</AdminBadge>;
 }
 
-function TemplateReadinessBadge({ readiness }: { readiness: BrandedTemplateReadiness }) {
-  if (readiness.status === "not_offered") {
-    return <AdminBadge tone="neutral">No branded</AdminBadge>;
-  }
-
-  if (readiness.status === "ready") {
-    return <AdminBadge tone="success">Template ready</AdminBadge>;
-  }
-
-  return (
-    <AdminBadge tone="danger" title={readiness.reason}>
-      Template missing
-    </AdminBadge>
-  );
-}
-
 function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus"] }) {
   return (
     <AdminBadge tone={stockStatus === "instock" ? "success" : "neutral"}>
@@ -519,33 +491,8 @@ function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus
   );
 }
 
-function ReadinessBadge({ status, missing }: { status: string; missing: string[] }) {
-  if (status === "ready") {
-    return <AdminBadge tone="success">Assets ready</AdminBadge>;
-  }
-
-  const label =
-    missing.length === 1
-      ? `Missing ${shortMissingLabel(missing[0])}`
-      : missing.length > 1
-        ? `${missing.length} option assets missing`
-        : "Blocked";
-
-  return (
-    <AdminBadge tone="danger" title={missing.join(", ")}>
-      {label}
-    </AdminBadge>
-  );
-}
-
-function MediaWarningList({ warnings }: { warnings: string[] }) {
-  if (warnings.length === 0) return null;
-
-  return (
-    <AdminBadge tone="warning" title={warnings.join("; ")}>
-      {warnings.length} warning{warnings.length === 1 ? "" : "s"}
-    </AdminBadge>
-  );
+function ReadinessYesNoBadge({ ready }: { ready: boolean }) {
+  return <AdminBadge tone={ready ? "success" : "warning"}>{ready ? "Yes" : "No"}</AdminBadge>;
 }
 
 function ProductMobileField({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
@@ -588,17 +535,6 @@ function getMediaWarnings(product: MigratedProduct) {
   return Array.from(warnings);
 }
 
-function shortMissingLabel(value: string) {
-  return value
-    .replace("Standard Direct angled image", "standard image")
-    .replace("Branded + QR angled image", "branded image")
-    .replace("Branded + QR front template", "branded template")
-    .replace("Multi-Link angled image", "multi-link image")
-    .replace("Multi-Link front template", "multi-link template")
-    .replace("Landing page preview configuration", "landing preview")
-    .toLowerCase();
-}
-
 function getProductKind(product: MigratedProduct): ProductKind {
   return product.productKind ?? inferProductKind(product);
 }
@@ -619,12 +555,6 @@ function formatBusinessUses(product: MigratedProduct, businessUses: BusinessUse[
   return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
 }
 
-function formatOptionSummary(options: ReturnType<typeof getDefaultOptionsForProductKind>, customizationLevel: string) {
-  const labels = options.map((option) => option.title);
-  const summary = labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
-  return summary || customizationLevel || "-";
-}
-
 function formatPriceRange(options: ReturnType<typeof getDefaultOptionsForProductKind>, product: MigratedProduct) {
   if (options.length === 0) {
     return formatPrice(product.salePriceCents ?? product.basePriceCents);
@@ -637,6 +567,10 @@ function formatPriceRange(options: ReturnType<typeof getDefaultOptionsForProduct
 
   const prices = options.map((option) => option.priceCents).sort((first, second) => first - second);
   return `${formatPrice(prices[0])}-${formatPrice(prices[prices.length - 1])}`;
+}
+
+function isProductListReady(status: string, brandedReadiness: BrandedTemplateReadiness, warnings: string[]) {
+  return status === "ready" && brandedReadiness.status !== "missing" && warnings.length === 0;
 }
 
 function formatDate(value?: string) {

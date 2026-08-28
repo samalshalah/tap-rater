@@ -1,3 +1,5 @@
+import type { AdminOrderAction } from "@/lib/admin-order-actions";
+
 export const adminProductListFilterLabels = [
   "Search",
   "Stand Type",
@@ -13,7 +15,6 @@ export const adminProductListColumnLabels = [
   "Product",
   "Type",
   "Uses",
-  "Options",
   "Price",
   "Readiness",
   "Status",
@@ -39,4 +40,41 @@ export function formatOrderItemSummary(items: OrderSummaryItem[]) {
     title: extraProductCount > 0 ? `${primaryTitle} + ${extraProductCount} more` : primaryTitle,
     count: `${totalQuantity} item${totalQuantity === 1 ? "" : "s"}`
   };
+}
+
+type OrderWorkflowState = {
+  productionStatus: string;
+  shippingStatus: string;
+};
+
+type PrimaryOrderAction =
+  | { kind: "action"; action: AdminOrderAction; label: string }
+  | { kind: "status"; label: string };
+
+export function getPrimaryOrderAction(state: OrderWorkflowState): PrimaryOrderAction {
+  if (state.shippingStatus === "delivered") {
+    return { kind: "status" as const, label: "Delivered" };
+  }
+
+  if (state.shippingStatus === "shipped") {
+    return { kind: "status" as const, label: "Shipped" };
+  }
+
+  if (state.productionStatus === "completed" && state.shippingStatus === "ready_to_ship") {
+    return { kind: "action" as const, action: "mark_shipped" satisfies AdminOrderAction, label: "Shipped" };
+  }
+
+  if (state.productionStatus === "completed") {
+    return { kind: "action" as const, action: "ready_to_ship" satisfies AdminOrderAction, label: "Ready ship" };
+  }
+
+  if (state.productionStatus === "ready_for_production") {
+    return { kind: "action" as const, action: "in_production" satisfies AdminOrderAction, label: "In production" };
+  }
+
+  if (state.productionStatus === "in_production") {
+    return { kind: "action" as const, action: "ready_to_ship" satisfies AdminOrderAction, label: "Ready ship" };
+  }
+
+  return { kind: "action" as const, action: "ready_for_production" satisfies AdminOrderAction, label: "Ready" };
 }

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderActionSource } from "@/lib/admin-order-actions";
-import { formatOrderItemSummary } from "@/lib/admin-list-display";
+import { formatOrderItemSummary, getPrimaryOrderAction } from "@/lib/admin-list-display";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminResponsiveTable, AdminSelect, AdminSummaryCard, AdminTextarea } from "./admin-ui";
@@ -344,6 +344,7 @@ function OrderRow({
   onSave: (payload: OrderFulfillmentUpdateInput) => void;
 }) {
   const itemSummary = formatOrderItemSummary(order.items);
+  const primaryAction = getPrimaryOrderAction(order);
 
   return (
     <>
@@ -377,10 +378,14 @@ function OrderRow({
           </StatusPill>
         </td>
         <td className="px-4 py-4 align-top">
-          <div className="flex flex-wrap gap-2">
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
-            <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
+          <div className="flex flex-wrap items-center gap-2">
+            {primaryAction.kind === "action" ? (
+              <QuickActionButton disabled={saving} onClick={() => onApplyAction(primaryAction.action)}>
+                {primaryAction.label}
+              </QuickActionButton>
+            ) : (
+              <StatusPill tone="ready">{primaryAction.label}</StatusPill>
+            )}
             <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
               {editorOpen ? "Close" : "Edit"}
             </AdminButton>
@@ -550,6 +555,7 @@ function OrderMobileCard({
   onSave: (payload: OrderFulfillmentUpdateInput) => void;
 }) {
   const itemSummary = formatOrderItemSummary(order.items);
+  const primaryAction = getPrimaryOrderAction(order);
 
   return (
     <article className={selected ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
@@ -570,9 +576,13 @@ function OrderMobileCard({
         <OrderMobileField label="Date">{order.createdAt}</OrderMobileField>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_for_production")}>Ready</QuickActionButton>
-        <QuickActionButton disabled={saving} onClick={() => onApplyAction("ready_to_ship")}>Ready ship</QuickActionButton>
-        <QuickActionButton disabled={saving} onClick={() => onApplyAction("mark_shipped")}>Shipped</QuickActionButton>
+        {primaryAction.kind === "action" ? (
+          <QuickActionButton disabled={saving} onClick={() => onApplyAction(primaryAction.action)}>
+            {primaryAction.label}
+          </QuickActionButton>
+        ) : (
+          <StatusPill tone="ready">{primaryAction.label}</StatusPill>
+        )}
         <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
           {editorOpen ? "Close" : "Edit"}
         </AdminButton>
