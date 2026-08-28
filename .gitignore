@@ -6,6 +6,7 @@ node_modules/
 apps/backend/dist/
 .env
 .env.local
+.env.milestone7-qa
 .vercel/
 coverage/
 playwright-report/

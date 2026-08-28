@@ -11,6 +11,11 @@ describe("next config redirects", () => {
 
     expect(redirects).toEqual(
       expect.arrayContaining([
+        { source: "/faq", destination: "/faqs", permanent: true },
+        { source: "/contact", destination: "/contact-us", permanent: true },
+        { source: "/shop-by-use", destination: "/solutions", permanent: true },
+        { source: "/custom-branding", destination: "/custom-stands", permanent: true },
+        { source: "/multi-link", destination: "/category/website-link-stands", permanent: true },
         { source: "/product-category/:slug*", destination: "/shop", permanent: true },
         { source: "/my-account", destination: "/admin", permanent: true }
       ])

@@ -140,6 +140,102 @@ describe("hosted subscription provisioning", () => {
     expect(storage.assignedCodes).toEqual(["ABCDEFGHJKM2"]);
   });
 
+  it("does not allocate permanent resources for an unpaid hosted checkout session", async () => {
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+    const result = await provisionHostedSubscriptionFromCheckout(
+      {
+        eventId: "evt_unpaid",
+        eventType: "checkout.session.completed",
+        session: {
+          id: "cs_test_unpaid",
+          payment_status: "unpaid",
+          customer_details: { email: "owner@example.com" },
+          metadata: { checkout_intent: "hosted_subscription" },
+          subscription: { id: "sub_test_unpaid", status: "incomplete" }
+        },
+        order: createHostedOrder(),
+        now: new Date("2026-08-23T12:00:00.000Z"),
+        siteUrl: "https://taprater.com"
+      },
+      { client, storage, generateCode: () => "ABCDEFGHJKM2" }
+    );
+
+    expect(result).toEqual({ ok: true, provisioned: false, reason: "unpaid_checkout" });
+    expect(client.table("hosted_subscriptions")).toHaveLength(0);
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(0);
+    expect(storage.assignedCodes).toEqual([]);
+  });
+
+  it("reactivates an expired customer using the existing hosted page and permanent code", async () => {
+    const client = new MemoryDbClient();
+    client.table("customers").push({ id: "customers-1", email: "owner@example.com", name: "Owner Example" });
+    client.table("businesses").push({ id: "businesses-1", customer_id: "customers-1", business_name: "Owner Example" });
+    client.table("hosted_page_editor_pages").push({
+      id: "hosted_page_editor_pages-1",
+      customer_id: "customers-1",
+      business_id: "businesses-1",
+      code: "ABCDEFGHJKM2",
+      lifecycle_status: "EXPIRED",
+      draft_json: {
+        businessName: "Owner Example",
+        appearance: { theme: "light", accentColor: "#0f766e" },
+        buttons: []
+      }
+    });
+    client.table("hosted_subscriptions").push({
+      id: "hosted_subscriptions-1",
+      customer_id: "customers-1",
+      business_id: "businesses-1",
+      hosted_page_id: "hosted_page_editor_pages-1",
+      order_id: "old-order",
+      stripe_checkout_session_id: "cs_test_old",
+      stripe_customer_id: "cus_test_old",
+      stripe_subscription_id: "sub_test_old",
+      permanent_code: "ABCDEFGHJKM2",
+      hosted_page_url: "https://taprater.com/p/ABCDEFGHJKM2",
+      status: "canceled",
+      lifecycle_status: "EXPIRED"
+    });
+    const storage = new MemoryHostedStorage(["BBBBBBBBBBB2"]);
+    storage.objects.set(
+      "hosted-pages/ABCDEFGHJKM2/assignment.json",
+      JSON.stringify({ code: "ABCDEFGHJKM2", physicalProductRef: "old-order:item-1", assignedAt: "2026-08-01T00:00:00.000Z" })
+    );
+
+    const result = await provisionHostedSubscriptionFromCheckout(
+      {
+        eventId: "evt_reactivated",
+        eventType: "checkout.session.completed",
+        session: {
+          id: "cs_test_new",
+          payment_status: "paid",
+          customer: "cus_test_new",
+          customer_details: { email: "owner@example.com", name: "Owner Example" },
+          metadata: { checkout_intent: "hosted_subscription" },
+          subscription: { id: "sub_test_new", status: "active" }
+        },
+        order: { ...createHostedOrder(), id: "new-order", stripe_checkout_session_id: "cs_test_new" },
+        now: new Date("2026-08-23T12:00:00.000Z"),
+        siteUrl: "https://taprater.com"
+      },
+      { client, storage, generateCode: () => "BBBBBBBBBBB2" }
+    );
+
+    expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
+    expect(client.table("customers")).toHaveLength(1);
+    expect(client.table("businesses")).toHaveLength(1);
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(1);
+    expect(client.table("hosted_subscriptions")).toHaveLength(1);
+    expect(client.table("hosted_subscriptions")[0]).toMatchObject({
+      stripe_checkout_session_id: "cs_test_new",
+      stripe_subscription_id: "sub_test_new",
+      permanent_code: "ABCDEFGHJKM2",
+      lifecycle_status: "ACTIVE"
+    });
+    expect(storage.assignedCodes).toEqual([]);
+  });
+
   it("does not send hosted setup email from the browser success page", async () => {
     const source = await readFile("src/app/checkout/success/page.tsx", "utf8");
 

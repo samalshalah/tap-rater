@@ -23,7 +23,7 @@
   },
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
-    "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://app.taprater.com",
+    "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://taprater.com",
     "PRODUCT_MEDIA_PUBLIC_BASE_URL": ""
   }
 }

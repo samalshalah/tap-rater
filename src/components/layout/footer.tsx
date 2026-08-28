@@ -29,10 +29,10 @@ const defaultFooterContent: FooterContent = {
       label: "Solutions",
       order: 20,
       links: [
-        { label: "Automotive", href: "/solutions/auto-dealerships", order: 10, enabled: true },
-        { label: "Restaurants", href: "/solutions/restaurants-cafes", order: 20, enabled: true },
+        { label: "Automotive", href: "/solutions/automotive", order: 10, enabled: true },
+        { label: "Restaurants", href: "/solutions/restaurant-food", order: 20, enabled: true },
         { label: "Healthcare", href: "/solutions/healthcare-dental", order: 30, enabled: true },
-        { label: "Beauty & Wellness", href: "/solutions/beauty-wellness", order: 40, enabled: true }
+        { label: "Beauty & Wellness", href: "/solutions/beauty-salon-wellness", order: 40, enabled: true }
       ]
     },
     {

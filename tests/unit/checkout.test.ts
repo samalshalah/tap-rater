@@ -645,7 +645,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.return_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
     expect(params).not.toHaveProperty("success_url");
     expect(params).not.toHaveProperty("cancel_url");
-    expect(params.payment_method_types).toEqual(["card"]);
+    expect(params).not.toHaveProperty("payment_method_types");
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         currency: "usd",
@@ -703,6 +703,7 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.mode).toBe("subscription");
+    expect(params).not.toHaveProperty("payment_method_types");
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
     expect(params.metadata?.recurring_total_cents).toBe("990");
     expect(params.line_items).toHaveLength(2);

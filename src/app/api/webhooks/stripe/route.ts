@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
+import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
 import { provisionHostedSubscriptionFromCheckout } from "@/lib/hosted-subscription-provisioning";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { savePaidOrderFromCheckoutSession } from "@/lib/orders";
@@ -61,6 +62,27 @@ export async function POST(request: Request) {
             });
           }
         }
+      }
+    }
+
+    if (
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted" ||
+      event.type === "invoice.paid" ||
+      event.type === "invoice.payment_failed"
+    ) {
+      const result = await processHostedSubscriptionLifecycleEvent({
+        eventId: event.id,
+        eventType: event.type,
+        object: event.data.object
+      });
+      if (!result.ok) {
+        console.warn("[stripe-webhook] hosted_subscription_lifecycle_failed", {
+          eventId: event.id,
+          eventType: event.type,
+          error: result.error
+        });
+        return NextResponse.json({ error: "Hosted subscription lifecycle could not be updated." }, { status: 500 });
       }
     }
 

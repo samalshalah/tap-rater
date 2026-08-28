@@ -15,7 +15,7 @@ export type HostedSubscriptionProvisioningResult =
       provisioned: boolean;
       code?: string;
       hostedPageUrl?: string;
-      reason?: "not_hosted_checkout" | "duplicate_event";
+      reason?: "not_hosted_checkout" | "duplicate_event" | "unpaid_checkout";
     }
   | {
       ok: false;
@@ -51,6 +51,10 @@ export async function provisionHostedSubscriptionFromCheckout(
 ): Promise<HostedSubscriptionProvisioningResult> {
   if (!isHostedSubscriptionCheckout(input.session, input.order)) {
     return { ok: true, provisioned: false, reason: "not_hosted_checkout" };
+  }
+
+  if (input.session.payment_status !== "paid") {
+    return { ok: true, provisioned: false, reason: "unpaid_checkout" };
   }
 
   if (!input.session.id) {
@@ -92,22 +96,27 @@ export async function provisionHostedSubscriptionFromCheckout(
   });
   if (!customer.ok) return customer;
 
-  const business = await createBusiness(client, {
-    customerId: customer.customerId,
-    businessName,
-    logoUrl: logoUrl ?? null,
-    now
-  });
+  const existingHostedSubscription = await findExistingHostedSubscriptionForCustomer(client, customer.customerId);
+  const business = existingHostedSubscription
+    ? { ok: true as const, businessId: existingHostedSubscription.business_id }
+    : await createBusiness(client, {
+        customerId: customer.customerId,
+        businessName,
+        logoUrl: logoUrl ?? null,
+        now
+      });
   if (!business.ok) return business;
 
-  const physicalProductRef = buildPhysicalProductRef(input.order, input.session.id, hostedItemIndex);
-  const assignment = await assignPermanentHostedPageCode(storage, {
-    physicalProductRef,
-    assignedBy: `stripe:${input.session.id}`,
-    now,
-    generateCode: dependencies?.generateCode
-  });
-  const hostedPageUrl = `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/p/${assignment.code}`;
+  const assignment = existingHostedSubscription
+    ? { code: existingHostedSubscription.permanent_code }
+    : await assignPermanentHostedPageCode(storage, {
+        physicalProductRef: buildPhysicalProductRef(input.order, input.session.id, hostedItemIndex),
+        assignedBy: `stripe:${input.session.id}`,
+        now,
+        generateCode: dependencies?.generateCode
+      });
+  const hostedPageUrl =
+    existingHostedSubscription?.hosted_page_url ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/p/${assignment.code}`;
   const lineItems = attachHostedTargets(input.order.line_items_json, hostedItemIndex, assignment.code, hostedPageUrl, {
     stripeSubscriptionId,
     subscriptionStatus
@@ -125,6 +134,7 @@ export async function provisionHostedSubscriptionFromCheckout(
   if (!page.ok) return page;
 
   const subscription = await upsertHostedSubscription(client, {
+    existingSubscriptionId: existingHostedSubscription?.id,
     customerId: customer.customerId,
     businessId: business.businessId,
     hostedPageId: page.pageId,
@@ -287,6 +297,7 @@ async function upsertHostedEditorPage(
 async function upsertHostedSubscription(
   client: OrdersDbClient,
   input: {
+    existingSubscriptionId?: string;
     customerId: string;
     businessId: string;
     hostedPageId: string;
@@ -304,6 +315,32 @@ async function upsertHostedSubscription(
     now: Date;
   }
 ) {
+  if (input.existingSubscriptionId) {
+    const result = await client
+      .from("hosted_subscriptions")
+      .update({
+        business_id: input.businessId,
+        hosted_page_id: input.hostedPageId,
+        order_id: input.orderId,
+        stripe_checkout_session_id: input.stripeCheckoutSessionId,
+        stripe_customer_id: input.stripeCustomerId ?? null,
+        stripe_subscription_id: input.stripeSubscriptionId,
+        hosted_page_url: input.hostedPageUrl,
+        status: input.status,
+        lifecycle_status: input.lifecycleStatus,
+        current_period_end: input.currentPeriodEnd ?? null,
+        cancel_at_period_end: input.cancelAtPeriodEnd,
+        past_due_since: null,
+        grace_ends_at: null,
+        provisioning_status: input.provisioningStatus,
+        provisioning_error: null,
+        updated_at: input.now.toISOString()
+      })
+      .eq("id", input.existingSubscriptionId);
+    if (result.error) return { ok: false as const, error: result.error.message };
+    return { ok: true as const };
+  }
+
   const result = await client.from("hosted_subscriptions").upsert(
     {
       customer_id: input.customerId,
@@ -326,6 +363,35 @@ async function upsertHostedSubscription(
   );
   if (result.error) return { ok: false as const, error: result.error.message };
   return { ok: true as const };
+}
+
+async function findExistingHostedSubscriptionForCustomer(client: OrdersDbClient, customerId: string) {
+  const result = await client
+    .from("hosted_subscriptions")
+    .select("*")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (result.error || !Array.isArray(result.data)) return null;
+  return normalizeExistingHostedSubscription(result.data[0]);
+}
+
+function normalizeExistingHostedSubscription(row: unknown) {
+  if (!row || typeof row !== "object") return null;
+  const value = row as Record<string, unknown>;
+  const id = readString(value.id);
+  const businessId = readString(value.business_id);
+  const hostedPageId = readString(value.hosted_page_id);
+  const permanentCode = readString(value.permanent_code);
+  const hostedPageUrl = readString(value.hosted_page_url);
+  if (!id || !businessId || !hostedPageId || !permanentCode || !hostedPageUrl) return null;
+  return {
+    id,
+    business_id: businessId,
+    hosted_page_id: hostedPageId,
+    permanent_code: permanentCode,
+    hosted_page_url: hostedPageUrl
+  };
 }
 
 function attachHostedTargets(

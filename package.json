@@ -21,6 +21,8 @@
     "start": "next start",
     "smoke": "node scripts/smoke.mjs",
     "sync:products": "node scripts/sync-products.mjs",
+    "milestone7:qa:check-env": "node scripts/milestone7-qa-runtime.mjs --check",
+    "milestone7:qa:dev": "node scripts/milestone7-qa-runtime.mjs --dev",
     "check:platform-schema": "node scripts/check-platform-schema.mjs",
     "test": "vitest run"
   },
