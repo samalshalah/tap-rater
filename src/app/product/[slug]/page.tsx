@@ -70,8 +70,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const productFaqs = [
     {
       question: `How does ${product.title} work?`,
-      answer:
-        "Customers tap their phone or scan the QR code. The stand opens the direct destination link configured for your business."
+      answer: supportsBrandedDirect
+        ? "Customers tap their phone with Standard Direct. Branded + QR Direct also supports scanning the QR code. The stand opens the direct destination link configured for your business."
+        : "Customers tap their phone. The stand opens the direct destination link configured for your business."
     },
     {
       question: "Does this require a subscription?",

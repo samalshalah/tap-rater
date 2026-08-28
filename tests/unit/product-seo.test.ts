@@ -33,7 +33,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("Google Review Stand | NFC Review Stand from $39");
     expect(seo.generatedDescription).toBe(
-      "Get more Google reviews with a Tap Rater NFC review stand. Choose Standard Direct or Branded + QR for your business. Starts at $39."
+      "Get more Google reviews with a Tap Rater NFC review stand. Choose Standard Direct NFC or Branded + QR for your business. Starts at $39."
     );
     expect(seo.generatedTitle.length).toBeLessThanOrEqual(64);
     expect(seo.generatedDescription.length).toBeLessThanOrEqual(158);

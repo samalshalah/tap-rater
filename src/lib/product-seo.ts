@@ -71,7 +71,7 @@ function buildDescription({
 }) {
   const options = getProductPurchaseOptions(product);
   const supportsBranded = options.some((option) => option.id === "branded_qr_direct");
-  const optionCopy = supportsBranded ? "Choose Standard Direct or Branded + QR for your business." : "Order a ready-made direct stand.";
+  const optionCopy = supportsBranded ? "Choose Standard Direct NFC or Branded + QR for your business." : "Order a ready-made direct stand.";
   const actionCopy = getDescriptionAction({ product, platform, useCase });
 
   if ((product.destinationType ?? "").includes("booking")) {

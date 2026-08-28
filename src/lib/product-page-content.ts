@@ -67,11 +67,11 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
   return [
     {
       title: "Tap or scan ready",
-      body: `Customers tap or scan and open your ${destination.highlightTarget} without searching.`
+      body: `Customers tap and open your ${destination.highlightTarget} without searching.`
     },
     {
       title: "Connects to one destination URL",
-      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct points QR and NFC to that same destination.`
+      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct points the NFC tap to that same destination.`
     },
     {
       title: "Countertop physical product",
@@ -92,7 +92,7 @@ export function getProductPageUseCases(_product: MigratedProduct): ProductPageCo
     },
     {
       title: "Salons and clinics",
-      body: "Offer the tap or scan prompt after a completed appointment while the visit is still fresh."
+      body: "Offer the tap prompt after a completed appointment while the visit is still fresh."
     },
     {
       title: "Retail stores",

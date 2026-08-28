@@ -259,14 +259,14 @@ export const defaultFaqContent: FaqContent = {
   items: [
     {
       question: "What can a Tap Rater stand open?",
-      answer: "A Standard Direct stand opens one customer-provided destination URL by QR code and NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.",
+      answer: "A Standard Direct stand opens one customer-provided destination URL by NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.",
       area: "global",
       order: 10,
       enabled: true
     },
     {
       question: "Do Standard Direct stands require an account or subscription?",
-      answer: "No. Standard Direct sends QR and NFC directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.",
+      answer: "No. Standard Direct sends NFC taps directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.",
       area: "global",
       order: 20,
       enabled: true

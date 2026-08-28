@@ -398,7 +398,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         <div>
           <p className="tr-eyebrow">Select your stand</p>
           <p className="mt-2 text-3xl font-semibold leading-none text-ink">{selectedPrice}</p>
-          <p className="tr-body-sm mt-2">One-time QR + NFC purchase</p>
+          <p className="tr-body-sm mt-2">{selectedOption.id === "branded_qr_direct" ? "One-time branded QR + NFC purchase" : "One-time NFC tap purchase"}</p>
         </div>
 
         <div className="my-5 h-px bg-line" />
@@ -609,7 +609,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <p className="mt-1 text-sm leading-6 text-muted">
                       {selectedOption.id === "branded_qr_direct"
                         ? "This is the front proof. Confirm the logo, business name, and QR placement before adding to cart."
-                        : "Confirm the direct destination link before adding this stand to cart. QR and NFC use the same URL."}
+                        : "Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL."}
                     </p>
                   </div>
 
@@ -653,7 +653,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   ) : (
                     <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
                       <p className="font-semibold text-ink">Standard Direct confirmation</p>
-                      <p>QR and NFC both open the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
+                      <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
                     </div>
                   )}
                 </div>
@@ -901,7 +901,7 @@ function getOptionSummary(option: PurchaseOption) {
     return "QR and NFC direct stand with logo, business name, and front proof before cart.";
   }
 
-  return "Ready-made stand with QR and NFC connected to one direct destination link.";
+  return "Ready-made stand with NFC tap connected to one direct destination link.";
 }
 
 function platformMark(product: ProductSetupChooserProduct) {
