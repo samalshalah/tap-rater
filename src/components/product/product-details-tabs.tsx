@@ -67,9 +67,9 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
               <h2 className="text-2xl font-black text-ink">Product details</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {highlights.map((highlight) => (
-                  <article key={highlight.title} className="rounded-md border border-line bg-white p-4">
-                    <h3 className="text-base font-black text-ink">{highlight.title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted">{highlight.body}</p>
+                  <article key={highlight.title} className="tr-card p-5">
+                    <h3 className="tr-card-title">{highlight.title}</h3>
+                    <p className="tr-body-sm mt-3">{highlight.body}</p>
                   </article>
                 ))}
               </div>
@@ -79,7 +79,7 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
               {specifications.length > 0 ? (
                 <div>
                   <h3 className="text-lg font-black text-ink">Specifications</h3>
-                  <dl className="mt-3 overflow-hidden rounded-md border border-line bg-white">
+                  <dl className="tr-card mt-3 overflow-hidden p-0">
                     {specifications.map((specification) => (
                       <div key={specification.label} className="grid grid-cols-[minmax(120px,0.75fr)_1fr] gap-3 border-b border-line px-4 py-3 text-sm last:border-b-0">
                         <dt className="font-semibold text-ink">{specification.label}</dt>
@@ -95,7 +95,7 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
                   <h3 className="text-lg font-black text-ink">Included</h3>
                   <ul className="mt-3 grid gap-2">
                     {includedItems.map((item) => (
-                      <li key={item.label} className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-4 py-3 text-sm font-semibold text-ink">
+                      <li key={item.label} className="tr-card flex items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink">
                         <span>{item.label}</span>
                         {item.appliesTo === "branded" ? <span className="text-xs font-black uppercase tracking-[0.05em] text-brand">Branded</span> : null}
                       </li>
@@ -110,7 +110,7 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
         {activeTab === "compare" ? (
           <div>
             <h2 className="text-2xl font-black text-ink">Standard vs. Branded</h2>
-            <div className="mt-4 overflow-hidden rounded-md border border-line bg-white">
+            <div className="tr-card mt-4 overflow-hidden p-0">
               <ComparisonRow label="" standard="Standard" branded="Branded" header />
               <ComparisonRow label="NFC Tap" standard="Yes" branded="Yes" />
               <ComparisonRow label="Printed QR" standard="Yes" branded="Yes" />
@@ -128,7 +128,9 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
         {activeTab === "how" ? (
           <div className="max-w-4xl">
             <h2 className="text-2xl font-black text-ink">How it works</h2>
-            <p className="mt-4 text-base leading-8 text-muted">{formatHowItWorksParagraph(howItWorks)}</p>
+            <article className="tr-card mt-4 p-5 sm:p-6">
+              <p className="tr-body">{formatHowItWorksParagraph(howItWorks)}</p>
+            </article>
           </div>
         ) : null}
       </div>
