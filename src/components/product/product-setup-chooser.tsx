@@ -475,7 +475,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               </ol>
             </div>
 
-            <div className="overflow-y-auto px-4 py-4 sm:px-6">
+            <div className="overflow-y-auto px-4 py-3 sm:px-6">
               {step === "destination" ? (
                 <div className="grid gap-4">
                   <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} />
@@ -603,8 +603,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               ) : null}
 
               {step === "review" ? (
-                <div className="grid gap-4">
-                  <div>
+                <div className="grid gap-3">
+                  <div className="sr-only">
                     <p className="text-sm font-semibold text-ink">{selectedOption.id === "branded_qr_direct" ? "Proof preview" : "Confirm setup"}</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
                       {selectedOption.id === "branded_qr_direct"
@@ -613,7 +613,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     </p>
                   </div>
 
-                  <div className="tr-panel-muted grid gap-2 text-sm text-muted">
+                  <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
                     <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
@@ -729,12 +729,12 @@ function ProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="tr-card p-4 sm:p-5">
+    <div className="tr-card p-3 sm:p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-semibold text-ink">Front proof preview</p>
         <p className="tr-caption font-semibold">QR generated from destination link</p>
       </div>
-      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
         {templateUrl ? (
           <TemplateProofPreview businessName={businessName} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
         ) : (
@@ -762,16 +762,16 @@ function TemplateProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[390px] overflow-hidden rounded-lg border border-line bg-white">
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute grid place-items-center p-[1.5%]" style={regionStyle(brandedStandComposition.logoRegion)}>
+      <div className="absolute grid place-items-center p-[3%]" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logo ? (
-          <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-full max-w-full object-contain" />
+          <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-[72%] max-w-[78%] object-contain" />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
-      <p className="absolute overflow-hidden text-center text-[clamp(15px,4.2vw,21px)] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
+      <p className="absolute overflow-hidden text-center text-[clamp(13px,3.2vw,17px)] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
         {businessName || "Business name"}
       </p>
       <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>
