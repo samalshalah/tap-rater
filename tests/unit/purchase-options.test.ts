@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
-import { getProductPurchaseOptions, hasBrandedDirectProductionTemplate } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, hasBrandedDirectProductionTemplate, isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 
 describe("purchase option readiness", () => {
+  afterEach(() => {
+    delete process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING;
+  });
+
   it("offers only Standard Direct when a direct product has no branded production template", () => {
     const product = migratedProducts.find((item) => item.slug === "google-review-stand");
 
@@ -34,7 +38,22 @@ describe("purchase option readiness", () => {
     expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct"]);
   });
 
-  it("keeps HOSTED subscription checkout structurally available outside the public storefront filter", () => {
+  it("keeps HOSTED purchase options disabled by default", () => {
+    const product = {
+      ...migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!,
+      productKind: "hosted_multilink",
+      requiresLandingPage: true,
+      requiresSubscription: true,
+      checkoutMode: "subscription",
+      requiresAccount: true
+    } satisfies MigratedProduct;
+
+    expect(isHostedPurchaseOptionEnabled()).toBe(false);
+    expect(getProductPurchaseOptions(product)).toEqual([]);
+  });
+
+  it("keeps HOSTED subscription checkout structurally available only when explicitly enabled", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
     const product = {
       ...migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!,
       productKind: "hosted_multilink",

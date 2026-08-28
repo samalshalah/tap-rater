@@ -9,6 +9,7 @@ import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCatalogCategories } from "@/lib/products";
+import { isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
 
@@ -191,7 +192,7 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {content.multilink.enabled ? (
+      {content.multilink.enabled && isHostedPurchaseOptionEnabled() ? (
         <section className="bg-[#f7f8f8] py-12 sm:py-16 lg:py-20">
           <div className="tr-container grid gap-10 lg:grid-cols-[1fr_0.92fr] lg:items-center">
             <MarketingVisual content={content.multilink} />

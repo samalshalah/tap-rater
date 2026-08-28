@@ -28,7 +28,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     {
-      label: "Multi-Link",
+      label: "Website Links",
       href: "/category/website-link-stands",
       order: 40,
       enabled: true,
@@ -43,7 +43,7 @@ const mobileNavigationDescriptions: Record<string, string> = {
   "Shop by Type": "Choose review, menu, website, and other stand types.",
   "By Use": "Shop by business or customer action.",
   "How It Works": "See the buying and setup flow.",
-  "Multi-Link": "Website and multi-link stand options.",
+  "Website Links": "Open websites, catalogs, apps, and custom direct URLs.",
   Resources: "FAQ, support, and help pages.",
 };
 

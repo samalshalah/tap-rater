@@ -273,6 +273,7 @@ export function createCheckoutSessionParams({
   return {
     mode: cart.checkoutMode,
     ui_mode: "embedded_page",
+    payment_method_types: ["card"],
     line_items: buildStripeCheckoutLineItems(cart.rows),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     billing_address_collection: "auto",

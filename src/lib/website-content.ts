@@ -204,7 +204,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "Shop by Type", href: "/shop#stand-categories", order: 15, enabled: true },
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
-    { label: "Multi-Link", href: "/category/website-link-stands", order: 40, enabled: true },
+    { label: "Website Links", href: "/category/website-link-stands", order: 40, enabled: true },
     { label: "Resources", href: "/support", order: 60, enabled: true }
   ]
 };
@@ -219,7 +219,7 @@ export const defaultFooterContent: FooterContent = {
         { label: "All Stands", href: "/shop", order: 10, enabled: true },
         { label: "Review Stands", href: "/category/reviews", order: 20, enabled: true },
         { label: "Menu Stands", href: "/category/menu", order: 30, enabled: true },
-        { label: "Multi-Link Stands", href: "/category/website-link-stands", order: 40, enabled: true }
+        { label: "Website Link Stands", href: "/category/website-link-stands", order: 40, enabled: true }
       ]
     },
     {

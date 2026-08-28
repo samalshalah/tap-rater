@@ -1,5 +1,12 @@
 import { getActiveProducts, getProductBySlug } from "@/lib/products";
-import { getProductPurchaseOptions, getPurchaseOption, standardDirectOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import {
+  getProductPurchaseOptions,
+  getPurchaseOption,
+  isHostedPurchaseOptionEnabled,
+  standardDirectOption,
+  type PurchaseOption,
+  type PurchaseOptionId
+} from "@/lib/purchase-options";
 
 export type CartProductSnapshot = {
   title: string;
@@ -79,10 +86,17 @@ export function normalizeCartItems(value: unknown): CartItem[] {
 
     const requestedOption = typeof entry?.optionId === "string" ? getPurchaseOption(entry.optionId) : undefined;
     const productOptions = product ? getProductPurchaseOptions(product) : [];
-    const option =
-      requestedOption && (productOptions.length === 0 || productOptions.some((item) => item.id === requestedOption.id))
-        ? requestedOption
-        : productOptions[0] ?? standardDirectOption;
+    if (product && productOptions.length === 0) {
+      continue;
+    }
+    if (requestedOption && !isCartOptionAccepted(requestedOption, productOptions, Boolean(product))) {
+      continue;
+    }
+
+    const option = requestedOption ?? productOptions[0] ?? standardDirectOption;
+    if (option.id === "hosted_multilink" && !isHostedPurchaseOptionEnabled()) {
+      continue;
+    }
     const setup = normalizeSetup(entry?.setup);
     const key = getCartItemKey({ productId, optionId: option.id, setup });
     const existing = normalized.get(key);
@@ -213,6 +227,18 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.centerAssetUrl ?? "",
     setup.ctaText ?? ""
   ].join("|");
+}
+
+function isCartOptionAccepted(option: PurchaseOption, productOptions: PurchaseOption[], hasCatalogProduct: boolean) {
+  if (option.id === "hosted_multilink" && !isHostedPurchaseOptionEnabled()) {
+    return false;
+  }
+
+  if (hasCatalogProduct) {
+    return productOptions.some((item) => item.id === option.id);
+  }
+
+  return option.id !== "hosted_multilink" || isHostedPurchaseOptionEnabled();
 }
 
 function normalizeSetup(value: unknown): CartItem["setup"] {

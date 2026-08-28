@@ -33,6 +33,7 @@ describe("Stripe checkout helpers", () => {
     delete process.env.STRIPE_SECRET_KEY;
     delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
     delete process.env.STRIPE_WEBHOOK_SECRET;
+    delete process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING;
   });
 
   it("validates cart items server-side against active in-stock products", () => {
@@ -422,7 +423,39 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("accepts Hosted Multi-Link through subscription checkout without assigning a permanent code", () => {
+  it("rejects Hosted Multi-Link subscription checkout while Hosted purchasing is disabled", () => {
+    const hostedProduct = {
+      ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
+      slug: "hosted-multilink-stand",
+      productKind: "hosted_multilink" as const,
+      productType: "platform_landing_page" as const,
+      serviceMode: "hosted_landing_page" as const,
+      checkoutMode: "subscription" as const,
+      requiresAccount: true,
+      requiresSubscription: true,
+      requiresLandingPage: true,
+      isActive: true
+    };
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "hosted-multilink-stand",
+          optionId: "hosted_multilink",
+          quantity: 1,
+          setup: {
+            businessName: "Nova Implant",
+            manualCollectionAcknowledged: true
+          }
+        }
+      ],
+      [hostedProduct]
+    );
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
+  it("accepts Hosted Multi-Link through subscription checkout without assigning a permanent code when explicitly enabled", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
     const hostedProduct = {
       ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
       slug: "hosted-multilink-stand",
@@ -645,7 +678,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.return_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
     expect(params).not.toHaveProperty("success_url");
     expect(params).not.toHaveProperty("cancel_url");
-    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.payment_method_types).toEqual(["card"]);
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         currency: "usd",
@@ -667,7 +700,8 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 
-  it("creates subscription Checkout Session params for hosted products with one-time and monthly lines", () => {
+  it("creates card-only subscription Checkout Session params for hosted products with one-time and monthly lines when explicitly enabled", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
     const hostedProduct = {
       ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
       slug: "hosted-multilink-stand",
@@ -703,7 +737,7 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.mode).toBe("subscription");
-    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.payment_method_types).toEqual(["card"]);
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
     expect(params.metadata?.recurring_total_cents).toBe("990");
     expect(params.line_items).toHaveLength(2);

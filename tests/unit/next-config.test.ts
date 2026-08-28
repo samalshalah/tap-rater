@@ -15,7 +15,6 @@ describe("next config redirects", () => {
         { source: "/contact", destination: "/contact-us", permanent: true },
         { source: "/shop-by-use", destination: "/solutions", permanent: true },
         { source: "/custom-branding", destination: "/custom-stands", permanent: true },
-        { source: "/multi-link", destination: "/category/website-link-stands", permanent: true },
         { source: "/product-category/:slug*", destination: "/shop", permanent: true },
         { source: "/my-account", destination: "/admin", permanent: true }
       ])
@@ -24,6 +23,9 @@ describe("next config redirects", () => {
       expect.arrayContaining([
         expect.objectContaining({
           source: "/checkout"
+        }),
+        expect.objectContaining({
+          source: "/multi-link"
         })
       ])
     );

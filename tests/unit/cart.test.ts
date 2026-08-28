@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { calculateCartTotalCents, getCartItemKey, mergeCartItem, normalizeCartItems, parseStoredCart, updateCartQuantity } from "@/lib/cart";
 
 describe("cart utilities", () => {
+  afterEach(() => {
+    delete process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING;
+  });
+
   it("merges matching products and counts only positive quantities", () => {
     const items = mergeCartItem([{ productId: "google-review-stand", quantity: 1 }], {
       productId: "google-review-stand",
@@ -54,6 +58,23 @@ describe("cart utilities", () => {
         sku: "TR-NEW-DATABASE-STAND"
       }
     });
+  });
+
+  it("rejects snapshot-only Hosted items while Hosted purchasing is disabled", () => {
+    const items = normalizeCartItems([
+      {
+        productId: "new-hosted-stand",
+        optionId: "hosted_multilink",
+        quantity: 1,
+        productSnapshot: {
+          title: "New Hosted Stand",
+          sku: "TR-NEW-HOSTED-STAND",
+          shortDescription: "Backend-created hosted product"
+        }
+      }
+    ]);
+
+    expect(items).toEqual([]);
   });
 
   it("restores only valid items from localStorage JSON", () => {
