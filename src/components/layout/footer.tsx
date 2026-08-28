@@ -91,16 +91,18 @@ export function Footer() {
     <footer className="border-t border-line bg-white text-ink">
       <div className="tr-container grid gap-8 py-12 md:grid-cols-[1.35fr_repeat(4,0.9fr)] lg:py-14">
         <div>
-          <p className="text-lg font-semibold text-brand">Tap Rater</p>
-          <p className="mt-3 max-w-sm text-sm leading-6 text-muted">
+          <p className="text-lg font-semibold text-ink">Tap Rater</p>
+          <p className="tr-body-sm mt-3 max-w-sm">
             {content.intro}
           </p>
         </div>
         {columns.map((column) => (
-          <div key={column.label} className="grid content-start gap-2 text-sm text-muted [&_a:hover]:text-brand">
-            <p className="mb-2 text-xs font-semibold uppercase text-ink">{column.label}</p>
+          <div key={column.label} className="grid content-start gap-2 text-sm text-muted">
+            <p className="tr-eyebrow mb-2 text-ink">{column.label}</p>
             {column.links.map((link) => (
-              <Link key={`${column.label}-${link.href}-${link.label}`} href={link.href}>{link.label}</Link>
+              <Link key={`${column.label}-${link.href}-${link.label}`} href={link.href} className="min-h-8 transition hover:text-brand">
+                {link.label}
+              </Link>
             ))}
           </div>
         ))}

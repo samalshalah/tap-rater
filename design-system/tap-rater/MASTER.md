@@ -1,6 +1,6 @@
 # Tap Rater Master Design System
 
-This document records the current owner-approved Tap Rater design system as implemented in the Next.js storefront and admin app. It is descriptive, not a redesign proposal.
+This document records the current owner-approved Tap Rater design system as implemented in the Next.js storefront and admin app. It is the working source of truth for controlled refinement.
 
 ## Authority Order
 
@@ -12,11 +12,25 @@ This document records the current owner-approved Tap Rater design system as impl
 
 UI UX Pro Max is installed as a project-local UI/UX intelligence and QA skill. Its guidance may identify accessibility, responsiveness, interaction, hierarchy, and usability problems, but it must not automatically override approved Tap Rater visual decisions.
 
-## Public Website Freeze
+## Public Frontend — Controlled Design Improvement Authorized
 
-The current public website visual direction is approved. Do not use UI UX Pro Max to redesign the homepage, replace typography, replace brand colors, introduce glassmorphism, introduce a new visual style, change global radius, change established card language, alter CTA hierarchy, change product imagery style, restructure approved pages, or add unnecessary animation.
+Owner-approved business and product decisions remain authoritative.
 
-Allowed public-site work is limited to preserving the existing visual direction while fixing clear accessibility problems, responsive problems, inconsistent spacing, broken mobile behavior, interaction problems, and usability bugs.
+The visual system may be improved for consistency, typography, spacing, layout, responsive behavior, hierarchy, accessibility, ecommerce usability, and visual polish.
+
+Do not change Tap Rater core brand identity without owner approval, the product model, DIRECT/HOSTED architecture, Google Branded artwork geometry, product pricing/data, checkout logic, Stripe, or Hosted purchasing state.
+
+Stage 1 establishes the homepage as the public reference implementation. Shared header, footer, section, button, and card primitives may be improved because they define the frontend system. Stage 2 should apply the approved system to shop, category, solutions, product pages, cart, support, FAQ, and related public pages.
+
+## Stage 1 Frontend Audit Summary
+
+- Homepage: strong content architecture and real-product imagery, but page-specific heading sizes, section padding, soft backgrounds, and card shadows made sections feel related but not fully systematic.
+- Header: compact and functional; needed tokenized radius and consistent hover surfaces.
+- Mobile navigation: content is clear and uses adequate touch targets; keep it direct and avoid adding oversized chrome.
+- Footer: content columns are useful; heading and link typography needed alignment with the public text system.
+- Product cards: approved 4:5 real-product-first treatment is retained; image area is now slightly stronger and title-to-price spacing is tighter.
+- Action and use-case cards: previous variants used separate radii, shadows, text colors, and surface colors; normalized to shared card behavior.
+- Shop/category/product/cart routes: current logic and content are preserved for Stage 1; full visual rollout is deferred to Stage 2.
 
 ## Stack
 
@@ -26,22 +40,23 @@ Allowed public-site work is limited to preserving the existing visual direction 
 - Images: `next/image` on storefront; plain `img` appears in admin tables for thumbnails.
 - Primary surfaces: Cloudflare/OpenNext public website, admin app, account pages, API routes.
 
-## Brand Colors
+## Brand Colors And Canonical Tokens
 
-The dominant implementation uses both Tailwind theme colors and CSS custom properties.
+The implementation uses one public CSS custom property system mirrored by Tailwind theme colors where practical.
 
 CSS variables:
 
-- Ink: `#10201e`
-- Muted: `#60706c`
-- Line: `#d9e2df`
+- Ink: `#111827`
+- Muted: `#5f6b76`
+- Line: `#dfe5e3`
 - Brand teal: `#0b7a75`
-- Brand dark teal: `#064f4b`
+- Brand dark teal: `#075e59`
 - Accent amber: `#f5a524`
+- White: `#ffffff`
 - Surface: `#ffffff`
 - Page background: `#f5f5f7`
-- Soft background: `#f6f8f7`
-- Panel background: `#edf4f2`
+- Soft background: `#f7f8f6`
+- Panel background: `#f2f6f5`
 
 Tailwind extensions:
 
@@ -54,7 +69,7 @@ Tailwind extensions:
 - `panel`: `#F2F6F5`
 - `accent`: `#F5A524`
 
-Dominant rule: use teal for brand actions and positive/ready states, amber for eyebrow/accent/warning context, ink for primary text and primary checkout/admin actions, white for cards, and soft gray/green for page sections and admin workspace surfaces.
+Dominant rule: use brand teal for primary public actions and positive states, amber for eyebrow/accent/warning context, ink for primary text and checkout/admin actions, white for cards, page for the global public canvas, soft for alternate bands, and panel for subtle grouped content.
 
 ## Backgrounds
 
@@ -72,6 +87,14 @@ Global font stack:
 `Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif`
 
 The global stylesheet enforces this font family across all elements.
+
+Font-family comparison:
+
+- A. Normalized current system font: Aptos / Segoe UI Variable / Segoe UI / Inter / Arial / Helvetica. Character is clean, familiar, and operational; ecommerce suitability is high for a direct product storefront; performance is strongest because it does not add remote font requests; readability and mobile behavior are stable.
+- B. Cormorant / Montserrat from UI UX Pro Max: character is more luxury/editorial; ecommerce suitability is stronger for fashion and premium lifestyle than operational NFC stands; performance is weaker because it needs remote webfont loading; mobile body readability would need more testing.
+- C. Inter-only alternative: character is neutral SaaS/ecommerce; performance is acceptable if self-hosted or system fallback is used, but current stack already includes Inter as fallback; mobile readability is strong but not visually different enough to justify a change.
+
+Selected for Stage 1: normalized current system font. Do not change font family until visual QA proves an alternative is better.
 
 Dominant weights:
 
@@ -102,7 +125,13 @@ Text should wrap safely. The implementation uses `overflow-wrap: break-word` on 
 
 ## Spacing And Layout
 
-Dominant spacing rhythm is Tailwind's 4px scale, with common section gaps at 16, 20, 24, 32, 40, 48, and 64px.
+Dominant spacing rhythm is Tailwind's 4px scale, with common component gaps at 12, 16, 20, 24, 32, and 40px.
+
+Public section rhythm:
+
+- Hero: 32-56px top, 48-80px bottom depending on breakpoint.
+- Default sections: 48px mobile, 64px tablet, 80px desktop.
+- Compact sections: 40px mobile, 48px tablet, 56px desktop.
 
 Containers:
 
@@ -126,13 +155,12 @@ Admin grids:
 
 CSS variables:
 
-- Small radius: `8px`
-- Medium radius: `10px`
-- Large radius: `24px`
-- Extra large radius: `30px`
-- Card shadow: `0 1px 2px rgba(16, 32, 30, 0.05)`
-- Panel shadow: `0 16px 42px rgba(16, 32, 30, 0.08)`
-- Hover shadow: `0 18px 44px rgba(16, 32, 30, 0.1)`
+- Control radius: `10px`
+- Card radius: `24px`
+- Feature radius: `30px`
+- Card shadow: `0 12px 34px rgba(17, 24, 39, 0.055)`
+- Hover shadow: `0 18px 48px rgba(17, 24, 39, 0.09)`
+- Elevated/modal shadow: `0 24px 72px rgba(17, 24, 39, 0.12)`
 
 Tailwind extensions:
 
@@ -142,11 +170,11 @@ Tailwind extensions:
 
 Dominant implemented components:
 
-- `.tr-card`: 20px radius, white, line border, light shadow
-- `.tr-card-compact`: 18px radius, white, line border
-- `.tr-hover-card`: 22px radius, subtle lift on hover
-- `.tr-premium-surface`: 28px radius, larger soft shadow
-- `.tr-process-step-card`: 28px radius
+- `.tr-card`: card radius, white, line border, light shadow
+- `.tr-card-compact`: card radius, white, line border
+- `.tr-hover-card`: card radius, subtle lift on hover, shared hover shadow
+- `.tr-premium-surface`: feature radius, larger elevated shadow
+- `.tr-process-step-card`: card radius
 - `.tr-admin-card`: 14px radius, white, line border, light admin shadow
 - `.tr-admin-table-shell`: 16px radius, white, line border, light admin shadow
 - `.tr-admin-soft-panel`: 12px radius, `#f8f9fa`
@@ -189,18 +217,23 @@ Storefront product cards:
 
 - `aspect-[4/5]`
 - White surface
-- Product image area takes about 1.3x the content area
-- Rounded 22px compact / 28px default
+- Product image area takes about 1.4x the content area
+- Shared card radius
 - Subtle shadow and ring
 - Image uses `object-contain`, center positioning, slight hover scale, and `mix-blend-multiply`
 - Category/accent label above product name
-- Product name close to price label
+- Product name sits close to price label
 
 Action/marketing cards:
 
 - White cards on soft page background
-- Large radius and restrained shadow
+- Shared card radius and restrained shadow
 - Short headings and muted supporting copy
+
+Section primitives:
+
+- `SectionShell`: standard public section canvas, with white/page or soft tone and hero/default/compact spacing.
+- `SectionHeader`: consistent eyebrow, section heading, optional body, and optional editorial CTA.
 
 Admin cards:
 

@@ -3,23 +3,24 @@
 @tailwind utilities;
 
 :root {
-  --tr-color-ink: #10201e;
-  --tr-color-muted: #60706c;
-  --tr-color-line: #d9e2df;
+  --tr-color-ink: #111827;
+  --tr-color-muted: #5f6b76;
+  --tr-color-line: #dfe5e3;
   --tr-color-brand: #0b7a75;
-  --tr-color-brand-dark: #064f4b;
+  --tr-color-brand-dark: #075e59;
   --tr-color-accent: #f5a524;
+  --tr-color-white: #ffffff;
   --tr-color-surface: #ffffff;
   --tr-color-page: #f5f5f7;
-  --tr-color-soft: #f6f8f7;
-  --tr-color-panel: #edf4f2;
-  --tr-radius-sm: 8px;
-  --tr-radius-md: 10px;
-  --tr-radius-lg: 24px;
-  --tr-radius-xl: 30px;
-  --tr-shadow-card: 0 1px 2px rgba(16, 32, 30, 0.05);
-  --tr-shadow-panel: 0 16px 42px rgba(16, 32, 30, 0.08);
-  --tr-shadow-hover: 0 18px 44px rgba(16, 32, 30, 0.1);
+  --tr-color-soft: #f7f8f6;
+  --tr-color-panel: #f2f6f5;
+  --tr-radius-control: 10px;
+  --tr-radius-card: 24px;
+  --tr-radius-feature: 30px;
+  --tr-shadow-card: 0 12px 34px rgba(17, 24, 39, 0.055);
+  --tr-shadow-hover: 0 18px 48px rgba(17, 24, 39, 0.09);
+  --tr-shadow-elevated: 0 24px 72px rgba(17, 24, 39, 0.12);
+  --tr-motion: 180ms ease;
   color: var(--tr-color-ink);
   background: var(--tr-color-surface);
 }
@@ -82,11 +83,27 @@ main h3 {
   }
 
   .tr-section {
-    @apply py-12 sm:py-14 lg:py-16;
+    @apply py-12 sm:py-16 lg:py-20;
   }
 
   .tr-section-compact {
-    @apply py-9 sm:py-11 lg:py-12;
+    @apply py-10 sm:py-12 lg:py-14;
+  }
+
+  .tr-section-default {
+    @apply py-12 sm:py-16 lg:py-20;
+  }
+
+  .tr-section-hero {
+    @apply pb-12 pt-8 sm:pb-16 sm:pt-10 lg:pb-20 lg:pt-14;
+  }
+
+  .tr-section-shell {
+    background: var(--tr-color-page);
+  }
+
+  .tr-section-shell-soft {
+    background: var(--tr-color-soft);
   }
 
   .tr-section-muted {
@@ -103,7 +120,7 @@ main h3 {
   }
 
   .tr-hero-title {
-    @apply max-w-full text-[2.35rem] font-semibold leading-[1.08] text-ink sm:text-[3rem] lg:text-[3.4rem];
+    @apply max-w-full text-[2.55rem] font-semibold leading-[1.05] text-ink sm:text-[3.1rem] lg:text-[3.45rem];
     letter-spacing: 0;
     overflow-wrap: anywhere;
   }
@@ -115,12 +132,12 @@ main h3 {
   }
 
   .tr-section-title {
-    @apply text-[1.9rem] font-semibold leading-tight text-ink md:text-[2.35rem];
+    @apply text-[1.85rem] font-semibold leading-[1.1] text-ink sm:text-[2.25rem] lg:text-[2.55rem];
     letter-spacing: 0;
   }
 
   .tr-card-title {
-    @apply text-base font-semibold leading-snug text-ink md:text-lg;
+    @apply text-base font-semibold leading-snug text-ink md:text-[1.1rem];
   }
 
   .tr-body {
@@ -136,22 +153,26 @@ main h3 {
   }
 
   .tr-card {
-    @apply rounded-[20px] border border-line bg-white;
+    @apply border border-line bg-white;
+    border-radius: var(--tr-radius-card);
     max-width: 100%;
     min-width: 0;
     box-shadow: var(--tr-shadow-card);
   }
 
   .tr-card-compact {
-    @apply rounded-[18px] border border-line bg-white p-4;
+    @apply border border-line bg-white p-4;
+    border-radius: var(--tr-radius-card);
     max-width: 100%;
     min-width: 0;
     box-shadow: var(--tr-shadow-card);
   }
 
   .tr-hover-card {
-    @apply rounded-[22px] border border-line bg-white transition hover:-translate-y-0.5 hover:border-brand/40;
+    @apply border border-line bg-white transition hover:-translate-y-0.5 hover:border-brand/40;
+    border-radius: var(--tr-radius-card);
     box-shadow: var(--tr-shadow-card);
+    transition-duration: var(--tr-motion);
   }
 
   .tr-hover-card:hover {
@@ -159,29 +180,35 @@ main h3 {
   }
 
   .tr-panel-muted {
-    @apply rounded-[20px] border border-line p-4;
+    @apply border border-line p-4;
+    border-radius: var(--tr-radius-card);
     background: var(--tr-color-soft);
   }
 
   .tr-premium-surface {
-    @apply overflow-hidden rounded-[28px] bg-white;
+    @apply overflow-hidden bg-white;
+    border-radius: var(--tr-radius-feature);
     border: 1px solid rgba(217, 226, 223, 0.7);
-    box-shadow: 0 22px 60px rgba(16, 32, 30, 0.08);
+    box-shadow: var(--tr-shadow-elevated);
   }
 
   .tr-process-step-card {
-    @apply rounded-[28px] border border-line bg-white p-7 shadow-sm;
+    @apply border border-line bg-white p-6 shadow-sm sm:p-7;
+    border-radius: var(--tr-radius-card);
   }
 
   .tr-editorial-link {
-    @apply inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-dark;
+    @apply inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-dark;
+    transition-duration: var(--tr-motion);
   }
 
   .tr-button {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-200 disabled:text-muted;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-200 disabled:text-muted;
+    border-radius: var(--tr-radius-control);
     max-width: 100%;
     text-align: center;
     white-space: normal;
+    transition-duration: var(--tr-motion);
   }
 
   .tr-button-primary {
@@ -193,7 +220,9 @@ main h3 {
   }
 
   .tr-button-ghost {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:border-brand hover:text-brand;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 border border-line bg-white px-3 py-2 text-sm font-semibold text-ink transition hover:border-brand hover:text-brand;
+    border-radius: var(--tr-radius-control);
+    transition-duration: var(--tr-motion);
   }
 
   .tr-button-outline {
@@ -201,7 +230,9 @@ main h3 {
   }
 
   .tr-icon-button {
-    @apply grid h-10 w-10 place-items-center rounded-lg border border-line bg-white text-ink transition hover:border-brand hover:text-brand;
+    @apply grid h-11 w-11 place-items-center border border-line bg-white text-ink transition hover:border-brand hover:text-brand;
+    border-radius: var(--tr-radius-control);
+    transition-duration: var(--tr-motion);
   }
 
   .tr-input {
@@ -284,6 +315,17 @@ body * {
   font-family:
     Aptos, "Segoe UI Variable", "Segoe UI", Inter, Arial, Helvetica, sans-serif !important;
   letter-spacing: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 h1,
