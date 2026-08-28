@@ -14,13 +14,13 @@ type ProductHeroProps = {
   fromPrice: string;
 };
 
-export function ProductHero({ product, category }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
 
   return (
-    <div className="tr-container grid gap-10 py-10 lg:grid-cols-[0.94fr_1fr] lg:items-start lg:py-16">
+    <div className="tr-container grid gap-10 lg:grid-cols-[0.98fr_0.92fr] lg:items-start">
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-6">
@@ -39,8 +39,10 @@ export function ProductHero({ product, category }: ProductHeroProps) {
         </div>
 
         <div>
-          <h1 className="text-[2.15rem] font-semibold leading-[1.08] text-[#111317] md:text-[2.65rem]">{product.title}</h1>
-          <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-[#5f686f]">{product.shortDescription}</p>
+          <p className="tr-eyebrow">{category?.title ?? "Tap Rater stand"}</p>
+          <h1 className="tr-page-title mt-3 max-w-3xl">{product.title}</h1>
+          <p className="tr-body mt-5 max-w-2xl text-[1.05rem]">{product.shortDescription}</p>
+          <p className="mt-5 text-xl font-semibold text-ink">{fromPrice} <span className="text-sm font-medium text-muted">starting price</span></p>
         </div>
 
         <ProductSetupChooser product={product} selectedOptionId={effectiveSelectedOptionId} onSelectedOptionChange={setSelectedOptionId} />

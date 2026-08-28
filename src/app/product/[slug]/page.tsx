@@ -1,10 +1,10 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
 import { FaqList } from "@/components/storefront/faq-list";
 import { ProcessStepCard } from "@/components/storefront/process-step-card";
+import { SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getProductPageHighlights, getReviewDestination } from "@/lib/product-page-content";
@@ -87,53 +87,46 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ];
 
   return (
-    <main className="bg-white text-ink">
+    <main className="tr-public-shell text-ink">
       <JsonLd data={productJsonLd(product)} />
       <JsonLd data={faqJsonLd(productFaqs)} />
 
-      <section className="border-b border-line bg-white">
+      <SectionShell spacing="compact">
         <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} />
-      </section>
+      </SectionShell>
 
-      <section className="border-b border-line bg-[#f7f8f8]">
-        <div className="tr-container py-12">
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container">
           <div className="grid gap-4 md:grid-cols-4">
             {highlights.map((highlight, index) => (
               <ProcessStepCard key={highlight.title} description={highlight.body} index={index} title={highlight.title} />
             ))}
           </div>
         </div>
-      </section>
+      </SectionShell>
 
-      <section className="border-b border-line bg-white">
-        <div className="tr-container tr-section">
-          <div className="max-w-3xl">
-            <p className="tr-eyebrow">Product questions</p>
-            <h2 className="mt-3 text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.85rem]">Answers before you buy.</h2>
-          </div>
+      <SectionShell spacing="default">
+        <div className="tr-container">
+          <SectionHeader align="left" eyebrow="Product questions" title="Answers before you buy." />
           <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
         </div>
-      </section>
+      </SectionShell>
 
       {relatedProducts.length > 0 ? (
-        <section className="bg-[#f7f8f8]">
-          <div className="tr-container tr-section">
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="tr-eyebrow">More stands</p>
-                <h2 className="mt-3 text-[2.15rem] font-semibold leading-tight text-ink md:text-[2.85rem]">Related Tap Rater stands</h2>
-              </div>
-              <Link href="/shop" className="text-sm font-semibold text-brand">
-                View all stands
-              </Link>
-            </div>
+        <SectionShell tone="soft" spacing="default">
+          <div className="tr-container">
+            <SectionHeader
+              eyebrow="More stands"
+              title="Related Tap Rater stands"
+              cta={{ href: "/shop", label: "View all stands" }}
+            />
             <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
               {relatedProducts.slice(0, 5).map((relatedProduct) => (
                 <ProductCard key={relatedProduct.slug} product={relatedProduct} />
               ))}
             </div>
           </div>
-        </section>
+        </SectionShell>
       ) : null}
     </main>
   );

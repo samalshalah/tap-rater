@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
+import { SectionShell } from "@/components/storefront/section";
 import { catalogCategories, type CatalogCategorySlug } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
@@ -71,9 +72,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const isMultiLinkCategory = category.slug === "website-links";
 
   return (
-    <main className="bg-white text-ink">
-      <section className="bg-white">
-        <div className={isMultiLinkCategory ? "tr-container grid gap-8 py-12 lg:grid-cols-[0.94fr_1fr] lg:items-center lg:py-16" : "tr-container grid gap-8 py-12 lg:grid-cols-[0.82fr_1fr] lg:items-center lg:py-16"}>
+    <main className="tr-public-shell text-ink">
+      <SectionShell spacing="compact">
+        <div className={isMultiLinkCategory ? "tr-container grid gap-8 lg:grid-cols-[0.94fr_1fr] lg:items-center" : "tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center"}>
           {isMultiLinkCategory ? (
             <div className="tr-page-hero-media relative aspect-square overflow-hidden bg-white">
               <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain" />
@@ -84,25 +85,26 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               Shop all stands
             </Link>
             <p className="tr-eyebrow mt-6">{category.eyebrow}</p>
-            <h1 className="mt-4 max-w-4xl text-[2.45rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3.2rem]">{title}</h1>
-            <p className="mt-5 max-w-3xl text-xl font-medium leading-8 text-[#5f686f]">{description}</p>
-            {activeStandType.longContent ? <div className="mt-6 max-w-3xl whitespace-pre-line text-sm leading-7 text-muted">{activeStandType.longContent}</div> : null}
+            <h1 className="tr-page-title mt-4 max-w-4xl">{title}</h1>
+            <p className="tr-body mt-5 max-w-3xl text-[1.05rem]">{description}</p>
+            {activeStandType.longContent ? <div className="tr-body-sm mt-6 max-w-3xl whitespace-pre-line">{activeStandType.longContent}</div> : null}
           </div>
           {!isMultiLinkCategory ? (
-            <div className="tr-page-hero-media relative aspect-[4/3] overflow-hidden rounded-[34px] bg-[#f7f8f8] shadow-[0_22px_70px_rgba(16,32,30,0.08)]">
+            <div className="tr-page-hero-media tr-premium-surface relative aspect-[4/3]">
               <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
             </div>
           ) : null}
         </div>
-      </section>
+      </SectionShell>
 
-      <section className={hasSingleProduct ? "tr-container py-10 lg:py-12" : "tr-container py-12 lg:py-16"}>
+      <SectionShell tone="soft" spacing={hasSingleProduct ? "compact" : "default"}>
+        <div className="tr-container">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">{products.length} stands</p>
-            <h2 className="mt-2 text-[1.95rem] font-semibold leading-tight text-ink md:text-[2.35rem]">Shop {title.toLowerCase()}</h2>
+            <h2 className="tr-section-title mt-2">Shop {title.toLowerCase()}</h2>
           </div>
-          <p className="max-w-xl text-sm leading-6 text-muted">{buyerIntent}</p>
+          <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
         </div>
         <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
           {products.length > 0 ? (
@@ -113,7 +115,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
           )}
         </div>
-      </section>
+        </div>
+      </SectionShell>
     </main>
   );
 }

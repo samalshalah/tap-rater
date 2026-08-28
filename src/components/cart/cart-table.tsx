@@ -66,10 +66,10 @@ export function CartTable({
 
   if (rows.length === 0) {
     return (
-      <div className="tr-card p-8 text-center">
-        <p className="text-lg font-semibold text-ink">Your cart is empty.</p>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">
-          Choose a ready QR + NFC stand or contact support for a custom request.
+      <div className="tr-card p-8 text-center sm:p-10">
+        <p className="text-2xl font-semibold text-ink">Your cart is empty</p>
+        <p className="tr-body-sm mx-auto mt-3 max-w-md">
+          Choose a ready QR + NFC stand and set the destination link before checkout.
         </p>
         <div className="mt-5 grid justify-center gap-3 sm:flex sm:flex-wrap">
           <Link href="/shop" className="tr-button-primary w-full sm:w-auto">
@@ -84,158 +84,140 @@ export function CartTable({
   }
 
   return (
-    <div className="tr-card grid gap-5 p-4 sm:p-6">
-      {rows.map((row) => {
-        const cartKey = getCartItemKey(row.item);
-        return (
-          <div
-            key={cartKey}
-            className="grid gap-4 border-b border-line py-4 last:border-b-0 md:grid-cols-[1fr_auto_auto] md:items-center"
-          >
-            <div>
-              <p className="font-semibold text-ink">{row.product.title}</p>
-              <p className="mt-1 text-sm font-semibold text-brand">
-                {row.option.label}
-              </p>
-              <p className="text-sm text-muted">
-                {formatPrice(row.unitPriceCents)} each
-              </p>
-              <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
-                {row.item.setup?.businessName ? (
-                  <p>
-                    <strong className="text-ink">Business:</strong>{" "}
-                    {row.item.setup.businessName}
-                  </p>
-                ) : null}
-                {row.item.setup?.destinationUrl ? (
-                  <p>
-                    <strong className="text-ink">Destination link:</strong>{" "}
-                    {row.item.setup.destinationUrl}
-                  </p>
-                ) : null}
-                <p>
-                  <strong className="text-ink">Connection:</strong> QR and NFC
-                  open the destination link directly
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+      <div className="tr-card grid gap-0 p-4 sm:p-6">
+        {rows.map((row) => {
+          const cartKey = getCartItemKey(row.item);
+          return (
+            <div
+              key={cartKey}
+              className="grid gap-5 border-b border-line py-5 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+            >
+              <div className="min-w-0">
+                <p className="text-lg font-semibold leading-6 text-ink">{row.product.title}</p>
+                <p className="mt-1 text-sm font-semibold text-brand">
+                  {row.option.label}
                 </p>
-                {row.item.setup?.qrTargetUrl ? (
-                  <p>
-                    <strong className="text-ink">QR target:</strong>{" "}
-                    {row.item.setup.qrTargetUrl}
+                <div className="mt-3 grid gap-1 text-sm leading-6 text-muted">
+                  {row.item.setup?.destinationUrl ? (
+                    <p className="break-words">
+                      <strong className="text-ink">Destination link:</strong>{" "}
+                      {row.item.setup.destinationUrl}
+                    </p>
+                  ) : null}
+                  {row.item.setup?.businessName ? (
+                    <p>
+                      <strong className="text-ink">Business name:</strong>{" "}
+                      {row.item.setup.businessName}
+                    </p>
+                  ) : null}
+                  {row.option.requiresLogo ? (
+                    <p>
+                      <strong className="text-ink">Logo:</strong>{" "}
+                      {row.item.setup?.logoMediaUrl ||
+                      row.item.setup?.logoStorageKey
+                        ? "Uploaded"
+                        : "Missing"}
+                    </p>
+                  ) : null}
+                  {row.option.hasQr ? (
+                    <p>
+                      <strong className="text-ink">Connection:</strong> QR + NFC direct
+                    </p>
+                  ) : null}
+                  {row.option.requiresFinalProof ? (
+                    <p>
+                      <strong className="text-ink">Front proof:</strong>{" "}
+                      {row.item.setup?.proofApproved
+                        ? "Approved"
+                        : "Approval required"}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center md:min-w-56 md:grid-cols-1 md:justify-items-end">
+                <div className="flex h-11 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
+                  <button
+                    type="button"
+                    aria-label={`Decrease ${row.product.title} quantity`}
+                    className="grid h-11 w-11 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
+                    disabled={row.item.quantity <= 1}
+                    onClick={() => decreaseItem(cartKey)}
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="grid h-11 min-w-12 place-items-center border-x border-line px-3 text-sm font-semibold text-ink">
+                    {row.item.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Increase ${row.product.title} quantity`}
+                    className="grid h-11 w-11 place-items-center text-ink hover:bg-soft"
+                    onClick={() => increaseItem(cartKey)}
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <div className="text-left sm:text-center md:text-right">
+                  <p className="tr-caption font-semibold uppercase">Item total</p>
+                  <p className="text-lg font-semibold text-ink">
+                    {formatPrice(row.lineSubtotalCents)}
                   </p>
-                ) : null}
-                {row.item.setup?.nfcTargetUrl ? (
-                  <p>
-                    <strong className="text-ink">NFC target:</strong>{" "}
-                    {row.item.setup.nfcTargetUrl}
-                  </p>
-                ) : null}
-                {row.item.setup?.headline ? (
-                  <p>
-                    <strong className="text-ink">Headline:</strong>{" "}
-                    {row.item.setup.headline}
-                  </p>
-                ) : null}
-                {row.item.setup?.designNotes ? (
-                  <p>
-                    <strong className="text-ink">Design notes:</strong>{" "}
-                    {row.item.setup.designNotes}
-                  </p>
-                ) : null}
-                {row.option.requiresLogo ? (
-                  <p>
-                    <strong className="text-ink">Logo:</strong>{" "}
-                    {row.item.setup?.logoMediaUrl ||
-                    row.item.setup?.logoStorageKey
-                      ? "Logo uploaded"
-                      : "Missing"}
-                  </p>
-                ) : null}
-                {row.item.setup?.hasQr || row.option.hasQr ? (
-                  <p>
-                    <strong className="text-ink">QR:</strong>{" "}
-                    {row.item.setup?.generatedQrValue ||
-                    row.item.setup?.qrTargetUrl
-                      ? "Direct QR ready"
-                      : "Missing"}
-                  </p>
-                ) : null}
-                {row.option.requiresFinalProof ? (
-                  <p>
-                    <strong className="text-ink">Proof:</strong>{" "}
-                    {row.item.setup?.proofApproved
-                      ? "Proof confirmed"
-                      : "Proof required"}
-                  </p>
-                ) : null}
+                  <p className="tr-caption">{formatPrice(row.unitPriceCents)} each</p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Remove ${row.product.title}`}
+                  className="tr-icon-button text-brand"
+                  onClick={() => removeItem(cartKey)}
+                >
+                  <Trash2 size={17} />
+                </button>
               </div>
             </div>
-            <div className="flex h-10 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
-              <button
-                type="button"
-                aria-label={`Decrease ${row.product.title} quantity`}
-                className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
-                disabled={row.item.quantity <= 1}
-                onClick={() => decreaseItem(cartKey)}
-              >
-                <Minus size={16} />
-              </button>
-              <span className="grid h-10 min-w-12 place-items-center border-x border-line px-3 text-sm font-black text-ink">
-                {row.item.quantity}
-              </span>
-              <button
-                type="button"
-                aria-label={`Increase ${row.product.title} quantity`}
-                className="grid h-10 w-10 place-items-center text-ink hover:bg-soft"
-                onClick={() => increaseItem(cartKey)}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-            <div className="flex items-center justify-between gap-4 md:min-w-44 md:justify-end">
-              <div className="text-right">
-                <p className="text-xs font-bold uppercase text-muted">
-                  Subtotal
-                </p>
-                <p className="font-black text-ink">
-                  {formatPrice(row.lineSubtotalCents)}
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-label={`Remove ${row.product.title}`}
-                className="tr-icon-button text-brand"
-                onClick={() => removeItem(cartKey)}
-              >
-                <Trash2 size={17} />
-              </button>
-            </div>
-          </div>
-        );
-      })}
-      <div className="flex items-center justify-between border-t border-line pt-5 text-xl font-black">
-        <span>Total</span>
-        <span>{formatPrice(total)}</span>
+          );
+        })}
       </div>
-      <button
-        type="button"
-        disabled={isCheckingOut}
-        className="tr-button-primary min-h-12"
-        onClick={startCheckout}
-      >
-        {isCheckingOut
-          ? "Starting secure checkout..."
-          : isLiveStripe
-            ? "Secure checkout"
-            : "Secure checkout in Stripe test mode"}
-      </button>
-      <p className="text-sm leading-6 text-muted">
-        {isLiveStripe
-          ? "Payment opens inside Tap Rater with Stripe. Shipping is reviewed after payment. No shipping fee is added today."
-          : "Test mode only. Stripe payment opens inside Tap Rater. Shipping is reviewed after payment, and no shipping fee is added today."}
-      </p>
-      {checkoutError ? (
-        <p className="tr-status-warning">{checkoutError}</p>
-      ) : null}
+      <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
+        <div>
+          <p className="tr-eyebrow">Order summary</p>
+          <h2 className="mt-2 text-2xl font-semibold text-ink">Checkout</h2>
+        </div>
+        <div className="grid gap-3 border-y border-line py-4 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Subtotal</span>
+            <span className="font-semibold text-ink">{formatPrice(total)}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Shipping</span>
+            <span className="font-semibold text-ink">Reviewed after payment</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 text-lg">
+            <span className="font-semibold text-ink">Total today</span>
+            <span className="font-semibold text-ink">{formatPrice(total)}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={isCheckingOut}
+          className="tr-button-primary min-h-12 w-full"
+          onClick={startCheckout}
+        >
+          {isCheckingOut
+            ? "Starting secure checkout..."
+            : isLiveStripe
+              ? "Secure checkout"
+              : "Secure checkout in Stripe test mode"}
+        </button>
+        <p className="tr-body-sm">
+          {isLiveStripe
+            ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
+            : "Test mode only. Stripe payment opens inside Tap Rater. No shipping fee is added today."}
+        </p>
+        {checkoutError ? (
+          <p className="tr-status-warning" role="alert">{checkoutError}</p>
+        ) : null}
+      </aside>
     </div>
   );
 }

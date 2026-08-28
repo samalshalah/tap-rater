@@ -110,6 +110,17 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   }, [isBuilderOpen]);
 
   useEffect(() => {
+    if (!isBuilderOpen) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") closeBuilder();
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isBuilderOpen]);
+
+  useEffect(() => {
     if (selectedOption?.id !== "branded_qr_direct" || !proofApproved) return;
 
     if (!currentApprovalSnapshot || !isProofApprovalSnapshotCurrent(currentApprovalSnapshot, approvedProofSnapshot)) {
@@ -367,9 +378,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     router.push("/cart");
   }
 
-  const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build Your Branded QR Stand" : "Set up your Standard Direct Stand";
+  const modalTitle = selectedOption.id === "branded_qr_direct" ? "Build your Branded QR stand" : "Set up your Standard Direct stand";
   const selectedPrice = formatPrice(selectedOption.priceCents).replace(".00", "");
   const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
+  const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-3" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
     ? step === "destination"
       ? 0
@@ -382,23 +394,23 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
   return (
     <>
-      <section className="rounded-[16px] bg-white p-5 shadow-[0_1px_0_rgba(17,24,39,0.05)] ring-1 ring-line sm:p-6">
+      <section className="tr-card p-5 sm:p-6">
         <div>
           <p className="tr-eyebrow">Select your stand</p>
           <p className="mt-2 text-3xl font-semibold leading-none text-ink">{selectedPrice}</p>
-          <p className="mt-2 text-sm font-medium text-muted">One-time purchase</p>
+          <p className="tr-body-sm mt-2">One-time QR + NFC purchase</p>
         </div>
 
         <div className="my-5 h-px bg-line" />
 
-        <div className="grid gap-1">
+        <div className="grid gap-3">
           {directOptions.map((option) => (
             <label
               key={option.id}
               className={
                 selectedOptionId === option.id
-                  ? "grid cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg bg-[#f7fbfa] p-3 transition"
-                  : "grid cursor-pointer grid-cols-[auto_1fr_auto] gap-3 rounded-lg p-3 transition hover:bg-soft"
+                  ? "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-lg border border-brand bg-panel p-4 transition sm:grid-cols-[auto_1fr_auto]"
+                  : "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-lg border border-line bg-white p-4 transition hover:border-brand/50 hover:bg-soft sm:grid-cols-[auto_1fr_auto]"
               }
             >
               <input
@@ -412,8 +424,9 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               <span className="min-w-0">
                 <span className="block text-base font-semibold leading-6 text-ink">{option.label}</span>
                 <span className="mt-1 block text-sm leading-6 text-muted">{getOptionSummary(option)}</span>
+                <span className="mt-2 inline-flex text-xs font-semibold uppercase tracking-[0.06em] text-brand">Available today</span>
               </span>
-              <span className="text-sm font-semibold text-ink">{formatPrice(option.priceCents).replace(".00", "")}</span>
+              <span className="text-sm font-semibold text-ink sm:text-right">{formatPrice(option.priceCents).replace(".00", "")}</span>
             </label>
           ))}
         </div>
@@ -435,12 +448,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           Set up stand · {selectedPrice}
         </button>
 
-        {error && !isBuilderOpen ? <p className="tr-status-error mt-4">{error}</p> : null}
+        {error && !isBuilderOpen ? <p className="tr-status-error mt-4" role="alert">{error}</p> : null}
       </section>
 
       {isBuilderOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={modalTitle}>
-          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-[0_28px_80px_rgba(17,24,39,0.22)]">
+          <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden bg-white" style={{ borderRadius: "var(--tr-radius-card)", boxShadow: "var(--tr-shadow-elevated)" }}>
             <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-4 sm:px-6">
               <div>
                 <p className="tr-eyebrow">{product.title}</p>
@@ -452,10 +465,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
 
             <div className="border-b border-line px-4 py-3 sm:px-6">
-              <ol className="grid gap-2 text-center text-xs font-semibold uppercase text-muted sm:grid-cols-3">
+              <ol className={`grid gap-2 text-xs font-semibold uppercase text-muted ${stepGridClassName}`}>
                 {stepLabels.map((label, index) => (
-                  <li key={label} className={index <= activeStepIndex ? "rounded-lg bg-ink px-3 py-2 text-white" : "rounded-lg border border-line px-3 py-2"}>
-                    {label}
+                  <li key={label} className={index < activeStepIndex ? "rounded-lg bg-panel px-3 py-2 text-brand" : index === activeStepIndex ? "rounded-lg bg-ink px-3 py-2 text-white" : "rounded-lg border border-line px-3 py-2"}>
+                    <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
+                    <span>{label}</span>
                   </li>
                 ))}
               </ol>
@@ -497,7 +511,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         </div>
                       </label>
 
-                      {googleSearchMessage ? <p className="text-sm font-semibold text-muted">{googleSearchMessage}</p> : null}
+                      {googleSearchMessage ? <p className="text-sm font-semibold text-muted" role="status">{googleSearchMessage}</p> : null}
                       {googleResults.length ? (
                         <div className="grid gap-2">
                           {googleResults.map((place) => (
@@ -575,6 +589,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <label className="grid min-h-32 cursor-pointer place-items-center rounded-lg border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted transition hover:border-brand">
                       <UploadCloud className="mb-2 h-6 w-6" />
                       {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
+                      <span className="mt-1 block text-xs font-semibold text-brand">{logo ? "Click to replace" : "Choose file"}</span>
                       <input
                         className="sr-only"
                         type="file"
@@ -602,8 +617,6 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
                     <ReviewLine label="Price" value={formatPrice(selectedOption.priceCents)} />
-                    <ReviewLine label="QR target" value={directTargets?.qrTargetUrl || "-"} />
-                    <ReviewLine label="NFC target" value={directTargets?.nfcTargetUrl || "-"} />
                     <ReviewLine label="Destination link" value={destinationUrl || "-"} />
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                     {selectedOption.id === "branded_qr_direct" ? (
@@ -648,7 +661,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
 
             <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
-              {error ? <p className="tr-status-error mb-3">{error}</p> : null}
+              {error ? <p className="tr-status-error mb-3" role="alert">{error}</p> : null}
               <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
                 <button
                   type="button"
@@ -716,12 +729,12 @@ function ProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="tr-card p-4">
+    <div className="tr-card p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-black text-ink">Front proof preview</p>
-        <p className="text-xs font-bold text-muted">QR generated from destination link</p>
+        <p className="text-sm font-semibold text-ink">Front proof preview</p>
+        <p className="tr-caption font-semibold">QR generated from destination link</p>
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_180px] md:items-start">
+      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
         {templateUrl ? (
           <TemplateProofPreview businessName={businessName} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
         ) : (
@@ -749,7 +762,7 @@ function TemplateProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[270px] overflow-hidden rounded-lg border border-line bg-white">
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[390px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
       <div className="absolute grid place-items-center" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logo ? (
@@ -780,7 +793,7 @@ function CleanProofPreview({
   qrValue: string;
 }) {
   return (
-    <div className="mx-auto grid aspect-[0.68] w-full max-w-[270px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
+    <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
       <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
         {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
       </div>
@@ -855,7 +868,7 @@ function QrPreview({ value, variant = "framed" }: { value: string; variant?: "fr
 
 function ReviewLine({ label, value }: { label: string; value: string }) {
   return (
-    <p>
+    <p className="[overflow-wrap:anywhere]">
       <strong className="text-ink">{label}:</strong> {value}
     </p>
   );

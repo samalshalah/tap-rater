@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SlidersHorizontal } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -46,33 +48,36 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   });
 
   return (
-    <main className="bg-white text-ink">
-      <section className="bg-white">
-        <div className="tr-container py-8 sm:py-10 lg:py-12">
+    <main className="tr-public-shell text-ink">
+      <SectionShell spacing="compact">
+        <div className="tr-container">
           <p className="tr-eyebrow">Tap Rater shop</p>
           <div className="mt-4 grid gap-4 lg:grid-cols-[0.82fr_1fr] lg:items-end">
-            <h1 className="max-w-3xl text-[2.35rem] font-semibold leading-[1.06] text-[#111317] sm:text-[3rem]">
+            <h1 className="tr-page-title max-w-3xl">
               Shop NFC and QR stands.
             </h1>
-            <p className="max-w-2xl text-lg font-medium leading-7 text-[#5f686f]">
+            <p className="tr-body max-w-2xl text-[1.05rem]">
               Browse by stand type or business use, then choose the product that
               fits the customer action.
             </p>
           </div>
         </div>
-      </section>
+      </SectionShell>
 
-      <section className="bg-[#f7f8f8]">
+      <SectionShell tone="soft" spacing="compact">
         <div
           id="stand-types"
-          className="tr-container scroll-mt-24 py-8 lg:py-10"
+          className="tr-container scroll-mt-24"
         >
-          <div className="grid gap-6 lg:grid-cols-[340px_1fr] lg:gap-8">
+          <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
             <div className="lg:hidden">
-              <details className="rounded-[22px] bg-white p-4 ring-1 ring-line">
+              <details className="tr-card-compact group p-0">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
-                  <span>Filters</span>
-                  <span className="text-brand">
+                  <span className="flex min-h-12 items-center gap-2 px-4">
+                    <SlidersHorizontal size={17} aria-hidden="true" />
+                    Filters
+                  </span>
+                  <span className="px-4 text-brand">
                     {selectedType || selectedUse ? "Active" : "Type and use"}
                   </span>
                 </summary>
@@ -88,7 +93,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </details>
             </div>
 
-            <aside className="hidden h-fit rounded-[24px] bg-white p-5 ring-1 ring-line lg:sticky lg:top-24 lg:block">
+            <aside className="tr-card-compact hidden h-fit p-5 lg:sticky lg:top-24 lg:block">
               <FilterPanelContent
                 businessUses={businessUses}
                 products={products}
@@ -99,6 +104,20 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </aside>
 
             <div>
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="tr-eyebrow">All products</p>
+                  <p className="mt-1 text-sm font-medium text-muted">
+                    {filteredProducts.length} of {products.length} products shown.
+                  </p>
+                </div>
+                {selectedType || selectedUse ? (
+                  <Link href="/shop" className="tr-button-outline w-fit">
+                    Reset filters
+                  </Link>
+                ) : null}
+              </div>
+
               {selectedType || selectedUse ? (
                 <div className="mb-5 flex flex-wrap gap-2">
                   {selectedType ? (
@@ -130,7 +149,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     />
                   ))
                 ) : (
-                  <div className="rounded-[24px] bg-white p-8 text-sm font-semibold text-muted ring-1 ring-line sm:col-span-2 xl:col-span-4">
+                  <div className="tr-card p-8 text-sm font-semibold text-muted sm:col-span-2 xl:col-span-4">
                     No products match these filters. Clear filters to view all
                     stands.
                   </div>
@@ -139,7 +158,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </div>
           </div>
         </div>
-      </section>
+      </SectionShell>
     </main>
   );
 }
@@ -291,8 +310,8 @@ function FilterLink({
       href={href}
       className={
         active
-          ? "flex items-center justify-between gap-3 rounded-lg bg-[#f7fbfa] px-3 py-2 text-sm font-semibold text-ink"
-          : "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"
+          ? "flex min-h-11 items-center justify-between gap-3 rounded-lg bg-panel px-3 py-2 text-sm font-semibold text-ink ring-1 ring-brand/20"
+          : "flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"
       }
     >
       <span className="min-w-0 truncate">{label}</span>

@@ -180,7 +180,7 @@ main h3 {
   }
 
   .tr-panel-muted {
-    @apply border border-line p-4;
+    @apply min-w-0 border border-line p-4;
     border-radius: var(--tr-radius-card);
     background: var(--tr-color-soft);
   }
