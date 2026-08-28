@@ -506,7 +506,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     }
                     aria-disabled={pending}
                   >
-                    <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
+                    <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-semibold text-ink">
                       <input
                         type="radio"
                         name={`${product.slug}-size`}
@@ -515,14 +515,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         onChange={() => {
                           if (!pending) setSelectedSizeCode(size.code);
                         }}
-                        className="h-4 w-4 accent-brand"
+                        className="h-4 w-4 shrink-0 accent-brand"
                       />
                       <span className="shrink-0">{formatSizeLabel(size.label)}</span>
-                    </span>
-                    <span className="min-w-0 text-right text-xs leading-5 text-muted">
-                      {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
-                      <span className="mx-1 text-line">/</span>
-                      {size.frontWidthMm} x {size.frontHeightMm} mm
+                      <span className="min-w-0 text-xs leading-5 text-muted">
+                        {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
+                        <span className="mx-1 text-line">/</span>
+                        {size.frontWidthMm} x {size.frontHeightMm} mm
+                      </span>
                     </span>
                     <span className={pending ? "shrink-0 text-xs font-semibold text-muted" : "shrink-0 text-xs font-semibold text-brand"}>
                       {pending ? "Price coming soon" : "Included"}

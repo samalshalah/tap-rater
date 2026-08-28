@@ -44,7 +44,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
 
         <div>
           <p className="tr-eyebrow">{category?.title ?? "Tap Rater stand"}</p>
-          <h1 className="mt-2 max-w-3xl text-[1.6rem] font-semibold leading-tight text-ink sm:text-[2rem] md:text-[2.25rem]">{product.title}</h1>
+          <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
           <p className="tr-body mt-3 max-w-2xl text-base">{product.shortDescription}</p>
           <p className="mt-3 text-xl font-semibold text-ink">{pricePrefix}{displayPrice}</p>
         </div>

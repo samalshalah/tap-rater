@@ -411,6 +411,13 @@ a {
   }
 }
 
+.tr-product-title,
+.tr-product-title[class] {
+  font-size: clamp(1.2rem, 1.8vw, 1.7rem) !important;
+  font-weight: 600 !important;
+  line-height: 1.12 !important;
+}
+
 .tr-admin-section,
 .tr-admin-section[class] {
   padding-top: clamp(1.5rem, 3vw, 2.5rem);
