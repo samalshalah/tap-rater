@@ -568,14 +568,14 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     seoTitle: readString(productRow.seo_title) ?? readString(productRow.seoTitle) ?? staticProduct?.seoTitle,
     seoDescription: readString(productRow.seo_description) ?? readString(productRow.seoDescription) ?? staticProduct?.seoDescription,
     searchKeywords:
-      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords) ?? staticProduct?.searchKeywords,
-    sizeOptions: readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.size_options) ?? readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.sizeOptions) ?? staticProduct?.sizeOptions,
-    colorOptions: readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.color_options) ?? readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.colorOptions) ?? staticProduct?.colorOptions,
-    keyFeatures: readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.key_features) ?? readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.keyFeatures) ?? staticProduct?.keyFeatures,
-    howItWorks: readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.how_it_works) ?? readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.howItWorks) ?? staticProduct?.howItWorks,
-    specifications: readArray<NonNullable<MigratedProduct["specifications"]>[number]>(productRow.specifications) ?? staticProduct?.specifications,
-    includedItems: readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.included_items) ?? readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.includedItems) ?? staticProduct?.includedItems,
-    productFaqs: readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.product_faqs) ?? readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.productFaqs) ?? staticProduct?.productFaqs,
+      readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords),
+    sizeOptions: readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.size_options) ?? readArray<NonNullable<MigratedProduct["sizeOptions"]>[number]>(productRow.sizeOptions),
+    colorOptions: readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.color_options) ?? readArray<NonNullable<MigratedProduct["colorOptions"]>[number]>(productRow.colorOptions),
+    keyFeatures: readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.key_features) ?? readArray<NonNullable<MigratedProduct["keyFeatures"]>[number]>(productRow.keyFeatures),
+    howItWorks: readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.how_it_works) ?? readArray<NonNullable<MigratedProduct["howItWorks"]>[number]>(productRow.howItWorks),
+    specifications: readArray<NonNullable<MigratedProduct["specifications"]>[number]>(productRow.specifications),
+    includedItems: readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.included_items) ?? readArray<NonNullable<MigratedProduct["includedItems"]>[number]>(productRow.includedItems),
+    productFaqs: readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.product_faqs) ?? readArray<NonNullable<MigratedProduct["productFaqs"]>[number]>(productRow.productFaqs),
     updatedAt: readString(productRow.updated_at) ?? readString(productRow.updatedAt) ?? staticProduct?.updatedAt
   };
 

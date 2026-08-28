@@ -578,117 +578,11 @@ export const migratedProducts: MigratedProduct[] = [
       googleStandImage,
       { src: "/uploads/products/google-review-stand-branded-angled.jpg", alt: "Branded Google Review Stand example" }
     ],
-    variants: [
-      { id: "standard-regular-white", label: "Standard / Standard / White", sku: "TR-GOOGLE-REV-ST-STD-REG-WHT", stockStatus: "instock" },
-      { id: "branded-regular-white", label: "Branded / Standard / White", sku: "TR-GOOGLE-REV-ST-BRD-REG-WHT", stockStatus: "instock" },
-      { id: "standard-a4-white", label: "Standard / Large - A4 / White", sku: "TR-GOOGLE-REV-ST-STD-A4-WHT", stockStatus: "outofstock" },
-      { id: "branded-a4-white", label: "Branded / Large - A4 / White", sku: "TR-GOOGLE-REV-ST-BRD-A4-WHT", stockStatus: "outofstock" }
-    ],
+    variants: [],
     isActive: true,
     seoTitle: "Google Review Stand with NFC & QR",
     seoDescription:
-      "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use.",
-    searchKeywords: [
-      "google review stand",
-      "google review qr code stand",
-      "nfc review stand",
-      "google review qr stand",
-      "tap to review google",
-      "google review sign",
-      "google business review stand"
-    ],
-    sizeOptions: [
-      {
-        code: "regular",
-        label: "Standard",
-        frontWidthMm: 108,
-        frontHeightMm: 165,
-        frontWidthIn: 4.25,
-        frontHeightIn: 6.5,
-        baseDepthMm: 50,
-        baseDepthIn: 1.97,
-        skuSuffix: "REG",
-        priceAdjustmentCents: 0,
-        isDefault: true,
-        isActive: true
-      },
-      {
-        code: "a4",
-        label: "Large - A4",
-        frontWidthMm: 210,
-        frontHeightMm: 297,
-        frontWidthIn: 8.27,
-        frontHeightIn: 11.69,
-        baseDepthMm: 80,
-        baseDepthIn: 3.15,
-        skuSuffix: "A4",
-        priceAdjustmentCents: null,
-        isDefault: false,
-        isActive: true
-      }
-    ],
-    colorOptions: [{ code: "white", label: "White", skuSuffix: "WHT", priceAdjustmentCents: 0, isDefault: true, isActive: true }],
-    keyFeatures: [
-      { title: "Tap + Scan", body: "Customers can tap with NFC or scan the printed QR code." },
-      { title: "Direct to Google", body: "NFC and QR both open the same Google review link you provide." },
-      { title: "No App Required", body: "Customers use their phone NFC or camera." },
-      { title: "No Subscription", body: "Direct stands are a one-time physical product purchase with no monthly fee." },
-      { title: "Ready to Use", body: "Tap Rater programs the NFC and prepares the QR code before shipping." },
-      { title: "Standard or Branded", body: "Choose the ready-made Google design or add your logo and business name." }
-    ],
-    howItWorks: [
-      { step: 1, title: "Choose your design and size", body: "Select Standard or Branded, then choose Standard size or Large - A4." },
-      { step: 2, title: "Add your Google review link", body: "Provide the Google review destination customers should open." },
-      { step: 3, title: "Customize if Branded", body: "Upload your logo and enter the business name, then approve the proof." },
-      { step: 4, title: "We prepare your stand", body: "Tap Rater programs the NFC and creates the QR so both open the same URL." },
-      { step: 5, title: "Place it and start using it", body: "Your stand arrives ready for your counter, reception desk, checkout or service area." }
-    ],
-    specifications: [
-      { label: "Material", value: "Acrylic" },
-      { label: "NFC chip", value: "NTAG213" },
-      { label: "NFC frequency", value: "13.56 MHz" },
-      { label: "NFC reading distance", value: "Approx. 2-5 cm" },
-      { label: "Standard size", value: "108 x 165 mm / 4.25 x 6.50 in" },
-      { label: "Standard base", value: "50 mm / 1.97 in" },
-      { label: "Large - A4", value: "210 x 297 mm / 8.27 x 11.69 in" },
-      { label: "A4 base", value: "80 mm / 3.15 in" },
-      { label: "QR", value: "Unique printed QR code" },
-      { label: "Color", value: "White" },
-      { label: "Power", value: "None" },
-      { label: "Orientation", value: "Portrait" },
-      { label: "Recommended placement", value: "Indoor countertop" }
-    ],
-    includedItems: [
-      { label: "Acrylic NFC + QR stand", appliesTo: "all" },
-      { label: "Programmed NTAG213 NFC chip", appliesTo: "all" },
-      { label: "Unique printed QR code", appliesTo: "all" },
-      { label: "Destination setup before shipping", appliesTo: "all" },
-      { label: "Business logo", appliesTo: "branded" },
-      { label: "Business name", appliesTo: "branded" },
-      { label: "Front proof approval", appliesTo: "branded" }
-    ],
-    productFaqs: [
-      {
-        question: "How does the Google Review Stand work?",
-        answer: "Customers tap the stand with an NFC-enabled phone or scan the QR code. Both open the Google review link you provide."
-      },
-      {
-        question: "Does it require an app or subscription?",
-        answer: "No. Direct stands do not require a Tap Rater app, customer account, or monthly subscription."
-      },
-      {
-        question: "What sizes are available?",
-        answer: "Standard is 108 x 165 mm (4.25 x 6.50 in) with a 50 mm (1.97 in) base. Large - A4 is 210 x 297 mm (8.27 x 11.69 in) with an 80 mm (3.15 in) base."
-      },
-      {
-        question: "What is the difference between Standard and Branded?",
-        answer: "Standard uses the ready-made Google design. Branded adds your logo and business name and includes a front proof before production."
-      },
-      {
-        question: "Will it arrive ready to use?",
-        answer: "Yes. Tap Rater programs the NFC and prepares the QR code before shipping so you can place the stand and start using it."
-      }
-    ]
+      "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
   },
   phaseOneProduct({
     slug: "google-review-plate",

@@ -755,6 +755,40 @@ describe("product repository", () => {
     expect(product?.images).toEqual([]);
   });
 
+  it("does not restore static Google variant fields when a database row omits them", () => {
+    const product = normalizeStorefrontProductRow({
+      slug: "google-review-stand",
+      title: "Supabase Google Stand",
+      sku: "SUP-1",
+      category_slug: "reviews",
+      format: "stand",
+      base_price_cents: 5900,
+      stock_status: "instock",
+      short_description: "Supabase short description",
+      description: "Supabase full description",
+      product_type: "physical_redirect",
+      service_mode: "basic_redirect",
+      checkout_mode: "buy_now",
+      requires_account: false,
+      requires_subscription: false,
+      requires_landing_page: false,
+      supported_destinations: ["google"],
+      activation_type: "free_basic_activation",
+      included_service_label: "Free basic activation",
+      customization_options: ["standard_design", "add_logo"],
+      allows_logo_upload: true,
+      allows_custom_design: false,
+      design_mode: "standard",
+      images: [],
+      is_active: true
+    });
+
+    expect(product?.sizeOptions).toBeUndefined();
+    expect(product?.colorOptions).toBeUndefined();
+    expect(product?.keyFeatures).toBeUndefined();
+    expect(product?.productFaqs).toBeUndefined();
+  });
+
   it("returns an empty storefront when the configured database has no active products", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient([]));
 

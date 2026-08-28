@@ -14,10 +14,20 @@ import {
 
 describe("product page content", () => {
   it("builds purchase highlights from the product", () => {
-    const product = getProductBySlug("google-review-stand");
+    const product = productFixture({
+      slug: "google-review-stand",
+      title: "Google Review Stand",
+      keyFeatures: [
+        { title: "Tap + Scan", body: "Customers can tap with NFC or scan the printed QR code." },
+        { title: "Direct to Google", body: "NFC and QR both open the same Google review link you provide." },
+        { title: "No App Required", body: "Customers use their phone NFC or camera." },
+        { title: "No Subscription", body: "Direct stands are a one-time physical product purchase with no monthly fee." },
+        { title: "Ready to Use", body: "Tap Rater programs the NFC and prepares the QR code before shipping." },
+        { title: "Standard or Branded", body: "Choose the ready-made Google design or add your logo and business name." }
+      ]
+    });
 
-    expect(product).toBeDefined();
-    expect(getProductPageHighlights(product!).map((highlight) => highlight.title)).toEqual([
+    expect(getProductPageHighlights(product).map((highlight) => highlight.title)).toEqual([
       "Tap + Scan",
       "Direct to Google",
       "No App Required",

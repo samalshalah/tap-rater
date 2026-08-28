@@ -2,7 +2,7 @@
 
 import { type ChangeEventHandler, type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { CheckCircle2, Copy, ExternalLink, Loader2, MoreHorizontal, Save, Trash2, UploadCloud, XCircle } from "lucide-react";
-import type { MigratedProduct, ProductKind, SupportedDestination } from "@/data/migrated-products";
+import type { MigratedProduct, ProductColorOption, ProductKind, ProductSizeOption, SupportedDestination } from "@/data/migrated-products";
 import type {
   BusinessUse,
   PlatformDestination,
@@ -105,6 +105,8 @@ export function ProductEditor({
   );
   const [ctaEditable, setCtaEditable] = useState(product.ctaEditable ?? true);
   const [searchTermsText, setSearchTermsText] = useState((product.searchKeywords ?? []).join("\n"));
+  const [sizeOptions, setSizeOptions] = useState<ProductSizeOption[]>(() => product.sizeOptions ?? []);
+  const [colorOptions, setColorOptions] = useState<ProductColorOption[]>(() => product.colorOptions ?? []);
 
   const isHostedProduct = productKind === "hosted_multilink";
   const visibleOptions = useMemo(
@@ -295,6 +297,14 @@ export function ProductEditor({
     setOptionStates((current) => current.map((option) => (option.optionCode === optionCode ? { ...option, ...patch } : option)));
   }
 
+  function updateSizeOption(index: number, patch: Partial<ProductSizeOption>) {
+    setSizeOptions((current) => current.map((size, itemIndex) => (itemIndex === index ? { ...size, ...patch } : size)));
+  }
+
+  function updateColorOption(index: number, patch: Partial<ProductColorOption>) {
+    setColorOptions((current) => current.map((color, itemIndex) => (itemIndex === index ? { ...color, ...patch } : color)));
+  }
+
   function updateProductKind(nextProductKind: ProductKind) {
     setProductKind(nextProductKind);
     if (nextProductKind === "hosted_multilink") {
@@ -371,8 +381,8 @@ export function ProductEditor({
           seoTitle: readOptionalString(String(form.get("seoTitle") ?? "")),
           seoDescription: readOptionalString(String(form.get("seoDescription") ?? "")),
           searchKeywords: parseMultiline(searchTermsText),
-          sizeOptions: product.sizeOptions ?? [],
-          colorOptions: product.colorOptions ?? [],
+          sizeOptions,
+          colorOptions,
           keyFeatures: product.keyFeatures ?? [],
           howItWorks: product.howItWorks ?? [],
           specifications: product.specifications ?? [],
@@ -557,31 +567,81 @@ export function ProductEditor({
         <EditorCard title="Variants" description="Structured size and color options. A price-pending size is visible for QA but blocked from checkout.">
           <div className="grid gap-4">
             <div>
-              <p className="text-sm font-black text-ink">Size options</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-black text-ink">Size options</p>
+                <AdminButton type="button" variant="outline" onClick={() => setSizeOptions((current) => [...current, createSizeOption(current.length)])}>
+                  Add size
+                </AdminButton>
+              </div>
               <div className="mt-3 grid gap-3">
-                {(product.sizeOptions ?? []).map((size) => (
-                  <div key={size.code} className="grid gap-2 rounded-md border border-line bg-white p-3 text-sm md:grid-cols-4">
-                    <InfoPill label="Label" value={size.label} />
-                    <InfoPill label="Code" value={size.code} />
-                    <InfoPill label="Front" value={`${size.frontWidthMm} x ${size.frontHeightMm} mm / ${size.frontWidthIn.toFixed(2)} x ${size.frontHeightIn.toFixed(2)} in`} />
-                    <InfoPill label="Base" value={`${size.baseDepthMm} mm / ${size.baseDepthIn.toFixed(2)} in`} />
-                    <InfoPill label="SKU suffix" value={size.skuSuffix} />
-                    <InfoPill label="Price adjustment" value={size.priceAdjustmentCents === null ? "Pending" : formatPrice(size.priceAdjustmentCents)} />
-                    <InfoPill label="Default" value={size.isDefault ? "Yes" : "No"} />
-                    <InfoPill label="Active" value={size.isActive ? "Yes" : "No"} />
+                {sizeOptions.map((size, index) => (
+                  <div key={`${size.code}-${index}`} className="grid gap-3 rounded-md border border-line bg-white p-3 text-sm">
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <VariantTextInput label="Label" value={size.label} onChange={(value) => updateSizeOption(index, { label: value })} />
+                      <VariantTextInput label="Code" value={size.code} onChange={(value) => updateSizeOption(index, { code: slugify(value) })} />
+                      <VariantTextInput label="SKU suffix" value={size.skuSuffix} onChange={(value) => updateSizeOption(index, { skuSuffix: formatSku(value) })} />
+                      <VariantPriceInput
+                        label="Price adjustment"
+                        value={size.priceAdjustmentCents}
+                        onChange={(value) => updateSizeOption(index, { priceAdjustmentCents: value })}
+                      />
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <VariantNumberInput label="Front width mm" value={size.frontWidthMm} onChange={(value) => updateSizeOption(index, { frontWidthMm: value })} />
+                      <VariantNumberInput label="Front height mm" value={size.frontHeightMm} onChange={(value) => updateSizeOption(index, { frontHeightMm: value })} />
+                      <VariantNumberInput label="Front width in" value={size.frontWidthIn} step="0.01" onChange={(value) => updateSizeOption(index, { frontWidthIn: value })} />
+                      <VariantNumberInput label="Front height in" value={size.frontHeightIn} step="0.01" onChange={(value) => updateSizeOption(index, { frontHeightIn: value })} />
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <VariantNumberInput label="Base depth mm" value={size.baseDepthMm} onChange={(value) => updateSizeOption(index, { baseDepthMm: value })} />
+                      <VariantNumberInput label="Base depth in" value={size.baseDepthIn} step="0.01" onChange={(value) => updateSizeOption(index, { baseDepthIn: value })} />
+                      <VariantBooleanSelect label="Active" value={size.isActive} onChange={(value) => updateSizeOption(index, { isActive: value })} />
+                      <VariantBooleanSelect
+                        label="Default"
+                        value={size.isDefault}
+                        onChange={(value) =>
+                          setSizeOptions((current) => current.map((item, itemIndex) => ({ ...item, isDefault: itemIndex === index ? value : value ? false : item.isDefault })))
+                        }
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <AdminButton type="button" variant="danger" onClick={() => setSizeOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                        Remove size
+                      </AdminButton>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
             <div>
-              <p className="text-sm font-black text-ink">Color options</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-black text-ink">Color options</p>
+                <AdminButton type="button" variant="outline" onClick={() => setColorOptions((current) => [...current, createColorOption(current.length)])}>
+                  Add color
+                </AdminButton>
+              </div>
               <div className="mt-3 grid gap-3">
-                {(product.colorOptions ?? []).map((color) => (
-                  <div key={color.code} className="grid gap-2 rounded-md border border-line bg-white p-3 text-sm md:grid-cols-4">
-                    <InfoPill label="Label" value={color.label} />
-                    <InfoPill label="Code" value={color.code} />
-                    <InfoPill label="SKU suffix" value={color.skuSuffix} />
-                    <InfoPill label="Default" value={color.isDefault ? "Yes" : "No"} />
+                {colorOptions.map((color, index) => (
+                  <div key={`${color.code}-${index}`} className="grid gap-3 rounded-md border border-line bg-white p-3 text-sm">
+                    <div className="grid gap-3 md:grid-cols-5">
+                      <VariantTextInput label="Label" value={color.label} onChange={(value) => updateColorOption(index, { label: value })} />
+                      <VariantTextInput label="Code" value={color.code} onChange={(value) => updateColorOption(index, { code: slugify(value) })} />
+                      <VariantTextInput label="SKU suffix" value={color.skuSuffix} onChange={(value) => updateColorOption(index, { skuSuffix: formatSku(value) })} />
+                      <VariantPriceInput label="Price adjustment" value={color.priceAdjustmentCents ?? 0} onChange={(value) => updateColorOption(index, { priceAdjustmentCents: value ?? 0 })} allowPending={false} />
+                      <VariantBooleanSelect label="Active" value={color.isActive} onChange={(value) => updateColorOption(index, { isActive: value })} />
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <VariantBooleanSelect
+                        label="Default"
+                        value={color.isDefault}
+                        onChange={(value) =>
+                          setColorOptions((current) => current.map((item, itemIndex) => ({ ...item, isDefault: itemIndex === index ? value : value ? false : item.isDefault })))
+                        }
+                      />
+                      <AdminButton type="button" variant="danger" onClick={() => setColorOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                        Remove color
+                      </AdminButton>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1491,6 +1551,107 @@ function StructuredPreview({ title, rows }: { title: string; rows: [string, stri
       </div>
     </div>
   );
+}
+
+function VariantTextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-ink">
+      {label}
+      <AdminInput value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function VariantNumberInput({
+  label,
+  value,
+  step = "1",
+  onChange
+}: {
+  label: string;
+  value: number;
+  step?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-ink">
+      {label}
+      <AdminInput
+        min="0"
+        step={step}
+        type="number"
+        value={String(value)}
+        onChange={(event) => onChange(Number(event.target.value) || 0)}
+      />
+    </label>
+  );
+}
+
+function VariantPriceInput({
+  label,
+  value,
+  allowPending = true,
+  onChange
+}: {
+  label: string;
+  value: number | null;
+  allowPending?: boolean;
+  onChange: (value: number | null) => void;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-ink">
+      {label}
+      <AdminInput
+        inputMode="numeric"
+        placeholder={allowPending ? "Pending" : "0"}
+        value={value === null ? "" : String(value)}
+        onChange={(event) => {
+          const trimmed = event.target.value.trim();
+          onChange(trimmed === "" && allowPending ? null : Math.max(0, Math.round(Number(trimmed) || 0)));
+        }}
+      />
+    </label>
+  );
+}
+
+function VariantBooleanSelect({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-ink">
+      {label}
+      <AdminSelect value={value ? "true" : "false"} onChange={(event) => onChange(event.target.value === "true")}>
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </AdminSelect>
+    </label>
+  );
+}
+
+function createSizeOption(index: number): ProductSizeOption {
+  return {
+    code: `size-${index + 1}`,
+    label: `Size ${index + 1}`,
+    frontWidthMm: 1,
+    frontHeightMm: 1,
+    frontWidthIn: 0.01,
+    frontHeightIn: 0.01,
+    baseDepthMm: 1,
+    baseDepthIn: 0.01,
+    skuSuffix: `S${index + 1}`,
+    priceAdjustmentCents: null,
+    isDefault: index === 0,
+    isActive: false
+  };
+}
+
+function createColorOption(index: number): ProductColorOption {
+  return {
+    code: `color-${index + 1}`,
+    label: `Color ${index + 1}`,
+    skuSuffix: `C${index + 1}`,
+    priceAdjustmentCents: 0,
+    isDefault: index === 0,
+    isActive: false
+  };
 }
 
 function InfoPill({ label, value }: { label: string; value: string }) {

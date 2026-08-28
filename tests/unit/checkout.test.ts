@@ -26,6 +26,47 @@ const configuredStandardItem = {
   }
 };
 
+const productsWithBackendGoogleVariants = migratedProducts.map((product): MigratedProduct => {
+  if (product.slug !== "google-review-stand") {
+    return product;
+  }
+
+  return {
+    ...product,
+    sizeOptions: [
+      {
+        code: "regular",
+        label: "Standard",
+        frontWidthMm: 108,
+        frontHeightMm: 165,
+        frontWidthIn: 4.25,
+        frontHeightIn: 6.5,
+        baseDepthMm: 50,
+        baseDepthIn: 1.97,
+        skuSuffix: "REG",
+        priceAdjustmentCents: 0,
+        isDefault: true,
+        isActive: true
+      },
+      {
+        code: "a4",
+        label: "Large - A4",
+        frontWidthMm: 210,
+        frontHeightMm: 297,
+        frontWidthIn: 8.27,
+        frontHeightIn: 11.69,
+        baseDepthMm: 80,
+        baseDepthIn: 3.15,
+        skuSuffix: "A4",
+        priceAdjustmentCents: null,
+        isDefault: false,
+        isActive: true
+      }
+    ],
+    colorOptions: [{ code: "white", label: "White", skuSuffix: "WHT", priceAdjustmentCents: 0, isDefault: true, isActive: true }]
+  };
+});
+
 describe("Stripe checkout helpers", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -65,7 +106,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("maps Standard Direct QR and NFC targets to the customer destination URL", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -114,7 +155,7 @@ describe("Stripe checkout helpers", () => {
             }
           }
         ],
-        migratedProducts
+        productsWithBackendGoogleVariants
       )
     ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
@@ -670,7 +711,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("builds Stripe line items from validated cart rows", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
