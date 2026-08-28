@@ -29,8 +29,8 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
 
   return (
     <div className="lg:sticky lg:top-24">
-      <div className="tr-premium-surface relative aspect-[4/5] max-h-[680px] bg-white">
-        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-3 mix-blend-multiply sm:p-5" />
+      <div className="tr-premium-surface relative mx-auto aspect-[4/4.35] max-h-[520px] w-full max-w-[520px] bg-white">
+        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-4 mix-blend-multiply sm:p-6" />
       </div>
     </div>
   );
