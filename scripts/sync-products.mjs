@@ -35,6 +35,7 @@ export const FIELD_OWNERSHIP_POLICY = {
     "requires_account",
     "requires_subscription",
     "requires_landing_page",
+    "supports_multilink",
     "supported_destinations",
     "activation_type",
     "included_service_label",
@@ -71,11 +72,13 @@ export function parseSyncProductArgs(argv) {
   const json = argv.includes("--json");
   const help = argv.includes("--help") || argv.includes("-h");
   const allowWrites = apply && argv.includes("--confirm-fill-empty-assets");
+  const allowProductSync = apply && argv.includes("--confirm-product-sync");
 
   return {
-    mode: allowWrites ? "safe-fill-empty-assets" : "dry-run",
+    mode: allowProductSync ? "product-sync" : allowWrites ? "safe-fill-empty-assets" : "dry-run",
     apply,
     allowWrites,
+    allowProductSync,
     help,
     json
   };
@@ -279,8 +282,10 @@ export function formatReconciliationPlan(plan) {
 async function main() {
   const args = parseSyncProductArgs(process.argv.slice(2));
   if (args.help) {
-    console.log("Usage: npm run sync:products -- [--json] [--apply --confirm-fill-empty-assets]");
-    console.log("Default mode is a read-only reconciliation dry-run. Safe apply only fills empty asset URL fields.");
+    console.log("Usage: npm run sync:products -- [--json] [--apply --confirm-fill-empty-assets|--confirm-product-sync]");
+    console.log("Default mode is a read-only reconciliation dry-run.");
+    console.log("--confirm-fill-empty-assets only fills empty asset URL fields.");
+    console.log("--confirm-product-sync creates missing approved products, updates catalog-owned fields, options, business-use links, and archives retired storefront products.");
     return;
   }
 
@@ -298,8 +303,17 @@ async function main() {
     return;
   }
 
+  if (args.allowProductSync) {
+    const result = await backend.applyProductCatalogSync({
+      approvedProducts,
+      productOptionsBySlug: new Map(approvedProducts.map((product) => [product.slug, getOptionsForProduct(product)]))
+    });
+    console.log(`Product catalog sync applied: ${JSON.stringify(result)}`);
+    return;
+  }
+
   if (!args.allowWrites) {
-    throw new Error("Refusing to write. Re-run with --apply --confirm-fill-empty-assets after architect approval.");
+    throw new Error("Refusing to write. Re-run with --apply --confirm-fill-empty-assets or --apply --confirm-product-sync after architect approval.");
   }
 
   await backend.applyFillIfEmptyAssetUpdates(plan.fillIfEmptyAssetUpdates);
@@ -347,6 +361,41 @@ async function createNeonBackend(connectionString) {
           [update.slug, update.value]
         );
       }
+    },
+    async applyProductCatalogSync({ approvedProducts, productOptionsBySlug }) {
+      const existingProducts = await sql.query("select slug from products", []);
+      const existingSlugs = new Set(existingProducts.map((row) => readString(row.slug)).filter(Boolean));
+      let insertedProducts = 0;
+      let updatedProducts = 0;
+      let archivedProducts = 0;
+      let replacedOptions = 0;
+      let replacedBusinessUses = 0;
+
+      for (const product of approvedProducts) {
+        const isNew = !existingSlugs.has(product.slug);
+        if (isNew) {
+          await insertProductWithNeon(sql, product);
+          insertedProducts += 1;
+        } else {
+          await updateProductSystemFieldsWithNeon(sql, product);
+          updatedProducts += 1;
+        }
+        replacedOptions += await replaceProductOptionsWithNeon(sql, product.slug, productOptionsBySlug.get(product.slug) ?? []);
+        replacedBusinessUses += await replaceProductBusinessUsesWithNeon(sql, product.slug, product.businessUseSlugs ?? []);
+      }
+
+      const archiveResult = await sql.query(
+        `
+          update products
+          set status = 'archived', is_active = false, updated_at = now()
+          where slug = 'multi-link-stand' and (status <> 'archived' or is_active is not false)
+          returning slug
+        `,
+        []
+      );
+      archivedProducts = archiveResult.length;
+
+      return { insertedProducts, updatedProducts, archivedProducts, replacedOptions, replacedBusinessUses };
     }
   };
 }
@@ -392,6 +441,9 @@ async function createSupabaseBackend(supabaseUrl, serviceKey) {
           throw new Error(`products:${update.slug}:${update.field}: ${error.message}`);
         }
       }
+    },
+    async applyProductCatalogSync() {
+      throw new Error("Product catalog sync is only implemented for direct Neon/DATABASE_URL connections.");
     }
   };
 }
@@ -418,6 +470,7 @@ function canonicalProductValue(product, field) {
     requires_account: product.requiresAccount,
     requires_subscription: product.requiresSubscription,
     requires_landing_page: product.requiresLandingPage,
+    supports_multilink: product.supportsMultiLink ?? false,
     supported_destinations: product.supportedDestinations ?? [],
     activation_type: product.activationType,
     included_service_label: product.includedServiceLabel,
@@ -436,6 +489,202 @@ function canonicalProductValue(product, field) {
 
   return normalizeComparable(values[field]);
 }
+
+function productDatabaseRow(product, { includeAdminOwnedFields }) {
+  const systemFields = {
+    slug: product.slug,
+    category_slug: product.categorySlug,
+    stand_type_slug: product.standTypeSlug ?? null,
+    primary_platform_slug: product.primaryPlatformSlug ?? null,
+    destination_type: product.destinationType ?? null,
+    is_special_solution: product.isSpecialSolution ?? false,
+    product_kind: product.productKind ?? "normal_direct",
+    product_type: product.productType,
+    service_mode: product.serviceMode,
+    checkout_mode: product.checkoutMode,
+    requires_account: product.requiresAccount,
+    requires_subscription: product.requiresSubscription,
+    requires_landing_page: product.requiresLandingPage,
+    supports_multilink: product.supportsMultiLink ?? false,
+    supported_destinations: product.supportedDestinations ?? [],
+    activation_type: product.activationType,
+    included_service_label: product.includedServiceLabel,
+    format: product.format,
+    customization_options: product.customizationOptions ?? [],
+    allows_logo_upload: product.allowsLogoUpload,
+    allows_custom_design: product.allowsCustomDesign,
+    design_mode: product.designMode,
+    default_cta_text: product.defaultCtaText ?? null,
+    cta_editable: product.ctaEditable ?? true,
+    size_options: product.sizeOptions ?? [],
+    color_options: product.colorOptions ?? [],
+    key_features: product.keyFeatures ?? [],
+    how_it_works: product.howItWorks ?? [],
+    specifications: product.specifications ?? [],
+    included_items: product.includedItems ?? [],
+    product_faqs: product.productFaqs ?? [],
+    is_active: product.isActive,
+    updated_at: new Date().toISOString()
+  };
+
+  if (!includeAdminOwnedFields) {
+    return systemFields;
+  }
+
+  return {
+    ...systemFields,
+    title: product.title,
+    sku: product.sku,
+    status: product.status ?? "active",
+    base_price_cents: product.basePriceCents,
+    sale_price_cents: product.salePriceCents ?? null,
+    stock_status: product.stockStatus,
+    short_description: product.shortDescription,
+    description: product.description,
+    display_text: product.displayText ?? null,
+    images: product.images ?? [],
+    standard_angled_image_url: product.assetSet?.standardAngledImageUrl ?? null,
+    branded_angled_image_url: product.assetSet?.brandedAngledImageUrl ?? null,
+    multilink_angled_image_url: product.assetSet?.multiLinkAngledImageUrl ?? null,
+    standard_front_template_url: product.assetSet?.standardFrontTemplateUrl ?? null,
+    branded_front_template_url: product.assetSet?.brandedFrontTemplateUrl ?? null,
+    multilink_front_template_url: product.assetSet?.multiLinkFrontTemplateUrl ?? null,
+    center_asset_url: product.assetSet?.centerAssetUrl ?? null,
+    landing_page_preview_config: product.assetSet?.landingPagePreviewConfig ?? {},
+    asset_readiness_status: product.assetReadinessStatus ?? "ready",
+    seo_title: product.seoTitle ?? null,
+    seo_description: product.seoDescription ?? null,
+    search_keywords: product.searchKeywords ?? []
+  };
+}
+
+async function insertProductWithNeon(sql, product) {
+  const row = productDatabaseRow(product, { includeAdminOwnedFields: true });
+  const columns = Object.keys(row);
+  const params = columns.map((column) => prepareDatabaseParam(column, row[column]));
+  const placeholders = columns.map((column, index) => placeholderForColumn(column, index + 1));
+  const updateColumns = columns.filter((column) => column !== "slug");
+
+  await sql.query(
+    `
+      insert into products (${columns.join(", ")})
+      values (${placeholders.join(", ")})
+      on conflict (slug) do update set ${updateColumns.map((column) => `${column} = excluded.${column}`).join(", ")}
+    `,
+    params
+  );
+}
+
+async function updateProductSystemFieldsWithNeon(sql, product) {
+  const row = productDatabaseRow(product, { includeAdminOwnedFields: false });
+  const columns = Object.keys(row).filter((column) => column !== "slug");
+  const params = columns.map((column) => prepareDatabaseParam(column, row[column]));
+  params.push(product.slug);
+
+  await sql.query(
+    `
+      update products
+      set ${columns.map((column, index) => `${column} = ${placeholderForColumn(column, index + 1)}`).join(", ")}
+      where slug = $${params.length}
+    `,
+    params
+  );
+}
+
+async function replaceProductOptionsWithNeon(sql, productSlug, options) {
+  await sql.query("delete from product_options where product_slug = $1", [productSlug]);
+  if (options.length === 0) {
+    return 0;
+  }
+
+  const rows = options.map((option) => ({
+    product_slug: productSlug,
+    option_code: option.optionCode,
+    title: option.title,
+    description: option.description,
+    price_cents: option.priceCents,
+    monthly_price_cents: option.monthlyPriceCents ?? null,
+    max_links: option.maxLinks ?? null,
+    requires_destination_url: option.requiresDestinationUrl,
+    has_qr: option.hasQr,
+    requires_logo: option.requiresLogo,
+    requires_business_name: option.requiresBusinessName,
+    requires_design_step: option.requiresDesignStep,
+    requires_front_proof: option.requiresFrontProof,
+    requires_subscription: option.requiresSubscription,
+    account_required: option.accountRequired,
+    supports_reorderable_links: option.supportsReorderableLinks,
+    supports_link_visibility: option.supportsLinkVisibility,
+    landing_page_url_pattern: option.landingPageUrlPattern ?? null,
+    footer_label: option.footerLabel ?? null,
+    is_active: option.isActive,
+    sort_order: option.sortOrder
+  }));
+
+  await insertRowsWithNeon(sql, "product_options", rows);
+  return rows.length;
+}
+
+async function replaceProductBusinessUsesWithNeon(sql, productSlug, businessUseSlugs) {
+  await sql.query("delete from product_business_uses where product_slug = $1", [productSlug]);
+  const rows = Array.from(new Set(businessUseSlugs)).map((businessUseSlug, index) => ({
+    product_slug: productSlug,
+    business_use_slug: businessUseSlug,
+    sort_order: (index + 1) * 10
+  }));
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  await insertRowsWithNeon(sql, "product_business_uses", rows);
+  return rows.length;
+}
+
+async function insertRowsWithNeon(sql, table, rows) {
+  const columns = Object.keys(rows[0]);
+  const params = [];
+  const groups = rows.map((row) => {
+    const placeholders = columns.map((column) => {
+      params.push(prepareDatabaseParam(column, row[column]));
+      return placeholderForColumn(column, params.length);
+    });
+    return `(${placeholders.join(", ")})`;
+  });
+  await sql.query(`insert into ${table} (${columns.join(", ")}) values ${groups.join(", ")}`, params);
+}
+
+function prepareDatabaseParam(column, value) {
+  if (jsonbSyncColumns.has(column)) {
+    return JSON.stringify(value ?? null);
+  }
+  return value;
+}
+
+function placeholderForColumn(column, index) {
+  if (jsonbSyncColumns.has(column)) {
+    return `$${index}::jsonb`;
+  }
+
+  if (textArraySyncColumns.has(column)) {
+    return `$${index}::text[]`;
+  }
+
+  return `$${index}`;
+}
+
+const jsonbSyncColumns = new Set([
+  "images",
+  "landing_page_preview_config",
+  "size_options",
+  "color_options",
+  "key_features",
+  "how_it_works",
+  "specifications",
+  "included_items",
+  "product_faqs"
+]);
+
+const textArraySyncColumns = new Set(["supported_destinations", "customization_options", "search_keywords"]);
 
 function getOptionsForProduct(product) {
   return product.purchaseOptions ?? getDefaultOptionsForProductKind(product.productKind ?? "normal_direct");

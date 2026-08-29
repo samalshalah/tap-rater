@@ -43,6 +43,10 @@ set
   updated_at = now()
 where slug = 'website-link-stands';
 
+delete from product_options where product_slug = 'multi-link-stand';
+delete from product_business_uses where product_slug = 'multi-link-stand';
+delete from product_service_addons where product_slug = 'multi-link-stand';
+
 update products
 set
   slug = 'visit-our-website-stand',
