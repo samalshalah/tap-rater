@@ -259,7 +259,7 @@ create table if not exists products (
   primary_platform_slug text,
   destination_type text,
   is_special_solution boolean not null default false,
-  product_kind text not null default 'normal_direct' check (product_kind in ('normal_direct', 'custom_direct', 'hosted_multilink', 'bundle')),
+  product_kind text not null default 'normal_direct' check (product_kind in ('normal_direct', 'custom_direct', 'bundle')),
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
   base_price_cents integer not null check (base_price_cents >= 0),
   sale_price_cents integer check (sale_price_cents >= 0),
@@ -363,7 +363,7 @@ begin
   update products set service_mode = 'hosted_landing_page' where service_mode = 'premium_landing_page';
   alter table products add constraint products_service_mode_check check (service_mode in ('basic_redirect', 'managed_redirect', 'hosted_landing_page', 'multi_location_platform'));
   alter table products add constraint products_format_check check (format in ('stand', 'plate', 'bundle', 'platform'));
-  alter table products add constraint products_product_kind_check check (product_kind in ('normal_direct', 'custom_direct', 'hosted_multilink', 'bundle'));
+  alter table products add constraint products_product_kind_check check (product_kind in ('normal_direct', 'custom_direct', 'bundle'));
   alter table products add constraint products_status_check check (status in ('draft', 'active', 'archived'));
   alter table products add constraint products_asset_readiness_status_check check (asset_readiness_status in ('draft_missing_assets', 'ready', 'blocked'));
   alter table products add constraint products_destination_type_check check (

@@ -3,7 +3,7 @@ import { z } from "zod";
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
 const productFormats = ["stand", "plate", "bundle", "platform"] as const;
 const productStatuses = ["draft", "active", "archived"] as const;
-const productKinds = ["normal_direct", "custom_direct", "hosted_multilink", "bundle"] as const;
+const productKinds = ["normal_direct", "custom_direct", "bundle"] as const;
 const destinationTypes = [
   "review",
   "review_social",

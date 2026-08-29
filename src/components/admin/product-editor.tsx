@@ -61,7 +61,7 @@ type MediaUploadRole =
   | "center_asset";
 
 const normalOptionCodes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
-const hostedOptionCodes: ProductOptionCode[] = ["hosted_multilink"];
+type OperationalProductKind = Exclude<ProductKind, "hosted_multilink">;
 
 export function ProductEditor({
   product,
@@ -72,7 +72,7 @@ export function ProductEditor({
   productOptions,
   mode
 }: ProductEditorProps) {
-  const initialKind = product.productKind ?? inferProductKind(product);
+  const initialKind = normalizeOperationalProductKind(product.productKind ?? inferProductKind(product));
   const [status, setStatus] = useState<SaveStatus>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [title, setTitle] = useState(product.title);
@@ -80,12 +80,12 @@ export function ProductEditor({
   const [slugEdited, setSlugEdited] = useState(mode === "edit" && Boolean(product.slug));
   const [sku, setSku] = useState(product.sku || generateProductSku(product.title));
   const [skuEdited, setSkuEdited] = useState(mode === "edit" && Boolean(product.sku));
-  const [productKind, setProductKind] = useState<ProductKind>(initialKind);
+  const [productKind, setProductKind] = useState<OperationalProductKind>(initialKind);
   const [standTypeSlug, setStandTypeSlug] = useState(product.standTypeSlug ?? standTypes[0]?.slug ?? "");
   const [primaryPlatformSlug, setPrimaryPlatformSlug] = useState(product.primaryPlatformSlug ?? "custom-url");
   const [destinationType, setDestinationType] = useState(product.destinationType ?? selectedPlatformDestinationType(platforms, primaryPlatformSlug));
   const [businessUseSlugs, setBusinessUseSlugs] = useState<string[]>(product.businessUseSlugs ?? []);
-  const [isSpecialSolution, setIsSpecialSolution] = useState(product.isSpecialSolution ?? productKind === "hosted_multilink");
+  const [isSpecialSolution, setIsSpecialSolution] = useState(product.isSpecialSolution ?? false);
   const [supportsMultiLink, setSupportsMultiLink] = useState(product.supportsMultiLink ?? false);
   const [publishStatus, setPublishStatus] = useState(product.status ?? (product.isActive ? "active" : "draft"));
   const [assetSet, setAssetSet] = useState<AssetSetState>(() => ({
@@ -110,10 +110,9 @@ export function ProductEditor({
   const [sizeOptions, setSizeOptions] = useState<ProductSizeOption[]>(() => product.sizeOptions ?? []);
   const [colorOptions, setColorOptions] = useState<ProductColorOption[]>(() => product.colorOptions ?? []);
 
-  const isHostedProduct = productKind === "hosted_multilink";
   const visibleOptions = useMemo(
-    () => optionStates.filter((option) => (isHostedProduct ? hostedOptionCodes : normalOptionCodes).includes(option.optionCode)),
-    [isHostedProduct, optionStates]
+    () => optionStates.filter((option) => normalOptionCodes.includes(option.optionCode)),
+    [optionStates]
   );
   const activeVisibleOptions = visibleOptions.filter((option) => option.isActive);
   const effectiveAssetSet = useMemo(
@@ -167,14 +166,14 @@ export function ProductEditor({
         primaryPlatformSlug,
         destinationType,
         businessUseSlugs,
-        isSpecialSolution: isSpecialSolution || productKind === "hosted_multilink",
+        isSpecialSolution,
         productKind,
         supportsMultiLink,
         basePriceCents,
         salePriceCents: undefined,
-        requiresAccount: productKind === "hosted_multilink",
-        requiresSubscription: productKind === "hosted_multilink",
-        requiresLandingPage: productKind === "hosted_multilink",
+        requiresAccount: false,
+        requiresSubscription: false,
+        requiresLandingPage: false,
         supportedDestinations: getSupportedDestinations(primaryPlatformSlug),
         seoTitle: undefined,
         seoDescription: undefined
@@ -309,13 +308,8 @@ export function ProductEditor({
     setColorOptions((current) => current.map((color, itemIndex) => (itemIndex === index ? { ...color, ...patch } : color)));
   }
 
-  function updateProductKind(nextProductKind: ProductKind) {
+  function updateProductKind(nextProductKind: OperationalProductKind) {
     setProductKind(nextProductKind);
-    if (nextProductKind === "hosted_multilink") {
-      setIsSpecialSolution(true);
-      setDestinationType("custom");
-      setPrimaryPlatformSlug("custom-url");
-    }
   }
 
   function toggleBusinessUse(slug: string) {
@@ -354,7 +348,7 @@ export function ProductEditor({
           primaryPlatformSlug,
           destinationType,
           businessUseSlugs,
-          isSpecialSolution: isSpecialSolution || productKind === "hosted_multilink",
+          isSpecialSolution,
           productKind,
           status: finalStatus,
           basePriceCents,
@@ -362,18 +356,18 @@ export function ProductEditor({
           stockStatus: form.get("stockStatus"),
           shortDescription,
           description,
-          productType: productKind === "hosted_multilink" ? "platform_landing_page" : "physical_redirect",
-          serviceMode: productKind === "hosted_multilink" ? "hosted_landing_page" : "basic_redirect",
-          checkoutMode: productKind === "hosted_multilink" ? "subscription" : "buy_now",
-          requiresAccount: productKind === "hosted_multilink",
-          requiresSubscription: productKind === "hosted_multilink",
-          requiresLandingPage: productKind === "hosted_multilink",
-          supportsMultiLink: productKind === "hosted_multilink" ? false : supportsMultiLink,
+          productType: "physical_redirect",
+          serviceMode: "basic_redirect",
+          checkoutMode: "buy_now",
+          requiresAccount: false,
+          requiresSubscription: false,
+          requiresLandingPage: false,
+          supportsMultiLink,
           supportedDestinations,
-          activationType: productKind === "hosted_multilink" ? "premium_hosted_activation" : "free_basic_activation",
-          includedServiceLabel: productKind === "hosted_multilink" ? "Hosted Tap Rater page" : "Free basic activation",
+          activationType: "free_basic_activation",
+          includedServiceLabel: "Free basic activation",
           format: "stand",
-          customizationOptions: productKind === "hosted_multilink" ? ["standard_design", "add_logo"] : ["standard_design", "add_logo"],
+          customizationOptions: ["standard_design", "add_logo"],
           allowsLogoUpload: finalActiveOptions.some((option) => option.requiresLogo),
           allowsCustomDesign: false,
           designMode: finalActiveOptions.some((option) => option.requiresLogo) ? "logo" : "standard",
@@ -565,8 +559,28 @@ export function ProductEditor({
           <div className="grid gap-2 text-sm text-muted">
             <RuleRow label="Standard Direct" value="NFC direct. No logo zone, business name zone, QR zone, or design step." />
             <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and front proof required." />
-            <RuleRow label="Hosted Multi-Link" value="Logo, business name, QR, hosted page preview, account, and subscription readiness required." />
+            <RuleRow label="Multi-Link add-on" value="Optional hosted page capability controlled in Services & Add-ons. It is not an operational product type." />
           </div>
+        </EditorCard>
+
+        <EditorCard title="Services & Add-ons" description="Controls optional service capabilities available for this physical product.">
+          <label className="flex items-start gap-4 rounded-lg border border-brand/40 bg-brand/5 p-4 text-sm text-ink">
+            <input
+              type="checkbox"
+              className="mt-1 h-5 w-5 accent-brand"
+              checked={supportsMultiLink}
+              onChange={(event) => setSupportsMultiLink(event.target.checked)}
+            />
+            <span className="grid gap-2">
+              <span className="text-base font-black">Supports Multi-Link</span>
+              <span className="leading-6 text-muted">
+                When enabled, this product shows the Direct / Multi-Link link experience selector on the product page and appears on /multi-link.
+              </span>
+              <span className="text-xs font-bold uppercase tracking-[0.04em] text-brand">
+                {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/month service add-on · {hostedMultiLinkServiceAddon.maxLinks} editable links
+              </span>
+            </span>
+          </label>
         </EditorCard>
 
         <EditorCard title="Variants" description="Structured size and color options. A price-pending size is visible for QA but blocked from checkout.">
@@ -753,28 +767,12 @@ export function ProductEditor({
             Operational product type
             <AdminSelect
               value={productKind}
-              onChange={(event) => updateProductKind(event.target.value as ProductKind)}
+              onChange={(event) => updateProductKind(event.target.value as OperationalProductKind)}
             >
               <option value="normal_direct">Direct stand</option>
               <option value="custom_direct">Custom stand product</option>
-              <option value="hosted_multilink">Hosted Multi-Link</option>
               <option value="bundle">Bundle</option>
             </AdminSelect>
-          </label>
-          <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm text-ink">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 accent-brand"
-              checked={supportsMultiLink}
-              disabled={productKind === "hosted_multilink"}
-              onChange={(event) => setSupportsMultiLink(event.target.checked)}
-            />
-            <span>
-              <span className="block font-semibold">Supports Multi-Link</span>
-              <span className="mt-1 block text-xs leading-5 text-muted">
-                {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/month and {hostedMultiLinkServiceAddon.maxLinks} links are locked by the global service definition.
-              </span>
-            </span>
           </label>
           <label className="grid gap-2 text-sm font-semibold text-ink">
             Stand Type
@@ -885,7 +883,7 @@ export function ProductEditor({
           <ul className="grid gap-2 text-xs leading-5 text-muted">
             <li>Standard Direct includes NFC pointed to the customer-provided URL.</li>
             <li>Branded + QR requires logo collection, business name, QR generation, front proof, and a branded front template before publishing.</li>
-            <li>Hosted Multi-Link requires account, hosted page, subscription readiness, and landing page preview.</li>
+            <li>Multi-Link is an add-on capability. Enable it in Services & Add-ons for compatible physical products.</li>
           </ul>
         </SidebarCard>
 
@@ -1726,6 +1724,10 @@ function buildInitialOptions(productKind: ProductKind, productOptions: ProductOp
     ...(templateMap.get(code) ?? getDefaultOptionsForProductKind(code === "hosted_multilink" ? "hosted_multilink" : "normal_direct").find((option) => option.optionCode === code)!),
     ...(savedOptionMap.get(code) ?? {})
   }));
+}
+
+function normalizeOperationalProductKind(productKind: ProductKind): OperationalProductKind {
+  return productKind === "hosted_multilink" ? "normal_direct" : productKind;
 }
 
 function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: AssetSetState) {
