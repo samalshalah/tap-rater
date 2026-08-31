@@ -25,7 +25,7 @@ const generatedProductionArtwork = {
   widthIn: 4.26,
   heightIn: 6.4967,
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-27.3",
+  templateVersion: "2026-08-31.1",
   approvalSnapshotHash: "hash",
   baseTemplateContentHash: "base-template-hash",
   logoContentHash: "logo-hash",
@@ -182,7 +182,7 @@ describe("orders repository", () => {
     expect(items[0].setup?.productionArtwork).toMatchObject({
       status: "generated",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.3",
+      templateVersion: "2026-08-31.1",
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
     });

@@ -529,6 +529,7 @@ export const checkoutCartSchema = z.object({
             logoStorageKey: z.string().trim().max(600).optional(),
             originalLogoMediaUrl: z.string().trim().max(600).optional(),
             originalLogoStorageKey: z.string().trim().max(600).optional(),
+            designAssistanceRequested: z.boolean().optional(),
             logoBackgroundMode: z.string().trim().max(40).optional(),
             logoFitMode: z.string().trim().max(40).optional(),
             logoOffsetXPercent: z.number().int().min(-100).max(100).optional(),

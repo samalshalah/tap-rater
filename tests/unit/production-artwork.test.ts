@@ -179,6 +179,40 @@ describe("production artwork", () => {
     expect(item.setup?.qrTargetUrl).toBe("https://g.page/example/review");
   });
 
+  it("keeps design assistance orders in manual proof review instead of generating artwork", async () => {
+    const { storage, writes } = memoryStorage();
+    const item = await generateProductionArtworkForOrderLineItem(
+      {
+        orderReference: "cs_test_123",
+        lineItemIndex: 0,
+        item: {
+          ...brandedItem,
+          setup: {
+            ...brandedItem.setup,
+            designAssistanceRequested: true,
+            manualCollectionAcknowledged: true,
+            logoMediaUrl: undefined,
+            logoStorageKey: undefined,
+            proofApprovalSnapshot: undefined,
+            proofPreviewData: undefined
+          },
+          logoStatus: "manual_collection_required",
+          logoReference: null,
+          proofApproved: false,
+          productionStatus: "pending_manual_logo_and_proof",
+          manualProductionRequired: true
+        }
+      },
+      storage
+    );
+
+    expect(writes.size).toBe(0);
+    expect(item.productionStatus).toBe("pending_manual_logo_and_proof");
+    expect(item.manualProductionRequired).toBe(true);
+    expect(item.productionWarningCodes).toEqual(["pending_manual_proof", "do_not_print_until_manual_review"]);
+    expect(readProductionArtworkReference(item)).toBeUndefined();
+  });
+
   it("rejects stale or unapproved configurations with an operational failure state", async () => {
     const { storage } = memoryStorage();
     const item = await generateProductionArtworkForOrderLineItem(

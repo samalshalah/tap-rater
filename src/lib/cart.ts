@@ -49,6 +49,7 @@ export type CartItem = {
     logoStorageKey?: string;
     originalLogoMediaUrl?: string;
     originalLogoStorageKey?: string;
+    designAssistanceRequested?: boolean;
     logoBackgroundMode?: string;
     logoFitMode?: string;
     logoOffsetXPercent?: number;
@@ -253,6 +254,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.logoStorageKey ?? "",
     setup.originalLogoMediaUrl ?? "",
     setup.originalLogoStorageKey ?? "",
+    setup.designAssistanceRequested === true ? "design_assistance" : "",
     setup.logoBackgroundMode ?? "",
     setup.logoFitMode ?? "",
     setup.logoOffsetXPercent === undefined ? "" : String(setup.logoOffsetXPercent),
@@ -308,6 +310,7 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     logoStorageKey: readString(row.logoStorageKey),
     originalLogoMediaUrl: readString(row.originalLogoMediaUrl),
     originalLogoStorageKey: readString(row.originalLogoStorageKey),
+    designAssistanceRequested: row.designAssistanceRequested === true,
     logoBackgroundMode: readString(row.logoBackgroundMode),
     logoFitMode: readString(row.logoFitMode),
     logoOffsetXPercent: readInteger(row.logoOffsetXPercent),

@@ -122,7 +122,9 @@ export function CartTable({
                       {row.item.setup?.logoMediaUrl ||
                       row.item.setup?.logoStorageKey
                         ? "Uploaded"
-                        : "Missing"}
+                        : row.item.setup?.designAssistanceRequested
+                          ? "Tap Rater will prepare"
+                          : "Missing"}
                     </p>
                   ) : null}
                   {connectionLabel ? (
@@ -135,7 +137,9 @@ export function CartTable({
                       <strong className="text-ink">Front proof:</strong>{" "}
                       {row.item.setup?.proofApproved
                         ? "Approved"
-                        : "Approval required"}
+                        : row.item.setup?.designAssistanceRequested
+                          ? "Tap Rater will send proof"
+                          : "Approval required"}
                     </p>
                   ) : null}
                 </div>

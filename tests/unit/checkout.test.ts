@@ -299,6 +299,52 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
+  it("allows branded checkout with manual design assistance instead of uploaded logo", () => {
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            productSlug: "google-review-stand",
+            optionCode: "branded_qr_direct",
+            destinationUrl: "https://g.page/example/review",
+            businessName: "Bingo Tires",
+            generatedQrValue: "https://g.page/example/review",
+            qrTargetUrl: "https://g.page/example/review",
+            nfcTargetUrl: "https://g.page/example/review",
+            frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+            designAssistanceRequested: true,
+            designNotes: "Please use the logo from my website and remove the white background.",
+            manualCollectionAcknowledged: true,
+            proofApproved: false
+          }
+        }
+      ],
+      productsWithBrandedGoogleTemplate()
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.rows[0]).toMatchObject({
+      optionId: "branded_qr_direct",
+      logoRequired: true,
+      logoStatus: "manual_collection_required",
+      logoReference: null,
+      proofRequired: true,
+      proofApproved: false,
+      productionStatus: "pending_manual_logo_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: ["pending_manual_proof", "do_not_print_until_manual_review"]
+    });
+    expect(result.rows[0].setup).toMatchObject({
+      designAssistanceRequested: true,
+      manualCollectionAcknowledged: true,
+      designNotes: "Please use the logo from my website and remove the white background."
+    });
+  });
+
   it("rejects branded checkout when proof approval no longer matches the current setup", () => {
     const products = productsWithBrandedGoogleTemplate();
 

@@ -103,6 +103,17 @@ export async function generateProductionArtworkForOrderLineItem(
     return input.item;
   }
 
+  if (readSetupBoolean(input.item.setup, "designAssistanceRequested")) {
+    return {
+      ...input.item,
+      logoStatus: input.item.logoReference ? input.item.logoStatus ?? "uploaded" : "manual_collection_required",
+      proofApproved: false,
+      productionStatus: "pending_manual_logo_and_proof",
+      manualProductionRequired: true,
+      productionWarningCodes: mergeWarningCodes(input.item.productionWarningCodes, ["pending_manual_proof", "do_not_print_until_manual_review"])
+    };
+  }
+
   const template = getProductionArtworkTemplate(input.item);
   const generatedAt = new Date().toISOString();
 
@@ -455,6 +466,10 @@ function readSetupString(setup: OrderLineItem["setup"], key: string) {
 function readSetupNumber(setup: OrderLineItem["setup"], key: string) {
   const value = setup?.[key];
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readSetupBoolean(setup: OrderLineItem["setup"], key: string) {
+  return setup?.[key] === true;
 }
 
 function readSetupRecord(setup: OrderLineItem["setup"], key: string): Record<string, unknown> | undefined {

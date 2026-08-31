@@ -136,6 +136,8 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
         <Field label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link />
         <Field label="NFC target" value={summary.nfcTargetUrl ?? summary.destinationUrl} link />
         <Field label="Business name" value={summary.businessName} />
+        <Field label="Design assistance" value={readSetupBoolean(item.setup, "designAssistanceRequested") ? "Requested" : null} />
+        <Field label="Design notes" value={readSetupString(item.setup, "designNotes")} />
         <Field label="Logo" value={summary.logoReference ?? summary.logoMediaUrl} link={Boolean(summary.logoMediaUrl)} />
         <Field label="QR production value" value={summary.generatedQrValue} link />
         <Field label="Front template" value={summary.frontTemplateUrl} link />
@@ -164,6 +166,10 @@ function readNested(value: unknown, keys: string[]) {
     current = (current as Record<string, unknown>)[key];
   }
   return typeof current === "string" && current.trim() ? current : null;
+}
+
+function readSetupBoolean(setup: unknown, key: string) {
+  return Boolean(setup && typeof setup === "object" && (setup as Record<string, unknown>)[key] === true);
 }
 
 function readAddressObject(value: unknown) {

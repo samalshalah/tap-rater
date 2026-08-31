@@ -189,15 +189,19 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
           nfcOnly: false
         }
       : setup;
+    const manualDesignFlow = option.id === "branded_qr_direct" && rowSetup.designAssistanceRequested === true;
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? isApprovedProofCurrent(option, rowSetup) : rowSetup.proofApproved === true;
-    const manualProductionRequired = option.id === "branded_qr_direct" ? !proofApproved : false;
+    const manualProductionRequired = option.id === "branded_qr_direct" ? manualDesignFlow || !proofApproved : false;
     const productionStatus =
-      option.id === "branded_qr_direct"
+      manualDesignFlow
+        ? "pending_manual_logo_and_proof"
+        : option.id === "branded_qr_direct"
           ? "ready_for_direct_fulfillment"
           : "ready_for_direct_fulfillment";
     const logoReference = rowSetup.logoStorageKey ?? rowSetup.logoMediaUrl ?? null;
+    const productionWarningCodes: ManualProductionWarningCode[] = manualDesignFlow ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [];
 
     rows.push({
       productId: product.slug,
@@ -215,13 +219,13 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       shortDescription: product.shortDescription,
       setup: rowSetup,
       logoRequired,
-      logoStatus: logoRequired ? "uploaded" : "not_required",
+      logoStatus: logoRequired ? logoReference ? "uploaded" : "manual_collection_required" : "not_required",
       logoReference,
       proofRequired,
       proofApproved,
       productionStatus,
       manualProductionRequired,
-      productionWarningCodes: []
+      productionWarningCodes
     });
   }
 
@@ -381,6 +385,7 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     logoStorageKey: setup?.logoStorageKey?.trim(),
     originalLogoMediaUrl: setup?.originalLogoMediaUrl?.trim(),
     originalLogoStorageKey: setup?.originalLogoStorageKey?.trim(),
+    designAssistanceRequested: setup?.designAssistanceRequested === true,
     logoBackgroundMode: setup?.logoBackgroundMode?.trim(),
     logoFitMode: setup?.logoFitMode?.trim(),
     logoOffsetXPercent: setup?.logoOffsetXPercent,
@@ -447,7 +452,9 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
   }
 
   if (option.id === "branded_qr_direct") {
-    if (!setup.logoMediaUrl && !setup.logoStorageKey) {
+    const manualDesignFlow = setup.designAssistanceRequested === true;
+
+    if (!manualDesignFlow && !setup.logoMediaUrl && !setup.logoStorageKey) {
       return false;
     }
 
@@ -457,6 +464,10 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
 
     if (!setup.frontTemplateUrl) {
       return false;
+    }
+
+    if (manualDesignFlow) {
+      return setup.manualCollectionAcknowledged === true;
     }
 
     if (!setup.proofPreviewData || !isApprovedProofCurrent(option, setup)) {
