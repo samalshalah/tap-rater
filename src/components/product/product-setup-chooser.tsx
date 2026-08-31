@@ -674,62 +674,35 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
         {supportsMultiLink ? (
           <div className="grid gap-2">
-            <p className="text-sm font-black text-ink">Link Experience</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label
-                className={
-                  selectedLinkExperience === "direct"
-                    ? "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                    : "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
-                }
-              >
-                <input
-                  type="radio"
-                  name={`${product.slug}-link-experience`}
-                  checked={selectedLinkExperience === "direct"}
-                  onChange={() => {
-                    setSelectedLinkExperience("direct");
-                    setError("");
-                  }}
-                  className="mt-1 h-4 w-4 accent-brand"
-                />
-                <span className="min-w-0">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-base font-black leading-5 text-ink">Direct</span>
-                    <span className="shrink-0 text-sm font-black text-ink">Included</span>
-                  </span>
-                  <span className="mt-1 block text-sm font-semibold leading-5 text-ink">QR + NFC open one link you provide.</span>
-                  <span className="mt-1 block text-xs leading-5 text-muted">No monthly fee.</span>
+            <p className="text-sm font-black text-ink">Services & add-ons</p>
+            <label
+              className={
+                selectedLinkExperience === "multilink"
+                  ? "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
+                  : "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
+              }
+            >
+              <input
+                type="checkbox"
+                checked={selectedLinkExperience === "multilink"}
+                disabled={!hostedPurchasingEnabled}
+                onChange={(event) => {
+                  setSelectedLinkExperience(event.target.checked ? "multilink" : "direct");
+                  setError("");
+                }}
+                className="mt-1 h-4 w-4 accent-brand disabled:cursor-not-allowed"
+              />
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-start justify-between gap-2">
+                  <span className="text-base font-black leading-5 text-ink">Add Multi-Link hosted page</span>
+                  <span className="shrink-0 text-sm font-black text-ink">+{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo</span>
                 </span>
-              </label>
-
-              <label
-                className={
-                  selectedLinkExperience === "multilink"
-                    ? "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                    : "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
-                }
-              >
-                <input
-                  type="radio"
-                  name={`${product.slug}-link-experience`}
-                  checked={selectedLinkExperience === "multilink"}
-                  onChange={() => {
-                    setSelectedLinkExperience("multilink");
-                    setError("");
-                  }}
-                  className="mt-1 h-4 w-4 accent-brand"
-                />
-                <span className="min-w-0">
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-base font-black leading-5 text-ink">Multi-Link</span>
-                    <span className="shrink-0 text-sm font-black text-ink">+{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo</span>
-                  </span>
-                  <span className="mt-1 block text-sm font-semibold leading-5 text-ink">Editable Tap Rater page with up to 10 links.</span>
-                  <span className="mt-1 inline-flex rounded-full bg-white px-2 py-1 text-[11px] font-black uppercase text-brand">Editable anytime</span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">Optional add-on. QR + NFC open an editable Tap Rater page with up to 10 links.</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">
+                  Leave unchecked for direct setup with no monthly fee.
                 </span>
-              </label>
-            </div>
+              </span>
+            </label>
             {selectedLinkExperience === "multilink" ? (
               <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
                 Account included. Manage up to 10 links after purchase and change them anytime without replacing your stand.
