@@ -15,6 +15,8 @@ export type ProofApprovalSnapshot = {
   frontTemplateUrl?: string;
   centerAssetUrl?: string;
   ctaText?: string;
+  fontSizePercent?: number;
+  logoSizePercent?: number;
 };
 
 export function normalizeDirectDestinationUrl(value: string | undefined | null) {
@@ -55,7 +57,9 @@ export function buildProofApprovalSnapshot(input: ProofApprovalSnapshot): ProofA
     logoStorageKey: normalizeOptional(input.logoStorageKey),
     logoMediaUrl: normalizeOptional(input.logoMediaUrl),
     generatedQrValue: normalizeOptional(input.generatedQrValue),
-    frontTemplateUrl: normalizeOptional(input.frontTemplateUrl)
+    frontTemplateUrl: normalizeOptional(input.frontTemplateUrl),
+    fontSizePercent: normalizeOptionalPercent(input.fontSizePercent),
+    logoSizePercent: normalizeOptionalPercent(input.logoSizePercent)
   };
 }
 
@@ -83,6 +87,12 @@ function stableSnapshotString(snapshot: ProofApprovalSnapshot) {
     logoStorageKey: snapshot.logoStorageKey ?? "",
     logoMediaUrl: snapshot.logoMediaUrl ?? "",
     generatedQrValue: snapshot.generatedQrValue ?? "",
-    frontTemplateUrl: snapshot.frontTemplateUrl ?? ""
+    frontTemplateUrl: snapshot.frontTemplateUrl ?? "",
+    fontSizePercent: snapshot.fontSizePercent ?? "",
+    logoSizePercent: snapshot.logoSizePercent ?? ""
   });
+}
+
+function normalizeOptionalPercent(value: number | undefined | null) {
+  return typeof value === "number" && Number.isFinite(value) ? Math.round(value) : undefined;
 }

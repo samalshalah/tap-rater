@@ -79,6 +79,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
   const [selectedSizeCode, setSelectedSizeCode] = useState(() => getDefaultProductSize(product)?.code ?? "");
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
+  const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
+  const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [proofApproved, setProofApproved] = useState(false);
   const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
@@ -108,7 +110,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     : product.sku;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
-  const brandedFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const proofFrontTemplateUrl = product.assetSet?.standardFrontTemplateUrl ?? product.assetSet?.brandedFrontTemplateUrl ?? "";
   const setupOptions = options;
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
@@ -121,7 +123,9 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         logoStorageKey: logo?.storageKey,
         logoMediaUrl: logo?.mediaUrl,
         generatedQrValue,
-        frontTemplateUrl: brandedFrontTemplateUrl || undefined
+        frontTemplateUrl: proofFrontTemplateUrl || undefined,
+        fontSizePercent: proofFontSizePercent,
+        logoSizePercent: proofLogoSizePercent
       })
     : undefined;
   const isApprovedConfigurationCurrent =
@@ -351,7 +355,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
-    if (!brandedFrontTemplateUrl) {
+    if (!proofFrontTemplateUrl) {
       setError("Branded artwork is not configured for this product yet.");
       return;
     }
@@ -400,7 +404,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         return;
       }
 
-      if (!brandedFrontTemplateUrl) {
+      if (!proofFrontTemplateUrl) {
         setError("Branded artwork is not configured for this product yet.");
         setStep("design");
         return;
@@ -448,7 +452,9 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         generatedQrValue: directTargets?.qrTargetUrl,
         qrTargetUrl: directTargets?.qrTargetUrl,
         nfcTargetUrl: directTargets?.nfcTargetUrl,
-        frontTemplateUrl: selectedOption.hasQr ? brandedFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
+        frontTemplateUrl: selectedOption.hasQr ? proofFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
+        fontSizePercent: selectedOption.id === "branded_qr_direct" ? proofFontSizePercent : undefined,
+        logoSizePercent: selectedOption.id === "branded_qr_direct" ? proofLogoSizePercent : undefined,
         proofApprovalSnapshot: selectedOption.id === "branded_qr_direct" ? approvedProofSnapshot ?? currentApprovalSnapshot : undefined,
         proofApprovedAt: selectedOption.id === "branded_qr_direct" ? new Date().toISOString() : undefined,
         proofPreviewData:
@@ -458,7 +464,9 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 businessName: businessName.trim(),
                 logoMediaUrl: logo?.mediaUrl,
                 qrValue: directTargets?.qrTargetUrl,
-                frontTemplateUrl: brandedFrontTemplateUrl || undefined
+                frontTemplateUrl: proofFrontTemplateUrl || undefined,
+                fontSizePercent: proofFontSizePercent,
+                logoSizePercent: proofLogoSizePercent
               }
             : undefined,
         hasQr: true,
@@ -897,12 +905,38 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
                   {selectedOption.id === "branded_qr_direct" ? (
                     <>
+                      <div className="tr-panel-muted grid gap-4 sm:grid-cols-2">
+                        <ProofRangeControl
+                          label="Font size"
+                          value={proofFontSizePercent}
+                          min={75}
+                          max={135}
+                          onChange={(value) => {
+                            setProofFontSizePercent(value);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                        />
+                        <ProofRangeControl
+                          label="Logo size"
+                          value={proofLogoSizePercent}
+                          min={75}
+                          max={140}
+                          onChange={(value) => {
+                            setProofLogoSizePercent(value);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                        />
+                      </div>
                       <ProofPreview
                         businessName={businessName}
                         logo={logo}
                         product={product}
                         qrValue={generatedQrValue}
-                        templateUrl={brandedFrontTemplateUrl}
+                        templateUrl={proofFrontTemplateUrl}
+                        fontSizePercent={proofFontSizePercent}
+                        logoSizePercent={proofLogoSizePercent}
                       />
                       <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
                         <input
@@ -982,15 +1016,51 @@ function BuilderSummary({ image, productTitle, option }: { image: { src: string;
   );
 }
 
+function ProofRangeControl({
+  label,
+  max,
+  min,
+  onChange,
+  value
+}: {
+  label: string;
+  max: number;
+  min: number;
+  onChange: (value: number) => void;
+  value: number;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-semibold text-ink">
+      <span className="flex items-center justify-between gap-3">
+        <span>{label}</span>
+        <span className="text-xs font-bold text-muted">{value}%</span>
+      </span>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={5}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="accent-brand"
+      />
+    </label>
+  );
+}
+
 function ProofPreview({
   businessName,
+  fontSizePercent,
   logo,
+  logoSizePercent,
   product,
   qrValue,
   templateUrl
 }: {
   businessName: string;
+  fontSizePercent: number;
   logo: UploadedLogo | null;
+  logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
   templateUrl: string;
@@ -1003,9 +1073,16 @@ function ProofPreview({
       </div>
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
         {templateUrl ? (
-          <TemplateProofPreview businessName={businessName} logo={logo} qrValue={qrValue} templateUrl={templateUrl} />
+          <TemplateProofPreview
+            businessName={businessName}
+            fontSizePercent={fontSizePercent}
+            logo={logo}
+            logoSizePercent={logoSizePercent}
+            qrValue={qrValue}
+            templateUrl={templateUrl}
+          />
         ) : (
-          <CleanProofPreview businessName={businessName} logo={logo} product={product} qrValue={qrValue} />
+          <CleanProofPreview businessName={businessName} fontSizePercent={fontSizePercent} logo={logo} logoSizePercent={logoSizePercent} product={product} qrValue={qrValue} />
         )}
         <div className="grid gap-3 text-sm text-muted">
           {templateUrl ? <ReviewLine label="Template" value="Branded front template attached" /> : <ReviewLine label="Template" value="Clean proof layout shown" />}
@@ -1019,12 +1096,16 @@ function ProofPreview({
 
 function TemplateProofPreview({
   businessName,
+  fontSizePercent,
   logo,
+  logoSizePercent,
   qrValue,
   templateUrl
 }: {
   businessName: string;
+  fontSizePercent: number;
   logo: UploadedLogo | null;
+  logoSizePercent: number;
   qrValue: string;
   templateUrl: string;
 }) {
@@ -1033,12 +1114,23 @@ function TemplateProofPreview({
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
       <div className="absolute grid place-items-center p-[3%]" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logo ? (
-          <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-[72%] max-w-[78%] object-contain" />
+          <img
+            src={logo.mediaUrl}
+            alt="Uploaded business logo"
+            className="object-contain"
+            style={{ maxHeight: `${Math.round(72 * logoSizePercent / 100)}%`, maxWidth: `${Math.round(78 * logoSizePercent / 100)}%` }}
+          />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
         )}
       </div>
-      <p className="absolute overflow-hidden text-center text-[clamp(13px,3.2vw,17px)] font-black leading-tight text-ink" style={regionStyle(brandedStandComposition.businessNameRegion)}>
+      <p
+        className="absolute overflow-hidden text-center font-black leading-tight text-ink"
+        style={{
+          ...regionStyle(brandedStandComposition.businessNameRegion),
+          fontSize: `${17 * fontSizePercent / 100}px`
+        }}
+      >
         {businessName || "Business name"}
       </p>
       <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>
@@ -1050,21 +1142,36 @@ function TemplateProofPreview({
 
 function CleanProofPreview({
   businessName,
+  fontSizePercent,
   logo,
+  logoSizePercent,
   product,
   qrValue
 }: {
   businessName: string;
+  fontSizePercent: number;
   logo: UploadedLogo | null;
+  logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
 }) {
   return (
     <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
       <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
-        {logo ? <img src={logo.mediaUrl} alt="Uploaded business logo" className="max-h-14 max-w-[80%] object-contain" /> : <span className="text-xs font-black uppercase text-muted">Logo zone</span>}
+        {logo ? (
+          <img
+            src={logo.mediaUrl}
+            alt="Uploaded business logo"
+            className="object-contain"
+            style={{ maxHeight: `${3.5 * logoSizePercent / 100}rem`, maxWidth: `${80 * logoSizePercent / 100}%` }}
+          />
+        ) : (
+          <span className="text-xs font-black uppercase text-muted">Logo zone</span>
+        )}
       </div>
-      <p className="mt-3 max-w-full break-words text-sm font-black uppercase text-ink">{businessName || "Business name"}</p>
+      <p className="mt-3 max-w-full break-words font-black uppercase text-ink" style={{ fontSize: `${0.875 * fontSizePercent / 100}rem` }}>
+        {businessName || "Business name"}
+      </p>
       <div className="mt-5 grid justify-items-center gap-2">
         <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
       </div>
@@ -1088,8 +1195,8 @@ function QrPreview({ value, variant = "framed" }: { value: string; variant?: "fr
   const [qrError, setQrError] = useState("");
   const className =
     variant === "template"
-      ? "grid h-full w-full place-items-center bg-white p-[3px]"
-      : "grid h-20 w-20 place-items-center border-4 border-ink bg-white p-1";
+      ? "grid h-full w-full place-items-center bg-white p-px"
+      : "grid h-20 w-20 place-items-center border-4 border-ink bg-white p-px";
 
   useEffect(() => {
     let isActive = true;

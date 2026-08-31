@@ -385,6 +385,8 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     frontTemplateUrl: setup?.frontTemplateUrl?.trim(),
     centerAssetUrl: setup?.centerAssetUrl?.trim(),
     ctaText: setup?.ctaText?.trim(),
+    fontSizePercent: setup?.fontSizePercent,
+    logoSizePercent: setup?.logoSizePercent,
     proofApprovalSnapshot: setup?.proofApprovalSnapshot,
     proofApprovedAt: setup?.proofApprovedAt?.trim(),
     proofPreviewData: setup?.proofPreviewData,
@@ -472,7 +474,9 @@ function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartI
     logoStorageKey: setup.logoStorageKey,
     logoMediaUrl: setup.logoMediaUrl,
     generatedQrValue: setup.generatedQrValue,
-    frontTemplateUrl: setup.frontTemplateUrl
+    frontTemplateUrl: setup.frontTemplateUrl,
+    fontSizePercent: setup.fontSizePercent,
+    logoSizePercent: setup.logoSizePercent
   }, setup.proofApprovalSnapshot);
 }
 

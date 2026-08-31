@@ -53,6 +53,8 @@ export type CartItem = {
     frontTemplateUrl?: string;
     centerAssetUrl?: string;
     ctaText?: string;
+    fontSizePercent?: number;
+    logoSizePercent?: number;
     proofApprovalSnapshot?: Record<string, unknown>;
     proofApprovedAt?: string;
     proofPreviewData?: Record<string, unknown>;
@@ -248,7 +250,9 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.nfcTargetUrl ?? "",
     setup.frontTemplateUrl ?? "",
     setup.centerAssetUrl ?? "",
-    setup.ctaText ?? ""
+    setup.ctaText ?? "",
+    setup.fontSizePercent === undefined ? "" : String(setup.fontSizePercent),
+    setup.logoSizePercent === undefined ? "" : String(setup.logoSizePercent)
   ].join("|");
 }
 
@@ -296,6 +300,8 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     frontTemplateUrl: readString(row.frontTemplateUrl),
     centerAssetUrl: readString(row.centerAssetUrl),
     ctaText: readString(row.ctaText),
+    fontSizePercent: readInteger(row.fontSizePercent),
+    logoSizePercent: readInteger(row.logoSizePercent),
     proofApprovalSnapshot: readRecord(row.proofApprovalSnapshot),
     proofApprovedAt: readString(row.proofApprovedAt),
     proofPreviewData: readRecord(row.proofPreviewData),
@@ -310,6 +316,10 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function readInteger(value: unknown) {
+  return typeof value === "number" && Number.isInteger(value) ? value : undefined;
 }
 
 function readRecord(value: unknown): Record<string, unknown> | undefined {

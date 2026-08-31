@@ -218,6 +218,8 @@ export async function composeProductionArtworkDocument(
   const businessName = readSetupString(item.setup, "businessName");
   const logoHref = readSetupString(item.setup, "logoMediaUrl");
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? readSetupString(item.setup, "generatedQrValue");
+  const fontSizePercent = readSetupNumber(item.setup, "fontSizePercent") ?? 100;
+  const logoSizePercent = readSetupNumber(item.setup, "logoSizePercent") ?? 100;
 
   if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
@@ -231,7 +233,8 @@ export async function composeProductionArtworkDocument(
   const qrSvg = await createQrSvg(qrTargetUrl);
   const qrBody = extractSvgBody(qrSvg);
   const qrViewBox = extractViewBox(qrSvg) ?? "0 0 512 512";
-  const nameFontSize = fitSingleLineFontSize(businessName, template.businessNameRegion.width, 68, 26);
+  const nameFontSize = Math.round(fitSingleLineFontSize(businessName, template.businessNameRegion.width, 68, 26) * fontSizePercent / 100);
+  const logoRegion = scaleRegion(template.logoRegion, logoSizePercent);
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${template.widthPx}" height="${template.heightPx}" viewBox="0 0 ${template.widthPx} ${template.heightPx}" role="img" aria-label="${escapeXml(item.title)} production artwork">`,
@@ -249,7 +252,7 @@ export async function composeProductionArtworkDocument(
     }))}</metadata>`,
     `<rect width="${template.widthPx}" height="${template.heightPx}" fill="#ffffff"/>`,
     `<image href="${escapeXml(baseTemplateAsset.dataUri)}" x="0" y="0" width="${template.widthPx}" height="${template.heightPx}" preserveAspectRatio="xMidYMid meet"/>`,
-    `<image href="${escapeXml(logoAsset.dataUri)}" x="${template.logoRegion.x}" y="${template.logoRegion.y}" width="${template.logoRegion.width}" height="${template.logoRegion.height}" preserveAspectRatio="xMidYMid meet"/>`,
+    `<image href="${escapeXml(logoAsset.dataUri)}" x="${logoRegion.x}" y="${logoRegion.y}" width="${logoRegion.width}" height="${logoRegion.height}" preserveAspectRatio="xMidYMid meet"/>`,
     `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`,
     `<svg x="${template.qrRegion.x}" y="${template.qrRegion.y}" width="${template.qrRegion.width}" height="${template.qrRegion.height}" viewBox="${escapeXml(qrViewBox)}">${qrBody}</svg>`,
     `</svg>`
@@ -273,7 +276,9 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
     logoStorageKey: readSetupString(item.setup, "logoStorageKey"),
     logoMediaUrl: readSetupString(item.setup, "logoMediaUrl"),
     generatedQrValue: readSetupString(item.setup, "generatedQrValue"),
-    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl")
+    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl"),
+    fontSizePercent: readSetupNumber(item.setup, "fontSizePercent"),
+    logoSizePercent: readSetupNumber(item.setup, "logoSizePercent")
   };
 }
 
@@ -439,6 +444,11 @@ function readSetupString(setup: OrderLineItem["setup"], key: string) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
+function readSetupNumber(setup: OrderLineItem["setup"], key: string) {
+  const value = setup?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 function readSetupRecord(setup: OrderLineItem["setup"], key: string): Record<string, unknown> | undefined {
   const value = setup?.[key];
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
@@ -456,6 +466,19 @@ function fitSingleLineFontSize(text: string, maxWidthPx: number, maxFontPx: numb
   const estimatedWidthAtMax = text.length * maxFontPx * 0.62;
   if (estimatedWidthAtMax <= maxWidthPx * 0.96) return maxFontPx;
   return Math.max(minFontPx, Math.floor((maxWidthPx * 0.96) / Math.max(1, text.length * 0.62)));
+}
+
+function scaleRegion(region: ArtworkRegion, percent: number): ArtworkRegion {
+  const clampedPercent = Math.min(140, Math.max(75, percent));
+  const width = Math.round(region.width * clampedPercent / 100);
+  const height = Math.round(region.height * clampedPercent / 100);
+
+  return {
+    x: Math.round(region.x + (region.width - width) / 2),
+    y: Math.round(region.y + (region.height - height) / 2),
+    width,
+    height
+  };
 }
 
 function mergeWarningCodes(current: OrderLineItem["productionWarningCodes"], additions: OrderLineItem["productionWarningCodes"]) {
