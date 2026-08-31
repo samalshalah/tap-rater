@@ -373,16 +373,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
-    if (!logo && !designAssistanceRequested) {
-      setError("Upload your business logo before reviewing the front proof.");
-      return;
-    }
-
-    if (!designAssistanceRequested && !proofFrontTemplateUrl) {
-      setError("Branded artwork is not configured for this product yet.");
-      return;
-    }
-
     setProofApproved(false);
     setApprovedProofSnapshot(null);
     setStep("review");
@@ -390,6 +380,12 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
   function continueFromProof() {
     setError("");
+
+    if (selectedOption.id === "branded_qr_direct" && !logo && !designAssistanceRequested) {
+      setError("Upload your business logo or choose Tap Rater design help before continuing.");
+      return;
+    }
+
     setProofApproved(false);
     setApprovedProofSnapshot(null);
     setStep("confirmation");
@@ -929,37 +925,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     </label>
                   </div>
 
-                  <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-                    <input
-                      className="mt-1"
-                      type="checkbox"
-                      checked={designAssistanceRequested}
-                      onChange={(event) => {
-                        setDesignAssistanceRequested(event.target.checked);
-                        setManualDesignAcknowledged(false);
-                        setProofApproved(false);
-                        setApprovedProofSnapshot(null);
-                      }}
-                    />
-                    <span>
-                      I want Tap Rater to prepare or fix my logo proof.
-                      <span className="mt-1 block text-xs font-medium leading-5 text-muted">
-                        You can continue checkout now. We will send the branded proof for approval before production.
-                      </span>
-                    </span>
-                  </label>
-
-                  {designAssistanceRequested ? (
-                    <label className="grid gap-2 text-sm font-semibold text-ink">
-                      Design notes
-                      <textarea
-                        className="tr-input min-h-24 resize-y"
-                        value={designNotes}
-                        onChange={(event) => setDesignNotes(event.target.value)}
-                        placeholder="Example: use the logo from my website, remove the white background, or I will send the logo later."
-                      />
-                    </label>
-                  ) : null}
                 </div>
               ) : null}
 
@@ -994,7 +959,43 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     </div>
                   )}
 
-                  {selectedOption.id === "branded_qr_direct" && !designAssistanceRequested ? (
+                  {selectedOption.id === "branded_qr_direct" ? (
+                    <div className="mx-auto grid w-full max-w-3xl gap-3 rounded-lg border border-line bg-white p-3">
+                      <label className="flex items-start gap-3 text-sm font-semibold text-ink">
+                        <input
+                          className="mt-1"
+                          type="checkbox"
+                          checked={designAssistanceRequested}
+                          onChange={(event) => {
+                            setDesignAssistanceRequested(event.target.checked);
+                            setManualDesignAcknowledged(false);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                        />
+                        <span>
+                          I want Tap Rater to prepare or fix my logo proof.
+                          <span className="mt-1 block text-xs font-medium leading-5 text-muted">
+                            You can continue checkout now. We will send the branded proof for approval before production.
+                          </span>
+                        </span>
+                      </label>
+
+                      {designAssistanceRequested ? (
+                        <label className="grid gap-2 text-sm font-semibold text-ink">
+                          Design notes
+                          <textarea
+                            className="tr-input min-h-24 resize-y"
+                            value={designNotes}
+                            onChange={(event) => setDesignNotes(event.target.value)}
+                            placeholder="Example: use the logo from my website, remove the white background, or I will send the logo later."
+                          />
+                        </label>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {selectedOption.id === "branded_qr_direct" && logo && !designAssistanceRequested ? (
                     <>
                       <div className="mx-auto grid w-full max-w-3xl gap-4 rounded-lg border border-line bg-white p-3">
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -1091,7 +1092,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         logoSizePercent={proofLogoSizePercent}
                       />
                     </>
-                  ) : selectedOption.id === "branded_qr_direct" ? (
+                  ) : selectedOption.id === "branded_qr_direct" && designAssistanceRequested ? (
                     <div className="mx-auto grid w-full max-w-2xl gap-3 rounded-lg border border-line bg-white p-4 text-center">
                       <p className="text-sm font-semibold text-ink">Tap Rater will prepare your branded proof</p>
                       <p className="mx-auto max-w-xl text-sm leading-6 text-muted">
@@ -1110,6 +1111,13 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         logoSizePercent={proofLogoSizePercent}
                         designAssistanceRequested
                       />
+                    </div>
+                  ) : selectedOption.id === "branded_qr_direct" ? (
+                    <div className="mx-auto grid w-full max-w-2xl gap-2 rounded-lg border border-line bg-white p-4 text-center">
+                      <p className="text-sm font-semibold text-ink">No logo uploaded yet</p>
+                      <p className="mx-auto max-w-xl text-sm leading-6 text-muted">
+                        Upload a logo from the previous step, or choose Tap Rater design help above to continue without one.
+                      </p>
                     </div>
                   ) : (
                     <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
