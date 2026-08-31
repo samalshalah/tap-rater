@@ -996,89 +996,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   ) : null}
 
                   {selectedOption.id === "branded_qr_direct" && logo && !designAssistanceRequested ? (
-                    <>
-                      <div className="mx-auto grid w-full max-w-3xl gap-4 rounded-lg border border-line bg-white p-3">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <ProofSegmentedControl
-                            label="Logo background"
-                            value={logoBackgroundMode}
-                            options={[
-                              { label: "Auto-crop", value: "auto_crop" },
-                              { label: "Original", value: "original" }
-                            ]}
-                            disabled={!logo?.trimApplied}
-                            onChange={(value) => {
-                              setLogoBackgroundMode(value as LogoBackgroundMode);
-                              setProofApproved(false);
-                              setApprovedProofSnapshot(null);
-                            }}
-                          />
-                          <ProofSegmentedControl
-                            label="Logo fit"
-                            value={logoFitMode}
-                            options={[
-                              { label: "Fit", value: "contain" },
-                              { label: "Fill", value: "fill" }
-                            ]}
-                            onChange={(value) => {
-                              setLogoFitMode(value as LogoFitMode);
-                              setProofApproved(false);
-                              setApprovedProofSnapshot(null);
-                            }}
-                          />
-                        </div>
-                        {logo?.trimApplied ? (
-                          <p className="text-xs font-semibold text-brand">Auto-crop removed about {logo.blankMarginPercent ?? 0}% blank logo margin. Original is still available.</p>
-                        ) : null}
-                        <div className="grid gap-4 sm:grid-cols-2">
-                        <ProofRangeControl
-                          label="Font size"
-                          value={proofFontSizePercent}
-                          min={75}
-                          max={135}
-                          onChange={(value) => {
-                            setProofFontSizePercent(value);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
-                          }}
-                        />
-                        <ProofRangeControl
-                          label="Logo size"
-                          value={proofLogoSizePercent}
-                          min={75}
-                          max={160}
-                          onChange={(value) => {
-                            setProofLogoSizePercent(value);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
-                          }}
-                        />
-                        <ProofRangeControl
-                          label="Logo left / right"
-                          value={logoOffsetXPercent}
-                          min={-40}
-                          max={40}
-                          unit=""
-                          onChange={(value) => {
-                            setLogoOffsetXPercent(value);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
-                          }}
-                        />
-                        <ProofRangeControl
-                          label="Logo up / down"
-                          value={logoOffsetYPercent}
-                          min={-40}
-                          max={40}
-                          unit=""
-                          onChange={(value) => {
-                            setLogoOffsetYPercent(value);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
-                          }}
-                        />
-                        </div>
-                      </div>
+                    <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-[minmax(300px,420px)_minmax(320px,1fr)] lg:items-start">
                       <ProofPreview
                         businessName={businessName}
                         logoMediaUrl={selectedLogoMediaUrl}
@@ -1091,7 +1009,46 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
                       />
-                    </>
+                      <ProofControls
+                        logo={logo}
+                        logoBackgroundMode={logoBackgroundMode}
+                        logoFitMode={logoFitMode}
+                        logoOffsetXPercent={logoOffsetXPercent}
+                        logoOffsetYPercent={logoOffsetYPercent}
+                        proofFontSizePercent={proofFontSizePercent}
+                        proofLogoSizePercent={proofLogoSizePercent}
+                        onLogoBackgroundModeChange={(value) => {
+                          setLogoBackgroundMode(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        onLogoFitModeChange={(value) => {
+                          setLogoFitMode(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        onLogoOffsetXPercentChange={(value) => {
+                          setLogoOffsetXPercent(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        onLogoOffsetYPercentChange={(value) => {
+                          setLogoOffsetYPercent(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        onProofFontSizePercentChange={(value) => {
+                          setProofFontSizePercent(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        onProofLogoSizePercentChange={(value) => {
+                          setProofLogoSizePercent(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                      />
+                    </div>
                   ) : selectedOption.id === "branded_qr_direct" && designAssistanceRequested ? (
                     <div className="mx-auto grid w-full max-w-2xl gap-3 rounded-lg border border-line bg-white p-4 text-center">
                       <p className="text-sm font-semibold text-ink">Tap Rater will prepare your branded proof</p>
@@ -1273,6 +1230,97 @@ function ProofRangeControl({
         className="accent-brand"
       />
     </label>
+  );
+}
+
+function ProofControls({
+  logo,
+  logoBackgroundMode,
+  logoFitMode,
+  logoOffsetXPercent,
+  logoOffsetYPercent,
+  onLogoBackgroundModeChange,
+  onLogoFitModeChange,
+  onLogoOffsetXPercentChange,
+  onLogoOffsetYPercentChange,
+  onProofFontSizePercentChange,
+  onProofLogoSizePercentChange,
+  proofFontSizePercent,
+  proofLogoSizePercent
+}: {
+  logo: UploadedLogo;
+  logoBackgroundMode: LogoBackgroundMode;
+  logoFitMode: LogoFitMode;
+  logoOffsetXPercent: number;
+  logoOffsetYPercent: number;
+  onLogoBackgroundModeChange: (value: LogoBackgroundMode) => void;
+  onLogoFitModeChange: (value: LogoFitMode) => void;
+  onLogoOffsetXPercentChange: (value: number) => void;
+  onLogoOffsetYPercentChange: (value: number) => void;
+  onProofFontSizePercentChange: (value: number) => void;
+  onProofLogoSizePercentChange: (value: number) => void;
+  proofFontSizePercent: number;
+  proofLogoSizePercent: number;
+}) {
+  return (
+    <div className="grid gap-4 rounded-lg border border-line bg-white p-3 lg:sticky lg:top-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <ProofSegmentedControl
+          label="Logo background"
+          value={logoBackgroundMode}
+          options={[
+            { label: "Auto-crop", value: "auto_crop" },
+            { label: "Original", value: "original" }
+          ]}
+          disabled={!logo.trimApplied}
+          onChange={(value) => onLogoBackgroundModeChange(value as LogoBackgroundMode)}
+        />
+        <ProofSegmentedControl
+          label="Logo fit"
+          value={logoFitMode}
+          options={[
+            { label: "Fit", value: "contain" },
+            { label: "Fill", value: "fill" }
+          ]}
+          onChange={(value) => onLogoFitModeChange(value as LogoFitMode)}
+        />
+      </div>
+      {logo.trimApplied ? (
+        <p className="text-xs font-semibold text-brand">Auto-crop removed about {logo.blankMarginPercent ?? 0}% blank logo margin. Original is still available.</p>
+      ) : null}
+      <div className="grid gap-4">
+        <ProofRangeControl
+          label="Font size"
+          value={proofFontSizePercent}
+          min={75}
+          max={135}
+          onChange={onProofFontSizePercentChange}
+        />
+        <ProofRangeControl
+          label="Logo size"
+          value={proofLogoSizePercent}
+          min={75}
+          max={160}
+          onChange={onProofLogoSizePercentChange}
+        />
+        <ProofRangeControl
+          label="Logo left / right"
+          value={logoOffsetXPercent}
+          min={-40}
+          max={40}
+          unit=""
+          onChange={onLogoOffsetXPercentChange}
+        />
+        <ProofRangeControl
+          label="Logo up / down"
+          value={logoOffsetYPercent}
+          min={-40}
+          max={40}
+          unit=""
+          onChange={onLogoOffsetYPercentChange}
+        />
+      </div>
+    </div>
   );
 }
 
