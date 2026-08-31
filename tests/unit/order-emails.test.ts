@@ -246,13 +246,15 @@ describe("paid order emails", () => {
     const html = buildHostedSetupEmailHtml({
       businessName: "Hosted Cafe",
       hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2",
-      accountUrl: "https://app.taprater.com/account/login?token=signed-token"
+      activationUrl: "https://app.taprater.com/account/activate?token=signed-token"
     });
 
-    expect(html).toContain("Your Tap Rater hosted page for Hosted Cafe has been created.");
+    expect(html).toContain("Your Tap Rater Multi-Link page for Hosted Cafe has been created after payment confirmation.");
+    expect(html).toContain("Activate your account and set your password");
     expect(html).toContain("https://taprater.com/p/ABCDEFGHJKM2");
     expect(html).toContain("That permanent URL stays the same");
-    expect(html).toContain("https://app.taprater.com/account/login?token=signed-token");
+    expect(html).toContain("This activation link expires in 7 days.");
+    expect(html).toContain("https://app.taprater.com/account/activate?token=signed-token");
     expect(html).toContain("https://taprater.com/support");
     expect(html).not.toMatch(/analytics|clicks|conversion|device|subscription|localhost|workers\\.dev/i);
   });

@@ -37,9 +37,15 @@ create table if not exists customers (
   name text,
   phone text,
   role text default 'customer',
+  password_hash text,
+  account_status text not null default 'pending_activation',
+  activation_token_hash text,
+  activation_expires_at timestamptz,
+  activated_at timestamptz,
   email_verified_at timestamptz,
   created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  updated_at timestamptz default now(),
+  constraint customers_account_status_check check (account_status in ('pending_activation', 'active', 'disabled'))
 );
 
 create table if not exists businesses (
@@ -163,6 +169,9 @@ create table if not exists device_activation_attempts (
 );
 
 create index if not exists customers_email_idx on customers(email);
+create index if not exists customers_activation_token_hash_idx
+  on customers(activation_token_hash)
+  where activation_token_hash is not null;
 create index if not exists businesses_customer_id_idx on businesses(customer_id);
 create index if not exists businesses_google_place_id_idx on businesses(google_place_id);
 create index if not exists devices_device_code_idx on devices(device_code);

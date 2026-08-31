@@ -56,7 +56,14 @@ describe("hosted subscription provisioning", () => {
       code: "ABCDEFGHJKM2",
       hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
     });
-    expect(client.table("customers")).toMatchObject([{ email: "owner@example.com" }]);
+    expect(client.table("customers")).toMatchObject([
+      {
+        email: "owner@example.com",
+        account_status: "pending_activation",
+        activation_expires_at: "2026-08-30T12:00:00.000Z"
+      }
+    ]);
+    expect(client.table("customers")[0].activation_token_hash).toMatch(/^[a-f0-9]{64}$/);
     expect(client.table("hosted_page_editor_pages")).toMatchObject([{ code: "ABCDEFGHJKM2", lifecycle_status: "ACTIVE" }]);
     expect(client.table("hosted_subscriptions")).toMatchObject([
       {
@@ -78,7 +85,8 @@ describe("hosted subscription provisioning", () => {
     expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({
       to: "owner@example.com",
       businessName: "Owner Example",
-      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2",
+      activationToken: expect.any(String)
     });
   });
 
@@ -169,7 +177,7 @@ describe("hosted subscription provisioning", () => {
 
   it("reactivates an expired customer using the existing hosted page and permanent code", async () => {
     const client = new MemoryDbClient();
-    client.table("customers").push({ id: "customers-1", email: "owner@example.com", name: "Owner Example" });
+    client.table("customers").push({ id: "customers-1", email: "owner@example.com", name: "Owner Example", account_status: "active" });
     client.table("businesses").push({ id: "businesses-1", customer_id: "customers-1", business_name: "Owner Example" });
     client.table("hosted_page_editor_pages").push({
       id: "hosted_page_editor_pages-1",
@@ -224,6 +232,8 @@ describe("hosted subscription provisioning", () => {
 
     expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
     expect(client.table("customers")).toHaveLength(1);
+    expect(client.table("customers")[0].account_status).toBe("active");
+    expect(client.table("customers")[0].activation_token_hash).toMatch(/^[a-f0-9]{64}$/);
     expect(client.table("businesses")).toHaveLength(1);
     expect(client.table("hosted_page_editor_pages")).toHaveLength(1);
     expect(client.table("hosted_subscriptions")).toHaveLength(1);

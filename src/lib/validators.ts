@@ -418,6 +418,11 @@ export const accountLoginVerifySchema = z.object({
   token: z.string().trim().min(10).max(1000)
 });
 
+export const accountActivateSchema = z.object({
+  token: z.string().trim().min(20).max(1000),
+  password: z.string().min(8).max(200)
+});
+
 export const accountChangeRequestSchema = z.object({
   tapraterId: z.string().trim().min(3).max(80),
   newReviewUrl: z
@@ -437,6 +442,7 @@ export const accountChangeRequestSchema = z.object({
 
 export type AccountLoginRequestInput = z.infer<typeof accountLoginRequestSchema>;
 export type AccountLoginVerifyInput = z.infer<typeof accountLoginVerifySchema>;
+export type AccountActivateInput = z.infer<typeof accountActivateSchema>;
 export type AccountChangeRequestInput = z.infer<typeof accountChangeRequestSchema>;
 
 export const adminConfigSchema = z.object({

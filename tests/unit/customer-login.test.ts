@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { createCustomerActivationUrl } from "@/lib/customer-account";
 import { createCustomerLoginUrl, isDevelopmentAdminLoginAllowed } from "@/lib/customer-login";
 
 describe("customer login helpers", () => {
@@ -12,6 +13,12 @@ describe("customer login helpers", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://taprater.com/";
 
     expect(createCustomerLoginUrl("abc123")).toBe("https://taprater.com/account/login?token=abc123");
+  });
+
+  it("creates account activation URLs for password setup", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://taprater.com/";
+
+    expect(createCustomerActivationUrl("activation-token")).toBe("https://taprater.com/account/activate?token=activation-token");
   });
 
   it("prefers the customer app URL when configured", () => {

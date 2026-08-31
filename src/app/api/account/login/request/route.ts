@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { adminCookieName, createAdminSessionValue } from "@/lib/admin-auth";
+import { getCustomerPasswordLoginRecord, verifyCustomerPassword } from "@/lib/customer-account";
 import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
 import { accountLoginRequestSchema } from "@/lib/validators";
 
@@ -15,31 +15,33 @@ export async function POST(request: Request) {
 
   const email = parsed.data.email.toLowerCase();
   const password = parsed.data.password;
-  const expectedPassword = getExpectedPassword(email);
-
-  if (!expectedPassword) {
-    return NextResponse.json({ error: "Customer password login is not configured yet. Please contact Tap Rater support." }, { status: 503 });
-  }
-
-  if (!passwordMatches(password, expectedPassword)) {
-    return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
-  }
 
   if (isConfiguredAdminEmail(email)) {
+    const expectedPassword = process.env.ADMIN_PASSWORD;
+    if (!expectedPassword || !passwordMatches(password, expectedPassword)) {
+      return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+    }
     return createAdminLoginResponse(email, request);
   }
 
-  if (!hasSupabaseAdminConfig()) {
+  const login = await getCustomerPasswordLoginRecord(email);
+  if (!login.configured) {
     return NextResponse.json({ error: "Customer login is not configured yet." }, { status: 503 });
   }
 
-  const { data: customer } = await getSupabaseAdmin().from("customers").select("id,email").eq("email", email).maybeSingle();
-
-  if (!customer?.id) {
+  if (!login.customer || !verifyCustomerPassword(password, login.customer.passwordHash)) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
-  return createLoginResponse(customer.email ?? email, request);
+  if (login.customer.accountStatus === "pending_activation") {
+    return NextResponse.json({ error: "Activate your account from the email Tap Rater sent before logging in." }, { status: 403 });
+  }
+
+  if (login.customer.accountStatus === "disabled") {
+    return NextResponse.json({ error: "This account is not active. Please contact Tap Rater support." }, { status: 403 });
+  }
+
+  return createLoginResponse(login.customer.email, request);
 }
 
 function createLoginResponse(email: string, request: Request) {
@@ -63,14 +65,6 @@ function createAdminLoginResponse(email: string, request: Request) {
     path: "/"
   });
   return response;
-}
-
-function getExpectedPassword(email: string) {
-  if (isConfiguredAdminEmail(email) && process.env.ADMIN_PASSWORD) {
-    return process.env.ADMIN_PASSWORD;
-  }
-
-  return process.env.CUSTOMER_ACCOUNT_PASSWORD || process.env.CUSTOMER_LOGIN_PASSWORD || "";
 }
 
 function passwordMatches(actual: string, expected: string) {

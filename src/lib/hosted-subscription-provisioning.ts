@@ -1,4 +1,5 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { createCustomerActivationToken } from "@/lib/customer-account";
 import { sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
@@ -87,11 +88,13 @@ export async function provisionHostedSubscriptionFromCheckout(
   const subscriptionStatus = readSubscriptionStatus(input.session.subscription);
   const lifecycleStatus = mapStripeSubscriptionLifecycle(input.session.subscription, now);
   const paidThrough = readCurrentPeriodEnd(input.session.subscription);
+  const activation = createCustomerActivationToken();
 
   const customer = await upsertCustomer(client, {
     email,
     name: input.session.customer_details?.name ?? input.order.customer_name ?? null,
     phone: input.session.customer_details?.phone ?? null,
+    activationTokenHash: activation.tokenHash,
     now
   });
   if (!customer.ok) return customer;
@@ -181,7 +184,8 @@ export async function provisionHostedSubscriptionFromCheckout(
   const setupEmail = await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
     to: email,
     businessName,
-    hostedPageUrl
+    hostedPageUrl,
+    activationToken: activation.token
   });
   if (!setupEmail.sent) {
     console.warn("[hosted-provisioning] setup_email_not_sent", {
@@ -234,7 +238,15 @@ async function recordStripeEventIfNew(client: OrdersDbClient, eventId: string, e
   return { ok: true as const, created: true };
 }
 
-async function upsertCustomer(client: OrdersDbClient, input: { email: string; name?: string | null; phone?: string | null; now: Date }) {
+async function upsertCustomer(
+  client: OrdersDbClient,
+  input: { email: string; name?: string | null; phone?: string | null; activationTokenHash: string; now: Date }
+) {
+  const activationExpiresAt = new Date(input.now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const existing = await client.from("customers").select("id,account_status").eq("email", input.email).maybeSingle();
+  const existingStatus = readString(existing.data?.account_status);
+  const accountStatus = existingStatus === "active" ? "active" : "pending_activation";
+
   const result = await client
     .from("customers")
     .upsert(
@@ -243,6 +255,9 @@ async function upsertCustomer(client: OrdersDbClient, input: { email: string; na
         name: input.name ?? null,
         phone: input.phone ?? null,
         role: "customer",
+        account_status: accountStatus,
+        activation_token_hash: input.activationTokenHash,
+        activation_expires_at: activationExpiresAt,
         updated_at: input.now.toISOString()
       },
       { onConflict: "email" }

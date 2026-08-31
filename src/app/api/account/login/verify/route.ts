@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCustomerPasswordLoginRecord } from "@/lib/customer-account";
 import { createCustomerSessionValue, customerCookieName, parseCustomerLoginToken } from "@/lib/customer-auth";
 import { accountLoginVerifySchema } from "@/lib/validators";
 
@@ -16,8 +17,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Login link is invalid or expired." }, { status: 401 });
   }
 
+  const login = await getCustomerPasswordLoginRecord(token.email);
+  if (!login.configured || !login.customer || login.customer.accountStatus !== "active") {
+    return NextResponse.json({ error: "Activate your account and create a password before logging in." }, { status: 403 });
+  }
+
   const response = NextResponse.json({ ok: true, redirectTo: "/account" });
-  response.cookies.set(customerCookieName, createCustomerSessionValue(token.email), {
+  response.cookies.set(customerCookieName, createCustomerSessionValue(login.customer.email), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
