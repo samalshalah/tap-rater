@@ -15,7 +15,12 @@ type ActivatePageProps = {
 export default async function ActivatePage({ searchParams }: ActivatePageProps) {
   const params = await searchParams;
   const deviceCode = typeof params?.device === "string" ? params.device : "";
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsApiKey =
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    process.env.GOOGLE_PLACES_API_KEY ||
+    process.env.GOOGLE_MAPS_API_KEY ||
+    process.env.GOOGLE_MAPS_PLATFORM_API_KEY ||
+    process.env.MAPS_PLATFORM_API_KEY;
 
   return (
     <main className="bg-soft">
