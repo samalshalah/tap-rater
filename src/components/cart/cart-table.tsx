@@ -88,7 +88,10 @@ export function CartTable({
       <div className="tr-card grid gap-0 p-4 sm:p-6">
         {rows.map((row) => {
           const cartKey = getCartItemKey(row.item);
-          const connectionLabel = row.option.hasQr
+          const hasHostedMultiLink = row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink";
+          const connectionLabel = hasHostedMultiLink
+            ? "Hosted Multi-Link"
+            : row.option.hasQr
             ? "QR + NFC direct"
             : row.option.requiresDestinationUrl
               ? "NFC direct"
@@ -130,6 +133,12 @@ export function CartTable({
                   {connectionLabel ? (
                     <p>
                       <strong className="text-ink">Connection:</strong> {connectionLabel}
+                    </p>
+                  ) : null}
+                  {hasHostedMultiLink && row.item.setup?.monthlyPriceCents ? (
+                    <p>
+                      <strong className="text-ink">Service:</strong>{" "}
+                      {formatPrice(row.item.setup.monthlyPriceCents)}/mo Multi-Link hosting
                     </p>
                   ) : null}
                   {row.option.requiresFinalProof ? (
