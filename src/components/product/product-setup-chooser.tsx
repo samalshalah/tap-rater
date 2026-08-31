@@ -312,6 +312,11 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
+    if (selectedLinkExperience === "multilink" && !businessName.trim()) {
+      setError("Enter the business or page name for your Multi-Link page.");
+      return;
+    }
+
     if (selectedLinkExperience === "direct" && !isHttpUrl(destinationUrl)) {
       setError("Enter a valid destination link starting with http or https.");
       return;
@@ -482,7 +487,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         platformSlug: product.primaryPlatformSlug,
         googlePlaceId: googlePlaceId || undefined,
         googlePlaceName: googlePlaceName || undefined,
-        businessName: selectedOption.requiresBusinessName ? businessName.trim() : undefined,
+        businessName: selectedOption.requiresBusinessName || selectedLinkExperience === "multilink" ? businessName.trim() : undefined,
         logoFileName: logoBackgroundMode === "original" ? logo?.originalFilename ?? logo?.filename : logo?.filename,
         logoMediaUrl: selectedLogoMediaUrl,
         logoStorageKey: selectedLogoStorageKey,
@@ -529,14 +534,21 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   }
 
   const modalTitle =
-    selectedOption.id === "branded_qr_direct"
+    selectedLinkExperience === "multilink"
+      ? "Set up your Multi-Link stand"
+      : selectedOption.id === "branded_qr_direct"
         ? "Build your Branded QR stand"
         : "Set up your Standard Direct stand";
   const selectedPrice =
     configuredUnitPriceCents === null
         ? "Unavailable"
         : formatPrice(configuredUnitPriceCents).replace(".00", "");
-  const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof", "Confirm"] : ["Destination", "Confirm"];
+  const stepLabels =
+    selectedOption.id === "branded_qr_direct"
+      ? ["Destination", "Logo + name", "Proof", "Confirm"]
+      : selectedLinkExperience === "multilink"
+        ? ["Business", "Confirm"]
+        : ["Destination", "Confirm"];
   const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-4" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
     ? step === "destination"
@@ -783,73 +795,104 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
               {step === "destination" ? (
                 <div className="grid gap-4">
-                  <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} />
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Destination link</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">
-                      {isGoogleReviewProduct
-                        ? "Search for your Google Business Profile or paste your Google review link manually."
-                        : "Paste the URL this stand should open when customers tap."}
-                    </p>
-                  </div>
+                  <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} linkExperience={selectedLinkExperience} />
+                  {selectedLinkExperience === "multilink" ? (
+                    <>
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Multi-Link page</p>
+                        <p className="mt-1 text-sm leading-6 text-muted">
+                          Enter the business or page name for the hosted Tap Rater page. You can add and edit the links after checkout.
+                        </p>
+                      </div>
 
-                  {isGoogleReviewProduct ? (
-                    <div className="tr-panel-muted grid gap-3">
                       <label className="grid gap-2 text-sm font-semibold text-ink">
-                        Google Business search
-                        <div className="relative">
-                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-                          <input
-                            ref={googleSearchInputRef}
-                            className="tr-input min-w-0 pl-10 pr-24"
-                            value={googleSearchQuery}
-                            onChange={(event) => {
-                              setGoogleSearchQuery(event.target.value);
-                              if (googlePlaceId) {
-                                setGooglePlaceId("");
-                                setGooglePlaceName("");
-                                setDestinationUrl("");
-                                setProofApproved(false);
-                                setApprovedProofSnapshot(null);
-                              }
-                            }}
-                            placeholder="Business name and city"
-                            autoComplete="off"
-                          />
-                          {googleAutocompleteStatus === "loading" ? (
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Loading</span>
-                          ) : null}
-                        </div>
+                        Business or page name
+                        <input
+                          className="tr-input"
+                          value={businessName}
+                          onChange={(event) => {
+                            setBusinessName(event.target.value);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                          placeholder="Your business name"
+                        />
                       </label>
 
-                      {googleAutocompleteStatus === "fallback" ? (
-                        <p className="text-sm font-semibold text-muted" role="status">Google business search is unavailable. Paste your Google review link manually.</p>
+                      <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
+                        No one-link destination is needed now. The QR and NFC will point to your hosted Multi-Link page.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Destination link</p>
+                        <p className="mt-1 text-sm leading-6 text-muted">
+                          {isGoogleReviewProduct
+                            ? "Search for your Google Business Profile or paste your Google review link manually."
+                            : "Paste the URL this stand should open when customers tap."}
+                        </p>
+                      </div>
+
+                      {isGoogleReviewProduct ? (
+                        <div className="tr-panel-muted grid gap-3">
+                          <label className="grid gap-2 text-sm font-semibold text-ink">
+                            Google Business search
+                            <div className="relative">
+                              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                              <input
+                                ref={googleSearchInputRef}
+                                className="tr-input min-w-0 pl-10 pr-24"
+                                value={googleSearchQuery}
+                                onChange={(event) => {
+                                  setGoogleSearchQuery(event.target.value);
+                                  if (googlePlaceId) {
+                                    setGooglePlaceId("");
+                                    setGooglePlaceName("");
+                                    setDestinationUrl("");
+                                    setProofApproved(false);
+                                    setApprovedProofSnapshot(null);
+                                  }
+                                }}
+                                placeholder="Business name and city"
+                                autoComplete="off"
+                              />
+                              {googleAutocompleteStatus === "loading" ? (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Loading</span>
+                              ) : null}
+                            </div>
+                          </label>
+
+                          {googleAutocompleteStatus === "fallback" ? (
+                            <p className="text-sm font-semibold text-muted" role="status">Google business search is unavailable. Paste your Google review link manually.</p>
+                          ) : null}
+                        </div>
                       ) : null}
-                    </div>
-                  ) : null}
 
-                  <label className="grid gap-2 text-sm font-semibold text-ink">
-                    {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
-                    <input
-                      className="tr-input"
-                      type="url"
-                      value={destinationUrl}
-                      onChange={(event) => {
-                        setDestinationUrl(event.target.value);
-                        setGooglePlaceId("");
-                        setGooglePlaceName("");
-                        setProofApproved(false);
-                        setApprovedProofSnapshot(null);
-                      }}
-                      placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
-                    />
-                  </label>
+                      <label className="grid gap-2 text-sm font-semibold text-ink">
+                        {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
+                        <input
+                          className="tr-input"
+                          type="url"
+                          value={destinationUrl}
+                          onChange={(event) => {
+                            setDestinationUrl(event.target.value);
+                            setGooglePlaceId("");
+                            setGooglePlaceName("");
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                          placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
+                        />
+                      </label>
 
-                  {googlePlaceName ? (
-                    <p className="tr-status-success">
-                      Selected Google business: {googlePlaceName}
-                    </p>
-                  ) : null}
+                      {googlePlaceName ? (
+                        <p className="tr-status-success">
+                          Selected Google business: {googlePlaceName}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                 </div>
               ) : null}
 
@@ -1051,8 +1094,17 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     </div>
                   ) : (
                     <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
-                      <p className="font-semibold text-ink">Standard Direct confirmation</p>
-                      <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
+                      {selectedLinkExperience === "multilink" ? (
+                        <>
+                          <p className="font-semibold text-ink">Multi-Link confirmation</p>
+                          <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. You can add and edit up to 10 links after checkout.</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-semibold text-ink">Standard Direct confirmation</p>
+                          <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1154,7 +1206,19 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   );
 }
 
-function BuilderSummary({ image, productTitle, option }: { image: { src: string; alt: string }; productTitle: string; option: PurchaseOption }) {
+function BuilderSummary({
+  image,
+  linkExperience,
+  productTitle,
+  option
+}: {
+  image: { src: string; alt: string };
+  linkExperience: LinkExperienceId;
+  productTitle: string;
+  option: PurchaseOption;
+}) {
+  const serviceLabel = linkExperience === "multilink" ? "Hosted Multi-Link" : "QR and NFC direct";
+
   return (
     <div className="tr-panel-muted grid gap-3 p-3 sm:grid-cols-[96px_1fr] sm:items-center">
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
@@ -1165,7 +1229,7 @@ function BuilderSummary({ image, productTitle, option }: { image: { src: string;
         <p className="mt-1 text-sm text-muted">{option.label} · {formatPrice(option.priceCents)}</p>
         <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-brand">
           <CheckCircle2 size={14} />
-          QR and NFC direct
+          {serviceLabel}
         </p>
       </div>
     </div>
