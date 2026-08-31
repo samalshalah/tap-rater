@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Plus, Search, Smartphone, Trash2, UploadCloud, X } from "lucide-react";
+import { CheckCircle2, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -1306,7 +1306,13 @@ function MultiLinkSetupStep({
   buttons: MultiLinkDraftButton[];
   onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
 }) {
-  const configuredButtons = normalizeMultiLinkButtonsForSetup(buttons).buttons;
+  const previewButtons = buttons
+    .map((button, index) => ({
+      ...button,
+      label: button.label.trim() || getHostedButtonLabel(button.type),
+      position: index
+    }))
+    .filter((button) => button.label || button.url.trim());
 
   function updateButton(id: string, patch: Partial<MultiLinkDraftButton>) {
     onButtonsChange(buttons.map((button) => (button.id === id ? { ...button, ...patch } : button)));
@@ -1346,17 +1352,19 @@ function MultiLinkSetupStep({
           {buttons.map((button, index) => (
             <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-white p-3 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-end">
               <label className="grid gap-2 text-sm font-semibold text-ink">
-                Type
+                Icon
                 <select
                   className="tr-input"
                   value={button.type}
                   onChange={(event) => {
                     const type = event.target.value as HostedPageEditorButtonType;
-                    updateButton(button.id, { type, label: button.label || getHostedButtonLabel(type) });
+                    const previousDefaultLabel = getHostedButtonLabel(button.type);
+                    updateButton(button.id, { type, label: !button.label.trim() || button.label.trim() === previousDefaultLabel ? getHostedButtonLabel(type) : button.label });
                   }}
+                  aria-label={`Choose icon for link ${index + 1}`}
                 >
                   {supportedHostedPageButtons.map((option) => (
-                    <option key={option.type} value={option.type}>{option.label}</option>
+                    <option key={option.type} value={option.type}>{getHostedButtonSymbol(option.type)} {option.label}</option>
                   ))}
                 </select>
               </label>
@@ -1395,7 +1403,7 @@ function MultiLinkSetupStep({
         </button>
       </div>
 
-      <MultiLinkMobilePreview businessName={businessName} buttons={configuredButtons} />
+      <MultiLinkMobilePreview businessName={businessName} buttons={previewButtons} />
     </div>
   );
 }
@@ -1410,15 +1418,20 @@ function MultiLinkMobilePreview({ businessName, buttons }: { businessName: strin
             {(businessName.trim()[0] ?? "T").toUpperCase()}
           </span>
           <p className="text-lg font-black leading-6 text-ink">{businessName.trim() || "Your business"}</p>
-          <p className="text-xs font-semibold uppercase text-muted">Tap Rater Multi-Link</p>
+          <p className="max-w-[190px] text-sm leading-6 text-muted">Choose the link you need below.</p>
         </div>
 
         <div className="mt-6 grid gap-2">
           {buttons.length ? (
             buttons.map((button) => (
-              <div key={button.id} className="flex min-h-12 items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm font-black text-ink">
-                <span>{button.label}</span>
-                <Smartphone size={16} className="text-brand" aria-hidden="true" />
+              <div key={button.id} className="flex min-h-14 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-left shadow-sm">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-xs font-black text-brand" aria-hidden="true">
+                  {getHostedButtonSymbol(button.type)}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-black text-ink">{button.label}</span>
+                  <span className="block truncate text-xs font-semibold text-muted">{formatPreviewUrl(button.url) || "Link to be added"}</span>
+                </span>
               </div>
             ))
           ) : (
@@ -2046,6 +2059,35 @@ function createMultiLinkButtonId() {
 
 function getHostedButtonLabel(type: HostedPageEditorButtonType) {
   return supportedHostedPageButtons.find((button) => button.type === type)?.label ?? "Custom Link";
+}
+
+function getHostedButtonSymbol(type: HostedPageEditorButtonType) {
+  const symbols: Record<HostedPageEditorButtonType, string> = {
+    google_review: "G",
+    yelp: "Y",
+    facebook: "f",
+    instagram: "IG",
+    website: "www",
+    appointment: "cal",
+    menu: "menu",
+    contact: "@",
+    whatsapp: "WA",
+    custom_link: "link"
+  };
+
+  return symbols[type];
+}
+
+function formatPreviewUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.hostname.replace(/^www\./, "");
+  } catch {
+    return trimmed;
+  }
 }
 
 function normalizeMultiLinkButtonsForSetup(buttons: MultiLinkDraftButton[]): { buttons: MultiLinkDraftButton[]; error?: string } {
