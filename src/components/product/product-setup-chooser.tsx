@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Search, UploadCloud, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
@@ -68,6 +68,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [step, setStep] = useState<SetupStep>("choose");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
+  const [selectedGoogleSearchQuery, setSelectedGoogleSearchQuery] = useState("");
   const [googleResults, setGoogleResults] = useState<GooglePlaceResult[]>([]);
   const [googleSearchMessage, setGoogleSearchMessage] = useState("");
   const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
@@ -82,6 +83,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const googleSearchRequestId = useRef(0);
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -164,6 +166,28 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     onSelectedPriceChange?.(configuredUnitPriceCents);
   }, [configuredUnitPriceCents, onSelectedPriceChange]);
 
+  useEffect(() => {
+    if (!isGoogleReviewProduct || step !== "destination") return;
+
+    const query = googleSearchQuery.trim();
+
+    if (query.length < 3) {
+      googleSearchRequestId.current += 1;
+      setGoogleResults([]);
+      setGoogleSearchMessage("");
+      setIsSearchingGoogle(false);
+      return;
+    }
+
+    if (query === selectedGoogleSearchQuery) return;
+
+    const timeout = window.setTimeout(() => {
+      void searchGooglePlaces(query, { showValidationError: false });
+    }, 350);
+
+    return () => window.clearTimeout(timeout);
+  }, [googleSearchQuery, isGoogleReviewProduct, selectedGoogleSearchQuery, step]);
+
   if (!selectedOption || !selectedImage) {
     return (
       <div className="tr-card p-6">
@@ -211,21 +235,30 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setError("");
   }
 
-  async function searchGooglePlaces() {
+  async function searchGooglePlaces(queryOverride?: string, options: { showValidationError?: boolean } = {}) {
+    const query = (queryOverride ?? googleSearchQuery).trim();
+    const showValidationError = options.showValidationError ?? true;
+    const requestId = googleSearchRequestId.current + 1;
+    googleSearchRequestId.current = requestId;
+
     setError("");
     setGoogleSearchMessage("");
     setGoogleResults([]);
 
-    if (googleSearchQuery.trim().length < 3) {
-      setError("Search for a business name or address, or paste your Google review link manually.");
+    if (query.length < 3) {
+      if (showValidationError) {
+        setError("Search for a business name or address, or paste your Google review link manually.");
+      }
       return;
     }
 
     setIsSearchingGoogle(true);
 
     try {
-      const response = await fetch(`/api/setup/google-places?q=${encodeURIComponent(googleSearchQuery.trim())}`);
+      const response = await fetch(`/api/setup/google-places?q=${encodeURIComponent(query)}`);
       const body = await response.json().catch(() => ({}));
+
+      if (requestId !== googleSearchRequestId.current) return;
 
       if (!response.ok || body.ok === false) {
         setGoogleSearchMessage("Search is unavailable right now. Paste your Google review link manually.");
@@ -235,15 +268,22 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       setGoogleResults(Array.isArray(body.results) ? body.results : []);
       setGoogleSearchMessage(body.message ?? (body.results?.length ? "" : "No matching businesses found. Paste your Google review link manually."));
     } catch {
+      if (requestId !== googleSearchRequestId.current) return;
       setGoogleSearchMessage("Search is unavailable right now. Paste your Google review link manually.");
     } finally {
-      setIsSearchingGoogle(false);
+      if (requestId === googleSearchRequestId.current) {
+        setIsSearchingGoogle(false);
+      }
     }
   }
 
   function useGooglePlace(place: GooglePlaceResult) {
+    const selectedQuery = `${place.name}${place.formattedAddress ? ` - ${place.formattedAddress}` : ""}`;
     setGooglePlaceId(place.placeId);
     setGooglePlaceName(place.name);
+    setGoogleSearchQuery(selectedQuery);
+    setSelectedGoogleSearchQuery(selectedQuery);
+    setGoogleResults([]);
     setDestinationUrl(place.reviewUrl);
     setBusinessName((current) => current || place.name);
     setGoogleSearchMessage("");
@@ -739,22 +779,25 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <div className="tr-panel-muted grid gap-3">
                       <label className="grid gap-2 text-sm font-semibold text-ink">
                         Google Business search
-                        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
                           <input
-                            className="tr-input min-w-0"
+                            className="tr-input min-w-0 pl-10 pr-24"
                             value={googleSearchQuery}
-                            onChange={(event) => setGoogleSearchQuery(event.target.value)}
+                            onChange={(event) => {
+                              setGoogleSearchQuery(event.target.value);
+                              setSelectedGoogleSearchQuery("");
+                              if (googlePlaceId) {
+                                setGooglePlaceId("");
+                                setGooglePlaceName("");
+                                setDestinationUrl("");
+                                setProofApproved(false);
+                                setApprovedProofSnapshot(null);
+                              }
+                            }}
                             placeholder="Business name and city"
                           />
-                          <button
-                            type="button"
-                            className="tr-button-primary px-4"
-                            disabled={isSearchingGoogle}
-                            onClick={searchGooglePlaces}
-                          >
-                            <Search size={16} />
-                            {isSearchingGoogle ? "Searching" : "Search"}
-                          </button>
+                          {isSearchingGoogle ? <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Searching</span> : null}
                         </div>
                       </label>
 
