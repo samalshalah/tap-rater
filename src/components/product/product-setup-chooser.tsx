@@ -12,6 +12,7 @@ import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type Purchase
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
+import { generateGoogleReviewUrl } from "@/lib/google-review";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 export type ProductSetupChooserProduct = Pick<
@@ -43,6 +44,7 @@ type LinkExperienceId = "direct" | "multilink";
 
 type ProductSetupChooserProps = {
   product: ProductSetupChooserProduct;
+  googleMapsApiKey?: string;
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
@@ -61,17 +63,16 @@ type GooglePlaceResult = {
   reviewUrl: string;
 };
 
-export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
+let productGoogleMapsScriptPromise: Promise<void> | null = null;
+
+export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
   const [step, setStep] = useState<SetupStep>("choose");
   const [destinationUrl, setDestinationUrl] = useState("");
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
-  const [selectedGoogleSearchQuery, setSelectedGoogleSearchQuery] = useState("");
-  const [googleResults, setGoogleResults] = useState<GooglePlaceResult[]>([]);
-  const [googleSearchMessage, setGoogleSearchMessage] = useState("");
-  const [isSearchingGoogle, setIsSearchingGoogle] = useState(false);
+  const [googleAutocompleteStatus, setGoogleAutocompleteStatus] = useState<"idle" | "loading" | "ready" | "fallback">("idle");
   const [googlePlaceId, setGooglePlaceId] = useState("");
   const [googlePlaceName, setGooglePlaceName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -83,7 +84,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const googleSearchRequestId = useRef(0);
+  const googleSearchInputRef = useRef<HTMLInputElement | null>(null);
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -169,24 +170,52 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   useEffect(() => {
     if (!isGoogleReviewProduct || step !== "destination") return;
 
-    const query = googleSearchQuery.trim();
-
-    if (query.length < 3) {
-      googleSearchRequestId.current += 1;
-      setGoogleResults([]);
-      setGoogleSearchMessage("");
-      setIsSearchingGoogle(false);
+    if (!googleMapsApiKey || !googleSearchInputRef.current) {
+      setGoogleAutocompleteStatus("fallback");
       return;
     }
 
-    if (query === selectedGoogleSearchQuery) return;
+    let mounted = true;
+    setGoogleAutocompleteStatus("loading");
 
-    const timeout = window.setTimeout(() => {
-      void searchGooglePlaces(query, { showValidationError: false });
-    }, 350);
+    loadProductGooglePlaces(googleMapsApiKey)
+      .then(() => {
+        if (!mounted || !googleSearchInputRef.current || !window.google?.maps?.places?.Autocomplete) {
+          return;
+        }
 
-    return () => window.clearTimeout(timeout);
-  }, [googleSearchQuery, isGoogleReviewProduct, selectedGoogleSearchQuery, step]);
+        const autocomplete = new window.google.maps.places.Autocomplete(googleSearchInputRef.current, {
+          fields: ["place_id", "name", "formatted_address"],
+          types: ["establishment"],
+          componentRestrictions: { country: "us" }
+        });
+
+        autocomplete.addListener("place_changed", () => {
+          const place = autocomplete.getPlace();
+          if (!place.place_id || !place.name) {
+            return;
+          }
+
+          useGooglePlace({
+            placeId: place.place_id,
+            name: place.name,
+            formattedAddress: place.formatted_address ?? "",
+            reviewUrl: generateGoogleReviewUrl(place.place_id)
+          });
+        });
+
+        setGoogleAutocompleteStatus("ready");
+      })
+      .catch(() => {
+        if (mounted) {
+          setGoogleAutocompleteStatus("fallback");
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [googleMapsApiKey, isGoogleReviewProduct, step]);
 
   if (!selectedOption || !selectedImage) {
     return (
@@ -235,58 +264,13 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setError("");
   }
 
-  async function searchGooglePlaces(queryOverride?: string, options: { showValidationError?: boolean } = {}) {
-    const query = (queryOverride ?? googleSearchQuery).trim();
-    const showValidationError = options.showValidationError ?? true;
-    const requestId = googleSearchRequestId.current + 1;
-    googleSearchRequestId.current = requestId;
-
-    setError("");
-    setGoogleSearchMessage("");
-    setGoogleResults([]);
-
-    if (query.length < 3) {
-      if (showValidationError) {
-        setError("Search for a business name or address, or paste your Google review link manually.");
-      }
-      return;
-    }
-
-    setIsSearchingGoogle(true);
-
-    try {
-      const response = await fetch(`/api/setup/google-places?q=${encodeURIComponent(query)}`);
-      const body = await response.json().catch(() => ({}));
-
-      if (requestId !== googleSearchRequestId.current) return;
-
-      if (!response.ok || body.ok === false) {
-        setGoogleSearchMessage("Search is unavailable right now. Paste your Google review link manually.");
-        return;
-      }
-
-      setGoogleResults(Array.isArray(body.results) ? body.results : []);
-      setGoogleSearchMessage(body.message ?? (body.results?.length ? "" : "No matching businesses found. Paste your Google review link manually."));
-    } catch {
-      if (requestId !== googleSearchRequestId.current) return;
-      setGoogleSearchMessage("Search is unavailable right now. Paste your Google review link manually.");
-    } finally {
-      if (requestId === googleSearchRequestId.current) {
-        setIsSearchingGoogle(false);
-      }
-    }
-  }
-
   function useGooglePlace(place: GooglePlaceResult) {
     const selectedQuery = `${place.name}${place.formattedAddress ? ` - ${place.formattedAddress}` : ""}`;
     setGooglePlaceId(place.placeId);
     setGooglePlaceName(place.name);
     setGoogleSearchQuery(selectedQuery);
-    setSelectedGoogleSearchQuery(selectedQuery);
-    setGoogleResults([]);
     setDestinationUrl(place.reviewUrl);
     setBusinessName((current) => current || place.name);
-    setGoogleSearchMessage("");
     setError("");
     setProofApproved(false);
     setApprovedProofSnapshot(null);
@@ -782,11 +766,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                         <div className="relative">
                           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
                           <input
+                            ref={googleSearchInputRef}
                             className="tr-input min-w-0 pl-10 pr-24"
                             value={googleSearchQuery}
                             onChange={(event) => {
                               setGoogleSearchQuery(event.target.value);
-                              setSelectedGoogleSearchQuery("");
                               if (googlePlaceId) {
                                 setGooglePlaceId("");
                                 setGooglePlaceName("");
@@ -796,26 +780,16 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                               }
                             }}
                             placeholder="Business name and city"
+                            autoComplete="off"
                           />
-                          {isSearchingGoogle ? <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Searching</span> : null}
+                          {googleAutocompleteStatus === "loading" ? (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Loading</span>
+                          ) : null}
                         </div>
                       </label>
 
-                      {googleSearchMessage ? <p className="text-sm font-semibold text-muted" role="status">{googleSearchMessage}</p> : null}
-                      {googleResults.length ? (
-                        <div className="grid gap-2">
-                          {googleResults.map((place) => (
-                            <button
-                              key={place.placeId}
-                              type="button"
-                              className="rounded-lg border border-line bg-white p-3 text-left transition hover:border-brand"
-                              onClick={() => useGooglePlace(place)}
-                            >
-                              <span className="block text-sm font-semibold text-ink">{place.name}</span>
-                              {place.formattedAddress ? <span className="block text-xs leading-5 text-muted">{place.formattedAddress}</span> : null}
-                            </button>
-                          ))}
-                        </div>
+                      {googleAutocompleteStatus === "fallback" ? (
+                        <p className="text-sm font-semibold text-muted" role="status">Google business search is unavailable. Paste your Google review link manually.</p>
                       ) : null}
                     </div>
                   ) : null}
@@ -1240,6 +1214,34 @@ function platformMark(product: ProductSetupChooserProduct) {
   if (platform === "tripadvisor") return "T";
   if (platform === "facebook") return "f";
   return product.displayText?.slice(0, 1).toUpperCase() || "T";
+}
+
+function loadProductGooglePlaces(apiKey: string) {
+  if (window.google?.maps?.places?.Autocomplete) {
+    return Promise.resolve();
+  }
+
+  if (!productGoogleMapsScriptPromise) {
+    productGoogleMapsScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector<HTMLScriptElement>('script[data-taprater-google-places="true"]');
+      if (existing) {
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", () => reject(new Error("Google Maps script failed to load.")));
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.dataset.tapraterGooglePlaces = "true";
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Google Maps script failed to load."));
+      document.head.appendChild(script);
+    });
+  }
+
+  return productGoogleMapsScriptPromise;
 }
 
 function isHttpUrl(value: string) {

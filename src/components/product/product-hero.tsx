@@ -13,9 +13,10 @@ type ProductHeroProps = {
   category?: CatalogCategory;
   destination: string;
   fromPrice: string;
+  googleMapsApiKey?: string;
 };
 
-export function ProductHero({ product, category, fromPrice }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice, googleMapsApiKey }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(options[0]?.priceCents ?? product.basePriceCents);
@@ -51,6 +52,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
 
         <ProductSetupChooser
           product={product}
+          googleMapsApiKey={googleMapsApiKey}
           selectedOptionId={effectiveSelectedOptionId}
           onSelectedOptionChange={setSelectedOptionId}
           onSelectedPriceChange={setSelectedPriceCents}

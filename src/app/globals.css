@@ -241,6 +241,10 @@ main h3 {
     min-width: 0;
   }
 
+  .pac-container {
+    z-index: 70;
+  }
+
   .tr-textarea {
     @apply tr-input min-h-32 resize-y;
   }
