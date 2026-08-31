@@ -885,23 +885,25 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     </p>
                   </div>
 
-                  <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
-                    <ReviewLine label="Product" value={product.title} />
-                    <ReviewLine label="Setup" value={selectedOption.label} />
-                    <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
-                    <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
-                    <ReviewLine label="SKU" value={finalSku} />
-                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
-                    <ReviewLine label="Destination link" value={destinationUrl || "-"} />
-                    {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
-                    {selectedOption.id === "branded_qr_direct" ? (
-                      <>
-                        <ReviewLine label="Business name" value={businessName || "-"} />
-                        <ReviewLine label="Logo" value={logo ? "Logo uploaded" : "Missing"} />
-                        <ReviewLine label="QR" value={generatedQrValue ? "QR generated from destination link" : "Missing"} />
-                      </>
-                    ) : null}
-                  </div>
+                  {selectedOption.id === "branded_qr_direct" ? (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted">
+                      <span className="font-semibold text-ink">{product.title}</span>
+                      <span>{selectedOption.label}</span>
+                      <span>{configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</span>
+                      {googlePlaceName ? <span>{googlePlaceName}</span> : null}
+                    </div>
+                  ) : (
+                    <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
+                      <ReviewLine label="Product" value={product.title} />
+                      <ReviewLine label="Setup" value={selectedOption.label} />
+                      <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
+                      <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
+                      <ReviewLine label="SKU" value={finalSku} />
+                      <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
+                      <ReviewLine label="Destination link" value={destinationUrl || "-"} />
+                      {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
+                    </div>
+                  )}
 
                   {selectedOption.id === "branded_qr_direct" ? (
                     <>
@@ -1067,11 +1069,10 @@ function ProofPreview({
 }) {
   return (
     <div className="tr-card p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         <p className="text-sm font-semibold text-ink">Front proof preview</p>
-        <p className="tr-caption font-semibold">QR generated from destination link</p>
       </div>
-      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">
+      <div className="mt-3 grid justify-items-center">
         {templateUrl ? (
           <TemplateProofPreview
             businessName={businessName}
@@ -1084,11 +1085,6 @@ function ProofPreview({
         ) : (
           <CleanProofPreview businessName={businessName} fontSizePercent={fontSizePercent} logo={logo} logoSizePercent={logoSizePercent} product={product} qrValue={qrValue} />
         )}
-        <div className="grid gap-3 text-sm text-muted">
-          {templateUrl ? <ReviewLine label="Template" value="Branded front template attached" /> : <ReviewLine label="Template" value="Clean proof layout shown" />}
-          <ReviewLine label="Logo" value={logo ? "Logo uploaded" : "Upload required"} />
-          <ReviewLine label="QR" value={qrValue ? "QR generated from destination link" : "Add destination first"} />
-        </div>
       </div>
     </div>
   );
