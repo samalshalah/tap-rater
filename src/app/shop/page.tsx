@@ -200,6 +200,23 @@ type ProductForFilter = Awaited<
   ReturnType<typeof getStorefrontProducts>
 >[number];
 
+function getStandTypeProductCount(slug: string, products: ProductForFilter[]) {
+  const categorySlug = standTypeToCategorySlug(slug);
+  if (!categorySlug) {
+    return 0;
+  }
+
+  return products.filter((product) => product.categorySlug === categorySlug).length;
+}
+
+function getPublicStandTypeLabel(standType: StandTypeForFilter) {
+  if (standType.slug === "website-link-stands") {
+    return "Website & Multi-Link Stands";
+  }
+
+  return standType.title;
+}
+
 function FilterPanelContent({
   businessUses,
   products,
@@ -226,12 +243,11 @@ function FilterPanelContent({
 
       <FilterGroup title="Type">
         {standTypes.map((standType) => {
-          const categorySlug = standTypeToCategorySlug(standType.slug);
-          const count = categorySlug
-            ? products.filter(
-                (product) => product.categorySlug === categorySlug,
-              ).length
-            : 0;
+          const count = getStandTypeProductCount(standType.slug, products);
+          if (count === 0 && selectedType?.slug !== standType.slug) {
+            return null;
+          }
+
           return (
             <FilterLink
               key={standType.slug}
@@ -244,7 +260,7 @@ function FilterPanelContent({
                     : standType.slug,
                 use: selectedUse?.slug,
               })}
-              label={standType.title}
+              label={getPublicStandTypeLabel(standType)}
             />
           );
         })}
