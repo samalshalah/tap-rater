@@ -40,6 +40,7 @@ describe("purchase option readiness", () => {
   });
 
   it("keeps Multi-Link out of physical purchase options", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "false";
     const product = migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!;
 
     expect(isHostedPurchaseOptionEnabled()).toBe(false);
@@ -48,6 +49,7 @@ describe("purchase option readiness", () => {
   });
 
   it("models Multi-Link as a reusable $9.99 monthly service add-on", () => {
+    expect(isHostedPurchaseOptionEnabled()).toBe(true);
     expect(hostedMultiLinkServiceAddon).toMatchObject({
       code: "hosted_multilink",
       title: "Multi-Link",

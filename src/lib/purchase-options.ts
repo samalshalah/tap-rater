@@ -92,7 +92,7 @@ export function hasBrandedDirectProductionTemplate(product: ProductForPurchaseOp
 }
 
 export function isHostedPurchaseOptionEnabled(): boolean {
-  return process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING === "true";
+  return process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING !== "false";
 }
 
 export function isPurchaseOptionSellableForProduct(product: ProductForPurchaseOptions, optionId: PurchaseOptionId): boolean {

@@ -61,6 +61,7 @@ describe("cart utilities", () => {
   });
 
   it("rejects snapshot-only Hosted items while Hosted purchasing is disabled", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "false";
     const items = normalizeCartItems([
       {
         productId: "new-hosted-stand",

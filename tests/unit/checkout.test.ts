@@ -542,6 +542,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("rejects Hosted Multi-Link subscription checkout while Hosted purchasing is disabled", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "false";
     const hostedProduct = {
       ...migratedProducts.find((product) => product.slug === "custom-direct-stand")!,
       slug: "hosted-multilink-stand",

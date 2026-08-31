@@ -14,7 +14,7 @@ import {
   type CustomizationLevel,
   type DestinationMode
 } from "@/lib/product-model";
-import { getProductPurchaseOptions, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
@@ -139,7 +139,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
 
     const setup = normalizeCheckoutSetup(item.setup);
     const hasMultiLinkAddon =
-      setup.serviceAddon === hostedMultiLinkServiceAddon.code && productSupportsMultiLink(product) && process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING === "true";
+      setup.serviceAddon === hostedMultiLinkServiceAddon.code && productSupportsMultiLink(product) && isHostedPurchaseOptionEnabled();
 
     if (!isProductOptionArchitectureConsistent(product, option) || cartItemRequestsPermanentHostedCode(item) || !isValidCheckoutSetup(option, setup, hasMultiLinkAddon)) {
       continue;
