@@ -332,6 +332,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
       setLogoBackgroundMode(preparedLogo.trimApplied ? "auto_crop" : "original");
       setLogoFitMode("contain");
+      setProofLogoSizePercent(preparedLogo.trimApplied ? 125 : 115);
       setLogoOffsetXPercent(0);
       setLogoOffsetYPercent(0);
       setLogo({
@@ -995,7 +996,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                           label="Logo size"
                           value={proofLogoSizePercent}
                           min={75}
-                          max={140}
+                          max={160}
                           onChange={(value) => {
                             setProofLogoSizePercent(value);
                             setProofApproved(false);

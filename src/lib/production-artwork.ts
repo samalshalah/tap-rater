@@ -477,7 +477,7 @@ function fitSingleLineFontSize(text: string, maxWidthPx: number, maxFontPx: numb
 }
 
 function scaleRegion(region: ArtworkRegion, percent: number): ArtworkRegion {
-  const clampedPercent = Math.min(140, Math.max(75, percent));
+  const clampedPercent = Math.min(160, Math.max(75, percent));
   const width = Math.round(region.width * clampedPercent / 100);
   const height = Math.round(region.height * clampedPercent / 100);
 
