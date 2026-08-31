@@ -21,7 +21,7 @@ export type BrandedCompositionGeometry = {
 
 export const brandedStandComposition: BrandedCompositionGeometry = {
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-27.3",
+  templateVersion: "2026-08-31.1",
   widthPx: 1278,
   heightPx: 1949,
   dpi: 300,
@@ -30,7 +30,7 @@ export const brandedStandComposition: BrandedCompositionGeometry = {
   safeMarginPx: 64,
   logoRegion: { xPercent: 26.2128325509, yPercent: 4.8742945100, widthPercent: 47.7308294209, heightPercent: 7.1831708568 },
   businessNameRegion: { xPercent: 22.3787167449, yPercent: 19.4971780400, widthPercent: 55.2425665102, heightPercent: 4.3612108774 },
-  qrRegion: { xPercent: 63.6932707355, yPercent: 69.3689061057, widthPercent: 19.2488262911, heightPercent: 12.6218573628 }
+  qrRegion: { xPercent: 61.82, yPercent: 68.3, widthPercent: 22.5, heightPercent: 14.78 }
 };
 
 export function regionToPixels(

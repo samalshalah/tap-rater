@@ -39,7 +39,7 @@ export type ProductSetupChooserProduct = Pick<
   | "colorOptions"
 >;
 
-type SetupStep = "choose" | "destination" | "design" | "review";
+type SetupStep = "choose" | "destination" | "design" | "review" | "confirmation";
 type LinkExperienceId = "direct" | "multilink";
 
 type ProductSetupChooserProps = {
@@ -365,8 +365,20 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     setStep("review");
   }
 
+  function continueFromProof() {
+    setError("");
+    setProofApproved(false);
+    setApprovedProofSnapshot(null);
+    setStep("confirmation");
+  }
+
   function goToPreviousStep() {
     setError("");
+    if (step === "confirmation") {
+      setStep("review");
+      return;
+    }
+
     if (step === "review") {
       setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination");
       return;
@@ -486,14 +498,16 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     configuredUnitPriceCents === null
         ? "Unavailable"
         : formatPrice(configuredUnitPriceCents).replace(".00", "");
-  const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof"] : ["Destination", "Confirm"];
-  const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-3" : "sm:grid-cols-2";
+  const stepLabels = selectedOption.id === "branded_qr_direct" ? ["Destination", "Logo + name", "Proof", "Confirm"] : ["Destination", "Confirm"];
+  const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-4" : "sm:grid-cols-2";
   const activeStepIndex = selectedOption.id === "branded_qr_direct"
     ? step === "destination"
       ? 0
       : step === "design"
         ? 1
-        : 2
+        : step === "review"
+          ? 2
+          : 3
     : step === "destination"
       ? 0
       : 1;
@@ -738,6 +752,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       onClick={() => {
                         if (index === 0) setStep("destination");
                         if (index === 1 && selectedOption.id === "branded_qr_direct") setStep("design");
+                        if (index === 2 && selectedOption.id === "branded_qr_direct") setStep("review");
                       }}
                     >
                       <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
@@ -907,7 +922,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
                   {selectedOption.id === "branded_qr_direct" ? (
                     <>
-                      <div className="tr-panel-muted grid gap-4 sm:grid-cols-2">
+                      <div className="mx-auto grid w-full max-w-2xl gap-4 rounded-lg border border-line bg-white p-3 sm:grid-cols-2">
                         <ProofRangeControl
                           label="Font size"
                           value={proofFontSizePercent}
@@ -940,18 +955,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
                       />
-                      <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-                        <input
-                          className="mt-1"
-                          type="checkbox"
-                          checked={proofApproved}
-                          onChange={(event) => {
-                            setProofApproved(event.target.checked);
-                            setApprovedProofSnapshot(event.target.checked && currentApprovalSnapshot ? currentApprovalSnapshot : null);
-                          }}
-                        />
-                        I reviewed the front proof preview and confirm these branded setup details.
-                      </label>
                     </>
                   ) : (
                     <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
@@ -959,6 +962,38 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
                     </div>
                   )}
+                </div>
+              ) : null}
+
+              {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
+                <div className="grid gap-3">
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted">
+                    <span className="font-semibold text-ink">{product.title}</span>
+                    <span>{selectedOption.label}</span>
+                    <span>{configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</span>
+                    {googlePlaceName ? <span>{googlePlaceName}</span> : null}
+                  </div>
+                  <ProofPreview
+                    businessName={businessName}
+                    logo={logo}
+                    product={product}
+                    qrValue={generatedQrValue}
+                    templateUrl={proofFrontTemplateUrl}
+                    fontSizePercent={proofFontSizePercent}
+                    logoSizePercent={proofLogoSizePercent}
+                  />
+                  <label className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
+                    <input
+                      className="mt-1"
+                      type="checkbox"
+                      checked={proofApproved}
+                      onChange={(event) => {
+                        setProofApproved(event.target.checked);
+                        setApprovedProofSnapshot(event.target.checked && currentApprovalSnapshot ? currentApprovalSnapshot : null);
+                      }}
+                    />
+                    I reviewed the front proof preview and confirm these branded setup details.
+                  </label>
                 </div>
               ) : null}
             </div>
@@ -986,7 +1021,17 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     Preview proof
                   </button>
                 ) : null}
-                {step === "review" ? (
+                {step === "review" && selectedOption.id === "branded_qr_direct" ? (
+                  <button type="button" className="tr-button-primary" onClick={continueFromProof}>
+                    Continue to confirmation
+                  </button>
+                ) : null}
+                {step === "review" && selectedOption.id !== "branded_qr_direct" ? (
+                  <button type="button" className="tr-button-primary" onClick={addConfiguredItemToCart}>
+                    Add to cart
+                  </button>
+                ) : null}
+                {step === "confirmation" ? (
                   <button type="button" className="tr-button-primary" onClick={addConfiguredItemToCart}>
                     Add to cart
                   </button>

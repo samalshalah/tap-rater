@@ -100,7 +100,7 @@ describe("production artwork", () => {
 
     expect(template).toMatchObject({
       id: "taprater-branded-stand-front",
-      version: "2026-08-27.3",
+      version: "2026-08-31.1",
       format: "svg",
       widthPx: 1278,
       heightPx: 1949,
@@ -120,7 +120,7 @@ describe("production artwork", () => {
       dpi: brandedStandComposition.dpi,
       logoRegion: { x: 335, y: 95, width: 610, height: 140 },
       businessNameRegion: { x: 286, y: 380, width: 706, height: 85 },
-      qrRegion: { x: 814, y: 1352, width: 246, height: 246 }
+      qrRegion: { x: 790, y: 1331, width: 288, height: 288 }
     });
     expect(regionToPixels(brandedStandComposition.logoRegion)).toMatchObject({ x: 335, y: 95, width: 610, height: 140 });
   });
@@ -139,7 +139,7 @@ describe("production artwork", () => {
       dpi: 300,
       widthIn: 4.26,
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.3",
+      templateVersion: "2026-08-31.1",
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
     });
@@ -156,7 +156,7 @@ describe("production artwork", () => {
       productId: "google-review-stand",
       optionId: "branded_qr_direct",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-27.3",
+      templateVersion: "2026-08-31.1",
       approvalSnapshotHash: artwork?.approvalSnapshotHash,
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
