@@ -220,6 +220,9 @@ export async function composeProductionArtworkDocument(
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? readSetupString(item.setup, "generatedQrValue");
   const fontSizePercent = readSetupNumber(item.setup, "fontSizePercent") ?? 100;
   const logoSizePercent = readSetupNumber(item.setup, "logoSizePercent") ?? 100;
+  const logoFitMode = readSetupString(item.setup, "logoFitMode") === "fill" ? "fill" : "contain";
+  const logoOffsetXPercent = readSetupNumber(item.setup, "logoOffsetXPercent") ?? 0;
+  const logoOffsetYPercent = readSetupNumber(item.setup, "logoOffsetYPercent") ?? 0;
 
   if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
@@ -234,7 +237,8 @@ export async function composeProductionArtworkDocument(
   const qrBody = extractSvgBody(qrSvg);
   const qrViewBox = extractViewBox(qrSvg) ?? "0 0 512 512";
   const nameFontSize = Math.round(fitSingleLineFontSize(businessName, template.businessNameRegion.width, 68, 26) * fontSizePercent / 100);
-  const logoRegion = scaleRegion(template.logoRegion, logoSizePercent);
+  const logoRegion = offsetRegion(scaleRegion(template.logoRegion, logoSizePercent), template.logoRegion, logoOffsetXPercent, logoOffsetYPercent);
+  const logoPreserveAspectRatio = logoFitMode === "fill" ? "xMidYMid slice" : "xMidYMid meet";
 
   const svg = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${template.widthPx}" height="${template.heightPx}" viewBox="0 0 ${template.widthPx} ${template.heightPx}" role="img" aria-label="${escapeXml(item.title)} production artwork">`,
@@ -252,7 +256,7 @@ export async function composeProductionArtworkDocument(
     }))}</metadata>`,
     `<rect width="${template.widthPx}" height="${template.heightPx}" fill="#ffffff"/>`,
     `<image href="${escapeXml(baseTemplateAsset.dataUri)}" x="0" y="0" width="${template.widthPx}" height="${template.heightPx}" preserveAspectRatio="xMidYMid meet"/>`,
-    `<image href="${escapeXml(logoAsset.dataUri)}" x="${logoRegion.x}" y="${logoRegion.y}" width="${logoRegion.width}" height="${logoRegion.height}" preserveAspectRatio="xMidYMid meet"/>`,
+    `<image href="${escapeXml(logoAsset.dataUri)}" x="${logoRegion.x}" y="${logoRegion.y}" width="${logoRegion.width}" height="${logoRegion.height}" preserveAspectRatio="${logoPreserveAspectRatio}"/>`,
     `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`,
     `<svg x="${template.qrRegion.x}" y="${template.qrRegion.y}" width="${template.qrRegion.width}" height="${template.qrRegion.height}" viewBox="${escapeXml(qrViewBox)}">${qrBody}</svg>`,
     `</svg>`
@@ -278,7 +282,11 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
     generatedQrValue: readSetupString(item.setup, "generatedQrValue"),
     frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl"),
     fontSizePercent: readSetupNumber(item.setup, "fontSizePercent"),
-    logoSizePercent: readSetupNumber(item.setup, "logoSizePercent")
+    logoSizePercent: readSetupNumber(item.setup, "logoSizePercent"),
+    logoBackgroundMode: readSetupString(item.setup, "logoBackgroundMode"),
+    logoFitMode: readSetupString(item.setup, "logoFitMode"),
+    logoOffsetXPercent: readSetupNumber(item.setup, "logoOffsetXPercent"),
+    logoOffsetYPercent: readSetupNumber(item.setup, "logoOffsetYPercent")
   };
 }
 
@@ -478,6 +486,14 @@ function scaleRegion(region: ArtworkRegion, percent: number): ArtworkRegion {
     y: Math.round(region.y + (region.height - height) / 2),
     width,
     height
+  };
+}
+
+function offsetRegion(region: ArtworkRegion, originalRegion: ArtworkRegion, offsetXPercent: number, offsetYPercent: number): ArtworkRegion {
+  return {
+    ...region,
+    x: Math.round(region.x + originalRegion.width * offsetXPercent / 100),
+    y: Math.round(region.y + originalRegion.height * offsetYPercent / 100)
   };
 }
 

@@ -379,6 +379,12 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     logoFileName: setup?.logoFileName?.trim(),
     logoMediaUrl: setup?.logoMediaUrl?.trim(),
     logoStorageKey: setup?.logoStorageKey?.trim(),
+    originalLogoMediaUrl: setup?.originalLogoMediaUrl?.trim(),
+    originalLogoStorageKey: setup?.originalLogoStorageKey?.trim(),
+    logoBackgroundMode: setup?.logoBackgroundMode?.trim(),
+    logoFitMode: setup?.logoFitMode?.trim(),
+    logoOffsetXPercent: setup?.logoOffsetXPercent,
+    logoOffsetYPercent: setup?.logoOffsetYPercent,
     generatedQrValue: setup?.generatedQrValue?.trim(),
     qrTargetUrl: setup?.qrTargetUrl?.trim(),
     nfcTargetUrl: setup?.nfcTargetUrl?.trim(),
@@ -476,7 +482,11 @@ function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartI
     generatedQrValue: setup.generatedQrValue,
     frontTemplateUrl: setup.frontTemplateUrl,
     fontSizePercent: setup.fontSizePercent,
-    logoSizePercent: setup.logoSizePercent
+    logoSizePercent: setup.logoSizePercent,
+    logoBackgroundMode: setup.logoBackgroundMode,
+    logoFitMode: setup.logoFitMode,
+    logoOffsetXPercent: setup.logoOffsetXPercent,
+    logoOffsetYPercent: setup.logoOffsetYPercent
   }, setup.proofApprovalSnapshot);
 }
 

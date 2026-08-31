@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Search, UploadCloud, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
@@ -54,7 +54,15 @@ type UploadedLogo = {
   mediaUrl: string;
   storageKey: string;
   filename: string;
+  originalMediaUrl?: string;
+  originalStorageKey?: string;
+  originalFilename?: string;
+  trimApplied?: boolean;
+  blankMarginPercent?: number;
 };
+
+type LogoBackgroundMode = "auto_crop" | "original";
+type LogoFitMode = "contain" | "fill";
 
 type GooglePlaceResult = {
   placeId: string;
@@ -81,6 +89,10 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
   const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
   const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
+  const [logoBackgroundMode, setLogoBackgroundMode] = useState<LogoBackgroundMode>("auto_crop");
+  const [logoFitMode, setLogoFitMode] = useState<LogoFitMode>("contain");
+  const [logoOffsetXPercent, setLogoOffsetXPercent] = useState(0);
+  const [logoOffsetYPercent, setLogoOffsetYPercent] = useState(0);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [proofApproved, setProofApproved] = useState(false);
   const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
@@ -111,6 +123,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const proofFrontTemplateUrl = product.assetSet?.standardFrontTemplateUrl ?? product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const selectedLogoMediaUrl = logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl;
+  const selectedLogoStorageKey = logoBackgroundMode === "original" ? logo?.originalStorageKey ?? logo?.storageKey : logo?.storageKey;
   const setupOptions = options;
   const generatedQrValue = destinationUrl.trim();
   const directTargets = buildDirectProductionTargets(destinationUrl);
@@ -120,12 +134,16 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         optionCode: selectedOption.id,
         destinationUrl,
         businessName,
-        logoStorageKey: logo?.storageKey,
-        logoMediaUrl: logo?.mediaUrl,
+        logoStorageKey: selectedLogoStorageKey,
+        logoMediaUrl: selectedLogoMediaUrl,
         generatedQrValue,
         frontTemplateUrl: proofFrontTemplateUrl || undefined,
         fontSizePercent: proofFontSizePercent,
-        logoSizePercent: proofLogoSizePercent
+        logoSizePercent: proofLogoSizePercent,
+        logoBackgroundMode,
+        logoFitMode,
+        logoOffsetXPercent,
+        logoOffsetYPercent
       })
     : undefined;
   const isApprovedConfigurationCurrent =
@@ -305,38 +323,34 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
-    const form = new FormData();
-    form.set("file", file);
-    form.set("productSlug", product.slug);
     setIsUploadingLogo(true);
 
     try {
-      const response = await fetch("/api/setup/logo-upload", {
-        method: "POST",
-        body: form
-      });
-      const body = await response.json().catch(() => ({}));
+      const preparedLogo = await prepareLogoUpload(file);
+      const originalAsset = await uploadLogoAsset(file, product.slug);
+      const processedAsset = preparedLogo.file === file ? originalAsset : await uploadLogoAsset(preparedLogo.file, product.slug);
 
-      if (!response.ok || !body.asset?.mediaUrl || !body.asset?.storageKey) {
-        setLogo(null);
-        setProofApproved(false);
-        setApprovedProofSnapshot(null);
-        setError(body.error ?? "Logo upload failed. Use a PNG, JPG, or WEBP image up to 10 MB.");
-        return;
-      }
-
+      setLogoBackgroundMode(preparedLogo.trimApplied ? "auto_crop" : "original");
+      setLogoFitMode("contain");
+      setLogoOffsetXPercent(0);
+      setLogoOffsetYPercent(0);
       setLogo({
-        mediaUrl: body.asset.mediaUrl,
-        storageKey: body.asset.storageKey,
-        filename: body.asset.filename ?? file.name
+        mediaUrl: processedAsset.mediaUrl,
+        storageKey: processedAsset.storageKey,
+        filename: processedAsset.filename,
+        originalMediaUrl: originalAsset.mediaUrl,
+        originalStorageKey: originalAsset.storageKey,
+        originalFilename: originalAsset.filename,
+        trimApplied: preparedLogo.trimApplied,
+        blankMarginPercent: preparedLogo.blankMarginPercent
       });
       setProofApproved(false);
       setApprovedProofSnapshot(null);
-    } catch {
+    } catch (error) {
       setLogo(null);
       setProofApproved(false);
       setApprovedProofSnapshot(null);
-      setError("Logo upload failed. Please try again.");
+      setError(error instanceof Error ? error.message : "Logo upload failed. Please try again.");
     } finally {
       setIsUploadingLogo(false);
     }
@@ -458,9 +472,15 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         googlePlaceId: googlePlaceId || undefined,
         googlePlaceName: googlePlaceName || undefined,
         businessName: selectedOption.requiresBusinessName ? businessName.trim() : undefined,
-        logoFileName: logo?.filename,
-        logoMediaUrl: logo?.mediaUrl,
-        logoStorageKey: logo?.storageKey,
+        logoFileName: logoBackgroundMode === "original" ? logo?.originalFilename ?? logo?.filename : logo?.filename,
+        logoMediaUrl: selectedLogoMediaUrl,
+        logoStorageKey: selectedLogoStorageKey,
+        originalLogoMediaUrl: logo?.originalMediaUrl,
+        originalLogoStorageKey: logo?.originalStorageKey,
+        logoBackgroundMode: selectedOption.id === "branded_qr_direct" ? logoBackgroundMode : undefined,
+        logoFitMode: selectedOption.id === "branded_qr_direct" ? logoFitMode : undefined,
+        logoOffsetXPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetXPercent : undefined,
+        logoOffsetYPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetYPercent : undefined,
         generatedQrValue: directTargets?.qrTargetUrl,
         qrTargetUrl: directTargets?.qrTargetUrl,
         nfcTargetUrl: directTargets?.nfcTargetUrl,
@@ -474,11 +494,15 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
             ? {
                 productTitle: product.title,
                 businessName: businessName.trim(),
-                logoMediaUrl: logo?.mediaUrl,
+                logoMediaUrl: selectedLogoMediaUrl,
                 qrValue: directTargets?.qrTargetUrl,
                 frontTemplateUrl: proofFrontTemplateUrl || undefined,
                 fontSizePercent: proofFontSizePercent,
-                logoSizePercent: proofLogoSizePercent
+                logoSizePercent: proofLogoSizePercent,
+                logoBackgroundMode,
+                logoFitMode,
+                logoOffsetXPercent,
+                logoOffsetYPercent
               }
             : undefined,
         hasQr: true,
@@ -922,7 +946,40 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
                   {selectedOption.id === "branded_qr_direct" ? (
                     <>
-                      <div className="mx-auto grid w-full max-w-2xl gap-4 rounded-lg border border-line bg-white p-3 sm:grid-cols-2">
+                      <div className="mx-auto grid w-full max-w-3xl gap-4 rounded-lg border border-line bg-white p-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <ProofSegmentedControl
+                            label="Logo background"
+                            value={logoBackgroundMode}
+                            options={[
+                              { label: "Auto-crop", value: "auto_crop" },
+                              { label: "Original", value: "original" }
+                            ]}
+                            disabled={!logo?.trimApplied}
+                            onChange={(value) => {
+                              setLogoBackgroundMode(value as LogoBackgroundMode);
+                              setProofApproved(false);
+                              setApprovedProofSnapshot(null);
+                            }}
+                          />
+                          <ProofSegmentedControl
+                            label="Logo fit"
+                            value={logoFitMode}
+                            options={[
+                              { label: "Fit", value: "contain" },
+                              { label: "Fill", value: "fill" }
+                            ]}
+                            onChange={(value) => {
+                              setLogoFitMode(value as LogoFitMode);
+                              setProofApproved(false);
+                              setApprovedProofSnapshot(null);
+                            }}
+                          />
+                        </div>
+                        {logo?.trimApplied ? (
+                          <p className="text-xs font-semibold text-brand">Auto-crop removed about {logo.blankMarginPercent ?? 0}% blank logo margin. Original is still available.</p>
+                        ) : null}
+                        <div className="grid gap-4 sm:grid-cols-2">
                         <ProofRangeControl
                           label="Font size"
                           value={proofFontSizePercent}
@@ -945,10 +1002,38 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                             setApprovedProofSnapshot(null);
                           }}
                         />
+                        <ProofRangeControl
+                          label="Logo left / right"
+                          value={logoOffsetXPercent}
+                          min={-40}
+                          max={40}
+                          unit=""
+                          onChange={(value) => {
+                            setLogoOffsetXPercent(value);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                        />
+                        <ProofRangeControl
+                          label="Logo up / down"
+                          value={logoOffsetYPercent}
+                          min={-40}
+                          max={40}
+                          unit=""
+                          onChange={(value) => {
+                            setLogoOffsetYPercent(value);
+                            setProofApproved(false);
+                            setApprovedProofSnapshot(null);
+                          }}
+                        />
+                        </div>
                       </div>
                       <ProofPreview
                         businessName={businessName}
-                        logo={logo}
+                        logoMediaUrl={selectedLogoMediaUrl}
+                        logoFitMode={logoFitMode}
+                        logoOffsetXPercent={logoOffsetXPercent}
+                        logoOffsetYPercent={logoOffsetYPercent}
                         product={product}
                         qrValue={generatedQrValue}
                         templateUrl={proofFrontTemplateUrl}
@@ -975,7 +1060,10 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   </div>
                   <ProofPreview
                     businessName={businessName}
-                    logo={logo}
+                    logoMediaUrl={selectedLogoMediaUrl}
+                    logoFitMode={logoFitMode}
+                    logoOffsetXPercent={logoOffsetXPercent}
+                    logoOffsetYPercent={logoOffsetYPercent}
                     product={product}
                     qrValue={generatedQrValue}
                     templateUrl={proofFrontTemplateUrl}
@@ -1068,19 +1156,21 @@ function ProofRangeControl({
   max,
   min,
   onChange,
+  unit = "%",
   value
 }: {
   label: string;
   max: number;
   min: number;
   onChange: (value: number) => void;
+  unit?: string;
   value: number;
 }) {
   return (
     <label className="grid gap-2 text-sm font-semibold text-ink">
       <span className="flex items-center justify-between gap-3">
         <span>{label}</span>
-        <span className="text-xs font-bold text-muted">{value}%</span>
+        <span className="text-xs font-bold text-muted">{value}{unit}</span>
       </span>
       <input
         type="range"
@@ -1095,10 +1185,161 @@ function ProofRangeControl({
   );
 }
 
+function ProofSegmentedControl({
+  disabled = false,
+  label,
+  onChange,
+  options,
+  value
+}: {
+  disabled?: boolean;
+  label: string;
+  onChange: (value: string) => void;
+  options: Array<{ label: string; value: string }>;
+  value: string;
+}) {
+  return (
+    <div className={disabled ? "grid gap-2 text-sm font-semibold text-muted opacity-60" : "grid gap-2 text-sm font-semibold text-ink"}>
+      <p>{label}</p>
+      <div className="grid grid-cols-2 rounded-lg border border-line bg-soft p-1">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(option.value)}
+            className={
+              value === option.value
+                ? "rounded-md bg-white px-3 py-2 text-xs font-black text-ink shadow-sm"
+                : "rounded-md px-3 py-2 text-xs font-black text-muted hover:text-ink disabled:hover:text-muted"
+            }
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function uploadLogoAsset(file: File, productSlug: string): Promise<UploadedLogo> {
+  const form = new FormData();
+  form.set("file", file);
+  form.set("productSlug", productSlug);
+
+  const response = await fetch("/api/setup/logo-upload", {
+    method: "POST",
+    body: form
+  });
+  const body = await response.json().catch(() => ({}));
+
+  if (!response.ok || !body.asset?.mediaUrl || !body.asset?.storageKey) {
+    throw new Error(body.error ?? "Logo upload failed. Use a PNG, JPG, or WEBP image up to 10 MB.");
+  }
+
+  return {
+    mediaUrl: body.asset.mediaUrl,
+    storageKey: body.asset.storageKey,
+    filename: body.asset.filename ?? file.name
+  };
+}
+
+async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied: boolean; blankMarginPercent: number }> {
+  const image = await loadLogoImage(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+
+  if (!context || canvas.width < 2 || canvas.height < 2) {
+    return { file, trimApplied: false, blankMarginPercent: 0 };
+  }
+
+  context.drawImage(image, 0, 0);
+  const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  let minX = canvas.width;
+  let minY = canvas.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const index = (y * canvas.width + x) * 4;
+      if (isLogoContentPixel(data[index], data[index + 1], data[index + 2], data[index + 3])) {
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return { file, trimApplied: false, blankMarginPercent: 0 };
+  }
+
+  const contentWidth = maxX - minX + 1;
+  const contentHeight = maxY - minY + 1;
+  const contentAreaRatio = (contentWidth * contentHeight) / (canvas.width * canvas.height);
+  const blankMarginPercent = Math.round((1 - contentAreaRatio) * 100);
+
+  if (blankMarginPercent < 12) {
+    return { file, trimApplied: false, blankMarginPercent };
+  }
+
+  const padding = Math.round(Math.max(contentWidth, contentHeight) * 0.04);
+  const cropX = Math.max(0, minX - padding);
+  const cropY = Math.max(0, minY - padding);
+  const cropWidth = Math.min(canvas.width - cropX, contentWidth + padding * 2);
+  const cropHeight = Math.min(canvas.height - cropY, contentHeight + padding * 2);
+  const output = document.createElement("canvas");
+  output.width = cropWidth;
+  output.height = cropHeight;
+  const outputContext = output.getContext("2d");
+
+  if (!outputContext) {
+    return { file, trimApplied: false, blankMarginPercent };
+  }
+
+  outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  const blob = await new Promise<Blob | null>((resolve) => output.toBlob(resolve, "image/png"));
+
+  if (!blob) {
+    return { file, trimApplied: false, blankMarginPercent };
+  }
+
+  const filename = `${file.name.replace(/\.[^.]+$/, "") || "logo"}-trimmed.png`;
+  return { file: new File([blob], filename, { type: "image/png" }), trimApplied: true, blankMarginPercent };
+}
+
+function loadLogoImage(file: File) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image();
+    const objectUrl = URL.createObjectURL(file);
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Logo image could not be prepared."));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function isLogoContentPixel(red: number, green: number, blue: number, alpha: number) {
+  if (alpha < 16) return false;
+  return !(red >= 245 && green >= 245 && blue >= 245);
+}
+
 function ProofPreview({
   businessName,
   fontSizePercent,
-  logo,
+  logoFitMode,
+  logoMediaUrl,
+  logoOffsetXPercent,
+  logoOffsetYPercent,
   logoSizePercent,
   product,
   qrValue,
@@ -1106,7 +1347,10 @@ function ProofPreview({
 }: {
   businessName: string;
   fontSizePercent: number;
-  logo: UploadedLogo | null;
+  logoFitMode: LogoFitMode;
+  logoMediaUrl: string | undefined;
+  logoOffsetXPercent: number;
+  logoOffsetYPercent: number;
   logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
@@ -1122,13 +1366,26 @@ function ProofPreview({
           <TemplateProofPreview
             businessName={businessName}
             fontSizePercent={fontSizePercent}
-            logo={logo}
+            logoFitMode={logoFitMode}
+            logoMediaUrl={logoMediaUrl}
+            logoOffsetXPercent={logoOffsetXPercent}
+            logoOffsetYPercent={logoOffsetYPercent}
             logoSizePercent={logoSizePercent}
             qrValue={qrValue}
             templateUrl={templateUrl}
           />
         ) : (
-          <CleanProofPreview businessName={businessName} fontSizePercent={fontSizePercent} logo={logo} logoSizePercent={logoSizePercent} product={product} qrValue={qrValue} />
+          <CleanProofPreview
+            businessName={businessName}
+            fontSizePercent={fontSizePercent}
+            logoFitMode={logoFitMode}
+            logoMediaUrl={logoMediaUrl}
+            logoOffsetXPercent={logoOffsetXPercent}
+            logoOffsetYPercent={logoOffsetYPercent}
+            logoSizePercent={logoSizePercent}
+            product={product}
+            qrValue={qrValue}
+          />
         )}
       </div>
     </div>
@@ -1138,14 +1395,20 @@ function ProofPreview({
 function TemplateProofPreview({
   businessName,
   fontSizePercent,
-  logo,
+  logoFitMode,
+  logoMediaUrl,
+  logoOffsetXPercent,
+  logoOffsetYPercent,
   logoSizePercent,
   qrValue,
   templateUrl
 }: {
   businessName: string;
   fontSizePercent: number;
-  logo: UploadedLogo | null;
+  logoFitMode: LogoFitMode;
+  logoMediaUrl: string | undefined;
+  logoOffsetXPercent: number;
+  logoOffsetYPercent: number;
   logoSizePercent: number;
   qrValue: string;
   templateUrl: string;
@@ -1153,13 +1416,12 @@ function TemplateProofPreview({
   return (
     <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] overflow-hidden rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute grid place-items-center p-[3%]" style={regionStyle(brandedStandComposition.logoRegion)}>
-        {logo ? (
+      <div className="absolute grid place-items-center overflow-hidden p-[2%]" style={regionStyle(brandedStandComposition.logoRegion)}>
+        {logoMediaUrl ? (
           <img
-            src={logo.mediaUrl}
+            src={logoMediaUrl}
             alt="Uploaded business logo"
-            className="object-contain"
-            style={{ maxHeight: `${Math.round(72 * logoSizePercent / 100)}%`, maxWidth: `${Math.round(78 * logoSizePercent / 100)}%` }}
+            style={logoImageStyle({ fitMode: logoFitMode, logoSizePercent, offsetXPercent: logoOffsetXPercent, offsetYPercent: logoOffsetYPercent })}
           />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-[9px] font-black uppercase text-muted">Logo zone</span>
@@ -1184,27 +1446,32 @@ function TemplateProofPreview({
 function CleanProofPreview({
   businessName,
   fontSizePercent,
-  logo,
+  logoFitMode,
+  logoMediaUrl,
+  logoOffsetXPercent,
+  logoOffsetYPercent,
   logoSizePercent,
   product,
   qrValue
 }: {
   businessName: string;
   fontSizePercent: number;
-  logo: UploadedLogo | null;
+  logoFitMode: LogoFitMode;
+  logoMediaUrl: string | undefined;
+  logoOffsetXPercent: number;
+  logoOffsetYPercent: number;
   logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
 }) {
   return (
     <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
-      <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
-        {logo ? (
+      <div className="grid min-h-16 w-full place-items-center overflow-hidden rounded-lg border border-dashed border-line bg-soft p-2">
+        {logoMediaUrl ? (
           <img
-            src={logo.mediaUrl}
+            src={logoMediaUrl}
             alt="Uploaded business logo"
-            className="object-contain"
-            style={{ maxHeight: `${3.5 * logoSizePercent / 100}rem`, maxWidth: `${80 * logoSizePercent / 100}%` }}
+            style={logoImageStyle({ fitMode: logoFitMode, logoSizePercent, offsetXPercent: logoOffsetXPercent, offsetYPercent: logoOffsetYPercent })}
           />
         ) : (
           <span className="text-xs font-black uppercase text-muted">Logo zone</span>
@@ -1229,6 +1496,31 @@ function CleanProofPreview({
       <p className="mt-auto border-t border-ink px-8 pt-2 text-xs font-black uppercase text-ink">Tap Rater</p>
     </div>
   );
+}
+
+function logoImageStyle({
+  fitMode,
+  logoSizePercent,
+  offsetXPercent,
+  offsetYPercent
+}: {
+  fitMode: LogoFitMode;
+  logoSizePercent: number;
+  offsetXPercent: number;
+  offsetYPercent: number;
+}): CSSProperties {
+  const scale = Math.max(0.4, Math.min(1.8, logoSizePercent / 100));
+  const dimension = `${Math.round(100 * scale)}%`;
+
+  return {
+    display: "block",
+    height: fitMode === "fill" ? dimension : "auto",
+    maxHeight: fitMode === "contain" ? dimension : "none",
+    maxWidth: fitMode === "contain" ? dimension : "none",
+    objectFit: fitMode === "fill" ? "cover" : "contain",
+    transform: `translate(${offsetXPercent}%, ${offsetYPercent}%)`,
+    width: fitMode === "fill" ? dimension : "auto"
+  };
 }
 
 function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "template" }) {

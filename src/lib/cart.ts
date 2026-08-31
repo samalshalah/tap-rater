@@ -47,6 +47,12 @@ export type CartItem = {
     logoFileName?: string;
     logoMediaUrl?: string;
     logoStorageKey?: string;
+    originalLogoMediaUrl?: string;
+    originalLogoStorageKey?: string;
+    logoBackgroundMode?: string;
+    logoFitMode?: string;
+    logoOffsetXPercent?: number;
+    logoOffsetYPercent?: number;
     generatedQrValue?: string;
     qrTargetUrl?: string;
     nfcTargetUrl?: string;
@@ -245,6 +251,12 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.logoFileName ?? "",
     setup.logoMediaUrl ?? "",
     setup.logoStorageKey ?? "",
+    setup.originalLogoMediaUrl ?? "",
+    setup.originalLogoStorageKey ?? "",
+    setup.logoBackgroundMode ?? "",
+    setup.logoFitMode ?? "",
+    setup.logoOffsetXPercent === undefined ? "" : String(setup.logoOffsetXPercent),
+    setup.logoOffsetYPercent === undefined ? "" : String(setup.logoOffsetYPercent),
     setup.generatedQrValue ?? "",
     setup.qrTargetUrl ?? "",
     setup.nfcTargetUrl ?? "",
@@ -294,6 +306,12 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     logoFileName: readString(row.logoFileName),
     logoMediaUrl: readString(row.logoMediaUrl),
     logoStorageKey: readString(row.logoStorageKey),
+    originalLogoMediaUrl: readString(row.originalLogoMediaUrl),
+    originalLogoStorageKey: readString(row.originalLogoStorageKey),
+    logoBackgroundMode: readString(row.logoBackgroundMode),
+    logoFitMode: readString(row.logoFitMode),
+    logoOffsetXPercent: readInteger(row.logoOffsetXPercent),
+    logoOffsetYPercent: readInteger(row.logoOffsetYPercent),
     generatedQrValue: readString(row.generatedQrValue),
     qrTargetUrl: readString(row.qrTargetUrl),
     nfcTargetUrl: readString(row.nfcTargetUrl),

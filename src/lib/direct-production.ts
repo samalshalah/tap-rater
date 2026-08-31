@@ -17,6 +17,10 @@ export type ProofApprovalSnapshot = {
   ctaText?: string;
   fontSizePercent?: number;
   logoSizePercent?: number;
+  logoBackgroundMode?: string;
+  logoFitMode?: string;
+  logoOffsetXPercent?: number;
+  logoOffsetYPercent?: number;
 };
 
 export function normalizeDirectDestinationUrl(value: string | undefined | null) {
@@ -59,7 +63,11 @@ export function buildProofApprovalSnapshot(input: ProofApprovalSnapshot): ProofA
     generatedQrValue: normalizeOptional(input.generatedQrValue),
     frontTemplateUrl: normalizeOptional(input.frontTemplateUrl),
     fontSizePercent: normalizeOptionalPercent(input.fontSizePercent),
-    logoSizePercent: normalizeOptionalPercent(input.logoSizePercent)
+    logoSizePercent: normalizeOptionalPercent(input.logoSizePercent),
+    logoBackgroundMode: normalizeOptional(input.logoBackgroundMode),
+    logoFitMode: normalizeOptional(input.logoFitMode),
+    logoOffsetXPercent: normalizeOptionalPercent(input.logoOffsetXPercent),
+    logoOffsetYPercent: normalizeOptionalPercent(input.logoOffsetYPercent)
   };
 }
 
@@ -89,7 +97,11 @@ function stableSnapshotString(snapshot: ProofApprovalSnapshot) {
     generatedQrValue: snapshot.generatedQrValue ?? "",
     frontTemplateUrl: snapshot.frontTemplateUrl ?? "",
     fontSizePercent: snapshot.fontSizePercent ?? "",
-    logoSizePercent: snapshot.logoSizePercent ?? ""
+    logoSizePercent: snapshot.logoSizePercent ?? "",
+    logoBackgroundMode: snapshot.logoBackgroundMode ?? "",
+    logoFitMode: snapshot.logoFitMode ?? "",
+    logoOffsetXPercent: snapshot.logoOffsetXPercent ?? "",
+    logoOffsetYPercent: snapshot.logoOffsetYPercent ?? ""
   });
 }
 
