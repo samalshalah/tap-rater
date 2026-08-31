@@ -524,6 +524,23 @@ export const checkoutCartSchema = z.object({
             colorLabel: z.string().trim().max(80).optional(),
             destinationUrl: z.string().trim().max(500).optional(),
             destinationType: z.string().trim().max(80).optional(),
+            serviceMode: z.enum(["DIRECT", "HOSTED"]).optional(),
+            serviceAddon: z.string().trim().max(80).optional(),
+            monthlyPriceCents: z.number().int().min(0).max(1_000_000).optional(),
+            multiLinkButtons: z
+              .array(
+                z.object({
+                  id: z.string().trim().min(1).max(120),
+                  type: z.string().trim().min(1).max(60),
+                  label: z.string().trim().min(1).max(80),
+                  url: z.string().trim().min(1).max(600),
+                  enabled: z.boolean(),
+                  position: z.number().int().min(0).max(99)
+                })
+              )
+              .max(10)
+              .optional(),
+            multiLinkLinksSkipped: z.boolean().optional(),
             platformSlug: z.string().trim().max(120).optional(),
             googlePlaceId: z.string().trim().max(180).optional(),
             googlePlaceName: z.string().trim().max(180).optional(),

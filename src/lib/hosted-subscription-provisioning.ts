@@ -2,8 +2,9 @@ import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createCustomerActivationToken } from "@/lib/customer-account";
 import { sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
-import { validateHostedPageSnapshot, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
+import { validateHostedPageSnapshot, type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
+import { supportedHostedPageButtons, type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
 import type { EmailResult } from "@/lib/email";
 import type { OrderLineItem, OrderRecord, OrdersDbClient, StripeCheckoutSessionLike } from "@/lib/orders";
 
@@ -83,6 +84,7 @@ export async function provisionHostedSubscriptionFromCheckout(
   const setup = readSetup(hostedItem);
   const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
   const logoUrl = readString(setup.logoMediaUrl);
+  const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
   const stripeSubscriptionId = readStripeId(input.session.subscription) ?? `checkout:${input.session.id}`;
   const stripeCustomerId = readStripeId(input.session.customer);
   const subscriptionStatus = readSubscriptionStatus(input.session.subscription);
@@ -132,6 +134,7 @@ export async function provisionHostedSubscriptionFromCheckout(
     lifecycleStatus,
     businessName,
     logoUrl: logoUrl ?? null,
+    initialButtons,
     now
   });
   if (!page.ok) return page;
@@ -175,8 +178,8 @@ export async function provisionHostedSubscriptionFromCheckout(
     businessName,
     logoUrl: logoUrl ?? undefined,
     headline: businessName,
-    buttons: [],
-    description: "This Tap Rater page is being set up.",
+    buttons: buildSnapshotButtons(initialButtons),
+    description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
     appearance: { theme: "light", accentColor: "#0f766e" },
     subscriptionPaidThrough: paidThrough ?? undefined
   }));
@@ -287,9 +290,9 @@ async function createBusiness(client: OrdersDbClient, input: { customerId: strin
 
 async function upsertHostedEditorPage(
   client: OrdersDbClient,
-  input: { customerId: string; businessId: string; code: string; lifecycleStatus: HostedPageLifecycleStatus; businessName: string; logoUrl?: string | null; now: Date }
+  input: { customerId: string; businessId: string; code: string; lifecycleStatus: HostedPageLifecycleStatus; businessName: string; logoUrl?: string | null; initialButtons?: HostedPageEditorButton[]; now: Date }
 ) {
-  const draft = buildInitialDraft(input.businessName, input.logoUrl ?? undefined);
+  const draft = buildInitialDraft(input.businessName, input.logoUrl ?? undefined, input.initialButtons ?? []);
   const result = await client
     .from("hosted_page_editor_pages")
     .upsert(
@@ -445,15 +448,65 @@ function buildPhysicalProductRef(order: OrderRecord, checkoutSessionId: string, 
   return `stripe-checkout:${checkoutSessionId}:order:${order.id ?? "pending"}:line:${itemIndex + 1}`;
 }
 
-function buildInitialDraft(businessName: string, logoUrl?: string) {
+function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = []) {
   return {
     businessName,
     logoUrl,
     headline: businessName,
-    description: "This Tap Rater page is being set up.",
+    description: buttons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
     appearance: { theme: "light" as const, accentColor: "#0f766e" as const },
-    buttons: []
+    buttons
   };
+}
+
+function readInitialMultiLinkButtons(value: unknown): HostedPageEditorButton[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((item, index): HostedPageEditorButton[] => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const id = readString(row.id);
+    const type = readEditorButtonType(row.type);
+    const label = readString(row.label);
+    const url = readString(row.url);
+    if (!id || !type || !label || !url || !isHttpUrl(url)) return [];
+
+    return [
+      {
+        id,
+        type,
+        label,
+        url,
+        enabled: row.enabled !== false,
+        position: Number.isInteger(row.position) ? Number(row.position) : index
+      }
+    ];
+  }).slice(0, 10).map((button, index) => ({ ...button, position: index }));
+}
+
+function buildSnapshotButtons(buttons: HostedPageEditorButton[]): HostedPageButton[] {
+  return buttons
+    .filter((button) => button.enabled)
+    .map((button) => ({
+      id: button.id,
+      label: button.label,
+      type: supportedHostedPageButtons.find((item) => item.type === button.type)?.snapshotType ?? "website",
+      url: button.url,
+      isVisible: true
+    }));
+}
+
+function readEditorButtonType(value: unknown) {
+  return typeof value === "string" && supportedHostedPageButtons.some((button) => button.type === value) ? value as HostedPageEditorButton["type"] : undefined;
+}
+
+function isHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function getHostedLineItem(item: OrderLineItem) {

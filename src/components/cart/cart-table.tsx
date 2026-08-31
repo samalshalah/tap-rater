@@ -141,6 +141,12 @@ export function CartTable({
                       {formatPrice(row.item.setup.monthlyPriceCents)}/mo Multi-Link hosting
                     </p>
                   ) : null}
+                  {hasHostedMultiLink ? (
+                    <p>
+                      <strong className="text-ink">Links:</strong>{" "}
+                      {row.item.setup?.multiLinkButtons?.length ? `${row.item.setup.multiLinkButtons.length} added` : "Skipped for later"}
+                    </p>
+                  ) : null}
                   {row.option.requiresFinalProof ? (
                     <p>
                       <strong className="text-ink">Front proof:</strong>{" "}

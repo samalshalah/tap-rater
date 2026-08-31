@@ -78,6 +78,30 @@ describe("cart utilities", () => {
     expect(items).toEqual([]);
   });
 
+  it("keeps valid Multi-Link draft buttons on hosted add-on cart items", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
+    const items = normalizeCartItems([
+      {
+        productId: "follow-us-social-media-stand",
+        optionId: "standard_direct",
+        quantity: 1,
+        setup: {
+          serviceMode: "HOSTED",
+          serviceAddon: "hosted_multilink",
+          multiLinkButtons: [
+            { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 5 },
+            { id: "bad", type: "", label: "", url: "", enabled: true, position: 9 }
+          ],
+          multiLinkLinksSkipped: false
+        }
+      }
+    ]);
+
+    expect(items[0].setup?.multiLinkButtons).toEqual([
+      { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
+    ]);
+  });
+
   it("restores only valid items from localStorage JSON", () => {
     const items = parseStoredCart(
       JSON.stringify([

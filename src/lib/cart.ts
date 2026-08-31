@@ -18,6 +18,15 @@ export type CartProductSnapshot = {
 
 export const cartStorageKey = "taprater:cart";
 
+export type CartMultiLinkButton = {
+  id: string;
+  type: string;
+  label: string;
+  url: string;
+  enabled: boolean;
+  position: number;
+};
+
 export type CartItem = {
   productId: string;
   optionId?: PurchaseOptionId;
@@ -38,6 +47,8 @@ export type CartItem = {
     serviceMode?: "DIRECT" | "HOSTED";
     serviceAddon?: string;
     monthlyPriceCents?: number;
+    multiLinkButtons?: CartMultiLinkButton[];
+    multiLinkLinksSkipped?: boolean;
     platformSlug?: string;
     googlePlaceId?: string;
     googlePlaceName?: string;
@@ -243,6 +254,8 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.serviceMode ?? "",
     setup.serviceAddon ?? "",
     setup.monthlyPriceCents === undefined ? "" : String(setup.monthlyPriceCents),
+    JSON.stringify(setup.multiLinkButtons ?? []),
+    setup.multiLinkLinksSkipped === true ? "multilink_skipped" : "",
     setup.platformSlug ?? "",
     setup.googlePlaceId ?? "",
     setup.businessName ?? "",
@@ -299,6 +312,8 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     serviceMode: row.serviceMode === "DIRECT" || row.serviceMode === "HOSTED" ? row.serviceMode : undefined,
     serviceAddon: readString(row.serviceAddon),
     monthlyPriceCents: typeof row.monthlyPriceCents === "number" && Number.isInteger(row.monthlyPriceCents) ? row.monthlyPriceCents : undefined,
+    multiLinkButtons: readMultiLinkButtons(row.multiLinkButtons),
+    multiLinkLinksSkipped: row.multiLinkLinksSkipped === true,
     platformSlug: readString(row.platformSlug),
     googlePlaceId: readString(row.googlePlaceId),
     googlePlaceName: readString(row.googlePlaceName),
@@ -345,6 +360,34 @@ function readInteger(value: unknown) {
 
 function readRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function readMultiLinkButtons(value: unknown): CartMultiLinkButton[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+
+  const buttons = value.flatMap((item, index): CartMultiLinkButton[] => {
+    const row = readRecord(item);
+    if (!row) return [];
+    const id = readString(row.id);
+    const type = readString(row.type);
+    const label = readString(row.label);
+    const url = readString(row.url);
+    const position = readInteger(row.position) ?? index;
+    if (!id || !type || !label || !url) return [];
+
+    return [
+      {
+        id,
+        type,
+        label,
+        url,
+        enabled: row.enabled !== false,
+        position
+      }
+    ];
+  });
+
+  return buttons.length ? buttons.slice(0, 10).map((button, index) => ({ ...button, position: index })) : undefined;
 }
 
 function readPurchaseOptionId(value: unknown): PurchaseOptionId | undefined {

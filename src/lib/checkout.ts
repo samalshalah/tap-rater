@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
-import type { CartItem } from "@/lib/cart";
+import type { CartItem, CartMultiLinkButton } from "@/lib/cart";
 import {
   cartItemRequestsPermanentHostedCode,
   generateProductVariantSku,
@@ -374,6 +374,8 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     serviceMode: setup?.serviceMode,
     serviceAddon: setup?.serviceAddon?.trim(),
     monthlyPriceCents: setup?.monthlyPriceCents,
+    multiLinkButtons: normalizeMultiLinkCheckoutButtons(setup?.multiLinkButtons),
+    multiLinkLinksSkipped: setup?.multiLinkLinksSkipped === true,
     platformSlug: setup?.platformSlug?.trim(),
     googlePlaceId: setup?.googlePlaceId?.trim(),
     googlePlaceName: setup?.googlePlaceName?.trim(),
@@ -451,6 +453,10 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
     return false;
   }
 
+  if (hasMultiLinkAddon && !isValidMultiLinkCheckoutButtons(setup.multiLinkButtons)) {
+    return false;
+  }
+
   if (option.id === "branded_qr_direct") {
     const manualDesignFlow = setup.designAssistanceRequested === true;
 
@@ -476,6 +482,40 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
   }
 
   return true;
+}
+
+function normalizeMultiLinkCheckoutButtons(buttons: CartMultiLinkButton[] | undefined) {
+  if (!Array.isArray(buttons)) return undefined;
+
+  const normalized = buttons.flatMap((button, index) => {
+    const id = button.id?.trim();
+    const type = button.type?.trim();
+    const label = button.label?.trim();
+    const url = button.url?.trim();
+    if (!id || !type || !label || !url) return [];
+
+    return [
+      {
+        id,
+        type,
+        label,
+        url,
+        enabled: button.enabled !== false,
+        position: Number.isInteger(button.position) ? button.position : index
+      }
+    ];
+  });
+
+  return normalized.length ? normalized.slice(0, 10).map((button, index) => ({ ...button, position: index })) : undefined;
+}
+
+function isValidMultiLinkCheckoutButtons(buttons: NonNullable<CartItem["setup"]>["multiLinkButtons"]) {
+  if (!buttons) return true;
+
+  return buttons.every((button) => {
+    if (!button.enabled) return true;
+    return Boolean(button.label?.trim() && isHttpUrl(button.url));
+  });
 }
 
 function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartItem["setup"]>) {

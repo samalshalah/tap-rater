@@ -585,6 +585,9 @@ describe("Stripe checkout helpers", () => {
           setup: {
             serviceMode: "HOSTED",
             serviceAddon: "hosted_multilink",
+            multiLinkButtons: [
+              { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
+            ],
             manualCollectionAcknowledged: true
           }
         }
@@ -604,6 +607,33 @@ describe("Stripe checkout helpers", () => {
       monthlyAmountCents: 999
     });
     expect(result.rows[0].setup).not.toHaveProperty("hostedPageCode");
+    expect(result.rows[0].setup.multiLinkButtons).toEqual([
+      { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
+    ]);
+  });
+
+  it("rejects Multi-Link add-on checkout when an enabled draft link URL is invalid", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
+    const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "follow-us-social-media-stand",
+          optionId: "standard_direct",
+          quantity: 1,
+          setup: {
+            serviceMode: "HOSTED",
+            serviceAddon: "hosted_multilink",
+            multiLinkButtons: [
+              { id: "link-1", type: "website", label: "Website", url: "not-a-url", enabled: true, position: 0 }
+            ]
+          }
+        }
+      ],
+      [compatibleProduct]
+    );
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("rejects a HOSTED option attached to a DIRECT product", () => {

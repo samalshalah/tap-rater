@@ -18,7 +18,15 @@ describe("hosted subscription provisioning", () => {
   it("provisions customer ownership, permanent code, hosted page URL, subscription, production targets, and setup email after paid checkout", async () => {
     const client = new MemoryDbClient();
     const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
-    const order = createHostedOrder();
+    const order = createHostedOrder({
+      setup: {
+        businessName: "Owner Example",
+        multiLinkButtons: [
+          { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 },
+          { id: "link-2", type: "google_review", label: "Review us", url: "https://g.page/example/review", enabled: true, position: 1 }
+        ]
+      }
+    });
     const sendHostedSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
 
     const result = await provisionHostedSubscriptionFromCheckout(
@@ -64,7 +72,18 @@ describe("hosted subscription provisioning", () => {
       }
     ]);
     expect(client.table("customers")[0].activation_token_hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(client.table("hosted_page_editor_pages")).toMatchObject([{ code: "ABCDEFGHJKM2", lifecycle_status: "ACTIVE" }]);
+    expect(client.table("hosted_page_editor_pages")).toMatchObject([
+      {
+        code: "ABCDEFGHJKM2",
+        lifecycle_status: "ACTIVE",
+        draft_json: {
+          buttons: [
+            { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 },
+            { id: "link-2", type: "google_review", label: "Review us", url: "https://g.page/example/review", enabled: true, position: 1 }
+          ]
+        }
+      }
+    ]);
     expect(client.table("hosted_subscriptions")).toMatchObject([
       {
         stripe_checkout_session_id: "cs_test_hosted",
@@ -82,6 +101,12 @@ describe("hosted subscription provisioning", () => {
       nfcTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2"
     });
     expect(storage.objects.has("hosted-pages/ABCDEFGHJKM2/current.json")).toBe(true);
+    const pointer = JSON.parse(storage.objects.get("hosted-pages/ABCDEFGHJKM2/current.json") ?? "{}");
+    const snapshot = JSON.parse(storage.objects.get(`hosted-pages/ABCDEFGHJKM2/versions/${pointer.currentVersion}.json`) ?? "{}");
+    expect(snapshot.buttons).toEqual([
+      { id: "link-1", label: "Website", type: "website", url: "https://example.com", isVisible: true },
+      { id: "link-2", label: "Review us", type: "review", url: "https://g.page/example/review", isVisible: true }
+    ]);
     expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({
       to: "owner@example.com",
       businessName: "Owner Example",
@@ -261,7 +286,7 @@ describe("hosted subscription provisioning", () => {
   });
 });
 
-function createHostedOrder(input: { lineItems?: OrderRecord["line_items_json"] } = {}): OrderRecord {
+function createHostedOrder(input: { lineItems?: OrderRecord["line_items_json"]; setup?: Record<string, unknown> } = {}): OrderRecord {
   return {
     id: "order-1",
     stripe_checkout_session_id: "cs_test_hosted",
@@ -284,7 +309,7 @@ function createHostedOrder(input: { lineItems?: OrderRecord["line_items_json"] }
         quantity: 1,
         unitAmountCents: 4900,
         lineSubtotalCents: 4900,
-        setup: {
+        setup: input.setup ?? {
           businessName: "Owner Example"
         }
       }

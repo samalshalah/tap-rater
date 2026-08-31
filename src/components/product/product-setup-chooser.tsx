@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Search, UploadCloud, X } from "lucide-react";
+import { CheckCircle2, Plus, Search, Smartphone, Trash2, UploadCloud, X } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -14,6 +14,7 @@ import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
 import { generateGoogleReviewUrl } from "@/lib/google-review";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
+import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -39,8 +40,9 @@ export type ProductSetupChooserProduct = Pick<
   | "colorOptions"
 >;
 
-type SetupStep = "choose" | "destination" | "design" | "review" | "confirmation";
+type SetupStep = "choose" | "destination" | "links" | "design" | "review" | "confirmation";
 type LinkExperienceId = "direct" | "multilink";
+type MultiLinkDraftButton = Pick<HostedPageEditorButton, "id" | "type" | "label" | "url" | "enabled" | "position">;
 
 type ProductSetupChooserProps = {
   product: ProductSetupChooserProduct;
@@ -84,6 +86,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [googlePlaceId, setGooglePlaceId] = useState("");
   const [googlePlaceName, setGooglePlaceName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => createInitialMultiLinkButtons());
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
   const [selectedSizeCode, setSelectedSizeCode] = useState(() => getDefaultProductSize(product)?.code ?? "");
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
@@ -130,6 +133,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const selectedLogoStorageKey = logoBackgroundMode === "original" ? logo?.originalStorageKey ?? logo?.storageKey : logo?.storageKey;
   const setupOptions = options;
   const generatedQrValue = destinationUrl.trim();
+  const proofQrValue = selectedLinkExperience === "multilink" ? "https://taprater.com/p/your-page" : generatedQrValue;
   const directTargets = buildDirectProductionTargets(destinationUrl);
   const currentApprovalSnapshot = selectedOption
     ? buildProofApprovalSnapshot({
@@ -139,7 +143,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         businessName,
         logoStorageKey: selectedLogoStorageKey,
         logoMediaUrl: selectedLogoMediaUrl,
-        generatedQrValue,
+        generatedQrValue: proofQrValue,
         frontTemplateUrl: proofFrontTemplateUrl || undefined,
         fontSizePercent: proofFontSizePercent,
         logoSizePercent: proofLogoSizePercent,
@@ -324,6 +328,24 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
     setProofApproved(false);
     setApprovedProofSnapshot(null);
+    setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "review");
+  }
+
+  function continueFromMultiLinkLinks({ skip = false }: { skip?: boolean } = {}) {
+    setError("");
+
+    if (skip) {
+      setMultiLinkButtons([]);
+    } else {
+      const normalized = normalizeMultiLinkButtonsForSetup(multiLinkButtons);
+      if (normalized.error) {
+        setError(normalized.error);
+        return;
+      }
+    }
+
+    setProofApproved(false);
+    setApprovedProofSnapshot(null);
     setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
@@ -404,11 +426,16 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     }
 
     if (step === "review") {
-      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination");
+      setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "destination");
       return;
     }
 
     if (step === "design") {
+      setStep(selectedLinkExperience === "multilink" ? "links" : "destination");
+      return;
+    }
+
+    if (step === "links") {
       setStep("destination");
     }
   }
@@ -424,6 +451,14 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     if (selectedLinkExperience === "direct" && !directTargets) {
       setError("Enter a valid destination link starting with http or https.");
       setStep("destination");
+      return;
+    }
+
+    const normalizedMultiLinkButtons = selectedLinkExperience === "multilink" ? normalizeMultiLinkButtonsForSetup(multiLinkButtons) : { buttons: [] };
+
+    if (normalizedMultiLinkButtons.error) {
+      setError(normalizedMultiLinkButtons.error);
+      setStep("links");
       return;
     }
 
@@ -484,6 +519,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         serviceMode: selectedLinkExperience === "multilink" ? "HOSTED" : "DIRECT",
         serviceAddon: selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.code : undefined,
         monthlyPriceCents: selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.monthlyPriceCents : undefined,
+        multiLinkButtons: selectedLinkExperience === "multilink" ? normalizedMultiLinkButtons.buttons : undefined,
+        multiLinkLinksSkipped: selectedLinkExperience === "multilink" ? normalizedMultiLinkButtons.buttons.length === 0 : undefined,
         platformSlug: product.primaryPlatformSlug,
         googlePlaceId: googlePlaceId || undefined,
         googlePlaceName: googlePlaceName || undefined,
@@ -498,7 +535,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         logoFitMode: selectedOption.id === "branded_qr_direct" ? logoFitMode : undefined,
         logoOffsetXPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetXPercent : undefined,
         logoOffsetYPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetYPercent : undefined,
-        generatedQrValue: directTargets?.qrTargetUrl,
+        generatedQrValue: selectedLinkExperience === "multilink" ? proofQrValue : directTargets?.qrTargetUrl,
         qrTargetUrl: directTargets?.qrTargetUrl,
         nfcTargetUrl: directTargets?.nfcTargetUrl,
         frontTemplateUrl: selectedOption.hasQr ? proofFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
@@ -513,7 +550,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 productTitle: product.title,
                 businessName: businessName.trim(),
                 logoMediaUrl: selectedLogoMediaUrl,
-                qrValue: directTargets?.qrTargetUrl,
+                qrValue: selectedLinkExperience === "multilink" ? proofQrValue : directTargets?.qrTargetUrl,
                 frontTemplateUrl: proofFrontTemplateUrl || undefined,
                 fontSizePercent: proofFontSizePercent,
                 logoSizePercent: proofLogoSizePercent,
@@ -544,23 +581,30 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         ? "Unavailable"
         : formatPrice(configuredUnitPriceCents).replace(".00", "");
   const stepLabels =
-    selectedOption.id === "branded_qr_direct"
-      ? ["Destination", "Logo + name", "Proof", "Confirm"]
+    selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
+      ? ["Business", "Links", "Logo + name", "Proof", "Confirm"]
       : selectedLinkExperience === "multilink"
-        ? ["Business", "Confirm"]
+        ? ["Business", "Links", "Confirm"]
+        : selectedOption.id === "branded_qr_direct"
+          ? ["Destination", "Logo + name", "Proof", "Confirm"]
         : ["Destination", "Confirm"];
-  const stepGridClassName = selectedOption.id === "branded_qr_direct" ? "sm:grid-cols-4" : "sm:grid-cols-2";
-  const activeStepIndex = selectedOption.id === "branded_qr_direct"
-    ? step === "destination"
-      ? 0
-      : step === "design"
-        ? 1
-        : step === "review"
-          ? 2
-          : 3
-    : step === "destination"
-      ? 0
-      : 1;
+  const stepGridClassName =
+    selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
+      ? "sm:grid-cols-5"
+      : selectedLinkExperience === "multilink"
+        ? "sm:grid-cols-3"
+        : selectedOption.id === "branded_qr_direct"
+          ? "sm:grid-cols-4"
+          : "sm:grid-cols-2";
+  const stepOrder: SetupStep[] =
+    selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
+      ? ["destination", "links", "design", "review", "confirmation"]
+      : selectedLinkExperience === "multilink"
+        ? ["destination", "links", "review"]
+        : selectedOption.id === "branded_qr_direct"
+          ? ["destination", "design", "review", "confirmation"]
+          : ["destination", "review"];
+  const activeStepIndex = Math.max(0, stepOrder.indexOf(step));
 
   return (
     <>
@@ -773,9 +817,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       className="flex w-full items-center px-3 py-2 text-left disabled:cursor-default"
                       disabled={index >= activeStepIndex}
                       onClick={() => {
-                        if (index === 0) setStep("destination");
-                        if (index === 1 && selectedOption.id === "branded_qr_direct") setStep("design");
-                        if (index === 2 && selectedOption.id === "branded_qr_direct") setStep("review");
+                        const targetStep = stepOrder[index];
+                        if (targetStep) setStep(targetStep);
                       }}
                     >
                       <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
@@ -894,6 +937,14 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     </>
                   )}
                 </div>
+              ) : null}
+
+              {step === "links" && selectedLinkExperience === "multilink" ? (
+                <MultiLinkSetupStep
+                  businessName={businessName}
+                  buttons={multiLinkButtons}
+                  onButtonsChange={setMultiLinkButtons}
+                />
               ) : null}
 
               {step === "design" && selectedOption.id === "branded_qr_direct" ? (
@@ -1020,7 +1071,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         logoOffsetXPercent={logoOffsetXPercent}
                         logoOffsetYPercent={logoOffsetYPercent}
                         product={product}
-                        qrValue={generatedQrValue}
+                        qrValue={proofQrValue}
                         templateUrl={proofFrontTemplateUrl}
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
@@ -1078,7 +1129,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         logoOffsetXPercent={logoOffsetXPercent}
                         logoOffsetYPercent={logoOffsetYPercent}
                         product={product}
-                        qrValue={generatedQrValue}
+                        qrValue={proofQrValue}
                         templateUrl={proofFrontTemplateUrl}
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
@@ -1097,7 +1148,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       {selectedLinkExperience === "multilink" ? (
                         <>
                           <p className="font-semibold text-ink">Multi-Link confirmation</p>
-                          <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. You can add and edit up to 10 links after checkout.</p>
+                          <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them after account activation."}</p>
                         </>
                       ) : (
                         <>
@@ -1125,7 +1176,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     logoOffsetXPercent={logoOffsetXPercent}
                     logoOffsetYPercent={logoOffsetYPercent}
                     product={product}
-                    qrValue={generatedQrValue}
+                    qrValue={proofQrValue}
                     templateUrl={proofFrontTemplateUrl}
                     fontSizePercent={proofFontSizePercent}
                     logoSizePercent={proofLogoSizePercent}
@@ -1174,8 +1225,18 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 </button>
                 {step === "destination" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDestination}>
-                    {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                    {selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
                   </button>
+                ) : null}
+                {step === "links" ? (
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                    <button type="button" className="tr-button-outline" onClick={() => continueFromMultiLinkLinks({ skip: true })}>
+                      Skip for later
+                    </button>
+                    <button type="button" className="tr-button-primary" onClick={() => continueFromMultiLinkLinks()}>
+                      {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                    </button>
+                  </div>
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
@@ -1231,6 +1292,141 @@ function BuilderSummary({
           <CheckCircle2 size={14} />
           {serviceLabel}
         </p>
+      </div>
+    </div>
+  );
+}
+
+function MultiLinkSetupStep({
+  businessName,
+  buttons,
+  onButtonsChange
+}: {
+  businessName: string;
+  buttons: MultiLinkDraftButton[];
+  onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
+}) {
+  const configuredButtons = normalizeMultiLinkButtonsForSetup(buttons).buttons;
+
+  function updateButton(id: string, patch: Partial<MultiLinkDraftButton>) {
+    onButtonsChange(buttons.map((button) => (button.id === id ? { ...button, ...patch } : button)));
+  }
+
+  function addButton() {
+    if (buttons.length >= hostedPageButtonLimit) return;
+    const nextType = supportedHostedPageButtons.find((item) => !buttons.some((button) => button.type === item.type))?.type ?? "custom_link";
+    onButtonsChange([
+      ...buttons,
+      {
+        id: createMultiLinkButtonId(),
+        type: nextType,
+        label: getHostedButtonLabel(nextType),
+        url: "",
+        enabled: true,
+        position: buttons.length
+      }
+    ]);
+  }
+
+  function removeButton(id: string) {
+    onButtonsChange(buttons.filter((button) => button.id !== id).map((button, index) => ({ ...button, position: index })));
+  }
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+      <div className="grid gap-4">
+        <div>
+          <p className="text-sm font-semibold text-ink">Multi-Link page links</p>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Add the first links now to preview the customer page, or skip and finish them after account activation.
+          </p>
+        </div>
+
+        <div className="grid gap-3">
+          {buttons.map((button, index) => (
+            <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-white p-3 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-end">
+              <label className="grid gap-2 text-sm font-semibold text-ink">
+                Type
+                <select
+                  className="tr-input"
+                  value={button.type}
+                  onChange={(event) => {
+                    const type = event.target.value as HostedPageEditorButtonType;
+                    updateButton(button.id, { type, label: button.label || getHostedButtonLabel(type) });
+                  }}
+                >
+                  {supportedHostedPageButtons.map((option) => (
+                    <option key={option.type} value={option.type}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold text-ink">
+                Button label
+                <input
+                  className="tr-input"
+                  value={button.label}
+                  onChange={(event) => updateButton(button.id, { label: event.target.value })}
+                  placeholder={getHostedButtonLabel(button.type)}
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold text-ink">
+                Link URL
+                <input
+                  className="tr-input"
+                  type="url"
+                  value={button.url}
+                  onChange={(event) => updateButton(button.id, { url: event.target.value })}
+                  placeholder="https://example.com"
+                />
+              </label>
+
+              <button type="button" className="tr-icon-button" onClick={() => removeButton(button.id)} aria-label={`Remove link ${index + 1}`}>
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" className="tr-button-outline w-full sm:w-fit" onClick={addButton} disabled={buttons.length >= hostedPageButtonLimit}>
+          <Plus size={16} />
+          Add link
+        </button>
+      </div>
+
+      <MultiLinkMobilePreview businessName={businessName} buttons={configuredButtons} />
+    </div>
+  );
+}
+
+function MultiLinkMobilePreview({ businessName, buttons }: { businessName: string; buttons: MultiLinkDraftButton[] }) {
+  return (
+    <div className="rounded-2xl border border-line bg-ink p-2 shadow-sm lg:sticky lg:top-4">
+      <div className="min-h-[520px] rounded-xl bg-white p-4">
+        <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-line" aria-hidden="true" />
+        <div className="grid justify-items-center gap-2 text-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-xl font-black text-brand">
+            {(businessName.trim()[0] ?? "T").toUpperCase()}
+          </span>
+          <p className="text-lg font-black leading-6 text-ink">{businessName.trim() || "Your business"}</p>
+          <p className="text-xs font-semibold uppercase text-muted">Tap Rater Multi-Link</p>
+        </div>
+
+        <div className="mt-6 grid gap-2">
+          {buttons.length ? (
+            buttons.map((button) => (
+              <div key={button.id} className="flex min-h-12 items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm font-black text-ink">
+                <span>{button.label}</span>
+                <Smartphone size={16} className="text-brand" aria-hidden="true" />
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-dashed border-line bg-soft p-4 text-center text-sm leading-6 text-muted">
+              Links can be added after checkout.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -1823,6 +2019,61 @@ function getOptionDisplayLabel(option: PurchaseOption) {
   }
 
   return option.label;
+}
+
+function createInitialMultiLinkButtons(): MultiLinkDraftButton[] {
+  return [
+    createMultiLinkButton("website", 0),
+    createMultiLinkButton("google_review", 1),
+    createMultiLinkButton("instagram", 2)
+  ];
+}
+
+function createMultiLinkButton(type: HostedPageEditorButtonType, position: number): MultiLinkDraftButton {
+  return {
+    id: createMultiLinkButtonId(),
+    type,
+    label: getHostedButtonLabel(type),
+    url: "",
+    enabled: true,
+    position
+  };
+}
+
+function createMultiLinkButtonId() {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `link-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getHostedButtonLabel(type: HostedPageEditorButtonType) {
+  return supportedHostedPageButtons.find((button) => button.type === type)?.label ?? "Custom Link";
+}
+
+function normalizeMultiLinkButtonsForSetup(buttons: MultiLinkDraftButton[]): { buttons: MultiLinkDraftButton[]; error?: string } {
+  const normalized: MultiLinkDraftButton[] = [];
+
+  for (const [index, button] of buttons.entries()) {
+    const label = button.label.trim();
+    const url = button.url.trim();
+
+    if (!label && !url) continue;
+    if (!label || !url) {
+      return { buttons: [], error: `Complete or remove Multi-Link row ${index + 1}.` };
+    }
+    if (!isHttpUrl(url)) {
+      return { buttons: [], error: `Enter a valid URL for Multi-Link row ${index + 1}.` };
+    }
+
+    normalized.push({
+      id: button.id,
+      type: button.type,
+      label,
+      url,
+      enabled: true,
+      position: normalized.length
+    });
+  }
+
+  return { buttons: normalized.slice(0, hostedPageButtonLimit) };
 }
 
 function formatSizeLabel(label: string) {
