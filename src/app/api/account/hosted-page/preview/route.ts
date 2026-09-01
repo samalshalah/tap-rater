@@ -19,8 +19,9 @@ export async function POST(request: Request) {
 
     const draft = validateHostedPageEditorDraft(body?.draft ?? body);
     const page = { ...selectedContext.page, draft };
-    const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false });
-    return NextResponse.json({ ok: true, html: renderHostedPageDraftPreview(page), snapshot });
+    const publicBaseUrl = new URL(request.url).origin;
+    const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false, publicBaseUrl });
+    return NextResponse.json({ ok: true, html: renderHostedPageDraftPreview(page, { publicBaseUrl }), snapshot });
   } catch (error) {
     if (error instanceof HostedPageEditorError) {
       return NextResponse.json({ error: error.message }, { status: error.status });

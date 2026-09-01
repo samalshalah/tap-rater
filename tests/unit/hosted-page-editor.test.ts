@@ -119,6 +119,18 @@ describe("hosted page editor", () => {
     expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Add at least one valid link");
   });
 
+  it("renders relative uploaded logos with the preview request origin", async () => {
+    const page = await getOwnedPage();
+    const nextDraft = validateHostedPageEditorDraft({
+      ...page.draft,
+      logoUrl: "/api/media/product/products/customer-logo/logo.png"
+    });
+
+    const html = renderHostedPageDraftPreview({ ...page, draft: nextDraft }, { publicBaseUrl: "https://tap-rater-app-git.sam-alshalah1.workers.dev" });
+
+    expect(html).toContain("https://tap-rater-app-git.sam-alshalah1.workers.dev/api/media/product/products/customer-logo/logo.png");
+  });
+
   it("publishes through the Milestone 5 storage contract and preserves the previous public version on failure", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-23T12:00:00.000Z"));

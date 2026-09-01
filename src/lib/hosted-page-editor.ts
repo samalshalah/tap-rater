@@ -90,7 +90,7 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
   return { page, snapshot };
 }
 
-export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean } = {}): HostedPageSnapshot {
+export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean; publicBaseUrl?: string } = {}): HostedPageSnapshot {
   const draft = validateHostedPageEditorDraft(page.draft);
   const buttons = draft.buttons
     .filter((button) => button.label.trim() && button.url.trim())
@@ -119,7 +119,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
     publishedAt: now.toISOString(),
     lifecycleStatus: page.lifecycleStatus,
     businessName: draft.businessName,
-    logoUrl: makePublicUrl(draft.logoUrl),
+    logoUrl: makePublicUrl(draft.logoUrl, options.publicBaseUrl),
     headline: draft.headline || draft.businessName,
     description: draft.description,
     buttons,
@@ -127,8 +127,8 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
   });
 }
 
-export function renderHostedPageDraftPreview(page: HostedPageEditorRecord) {
-  const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false });
+export function renderHostedPageDraftPreview(page: HostedPageEditorRecord, options: { publicBaseUrl?: string } = {}) {
+  const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false, publicBaseUrl: options.publicBaseUrl });
   return renderHostedPageHtml(resolveHostedPageLifecycle(snapshot));
 }
 
@@ -379,10 +379,10 @@ function readOptionalUrl(value: unknown, label: string) {
   return text;
 }
 
-function makePublicUrl(value: string | undefined) {
+function makePublicUrl(value: string | undefined, publicBaseUrl?: string) {
   if (!value) return undefined;
   if (isHttpUrl(value)) return value;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
+  const siteUrl = publicBaseUrl || process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
   return `${siteUrl.replace(/\/+$/, "")}${value.startsWith("/") ? "" : "/"}${value}`;
 }
 
