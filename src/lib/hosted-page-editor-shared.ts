@@ -17,6 +17,7 @@ export type HostedPageEditorAppearance = {
   theme: "light" | "warm" | "bold";
   accentColor: "#0f766e" | "#1d4ed8" | "#7c3aed" | "#be123c";
   logoAlign?: "left" | "center" | "right";
+  textAlign?: "left" | "center" | "right";
 };
 export type HostedPageEditorButton = {
   id: string;

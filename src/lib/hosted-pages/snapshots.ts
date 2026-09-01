@@ -24,6 +24,7 @@ export type HostedPageAppearance = {
   theme?: "light" | "dark" | "warm" | "bold";
   accentColor?: string;
   logoAlign?: "left" | "center" | "right";
+  textAlign?: "left" | "center" | "right";
 };
 
 export type HostedPageSnapshot = {
@@ -186,6 +187,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       logoUrl: snapshot.logoUrl,
       theme: snapshot.appearance?.theme,
       logoAlign: snapshot.appearance?.logoAlign,
+      textAlign: snapshot.appearance?.textAlign,
       statusCode: "inactive"
     });
   }
@@ -198,8 +200,8 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       theme: snapshot.appearance?.theme,
       accentColor: snapshot.appearance?.accentColor,
       logoAlign: snapshot.appearance?.logoAlign,
+      textAlign: snapshot.appearance?.textAlign,
       body: `
-        <p class="tr-kicker">Tap Rater</p>
         <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
         <p class="tr-copy">${escapeHtml(snapshot.description ?? "This Tap Rater page is being set up. The permanent URL is active and will keep working after the business publishes its links.")}</p>
         <p class="tr-footer">Powered by Tap Rater</p>
@@ -223,8 +225,8 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
     theme: snapshot.appearance?.theme,
     accentColor: snapshot.appearance?.accentColor,
     logoAlign: snapshot.appearance?.logoAlign,
+    textAlign: snapshot.appearance?.textAlign,
     body: `
-      <p class="tr-kicker">Tap Rater</p>
       <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
       ${snapshot.description ? `<p class="tr-copy">${escapeHtml(snapshot.description)}</p>` : ""}
       <nav class="tr-buttons" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
@@ -274,11 +276,13 @@ function validateHostedPageButton(button: HostedPageButton): HostedPageButton {
 function normalizeAppearance(appearance: HostedPageAppearance | undefined): HostedPageAppearance | undefined {
   if (!appearance) return undefined;
   const logoAlign: HostedPageAppearance["logoAlign"] = appearance.logoAlign === "left" || appearance.logoAlign === "right" ? appearance.logoAlign : "center";
+  const textAlign: HostedPageAppearance["textAlign"] = appearance.textAlign === "left" || appearance.textAlign === "right" ? appearance.textAlign : "center";
 
   return {
     theme: appearance.theme,
     accentColor: appearance.accentColor && /^#[0-9a-fA-F]{6}$/.test(appearance.accentColor) ? appearance.accentColor : undefined,
-    logoAlign
+    logoAlign,
+    textAlign
   };
 }
 
@@ -300,6 +304,7 @@ function renderShell({
   theme,
   accentColor,
   logoAlign,
+  textAlign,
   statusCode
 }: {
   title: string;
@@ -308,11 +313,13 @@ function renderShell({
   theme?: HostedPageAppearance["theme"];
   accentColor?: string;
   logoAlign?: "left" | "center" | "right";
+  textAlign?: "left" | "center" | "right";
   statusCode: string;
 }) {
   const themeTokens = getThemeTokens(theme);
   const accent = accentColor && /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : themeTokens.accent;
   const logoMargin = logoAlign === "left" ? "0 auto 24px 0" : logoAlign === "right" ? "0 0 24px auto" : "0 auto 24px";
+  const contentAlign = textAlign === "left" || textAlign === "right" ? textAlign : "center";
 
   return `<!doctype html>
 <html lang="en">
@@ -322,17 +329,16 @@ function renderShell({
   <meta name="robots" content="noindex">
   <title>${stripTags(title)}</title>
   <style>
-    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; }
+    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; --button-text: ${themeTokens.buttonText}; --shadow: ${themeTokens.shadow}; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
-    .tr-card { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: clamp(24px, 7vw, 42px); box-shadow: 0 18px 50px rgba(23, 33, 31, 0.08); }
+    .tr-card { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: clamp(24px, 7vw, 42px); text-align: ${contentAlign}; box-shadow: var(--shadow); }
     .tr-logo { display: block; width: 72px; height: 72px; object-fit: contain; border-radius: 8px; margin: ${logoMargin}; }
-    .tr-kicker { margin: 0 0 10px; color: var(--accent); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0; }
     h1 { margin: 0; font-size: clamp(2rem, 10vw, 3rem); line-height: 1; letter-spacing: 0; }
     .tr-copy { margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
-    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: #fff; padding: 12px 16px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: var(--button-text); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
     .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 999px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
     .tr-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), white 55%); outline-offset: 3px; }
     .tr-footer { margin: 28px 0 0; color: var(--muted); font-size: 0.82rem; }
@@ -370,7 +376,9 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
       muted: "#725f55",
       line: "#eadfd6",
       soft: "#fbf6f0",
-      card: "#fffaf5"
+      card: "#fffaf5",
+      buttonText: "#ffffff",
+      shadow: "0 18px 50px rgba(80, 45, 17, 0.12)"
     };
   }
 
@@ -382,7 +390,9 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
       muted: "#cbd5e1",
       line: "#334155",
       soft: "#0f172a",
-      card: "#111827"
+      card: "#111827",
+      buttonText: "#061311",
+      shadow: "0 18px 50px rgba(0, 0, 0, 0.28)"
     };
   }
 
@@ -393,7 +403,9 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
     muted: "#62706c",
     line: "#dfe7e3",
     soft: "#f6f8f6",
-    card: "#ffffff"
+    card: "#ffffff",
+    buttonText: "#ffffff",
+    shadow: "0 18px 50px rgba(23, 33, 31, 0.08)"
   };
 }
 

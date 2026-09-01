@@ -20,6 +20,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   const permanentUrl = `https://taprater.com/p/${page.code}`;
   const orderedButtons = useMemo(() => [...draft.buttons].sort((a, b) => a.position - b.position), [draft.buttons]);
   const logoAlign = draft.appearance.logoAlign ?? "center";
+  const textAlign = draft.appearance.textAlign ?? "center";
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -239,7 +240,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                 <Upload size={16} /> Upload logo
                 <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadLogo} className="sr-only" />
               </label>
-              <div className="inline-flex w-fit rounded-md border border-line bg-white p-1" aria-label="Logo alignment">
+              <div className="inline-grid w-fit gap-1">
+                <span className="text-[11px] font-medium uppercase text-muted">Logo</span>
+                <div className="inline-flex w-fit rounded-md border border-line bg-white p-1" aria-label="Logo alignment">
                 {[
                   { value: "left", label: "Align logo left", icon: AlignLeft },
                   { value: "center", label: "Align logo center", icon: AlignCenter },
@@ -258,6 +261,30 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                     </button>
                   );
                 })}
+                </div>
+              </div>
+              <div className="inline-grid w-fit gap-1">
+                <span className="text-[11px] font-medium uppercase text-muted">Text</span>
+                <div className="inline-flex w-fit rounded-md border border-line bg-white p-1" aria-label="Text alignment">
+                  {[
+                    { value: "left", label: "Align text left", icon: AlignLeft },
+                    { value: "center", label: "Align text center", icon: AlignCenter },
+                    { value: "right", label: "Align text right", icon: AlignRight }
+                  ].map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        aria-label={option.label}
+                        className={textAlign === option.value ? "grid h-8 w-8 place-items-center rounded bg-ink text-white" : "grid h-8 w-8 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
+                        onClick={() => updateDraft({ ...draft, appearance: { ...draft.appearance, textAlign: option.value as "left" | "center" | "right" } })}
+                      >
+                        <Icon size={16} />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -289,7 +316,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
               ))}
             </div>
           ) : null}
-          <div className="grid gap-2">
+          <div className="grid max-h-[290px] gap-2 overflow-y-auto pr-1">
             {orderedButtons.map((button, index) => (
               <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[170px_minmax(0,1fr)_auto] md:items-end">
                   <label className="grid gap-1.5 text-sm font-medium text-ink">

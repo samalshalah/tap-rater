@@ -131,6 +131,23 @@ describe("hosted page editor", () => {
     expect(html).toContain("https://tap-rater-app-git.sam-alshalah1.workers.dev/api/media/product/products/customer-logo/logo.png");
   });
 
+  it("renders customer text alignment without the Tap Rater preview heading", async () => {
+    const page = await getOwnedPage();
+    const nextDraft = validateHostedPageEditorDraft({
+      ...page.draft,
+      businessName: "Aligned Cafe",
+      appearance: { ...page.draft.appearance, textAlign: "left" }
+    });
+
+    const snapshot = buildSnapshotFromDraft({ ...page, draft: nextDraft }, new Date("2026-08-23T12:00:00.000Z"));
+    const html = renderHostedPageDraftPreview({ ...page, draft: nextDraft });
+
+    expect(snapshot.appearance?.textAlign).toBe("left");
+    expect(html).toContain("text-align: left");
+    expect(html).not.toContain("tr-kicker");
+    expect(html).not.toContain(">Tap Rater</p>");
+  });
+
   it("publishes through the Milestone 5 storage contract and preserves the previous public version on failure", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-23T12:00:00.000Z"));

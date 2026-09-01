@@ -27,6 +27,7 @@ export type HostedPageEditorDbClient = {
 const supportedButtonTypes = new Set(supportedHostedPageButtons.map((button) => button.type));
 const supportedThemes = new Set(["light", "warm", "bold"]);
 const supportedAccentColors = new Set(["#0f766e", "#1d4ed8", "#7c3aed", "#be123c"]);
+const supportedAlignments = new Set(["left", "center", "right"]);
 
 export class HostedPageEditorError extends Error {
   constructor(
@@ -146,19 +147,22 @@ export function validateHostedPageEditorDraft(input: unknown): HostedPageEditorD
   const themeValue = appearanceRecord.theme ?? "light";
   const accentValue = appearanceRecord.accentColor ?? "#0f766e";
   const logoAlignValue = appearanceRecord.logoAlign ?? "center";
+  const textAlignValue = appearanceRecord.textAlign ?? "center";
   if (!supportedThemes.has(String(themeValue))) throw new HostedPageEditorError("Unsupported page style.", 400);
   if (!supportedAccentColors.has(String(accentValue))) throw new HostedPageEditorError("Unsupported accent color.", 400);
-  if (!["left", "center", "right"].includes(String(logoAlignValue))) throw new HostedPageEditorError("Unsupported logo alignment.", 400);
+  if (!supportedAlignments.has(String(logoAlignValue))) throw new HostedPageEditorError("Unsupported logo alignment.", 400);
+  if (!supportedAlignments.has(String(textAlignValue))) throw new HostedPageEditorError("Unsupported text alignment.", 400);
   const theme = themeValue as HostedPageEditorAppearance["theme"];
   const accentColor = accentValue as HostedPageEditorAppearance["accentColor"];
   const logoAlign = logoAlignValue as NonNullable<HostedPageEditorAppearance["logoAlign"]>;
+  const textAlign = textAlignValue as NonNullable<HostedPageEditorAppearance["textAlign"]>;
 
   return {
     businessName,
     logoUrl,
     headline: readString(value.headline, 140),
     description: readString(value.description, 300),
-    appearance: { theme, accentColor, logoAlign },
+    appearance: { theme, accentColor, logoAlign, textAlign },
     buttons
   };
 }
