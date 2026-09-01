@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Save, Trash2, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Plus, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
@@ -13,7 +13,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   const [status, setStatus] = useState<EditorStatus>("idle");
   const [message, setMessage] = useState("");
   const [previewMessage, setPreviewMessage] = useState("");
-  const [newButtonType, setNewButtonType] = useState("");
+  const [showLinkChoices, setShowLinkChoices] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const previewRequestId = useRef(0);
 
@@ -86,7 +86,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         }
       ]
     });
-    setNewButtonType("");
+    setShowLinkChoices(false);
   }
 
   function removeButton(id: string) {
@@ -237,25 +237,26 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
               <p className="tr-eyebrow">Buttons / links</p>
               <h2 className="tr-card-title mt-2">Your Links</h2>
             </div>
-            <select
-              className="tr-input sm:w-52"
-              value={newButtonType}
-              onChange={(event) => {
-                const value = event.target.value;
-                setNewButtonType(value);
-                if (value) addButton(value as HostedPageEditorButton["type"]);
-              }}
+            <button
+              type="button"
+              className="tr-button-secondary w-full justify-center text-sm sm:w-fit"
+              onClick={() => setShowLinkChoices((value) => !value)}
+              disabled={draft.buttons.length >= hostedPageButtonLimit}
             >
-              <option value="" disabled>
-                Add link
-              </option>
-              {supportedHostedPageButtons.map((button) => (
-                <option key={button.type} value={button.type}>
-                  {button.label}
-                </option>
-              ))}
-            </select>
+              <Plus size={16} />
+              Add link
+            </button>
           </div>
+          {showLinkChoices && draft.buttons.length < hostedPageButtonLimit ? (
+            <div className="grid gap-2 rounded-lg border border-line bg-soft p-3 sm:grid-cols-2 lg:grid-cols-3">
+              {supportedHostedPageButtons.map((button) => (
+                <button key={button.type} type="button" className="tr-button-ghost justify-start bg-white text-sm" onClick={() => addButton(button.type)}>
+                  <Plus size={15} />
+                  {button.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
           <div className="grid gap-3">
             {orderedButtons.map((button, index) => (
               <div key={button.id} className="rounded-lg border border-line bg-soft p-3">
