@@ -1,6 +1,6 @@
 "use client";
 
-import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Plus, Save, Trash2, Upload } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, CalendarDays, Check, Copy, ExternalLink, Eye, Globe, LinkIcon, Mail, Menu, Plus, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
@@ -189,7 +189,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   return (
-    <div className="grid min-w-0 gap-3">
+    <div className="grid min-h-0 min-w-0 gap-3">
       <div className="tr-card grid gap-2 p-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <p className="text-xs text-muted">Permanent URL</p>
@@ -214,8 +214,8 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </p>
       </div>
 
-      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
-        <section className="grid gap-3">
+      <div className="grid min-h-0 min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
+        <section className="grid min-h-0 gap-3">
         <div className="tr-card grid gap-2 p-3">
           <div>
             <p className="tr-eyebrow">Page information</p>
@@ -307,28 +307,28 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </button>
           </div>
           {showLinkChoices && draft.buttons.length < hostedPageButtonLimit ? (
-            <div className="grid gap-2 rounded-lg border border-line bg-soft p-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid max-h-32 gap-1.5 overflow-y-auto rounded-lg border border-line bg-soft p-2 sm:grid-cols-2 lg:grid-cols-5">
               {supportedHostedPageButtons.map((button) => (
-                <button key={button.type} type="button" className="tr-button-ghost min-h-9 justify-start bg-white px-2 py-1.5 text-xs" onClick={() => addButton(button.type)}>
+                <button key={button.type} type="button" className="tr-button-ghost min-h-9 justify-start gap-2 bg-white px-2 py-1.5 text-xs" onClick={() => addButton(button.type)}>
                   <HostedButtonMark type={button.type} />
-                  {button.label}
+                  <span className="truncate">{button.label}</span>
                 </button>
               ))}
             </div>
           ) : null}
-          <div className="grid max-h-[290px] gap-2 overflow-y-auto pr-1">
+          <div className="grid max-h-[260px] gap-1.5 overflow-y-auto pr-1">
             {orderedButtons.map((button, index) => (
-              <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[170px_minmax(0,1fr)_auto] md:items-end">
-                  <label className="grid gap-1.5 text-sm font-medium text-ink">
-                    Label
-                    <div className="flex items-center gap-2">
+              <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_auto] md:items-center">
+                  <label className="min-w-0">
+                    <span className="sr-only">Link label</span>
+                    <div className="flex min-w-0 items-center gap-2">
                       <HostedButtonMark type={button.type} />
-                      <input className="tr-input min-h-10 px-3 py-2" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                      <input className="tr-input min-h-9 min-w-0 px-3 py-1.5 text-sm" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
                     </div>
                   </label>
-                  <label className="grid gap-1.5 text-sm font-medium text-ink">
-                    Destination URL
-                    <input className="tr-input min-h-10 px-3 py-2" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
+                  <label className="min-w-0">
+                    <span className="sr-only">Destination URL</span>
+                    <input className="tr-input min-h-9 px-3 py-1.5 text-sm" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
                   </label>
                   <div className="flex gap-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">
@@ -397,11 +397,49 @@ function HostedButtonMark({ type }: { type: HostedPageEditorButton["type"] }) {
   const mark = getHostedButtonMark(type);
   return (
     <span
-      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium"
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border"
       style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
       aria-label={mark.brand}
     >
-      {mark.text}
+      <HostedButtonIcon icon={mark.icon} />
     </span>
   );
+}
+
+function HostedButtonIcon({ icon }: { icon: string }) {
+  if (icon === "google") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+        <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-1.99 3.02v2.51h3.23c1.89-1.74 2.98-4.3 2.98-7.44Z" />
+        <path fill="#34A853" d="M12 22c2.7 0 4.96-.89 6.62-2.33l-3.23-2.51c-.9.6-2.04.95-3.39.95-2.61 0-4.82-1.76-5.61-4.13H3.05v2.59A9.99 9.99 0 0 0 12 22Z" />
+        <path fill="#FBBC05" d="M6.39 13.98A6 6 0 0 1 6.07 12c0-.69.12-1.36.32-1.98V7.43H3.05A9.99 9.99 0 0 0 2 12c0 1.61.39 3.13 1.05 4.57l3.34-2.59Z" />
+        <path fill="#EA4335" d="M12 5.89c1.47 0 2.78.5 3.81 1.49l2.87-2.87C16.95 2.9 14.69 2 12 2a9.99 9.99 0 0 0-8.95 5.43l3.34 2.59C7.18 7.65 9.39 5.89 12 5.89Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "yelp") return <span className="text-[10px] font-medium leading-none">yelp</span>;
+  if (icon === "facebook") return <span className="font-serif text-lg font-medium leading-none">f</span>;
+  if (icon === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+        <rect x="5" y="5" width="14" height="14" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="16.5" cy="7.5" r="1" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (icon === "whatsapp") {
+    return (
+      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+        <path d="M12 4a7.7 7.7 0 0 0-6.6 11.7L4.7 20l4.4-1.1A7.8 7.8 0 1 0 12 4Z" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M9.2 8.9c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3 0 .5-.2.7l-.4.5c.6 1.1 1.4 1.9 2.6 2.5l.5-.6c.2-.2.4-.3.7-.2l1.6.7c.3.1.4.3.4.6v.4c0 .4-.2.7-.5.9-.4.2-.9.3-1.4.3-3.1-.2-6.9-3.8-7.1-7 0-.4.1-.9.4-1.3Z" fill="currentColor" />
+      </svg>
+    );
+  }
+  if (icon === "website") return <Globe size={15} />;
+  if (icon === "calendar") return <CalendarDays size={15} />;
+  if (icon === "menu") return <Menu size={15} />;
+  if (icon === "contact") return <Mail size={15} />;
+  return <LinkIcon size={15} />;
 }

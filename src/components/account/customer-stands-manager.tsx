@@ -77,7 +77,7 @@ function StandDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-2" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
-      <div className={`max-h-[calc(100vh-0.5rem)] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-[92rem]" : "max-w-4xl"}`}>
+      <div className={`flex max-h-[calc(100vh-0.5rem)] w-full flex-col rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-[92rem] overflow-hidden" : "max-w-4xl overflow-y-auto"}`}>
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2">
           <div>
             <p className="tr-eyebrow">{isMultiLink ? "Multi-Link stand setup" : "Purchased stand"}</p>
@@ -88,7 +88,7 @@ function StandDetailModal({
           </button>
         </div>
         {isMultiLink ? (
-          <div className="p-3">
+          <div className="min-h-0 overflow-hidden p-3">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} />
             ) : (
