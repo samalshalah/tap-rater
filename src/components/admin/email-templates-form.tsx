@@ -250,7 +250,7 @@ function PreviewContent({ templateKey }: { templateKey: EmailTemplateKey }) {
   if (templateKey === "admin-new-order") {
     return (
       <div className="mt-3 space-y-1">
-        <p>Order reference: order_123</p>
+        <p>Order number: TR-260901-AB12CD</p>
         <p>Customer email: buyer@example.com</p>
         <p>Total: $49.00</p>
         <p>Option: Branded + QR Direct</p>
@@ -273,7 +273,7 @@ function PreviewContent({ templateKey }: { templateKey: EmailTemplateKey }) {
   if (templateKey === "shipping-tracking") {
     return (
       <div className="mt-3 space-y-1">
-        <p>Order reference: order_123</p>
+        <p>Order number: TR-260901-AB12CD</p>
         <p>Carrier: USPS</p>
         <p>Tracking number: 9400 0000 0000 0000 0000 00</p>
         <p>Note: This template is not sent automatically in Phase 1C.</p>
@@ -283,7 +283,7 @@ function PreviewContent({ templateKey }: { templateKey: EmailTemplateKey }) {
 
   return (
     <div className="mt-3 space-y-1">
-      <p>Order reference: order_123</p>
+      <p>Order number: TR-260901-AB12CD</p>
       <p>Status: Paid</p>
       <p>Total: $39.00</p>
       <p>1 x Google Review Stand - Standard Direct - $39.00</p>

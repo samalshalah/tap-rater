@@ -249,7 +249,7 @@ describe("paid order emails", () => {
       activationUrl: "https://app.taprater.com/account/activate?token=signed-token"
     });
 
-    expect(html).toContain("Your Tap Rater Multi-Link page for Hosted Cafe has been created after payment confirmation.");
+    expect(html).toContain("Your Tap Rater Multi-Link page for Hosted Cafe has been created.");
     expect(html).toContain("Activate your account and set your password");
     expect(html).toContain("https://taprater.com/p/ABCDEFGHJKM2");
     expect(html).toContain("That permanent URL stays the same");
@@ -271,6 +271,7 @@ describe("paid order emails", () => {
     });
 
     expect(html).toContain("Your Tap Rater order has a shipping update.");
+    expect(html).toContain("Order number:</strong> cs_test_123");
     expect(html).toContain("Status:</strong> Shipped");
     expect(html).toContain("Carrier:</strong> USPS");
     expect(html).toContain("Tracking number:</strong> TRACK123");

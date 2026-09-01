@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatOrderReference } from "@/lib/order-reference";
 
 type CheckoutSuccessPageProps = {
   searchParams?: Promise<{
@@ -34,7 +35,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
         </p>
         {manualOrderReference ? (
           <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">
-            Order reference: <span className="font-semibold text-ink">{manualOrderReference}</span>
+            Order number: <span className="font-medium text-ink">{formatOrderReference(manualOrderReference)}</span>
           </p>
         ) : sessionId ? (
           <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">

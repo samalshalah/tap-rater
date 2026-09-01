@@ -1,5 +1,6 @@
 import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { defaultEmailTemplates, getEmailTemplate, renderEmailTemplateHtml, type EmailTemplateSettings } from "@/lib/email-templates";
+import { formatOrderReference } from "@/lib/order-reference";
 import type { OrderRecord } from "@/lib/orders";
 
 type SendEmailFn = (input: SendEmailInput) => Promise<EmailResult>;
@@ -32,7 +33,7 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
 export function buildShippingNotificationEmailHtml(order: OrderRecord, template = defaultEmailTemplates["shipping-tracking"]) {
   return renderEmailTemplateHtml(template, {
     rows: {
-      "Order reference": order.id ?? order.stripe_checkout_session_id,
+      "Order number": formatOrderReference(order.stripe_checkout_session_id || order.id),
       Status: "Shipped",
       Carrier: order.shipping_carrier ?? "",
       "Tracking number": order.tracking_number ?? "",

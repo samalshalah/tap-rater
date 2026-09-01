@@ -6,6 +6,7 @@ import {
   type EmailTemplateKey,
   type EmailTemplateSettings
 } from "@/lib/email-templates";
+import { formatOrderReference } from "@/lib/order-reference";
 import {
   getOrderLineItemProductionSummary,
   type OrderLineItem,
@@ -60,7 +61,7 @@ export async function sendPaidOrderEmails(
 export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["customer-order-confirmation"]) {
   return renderEmailTemplateHtml(template, {
     rows: {
-      "Order reference": getOrderReference(order),
+      "Order number": getOrderReference(order),
       Status: "Paid",
       Total: formatMoney(order.total_cents, order.currency),
       Shipping: formatShippingSummary(order)
@@ -80,7 +81,7 @@ export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = d
 export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["admin-new-order"]) {
   return renderEmailTemplateHtml(template, {
     rows: {
-      "Order reference": getOrderReference(order),
+      "Order number": getOrderReference(order),
       "Customer email": order.email ?? "",
       "Customer name": order.customer_name ?? "",
       Total: formatMoney(order.total_cents, order.currency),
@@ -156,7 +157,7 @@ function formatAdminLineItem(item: OrderLineItem) {
 }
 
 function getOrderReference(order: OrderRecord) {
-  return order.id ?? order.stripe_checkout_session_id;
+  return formatOrderReference(order.stripe_checkout_session_id || order.id);
 }
 
 async function sendPaidOrderEmailSafely(sendEmailFn: SendEmailFn, input: SendEmailInput): Promise<EmailResult> {

@@ -1,5 +1,6 @@
 import { createCustomerActivationUrl } from "@/lib/customer-account";
 import { buildEmailHtml, getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { formatOrderReference } from "@/lib/order-reference";
 
 type SendEmailFn = (input: SendEmailInput) => Promise<EmailResult>;
 
@@ -67,7 +68,7 @@ export async function sendCustomerAccountSetupEmail(input: {
         body: [
           `Your Tap Rater order for ${input.businessName} was received.`,
           "Activate your account and set your password so you can access order and business setup details.",
-          `Order reference: ${input.orderReference}`,
+          `Order number: ${formatOrderReference(input.orderReference)}`,
           "Tap Rater will contact you with the next step for payment, proof review, and fulfillment.",
           "This activation link expires in 7 days.",
           "Support: https://taprater.com/support"

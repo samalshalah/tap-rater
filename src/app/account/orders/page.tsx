@@ -1,6 +1,7 @@
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerPortal } from "@/lib/customer-portal";
+import { formatOrderReference } from "@/lib/order-reference";
 import { formatPrice } from "@/lib/products";
 
 export default async function AccountOrdersPage() {
@@ -21,8 +22,8 @@ export default async function AccountOrdersPage() {
               <article key={order.id} className="rounded-md border border-line bg-white p-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <p className="font-mono text-xs font-semibold uppercase text-muted">{order.reference}</p>
-                    <h3 className="mt-1 text-lg font-black text-ink">{formatPrice(order.totalCents)}</h3>
+                    <p className="font-mono text-xs uppercase text-muted">{formatOrderReference(order.reference)}</p>
+                    <h3 className="mt-1 text-lg font-medium text-ink">{formatPrice(order.totalCents)}</h3>
                     <p className="mt-1 text-sm text-muted">{order.itemCount} configured stand{order.itemCount === 1 ? "" : "s"}</p>
                   </div>
                   <div className="grid gap-2 text-sm md:min-w-64">
@@ -46,7 +47,7 @@ function StatusLine({ label, value }: { label: string; value: string }) {
   return (
     <p className="flex items-center justify-between gap-4 rounded-md bg-soft px-3 py-2">
       <span className="font-semibold text-muted">{label}</span>
-      <span className="text-right font-black capitalize text-ink">{value}</span>
+      <span className="text-right font-medium capitalize text-ink">{value}</span>
     </p>
   );
 }

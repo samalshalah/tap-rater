@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { formatOrderReference } from "@/lib/order-reference";
 import {
   applyOrderLineItemFulfillmentInference,
   getOrderLineItemFulfillmentKind,
@@ -49,6 +50,19 @@ const embeddedAssets: Record<string, EmbeddedProductionAsset> = {
     contentHash: "center-hash"
   }
 };
+
+describe("order references", () => {
+  it("keeps branded Tap Rater order numbers clean", () => {
+    expect(formatOrderReference("tr-260901-ab12cd")).toBe("TR-260901-AB12CD");
+  });
+
+  it("formats legacy manual references as short customer order numbers", () => {
+    const formatted = formatOrderReference("manual_0ed962ff-f896-429a-85e2-f90695fb6752");
+
+    expect(formatted).toMatch(/^TR-[A-Z0-9]{6}$/);
+    expect(formatted).not.toContain("manual_");
+  });
+});
 
 const memoryAssetResolver: ProductionArtworkAssetResolver = async (url) => {
   const asset = embeddedAssets[url];

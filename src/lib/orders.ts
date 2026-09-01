@@ -1,6 +1,7 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot } from "@/lib/direct-production";
+import { createManualOrderReference } from "@/lib/order-reference";
 import { purchaseOptionIdToCustomizationLevel, type CustomizationLevel, type DestinationMode } from "@/lib/product-model";
 import { sendShippingNotificationEmail, type ShippingEmailInput } from "@/lib/shipping-emails";
 import {
@@ -961,14 +962,6 @@ function isManualProductionWarningCode(value: unknown): value is ManualProductio
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-function createManualOrderReference() {
-  try {
-    return `manual_${crypto.randomUUID()}`;
-  } catch {
-    return `manual_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
-  }
 }
 
 async function getOrderByStripeCheckoutSessionId(client: OrdersDbClient, stripeCheckoutSessionId: string): Promise<OrderRecord | null> {

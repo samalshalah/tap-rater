@@ -187,7 +187,7 @@ export async function sendEmailTemplateTest(input: {
 function getSampleRowsForTemplate(key: EmailTemplateKey) {
   if (key === "admin-new-order") {
     return {
-      "Order reference": "order_123",
+      "Order number": "TR-260901-AB12CD",
       "Customer email": "buyer@example.com",
       Total: "$49.00",
       "Payment status": "paid"
@@ -204,14 +204,14 @@ function getSampleRowsForTemplate(key: EmailTemplateKey) {
 
   if (key === "shipping-tracking") {
     return {
-      "Order reference": "order_123",
+      "Order number": "TR-260901-AB12CD",
       Carrier: "USPS",
       "Tracking number": "9400 0000 0000 0000 0000 00"
     };
   }
 
   return {
-    "Order reference": "order_123",
+    "Order number": "TR-260901-AB12CD",
     Status: "Paid",
     Total: "$39.00"
   };
