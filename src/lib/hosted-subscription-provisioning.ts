@@ -1,6 +1,6 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createCustomerActivationToken } from "@/lib/customer-account";
-import { sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
+import { sendCustomerAccountSetupEmail, sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
@@ -33,11 +33,32 @@ export type HostedSubscriptionProvisioningInput = {
   siteUrl?: string;
 };
 
+export type ManualCustomerAccountProvisioningInput = {
+  order: OrderRecord;
+  now?: Date;
+  siteUrl?: string;
+};
+
+export type ManualCustomerAccountProvisioningResult =
+  | {
+      ok: true;
+      accountProvisioned: boolean;
+      hostedProvisioned: boolean;
+      code?: string;
+      hostedPageUrl?: string;
+      reason?: "missing_customer_email";
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export type HostedSubscriptionProvisioningDependencies = {
   client: OrdersDbClient;
   storage: HostedPageTextStorage;
   generateCode?: () => string;
   sendHostedSetupEmailFn?: (input: HostedSetupEmailInput) => Promise<EmailResult>;
+  sendCustomerAccountSetupEmailFn?: typeof sendCustomerAccountSetupEmail;
 };
 
 type StripeSubscriptionLike = {
@@ -200,6 +221,164 @@ export async function provisionHostedSubscriptionFromCheckout(
   return { ok: true, provisioned: true, code: assignment.code, hostedPageUrl };
 }
 
+export async function provisionManualCustomerAccountFromOrder(
+  input: ManualCustomerAccountProvisioningInput,
+  dependencies?: HostedSubscriptionProvisioningDependencies
+): Promise<ManualCustomerAccountProvisioningResult> {
+  const email = normalizeEmail(input.order.email);
+  if (!email) {
+    return { ok: true, accountProvisioned: false, hostedProvisioned: false, reason: "missing_customer_email" };
+  }
+
+  const resolved = await resolveClientDependency(dependencies);
+  if (!resolved.ok) return resolved;
+
+  const { client } = resolved;
+  const now = input.now ?? new Date();
+  const activation = createCustomerActivationToken();
+  const customer = await upsertCustomer(client, {
+    email,
+    name: input.order.customer_name ?? null,
+    phone: readCustomerPhone(input.order.customer_details_json),
+    activationTokenHash: activation.tokenHash,
+    now
+  });
+  if (!customer.ok) return customer;
+
+  const hostedItemIndex = input.order.line_items_json.findIndex((item) => getHostedLineItem(item));
+  const businessName = readManualOrderBusinessName(input.order);
+
+  if (hostedItemIndex === -1) {
+    const business = await createBusiness(client, {
+      customerId: customer.customerId,
+      businessName,
+      logoUrl: readManualOrderLogoUrl(input.order),
+      now
+    });
+    if (!business.ok) return business;
+
+    const setupEmail = await (dependencies?.sendCustomerAccountSetupEmailFn ?? sendCustomerAccountSetupEmail)({
+      to: email,
+      businessName,
+      orderReference: input.order.stripe_checkout_session_id,
+      activationToken: activation.token
+    });
+    if (!setupEmail.sent) {
+      console.warn("[manual-provisioning] account_email_not_sent", {
+        orderReference: input.order.stripe_checkout_session_id,
+        reason: setupEmail.reason
+      });
+    }
+
+    return { ok: true, accountProvisioned: true, hostedProvisioned: false };
+  }
+
+  const storage = dependencies?.storage ?? await getHostedPageStorage();
+  if (!storage) return { ok: false, error: "Hosted page snapshot storage is not configured." };
+
+  const hostedItem = input.order.line_items_json[hostedItemIndex];
+  const setup = readSetup(hostedItem);
+  const logoUrl = readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order);
+  const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
+  const existingHostedSubscription = await findExistingHostedSubscriptionForCustomer(client, customer.customerId);
+  const business = existingHostedSubscription
+    ? { ok: true as const, businessId: existingHostedSubscription.business_id }
+    : await createBusiness(client, {
+        customerId: customer.customerId,
+        businessName,
+        logoUrl: logoUrl ?? null,
+        now
+      });
+  if (!business.ok) return business;
+
+  const assignment = existingHostedSubscription
+    ? { code: existingHostedSubscription.permanent_code }
+    : await assignPermanentHostedPageCode(storage, {
+        physicalProductRef: buildPhysicalProductRef(input.order, input.order.stripe_checkout_session_id, hostedItemIndex),
+        assignedBy: `manual:${input.order.stripe_checkout_session_id}`,
+        now,
+        generateCode: dependencies?.generateCode
+      });
+  const hostedPageUrl =
+    existingHostedSubscription?.hosted_page_url ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/p/${assignment.code}`;
+  const stripeSubscriptionId = `manual:${input.order.stripe_checkout_session_id}`;
+  const lineItems = attachHostedTargets(input.order.line_items_json, hostedItemIndex, assignment.code, hostedPageUrl, {
+    stripeSubscriptionId,
+    subscriptionStatus: "unknown"
+  });
+
+  const page = await upsertHostedEditorPage(client, {
+    customerId: customer.customerId,
+    businessId: business.businessId,
+    code: assignment.code,
+    lifecycleStatus: "ACTIVE",
+    businessName,
+    logoUrl: logoUrl ?? null,
+    initialButtons,
+    now
+  });
+  if (!page.ok) return page;
+
+  const subscription = await upsertHostedSubscription(client, {
+    existingSubscriptionId: existingHostedSubscription?.id,
+    customerId: customer.customerId,
+    businessId: business.businessId,
+    hostedPageId: page.pageId,
+    orderId: input.order.id ?? null,
+    stripeCheckoutSessionId: input.order.stripe_checkout_session_id,
+    stripeCustomerId: null,
+    stripeSubscriptionId,
+    permanentCode: assignment.code,
+    hostedPageUrl,
+    status: "unknown",
+    lifecycleStatus: "ACTIVE",
+    currentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
+    provisioningStatus: "ready_for_customer_setup",
+    now
+  });
+  if (!subscription.ok) return subscription;
+
+  const orderUpdate = await client
+    .from("orders")
+    .update({
+      line_items_json: lineItems,
+      production_status: "ready_for_production",
+      updated_at: now.toISOString()
+    })
+    .eq("stripe_checkout_session_id", input.order.stripe_checkout_session_id);
+  if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
+
+  await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
+    schemaVersion: 1,
+    code: assignment.code,
+    version: `manual-${now.getTime()}-${input.order.stripe_checkout_session_id}`,
+    publishedAt: now.toISOString(),
+    lifecycleStatus: "ACTIVE",
+    businessName,
+    logoUrl: logoUrl ?? undefined,
+    headline: businessName,
+    buttons: buildSnapshotButtons(initialButtons),
+    description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+    appearance: { theme: "light", accentColor: "#0f766e" }
+  }));
+
+  const setupEmail = await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+    to: email,
+    businessName,
+    hostedPageUrl,
+    activationToken: activation.token
+  });
+  if (!setupEmail.sent) {
+    console.warn("[manual-provisioning] hosted_setup_email_not_sent", {
+      orderReference: input.order.stripe_checkout_session_id,
+      reason: setupEmail.reason
+    });
+  }
+
+  return { ok: true, accountProvisioned: true, hostedProvisioned: true, code: assignment.code, hostedPageUrl };
+}
+
 export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike, order: Pick<OrderRecord, "line_items_json">) {
   const metadataIntent = session.metadata?.checkout_intent;
   return metadataIntent === "hosted_subscription" || order.line_items_json.some((item) => getHostedLineItem(item));
@@ -224,6 +403,12 @@ async function resolveDependencies(dependencies?: HostedSubscriptionProvisioning
   if (!storage) return { ok: false as const, error: "Hosted page snapshot storage is not configured." };
 
   return { ok: true as const, client: getSupabaseAdmin() as OrdersDbClient, storage };
+}
+
+async function resolveClientDependency(dependencies?: Pick<HostedSubscriptionProvisioningDependencies, "client">) {
+  if (dependencies?.client) return { ok: true as const, client: dependencies.client };
+  if (!hasSupabaseAdminConfig()) return { ok: false as const, error: "Database persistence is not configured." };
+  return { ok: true as const, client: getSupabaseAdmin() as OrdersDbClient };
 }
 
 async function recordStripeEventIfNew(client: OrdersDbClient, eventId: string, eventType: string, now: Date) {
@@ -446,6 +631,29 @@ function attachHostedTargets(
 
 function buildPhysicalProductRef(order: OrderRecord, checkoutSessionId: string, itemIndex: number) {
   return `stripe-checkout:${checkoutSessionId}:order:${order.id ?? "pending"}:line:${itemIndex + 1}`;
+}
+
+function readManualOrderBusinessName(order: OrderRecord) {
+  for (const item of order.line_items_json) {
+    const businessName = readString(readSetup(item).businessName);
+    if (businessName) return businessName;
+  }
+
+  return order.customer_name ?? normalizeEmail(order.email) ?? "Tap Rater Customer";
+}
+
+function readManualOrderLogoUrl(order: OrderRecord) {
+  for (const item of order.line_items_json) {
+    const setup = readSetup(item);
+    const logoUrl = readString(setup.logoMediaUrl);
+    if (logoUrl) return logoUrl;
+  }
+
+  return null;
+}
+
+function readCustomerPhone(value: unknown) {
+  return value && typeof value === "object" ? readString((value as Record<string, unknown>).phone) ?? null : null;
 }
 
 function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = []) {

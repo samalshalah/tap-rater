@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getStripeModeSafe, validateCheckoutCart } from "@/lib/checkout";
 import { hasSupabaseAdminConfig } from "@/lib/db";
+import { provisionManualCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { createManualPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCheckoutShippingAmountCents, getShippingSettings } from "@/lib/shipping-settings";
@@ -50,9 +51,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Order could not be submitted." }, { status: 500 });
   }
 
+  const provisioning = await provisionManualCustomerAccountFromOrder({
+    order: result.order,
+    siteUrl: new URL(request.url).origin
+  });
+
+  if (!provisioning.ok) {
+    return NextResponse.json({ error: "Order was submitted, but customer account setup could not be created." }, { status: 500 });
+  }
+
   return NextResponse.json({
     checkoutMode: "manual",
     orderReference: result.orderReference,
-    orderId: result.orderId
+    orderId: result.orderId,
+    accountProvisioned: provisioning.accountProvisioned,
+    hostedProvisioned: provisioning.hostedProvisioned,
+    hostedPageUrl: provisioning.hostedPageUrl
   });
 }

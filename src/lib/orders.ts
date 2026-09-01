@@ -551,40 +551,48 @@ export async function createManualPendingOrderForCheckout({
 
   const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(rows, orderReference);
   const now = new Date().toISOString();
+  const order: OrderRecord = {
+    stripe_checkout_session_id: orderReference,
+    status: "pending_payment",
+    payment_status: "manual_unpaid",
+    email: customerEmail,
+    customer_name: customerName?.trim() || null,
+    subtotal_cents: subtotalCents,
+    total_cents: totalCents,
+    currency,
+    line_items_json: lineItems,
+    customer_details_json: {
+      email: customerEmail,
+      name: customerName?.trim() || null,
+      source: "manual_checkout"
+    },
+    shipping_address_json: null,
+    shipping_amount_cents: shippingAmountCents,
+    shipping_mode: shippingMode,
+    production_status: "not_started",
+    shipping_status: "not_shipped",
+    shipping_method: null,
+    shipping_carrier: null,
+    tracking_number: null,
+    tracking_url: null,
+    shipped_at: null,
+    internal_notes: "Manual unpaid order submitted from cart while Stripe checkout is bypassed.",
+    admin_fulfillment_notes: "",
+    updated_at: now
+  };
   const { data, error } = await (getSupabaseAdmin() as OrdersDbClient)
     .from("orders")
     .upsert(
-      {
-        stripe_checkout_session_id: orderReference,
-        status: "pending_payment",
-        payment_status: "manual_unpaid",
-        email: customerEmail,
-        customer_name: customerName?.trim() || null,
-        subtotal_cents: subtotalCents,
-        total_cents: totalCents,
-        currency,
-        line_items_json: lineItems,
-        customer_details_json: {
-          email: customerEmail,
-          name: customerName?.trim() || null,
-          source: "manual_checkout"
-        },
-        shipping_amount_cents: shippingAmountCents,
-        shipping_mode: shippingMode,
-        production_status: "not_started",
-        shipping_status: "not_shipped",
-        internal_notes: "Manual unpaid order submitted from cart while Stripe checkout is bypassed.",
-        admin_fulfillment_notes: "",
-        updated_at: now
-      },
+      order,
       { onConflict: "stripe_checkout_session_id" }
     )
     .select("id, stripe_checkout_session_id")
     .maybeSingle();
 
+  const savedOrder = { ...order, id: data?.id ? String(data.id) : undefined };
   return error
     ? { ok: false as const, error: error.message }
-    : { ok: true as const, orderReference, orderId: data?.id ? String(data.id) : undefined };
+    : { ok: true as const, orderReference, orderId: savedOrder.id, order: savedOrder };
 }
 
 export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSessionLike): Promise<PaidOrderSaveResult> {

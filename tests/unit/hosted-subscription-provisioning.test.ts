@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   isHostedSubscriptionCheckout,
   mapStripeSubscriptionLifecycle,
+  provisionManualCustomerAccountFromOrder,
   provisionHostedSubscriptionFromCheckout
 } from "@/lib/hosted-subscription-provisioning";
 import type { HostedPagePutOptions, HostedPageTextStorage } from "@/lib/hosted-pages/repository";
@@ -283,6 +284,102 @@ describe("hosted subscription provisioning", () => {
     expect(mapStripeSubscriptionLifecycle({ status: "past_due" })).toBe("PAST_DUE");
     expect(mapStripeSubscriptionLifecycle({ status: "active", cancel_at_period_end: true })).toBe("CANCELLED_AT_PERIOD_END");
     expect(mapStripeSubscriptionLifecycle({ status: "canceled" })).toBe("EXPIRED");
+  });
+
+  it("provisions a hosted page and activation email for manual Multi-Link orders", async () => {
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+    const order = createHostedOrder({
+      setup: {
+        businessName: "Manual Links",
+        logoMediaUrl: "https://taprater.com/logo.png",
+        multiLinkButtons: [
+          { id: "website", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
+        ]
+      }
+    });
+    order.stripe_checkout_session_id = "manual_order_123";
+    order.status = "pending_payment";
+    order.payment_status = "manual_unpaid";
+    client.table("orders")[0] = order as any;
+    const sendHostedSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await provisionManualCustomerAccountFromOrder(
+      { order, now: new Date("2026-09-01T12:00:00.000Z"), siteUrl: "https://taprater.com" },
+      { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      accountProvisioned: true,
+      hostedProvisioned: true,
+      code: "ABCDEFGHJKM2",
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+    expect(client.table("customers")).toMatchObject([{ email: "owner@example.com", account_status: "pending_activation" }]);
+    expect(client.table("hosted_subscriptions")).toMatchObject([
+      {
+        stripe_checkout_session_id: "manual_order_123",
+        stripe_subscription_id: "manual:manual_order_123",
+        status: "unknown",
+        lifecycle_status: "ACTIVE"
+      }
+    ]);
+    expect(client.table("orders")[0].line_items_json[0].setup).toMatchObject({
+      hostedPageCode: "ABCDEFGHJKM2",
+      qrTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2",
+      nfcTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+    expect(storage.objects.has("hosted-pages/ABCDEFGHJKM2/current.json")).toBe(true);
+    expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({
+      to: "owner@example.com",
+      businessName: "Manual Links",
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2",
+      activationToken: expect.any(String)
+    });
+  });
+
+  it("provisions customer account access for manual non-hosted orders", async () => {
+    const client = new MemoryDbClient();
+    const order = createHostedOrder({
+      lineItems: [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          optionLabel: "Branded + QR",
+          title: "Google Review Stand",
+          sku: "TR-GOOGLE",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          setup: {
+            businessName: "Manual Brand",
+            logoMediaUrl: "https://taprater.com/logo.png"
+          }
+        }
+      ]
+    });
+    order.stripe_checkout_session_id = "manual_brand_123";
+    order.status = "pending_payment";
+    order.payment_status = "manual_unpaid";
+    client.table("orders")[0] = order as any;
+    const sendCustomerAccountSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await provisionManualCustomerAccountFromOrder(
+      { order, now: new Date("2026-09-01T12:00:00.000Z") },
+      { client, storage: new MemoryHostedStorage([]), sendCustomerAccountSetupEmailFn }
+    );
+
+    expect(result).toEqual({ ok: true, accountProvisioned: true, hostedProvisioned: false });
+    expect(client.table("customers")).toMatchObject([{ email: "owner@example.com", account_status: "pending_activation" }]);
+    expect(client.table("businesses")).toMatchObject([{ business_name: "Manual Brand", logo_url: "https://taprater.com/logo.png" }]);
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(0);
+    expect(sendCustomerAccountSetupEmailFn).toHaveBeenCalledWith({
+      to: "owner@example.com",
+      businessName: "Manual Brand",
+      orderReference: "manual_brand_123",
+      activationToken: expect.any(String)
+    });
   });
 });
 
