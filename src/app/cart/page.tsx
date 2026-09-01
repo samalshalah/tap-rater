@@ -12,13 +12,13 @@ export default function CartPage() {
       <SectionShell spacing="compact">
         <div className="tr-container">
           <p className="tr-eyebrow">Cart</p>
-          <h1 className="mt-4 max-w-4xl text-[2.1rem] font-medium leading-tight text-ink sm:text-[2.55rem] md:text-[2.85rem]">
+          <h1 className="mt-3 max-w-3xl text-[1.8rem] font-medium leading-tight text-ink sm:text-[2.15rem] md:text-[2.35rem]">
             Review your order
           </h1>
-          <p className="tr-body mt-4 max-w-3xl text-base">
+          <p className="tr-body mt-3 max-w-2xl text-sm leading-6 sm:text-base">
             Confirm each configured stand before Tap Rater reviews proof, payment, shipping, and production details.
           </p>
-          <div className="mt-9">
+          <div className="mt-7">
             <CartTable stripeMode={stripeMode} />
           </div>
         </div>

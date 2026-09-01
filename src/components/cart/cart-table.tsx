@@ -286,16 +286,16 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
-          <h2 className="mt-2 text-[1.7rem] font-medium leading-tight text-ink">{isLiveStripe ? "Checkout" : "Order review"}</h2>
+          <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{isLiveStripe ? "Checkout" : "Order review"}</h2>
         </div>
         {!isLiveStripe ? (
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {signedInCustomer ? (
-              <div className="flex items-center gap-2 rounded-md border border-line bg-soft px-3 py-2 text-sm text-muted">
-                <CircleUserRound size={17} className="shrink-0 text-brand" />
-                <p className="min-w-0">
-                  Signed in as{" "}
-                  <span className="break-all text-ink">{signedInCustomer.email}</span>
+              <div className="flex min-w-0 items-center gap-2 rounded-md border border-line bg-soft px-3 py-2 text-xs text-muted sm:text-sm">
+                <CircleUserRound size={16} className="shrink-0 text-brand" />
+                <p className="min-w-0 truncate">
+                  <span className="text-muted">Signed in:</span>{" "}
+                  <span className="text-ink">{signedInCustomer.email}</span>
                 </p>
               </div>
             ) : (
