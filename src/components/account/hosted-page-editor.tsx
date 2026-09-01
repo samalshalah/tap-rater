@@ -188,8 +188,33 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   return (
-    <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="grid gap-3">
+    <div className="grid min-w-0 gap-3">
+      <div className="tr-card grid gap-2 p-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
+          <p className="text-xs text-muted">Permanent URL</p>
+          <p className="mt-0.5 truncate text-sm font-medium text-ink">{permanentUrl}</p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
+            <Copy size={14} /> Copy
+          </button>
+          <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
+            <ExternalLink size={14} /> Open
+          </a>
+          <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary min-h-9 px-3 py-1 text-xs">
+            <Save size={14} /> {status === "saving" ? "Saving..." : "Save Draft"}
+          </button>
+          <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-9 px-3 py-1 text-xs">
+            <Check size={14} /> {status === "publishing" ? "Publishing..." : "Publish"}
+          </button>
+        </div>
+        <p className="text-xs text-muted lg:col-span-2">
+          {message ? <span className={status === "error" ? "text-red-700" : "text-brand"}>{message}</span> : isDirty ? "Unsaved changes" : page.publishedAt ? `Published ${new Date(page.publishedAt).toLocaleString()}` : "Draft saved"}
+        </p>
+      </div>
+
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
+        <section className="grid gap-3">
         <div className="tr-card grid gap-2 p-3">
           <div>
             <p className="tr-eyebrow">Page information</p>
@@ -319,9 +344,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </label>
           </div>
         </div>
-      </section>
+        </section>
 
-      <aside className="grid h-fit gap-3 lg:sticky lg:top-3">
+        <aside className="grid h-fit gap-3 lg:sticky lg:top-3">
         <div className="tr-card p-3">
           <div className="mb-2 flex items-center justify-between">
             <div>
@@ -333,36 +358,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </button>
           </div>
           {previewMessage ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
-          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[430px] max-h-[48vh] min-h-[330px] w-full rounded-md border border-line bg-white" />
+          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[560px] max-h-[68vh] min-h-[430px] w-full rounded-md border border-line bg-white" />
         </div>
-        <div className="tr-card grid gap-2 p-3">
-          <p className="tr-eyebrow">Publish</p>
-          <div className="min-w-0 rounded-md border border-line bg-soft px-3 py-2">
-            <p className="text-xs text-muted">Permanent URL</p>
-            <p className="mt-1 truncate text-sm font-medium text-ink">{permanentUrl}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
-                <Copy size={14} /> Copy
-              </button>
-              <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
-                <ExternalLink size={14} /> Open
-              </a>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary min-h-10 px-3 py-2">
-              <Save size={16} /> {status === "saving" ? "Saving..." : "Save Draft"}
-            </button>
-            <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-10 px-3 py-2">
-              <Check size={16} /> {status === "publishing" ? "Publishing..." : "Publish"}
-            </button>
-          </div>
-          <p className="text-sm text-muted">
-            {isDirty ? "Unsaved changes" : page.publishedAt ? `Published ${new Date(page.publishedAt).toLocaleString()}` : "Draft saved"}
-          </p>
-          {message ? <p className={status === "error" ? "tr-status-error" : "tr-status-success"}>{message}</p> : null}
-        </div>
-      </aside>
+        </aside>
+      </div>
     </div>
   );
 }
