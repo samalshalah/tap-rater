@@ -27,7 +27,7 @@ export default async function AccountStandsPage({ searchParams }: AccountStandsP
           <p className="tr-eyebrow">My Stands</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Purchased stands</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Manage each purchased stand after checkout. Review prepared proofs, request changes when needed, and edit hosted Multi-Link pages without rebuilding the original order.
+            Manage each purchased stand after checkout. View status, confirm destination details, and edit hosted Multi-Link pages without rebuilding the original order.
           </p>
         </section>
 
@@ -40,7 +40,7 @@ export default async function AccountStandsPage({ searchParams }: AccountStandsP
                 <p className="tr-eyebrow">Multi-Link</p>
                 <h2 className="mt-2 text-xl font-medium text-ink">Hosted page setup</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                  Edit the links for the selected Multi-Link stand. The physical stand proof stays attached to the original order.
+                  Edit the links for the selected Multi-Link stand. The physical stand stays attached to the original order.
                 </p>
               </div>
             </div>
