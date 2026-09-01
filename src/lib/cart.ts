@@ -73,6 +73,7 @@ export type CartItem = {
     ctaText?: string;
     fontSizePercent?: number;
     logoSizePercent?: number;
+    showBusinessNameOnProof?: boolean;
     proofApprovalSnapshot?: Record<string, unknown>;
     proofApprovedAt?: string;
     proofPreviewData?: Record<string, unknown>;
@@ -279,7 +280,8 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.centerAssetUrl ?? "",
     setup.ctaText ?? "",
     setup.fontSizePercent === undefined ? "" : String(setup.fontSizePercent),
-    setup.logoSizePercent === undefined ? "" : String(setup.logoSizePercent)
+    setup.logoSizePercent === undefined ? "" : String(setup.logoSizePercent),
+    setup.showBusinessNameOnProof === false ? "hide_business_name" : ""
   ].join("|");
 }
 
@@ -338,6 +340,7 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     ctaText: readString(row.ctaText),
     fontSizePercent: readInteger(row.fontSizePercent),
     logoSizePercent: readInteger(row.logoSizePercent),
+    showBusinessNameOnProof: typeof row.showBusinessNameOnProof === "boolean" ? row.showBusinessNameOnProof : undefined,
     proofApprovalSnapshot: readRecord(row.proofApprovalSnapshot),
     proofApprovedAt: readString(row.proofApprovedAt),
     proofPreviewData: readRecord(row.proofPreviewData),

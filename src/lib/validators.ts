@@ -561,6 +561,7 @@ export const checkoutCartSchema = z.object({
             qrTargetUrl: z.string().trim().max(500).optional(),
             nfcTargetUrl: z.string().trim().max(500).optional(),
             frontTemplateUrl: z.string().trim().max(600).optional(),
+            showBusinessNameOnProof: z.boolean().optional(),
             proofApprovalSnapshot: z.record(z.unknown()).optional(),
             proofApprovedAt: z.string().trim().max(80).optional(),
             proofPreviewData: z.record(z.unknown()).optional(),

@@ -17,6 +17,7 @@ export type ProofApprovalSnapshot = {
   ctaText?: string;
   fontSizePercent?: number;
   logoSizePercent?: number;
+  showBusinessNameOnProof?: boolean;
   logoBackgroundMode?: string;
   logoFitMode?: string;
   logoOffsetXPercent?: number;
@@ -64,6 +65,7 @@ export function buildProofApprovalSnapshot(input: ProofApprovalSnapshot): ProofA
     frontTemplateUrl: normalizeOptional(input.frontTemplateUrl),
     fontSizePercent: normalizeOptionalPercent(input.fontSizePercent),
     logoSizePercent: normalizeOptionalPercent(input.logoSizePercent),
+    showBusinessNameOnProof: typeof input.showBusinessNameOnProof === "boolean" ? input.showBusinessNameOnProof : undefined,
     logoBackgroundMode: normalizeOptional(input.logoBackgroundMode),
     logoFitMode: normalizeOptional(input.logoFitMode),
     logoOffsetXPercent: normalizeOptionalPercent(input.logoOffsetXPercent),
@@ -98,6 +100,7 @@ function stableSnapshotString(snapshot: ProofApprovalSnapshot) {
     frontTemplateUrl: snapshot.frontTemplateUrl ?? "",
     fontSizePercent: snapshot.fontSizePercent ?? "",
     logoSizePercent: snapshot.logoSizePercent ?? "",
+    showBusinessNameOnProof: snapshot.showBusinessNameOnProof === false ? "hidden" : "shown",
     logoBackgroundMode: snapshot.logoBackgroundMode ?? "",
     logoFitMode: snapshot.logoFitMode ?? "",
     logoOffsetXPercent: snapshot.logoOffsetXPercent ?? "",

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
+import { CheckCircle2, ImageUp, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -92,6 +92,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
   const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
   const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
+  const [showBusinessNameOnProof, setShowBusinessNameOnProof] = useState(true);
   const [designAssistanceRequested, setDesignAssistanceRequested] = useState(false);
   const [designNotes, setDesignNotes] = useState("");
   const [manualDesignAcknowledged, setManualDesignAcknowledged] = useState(false);
@@ -147,6 +148,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         frontTemplateUrl: proofFrontTemplateUrl || undefined,
         fontSizePercent: proofFontSizePercent,
         logoSizePercent: proofLogoSizePercent,
+        showBusinessNameOnProof,
         logoBackgroundMode,
         logoFitMode,
         logoOffsetXPercent,
@@ -535,6 +537,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         logoFitMode: selectedOption.id === "branded_qr_direct" ? logoFitMode : undefined,
         logoOffsetXPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetXPercent : undefined,
         logoOffsetYPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetYPercent : undefined,
+        showBusinessNameOnProof: selectedOption.id === "branded_qr_direct" ? showBusinessNameOnProof : undefined,
         generatedQrValue: selectedLinkExperience === "multilink" ? proofQrValue : directTargets?.qrTargetUrl,
         qrTargetUrl: directTargets?.qrTargetUrl,
         nfcTargetUrl: directTargets?.nfcTargetUrl,
@@ -554,6 +557,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 frontTemplateUrl: proofFrontTemplateUrl || undefined,
                 fontSizePercent: proofFontSizePercent,
                 logoSizePercent: proofLogoSizePercent,
+                showBusinessNameOnProof,
                 logoBackgroundMode,
                 logoFitMode,
                 logoOffsetXPercent,
@@ -1075,6 +1079,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         templateUrl={proofFrontTemplateUrl}
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
+                        showBusinessNameOnProof={showBusinessNameOnProof}
                       />
                       <ProofControls
                         logo={logo}
@@ -1114,6 +1119,14 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                           setProofApproved(false);
                           setApprovedProofSnapshot(null);
                         }}
+                        showBusinessNameOnProof={showBusinessNameOnProof}
+                        onShowBusinessNameOnProofChange={(value) => {
+                          setShowBusinessNameOnProof(value);
+                          setProofApproved(false);
+                          setApprovedProofSnapshot(null);
+                        }}
+                        isUploadingLogo={isUploadingLogo}
+                        onUploadLogo={(file) => uploadLogo(file)}
                       />
                     </div>
                   ) : selectedOption.id === "branded_qr_direct" && designAssistanceRequested ? (
@@ -1133,6 +1146,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                         templateUrl={proofFrontTemplateUrl}
                         fontSizePercent={proofFontSizePercent}
                         logoSizePercent={proofLogoSizePercent}
+                        showBusinessNameOnProof={showBusinessNameOnProof}
                         designAssistanceRequested
                       />
                     </div>
@@ -1180,6 +1194,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     templateUrl={proofFrontTemplateUrl}
                     fontSizePercent={proofFontSizePercent}
                     logoSizePercent={proofLogoSizePercent}
+                    showBusinessNameOnProof={showBusinessNameOnProof}
                     designAssistanceRequested={designAssistanceRequested}
                   />
                   {designAssistanceRequested ? (
@@ -1480,6 +1495,7 @@ function ProofRangeControl({
 }
 
 function ProofControls({
+  isUploadingLogo,
   logo,
   logoBackgroundMode,
   logoFitMode,
@@ -1489,11 +1505,15 @@ function ProofControls({
   onLogoFitModeChange,
   onLogoOffsetXPercentChange,
   onLogoOffsetYPercentChange,
+  onShowBusinessNameOnProofChange,
+  onUploadLogo,
   onProofFontSizePercentChange,
   onProofLogoSizePercentChange,
   proofFontSizePercent,
-  proofLogoSizePercent
+  proofLogoSizePercent,
+  showBusinessNameOnProof
 }: {
+  isUploadingLogo: boolean;
   logo: UploadedLogo;
   logoBackgroundMode: LogoBackgroundMode;
   logoFitMode: LogoFitMode;
@@ -1503,13 +1523,47 @@ function ProofControls({
   onLogoFitModeChange: (value: LogoFitMode) => void;
   onLogoOffsetXPercentChange: (value: number) => void;
   onLogoOffsetYPercentChange: (value: number) => void;
+  onShowBusinessNameOnProofChange: (value: boolean) => void;
+  onUploadLogo: (file: File | undefined) => void;
   onProofFontSizePercentChange: (value: number) => void;
   onProofLogoSizePercentChange: (value: number) => void;
   proofFontSizePercent: number;
   proofLogoSizePercent: number;
+  showBusinessNameOnProof: boolean;
 }) {
   return (
     <div className="grid gap-4 rounded-lg border border-line bg-white p-3 lg:sticky lg:top-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-line bg-soft p-3">
+        <div>
+          <p className="text-sm font-black text-ink">Logo</p>
+          <p className="mt-1 text-xs leading-5 text-muted">Recommended: transparent PNG, 1200 px wide or larger.</p>
+        </div>
+        <label className="tr-button-outline w-full cursor-pointer sm:w-fit">
+          <ImageUp size={16} />
+          {isUploadingLogo ? "Uploading..." : "Replace logo"}
+          <input
+            className="sr-only"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={isUploadingLogo}
+            onChange={(event) => onUploadLogo(event.target.files?.[0])}
+          />
+        </label>
+      </div>
+      <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
+        <input
+          className="mt-1 h-4 w-4 accent-brand"
+          type="checkbox"
+          checked={showBusinessNameOnProof}
+          onChange={(event) => onShowBusinessNameOnProofChange(event.target.checked)}
+        />
+        <span>
+          Show business name text on the stand
+          <span className="mt-1 block text-xs font-medium leading-5 text-muted">
+            Turn off when the uploaded logo already includes the business name.
+          </span>
+        </span>
+      </label>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <ProofSegmentedControl
           label="Logo background"
@@ -1532,16 +1586,18 @@ function ProofControls({
         />
       </div>
       {logo.trimApplied ? (
-        <p className="text-xs font-semibold text-brand">Auto-crop removed about {logo.blankMarginPercent ?? 0}% blank logo margin. Original is still available.</p>
+        <p className="text-xs font-semibold text-brand">Auto-crop prepared the logo and removed white background where possible. Original is still available.</p>
       ) : null}
       <div className="grid gap-4">
-        <ProofRangeControl
-          label="Font size"
-          value={proofFontSizePercent}
-          min={75}
-          max={135}
-          onChange={onProofFontSizePercentChange}
-        />
+        {showBusinessNameOnProof ? (
+          <ProofRangeControl
+            label="Font size"
+            value={proofFontSizePercent}
+            min={75}
+            max={135}
+            onChange={onProofFontSizePercentChange}
+          />
+        ) : null}
         <ProofRangeControl
           label="Logo size"
           value={proofLogoSizePercent}
@@ -1668,15 +1724,12 @@ async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied:
   const contentAreaRatio = (contentWidth * contentHeight) / (canvas.width * canvas.height);
   const blankMarginPercent = Math.round((1 - contentAreaRatio) * 100);
 
-  if (blankMarginPercent < 12) {
-    return { file, trimApplied: false, blankMarginPercent };
-  }
-
-  const padding = Math.round(Math.max(contentWidth, contentHeight) * 0.04);
-  const cropX = Math.max(0, minX - padding);
-  const cropY = Math.max(0, minY - padding);
-  const cropWidth = Math.min(canvas.width - cropX, contentWidth + padding * 2);
-  const cropHeight = Math.min(canvas.height - cropY, contentHeight + padding * 2);
+  const shouldCrop = blankMarginPercent >= 12;
+  const padding = shouldCrop ? Math.round(Math.max(contentWidth, contentHeight) * 0.04) : 0;
+  const cropX = shouldCrop ? Math.max(0, minX - padding) : 0;
+  const cropY = shouldCrop ? Math.max(0, minY - padding) : 0;
+  const cropWidth = shouldCrop ? Math.min(canvas.width - cropX, contentWidth + padding * 2) : canvas.width;
+  const cropHeight = shouldCrop ? Math.min(canvas.height - cropY, contentHeight + padding * 2) : canvas.height;
   const output = document.createElement("canvas");
   output.width = cropWidth;
   output.height = cropHeight;
@@ -1687,6 +1740,12 @@ async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied:
   }
 
   outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  const backgroundRemoved = removeEdgeConnectedWhiteBackground(outputContext, cropWidth, cropHeight);
+
+  if (!shouldCrop && !backgroundRemoved) {
+    return { file, trimApplied: false, blankMarginPercent };
+  }
+
   const blob = await new Promise<Blob | null>((resolve) => output.toBlob(resolve, "image/png"));
 
   if (!blob) {
@@ -1694,7 +1753,59 @@ async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied:
   }
 
   const filename = `${file.name.replace(/\.[^.]+$/, "") || "logo"}-trimmed.png`;
-  return { file: new File([blob], filename, { type: "image/png" }), trimApplied: true, blankMarginPercent };
+  return { file: new File([blob], filename, { type: "image/png" }), trimApplied: shouldCrop || backgroundRemoved, blankMarginPercent };
+}
+
+function removeEdgeConnectedWhiteBackground(context: CanvasRenderingContext2D, width: number, height: number) {
+  const imageData = context.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const visited = new Uint8Array(width * height);
+  const queue: number[] = [];
+  let cursor = 0;
+  let changed = false;
+
+  function enqueue(x: number, y: number) {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const point = y * width + x;
+    if (visited[point]) return;
+    const index = point * 4;
+    if (!isRemovableWhitePixel(data[index], data[index + 1], data[index + 2], data[index + 3])) return;
+    visited[point] = 1;
+    queue.push(point);
+  }
+
+  for (let x = 0; x < width; x += 1) {
+    enqueue(x, 0);
+    enqueue(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    enqueue(0, y);
+    enqueue(width - 1, y);
+  }
+
+  while (cursor < queue.length) {
+    const point = queue[cursor]!;
+    cursor += 1;
+    const x = point % width;
+    const y = Math.floor(point / width);
+    const index = point * 4;
+    data[index + 3] = 0;
+    changed = true;
+    enqueue(x + 1, y);
+    enqueue(x - 1, y);
+    enqueue(x, y + 1);
+    enqueue(x, y - 1);
+  }
+
+  if (changed) {
+    context.putImageData(imageData, 0, 0);
+  }
+
+  return changed;
+}
+
+function isRemovableWhitePixel(red: number, green: number, blue: number, alpha: number) {
+  return alpha > 16 && red >= 242 && green >= 242 && blue >= 242;
 }
 
 function loadLogoImage(file: File) {
@@ -1729,6 +1840,7 @@ function ProofPreview({
   logoSizePercent,
   product,
   qrValue,
+  showBusinessNameOnProof,
   templateUrl
 }: {
   businessName: string;
@@ -1741,6 +1853,7 @@ function ProofPreview({
   logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
+  showBusinessNameOnProof: boolean;
   templateUrl: string;
 }) {
   return (
@@ -1760,6 +1873,7 @@ function ProofPreview({
             logoOffsetYPercent={logoOffsetYPercent}
             logoSizePercent={logoSizePercent}
             qrValue={qrValue}
+            showBusinessNameOnProof={showBusinessNameOnProof}
             templateUrl={templateUrl}
           />
         ) : (
@@ -1774,6 +1888,7 @@ function ProofPreview({
             logoSizePercent={logoSizePercent}
             product={product}
             qrValue={qrValue}
+            showBusinessNameOnProof={showBusinessNameOnProof}
           />
         )}
       </div>
@@ -1791,6 +1906,7 @@ function TemplateProofPreview({
   logoOffsetYPercent,
   logoSizePercent,
   qrValue,
+  showBusinessNameOnProof,
   templateUrl
 }: {
   businessName: string;
@@ -1802,6 +1918,7 @@ function TemplateProofPreview({
   logoOffsetYPercent: number;
   logoSizePercent: number;
   qrValue: string;
+  showBusinessNameOnProof: boolean;
   templateUrl: string;
 }) {
   return (
@@ -1820,15 +1937,17 @@ function TemplateProofPreview({
           </span>
         )}
       </div>
-      <p
-        className="absolute overflow-hidden text-center font-black leading-tight text-ink"
-        style={{
-          ...regionStyle(brandedStandComposition.businessNameRegion),
-          fontSize: `${17 * fontSizePercent / 100}px`
-        }}
-      >
-        {businessName || "Business name"}
-      </p>
+      {showBusinessNameOnProof ? (
+        <p
+          className="absolute overflow-hidden text-center font-black leading-tight text-ink"
+          style={{
+            ...regionStyle(brandedStandComposition.businessNameRegion),
+            fontSize: `${17 * fontSizePercent / 100}px`
+          }}
+        >
+          {businessName || "Business name"}
+        </p>
+      ) : null}
       <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>
         <QrPreview value={qrValue} variant="template" />
       </div>
@@ -1846,7 +1965,8 @@ function CleanProofPreview({
   logoOffsetYPercent,
   logoSizePercent,
   product,
-  qrValue
+  qrValue,
+  showBusinessNameOnProof
 }: {
   businessName: string;
   designAssistanceRequested: boolean;
@@ -1858,6 +1978,7 @@ function CleanProofPreview({
   logoSizePercent: number;
   product: ProductSetupChooserProduct;
   qrValue: string;
+  showBusinessNameOnProof: boolean;
 }) {
   return (
     <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
@@ -1872,9 +1993,11 @@ function CleanProofPreview({
           <span className="text-xs font-black uppercase text-muted">{designAssistanceRequested ? "Proof by Tap Rater" : "Logo zone"}</span>
         )}
       </div>
-      <p className="mt-3 max-w-full break-words font-black uppercase text-ink" style={{ fontSize: `${0.875 * fontSizePercent / 100}rem` }}>
-        {businessName || "Business name"}
-      </p>
+      {showBusinessNameOnProof ? (
+        <p className="mt-3 max-w-full break-words font-black uppercase text-ink" style={{ fontSize: `${0.875 * fontSizePercent / 100}rem` }}>
+          {businessName || "Business name"}
+        </p>
+      ) : null}
       <div className="mt-5 grid justify-items-center gap-2">
         <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
       </div>

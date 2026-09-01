@@ -171,6 +171,31 @@ describe("production artwork", () => {
     expect(stored?.value).toContain("<svg x=");
   });
 
+  it("omits the separate business name text when the approved proof hides it", async () => {
+    const { storage, writes } = memoryStorage();
+    const itemWithLogoOnlyName: OrderLineItem = {
+      ...brandedItem,
+      setup: {
+        ...brandedItem.setup,
+        showBusinessNameOnProof: false,
+        proofApprovalSnapshot: {
+          ...approvedSnapshot,
+          showBusinessNameOnProof: false
+        }
+      }
+    };
+    const item = await generateProductionArtworkForOrderLineItem(
+      { orderReference: "cs_test_123", lineItemIndex: 0, item: itemWithLogoOnlyName, assetResolver: memoryAssetResolver },
+      storage
+    );
+    const artwork = readProductionArtworkReference(item);
+    const stored = writes.get(artwork?.storageKey ?? "");
+
+    expect(artwork?.status).toBe("generated");
+    expect(stored?.value).not.toContain("Nova Implant</text>");
+    expect(stored?.value).toContain(embeddedAssets["/api/media/product/products/customer-setup/logo.png"].dataUri);
+  });
+
   it("keeps QR and NFC targets identical to the Direct destination", async () => {
     const { storage } = memoryStorage();
     const item = await generateProductionArtworkForOrderLineItem({ orderReference: "cs_test_123", lineItemIndex: 0, item: brandedItem, assetResolver: memoryAssetResolver }, storage);

@@ -24,6 +24,7 @@ describe("direct production approval snapshots", () => {
   it.each([
     ["logo", { logoMediaUrl: "/api/media/product/products/customer-setup/new-logo.png" }],
     ["business name", { businessName: "Changed Business" }],
+    ["business name visibility", { showBusinessNameOnProof: false }],
     ["destination", { destinationUrl: "https://example.com/changed", generatedQrValue: "https://example.com/changed" }],
     ["front template", { frontTemplateUrl: "/api/media/product/products/google-review/new-template.png" }]
   ])("invalidates approval when %s changes", (_, patch) => {

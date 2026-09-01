@@ -234,6 +234,7 @@ export async function composeProductionArtworkDocument(
   const logoFitMode = readSetupString(item.setup, "logoFitMode") === "fill" ? "fill" : "contain";
   const logoOffsetXPercent = readSetupNumber(item.setup, "logoOffsetXPercent") ?? 0;
   const logoOffsetYPercent = readSetupNumber(item.setup, "logoOffsetYPercent") ?? 0;
+  const showBusinessNameOnProof = readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof") !== false;
 
   if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
@@ -268,7 +269,9 @@ export async function composeProductionArtworkDocument(
     `<rect width="${template.widthPx}" height="${template.heightPx}" fill="#ffffff"/>`,
     `<image href="${escapeXml(baseTemplateAsset.dataUri)}" x="0" y="0" width="${template.widthPx}" height="${template.heightPx}" preserveAspectRatio="xMidYMid meet"/>`,
     `<image href="${escapeXml(logoAsset.dataUri)}" x="${logoRegion.x}" y="${logoRegion.y}" width="${logoRegion.width}" height="${logoRegion.height}" preserveAspectRatio="${logoPreserveAspectRatio}"/>`,
-    `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`,
+    showBusinessNameOnProof
+      ? `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`
+      : "",
     `<svg x="${template.qrRegion.x}" y="${template.qrRegion.y}" width="${template.qrRegion.width}" height="${template.qrRegion.height}" viewBox="${escapeXml(qrViewBox)}">${qrBody}</svg>`,
     `</svg>`
   ].join("");
@@ -294,6 +297,7 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
     frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl"),
     fontSizePercent: readSetupNumber(item.setup, "fontSizePercent"),
     logoSizePercent: readSetupNumber(item.setup, "logoSizePercent"),
+    showBusinessNameOnProof: readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof"),
     logoBackgroundMode: readSetupString(item.setup, "logoBackgroundMode"),
     logoFitMode: readSetupString(item.setup, "logoFitMode"),
     logoOffsetXPercent: readSetupNumber(item.setup, "logoOffsetXPercent"),
@@ -470,6 +474,11 @@ function readSetupNumber(setup: OrderLineItem["setup"], key: string) {
 
 function readSetupBoolean(setup: OrderLineItem["setup"], key: string) {
   return setup?.[key] === true;
+}
+
+function readSetupOptionalBoolean(setup: OrderLineItem["setup"], key: string) {
+  const value = setup?.[key];
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function readSetupRecord(setup: OrderLineItem["setup"], key: string): Record<string, unknown> | undefined {
