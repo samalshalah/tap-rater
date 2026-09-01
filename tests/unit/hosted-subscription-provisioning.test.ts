@@ -339,6 +339,77 @@ describe("hosted subscription provisioning", () => {
     });
   });
 
+  it("provisions only the Multi-Link stand when a manual order includes multiple stands", async () => {
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+    const order = createHostedOrder({
+      lineItems: [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          optionLabel: "Branded + QR",
+          title: "Google Review Stand",
+          sku: "TR-GOOGLE",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          setup: {
+            businessName: "Mixed Cart",
+            destinationUrl: "https://g.page/r/example/review",
+            qrTargetUrl: "https://g.page/r/example/review",
+            nfcTargetUrl: "https://g.page/r/example/review",
+            logoMediaUrl: "https://taprater.com/logo.png"
+          }
+        },
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "hosted_multilink",
+          optionLabel: "Hosted Multi-Link Stand",
+          destinationMode: "HOSTED",
+          customizationLevel: "BRANDED",
+          title: "Rate Your Experience Stand",
+          sku: "TR-RATE-HOSTED",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          setup: {
+            businessName: "Mixed Cart",
+            logoMediaUrl: "https://taprater.com/logo.png",
+            multiLinkButtons: [
+              { id: "website", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
+            ]
+          }
+        }
+      ]
+    });
+    order.stripe_checkout_session_id = "TR-260901-MIXED1";
+    order.status = "pending_payment";
+    order.payment_status = "manual_unpaid";
+    client.table("orders")[0] = order as any;
+
+    const result = await provisionManualCustomerAccountFromOrder(
+      { order, now: new Date("2026-09-01T12:00:00.000Z"), siteUrl: "https://taprater.com" },
+      { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true }) }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      accountProvisioned: true,
+      hostedProvisioned: true,
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+    expect(client.table("orders")[0].line_items_json[0].setup).toMatchObject({
+      qrTargetUrl: "https://g.page/r/example/review",
+      nfcTargetUrl: "https://g.page/r/example/review"
+    });
+    expect(client.table("orders")[0].line_items_json[0].setup.hostedPageCode).toBeUndefined();
+    expect(client.table("orders")[0].line_items_json[1].setup).toMatchObject({
+      hostedPageCode: "ABCDEFGHJKM2",
+      qrTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2",
+      nfcTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+  });
+
   it("provisions customer account access for manual non-hosted orders", async () => {
     const client = new MemoryDbClient();
     const order = createHostedOrder({

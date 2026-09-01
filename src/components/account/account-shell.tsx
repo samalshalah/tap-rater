@@ -11,7 +11,7 @@ const links = [
 
 export function AccountShell({ children }: { children: ReactNode }) {
   return (
-    <main className="min-h-screen bg-soft">
+    <main className="tr-account-shell min-h-screen bg-soft">
       <section className="tr-container tr-section-compact">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
