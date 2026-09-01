@@ -182,7 +182,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
           colorCode: selectedColor?.code,
           colorLabel: selectedColor?.label,
           destinationUrl: directTargets.destinationUrl,
-          generatedQrValue: setup.generatedQrValue ?? directTargets.qrTargetUrl,
+          generatedQrValue: directTargets.qrTargetUrl,
           qrTargetUrl: directTargets.qrTargetUrl,
           nfcTargetUrl: directTargets.nfcTargetUrl,
           hasQr: true,
@@ -198,7 +198,9 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       manualDesignFlow
         ? "pending_manual_logo_and_proof"
         : option.id === "branded_qr_direct"
-          ? "ready_for_direct_fulfillment"
+          ? proofApproved
+            ? "ready_for_direct_fulfillment"
+            : "pending_branded_proof_review"
           : "ready_for_direct_fulfillment";
     const logoReference = rowSetup.logoStorageKey ?? rowSetup.logoMediaUrl ?? null;
     const productionWarningCodes: ManualProductionWarningCode[] = manualDesignFlow ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [];
@@ -432,20 +434,6 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
     return false;
   }
 
-  if (directTargets) {
-    if (setup.qrTargetUrl && setup.qrTargetUrl !== directTargets.qrTargetUrl) {
-      return false;
-    }
-
-    if (setup.nfcTargetUrl && setup.nfcTargetUrl !== directTargets.nfcTargetUrl) {
-      return false;
-    }
-
-    if (setup.generatedQrValue && setup.generatedQrValue !== directTargets.qrTargetUrl) {
-      return false;
-    }
-  }
-
   if (option.requiresBusinessName && !setup.businessName) {
     return false;
   }
@@ -477,7 +465,7 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
       return setup.manualCollectionAcknowledged === true;
     }
 
-    if (!setup.proofPreviewData || !isApprovedProofCurrent(option, setup)) {
+    if (!setup.proofPreviewData || setup.proofApproved !== true) {
       return false;
     }
   }

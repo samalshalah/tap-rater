@@ -160,36 +160,29 @@ describe("Stripe checkout helpers", () => {
     ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("rejects DIRECT checkout setup when QR or NFC targets differ from the destination URL", () => {
-    expect(
-      validateCheckoutCart(
-        [
-          {
-            ...configuredStandardItem,
-            setup: {
-              ...configuredStandardItem.setup,
-              qrTargetUrl: "https://example.com/other"
-            }
+  it("refreshes stale DIRECT QR and NFC targets from the destination URL", () => {
+    const result = validateCheckoutCart(
+      [
+        {
+          ...configuredStandardItem,
+          setup: {
+            ...configuredStandardItem.setup,
+            generatedQrValue: "https://example.com/old",
+            qrTargetUrl: "https://example.com/old",
+            nfcTargetUrl: "https://example.com/old"
           }
-        ],
-        migratedProducts
-      )
-    ).toMatchObject({ ok: false, reason: "empty_cart" });
+        }
+      ],
+      migratedProducts
+    );
 
-    expect(
-      validateCheckoutCart(
-        [
-          {
-            ...configuredStandardItem,
-            setup: {
-              ...configuredStandardItem.setup,
-              nfcTargetUrl: "https://example.com/other"
-            }
-          }
-        ],
-        migratedProducts
-      )
-    ).toMatchObject({ ok: false, reason: "empty_cart" });
+    expect(result).toMatchObject({ ok: true });
+    expect(result.ok ? result.rows[0].setup : {}).toMatchObject({
+      destinationUrl: "https://g.page/example/review",
+      generatedQrValue: "https://g.page/example/review",
+      qrTargetUrl: "https://g.page/example/review",
+      nfcTargetUrl: "https://g.page/example/review"
+    });
   });
 
   it("rejects empty or invalid checkout carts", () => {
@@ -345,48 +338,53 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("rejects branded checkout when proof approval no longer matches the current setup", () => {
+  it("accepts branded checkout with stale proof as pending proof review", () => {
     const products = productsWithBrandedGoogleTemplate();
 
-    expect(
-      validateCheckoutCart(
-        [
-          {
-            productId: "google-review-stand",
-            optionId: "branded_qr_direct",
-            quantity: 1,
-            setup: {
+    const result = validateCheckoutCart(
+      [
+        {
+          productId: "google-review-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            productSlug: "google-review-stand",
+            optionCode: "branded_qr_direct",
+            destinationUrl: "https://g.page/example/review",
+            businessName: "Changed Business",
+            logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+            logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+            generatedQrValue: "https://g.page/example/review",
+            qrTargetUrl: "https://g.page/example/review",
+            nfcTargetUrl: "https://g.page/example/review",
+            frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
+            proofPreviewData: {
+              businessName: "Changed Business",
+              qrValue: "https://g.page/example/review"
+            },
+            proofApproved: true,
+            proofApprovalSnapshot: {
               productSlug: "google-review-stand",
               optionCode: "branded_qr_direct",
               destinationUrl: "https://g.page/example/review",
-              businessName: "Changed Business",
-              logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
+              businessName: "Original Business",
               logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
+              logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
               generatedQrValue: "https://g.page/example/review",
-              qrTargetUrl: "https://g.page/example/review",
-              nfcTargetUrl: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png",
-              proofPreviewData: {
-                businessName: "Changed Business",
-                qrValue: "https://g.page/example/review"
-              },
-              proofApproved: true,
-              proofApprovalSnapshot: {
-                productSlug: "google-review-stand",
-                optionCode: "branded_qr_direct",
-                destinationUrl: "https://g.page/example/review",
-                businessName: "Original Business",
-                logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
-                logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
-                generatedQrValue: "https://g.page/example/review",
-                frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
-              }
+              frontTemplateUrl: "/api/media/product/products/google-review-stand/branded_front_template/template.png"
             }
           }
-        ],
-        products
-      )
-    ).toMatchObject({ ok: false, reason: "empty_cart" });
+        }
+      ],
+      products
+    );
+
+    expect(result).toMatchObject({ ok: true });
+    expect(result.ok ? result.rows[0] : {}).toMatchObject({
+      proofApproved: false,
+      productionStatus: "pending_branded_proof_review",
+      manualProductionRequired: true
+    });
   });
 
   it("rejects branded checkout without an approved production artwork front template", () => {
