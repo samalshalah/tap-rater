@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Save, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
@@ -13,6 +13,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   const [status, setStatus] = useState<EditorStatus>("idle");
   const [message, setMessage] = useState("");
   const [previewMessage, setPreviewMessage] = useState("");
+  const [newButtonType, setNewButtonType] = useState("");
   const [isDirty, setIsDirty] = useState(false);
   const previewRequestId = useRef(0);
 
@@ -84,6 +85,14 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           position: orderedButtons.length
         }
       ]
+    });
+    setNewButtonType("");
+  }
+
+  function removeButton(id: string) {
+    updateDraft({
+      ...draft,
+      buttons: orderedButtons.filter((button) => button.id !== id).map((button, position) => ({ ...button, position }))
     });
   }
 
@@ -228,7 +237,15 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
               <p className="tr-eyebrow">Buttons / links</p>
               <h2 className="tr-card-title mt-2">Your Links</h2>
             </div>
-            <select className="tr-input sm:w-52" defaultValue="" onChange={(event) => event.target.value && addButton(event.target.value as HostedPageEditorButton["type"])}>
+            <select
+              className="tr-input sm:w-52"
+              value={newButtonType}
+              onChange={(event) => {
+                const value = event.target.value;
+                setNewButtonType(value);
+                if (value) addButton(value as HostedPageEditorButton["type"]);
+              }}
+            >
               <option value="" disabled>
                 Add link
               </option>
@@ -253,6 +270,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                     </button>
                     <button type="button" aria-label="Move down" onClick={() => moveButton(button.id, 1)} disabled={index === orderedButtons.length - 1} className="tr-icon-button">
                       <ArrowDown size={16} />
+                    </button>
+                    <button type="button" aria-label="Remove link" onClick={() => removeButton(button.id)} className="tr-icon-button">
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
