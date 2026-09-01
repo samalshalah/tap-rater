@@ -14,7 +14,7 @@ import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
 import { generateGoogleReviewUrl } from "@/lib/google-review";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
-import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
+import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -1436,9 +1436,7 @@ function MultiLinkMobilePreview({ businessName, buttons }: { businessName: strin
           {buttons.length ? (
             buttons.map((button) => (
               <div key={button.id} className="flex min-h-14 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-left shadow-sm">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand/10 text-xs font-black text-brand" aria-hidden="true">
-                  {getHostedButtonSymbol(button.type)}
-                </span>
+                <MultiLinkButtonMark type={button.type} />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-black text-ink">{button.label}</span>
                   <span className="block truncate text-xs font-semibold text-muted">{formatPreviewUrl(button.url) || "Link to be added"}</span>
@@ -1453,6 +1451,19 @@ function MultiLinkMobilePreview({ businessName, buttons }: { businessName: strin
         </div>
       </div>
     </div>
+  );
+}
+
+function MultiLinkButtonMark({ type }: { type: HostedPageEditorButtonType }) {
+  const mark = getHostedButtonMark(type);
+  return (
+    <span
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-full border text-xs font-medium"
+      style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
+      aria-label={mark.brand}
+    >
+      {mark.text}
+    </span>
   );
 }
 
@@ -2183,20 +2194,7 @@ function getHostedButtonLabel(type: HostedPageEditorButtonType) {
 }
 
 function getHostedButtonSymbol(type: HostedPageEditorButtonType) {
-  const symbols: Record<HostedPageEditorButtonType, string> = {
-    google_review: "G",
-    yelp: "Y",
-    facebook: "f",
-    instagram: "IG",
-    website: "www",
-    appointment: "cal",
-    menu: "menu",
-    contact: "@",
-    whatsapp: "WA",
-    custom_link: "link"
-  };
-
-  return symbols[type];
+  return getHostedButtonMark(type).text;
 }
 
 function formatPreviewUrl(value: string) {

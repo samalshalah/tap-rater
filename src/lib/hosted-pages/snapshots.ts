@@ -1,3 +1,4 @@
+import { getHostedButtonMark, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { assertHostedPageCode, isValidHostedPageCode } from "./codes";
 
 export type HostedPageLifecycleStatus =
@@ -14,6 +15,7 @@ export type HostedPageButton = {
   id: string;
   label: string;
   type: HostedPageButtonType;
+  iconKey?: HostedPageEditorButtonType;
   url: string;
   isVisible?: boolean;
 };
@@ -21,6 +23,7 @@ export type HostedPageButton = {
 export type HostedPageAppearance = {
   theme?: "light" | "dark" | "warm" | "bold";
   accentColor?: string;
+  logoAlign?: "left" | "center" | "right";
 };
 
 export type HostedPageSnapshot = {
@@ -181,6 +184,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       title: `${escapeHtml(snapshot.businessName)} is unavailable`,
       body: `<p class="tr-copy">This Tap Rater page is not active right now. The permanent URL has been preserved and can be reactivated without changing the QR or NFC destination.</p>`,
       logoUrl: snapshot.logoUrl,
+      logoAlign: snapshot.appearance?.logoAlign,
       statusCode: "inactive"
     });
   }
@@ -191,6 +195,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       title: escapeHtml(snapshot.businessName),
       logoUrl: snapshot.logoUrl,
       accentColor: snapshot.appearance?.accentColor,
+      logoAlign: snapshot.appearance?.logoAlign,
       body: `
         <p class="tr-kicker">Tap Rater</p>
         <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
@@ -203,8 +208,10 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
 
   const buttonHtml = visibleButtons
     .map(
-      (button) =>
-        `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}">${escapeHtml(button.label)}</a>`
+      (button) => {
+        const mark = getHostedButtonMark(button.iconKey ?? button.type);
+        return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark" style="background:${escapeAttribute(mark.background)};border-color:${escapeAttribute(mark.border)};color:${escapeAttribute(mark.color)}">${escapeHtml(mark.text)}</span><span>${escapeHtml(button.label)}</span></a>`;
+      }
     )
     .join("");
 
@@ -212,6 +219,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
     title: escapeHtml(snapshot.businessName),
     logoUrl: snapshot.logoUrl,
     accentColor: snapshot.appearance?.accentColor,
+    logoAlign: snapshot.appearance?.logoAlign,
     body: `
       <p class="tr-kicker">Tap Rater</p>
       <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
@@ -254,17 +262,20 @@ function validateHostedPageButton(button: HostedPageButton): HostedPageButton {
     id: button.id.trim(),
     label: button.label.trim(),
     type: button.type,
+    iconKey: isHostedButtonIconKey(button.iconKey) ? button.iconKey : undefined,
     url: button.url.trim(),
     isVisible: button.isVisible
   };
 }
 
-function normalizeAppearance(appearance: HostedPageAppearance | undefined) {
+function normalizeAppearance(appearance: HostedPageAppearance | undefined): HostedPageAppearance | undefined {
   if (!appearance) return undefined;
+  const logoAlign: HostedPageAppearance["logoAlign"] = appearance.logoAlign === "left" || appearance.logoAlign === "right" ? appearance.logoAlign : "center";
 
   return {
     theme: appearance.theme,
-    accentColor: appearance.accentColor && /^#[0-9a-fA-F]{6}$/.test(appearance.accentColor) ? appearance.accentColor : undefined
+    accentColor: appearance.accentColor && /^#[0-9a-fA-F]{6}$/.test(appearance.accentColor) ? appearance.accentColor : undefined,
+    logoAlign
   };
 }
 
@@ -284,15 +295,18 @@ function renderShell({
   body,
   logoUrl,
   accentColor,
+  logoAlign,
   statusCode
 }: {
   title: string;
   body: string;
   logoUrl?: string;
   accentColor?: string;
+  logoAlign?: "left" | "center" | "right";
   statusCode: string;
 }) {
   const accent = accentColor && /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : "#0f766e";
+  const logoMargin = logoAlign === "left" ? "0 auto 24px 0" : logoAlign === "right" ? "0 0 24px auto" : "0 auto 24px";
 
   return `<!doctype html>
 <html lang="en">
@@ -307,12 +321,13 @@ function renderShell({
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
     .tr-card { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: clamp(24px, 7vw, 42px); box-shadow: 0 18px 50px rgba(23, 33, 31, 0.08); }
-    .tr-logo { display: block; width: 72px; height: 72px; object-fit: contain; border-radius: 8px; margin-bottom: 24px; }
+    .tr-logo { display: block; width: 72px; height: 72px; object-fit: contain; border-radius: 8px; margin: ${logoMargin}; }
     .tr-kicker { margin: 0 0 10px; color: var(--accent); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0; }
     h1 { margin: 0; font-size: clamp(2rem, 10vw, 3rem); line-height: 1; letter-spacing: 0; }
     .tr-copy { margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
-    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: center; border-radius: 8px; background: var(--accent); color: #fff; padding: 14px 18px; font-weight: 800; text-decoration: none; overflow-wrap: anywhere; }
+    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: #fff; padding: 12px 16px; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+    .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 999px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
     .tr-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), white 55%); outline-offset: 3px; }
     .tr-footer { margin: 28px 0 0; color: var(--muted); font-size: 0.82rem; }
   </style>
@@ -338,6 +353,21 @@ function escapeAttribute(value: string) {
 
 function stripTags(value: string) {
   return value.replace(/<[^>]*>/g, "");
+}
+
+function isHostedButtonIconKey(value: unknown): value is HostedPageEditorButtonType {
+  return (
+    value === "google_review" ||
+    value === "yelp" ||
+    value === "facebook" ||
+    value === "instagram" ||
+    value === "website" ||
+    value === "appointment" ||
+    value === "menu" ||
+    value === "contact" ||
+    value === "whatsapp" ||
+    value === "custom_link"
+  );
 }
 
 const htmlEscapes: Record<string, string> = {

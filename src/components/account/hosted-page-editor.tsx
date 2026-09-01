@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Plus, Save, Trash2, Upload } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Plus, Save, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
+import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
 type EditorStatus = "idle" | "saving" | "saved" | "publishing" | "published" | "error";
 
@@ -19,6 +19,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
 
   const permanentUrl = `https://taprater.com/p/${page.code}`;
   const orderedButtons = useMemo(() => [...draft.buttons].sort((a, b) => a.position - b.position), [draft.buttons]);
+  const logoAlign = draft.appearance.logoAlign ?? "center";
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -224,10 +225,32 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
               {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-xs font-medium text-muted">Logo</span>}
             </div>
-            <label className="tr-button-secondary w-fit cursor-pointer text-sm">
-              <Upload size={16} /> Upload logo
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadLogo} className="sr-only" />
-            </label>
+            <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+              <label className="tr-button-secondary w-fit cursor-pointer text-sm">
+                <Upload size={16} /> Upload logo
+                <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadLogo} className="sr-only" />
+              </label>
+              <div className="inline-flex w-fit rounded-md border border-line bg-white p-1" aria-label="Logo alignment">
+                {[
+                  { value: "left", label: "Align logo left", icon: AlignLeft },
+                  { value: "center", label: "Align logo center", icon: AlignCenter },
+                  { value: "right", label: "Align logo right", icon: AlignRight }
+                ].map((option) => {
+                  const Icon = option.icon;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-label={option.label}
+                      className={logoAlign === option.value ? "grid h-9 w-9 place-items-center rounded bg-ink text-white" : "grid h-9 w-9 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
+                      onClick={() => updateDraft({ ...draft, appearance: { ...draft.appearance, logoAlign: option.value as "left" | "center" | "right" } })}
+                    >
+                      <Icon size={16} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -251,7 +274,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             <div className="grid gap-2 rounded-lg border border-line bg-soft p-3 sm:grid-cols-2 lg:grid-cols-3">
               {supportedHostedPageButtons.map((button) => (
                 <button key={button.type} type="button" className="tr-button-ghost justify-start bg-white text-sm" onClick={() => addButton(button.type)}>
-                  <Plus size={15} />
+                  <HostedButtonMark type={button.type} />
                   {button.label}
                 </button>
               ))}
@@ -280,7 +303,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                 <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
                   <label className="tr-field-label">
                     Label
-                    <input className="tr-input" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                    <div className="flex items-center gap-2">
+                      <HostedButtonMark type={button.type} />
+                      <input className="tr-input" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                    </div>
                   </label>
                   <label className="tr-field-label">
                     Destination URL
@@ -350,5 +376,18 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
       </aside>
     </div>
+  );
+}
+
+function HostedButtonMark({ type }: { type: HostedPageEditorButton["type"] }) {
+  const mark = getHostedButtonMark(type);
+  return (
+    <span
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border text-[11px] font-medium"
+      style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
+      aria-label={mark.brand}
+    >
+      {mark.text}
+    </span>
   );
 }

@@ -102,6 +102,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
         id: button.id,
         label: button.label || catalog.label,
         type: catalog.snapshotType,
+        iconKey: button.type,
         url: button.url,
         isVisible: true
       };
@@ -144,17 +145,20 @@ export function validateHostedPageEditorDraft(input: unknown): HostedPageEditorD
   const appearanceRecord = readRecord(value.appearance);
   const themeValue = appearanceRecord.theme ?? "light";
   const accentValue = appearanceRecord.accentColor ?? "#0f766e";
+  const logoAlignValue = appearanceRecord.logoAlign ?? "center";
   if (!supportedThemes.has(String(themeValue))) throw new HostedPageEditorError("Unsupported page style.", 400);
   if (!supportedAccentColors.has(String(accentValue))) throw new HostedPageEditorError("Unsupported accent color.", 400);
+  if (!["left", "center", "right"].includes(String(logoAlignValue))) throw new HostedPageEditorError("Unsupported logo alignment.", 400);
   const theme = themeValue as HostedPageEditorAppearance["theme"];
   const accentColor = accentValue as HostedPageEditorAppearance["accentColor"];
+  const logoAlign = logoAlignValue as NonNullable<HostedPageEditorAppearance["logoAlign"]>;
 
   return {
     businessName,
     logoUrl,
     headline: readString(value.headline, 140),
     description: readString(value.description, 300),
-    appearance: { theme, accentColor },
+    appearance: { theme, accentColor, logoAlign },
     buttons
   };
 }
