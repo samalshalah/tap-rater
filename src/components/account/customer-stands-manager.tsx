@@ -77,19 +77,18 @@ function StandDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-2" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
-      <div className={`max-h-[calc(100vh-1rem)] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-7xl" : "max-w-4xl"}`}>
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-3">
+      <div className={`max-h-[calc(100vh-0.5rem)] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-[92rem]" : "max-w-4xl"}`}>
+        <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2">
           <div>
             <p className="tr-eyebrow">{isMultiLink ? "Multi-Link stand setup" : "Purchased stand"}</p>
-            <h2 id="stand-detail-title" className="mt-2 text-xl font-medium text-ink">{stand.title}</h2>
-            <p className="mt-1 text-sm text-muted">Order {formatOrderReference(stand.orderReference)}</p>
+            <h2 id="stand-detail-title" className="mt-1 text-base font-medium text-ink">{stand.title}</h2>
           </div>
           <button type="button" onClick={onClose} className="tr-icon-button" aria-label="Close stand details">
             <X size={18} />
           </button>
         </div>
         {isMultiLink ? (
-          <div className="p-4">
+          <div className="p-3">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} />
             ) : (

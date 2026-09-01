@@ -188,27 +188,29 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   return (
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_390px]">
-      <section className="grid gap-4">
-        <div className="tr-card grid gap-3 p-4">
+    <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="grid gap-3">
+        <div className="tr-card grid gap-2 p-3">
           <div>
             <p className="tr-eyebrow">Page information</p>
-            <h2 className="tr-card-title mt-2">Business</h2>
+            <h2 className="tr-card-title mt-1">Business</h2>
           </div>
-          <label className="tr-field-label">
+          <div className="grid gap-2 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm font-medium text-ink">
             Business name
-            <input className="tr-input" value={draft.businessName} onChange={(event) => updateDraft({ ...draft, businessName: event.target.value })} />
+            <input className="tr-input min-h-10 px-3 py-2" value={draft.businessName} onChange={(event) => updateDraft({ ...draft, businessName: event.target.value })} />
           </label>
-          <label className="tr-field-label">
+          <label className="grid gap-1.5 text-sm font-medium text-ink">
             Supporting text
-            <input className="tr-input" value={draft.description ?? ""} onChange={(event) => updateDraft({ ...draft, description: event.target.value })} />
+            <input className="tr-input min-h-10 px-3 py-2" value={draft.description ?? ""} onChange={(event) => updateDraft({ ...draft, description: event.target.value })} />
           </label>
-          <div className="grid gap-3 sm:grid-cols-[72px_1fr] sm:items-center">
-            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[56px_1fr] sm:items-center">
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
               {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-xs font-medium text-muted">Logo</span>}
             </div>
-            <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
-              <label className="tr-button-secondary w-fit cursor-pointer text-sm">
+            <div className="grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+              <label className="tr-button-secondary min-h-10 w-fit cursor-pointer px-3 py-2 text-sm">
                 <Upload size={16} /> Upload logo
                 <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadLogo} className="sr-only" />
               </label>
@@ -224,7 +226,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                       key={option.value}
                       type="button"
                       aria-label={option.label}
-                      className={logoAlign === option.value ? "grid h-9 w-9 place-items-center rounded bg-ink text-white" : "grid h-9 w-9 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
+                      className={logoAlign === option.value ? "grid h-8 w-8 place-items-center rounded bg-ink text-white" : "grid h-8 w-8 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
                       onClick={() => updateDraft({ ...draft, appearance: { ...draft.appearance, logoAlign: option.value as "left" | "center" | "right" } })}
                     >
                       <Icon size={16} />
@@ -236,15 +238,15 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           </div>
         </div>
 
-        <div className="tr-card grid gap-3 p-4">
+        <div className="tr-card grid gap-2 p-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="tr-eyebrow">Buttons / links</p>
-              <h2 className="tr-card-title mt-2">Your Links</h2>
+              <h2 className="tr-card-title mt-1">Your Links</h2>
             </div>
             <button
               type="button"
-              className="tr-button-secondary w-full justify-center text-sm sm:w-fit"
+              className="tr-button-secondary min-h-10 w-full justify-center px-3 py-2 text-sm sm:w-fit"
               onClick={() => setShowLinkChoices((value) => !value)}
               disabled={draft.buttons.length >= hostedPageButtonLimit}
             >
@@ -253,9 +255,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </button>
           </div>
           {showLinkChoices && draft.buttons.length < hostedPageButtonLimit ? (
-            <div className="grid gap-2 rounded-lg border border-line bg-soft p-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-2 rounded-lg border border-line bg-soft p-2 sm:grid-cols-2 lg:grid-cols-5">
               {supportedHostedPageButtons.map((button) => (
-                <button key={button.type} type="button" className="tr-button-ghost justify-start bg-white text-sm" onClick={() => addButton(button.type)}>
+                <button key={button.type} type="button" className="tr-button-ghost min-h-9 justify-start bg-white px-2 py-1.5 text-xs" onClick={() => addButton(button.type)}>
                   <HostedButtonMark type={button.type} />
                   {button.label}
                 </button>
@@ -264,17 +266,17 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           ) : null}
           <div className="grid gap-2">
             {orderedButtons.map((button, index) => (
-              <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-soft p-2.5 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-end">
-                  <label className="tr-field-label">
+              <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[170px_minmax(0,1fr)_auto] md:items-end">
+                  <label className="grid gap-1.5 text-sm font-medium text-ink">
                     Label
                     <div className="flex items-center gap-2">
                       <HostedButtonMark type={button.type} />
-                      <input className="tr-input" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                      <input className="tr-input min-h-10 px-3 py-2" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
                     </div>
                   </label>
-                  <label className="tr-field-label">
+                  <label className="grid gap-1.5 text-sm font-medium text-ink">
                     Destination URL
-                    <input className="tr-input" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
+                    <input className="tr-input min-h-10 px-3 py-2" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
                   </label>
                   <div className="flex gap-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">
@@ -292,23 +294,23 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           </div>
         </div>
 
-        <div className="tr-card grid gap-3 p-4">
+        <div className="tr-card grid gap-2 p-3">
           <div>
             <p className="tr-eyebrow">Appearance</p>
-            <h2 className="tr-card-title mt-2">Page Style</h2>
+            <h2 className="tr-card-title mt-1">Page Style</h2>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="tr-field-label">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-sm font-medium text-ink">
               Style
-              <select className="tr-input" value={draft.appearance.theme} onChange={(event) => updateDraft({ ...draft, appearance: { ...draft.appearance, theme: event.target.value as HostedPageEditorDraft["appearance"]["theme"] } })}>
+              <select className="tr-input min-h-10 px-3 py-2" value={draft.appearance.theme} onChange={(event) => updateDraft({ ...draft, appearance: { ...draft.appearance, theme: event.target.value as HostedPageEditorDraft["appearance"]["theme"] } })}>
                 <option value="light">Light</option>
                 <option value="warm">Warm</option>
                 <option value="bold">Bold</option>
               </select>
             </label>
-            <label className="tr-field-label">
+            <label className="grid gap-1.5 text-sm font-medium text-ink">
               Accent
-              <select className="tr-input" value={draft.appearance.accentColor} onChange={(event) => updateDraft({ ...draft, appearance: { ...draft.appearance, accentColor: event.target.value as HostedPageEditorDraft["appearance"]["accentColor"] } })}>
+              <select className="tr-input min-h-10 px-3 py-2" value={draft.appearance.accentColor} onChange={(event) => updateDraft({ ...draft, appearance: { ...draft.appearance, accentColor: event.target.value as HostedPageEditorDraft["appearance"]["accentColor"] } })}>
                 <option value="#0f766e">Teal</option>
                 <option value="#1d4ed8">Blue</option>
                 <option value="#7c3aed">Violet</option>
@@ -319,26 +321,26 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
       </section>
 
-      <aside className="grid h-fit gap-3 lg:sticky lg:top-4">
-        <div className="tr-card p-4">
-          <div className="mb-3 flex items-center justify-between">
+      <aside className="grid h-fit gap-3 lg:sticky lg:top-3">
+        <div className="tr-card p-3">
+          <div className="mb-2 flex items-center justify-between">
             <div>
               <p className="tr-eyebrow">Preview</p>
-              <h2 className="tr-card-title mt-1">Live page draft</h2>
+              <h2 className="tr-card-title mt-1">Preview</h2>
             </div>
-            <button type="button" onClick={() => refreshPreview()} className="tr-button-ghost text-sm">
+            <button type="button" onClick={() => refreshPreview()} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
               <Eye size={16} /> Refresh
             </button>
           </div>
           {previewMessage ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
-          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[500px] max-h-[52vh] min-h-[390px] w-full rounded-md border border-line bg-white" />
+          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[430px] max-h-[48vh] min-h-[330px] w-full rounded-md border border-line bg-white" />
         </div>
-        <div className="tr-card grid gap-3 p-4">
+        <div className="tr-card grid gap-2 p-3">
           <p className="tr-eyebrow">Publish</p>
           <div className="min-w-0 rounded-md border border-line bg-soft px-3 py-2">
             <p className="text-xs text-muted">Permanent URL</p>
             <p className="mt-1 truncate text-sm font-medium text-ink">{permanentUrl}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
                 <Copy size={14} /> Copy
               </button>
@@ -348,10 +350,10 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary">
+            <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary min-h-10 px-3 py-2">
               <Save size={16} /> {status === "saving" ? "Saving..." : "Save Draft"}
             </button>
-            <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary">
+            <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-10 px-3 py-2">
               <Check size={16} /> {status === "publishing" ? "Publishing..." : "Publish"}
             </button>
           </div>
