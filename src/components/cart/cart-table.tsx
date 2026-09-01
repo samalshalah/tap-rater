@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CircleUserRound, Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice, getProductBySlug } from "@/lib/products";
@@ -288,43 +288,31 @@ export function CartTable({
           <p className="tr-eyebrow">Order summary</p>
           <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{isLiveStripe ? "Checkout" : "Order review"}</h2>
         </div>
-        {!isLiveStripe ? (
+        {!isLiveStripe && !signedInCustomer ? (
           <div className="grid gap-2">
-            {signedInCustomer ? (
-              <div className="flex min-w-0 items-center gap-2 rounded-md border border-line bg-soft px-3 py-2 text-xs text-muted sm:text-sm">
-                <CircleUserRound size={16} className="shrink-0 text-brand" />
-                <p className="min-w-0 truncate">
-                  <span className="text-muted">Signed in:</span>{" "}
-                  <span className="text-ink">{signedInCustomer.email}</span>
-                </p>
-              </div>
-            ) : (
-              <>
-                <label className="grid gap-2 text-sm font-medium text-ink">
-                  Customer email
-                  <input
-                    type="email"
-                    value={customerEmail}
-                    onChange={(event) => setCustomerEmail(event.target.value)}
-                    autoComplete="email"
-                    required
-                    className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-                    placeholder="customer@example.com"
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-ink">
-                  Customer name
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(event) => setCustomerName(event.target.value)}
-                    autoComplete="name"
-                    className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-                    placeholder="Business or customer name"
-                  />
-                </label>
-              </>
-            )}
+            <label className="grid gap-2 text-sm font-medium text-ink">
+              Customer email
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(event) => setCustomerEmail(event.target.value)}
+                autoComplete="email"
+                required
+                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                placeholder="customer@example.com"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-medium text-ink">
+              Customer name
+              <input
+                type="text"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                autoComplete="name"
+                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                placeholder="Business or customer name"
+              />
+            </label>
           </div>
         ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">

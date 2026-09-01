@@ -18,6 +18,8 @@ type HeaderNavigationContent = {
 type CustomerSessionState = {
   authenticated: boolean;
   email?: string;
+  name?: string;
+  businessName?: string;
 };
 
 const defaultHeaderNavigation: HeaderNavigationContent = {
@@ -106,6 +108,9 @@ export function Header() {
     () => orderedEnabledLinks(navigation.items),
     [navigation.items],
   );
+  const accountLabel = customerSession.authenticated
+    ? `Welcome, ${getCustomerFirstName(customerSession)}`
+    : "Account";
 
   useEffect(() => {
     let active = true;
@@ -132,6 +137,8 @@ export function Header() {
           setCustomerSession({
             authenticated: body.authenticated === true,
             email: typeof body.email === "string" ? body.email : undefined,
+            name: typeof body.name === "string" ? body.name : undefined,
+            businessName: typeof body.businessName === "string" ? body.businessName : undefined,
           });
         }
       })
@@ -186,11 +193,11 @@ export function Header() {
                     }}
                   >
                     <CircleUserRound size={20} />
-                    <span className="hidden xl:inline">My Account</span>
+                    <span className="hidden max-w-36 truncate xl:inline">{accountLabel}</span>
                     <ChevronDown size={16} />
                   </button>
                   {isAccountOpen ? (
-                    <AccountDropdown email={customerSession.email} onClose={() => setIsAccountOpen(false)} />
+                    <AccountDropdown customer={customerSession} onClose={() => setIsAccountOpen(false)} />
                   ) : null}
                 </>
               ) : (
@@ -204,7 +211,7 @@ export function Header() {
                   }}
                 >
                   <CircleUserRound size={20} />
-                  <span className="hidden xl:inline">Account</span>
+                  <span className="hidden xl:inline">{accountLabel}</span>
                 </Link>
               )}
             </div>
@@ -266,7 +273,7 @@ export function Header() {
                 className="min-h-12 rounded-[var(--tr-radius-control)] border border-line bg-white px-3 py-3 text-center text-sm font-semibold transition hover:border-brand hover:text-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
-                {customerSession.authenticated ? "My Account" : "Account"}
+                {customerSession.authenticated ? accountLabel : "Account"}
               </Link>
               <Link
                 href="/cart"
@@ -291,12 +298,14 @@ const accountLinks = [
   { href: "/support", label: "Support", icon: LifeBuoy },
 ];
 
-function AccountDropdown({ email, onClose }: { email?: string; onClose: () => void }) {
+function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState; onClose: () => void }) {
+  const firstName = getCustomerFirstName(customer);
+
   return (
     <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 rounded-[var(--tr-radius-card)] border border-line bg-white p-2 text-sm shadow-xl">
       <div className="border-b border-line px-3 py-3">
-        <p className="font-black text-ink">Signed in</p>
-        <p className="mt-1 truncate text-xs font-semibold text-muted">{email ?? "Tap Rater customer"}</p>
+        <p className="font-medium text-ink">Welcome, {firstName}</p>
+        <p className="mt-1 truncate text-xs text-muted">{customer.email ?? "Tap Rater customer"}</p>
       </div>
       <div className="py-2">
         {accountLinks.map((link) => {
@@ -322,4 +331,10 @@ function AccountDropdown({ email, onClose }: { email?: string; onClose: () => vo
       </form>
     </div>
   );
+}
+
+function getCustomerFirstName(customer: CustomerSessionState) {
+  const source = customer.name ?? customer.businessName ?? customer.email ?? "Customer";
+  const firstToken = source.trim().split(/\s+/)[0]?.replace(/[,;]/g, "");
+  return firstToken || "Customer";
 }
