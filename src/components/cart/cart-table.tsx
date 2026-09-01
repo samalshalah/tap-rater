@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Minus, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { CircleUserRound, Minus, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice } from "@/lib/products";
 import {
@@ -23,10 +23,38 @@ export function CartTable({
   const [checkoutError, setCheckoutError] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [signedInCustomer, setSignedInCustomer] = useState<{ email: string; name?: string; businessName?: string } | null>(null);
   const isLiveStripe = stripeMode === "live";
 
   const rows = getCartRows(items);
   const total = calculateCartTotalCents(items);
+  const checkoutEmail = signedInCustomer?.email ?? customerEmail;
+  const checkoutName = signedInCustomer?.name ?? signedInCustomer?.businessName ?? customerName;
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/session", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (!active || body?.authenticated !== true || typeof body.email !== "string") {
+          return;
+        }
+
+        const sessionCustomer = {
+          email: body.email,
+          name: typeof body.name === "string" ? body.name : undefined,
+          businessName: typeof body.businessName === "string" ? body.businessName : undefined
+        };
+        setSignedInCustomer(sessionCustomer);
+        setCustomerEmail(sessionCustomer.email);
+        setCustomerName(sessionCustomer.name ?? sessionCustomer.businessName ?? "");
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function startCheckout() {
     setIsCheckingOut(true);
@@ -77,8 +105,8 @@ export function CartTable({
         body: JSON.stringify({
           items,
           customer: {
-            email: customerEmail,
-            name: customerName
+            email: checkoutEmail,
+            name: checkoutName
           }
         }),
       });
@@ -243,29 +271,46 @@ export function CartTable({
         </div>
         {!isLiveStripe ? (
           <div className="grid gap-3">
-            <label className="grid gap-2 text-sm font-semibold text-ink">
-              Customer email
-              <input
-                type="email"
-                value={customerEmail}
-                onChange={(event) => setCustomerEmail(event.target.value)}
-                autoComplete="email"
-                required
-                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-                placeholder="customer@example.com"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-semibold text-ink">
-              Customer name
-              <input
-                type="text"
-                value={customerName}
-                onChange={(event) => setCustomerName(event.target.value)}
-                autoComplete="name"
-                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-                placeholder="Business or customer name"
-              />
-            </label>
+            {signedInCustomer ? (
+              <div className="rounded-md border border-line bg-soft p-3 text-sm">
+                <div className="flex items-start gap-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-brand">
+                    <CircleUserRound size={19} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">Signed in account</p>
+                    <p className="mt-1 break-all text-muted">{signedInCustomer.email}</p>
+                    <p className="mt-1 text-muted">{checkoutName || "Customer name will be confirmed during review."}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label className="grid gap-2 text-sm font-semibold text-ink">
+                  Customer email
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(event) => setCustomerEmail(event.target.value)}
+                    autoComplete="email"
+                    required
+                    className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                    placeholder="customer@example.com"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-semibold text-ink">
+                  Customer name
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    autoComplete="name"
+                    className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                    placeholder="Business or customer name"
+                  />
+                </label>
+              </>
+            )}
           </div>
         ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">
@@ -284,7 +329,7 @@ export function CartTable({
         </div>
         <button
           type="button"
-          disabled={isCheckingOut || (!isLiveStripe && !customerEmail.trim())}
+          disabled={isCheckingOut || (!isLiveStripe && !checkoutEmail.trim())}
           className="tr-button-primary min-h-12 w-full"
           onClick={isLiveStripe ? startCheckout : submitManualOrder}
         >

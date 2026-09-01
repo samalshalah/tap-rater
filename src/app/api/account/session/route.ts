@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { customerCookieName, parseCustomerSession } from "@/lib/customer-auth";
+import { getCustomerPortal } from "@/lib/customer-portal";
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -10,5 +11,12 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
-  return NextResponse.json({ authenticated: true, email: session.email });
+  const portal = await getCustomerPortal(session.email);
+
+  return NextResponse.json({
+    authenticated: true,
+    email: session.email,
+    name: portal.customer?.name,
+    businessName: portal.businesses[0]?.businessName
+  });
 }
