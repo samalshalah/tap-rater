@@ -79,11 +79,17 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
     adminFulfillmentNotes: order.admin_fulfillment_notes,
     createdAt: order.created_at ? new Date(order.created_at).toLocaleString() : "-",
     fulfillmentBadges: [
-      { label: order.status === "paid" ? "Paid" : "Payment pending", tone: order.status === "paid" ? "ready" : "warning" },
+      { label: formatPaymentBadge(order), tone: order.status === "paid" ? "ready" : "warning" },
       ...(hasStandard ? [{ label: "Standard Direct", tone: "neutral" as const }] : []),
       ...(hasBranded ? [{ label: hasWarnings ? "Needs production data" : "Branded + QR ready", tone: hasWarnings ? "warning" as const : "ready" as const }] : []),
       ...(hasHosted ? [{ label: "Hosted setup", tone: "warning" as const }] : []),
       ...(!hasWarnings && order.status === "paid" ? [{ label: "Production ready", tone: "ready" as const }] : [])
     ]
   };
+}
+
+function formatPaymentBadge(order: OrderRecord) {
+  if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
+  if (order.status === "paid" || order.payment_status === "paid") return "Paid";
+  return "Payment pending";
 }

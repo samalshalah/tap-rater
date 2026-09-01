@@ -196,6 +196,51 @@ describe("production artwork", () => {
     expect(stored?.value).toContain(embeddedAssets["/api/media/product/products/customer-setup/logo.png"].dataUri);
   });
 
+  it("uses approved proof preview controls when checkout setup root fields are missing", async () => {
+    const { storage, writes } = memoryStorage();
+    const itemWithPreviewOnlyControls: OrderLineItem = {
+      ...brandedItem,
+      setup: {
+        ...brandedItem.setup,
+        fontSizePercent: undefined,
+        logoSizePercent: undefined,
+        showBusinessNameOnProof: undefined,
+        logoFitMode: undefined,
+        logoOffsetXPercent: undefined,
+        logoOffsetYPercent: undefined,
+        proofPreviewData: {
+          ...(brandedItem.setup?.proofPreviewData as Record<string, unknown>),
+          fontSizePercent: 80,
+          logoSizePercent: 125,
+          showBusinessNameOnProof: false,
+          logoFitMode: "contain",
+          logoOffsetXPercent: -4,
+          logoOffsetYPercent: 3
+        },
+        proofApprovalSnapshot: {
+          ...approvedSnapshot,
+          fontSizePercent: 80,
+          logoSizePercent: 125,
+          showBusinessNameOnProof: false,
+          logoFitMode: "contain",
+          logoOffsetXPercent: -4,
+          logoOffsetYPercent: 3
+        }
+      }
+    };
+
+    const item = await generateProductionArtworkForOrderLineItem(
+      { orderReference: "cs_test_123", lineItemIndex: 0, item: itemWithPreviewOnlyControls, assetResolver: memoryAssetResolver },
+      storage
+    );
+    const artwork = readProductionArtworkReference(item);
+    const stored = writes.get(artwork?.storageKey ?? "");
+
+    expect(artwork?.status).toBe("generated");
+    expect(item.productionStatus).toBe("ready_for_direct_fulfillment");
+    expect(stored?.value).not.toContain("Nova Implant</text>");
+  });
+
   it("keeps QR and NFC targets identical to the Direct destination", async () => {
     const { storage } = memoryStorage();
     const item = await generateProductionArtworkForOrderLineItem({ orderReference: "cs_test_123", lineItemIndex: 0, item: brandedItem, assetResolver: memoryAssetResolver }, storage);

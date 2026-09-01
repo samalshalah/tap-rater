@@ -1,9 +1,10 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
-import { buildDirectProductionTargets } from "@/lib/direct-production";
+import { buildDirectProductionTargets, buildProofApprovalSnapshot } from "@/lib/direct-production";
 import { purchaseOptionIdToCustomizationLevel, type CustomizationLevel, type DestinationMode } from "@/lib/product-model";
 import { sendShippingNotificationEmail, type ShippingEmailInput } from "@/lib/shipping-emails";
 import {
+  buildCurrentApprovalSnapshot,
   generateProductionArtworkForOrderLineItem,
   readProductionArtworkReference,
   type ProductionArtworkAssetResolver,
@@ -113,6 +114,21 @@ export type FulfillmentUpdateResult =
   | {
       ok: true;
       shippingEmail?: Awaited<ReturnType<typeof sendShippingNotificationEmail>>;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+export type AdminOrderProductionActionInput = {
+  action: "approve_proof_manually" | "regenerate_artwork" | "request_customer_changes";
+  note?: string;
+};
+
+export type AdminOrderProductionActionResult =
+  | {
+      ok: true;
+      order: OrderRecord;
     }
   | {
       ok: false;
@@ -550,6 +566,7 @@ export async function createManualPendingOrderForCheckout({
   }
 
   const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(rows, orderReference);
+  const productionStatus = inferOrderProductionStatus(lineItems);
   const now = new Date().toISOString();
   const order: OrderRecord = {
     stripe_checkout_session_id: orderReference,
@@ -569,7 +586,7 @@ export async function createManualPendingOrderForCheckout({
     shipping_address_json: null,
     shipping_amount_cents: shippingAmountCents,
     shipping_mode: shippingMode,
-    production_status: "not_started",
+    production_status: productionStatus,
     shipping_status: "not_shipped",
     shipping_method: null,
     shipping_carrier: null,
@@ -766,6 +783,96 @@ export async function updateOrderFulfillmentWithClient(
   return { ok: true, shippingEmail };
 }
 
+export async function applyAdminOrderProductionAction(orderId: string, input: AdminOrderProductionActionInput): Promise<AdminOrderProductionActionResult> {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false, error: "Database persistence is not configured." };
+  }
+
+  return applyAdminOrderProductionActionWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
+}
+
+export async function applyAdminOrderProductionActionWithClient(
+  client: OrdersDbClient,
+  orderId: string,
+  input: AdminOrderProductionActionInput,
+  options: {
+    storage?: ProductionArtworkStorage;
+    assetResolver?: ProductionArtworkAssetResolver;
+  } = {}
+): Promise<AdminOrderProductionActionResult> {
+  const existingOrder = await getOrderByIdForFulfillment(client, orderId);
+  if (!existingOrder) {
+    return { ok: false, error: "Order was not found." };
+  }
+
+  const now = new Date().toISOString();
+  let lineItems = existingOrder.line_items_json.map(applyOrderLineItemFulfillmentInference);
+  let productionStatus: ProductionStatus = existingOrder.production_status;
+  const actionNote = formatProductionActionNote(input.action, input.note, now);
+
+  if (input.action === "request_customer_changes") {
+    productionStatus = "blocked";
+  } else {
+    if (input.action === "approve_proof_manually") {
+      lineItems = lineItems.map((item) => {
+        const summary = getOrderLineItemProductionSummary(item);
+        if (summary.fulfillmentKind !== "branded" && summary.fulfillmentKind !== "custom") {
+          return item;
+        }
+
+        const approvedSnapshot = buildProofApprovalSnapshot(buildCurrentApprovalSnapshot(item));
+        return {
+          ...item,
+          proofApproved: true,
+          setup: {
+            ...item.setup,
+            proofApprovalSnapshot: approvedSnapshot,
+            proofApprovedAt: now
+          }
+        };
+      });
+    }
+
+    lineItems = await Promise.all(
+      lineItems.map((item, index) =>
+        getOrderLineItemProductionSummary(item).fulfillmentKind === "branded"
+          ? generateProductionArtworkForOrderLineItem(
+              {
+                orderReference: existingOrder.stripe_checkout_session_id || existingOrder.id || orderId,
+                lineItemIndex: index,
+                item,
+                assetResolver: options.assetResolver
+              },
+              options.storage
+            )
+          : item
+      )
+    );
+    lineItems = lineItems.map(applyOrderLineItemFulfillmentInference);
+    productionStatus = inferOrderProductionStatus(lineItems);
+  }
+
+  const updatedOrder: OrderRecord = {
+    ...existingOrder,
+    line_items_json: lineItems,
+    production_status: productionStatus,
+    internal_notes: appendAdminNote(existingOrder.internal_notes, actionNote),
+    updated_at: now
+  };
+
+  const { error } = await client
+    .from("orders")
+    .update({
+      line_items_json: updatedOrder.line_items_json,
+      production_status: updatedOrder.production_status,
+      internal_notes: updatedOrder.internal_notes,
+      updated_at: now
+    })
+    .eq("id", orderId);
+
+  return error ? { ok: false, error: error.message } : { ok: true, order: updatedOrder };
+}
+
 function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] {
   if (!value) {
     return [];
@@ -947,6 +1054,32 @@ function readShippingStatus(value: unknown): ShippingStatus | undefined {
 
 function readShippingMode(value: unknown): "manual" | "free" | "flat" | undefined {
   return value === "manual" || value === "free" || value === "flat" ? value : undefined;
+}
+
+function inferOrderProductionStatus(lineItems: OrderLineItem[]): ProductionStatus {
+  if (lineItems.length === 0) return "not_started";
+
+  const summaries = lineItems.map(getOrderLineItemProductionSummary);
+  if (summaries.some((summary) => summary.warnings.length > 0 || summary.productionArtwork?.status === "generation_failed")) {
+    return "blocked";
+  }
+
+  return "ready_for_production";
+}
+
+function appendAdminNote(existing: string, note: string) {
+  return [existing?.trim(), note].filter(Boolean).join("\n\n");
+}
+
+function formatProductionActionNote(action: AdminOrderProductionActionInput["action"], note: string | undefined, timestamp: string) {
+  const label =
+    action === "approve_proof_manually"
+      ? "Admin approved proof manually and regenerated production artwork."
+      : action === "regenerate_artwork"
+      ? "Admin regenerated production artwork."
+      : "Admin requested customer changes.";
+  const cleanNote = note?.trim();
+  return cleanNote ? `[${timestamp}] ${label}\n${cleanNote}` : `[${timestamp}] ${label}`;
 }
 
 function normalizeShippingAddress(

@@ -226,15 +226,15 @@ export async function composeProductionArtworkDocument(
   generatedAt: string,
   assetResolver: ProductionArtworkAssetResolver = defaultProductionArtworkAssetResolver
 ) {
-  const businessName = readSetupString(item.setup, "businessName");
-  const logoHref = readSetupString(item.setup, "logoMediaUrl");
+  const businessName = readSetupString(item.setup, "businessName") ?? readProofPreviewString(item.setup, "businessName");
+  const logoHref = readSetupString(item.setup, "logoMediaUrl") ?? readProofPreviewString(item.setup, "logoMediaUrl");
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? readSetupString(item.setup, "generatedQrValue");
-  const fontSizePercent = readSetupNumber(item.setup, "fontSizePercent") ?? 100;
-  const logoSizePercent = readSetupNumber(item.setup, "logoSizePercent") ?? 100;
-  const logoFitMode = readSetupString(item.setup, "logoFitMode") === "fill" ? "fill" : "contain";
-  const logoOffsetXPercent = readSetupNumber(item.setup, "logoOffsetXPercent") ?? 0;
-  const logoOffsetYPercent = readSetupNumber(item.setup, "logoOffsetYPercent") ?? 0;
-  const showBusinessNameOnProof = readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof") !== false;
+  const fontSizePercent = readSetupNumber(item.setup, "fontSizePercent") ?? readProofPreviewNumber(item.setup, "fontSizePercent") ?? 100;
+  const logoSizePercent = readSetupNumber(item.setup, "logoSizePercent") ?? readProofPreviewNumber(item.setup, "logoSizePercent") ?? 100;
+  const logoFitMode = (readSetupString(item.setup, "logoFitMode") ?? readProofPreviewString(item.setup, "logoFitMode")) === "fill" ? "fill" : "contain";
+  const logoOffsetXPercent = readSetupNumber(item.setup, "logoOffsetXPercent") ?? readProofPreviewNumber(item.setup, "logoOffsetXPercent") ?? 0;
+  const logoOffsetYPercent = readSetupNumber(item.setup, "logoOffsetYPercent") ?? readProofPreviewNumber(item.setup, "logoOffsetYPercent") ?? 0;
+  const showBusinessNameOnProof = (readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof") ?? readProofPreviewBoolean(item.setup, "showBusinessNameOnProof")) !== false;
 
   if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
@@ -289,19 +289,19 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
   return {
     productSlug: readSetupString(item.setup, "productSlug") ?? item.productId,
     optionCode: readSetupString(item.setup, "optionCode") ?? item.optionId,
-    destinationUrl: readSetupString(item.setup, "destinationUrl"),
-    businessName: readSetupString(item.setup, "businessName"),
-    logoStorageKey: readSetupString(item.setup, "logoStorageKey"),
-    logoMediaUrl: readSetupString(item.setup, "logoMediaUrl"),
+    destinationUrl: readSetupString(item.setup, "destinationUrl") ?? readProofPreviewString(item.setup, "destinationUrl"),
+    businessName: readSetupString(item.setup, "businessName") ?? readProofPreviewString(item.setup, "businessName"),
+    logoStorageKey: readSetupString(item.setup, "logoStorageKey") ?? readProofPreviewString(item.setup, "logoStorageKey"),
+    logoMediaUrl: readSetupString(item.setup, "logoMediaUrl") ?? readProofPreviewString(item.setup, "logoMediaUrl"),
     generatedQrValue: readSetupString(item.setup, "generatedQrValue"),
-    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl"),
-    fontSizePercent: readSetupNumber(item.setup, "fontSizePercent"),
-    logoSizePercent: readSetupNumber(item.setup, "logoSizePercent"),
-    showBusinessNameOnProof: readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof"),
-    logoBackgroundMode: readSetupString(item.setup, "logoBackgroundMode"),
-    logoFitMode: readSetupString(item.setup, "logoFitMode"),
-    logoOffsetXPercent: readSetupNumber(item.setup, "logoOffsetXPercent"),
-    logoOffsetYPercent: readSetupNumber(item.setup, "logoOffsetYPercent")
+    frontTemplateUrl: readSetupString(item.setup, "frontTemplateUrl") ?? readProofPreviewString(item.setup, "frontTemplateUrl"),
+    fontSizePercent: readSetupNumber(item.setup, "fontSizePercent") ?? readProofPreviewNumber(item.setup, "fontSizePercent"),
+    logoSizePercent: readSetupNumber(item.setup, "logoSizePercent") ?? readProofPreviewNumber(item.setup, "logoSizePercent"),
+    showBusinessNameOnProof: readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof") ?? readProofPreviewBoolean(item.setup, "showBusinessNameOnProof"),
+    logoBackgroundMode: readSetupString(item.setup, "logoBackgroundMode") ?? readProofPreviewString(item.setup, "logoBackgroundMode"),
+    logoFitMode: readSetupString(item.setup, "logoFitMode") ?? readProofPreviewString(item.setup, "logoFitMode"),
+    logoOffsetXPercent: readSetupNumber(item.setup, "logoOffsetXPercent") ?? readProofPreviewNumber(item.setup, "logoOffsetXPercent"),
+    logoOffsetYPercent: readSetupNumber(item.setup, "logoOffsetYPercent") ?? readProofPreviewNumber(item.setup, "logoOffsetYPercent")
   };
 }
 
@@ -484,6 +484,25 @@ function readSetupOptionalBoolean(setup: OrderLineItem["setup"], key: string) {
 function readSetupRecord(setup: OrderLineItem["setup"], key: string): Record<string, unknown> | undefined {
   const value = setup?.[key];
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function readProofPreviewRecord(setup: OrderLineItem["setup"]) {
+  return readSetupRecord(setup, "proofPreviewData");
+}
+
+function readProofPreviewString(setup: OrderLineItem["setup"], key: string) {
+  const value = readProofPreviewRecord(setup)?.[key];
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function readProofPreviewNumber(setup: OrderLineItem["setup"], key: string) {
+  const value = readProofPreviewRecord(setup)?.[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readProofPreviewBoolean(setup: OrderLineItem["setup"], key: string) {
+  const value = readProofPreviewRecord(setup)?.[key];
+  return typeof value === "boolean" ? value : undefined;
 }
 
 function extractSvgBody(svg: string) {

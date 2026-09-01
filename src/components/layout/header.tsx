@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { CircleUserRound, Menu, ShoppingBag, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, CircleUserRound, CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
@@ -13,6 +13,11 @@ type HeaderNavigationContent = {
     order: number;
     enabled: boolean;
   }>;
+};
+
+type CustomerSessionState = {
+  authenticated: boolean;
+  email?: string;
 };
 
 const defaultHeaderNavigation: HeaderNavigationContent = {
@@ -92,6 +97,8 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
 export function Header() {
   const cart = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [customerSession, setCustomerSession] = useState<CustomerSessionState>({ authenticated: false });
   const [navigation, setNavigation] = useState<HeaderNavigationContent>(
     defaultHeaderNavigation,
   );
@@ -107,6 +114,25 @@ export function Header() {
       .then((body) => {
         if (active && body?.header?.items) {
           setNavigation(body.header);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/account/session", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => {
+        if (active && body) {
+          setCustomerSession({
+            authenticated: body.authenticated === true,
+            email: typeof body.email === "string" ? body.email : undefined,
+          });
         }
       })
       .catch(() => undefined);
@@ -146,20 +172,50 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
-            <Link
-              href="/account/login"
-              className="hidden min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand sm:inline-flex"
-              aria-label="Account"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <CircleUserRound size={20} />
-              <span className="hidden xl:inline">Account</span>
-            </Link>
+            <div className="relative hidden sm:block">
+              {customerSession.authenticated ? (
+                <>
+                  <button
+                    type="button"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
+                    aria-label="Open account menu"
+                    aria-expanded={isAccountOpen}
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setIsAccountOpen((current) => !current);
+                    }}
+                  >
+                    <CircleUserRound size={20} />
+                    <span className="hidden xl:inline">My Account</span>
+                    <ChevronDown size={16} />
+                  </button>
+                  {isAccountOpen ? (
+                    <AccountDropdown email={customerSession.email} onClose={() => setIsAccountOpen(false)} />
+                  ) : null}
+                </>
+              ) : (
+                <Link
+                  href="/account/login"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
+                  aria-label="Account"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    setIsAccountOpen(false);
+                  }}
+                >
+                  <CircleUserRound size={20} />
+                  <span className="hidden xl:inline">Account</span>
+                </Link>
+              )}
+            </div>
             <Link
               href="/cart"
               aria-label="Cart"
               className="relative grid h-11 w-11 place-items-center rounded-[var(--tr-radius-control)] border border-line bg-white transition hover:border-brand hover:text-brand"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                setIsAccountOpen(false);
+              }}
             >
               <ShoppingBag size={22} />
               <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-semibold text-white">
@@ -172,7 +228,10 @@ export function Header() {
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-controls="mobile-site-navigation"
               aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((current) => !current)}
+              onClick={() => {
+                setIsAccountOpen(false);
+                setIsMenuOpen((current) => !current);
+              }}
             >
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -203,11 +262,11 @@ export function Header() {
             </nav>
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
               <Link
-                href="/account/login"
+                href={customerSession.authenticated ? "/account" : "/account/login"}
                 className="min-h-12 rounded-[var(--tr-radius-control)] border border-line bg-white px-3 py-3 text-center text-sm font-semibold transition hover:border-brand hover:text-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Account
+                {customerSession.authenticated ? "My Account" : "Account"}
               </Link>
               <Link
                 href="/cart"
@@ -221,5 +280,46 @@ export function Header() {
         ) : null}
       </div>
     </header>
+  );
+}
+
+const accountLinks = [
+  { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
+  { href: "/account/orders", label: "Orders", icon: PackageCheck },
+  { href: "/account/billing", label: "Billing", icon: CreditCard },
+  { href: "/account/business", label: "Business profile", icon: BriefcaseBusiness },
+  { href: "/support", label: "Support", icon: LifeBuoy },
+];
+
+function AccountDropdown({ email, onClose }: { email?: string; onClose: () => void }) {
+  return (
+    <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 rounded-[var(--tr-radius-card)] border border-line bg-white p-2 text-sm shadow-xl">
+      <div className="border-b border-line px-3 py-3">
+        <p className="font-black text-ink">Signed in</p>
+        <p className="mt-1 truncate text-xs font-semibold text-muted">{email ?? "Tap Rater customer"}</p>
+      </div>
+      <div className="py-2">
+        {accountLinks.map((link) => {
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex min-h-10 items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 font-semibold text-ink transition hover:bg-soft hover:text-brand"
+              onClick={onClose}
+            >
+              <Icon size={17} />
+              {link.label}
+            </Link>
+          );
+        })}
+      </div>
+      <form action="/api/account/logout" method="post" className="border-t border-line pt-2">
+        <button className="flex min-h-10 w-full items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 text-left font-semibold text-ink transition hover:bg-soft hover:text-brand">
+          <LogOut size={17} />
+          Sign out
+        </button>
+      </form>
+    </div>
   );
 }

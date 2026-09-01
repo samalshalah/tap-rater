@@ -19,7 +19,32 @@ describe("customer portal repository", () => {
           destination_url: "https://example.com/review"
         }
       ],
-      tap_events: [{ device_id: "device-1" }, { device_id: "device-1" }]
+      tap_events: [{ device_id: "device-1" }, { device_id: "device-1" }],
+      orders: [
+        {
+          id: "order-1",
+          stripe_checkout_session_id: "manual_123",
+          email: "owner@example.com",
+          status: "pending_payment",
+          payment_status: "manual_unpaid",
+          production_status: "blocked",
+          shipping_status: "not_shipped",
+          total_cents: 4900,
+          currency: "usd",
+          line_items_json: [{ quantity: 1 }]
+        }
+      ],
+      hosted_subscriptions: [
+        {
+          id: "subscription-1",
+          customer_id: "customer-1",
+          hosted_page_url: "https://taprater.com/p/ABC123ABC123",
+          permanent_code: "ABC123ABC123",
+          status: "active",
+          lifecycle_status: "ACTIVE",
+          cancel_at_period_end: false
+        }
+      ]
     });
 
     const portal = await getCustomerPortalFromClient(db.client, "owner@example.com");
@@ -32,27 +57,33 @@ describe("customer portal repository", () => {
       destinationUrl: "https://example.com/review",
       tapCount: 2
     });
+    expect(portal.orders[0]).toMatchObject({ reference: "manual_123", paymentStatus: "manual_unpaid", itemCount: 1 });
+    expect(portal.subscriptions[0]).toMatchObject({ hostedPageUrl: "https://taprater.com/p/ABC123ABC123", lifecycleStatus: "ACTIVE" });
   });
 
   it("returns empty portal data when customer is not found", async () => {
-    const db = createCustomerPortalDb({ customers: [], businesses: [], devices: [], tap_events: [] });
+    const db = createCustomerPortalDb({ customers: [], businesses: [], devices: [], tap_events: [], orders: [], hosted_subscriptions: [] });
 
     const portal = await getCustomerPortalFromClient(db.client, "missing@example.com");
 
     expect(portal.customer).toBeNull();
     expect(portal.businesses).toEqual([]);
     expect(portal.devices).toEqual([]);
+    expect(portal.orders).toEqual([]);
+    expect(portal.subscriptions).toEqual([]);
   });
 });
 
-type TableName = "customers" | "businesses" | "devices" | "tap_events";
+type TableName = "customers" | "businesses" | "devices" | "tap_events" | "orders" | "hosted_subscriptions";
 
 function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unknown>>>) {
   const rows = {
     customers: [...seed.customers],
     businesses: [...seed.businesses],
     devices: [...seed.devices],
-    tap_events: [...seed.tap_events]
+    tap_events: [...seed.tap_events],
+    orders: [...seed.orders],
+    hosted_subscriptions: [...seed.hosted_subscriptions]
   };
 
   const client = {

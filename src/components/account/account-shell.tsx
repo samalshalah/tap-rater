@@ -2,8 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const links = [
-  { href: "/account", label: "My Page" },
-  { href: "/account/business", label: "Account / Business" }
+  { href: "/account", label: "Overview" },
+  { href: "/account/orders", label: "Orders" },
+  { href: "/account/billing", label: "Billing" },
+  { href: "/account/business", label: "Business" },
+  { href: "/support", label: "Support" }
 ];
 
 export function AccountShell({ children }: { children: ReactNode }) {
@@ -13,7 +16,10 @@ export function AccountShell({ children }: { children: ReactNode }) {
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">Tap Rater account</p>
-            <h1 className="tr-page-title mt-2">My Tap Rater Page</h1>
+            <h1 className="tr-page-title mt-2">Account dashboard</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
+              Manage orders, proof updates, billing, business details, and hosted Multi-Link pages.
+            </p>
           </div>
           <nav className="flex flex-wrap gap-2">
             {links.map((link) => (

@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
+import { AdminAlert, AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
+import { OrderProductionActions } from "@/components/admin/order-production-actions";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -20,6 +21,9 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
     notFound();
   }
 
+  const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
+  const attentionItems = buildAttentionItems(order, summaries);
+
   return (
     <AdminShell>
       <section className="tr-admin-section">
@@ -34,6 +38,8 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             {formatPrice(order.total_cents)}
           </div>
         </div>
+
+        {attentionItems.length ? <OrderAttentionCard items={attentionItems} /> : null}
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_420px]">
           <div className="space-y-6">
@@ -60,7 +66,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
           <div className="space-y-6">
             <InfoCard title="Status">
-              <Field label="Payment" value={order.status.replace("_", " ")} />
+              <Field label="Payment" value={formatPaymentStatus(order)} />
               <Field label="Payment status" value={order.payment_status} />
               <Field label="Production" value={order.production_status.replaceAll("_", " ")} />
               <Field label="Shipping" value={order.shipping_status.replaceAll("_", " ")} />
@@ -68,6 +74,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               <Field label="Tracking" value={order.tracking_number} />
               <Field label="Tracking URL" value={order.tracking_url} link />
             </InfoCard>
+            {order.id ? <OrderProductionActions orderId={order.id} /> : null}
             <OrderFulfillmentForm order={order} />
           </div>
         </div>
@@ -78,6 +85,21 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
 
 function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   return <AdminCard title={title}><div className="space-y-3">{children}</div></AdminCard>;
+}
+
+function OrderAttentionCard({ items }: { items: string[] }) {
+  return (
+    <div className="mt-6">
+      <AdminAlert tone="warning">
+        <p className="font-black text-ink">Order needs staff attention before production.</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </AdminAlert>
+    </div>
+  );
 }
 
 function Field({ label, value, link = false }: { label: string; value?: string | null; link?: boolean }) {
@@ -155,7 +177,62 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
           }
         />
       </div>
+      <LineItemVisuals item={item} />
+      {summary.warnings.length ? (
+        <AdminAlert tone="warning" className="mt-4">
+          <p className="font-black text-ink">Production warnings</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6">
+            {summary.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </AdminAlert>
+      ) : null}
     </AdminSoftPanel>
+  );
+}
+
+function LineItemVisuals({ item }: { item: OrderLineItem }) {
+  const summary = getOrderLineItemProductionSummary(item);
+  const previewData = readSetupRecord(item.setup, "proofPreviewData");
+  const previewLogo = summary.logoMediaUrl ?? readRecordString(previewData, "logoMediaUrl");
+  const previewTemplate = summary.frontTemplateUrl ?? readRecordString(previewData, "frontTemplateUrl");
+  const artworkUrl = summary.productionArtwork?.status === "generated" ? summary.productionArtwork.url : undefined;
+
+  if (!previewLogo && !previewTemplate && !artworkUrl) {
+    return null;
+  }
+
+  return (
+    <div className="mt-5 grid gap-4 border-t border-line pt-4 lg:grid-cols-3">
+      {previewLogo ? (
+        <PreviewAsset title="Uploaded logo" src={previewLogo} alt={`${item.title} customer logo`} />
+      ) : null}
+      {previewTemplate ? (
+        <PreviewAsset title="Approved proof base" src={previewTemplate} alt={`${item.title} proof template`} />
+      ) : null}
+      {artworkUrl ? (
+        <PreviewAsset title="Production artwork" src={artworkUrl} alt={`${item.title} production artwork`} />
+      ) : (
+        <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
+          Production artwork is not generated yet. Use the proof/artwork operations panel after confirming the proof data.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreviewAsset({ title, src, alt }: { title: string; src: string; alt: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-white p-3">
+      <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
+      <div className="grid min-h-40 place-items-center overflow-hidden rounded-md bg-soft">
+        <img src={src} alt={alt} className="max-h-52 max-w-full object-contain" />
+      </div>
+      <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
+        Open asset
+      </a>
+    </div>
   );
 }
 
@@ -182,4 +259,40 @@ function readSetupString(setup: OrderLineItem["setup"], key: string) {
   if (!setup || typeof setup !== "object") return null;
   const value = (setup as Record<string, unknown>)[key];
   return typeof value === "string" && value.trim() ? value : null;
+}
+
+function readSetupRecord(setup: OrderLineItem["setup"], key: string) {
+  if (!setup || typeof setup !== "object") return null;
+  const value = (setup as Record<string, unknown>)[key];
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function readRecordString(record: Record<string, unknown> | null, key: string) {
+  const value = record?.[key];
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
+  if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
+  if (order.status === "paid" || order.payment_status === "paid") return "Paid";
+  return order.status.replaceAll("_", " ");
+}
+
+function buildAttentionItems(
+  order: { status: string; payment_status?: string | null },
+  summaries: ReturnType<typeof getOrderLineItemProductionSummary>[]
+) {
+  const items = new Set<string>();
+  if (order.payment_status === "manual_unpaid") items.add("Customer submitted the order manually. Collect or confirm payment before production.");
+
+  for (const summary of summaries) {
+    if (summary.productionArtwork?.status === "generation_failed") {
+      items.add(`Artwork generation failed: ${summary.productionArtwork.error ?? "unknown error"}`);
+    }
+    for (const warning of summary.warnings) {
+      items.add(warning);
+    }
+  }
+
+  return Array.from(items);
 }
