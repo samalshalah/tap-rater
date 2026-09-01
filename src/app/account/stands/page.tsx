@@ -18,6 +18,7 @@ export default async function AccountStandsPage({ searchParams }: AccountStandsP
     getHostedPageEditorContext(session.email, selectedCode)
   ]);
   const multiLinkCount = portal.stands.filter((stand) => stand.kind === "multilink").length;
+  const shouldShowHostedEditor = Boolean(context.configured && context.page);
 
   return (
     <AccountShell>
@@ -26,7 +27,7 @@ export default async function AccountStandsPage({ searchParams }: AccountStandsP
           <p className="tr-eyebrow">My Stands</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Purchased stands</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Manage each physical stand separately. Orders stay in order history; this page is for setup, proof status, and Multi-Link management.
+            Manage each purchased stand after checkout. Review prepared proofs, request changes when needed, and edit hosted Multi-Link pages without rebuilding the original order.
           </p>
         </section>
 
@@ -37,13 +38,17 @@ export default async function AccountStandsPage({ searchParams }: AccountStandsP
             <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="tr-eyebrow">Multi-Link</p>
-                <h2 className="mt-2 text-xl font-medium text-ink">Hosted page editor</h2>
+                <h2 className="mt-2 text-xl font-medium text-ink">Hosted page setup</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-                  Edit the active hosted page for this account. Additional Multi-Link pages will appear as separate stand cards when their hosted records are provisioned.
+                  Edit the links for the selected Multi-Link stand. The physical stand proof stays attached to the original order.
                 </p>
               </div>
             </div>
-            {context.configured && context.page ? <HostedPageEditor initialPage={context.page} /> : <EmptyState message={context.configured ? "No hosted editor page is ready yet." : context.message} />}
+            {shouldShowHostedEditor ? (
+              <HostedPageEditor initialPage={context.page!} />
+            ) : (
+              <EmptyState message={context.configured ? "Select a Multi-Link stand above to manage its hosted page." : context.message} />
+            )}
           </section>
         ) : null}
       </div>

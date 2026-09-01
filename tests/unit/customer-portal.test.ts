@@ -75,6 +75,7 @@ describe("customer portal repository", () => {
     expect(portal.orders[0]).toMatchObject({ reference: "manual_123", paymentStatus: "manual_unpaid", itemCount: 1 });
     expect(portal.stands[0]).toMatchObject({
       title: "Google Review Stand",
+      lineItemIndex: 0,
       kind: "branded",
       proofStatus: "needs_review",
       productionStatus: "blocked",

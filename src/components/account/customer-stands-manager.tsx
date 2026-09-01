@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, X } from "lucide-react";
 import { useState } from "react";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
 import { formatOrderReference } from "@/lib/order-reference";
 
 export function CustomerStandsManager({ stands }: { stands: CustomerPortalStand[] }) {
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
+  const [standList, setStandList] = useState(stands);
 
   if (!stands.length) {
     return <EmptyState message="No purchased stands are linked to this account yet." />;
@@ -16,11 +17,20 @@ export function CustomerStandsManager({ stands }: { stands: CustomerPortalStand[
   return (
     <>
       <section className="grid gap-3">
-        {stands.map((stand) => (
+        {standList.map((stand) => (
           <StandCard key={stand.id} stand={stand} onOpen={() => setSelectedStand(stand)} />
         ))}
       </section>
-      {selectedStand ? <StandDetailModal stand={selectedStand} onClose={() => setSelectedStand(null)} /> : null}
+      {selectedStand ? (
+        <StandDetailModal
+          stand={selectedStand}
+          onClose={() => setSelectedStand(null)}
+          onStandChange={(updatedStand) => {
+            setSelectedStand(updatedStand);
+            setStandList((current) => current.map((stand) => stand.id === updatedStand.id ? updatedStand : stand));
+          }}
+        />
+      ) : null}
     </>
   );
 }
@@ -49,21 +59,69 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
             </a>
           ) : null}
         </div>
-        {isMultiLink ? (
-          <Link href={stand.primaryActionHref} className="tr-button-primary shrink-0 self-start">
-            Manage links
-          </Link>
-        ) : (
-          <button type="button" onClick={onOpen} className="tr-button-primary shrink-0 self-start">
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {isMultiLink ? (
+            <Link href={stand.primaryActionHref} className="tr-button-primary">
+              Manage links
+            </Link>
+          ) : null}
+          <button type="button" onClick={onOpen} className={isMultiLink ? "tr-button-secondary" : "tr-button-primary"}>
             {stand.proofStatus === "not_needed" ? "View details" : "View proof"}
           </button>
-        )}
+        </div>
       </div>
     </article>
   );
 }
 
-function StandDetailModal({ stand, onClose }: { stand: CustomerPortalStand; onClose: () => void }) {
+function StandDetailModal({
+  stand,
+  onClose,
+  onStandChange
+}: {
+  stand: CustomerPortalStand;
+  onClose: () => void;
+  onStandChange: (stand: CustomerPortalStand) => void;
+}) {
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+  const canReviewProof = stand.proofStatus !== "not_needed";
+
+  async function submitProofAction(action: "approve" | "request_change") {
+    setStatus("saving");
+    setMessage("");
+
+    const response = await fetch("/api/account/stands/proof", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: stand.orderId,
+        lineItemIndex: stand.lineItemIndex,
+        action,
+        note
+      })
+    });
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      setStatus("error");
+      setMessage(body?.error ?? "Proof update could not be saved.");
+      return;
+    }
+
+    const nextStand = {
+      ...stand,
+      proofStatus: action === "approve" ? "approved" : "needs_review",
+      productionStatus: typeof body?.productionStatus === "string" ? body.productionStatus : stand.productionStatus
+    } satisfies CustomerPortalStand;
+
+    setStatus("success");
+    setMessage(action === "approve" ? "Proof approved. Tap Rater can continue production review." : "Change request sent. Tap Rater will update the proof before production.");
+    setNote("");
+    onStandChange(nextStand);
+  }
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
       <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl">
@@ -97,6 +155,42 @@ function StandDetailModal({ stand, onClose }: { stand: CustomerPortalStand; onCl
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
             {stand.qrTargetUrl && stand.qrTargetUrl !== stand.destinationUrl ? <DetailLink label="QR target" href={stand.qrTargetUrl} /> : null}
             {stand.nfcTargetUrl && stand.nfcTargetUrl !== stand.destinationUrl ? <DetailLink label="NFC target" href={stand.nfcTargetUrl} /> : null}
+            {stand.kind === "multilink" && stand.primaryActionHref ? (
+              <Link href={stand.primaryActionHref} className="tr-button-primary justify-center">
+                Manage Multi-Link page
+              </Link>
+            ) : null}
+            {canReviewProof ? (
+              <div className="rounded-md border border-line p-3">
+                {stand.proofStatus === "approved" ? (
+                  <p className="flex items-center gap-2 text-sm text-brand">
+                    <CheckCircle2 size={16} />
+                    Proof approved
+                  </p>
+                ) : (
+                  <div className="grid gap-3">
+                    <p className="text-sm text-muted">Approve the prepared proof or request a change. You do not need to rebuild the stand.</p>
+                    <button type="button" disabled={status === "saving"} onClick={() => submitProofAction("approve")} className="tr-button-primary justify-center">
+                      Approve proof
+                    </button>
+                    <textarea
+                      value={note}
+                      onChange={(event) => setNote(event.target.value)}
+                      placeholder="Tell Tap Rater what to change"
+                      className="tr-textarea min-h-24"
+                    />
+                    <button type="button" disabled={status === "saving"} onClick={() => submitProofAction("request_change")} className="tr-button-secondary justify-center">
+                      Request proof changes
+                    </button>
+                  </div>
+                )}
+                {message ? (
+                  <p className={`mt-3 rounded-md px-3 py-2 text-sm ${status === "error" ? "bg-red-50 text-red-700" : "bg-teal-50 text-brand"}`}>
+                    {message}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </aside>
         </div>
       </div>

@@ -61,6 +61,7 @@ export type CustomerPortalOrderItem = {
 export type CustomerPortalStand = {
   id: string;
   orderId: string;
+  lineItemIndex: number;
   orderReference: string;
   title: string;
   quantity: number;
@@ -322,6 +323,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
       return {
         id: `${order.id}-${index + 1}`,
         orderId: order.id,
+        lineItemIndex: index,
         orderReference: order.reference,
         title: item.title,
         quantity: item.quantity,
