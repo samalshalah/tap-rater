@@ -48,9 +48,6 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
           <Link href={`/account/orders#order-${encodeURIComponent(formatOrderReference(stand.orderReference))}`} className="mt-2 inline-flex text-sm text-brand hover:underline">
             Order {formatOrderReference(stand.orderReference)}
           </Link>
-          <div className="mt-4 grid gap-2 text-sm md:max-w-sm">
-            <StatusPill label="Shipping" value={formatStatus(stand.shippingStatus)} />
-          </div>
           {isMultiLink && stand.hostedPageUrl ? (
             <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-brand">
               {stand.hostedPageUrl}
@@ -113,7 +110,6 @@ function StandDetailModal({
           <aside className="grid content-start gap-3 text-sm">
             <DetailLine label="Type" value={formatKind(stand.kind)} />
             <DetailLine label="Business" value={stand.businessName ?? "-"} />
-            <DetailLine label="Shipping" value={formatStatus(stand.shippingStatus)} />
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
             {stand.qrTargetUrl && stand.qrTargetUrl !== stand.destinationUrl ? <DetailLink label="QR target" href={stand.qrTargetUrl} /> : null}
@@ -123,15 +119,6 @@ function StandDetailModal({
         )}
       </div>
     </div>
-  );
-}
-
-function StatusPill({ label, value }: { label: string; value: string }) {
-  return (
-    <p className="rounded-md bg-soft px-3 py-2">
-      <span className="block text-xs text-muted">{label}</span>
-      <span className="mt-1 block capitalize text-ink">{value}</span>
-    </p>
   );
 }
 
@@ -165,8 +152,4 @@ function formatKind(kind: CustomerPortalStand["kind"]) {
   if (kind === "branded") return "Branded Direct";
   if (kind === "custom") return "Custom";
   return "Standard Direct";
-}
-
-function formatStatus(value: string) {
-  return value.replaceAll("_", " ");
 }
