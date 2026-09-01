@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     const draft = validateHostedPageEditorDraft(body?.draft ?? body);
     const page = { ...selectedContext.page, draft };
-    const snapshot = buildSnapshotFromDraft(page);
+    const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false });
     return NextResponse.json({ ok: true, html: renderHostedPageDraftPreview(page), snapshot });
   } catch (error) {
     if (error instanceof HostedPageEditorError) {

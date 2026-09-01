@@ -90,7 +90,7 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
   return { page, snapshot };
 }
 
-export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date()): HostedPageSnapshot {
+export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean } = {}): HostedPageSnapshot {
   const draft = validateHostedPageEditorDraft(page.draft);
   const buttons = draft.buttons
     .filter((button) => button.enabled)
@@ -107,7 +107,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
       };
     });
 
-  if (buttons.length === 0) {
+  if (options.requireButtons !== false && buttons.length === 0) {
     throw new HostedPageEditorError("Enable at least one valid button before publishing.", 400);
   }
 
@@ -127,7 +127,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
 }
 
 export function renderHostedPageDraftPreview(page: HostedPageEditorRecord) {
-  const snapshot = buildSnapshotFromDraft(page);
+  const snapshot = buildSnapshotFromDraft(page, new Date(), { requireButtons: false });
   return renderHostedPageHtml(resolveHostedPageLifecycle(snapshot));
 }
 

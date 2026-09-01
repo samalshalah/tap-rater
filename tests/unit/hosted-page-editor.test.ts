@@ -101,6 +101,24 @@ describe("hosted page editor", () => {
     expect(html).toContain("Google Review");
   });
 
+  it("renders setup preview before the customer has enabled any links", async () => {
+    const page = await getOwnedPage();
+    const nextDraft = validateHostedPageEditorDraft({
+      ...page.draft,
+      businessName: "Skipped Links Cafe",
+      logoUrl: "/api/media/product/products/customer-setup/logo.png",
+      headline: "",
+      description: "",
+      buttons: []
+    });
+
+    const html = renderHostedPageDraftPreview({ ...page, draft: nextDraft });
+
+    expect(html).toContain("Skipped Links Cafe");
+    expect(html).toContain("This Tap Rater page is being set up");
+    expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Enable at least one valid button");
+  });
+
   it("publishes through the Milestone 5 storage contract and preserves the previous public version on failure", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-23T12:00:00.000Z"));
@@ -162,4 +180,3 @@ class MemoryHostedStorage implements HostedPageTextStorage {
     return current ? JSON.parse(current).currentVersion : undefined;
   }
 }
-
