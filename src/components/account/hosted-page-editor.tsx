@@ -82,7 +82,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           type,
           label: catalog.label,
           url: "",
-          enabled: false,
+          enabled: true,
           position: orderedButtons.length
         }
       ]
@@ -283,11 +283,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           <div className="grid gap-3">
             {orderedButtons.map((button, index) => (
               <div key={button.id} className="rounded-lg border border-line bg-soft p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-ink">
-                    <input type="checkbox" checked={button.enabled} onChange={(event) => updateButton(button.id, { enabled: event.target.checked })} />
-                    Enabled
-                  </label>
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <div className="flex gap-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">
                       <ArrowUp size={16} />

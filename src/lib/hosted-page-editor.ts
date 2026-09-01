@@ -93,7 +93,7 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
 export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean } = {}): HostedPageSnapshot {
   const draft = validateHostedPageEditorDraft(page.draft);
   const buttons = draft.buttons
-    .filter((button) => button.enabled)
+    .filter((button) => button.label.trim() && button.url.trim())
     .sort((a, b) => a.position - b.position)
     .map((button) => {
       const catalog = supportedHostedPageButtons.find((item) => item.type === button.type);
@@ -109,7 +109,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
     });
 
   if (options.requireButtons !== false && buttons.length === 0) {
-    throw new HostedPageEditorError("Enable at least one valid button before publishing.", 400);
+    throw new HostedPageEditorError("Add at least one valid link before publishing.", 400);
   }
 
   return validateHostedPageSnapshot({
@@ -362,14 +362,12 @@ function normalizeButton(input: unknown, index: number): HostedPageEditorButton 
   const catalog = supportedHostedPageButtons.find((button) => button.type === type)!;
   const label = readString(value.label, 80) ?? catalog.label;
   const url = readOptionalUrl(value.url, "Destination URL") ?? "";
-  const enabled = Boolean(value.enabled);
-  if (enabled && !url) throw new HostedPageEditorError("Enter a valid website address.", 400);
   return {
     id: readString(value.id, 80) ?? `${type}-${index}`,
     type: type as HostedPageEditorButtonType,
     label,
     url,
-    enabled,
+    enabled: true,
     position: readInteger(value.position) ?? index
   };
 }

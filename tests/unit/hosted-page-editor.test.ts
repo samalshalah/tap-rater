@@ -101,7 +101,7 @@ describe("hosted page editor", () => {
     expect(html).toContain("Google Review");
   });
 
-  it("renders setup preview before the customer has enabled any links", async () => {
+  it("renders setup preview before the customer has completed any links", async () => {
     const page = await getOwnedPage();
     const nextDraft = validateHostedPageEditorDraft({
       ...page.draft,
@@ -116,7 +116,7 @@ describe("hosted page editor", () => {
 
     expect(html).toContain("Skipped Links Cafe");
     expect(html).toContain("This Tap Rater page is being set up");
-    expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Enable at least one valid button");
+    expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Add at least one valid link");
   });
 
   it("publishes through the Milestone 5 storage contract and preserves the previous public version on failure", async () => {
