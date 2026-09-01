@@ -147,6 +147,13 @@ export async function provisionHostedSubscriptionFromCheckout(
     stripeSubscriptionId,
     subscriptionStatus
   });
+  const hostedPageCode = await upsertHostedPageCode(client, {
+    code: assignment.code,
+    physicalProductRef: buildPhysicalProductRef(input.order, input.session.id, hostedItemIndex),
+    assignedBy: `stripe:${input.session.id}`,
+    assignedAt: now.toISOString()
+  });
+  if (!hostedPageCode.ok) return hostedPageCode;
 
   const page = await upsertHostedEditorPage(client, {
     customerId: customer.customerId,
@@ -306,6 +313,13 @@ export async function provisionManualCustomerAccountFromOrder(
     stripeSubscriptionId,
     subscriptionStatus: "unknown"
   });
+  const hostedPageCode = await upsertHostedPageCode(client, {
+    code: assignment.code,
+    physicalProductRef: buildPhysicalProductRef(input.order, input.order.stripe_checkout_session_id, hostedItemIndex),
+    assignedBy: `manual:${input.order.stripe_checkout_session_id}`,
+    assignedAt: now.toISOString()
+  });
+  if (!hostedPageCode.ok) return hostedPageCode;
 
   const page = await upsertHostedEditorPage(client, {
     customerId: customer.customerId,
@@ -495,6 +509,23 @@ async function upsertHostedEditorPage(
     .maybeSingle();
   if (result.error || !result.data?.id) return { ok: false as const, error: result.error?.message ?? "Hosted page editor record could not be provisioned." };
   return { ok: true as const, pageId: String(result.data.id) };
+}
+
+async function upsertHostedPageCode(
+  client: OrdersDbClient,
+  input: { code: string; physicalProductRef: string; assignedBy: string; assignedAt: string }
+) {
+  const result = await client.from("hosted_page_codes").upsert(
+    {
+      code: input.code,
+      physical_product_ref: input.physicalProductRef,
+      assigned_by: input.assignedBy,
+      assigned_at: input.assignedAt
+    },
+    { onConflict: "code" }
+  );
+
+  return result.error ? { ok: false as const, error: result.error.message } : { ok: true as const };
 }
 
 async function upsertHostedSubscription(
