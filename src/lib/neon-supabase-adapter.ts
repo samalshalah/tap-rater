@@ -115,6 +115,13 @@ const tableColumns = {
     "created_at",
     "updated_at"
   ],
+  hosted_page_codes: [
+    "code",
+    "physical_product_ref",
+    "assigned_by",
+    "assigned_at",
+    "retired_at"
+  ],
   hosted_subscriptions: [
     "id",
     "customer_id",
@@ -151,6 +158,7 @@ const tableColumns = {
     "is_special_solution",
     "product_kind",
     "status",
+    "sort_order",
     "base_price_cents",
     "sale_price_cents",
     "stock_status",
