@@ -302,8 +302,17 @@ export function getOrderLineItemFulfillmentKind(item: OrderLineItem): OrderLineI
   const optionLabel = item.optionLabel?.toLowerCase() ?? "";
   const productionStatus = item.productionStatus?.toLowerCase() ?? "";
   const warningCodes = Array.isArray(item.productionWarningCodes) ? item.productionWarningCodes : [];
+  const setup = item.setup && typeof item.setup === "object" ? item.setup : {};
+  const serviceMode = readSetupString(setup, "serviceMode")?.toUpperCase();
+  const serviceAddon = readSetupString(setup, "serviceAddon")?.toLowerCase();
 
-  if (optionId === "hosted_multilink" || optionLabel.includes("hosted multi-link")) {
+  if (
+    item.destinationMode === "HOSTED" ||
+    serviceMode === "HOSTED" ||
+    serviceAddon === "hosted_multilink" ||
+    optionId === "hosted_multilink" ||
+    optionLabel.includes("hosted multi-link")
+  ) {
     return "hosted";
   }
 

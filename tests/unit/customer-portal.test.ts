@@ -116,6 +116,73 @@ describe("customer portal repository", () => {
     expect(portal.stands).toEqual([]);
     expect(portal.subscriptions).toEqual([]);
   });
+
+  it("shows physical stands with the Multi-Link add-on as Multi-Link stands", async () => {
+    const db = createCustomerPortalDb({
+      customers: [{ id: "customer-1", email: "owner@example.com", name: "Owner" }],
+      businesses: [],
+      devices: [],
+      tap_events: [],
+      orders: [
+        {
+          id: "order-1",
+          stripe_checkout_session_id: "manual_multilink",
+          email: "owner@example.com",
+          status: "pending_payment",
+          payment_status: "manual_unpaid",
+          production_status: "not_started",
+          shipping_status: "not_shipped",
+          total_cents: 3900,
+          subtotal_cents: 3900,
+          shipping_amount_cents: 0,
+          currency: "usd",
+          line_items_json: [
+            {
+              productId: "rate-your-experience-stand",
+              optionId: "standard_direct",
+              optionLabel: "Standard Direct Stand",
+              destinationMode: "HOSTED",
+              title: "Rate Your Experience Stand",
+              sku: "TR-RATE-YOUR-EXP-ST",
+              quantity: 1,
+              unitAmountCents: 3900,
+              lineSubtotalCents: 3900,
+              setup: {
+                serviceMode: "HOSTED",
+                serviceAddon: "hosted_multilink",
+                businessName: "Norah Boutique",
+                hostedPageCode: "ABC123ABC123",
+                hostedPageUrl: "https://taprater.com/p/ABC123ABC123",
+                qrTargetUrl: "https://taprater.com/p/ABC123ABC123",
+                nfcTargetUrl: "https://taprater.com/p/ABC123ABC123"
+              }
+            }
+          ]
+        }
+      ],
+      hosted_subscriptions: [
+        {
+          id: "subscription-1",
+          customer_id: "customer-1",
+          hosted_page_url: "https://taprater.com/p/ABC123ABC123",
+          permanent_code: "ABC123ABC123",
+          status: "active",
+          lifecycle_status: "ACTIVE",
+          cancel_at_period_end: false
+        }
+      ]
+    });
+
+    const portal = await getCustomerPortalFromClient(db.client, "owner@example.com");
+
+    expect(portal.stands[0]).toMatchObject({
+      title: "Rate Your Experience Stand",
+      kind: "multilink",
+      businessName: "Norah Boutique",
+      hostedPageCode: "ABC123ABC123",
+      hostedPageUrl: "https://taprater.com/p/ABC123ABC123"
+    });
+  });
 });
 
 type TableName = "customers" | "businesses" | "devices" | "tap_events" | "orders" | "hosted_subscriptions";

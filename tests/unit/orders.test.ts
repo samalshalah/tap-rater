@@ -307,6 +307,35 @@ describe("orders repository", () => {
     });
   });
 
+  it("classifies a standard physical stand with the Multi-Link add-on as hosted", () => {
+    const item = applyOrderLineItemFulfillmentInference({
+      productId: "rate-your-experience-stand",
+      optionId: "standard_direct",
+      optionLabel: "Standard Direct Stand",
+      destinationMode: "HOSTED",
+      title: "Rate Your Experience Stand",
+      sku: "TR-RATE-YOUR-EXP-ST",
+      quantity: 1,
+      unitAmountCents: 3900,
+      lineSubtotalCents: 3900,
+      setup: {
+        serviceMode: "HOSTED",
+        serviceAddon: "hosted_multilink",
+        businessName: "Norah Boutique",
+        hostedPageCode: "ABC123ABC123",
+        qrTargetUrl: "https://taprater.com/p/ABC123ABC123",
+        nfcTargetUrl: "https://taprater.com/p/ABC123ABC123"
+      }
+    });
+
+    expect(getOrderLineItemFulfillmentKind(item)).toBe("hosted");
+    expect(item).toMatchObject({
+      destinationMode: "HOSTED",
+      logoRequired: true,
+      proofRequired: true
+    });
+  });
+
   it("summarizes Standard Direct fulfillment without QR or proof warnings", () => {
     const summary = getOrderLineItemProductionSummary({
       productId: "google-review-stand",
