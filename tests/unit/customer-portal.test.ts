@@ -31,7 +31,22 @@ describe("customer portal repository", () => {
           shipping_status: "not_shipped",
           total_cents: 4900,
           currency: "usd",
-          line_items_json: [{ quantity: 1 }]
+          line_items_json: [
+            {
+              productId: "google-review-stand",
+              optionId: "branded_qr_direct",
+              optionLabel: "Branded + QR",
+              title: "Google Review Stand",
+              sku: "TR-GOOGLE",
+              quantity: 1,
+              unitAmountCents: 4900,
+              lineSubtotalCents: 4900,
+              setup: {
+                businessName: "Local Shop",
+                destinationUrl: "https://example.com/review"
+              }
+            }
+          ]
         }
       ],
       hosted_subscriptions: [
@@ -58,6 +73,13 @@ describe("customer portal repository", () => {
       tapCount: 2
     });
     expect(portal.orders[0]).toMatchObject({ reference: "manual_123", paymentStatus: "manual_unpaid", itemCount: 1 });
+    expect(portal.stands[0]).toMatchObject({
+      title: "Google Review Stand",
+      kind: "branded",
+      proofStatus: "needs_review",
+      productionStatus: "blocked",
+      shippingStatus: "not_shipped"
+    });
     expect(portal.subscriptions[0]).toMatchObject({ hostedPageUrl: "https://taprater.com/p/ABC123ABC123", lifecycleStatus: "ACTIVE" });
   });
 
@@ -70,6 +92,7 @@ describe("customer portal repository", () => {
     expect(portal.businesses).toEqual([]);
     expect(portal.devices).toEqual([]);
     expect(portal.orders).toEqual([]);
+    expect(portal.stands).toEqual([]);
     expect(portal.subscriptions).toEqual([]);
   });
 });

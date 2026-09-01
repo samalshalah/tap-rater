@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 const links = [
   { href: "/account", label: "Overview" },
+  { href: "/account/stands", label: "My Stands" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/billing", label: "Billing" },
   { href: "/account/business", label: "Business" },
@@ -17,9 +18,7 @@ export function AccountShell({ children }: { children: ReactNode }) {
           <div>
             <p className="tr-eyebrow">Tap Rater account</p>
             <h1 className="tr-page-title mt-2">Account dashboard</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-              Manage orders, proof updates, billing, business details, and hosted Multi-Link pages.
-            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Review what needs attention and manage purchased stands from one place.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
             {links.map((link) => (

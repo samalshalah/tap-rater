@@ -31,7 +31,7 @@ export default async function AccountActivatePage({ searchParams }: AccountActiv
             <AccountActivationForm token={token} />
           ) : (
             <div className="tr-card grid gap-3 p-5 md:p-7">
-              <p className="font-bold text-ink">Activation link missing</p>
+              <p className="font-medium text-ink">Activation link missing</p>
               <p className="tr-body">Open the activation link from your Tap Rater email, or contact support if the link expired.</p>
               <Link href="/support" className="tr-button-secondary w-fit">
                 Contact support

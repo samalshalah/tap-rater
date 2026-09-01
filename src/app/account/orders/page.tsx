@@ -12,19 +12,28 @@ export default async function AccountOrdersPage() {
     <AccountShell>
       <section className="tr-card p-6">
         <p className="tr-eyebrow">Orders</p>
-        <h2 className="mt-2 text-2xl font-black text-ink">Order history</h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-          Track submitted stands, proof review, production, and shipping status.
-        </p>
+        <h2 className="mt-2 text-xl font-medium text-ink">Order history</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Purchase records, totals, and fulfillment progress.</p>
         <div className="mt-6 grid gap-3">
           {portal.orders.length ? (
             portal.orders.map((order) => (
               <article key={order.id} className="rounded-md border border-line bg-white p-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="font-mono text-xs uppercase text-muted">{formatOrderReference(order.reference)}</p>
                     <h3 className="mt-1 text-lg font-medium text-ink">{formatPrice(order.totalCents)}</h3>
-                    <p className="mt-1 text-sm text-muted">{order.itemCount} configured stand{order.itemCount === 1 ? "" : "s"}</p>
+                    <p className="mt-1 text-sm text-muted">
+                      {order.itemCount} stand{order.itemCount === 1 ? "" : "s"}
+                      {order.createdAt ? ` · ${new Date(order.createdAt).toLocaleDateString()}` : ""}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {order.items.slice(0, 4).map((item) => (
+                        <span key={item.id} className="rounded-full bg-soft px-2.5 py-1 text-xs text-muted">
+                          {item.quantity > 1 ? `${item.quantity}x ` : ""}{item.title}
+                        </span>
+                      ))}
+                      {order.items.length > 4 ? <span className="rounded-full bg-soft px-2.5 py-1 text-xs text-muted">+{order.items.length - 4} more</span> : null}
+                    </div>
                   </div>
                   <div className="grid gap-2 text-sm md:min-w-64">
                     <StatusLine label="Payment" value={formatPayment(order)} />
@@ -46,14 +55,14 @@ export default async function AccountOrdersPage() {
 function StatusLine({ label, value }: { label: string; value: string }) {
   return (
     <p className="flex items-center justify-between gap-4 rounded-md bg-soft px-3 py-2">
-      <span className="font-semibold text-muted">{label}</span>
+      <span className="text-muted">{label}</span>
       <span className="text-right font-medium capitalize text-ink">{value}</span>
     </p>
   );
 }
 
 function EmptyState({ message }: { message: string }) {
-  return <div className="rounded-md border border-dashed border-line bg-soft p-5 text-sm font-semibold text-muted">{message}</div>;
+  return <div className="rounded-md border border-dashed border-line bg-soft p-5 text-sm text-muted">{message}</div>;
 }
 
 function formatPayment(order: { status: string; paymentStatus?: string }) {

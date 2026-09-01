@@ -75,47 +75,51 @@ export async function processHostedSubscriptionLifecycleEvent(
   const rowResult = await resolved.client
     .from("hosted_subscriptions")
     .select("*")
-    .eq("stripe_subscription_id", lifecycleInput.subscriptionId)
-    .maybeSingle();
+    .eq("stripe_subscription_id", lifecycleInput.subscriptionId);
   if (rowResult.error) return { ok: false, error: rowResult.error.message };
-  const row = normalizeHostedSubscriptionRow(rowResult.data);
-  if (!row) return { ok: true, processed: false, reason: "not_hosted_subscription" };
+  const rows: HostedSubscriptionRow[] = (Array.isArray(rowResult.data)
+    ? rowResult.data.map((row: unknown) => normalizeHostedSubscriptionRow(row))
+    : [normalizeHostedSubscriptionRow(rowResult.data)]
+  ).filter((row: HostedSubscriptionRow | null): row is HostedSubscriptionRow => Boolean(row));
+  if (!rows.length) return { ok: true, processed: false, reason: "not_hosted_subscription" };
 
-  const currentPeriodEnd = lifecycleInput.currentPeriodEnd ?? (input.eventType.startsWith("invoice.") ? row.current_period_end ?? null : null);
-  const updatePayload = {
-    status: lifecycleInput.status,
-    lifecycle_status: lifecycleInput.lifecycleStatus,
-    current_period_end: currentPeriodEnd,
-    cancel_at_period_end: lifecycleInput.cancelAtPeriodEnd,
-    past_due_since: lifecycleInput.pastDueSince,
-    grace_ends_at: lifecycleInput.graceEndsAt,
-    updated_at: now.toISOString()
-  };
-
-  const subscriptionUpdate = await resolved.client.from("hosted_subscriptions").update(updatePayload).eq("id", row.id);
-  if (subscriptionUpdate.error) return { ok: false, error: subscriptionUpdate.error.message };
-
-  const pageUpdate = await resolved.client
-    .from("hosted_page_editor_pages")
-    .update({
+  for (const row of rows) {
+    const currentPeriodEnd = lifecycleInput.currentPeriodEnd ?? (input.eventType.startsWith("invoice.") ? row.current_period_end ?? null : null);
+    const updatePayload = {
+      status: lifecycleInput.status,
       lifecycle_status: lifecycleInput.lifecycleStatus,
+      current_period_end: currentPeriodEnd,
+      cancel_at_period_end: lifecycleInput.cancelAtPeriodEnd,
+      past_due_since: lifecycleInput.pastDueSince,
+      grace_ends_at: lifecycleInput.graceEndsAt,
       updated_at: now.toISOString()
-    })
-    .eq("id", row.hosted_page_id)
-    .eq("code", row.permanent_code);
-  if (pageUpdate.error) return { ok: false, error: pageUpdate.error.message };
+    };
 
-  if (resolved.storage) {
-    await republishLifecycleSnapshot(resolved.storage, row.permanent_code, lifecycleInput.lifecycleStatus, {
-      paidThrough: currentPeriodEnd,
-      pastDueSince: lifecycleInput.pastDueSince
-    });
+    const subscriptionUpdate = await resolved.client.from("hosted_subscriptions").update(updatePayload).eq("id", row.id);
+    if (subscriptionUpdate.error) return { ok: false, error: subscriptionUpdate.error.message };
+
+    const pageUpdate = await resolved.client
+      .from("hosted_page_editor_pages")
+      .update({
+        lifecycle_status: lifecycleInput.lifecycleStatus,
+        updated_at: now.toISOString()
+      })
+      .eq("id", row.hosted_page_id)
+      .eq("code", row.permanent_code);
+    if (pageUpdate.error) return { ok: false, error: pageUpdate.error.message };
+
+    if (resolved.storage) {
+      await republishLifecycleSnapshot(resolved.storage, row.permanent_code, lifecycleInput.lifecycleStatus, {
+        paidThrough: currentPeriodEnd,
+        pastDueSince: lifecycleInput.pastDueSince
+      });
+    }
   }
 
   return {
     ok: true,
     processed: true,
-    code: row.permanent_code,
+    code: rows[0].permanent_code,
     lifecycleStatus: lifecycleInput.lifecycleStatus
   };
 }

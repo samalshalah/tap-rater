@@ -10,13 +10,15 @@ export async function POST(request: Request) {
 
   try {
     const context = await getHostedPageEditorContext(auth.session.email);
-    if (!context.configured || !context.page) {
+    const body = await request.json().catch(() => null);
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    const selectedContext = code ? await getHostedPageEditorContext(auth.session.email, code) : context;
+    if (!selectedContext.configured || !selectedContext.page) {
       return NextResponse.json({ error: "Hosted page was not found for this account." }, { status: 404 });
     }
 
-    const body = await request.json().catch(() => null);
     const draft = validateHostedPageEditorDraft(body?.draft ?? body);
-    const page = { ...context.page, draft };
+    const page = { ...selectedContext.page, draft };
     const snapshot = buildSnapshotFromDraft(page);
     return NextResponse.json({ ok: true, html: renderHostedPageDraftPreview(page), snapshot });
   } catch (error) {
@@ -27,4 +29,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Preview could not be generated." }, { status: 500 });
   }
 }
-

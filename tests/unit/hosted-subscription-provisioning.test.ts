@@ -410,6 +410,85 @@ describe("hosted subscription provisioning", () => {
     });
   });
 
+  it("provisions a separate hosted page for each Multi-Link stand in a manual order", async () => {
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2", "BBBBBBBBBBB2"]);
+    const codes = ["ABCDEFGHJKM2", "BBBBBBBBBBB2"];
+    const order = createHostedOrder({
+      lineItems: [
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "hosted_multilink",
+          optionLabel: "Hosted Multi-Link Stand",
+          destinationMode: "HOSTED",
+          customizationLevel: "BRANDED",
+          title: "Rate Your Experience Stand",
+          sku: "TR-RATE-HOSTED",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          setup: { businessName: "First Location" }
+        },
+        {
+          productId: "connect-with-us-stand",
+          optionId: "hosted_multilink",
+          optionLabel: "Hosted Multi-Link Stand",
+          destinationMode: "HOSTED",
+          customizationLevel: "BRANDED",
+          title: "Connect With Us Stand",
+          sku: "TR-CONNECT-HOSTED",
+          quantity: 1,
+          unitAmountCents: 4900,
+          lineSubtotalCents: 4900,
+          setup: { businessName: "Second Location" }
+        }
+      ]
+    });
+    order.stripe_checkout_session_id = "TR-260901-MULTI1";
+    order.status = "pending_payment";
+    order.payment_status = "manual_unpaid";
+    client.table("orders")[0] = order as any;
+
+    const result = await provisionManualCustomerAccountFromOrder(
+      { order, now: new Date("2026-09-01T12:00:00.000Z"), siteUrl: "https://taprater.com" },
+      {
+        client,
+        storage,
+        generateCode: () => codes.shift() ?? "CCCCCCCCCCC2",
+        sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true })
+      }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      accountProvisioned: true,
+      hostedProvisioned: true,
+      code: "ABCDEFGHJKM2",
+      hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(2);
+    expect(client.table("hosted_subscriptions")).toMatchObject([
+      {
+        stripe_checkout_session_id: "TR-260901-MULTI1:line:1",
+        permanent_code: "ABCDEFGHJKM2",
+        hosted_page_url: "https://taprater.com/p/ABCDEFGHJKM2"
+      },
+      {
+        stripe_checkout_session_id: "TR-260901-MULTI1:line:2",
+        permanent_code: "BBBBBBBBBBB2",
+        hosted_page_url: "https://taprater.com/p/BBBBBBBBBBB2"
+      }
+    ]);
+    expect(client.table("orders")[0].line_items_json[0].setup).toMatchObject({
+      hostedPageCode: "ABCDEFGHJKM2",
+      qrTargetUrl: "https://taprater.com/p/ABCDEFGHJKM2"
+    });
+    expect(client.table("orders")[0].line_items_json[1].setup).toMatchObject({
+      hostedPageCode: "BBBBBBBBBBB2",
+      qrTargetUrl: "https://taprater.com/p/BBBBBBBBBBB2"
+    });
+  });
+
   it("provisions customer account access for manual non-hosted orders", async () => {
     const client = new MemoryDbClient();
     const order = createHostedOrder({

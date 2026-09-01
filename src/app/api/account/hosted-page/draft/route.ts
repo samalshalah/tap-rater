@@ -10,7 +10,8 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json().catch(() => null);
-    const page = await saveHostedPageDraft(auth.session.email, body?.draft ?? body);
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    const page = await saveHostedPageDraft(auth.session.email, body?.draft ?? body, code);
     return NextResponse.json({ ok: true, page });
   } catch (error) {
     if (error instanceof HostedPageEditorError) {
@@ -20,4 +21,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Draft could not be saved." }, { status: 500 });
   }
 }
-

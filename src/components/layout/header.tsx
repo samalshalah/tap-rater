@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BriefcaseBusiness, ChevronDown, CircleUserRound, CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, ShoppingBag, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, CircleUserRound, CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
@@ -292,6 +292,7 @@ export function Header() {
 
 const accountLinks = [
   { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
+  { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
   { href: "/account/orders", label: "Orders", icon: PackageCheck },
   { href: "/account/billing", label: "Billing", icon: CreditCard },
   { href: "/account/business", label: "Business profile", icon: BriefcaseBusiness },
@@ -305,7 +306,6 @@ function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState
     <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-72 rounded-[var(--tr-radius-card)] border border-line bg-white p-2 text-sm shadow-xl">
       <div className="border-b border-line px-3 py-3">
         <p className="font-medium text-ink">Welcome, {firstName}</p>
-        <p className="mt-1 truncate text-xs text-muted">{customer.email ?? "Tap Rater customer"}</p>
       </div>
       <div className="py-2">
         {accountLinks.map((link) => {

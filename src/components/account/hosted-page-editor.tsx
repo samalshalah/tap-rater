@@ -88,7 +88,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
     const response = await fetch("/api/account/hosted-page/draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ draft })
+      body: JSON.stringify({ code: page.code, draft })
     });
     const body = await response.json().catch(() => null);
 
@@ -115,7 +115,11 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
       setStatus("publishing");
     }
 
-    const response = await fetch("/api/account/hosted-page/publish", { method: "POST" });
+    const response = await fetch("/api/account/hosted-page/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: page.code })
+    });
     const body = await response.json().catch(() => null);
 
     if (!response.ok) {
@@ -134,7 +138,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
     const response = await fetch("/api/account/hosted-page/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ draft: nextDraft })
+      body: JSON.stringify({ code: page.code, draft: nextDraft })
     });
     const body = await response.json().catch(() => null);
     if (response.ok) setPreviewHtml(body.html ?? "");
@@ -167,7 +171,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="tr-eyebrow text-muted">Permanent URL</p>
-              <p className="mt-1 break-all text-sm font-bold text-ink">{permanentUrl}</p>
+              <p className="mt-1 break-all text-sm font-medium text-ink">{permanentUrl}</p>
             </div>
             <div className="grid gap-2 sm:flex sm:flex-wrap">
               <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost text-sm">
@@ -196,7 +200,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           </label>
           <div className="grid gap-3 sm:grid-cols-[88px_1fr] sm:items-center">
             <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
-              {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-xs font-bold text-muted">Logo</span>}
+              {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-xs font-medium text-muted">Logo</span>}
             </div>
             <label className="tr-button-secondary w-fit cursor-pointer text-sm">
               <Upload size={16} /> Upload logo
@@ -226,7 +230,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             {orderedButtons.map((button, index) => (
               <div key={button.id} className="rounded-lg border border-line bg-soft p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <label className="flex items-center gap-2 text-sm font-bold text-ink">
+                  <label className="flex items-center gap-2 text-sm font-medium text-ink">
                     <input type="checkbox" checked={button.enabled} onChange={(event) => updateButton(button.id, { enabled: event.target.checked })} />
                     Enabled
                   </label>

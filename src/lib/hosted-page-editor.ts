@@ -47,34 +47,34 @@ export function isHostedPageEditorConfigured() {
   return hasSupabaseAdminConfig() || Boolean(getLocalHostedPageEditorFileFromEnv());
 }
 
-export async function getHostedPageEditorContext(email: string): Promise<HostedPageEditorContext> {
+export async function getHostedPageEditorContext(email: string, code?: string): Promise<HostedPageEditorContext> {
   const localFile = getLocalHostedPageEditorFileFromEnv();
-  if (localFile) return getHostedPageEditorContextFromLocalFile(localFile, email);
+  if (localFile) return getHostedPageEditorContextFromLocalFile(localFile, email, code);
 
   if (!hasSupabaseAdminConfig()) {
     return { configured: false, page: null, message: "Hosted page editor storage is not configured yet." };
   }
 
-  return getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email);
+  return getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email, code);
 }
 
-export async function saveHostedPageDraft(email: string, draftInput: unknown): Promise<HostedPageEditorRecord> {
+export async function saveHostedPageDraft(email: string, draftInput: unknown, code?: string): Promise<HostedPageEditorRecord> {
   const draft = validateHostedPageEditorDraft(draftInput);
   const localFile = getLocalHostedPageEditorFileFromEnv();
-  if (localFile) return updateLocalHostedPage(localFile, email, { draft, businessName: draft.businessName });
+  if (localFile) return updateLocalHostedPage(localFile, email, { draft, businessName: draft.businessName }, code);
 
   if (!hasSupabaseAdminConfig()) {
     throw new HostedPageEditorError("Hosted page editor storage is not configured.", 503);
   }
 
-  const context = await getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email);
+  const context = await getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email, code);
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
   await updateHostedPageDraftWithClient(getSupabaseAdmin() as HostedPageEditorDbClient, context.page.id, context.page.customerId, draft);
   return { ...context.page, businessName: draft.businessName, draft, updatedAt: new Date().toISOString() };
 }
 
-export async function publishHostedPageDraft(email: string, storage: HostedPageTextStorage): Promise<{ page: HostedPageEditorRecord; snapshot: HostedPageSnapshot }> {
-  const context = await getHostedPageEditorContext(email);
+export async function publishHostedPageDraft(email: string, storage: HostedPageTextStorage, code?: string): Promise<{ page: HostedPageEditorRecord; snapshot: HostedPageSnapshot }> {
+  const context = await getHostedPageEditorContext(email, code);
   if (!context.configured) throw new HostedPageEditorError(context.message, 503);
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
@@ -86,7 +86,7 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
   });
   await publishHostedPageSnapshot(storage, snapshot);
 
-  const page = await markHostedPagePublished(email, snapshot.version, snapshot.publishedAt);
+  const page = await markHostedPagePublished(email, snapshot.version, snapshot.publishedAt, code);
   return { page, snapshot };
 }
 
@@ -159,18 +159,19 @@ export function validateHostedPageEditorDraft(input: unknown): HostedPageEditorD
   };
 }
 
-export async function getHostedPageEditorContextFromClient(client: HostedPageEditorDbClient, email: string): Promise<HostedPageEditorContext> {
+export async function getHostedPageEditorContextFromClient(client: HostedPageEditorDbClient, email: string, code?: string): Promise<HostedPageEditorContext> {
   const normalizedEmail = normalizeEmail(email);
   const { data: customerRow, error: customerError } = await client.from("customers").select("*").eq("email", normalizedEmail).maybeSingle();
   const customer = normalizeCustomer(customerRow);
   if (customerError || !customer) return { configured: true, page: null, message: "No customer record was found for this email." };
 
-  const { data: pageRows, error: pageError } = await client
+  const pageQuery = client
     .from("hosted_page_editor_pages")
     .select("*")
     .eq("customer_id", customer.id)
-    .order("created_at", { ascending: true })
-    .limit(1);
+    .order("created_at", { ascending: true });
+  if (code) pageQuery.eq("code", code);
+  const { data: pageRows, error: pageError } = await pageQuery.limit(1);
   if (pageError) throw new HostedPageEditorError(pageError.message ?? "Hosted page could not be loaded.", 500);
 
   const pageRow = Array.isArray(pageRows) ? pageRows[0] : undefined;
@@ -194,13 +195,13 @@ async function updateHostedPageDraftWithClient(client: HostedPageEditorDbClient,
   if (error) throw new HostedPageEditorError(error.message ?? "Draft could not be saved.", 500);
 }
 
-async function markHostedPagePublished(email: string, version: string, publishedAt: string) {
+async function markHostedPagePublished(email: string, version: string, publishedAt: string, code?: string) {
   const localFile = getLocalHostedPageEditorFileFromEnv();
   if (localFile) {
-    return updateLocalHostedPage(localFile, email, { publishedVersion: version, publishedAt });
+    return updateLocalHostedPage(localFile, email, { publishedVersion: version, publishedAt }, code);
   }
 
-  const context = await getHostedPageEditorContext(email);
+  const context = await getHostedPageEditorContext(email, code);
   if (!context.configured || !context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
   const { error } = await getSupabaseAdmin()
@@ -217,25 +218,25 @@ async function markHostedPagePublished(email: string, version: string, published
   return { ...context.page, publishedVersion: version, publishedAt };
 }
 
-async function getHostedPageEditorContextFromLocalFile(filePath: string, email: string): Promise<HostedPageEditorContext> {
+async function getHostedPageEditorContextFromLocalFile(filePath: string, email: string, code?: string): Promise<HostedPageEditorContext> {
   const store = await readLocalStore(filePath);
   const normalizedEmail = normalizeEmail(email);
   const customer = store.customers.find((row) => normalizeEmail(String(row.email ?? "")) === normalizedEmail);
   if (!customer) return { configured: true, page: null, message: "No hosted page was found for this account." };
 
-  const pageRow = store.hosted_page_editor_pages.find((row) => row.customer_id === customer.id);
+  const pageRow = store.hosted_page_editor_pages.find((row) => row.customer_id === customer.id && (!code || row.code === code));
   if (!pageRow) return { configured: true, page: null, message: "No hosted page was found for this account." };
 
   const business = store.businesses.find((row) => row.id === pageRow.business_id);
   return { configured: true, page: normalizeEditorPage(pageRow, normalizeCustomer(customer)!, business) };
 }
 
-async function updateLocalHostedPage(filePath: string, email: string, patch: { draft?: HostedPageEditorDraft; businessName?: string; publishedVersion?: string; publishedAt?: string }) {
+async function updateLocalHostedPage(filePath: string, email: string, patch: { draft?: HostedPageEditorDraft; businessName?: string; publishedVersion?: string; publishedAt?: string }, code?: string) {
   const store = await readLocalStore(filePath);
   const normalizedEmail = normalizeEmail(email);
   const customer = store.customers.find((row) => normalizeEmail(String(row.email ?? "")) === normalizedEmail);
   if (!customer) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
-  const pageIndex = store.hosted_page_editor_pages.findIndex((row) => row.customer_id === customer.id);
+  const pageIndex = store.hosted_page_editor_pages.findIndex((row) => row.customer_id === customer.id && (!code || row.code === code));
   if (pageIndex === -1) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
   const page = store.hosted_page_editor_pages[pageIndex];

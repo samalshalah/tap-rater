@@ -6,7 +6,7 @@ import { HostedPageRepositoryError } from "@/lib/hosted-pages/repository";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(request: Request) {
   const auth = await requireCustomerApi();
   if (auth.response) return auth.response;
 
@@ -16,7 +16,9 @@ export async function POST() {
   }
 
   try {
-    const result = await publishHostedPageDraft(auth.session.email, storage);
+    const body = await request.json().catch(() => null);
+    const code = typeof body?.code === "string" ? body.code : undefined;
+    const result = await publishHostedPageDraft(auth.session.email, storage, code);
     return NextResponse.json({
       ok: true,
       page: result.page,

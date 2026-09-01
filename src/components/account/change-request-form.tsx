@@ -35,7 +35,7 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
 
   return (
     <form onSubmit={submitRequest} className="tr-card grid gap-3 p-4">
-      <p className="font-black text-ink">Request destination change</p>
+      <p className="font-medium text-ink">Request destination change</p>
       <input
         required
         value={tapraterId}
@@ -61,7 +61,7 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
         {status === "saving" ? "Sending..." : "Send request"}
       </button>
       {message ? (
-        <p className={`rounded-md px-3 py-2 text-sm font-semibold ${status === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
+        <p className={`rounded-md px-3 py-2 text-sm font-medium ${status === "success" ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
           {message}
         </p>
       ) : null}
