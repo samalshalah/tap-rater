@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     console.error("Hosted page publish failed", error);
     if (error instanceof HostedPageEditorError || error instanceof HostedPageRepositoryError) {
       return NextResponse.json(
-        { error: "We couldn't publish your changes. Your current live page is still available. Try again." },
+        { error: error.message || "We couldn't publish your changes. Your current live page is still available. Try again." },
         { status: error instanceof HostedPageEditorError ? error.status : 500 }
       );
     }

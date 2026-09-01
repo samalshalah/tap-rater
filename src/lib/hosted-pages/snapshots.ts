@@ -184,6 +184,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       title: `${escapeHtml(snapshot.businessName)} is unavailable`,
       body: `<p class="tr-copy">This Tap Rater page is not active right now. The permanent URL has been preserved and can be reactivated without changing the QR or NFC destination.</p>`,
       logoUrl: snapshot.logoUrl,
+      theme: snapshot.appearance?.theme,
       logoAlign: snapshot.appearance?.logoAlign,
       statusCode: "inactive"
     });
@@ -194,6 +195,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
     return renderShell({
       title: escapeHtml(snapshot.businessName),
       logoUrl: snapshot.logoUrl,
+      theme: snapshot.appearance?.theme,
       accentColor: snapshot.appearance?.accentColor,
       logoAlign: snapshot.appearance?.logoAlign,
       body: `
@@ -218,6 +220,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
   return renderShell({
     title: escapeHtml(snapshot.businessName),
     logoUrl: snapshot.logoUrl,
+    theme: snapshot.appearance?.theme,
     accentColor: snapshot.appearance?.accentColor,
     logoAlign: snapshot.appearance?.logoAlign,
     body: `
@@ -294,6 +297,7 @@ function renderShell({
   title,
   body,
   logoUrl,
+  theme,
   accentColor,
   logoAlign,
   statusCode
@@ -301,11 +305,13 @@ function renderShell({
   title: string;
   body: string;
   logoUrl?: string;
+  theme?: HostedPageAppearance["theme"];
   accentColor?: string;
   logoAlign?: "left" | "center" | "right";
   statusCode: string;
 }) {
-  const accent = accentColor && /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : "#0f766e";
+  const themeTokens = getThemeTokens(theme);
+  const accent = accentColor && /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : themeTokens.accent;
   const logoMargin = logoAlign === "left" ? "0 auto 24px 0" : logoAlign === "right" ? "0 0 24px auto" : "0 auto 24px";
 
   return `<!doctype html>
@@ -316,11 +322,11 @@ function renderShell({
   <meta name="robots" content="noindex">
   <title>${stripTags(title)}</title>
   <style>
-    :root { color-scheme: light; --accent: ${accent}; --ink: #17211f; --muted: #62706c; --line: #dfe7e3; --soft: #f6f8f6; }
+    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
-    .tr-card { border: 1px solid var(--line); border-radius: 8px; background: #fff; padding: clamp(24px, 7vw, 42px); box-shadow: 0 18px 50px rgba(23, 33, 31, 0.08); }
+    .tr-card { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: clamp(24px, 7vw, 42px); box-shadow: 0 18px 50px rgba(23, 33, 31, 0.08); }
     .tr-logo { display: block; width: 72px; height: 72px; object-fit: contain; border-radius: 8px; margin: ${logoMargin}; }
     .tr-kicker { margin: 0 0 10px; color: var(--accent); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0; }
     h1 { margin: 0; font-size: clamp(2rem, 10vw, 3rem); line-height: 1; letter-spacing: 0; }
@@ -353,6 +359,42 @@ function escapeAttribute(value: string) {
 
 function stripTags(value: string) {
   return value.replace(/<[^>]*>/g, "");
+}
+
+function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
+  if (theme === "warm") {
+    return {
+      colorScheme: "light",
+      accent: "#b45309",
+      ink: "#231815",
+      muted: "#725f55",
+      line: "#eadfd6",
+      soft: "#fbf6f0",
+      card: "#fffaf5"
+    };
+  }
+
+  if (theme === "bold" || theme === "dark") {
+    return {
+      colorScheme: "dark",
+      accent: "#14b8a6",
+      ink: "#f8fafc",
+      muted: "#cbd5e1",
+      line: "#334155",
+      soft: "#0f172a",
+      card: "#111827"
+    };
+  }
+
+  return {
+    colorScheme: "light",
+    accent: "#0f766e",
+    ink: "#17211f",
+    muted: "#62706c",
+    line: "#dfe7e3",
+    soft: "#f6f8f6",
+    card: "#ffffff"
+  };
 }
 
 function isHostedButtonIconKey(value: unknown): value is HostedPageEditorButtonType {

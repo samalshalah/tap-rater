@@ -188,27 +188,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   return (
-    <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-      <section className="grid gap-5">
-        <div className="tr-card min-w-0 p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="tr-eyebrow text-muted">Permanent URL</p>
-              <p className="mt-1 break-all text-sm font-medium text-ink">{permanentUrl}</p>
-            </div>
-            <div className="grid gap-2 sm:flex sm:flex-wrap">
-              <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost text-sm">
-                <Copy size={16} /> Copy
-              </button>
-              <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost text-sm">
-                <ExternalLink size={16} /> Open Page
-              </a>
-            </div>
-          </div>
-          <p className="mt-3 break-words text-sm text-muted">Code <span className="break-all">{page.code}</span> is permanent and cannot be edited.</p>
-        </div>
-
-        <div className="tr-card grid gap-4 p-5">
+    <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_390px]">
+      <section className="grid gap-4">
+        <div className="tr-card grid gap-3 p-4">
           <div>
             <p className="tr-eyebrow">Page information</p>
             <h2 className="tr-card-title mt-2">Business</h2>
@@ -221,8 +203,8 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             Supporting text
             <input className="tr-input" value={draft.description ?? ""} onChange={(event) => updateDraft({ ...draft, description: event.target.value })} />
           </label>
-          <div className="grid gap-3 sm:grid-cols-[88px_1fr] sm:items-center">
-            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
+          <div className="grid gap-3 sm:grid-cols-[72px_1fr] sm:items-center">
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-md border border-line bg-white">
               {draft.logoUrl ? <img src={draft.logoUrl} alt="" className="h-full w-full object-contain" /> : <span className="text-xs font-medium text-muted">Logo</span>}
             </div>
             <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
@@ -254,7 +236,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
           </div>
         </div>
 
-        <div className="tr-card grid gap-4 p-5">
+        <div className="tr-card grid gap-3 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="tr-eyebrow">Buttons / links</p>
@@ -280,10 +262,20 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
               ))}
             </div>
           ) : null}
-          <div className="grid gap-3">
+          <div className="grid gap-2">
             {orderedButtons.map((button, index) => (
-              <div key={button.id} className="rounded-lg border border-line bg-soft p-3">
-                <div className="flex flex-wrap items-center justify-end gap-2">
+              <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-soft p-2.5 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-end">
+                  <label className="tr-field-label">
+                    Label
+                    <div className="flex items-center gap-2">
+                      <HostedButtonMark type={button.type} />
+                      <input className="tr-input" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                    </div>
+                  </label>
+                  <label className="tr-field-label">
+                    Destination URL
+                    <input className="tr-input" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
+                  </label>
                   <div className="flex gap-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">
                       <ArrowUp size={16} />
@@ -296,25 +288,11 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                     </button>
                   </div>
                 </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-[180px_1fr]">
-                  <label className="tr-field-label">
-                    Label
-                    <div className="flex items-center gap-2">
-                      <HostedButtonMark type={button.type} />
-                      <input className="tr-input" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
-                    </div>
-                  </label>
-                  <label className="tr-field-label">
-                    Destination URL
-                    <input className="tr-input" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
-                  </label>
-                </div>
-              </div>
             ))}
           </div>
         </div>
 
-        <div className="tr-card grid gap-4 p-5">
+        <div className="tr-card grid gap-3 p-4">
           <div>
             <p className="tr-eyebrow">Appearance</p>
             <h2 className="tr-card-title mt-2">Page Style</h2>
@@ -341,7 +319,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
       </section>
 
-      <aside className="grid h-fit gap-4 lg:sticky lg:top-24">
+      <aside className="grid h-fit gap-3 lg:sticky lg:top-4">
         <div className="tr-card p-4">
           <div className="mb-3 flex items-center justify-between">
             <div>
@@ -353,10 +331,22 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
             </button>
           </div>
           {previewMessage ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
-          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[640px] w-full rounded-md border border-line bg-white" />
+          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[500px] max-h-[52vh] min-h-[390px] w-full rounded-md border border-line bg-white" />
         </div>
         <div className="tr-card grid gap-3 p-4">
           <p className="tr-eyebrow">Publish</p>
+          <div className="min-w-0 rounded-md border border-line bg-soft px-3 py-2">
+            <p className="text-xs text-muted">Permanent URL</p>
+            <p className="mt-1 truncate text-sm font-medium text-ink">{permanentUrl}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
+                <Copy size={14} /> Copy
+              </button>
+              <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
+                <ExternalLink size={14} /> Open
+              </a>
+            </div>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary">
               <Save size={16} /> {status === "saving" ? "Saving..." : "Save Draft"}

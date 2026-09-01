@@ -76,9 +76,9 @@ function StandDetailModal({
   const isMultiLink = stand.kind === "multilink";
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
-      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-6xl" : "max-w-4xl"}`}>
-        <div className="flex items-start justify-between gap-4 border-b border-line p-5">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-2" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
+      <div className={`max-h-[calc(100vh-1rem)] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-7xl" : "max-w-4xl"}`}>
+        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-3">
           <div>
             <p className="tr-eyebrow">{isMultiLink ? "Multi-Link stand setup" : "Purchased stand"}</p>
             <h2 id="stand-detail-title" className="mt-2 text-xl font-medium text-ink">{stand.title}</h2>
@@ -89,7 +89,7 @@ function StandDetailModal({
           </button>
         </div>
         {isMultiLink ? (
-          <div className="p-5">
+          <div className="p-4">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} />
             ) : (
