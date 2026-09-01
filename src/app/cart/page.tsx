@@ -11,14 +11,16 @@ export default function CartPage() {
     <main className="tr-public-shell text-ink">
       <SectionShell spacing="compact">
         <div className="tr-container">
-        <p className="tr-eyebrow">Cart</p>
-        <h1 className="tr-page-title mt-4 max-w-4xl">Your configured stands</h1>
-        <p className="tr-body mt-5 max-w-3xl text-[1.05rem]">
-          Review each QR + NFC stand before checkout. Quantity duplicates the exact same configured stand.
-        </p>
-        <div className="mt-10">
-          <CartTable stripeMode={stripeMode} />
-        </div>
+          <p className="tr-eyebrow">Cart</p>
+          <h1 className="mt-4 max-w-4xl text-[2.1rem] font-medium leading-tight text-ink sm:text-[2.55rem] md:text-[2.85rem]">
+            Review your order
+          </h1>
+          <p className="tr-body mt-4 max-w-3xl text-base">
+            Confirm each configured stand before Tap Rater reviews proof, payment, shipping, and production details.
+          </p>
+          <div className="mt-9">
+            <CartTable stripeMode={stripeMode} />
+          </div>
         </div>
       </SectionShell>
     </main>

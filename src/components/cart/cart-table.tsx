@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { CircleUserRound, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, getProductBySlug } from "@/lib/products";
 import {
   calculateCartTotalCents,
   getCartItemKey,
   getCartRows,
+  type CartRow,
 } from "@/lib/cart";
+import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals";
 
 export function CartTable({
   stripeMode = "test",
@@ -146,10 +148,11 @@ export function CartTable({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="tr-card grid gap-0 p-4 sm:p-6">
         {rows.map((row) => {
           const cartKey = getCartItemKey(row.item);
+          const rowImage = getCartRowImage(row);
           const hasHostedMultiLink = row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink";
           const connectionLabel = hasHostedMultiLink
             ? "Hosted Multi-Link"
@@ -161,92 +164,108 @@ export function CartTable({
           return (
             <div
               key={cartKey}
-              className="grid gap-5 border-b border-line py-5 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-start"
+              className="grid gap-5 border-b border-line py-5 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-start"
             >
+              <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-md border border-line bg-soft">
+                {rowImage.src ? (
+                  <img
+                    src={rowImage.src}
+                    alt={rowImage.alt}
+                    className="h-full w-full object-contain p-2"
+                  />
+                ) : (
+                  <span className="text-xs text-muted">Stand</span>
+                )}
+              </div>
               <div className="min-w-0">
-                <p className="text-lg font-semibold leading-6 text-ink">{row.product.title}</p>
-                <p className="mt-1 text-sm font-semibold text-brand">
+                <p className="text-base font-medium leading-6 text-ink">{row.product.title}</p>
+                <p className="mt-1 text-sm font-medium text-brand">
                   {row.option.label}
                 </p>
                 <div className="mt-3 grid gap-1 text-sm leading-6 text-muted">
                   {row.item.setup?.destinationUrl ? (
                     <p className="break-words">
-                      <strong className="text-ink">Destination link:</strong>{" "}
-                      {row.item.setup.destinationUrl}
+                      <span className="text-muted">Destination link:</span>{" "}
+                      <span className="text-ink">{row.item.setup.destinationUrl}</span>
                     </p>
                   ) : null}
                   {row.item.setup?.businessName ? (
                     <p>
-                      <strong className="text-ink">Business name:</strong>{" "}
-                      {row.item.setup.businessName}
+                      <span className="text-muted">Business name:</span>{" "}
+                      <span className="text-ink">{row.item.setup.businessName}</span>
                     </p>
                   ) : null}
                   {row.option.requiresLogo ? (
                     <p>
-                      <strong className="text-ink">Logo:</strong>{" "}
-                      {row.item.setup?.logoMediaUrl ||
-                      row.item.setup?.logoStorageKey
-                        ? "Uploaded"
-                        : row.item.setup?.designAssistanceRequested
-                          ? "Tap Rater will prepare"
-                          : "Missing"}
+                      <span className="text-muted">Logo:</span>{" "}
+                      <span className="text-ink">
+                        {row.item.setup?.logoMediaUrl ||
+                        row.item.setup?.logoStorageKey
+                          ? "Uploaded"
+                          : row.item.setup?.designAssistanceRequested
+                            ? "Tap Rater will prepare"
+                            : "Missing"}
+                      </span>
                     </p>
                   ) : null}
                   {connectionLabel ? (
                     <p>
-                      <strong className="text-ink">Connection:</strong> {connectionLabel}
+                      <span className="text-muted">Connection:</span>{" "}
+                      <span className="text-ink">{connectionLabel}</span>
                     </p>
                   ) : null}
                   {hasHostedMultiLink && row.item.setup?.monthlyPriceCents ? (
                     <p>
-                      <strong className="text-ink">Service:</strong>{" "}
-                      {formatPrice(row.item.setup.monthlyPriceCents)}/mo Multi-Link hosting
+                      <span className="text-muted">Service:</span>{" "}
+                      <span className="text-ink">{formatPrice(row.item.setup.monthlyPriceCents)}/mo Multi-Link hosting</span>
                     </p>
                   ) : null}
                   {hasHostedMultiLink ? (
                     <p>
-                      <strong className="text-ink">Links:</strong>{" "}
-                      {row.item.setup?.multiLinkButtons?.length ? `${row.item.setup.multiLinkButtons.length} added` : "Skipped for later"}
+                      <span className="text-muted">Links:</span>{" "}
+                      <span className="text-ink">{row.item.setup?.multiLinkButtons?.length ? `${row.item.setup.multiLinkButtons.length} added` : "Skipped for later"}</span>
                     </p>
                   ) : null}
                   {row.option.requiresFinalProof ? (
                     <p>
-                      <strong className="text-ink">Front proof:</strong>{" "}
-                      {row.item.setup?.proofApproved
-                        ? "Approved"
-                        : row.item.setup?.designAssistanceRequested
-                          ? "Tap Rater will send proof"
-                          : "Approval required"}
+                      <span className="text-muted">Front proof:</span>{" "}
+                      <span className="text-ink">
+                        {row.item.setup?.proofApproved
+                          ? "Approved"
+                          : row.item.setup?.designAssistanceRequested
+                            ? "Tap Rater will send proof"
+                            : "Approval required"}
+                      </span>
                     </p>
                   ) : null}
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center md:min-w-56 md:grid-cols-1 md:justify-items-end">
-                <div className="flex h-11 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
+              <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center md:min-w-52 md:grid-cols-1 md:justify-items-end">
+                <div className="flex h-10 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
                   <button
                     type="button"
                     aria-label={`Decrease ${row.product.title} quantity`}
-                    className="grid h-11 w-11 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
+                    className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
                     disabled={row.item.quantity <= 1}
                     onClick={() => decreaseItem(cartKey)}
                   >
                     <Minus size={16} />
                   </button>
-                  <span className="grid h-11 min-w-12 place-items-center border-x border-line px-3 text-sm font-semibold text-ink">
+                  <span className="grid h-10 min-w-11 place-items-center border-x border-line px-3 text-sm font-medium text-ink">
                     {row.item.quantity}
                   </span>
                   <button
                     type="button"
                     aria-label={`Increase ${row.product.title} quantity`}
-                    className="grid h-11 w-11 place-items-center text-ink hover:bg-soft"
+                    className="grid h-10 w-10 place-items-center text-ink hover:bg-soft"
                     onClick={() => increaseItem(cartKey)}
                   >
                     <Plus size={16} />
                   </button>
                 </div>
                 <div className="text-left sm:text-center md:text-right">
-                  <p className="tr-caption font-semibold uppercase">Item total</p>
-                  <p className="text-lg font-semibold text-ink">
+                  <p className="tr-caption uppercase">Item total</p>
+                  <p className="text-lg font-medium text-ink">
                     {formatPrice(row.lineSubtotalCents)}
                   </p>
                   <p className="tr-caption">{formatPrice(row.unitPriceCents)} each</p>
@@ -267,26 +286,21 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink">{isLiveStripe ? "Checkout" : "Submit order"}</h2>
+          <h2 className="mt-2 text-[1.7rem] font-medium leading-tight text-ink">{isLiveStripe ? "Checkout" : "Order review"}</h2>
         </div>
         {!isLiveStripe ? (
           <div className="grid gap-3">
             {signedInCustomer ? (
-              <div className="rounded-md border border-line bg-soft p-3 text-sm">
-                <div className="flex items-start gap-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-brand">
-                    <CircleUserRound size={19} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-ink">Signed in account</p>
-                    <p className="mt-1 break-all text-muted">{signedInCustomer.email}</p>
-                    <p className="mt-1 text-muted">{checkoutName || "Customer name will be confirmed during review."}</p>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2 rounded-md border border-line bg-soft px-3 py-2 text-sm text-muted">
+                <CircleUserRound size={17} className="shrink-0 text-brand" />
+                <p className="min-w-0">
+                  Signed in as{" "}
+                  <span className="break-all text-ink">{signedInCustomer.email}</span>
+                </p>
               </div>
             ) : (
               <>
-                <label className="grid gap-2 text-sm font-semibold text-ink">
+                <label className="grid gap-2 text-sm font-medium text-ink">
                   Customer email
                   <input
                     type="email"
@@ -298,7 +312,7 @@ export function CartTable({
                     placeholder="customer@example.com"
                   />
                 </label>
-                <label className="grid gap-2 text-sm font-semibold text-ink">
+                <label className="grid gap-2 text-sm font-medium text-ink">
                   Customer name
                   <input
                     type="text"
@@ -316,15 +330,25 @@ export function CartTable({
         <div className="grid gap-3 border-y border-line py-4 text-sm">
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Subtotal</span>
-            <span className="font-semibold text-ink">{formatPrice(total)}</span>
+            <span className="font-medium text-ink">{formatPrice(total)}</span>
           </div>
+          {!isLiveStripe ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-muted">Payment</span>
+              <span className="text-right font-medium text-ink">No payment due now</span>
+            </div>
+          ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Shipping</span>
-            <span className="font-semibold text-ink">Reviewed after payment</span>
+            <span className="text-right font-medium text-ink">{isLiveStripe ? "Reviewed after payment" : "Confirmed before payment"}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Order total</span>
+            <span className="font-medium text-ink">{formatPrice(total)}</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
-            <span className="font-semibold text-ink">Total today</span>
-            <span className="font-semibold text-ink">{formatPrice(total)}</span>
+            <span className="font-medium text-ink">Due now</span>
+            <span className="font-medium text-ink">{isLiveStripe ? formatPrice(total) : "$0.00"}</span>
           </div>
         </div>
         <button
@@ -336,15 +360,15 @@ export function CartTable({
           {isCheckingOut
             ? isLiveStripe
               ? "Starting secure checkout..."
-              : "Submitting order..."
+              : "Submitting review request..."
             : isLiveStripe
               ? "Secure checkout"
-              : "Submit order"}
+              : "Submit order for review"}
         </button>
         <p className="tr-body-sm">
           {isLiveStripe
             ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
-            : "Payment will be handled after Tap Rater reviews the submitted order."}
+            : "Tap Rater will review your proof, payment, shipping, and production details before production."}
         </p>
         {checkoutError ? (
           <p className="tr-status-warning" role="alert">{checkoutError}</p>
@@ -352,4 +376,26 @@ export function CartTable({
       </aside>
     </div>
   );
+}
+
+function getCartRowImage(row: CartRow) {
+  const product = getProductBySlug(row.item.productId);
+  if (product) {
+    const visual = getProductVisual(product);
+    return visual;
+  }
+
+  const proofPreviewData = row.item.setup?.proofPreviewData;
+  const previewImage =
+    readString(proofPreviewData?.previewImageUrl) ??
+    readString(row.item.setup?.frontTemplateUrl) ??
+    readString(row.item.setup?.centerAssetUrl);
+
+  return previewImage
+    ? { src: previewImage, alt: row.product.title }
+    : { ...productImageFallback, alt: row.product.title };
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
