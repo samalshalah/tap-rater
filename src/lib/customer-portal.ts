@@ -67,6 +67,11 @@ export type CustomerPortalStand = {
   kind: "standard" | "branded" | "multilink" | "custom";
   businessName?: string;
   destinationUrl?: string;
+  logoUrl?: string;
+  proofPreviewUrl?: string;
+  proofTemplateUrl?: string;
+  qrTargetUrl?: string;
+  nfcTargetUrl?: string;
   hostedPageUrl?: string;
   hostedPageCode?: string;
   proofStatus: "not_needed" | "needs_review" | "approved";
@@ -323,6 +328,11 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         kind,
         businessName: summary.businessName,
         destinationUrl,
+        logoUrl: summary.logoMediaUrl,
+        proofPreviewUrl: readProofPreviewString(rawItem.setup, "previewImageUrl") ?? summary.productionArtwork?.url ?? summary.frontTemplateUrl,
+        proofTemplateUrl: summary.frontTemplateUrl,
+        qrTargetUrl: summary.qrTargetUrl,
+        nfcTargetUrl: summary.nfcTargetUrl,
         hostedPageUrl: hostedPageUrl ?? subscription?.hostedPageUrl,
         hostedPageCode: hostedPageCode ?? subscription?.permanentCode,
         proofStatus,
@@ -337,6 +347,15 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
       };
     })
   );
+}
+
+function readProofPreviewString(setup: Record<string, unknown> | undefined, key: string) {
+  const proofPreviewData = setup?.proofPreviewData;
+  if (!proofPreviewData || typeof proofPreviewData !== "object") {
+    return undefined;
+  }
+
+  return readString((proofPreviewData as Record<string, unknown>)[key]);
 }
 
 function normalizeOrderLineItem(row: Record<string, unknown>, fallbackTitle: string): OrderLineItem {
