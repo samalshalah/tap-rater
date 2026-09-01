@@ -17,10 +17,12 @@ export function CartTable({
 }: {
   stripeMode?: "test" | "live";
 }) {
-  const { decreaseItem, increaseItem, items, removeItem } = useCart();
+  const { clearCart, decreaseItem, increaseItem, items, removeItem } = useCart();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerName, setCustomerName] = useState("");
   const isLiveStripe = stripeMode === "live";
 
   const rows = getCartRows(items);
@@ -59,6 +61,38 @@ export function CartTable({
       router.push(`/checkout?session_id=${encodeURIComponent(body.sessionId)}`);
     } catch {
       setCheckoutError("Stripe Checkout is not available yet.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  }
+
+  async function submitManualOrder() {
+    setIsCheckingOut(true);
+    setCheckoutError("");
+
+    try {
+      const response = await fetch("/api/checkout/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items,
+          customer: {
+            email: customerEmail,
+            name: customerName
+          }
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok || body.checkoutMode !== "manual" || typeof body.orderReference !== "string") {
+        setCheckoutError(body.error ?? "Order could not be submitted.");
+        return;
+      }
+
+      clearCart();
+      router.push(`/checkout/success?manual_order=${encodeURIComponent(body.orderReference)}`);
+    } catch {
+      setCheckoutError("Order could not be submitted.");
     } finally {
       setIsCheckingOut(false);
     }
@@ -205,8 +239,35 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink">Checkout</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-ink">{isLiveStripe ? "Checkout" : "Submit order"}</h2>
         </div>
+        {!isLiveStripe ? (
+          <div className="grid gap-3">
+            <label className="grid gap-2 text-sm font-semibold text-ink">
+              Customer email
+              <input
+                type="email"
+                value={customerEmail}
+                onChange={(event) => setCustomerEmail(event.target.value)}
+                autoComplete="email"
+                required
+                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                placeholder="customer@example.com"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-ink">
+              Customer name
+              <input
+                type="text"
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+                autoComplete="name"
+                className="min-h-11 rounded-md border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+                placeholder="Business or customer name"
+              />
+            </label>
+          </div>
+        ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Subtotal</span>
@@ -223,20 +284,22 @@ export function CartTable({
         </div>
         <button
           type="button"
-          disabled={isCheckingOut}
+          disabled={isCheckingOut || (!isLiveStripe && !customerEmail.trim())}
           className="tr-button-primary min-h-12 w-full"
-          onClick={startCheckout}
+          onClick={isLiveStripe ? startCheckout : submitManualOrder}
         >
           {isCheckingOut
-            ? "Starting secure checkout..."
+            ? isLiveStripe
+              ? "Starting secure checkout..."
+              : "Submitting order..."
             : isLiveStripe
               ? "Secure checkout"
-              : "Secure checkout in Stripe test mode"}
+              : "Submit order"}
         </button>
         <p className="tr-body-sm">
           {isLiveStripe
             ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
-            : "Test mode only. Stripe payment opens inside Tap Rater. No shipping fee is added today."}
+            : "Payment will be handled after Tap Rater reviews the submitted order."}
         </p>
         {checkoutError ? (
           <p className="tr-status-warning" role="alert">{checkoutError}</p>

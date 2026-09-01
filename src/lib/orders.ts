@@ -524,6 +524,69 @@ export async function createPendingOrderForCheckoutWithClient(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+export async function createManualPendingOrderForCheckout({
+  rows,
+  subtotalCents,
+  totalCents,
+  currency,
+  customerEmail,
+  customerName,
+  shippingAmountCents = 0,
+  shippingMode = "manual",
+  orderReference = createManualOrderReference()
+}: {
+  rows: CheckoutCartRow[];
+  subtotalCents: number;
+  totalCents: number;
+  currency: string;
+  customerEmail: string;
+  customerName?: string;
+  shippingAmountCents?: number;
+  shippingMode?: "manual" | "free" | "flat";
+  orderReference?: string;
+}) {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false as const, error: "Database persistence is not configured. Checkout is disabled until order persistence is ready." };
+  }
+
+  const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(rows, orderReference);
+  const now = new Date().toISOString();
+  const { data, error } = await (getSupabaseAdmin() as OrdersDbClient)
+    .from("orders")
+    .upsert(
+      {
+        stripe_checkout_session_id: orderReference,
+        status: "pending_payment",
+        payment_status: "manual_unpaid",
+        email: customerEmail,
+        customer_name: customerName?.trim() || null,
+        subtotal_cents: subtotalCents,
+        total_cents: totalCents,
+        currency,
+        line_items_json: lineItems,
+        customer_details_json: {
+          email: customerEmail,
+          name: customerName?.trim() || null,
+          source: "manual_checkout"
+        },
+        shipping_amount_cents: shippingAmountCents,
+        shipping_mode: shippingMode,
+        production_status: "not_started",
+        shipping_status: "not_shipped",
+        internal_notes: "Manual unpaid order submitted from cart while Stripe checkout is bypassed.",
+        admin_fulfillment_notes: "",
+        updated_at: now
+      },
+      { onConflict: "stripe_checkout_session_id" }
+    )
+    .select("id, stripe_checkout_session_id")
+    .maybeSingle();
+
+  return error
+    ? { ok: false as const, error: error.message }
+    : { ok: true as const, orderReference, orderId: data?.id ? String(data.id) : undefined };
+}
+
 export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSessionLike): Promise<PaidOrderSaveResult> {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured." };
@@ -783,6 +846,14 @@ function isManualProductionWarningCode(value: unknown): value is ManualProductio
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value : undefined;
+}
+
+function createManualOrderReference() {
+  try {
+    return `manual_${crypto.randomUUID()}`;
+  } catch {
+    return `manual_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  }
 }
 
 async function getOrderByStripeCheckoutSessionId(client: OrdersDbClient, stripeCheckoutSessionId: string): Promise<OrderRecord | null> {

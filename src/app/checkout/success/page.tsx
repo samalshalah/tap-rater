@@ -3,6 +3,7 @@ import Link from "next/link";
 type CheckoutSuccessPageProps = {
   searchParams?: Promise<{
     session_id?: string;
+    manual_order?: string;
   }>;
 };
 
@@ -14,6 +15,8 @@ export const metadata = {
 export default async function CheckoutSuccessPage({ searchParams }: CheckoutSuccessPageProps) {
   const params = await searchParams;
   const sessionId = typeof params?.session_id === "string" ? params.session_id : "";
+  const manualOrderReference = typeof params?.manual_order === "string" ? params.manual_order : "";
+  const isManualOrder = Boolean(manualOrderReference);
 
   return (
     <main className="min-h-screen bg-[#f7f8fa] px-4 py-16 text-ink">
@@ -21,14 +24,19 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
         <p className="tr-eyebrow">Order received</p>
         <h1 className="tr-page-title mt-3">Your order was received</h1>
         <p className="mt-4 leading-7 text-muted">
-          Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details
-          before fulfillment starts.
+          {isManualOrder
+            ? "Tap Rater will review your stand setup and contact you with the next step for payment and fulfillment."
+            : "Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details before fulfillment starts."}
         </p>
         <p className="mt-3 leading-7 text-muted">
           Standard Direct stands use NFC pointed directly to the destination URL approved during setup.
           Tap Rater reviews the order before fulfillment.
         </p>
-        {sessionId ? (
+        {manualOrderReference ? (
+          <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">
+            Order reference: <span className="font-semibold text-ink">{manualOrderReference}</span>
+          </p>
+        ) : sessionId ? (
           <p className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-muted">
             Need help with this order? Contact support and include the checkout reference from your payment confirmation.
           </p>

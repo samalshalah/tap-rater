@@ -18,6 +18,7 @@ type CartContextValue = {
   decreaseItem: (productId: string) => void;
   increaseItem: (productId: string) => void;
   removeItem: (productId: string) => void;
+  clearCart: () => void;
   count: number;
 };
 
@@ -47,7 +48,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       addItem: (item) => setItems((current) => mergeCartItem(current, item)),
       decreaseItem: (productId) => setItems((current) => updateCartQuantity(current, productId, -1)),
       increaseItem: (productId) => setItems((current) => updateCartQuantity(current, productId, 1)),
-      removeItem: (productId) => setItems((current) => removeCartItem(current, productId))
+      removeItem: (productId) => setItems((current) => removeCartItem(current, productId)),
+      clearCart: () => setItems([])
     }),
     [items]
   );
