@@ -3,10 +3,18 @@
 import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import { useState } from "react";
+import { HostedPageEditor } from "@/components/account/hosted-page-editor";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
+import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 import { formatOrderReference } from "@/lib/order-reference";
 
-export function CustomerStandsManager({ stands }: { stands: CustomerPortalStand[] }) {
+export function CustomerStandsManager({
+  stands,
+  hostedPages = {}
+}: {
+  stands: CustomerPortalStand[];
+  hostedPages?: Record<string, HostedPageEditorRecord>;
+}) {
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
 
   if (!stands.length) {
@@ -20,7 +28,7 @@ export function CustomerStandsManager({ stands }: { stands: CustomerPortalStand[
           <StandCard key={stand.id} stand={stand} onOpen={() => setSelectedStand(stand)} />
         ))}
       </section>
-      {selectedStand ? <StandDetailModal stand={selectedStand} onClose={() => setSelectedStand(null)} /> : null}
+      {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} onClose={() => setSelectedStand(null)} /> : null}
     </>
   );
 }
@@ -40,8 +48,7 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
           <Link href={`/account/orders#order-${encodeURIComponent(formatOrderReference(stand.orderReference))}`} className="mt-2 inline-flex text-sm text-brand hover:underline">
             Order {formatOrderReference(stand.orderReference)}
           </Link>
-          <div className="mt-4 grid gap-2 text-sm md:grid-cols-2">
-            <StatusPill label="Production" value={formatStatus(stand.productionStatus)} />
+          <div className="mt-4 grid gap-2 text-sm md:max-w-sm">
             <StatusPill label="Shipping" value={formatStatus(stand.shippingStatus)} />
           </div>
           {isMultiLink && stand.hostedPageUrl ? (
@@ -51,13 +58,8 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          {isMultiLink ? (
-            <Link href={stand.primaryActionHref} className="tr-button-primary">
-              Manage links
-            </Link>
-          ) : null}
-          <button type="button" onClick={onOpen} className={isMultiLink ? "tr-button-secondary" : "tr-button-primary"}>
-            View stand
+          <button type="button" onClick={onOpen} className="tr-button-primary">
+            {isMultiLink ? "Set up landing page" : "View stand"}
           </button>
         </div>
       </div>
@@ -67,17 +69,21 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
 
 function StandDetailModal({
   stand,
+  hostedPage,
   onClose
 }: {
   stand: CustomerPortalStand;
+  hostedPage?: HostedPageEditorRecord;
   onClose: () => void;
 }) {
+  const isMultiLink = stand.kind === "multilink";
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-6xl" : "max-w-4xl"}`}>
         <div className="flex items-start justify-between gap-4 border-b border-line p-5">
           <div>
-            <p className="tr-eyebrow">Purchased stand</p>
+            <p className="tr-eyebrow">{isMultiLink ? "Multi-Link stand setup" : "Purchased stand"}</p>
             <h2 id="stand-detail-title" className="mt-2 text-xl font-medium text-ink">{stand.title}</h2>
             <p className="mt-1 text-sm text-muted">Order {formatOrderReference(stand.orderReference)}</p>
           </div>
@@ -85,6 +91,15 @@ function StandDetailModal({
             <X size={18} />
           </button>
         </div>
+        {isMultiLink ? (
+          <div className="p-5">
+            {hostedPage ? (
+              <HostedPageEditor initialPage={hostedPage} />
+            ) : (
+              <EmptyState message="This Multi-Link landing page is being prepared. The account is connected, but the editable page record is not available yet." />
+            )}
+          </div>
+        ) : (
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
           <div className="rounded-md border border-line bg-soft p-4">
             {stand.proofPreviewUrl ? (
@@ -98,19 +113,14 @@ function StandDetailModal({
           <aside className="grid content-start gap-3 text-sm">
             <DetailLine label="Type" value={formatKind(stand.kind)} />
             <DetailLine label="Business" value={stand.businessName ?? "-"} />
-            <DetailLine label="Production" value={formatStatus(stand.productionStatus)} />
             <DetailLine label="Shipping" value={formatStatus(stand.shippingStatus)} />
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
             {stand.qrTargetUrl && stand.qrTargetUrl !== stand.destinationUrl ? <DetailLink label="QR target" href={stand.qrTargetUrl} /> : null}
             {stand.nfcTargetUrl && stand.nfcTargetUrl !== stand.destinationUrl ? <DetailLink label="NFC target" href={stand.nfcTargetUrl} /> : null}
-            {stand.kind === "multilink" && stand.primaryActionHref ? (
-              <Link href={stand.primaryActionHref} className="tr-button-primary justify-center">
-                Manage Multi-Link page
-              </Link>
-            ) : null}
           </aside>
         </div>
+        )}
       </div>
     </div>
   );

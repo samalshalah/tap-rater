@@ -25,7 +25,7 @@ export default async function AccountPage() {
 
         <section className="grid gap-3 md:grid-cols-3">
           <SummaryCard label="Purchased stands" value={String(portal.stands.reduce((total, stand) => total + stand.quantity, 0))} />
-          <SummaryCard label="Open orders" value={String(portal.orders.filter((order) => order.shippingStatus !== "delivered").length)} />
+          <SummaryCard label="Orders" value={String(portal.orders.length)} />
           <SummaryCard label="Multi-Link pages" value={String(portal.stands.filter((stand) => stand.kind === "multilink").length)} />
         </section>
 
@@ -49,7 +49,7 @@ export default async function AccountPage() {
               <div>
                 <h2 className="text-lg font-medium text-ink">{formatOrderReference(latestOrder.reference)}</h2>
                 <p className="mt-1 text-sm text-muted">
-                  {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"} · {formatStatus(latestOrder.productionStatus)} · {formatStatus(latestOrder.shippingStatus)}
+                  {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"}
                 </p>
               </div>
               <Link href="/account/orders" className="tr-button-ghost self-start md:self-auto">Orders & billing</Link>
@@ -80,7 +80,7 @@ function buildDashboardActions(portal: CustomerPortalData) {
       id: "multilink-edit",
       title: "Manage Multi-Link page",
       body: editableMultiLinkStand.businessName ?? editableMultiLinkStand.title,
-      href: "/account/stands#multi-link-editor",
+      href: "/account/stands",
       cta: "Edit links"
     });
   }
@@ -125,8 +125,4 @@ function PortalMessage({ message }: { message: string }) {
 
 function EmptyState({ message }: { message: string }) {
   return <div className="rounded-md border border-dashed border-line bg-soft p-5 text-sm text-muted">{message}</div>;
-}
-
-function formatStatus(value: string) {
-  return value.replaceAll("_", " ");
 }

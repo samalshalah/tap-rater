@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerPortal, type CustomerPortalOrder } from "@/lib/customer-portal";
@@ -17,13 +16,13 @@ export default async function AccountOrdersPage() {
           <p className="tr-eyebrow">Orders & Billing</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Orders, invoices, and payments</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
-            Review submitted orders, invoice records, payment status, and recurring Multi-Link billing in one place.
+            Review invoice records, receipts, payment status, and recurring Multi-Link billing in one place.
           </p>
         </section>
 
         {pendingPayments.length ? (
           <section className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p>Some orders are waiting for payment review before production continues.</p>
+            <p>Some payments are waiting for Tap Rater review.</p>
           </section>
         ) : null}
 
@@ -31,7 +30,7 @@ export default async function AccountOrdersPage() {
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="tr-eyebrow">Order history</p>
-              <h2 className="mt-2 text-lg font-medium text-ink">Submitted orders</h2>
+              <h2 className="mt-2 text-lg font-medium text-ink">Invoices and payment history</h2>
             </div>
             <p className="text-sm text-muted">{portal.orders.length} order{portal.orders.length === 1 ? "" : "s"}</p>
           </div>
@@ -92,31 +91,21 @@ function OrderCard({ order }: { order: CustomerPortalOrder }) {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-mono text-sm uppercase text-ink">{reference}</h3>
             {order.createdAt ? <span className="text-sm text-muted">{new Date(order.createdAt).toLocaleDateString()}</span> : null}
-            <StatusBadge label={formatCustomerOrderStatus(order)} />
             <StatusBadge label={formatPayment(order)} tone={order.paymentStatus === "manual_unpaid" ? "warning" : "neutral"} />
           </div>
           <div className="mt-3 grid gap-2">
-            {order.items.map((item) => {
-              const multiLinkHref = getMultiLinkHref(item.lineItem);
-              return (
-                <div key={item.id} className="grid gap-2 rounded-md bg-soft px-3 py-2 text-sm md:grid-cols-[minmax(0,1fr)_160px_56px_96px_auto] md:items-center">
-                  <p className="text-ink">{item.title}</p>
-                  <p className="text-muted">{item.optionLabel}</p>
-                  <p className="text-muted md:text-center">Qty {item.quantity}</p>
-                  <p className="text-ink md:text-right">{formatPrice(item.lineSubtotalCents)}</p>
-                  {multiLinkHref ? (
-                    <Link href={multiLinkHref} className="tr-button-ghost justify-center whitespace-nowrap">
-                      Set up landing page
-                    </Link>
-                  ) : null}
-                </div>
-              );
-            })}
+            {order.items.map((item) => (
+              <div key={item.id} className="grid gap-2 rounded-md bg-soft px-3 py-2 text-sm md:grid-cols-[minmax(0,1fr)_160px_56px_96px] md:items-center">
+                <p className="text-ink">{item.title}</p>
+                <p className="text-muted">{item.optionLabel}</p>
+                <p className="text-muted md:text-center">Qty {item.quantity}</p>
+                <p className="text-ink md:text-right">{formatPrice(item.lineSubtotalCents)}</p>
+              </div>
+            ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
             <span>Payment method: {order.paymentMethodLabel}</span>
             {order.paymentReference ? <span>Reference: {order.paymentReference}</span> : null}
-            {order.shippingAmountCents > 0 ? <span>Shipping: {formatPrice(order.shippingAmountCents)}</span> : null}
           </div>
           {hasInvoiceActions ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -154,29 +143,4 @@ function formatPayment(order: { status: string; paymentStatus?: string }) {
 
 function formatStatus(value: string) {
   return value.replaceAll("_", " ");
-}
-
-function formatCustomerOrderStatus(order: Pick<CustomerPortalOrder, "paymentStatus" | "shippingStatus" | "status">) {
-  if (order.shippingStatus === "delivered") return "Delivered";
-  if (order.shippingStatus === "shipped") return "Shipped";
-  if (order.paymentStatus === "manual_unpaid") return "Order received";
-  if (order.status === "paid" || order.paymentStatus === "paid") return "Preparing order";
-  return "Order submitted";
-}
-
-function getMultiLinkHref(item: CustomerPortalOrder["items"][number]["lineItem"]) {
-  const optionId = item.optionId?.toLowerCase() ?? "";
-  const optionLabel = item.optionLabel?.toLowerCase() ?? "";
-  const code = readSetupString(item.setup, "hostedPageCode") ?? readSetupString(item.setup, "permanentPageCode");
-
-  if (item.destinationMode !== "HOSTED" && optionId !== "hosted_multilink" && !optionLabel.includes("multi-link")) {
-    return null;
-  }
-
-  return code ? `/account/stands?code=${encodeURIComponent(code)}#multi-link-editor` : "/account/stands#multi-link-editor";
-}
-
-function readSetupString(setup: Record<string, unknown> | undefined, key: string) {
-  const value = setup?.[key];
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
