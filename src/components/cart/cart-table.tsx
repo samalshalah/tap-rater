@@ -120,7 +120,7 @@ export function CartTable({
       clearCart();
       router.push(`/checkout/success?manual_order=${encodeURIComponent(body.orderReference)}`);
     } catch {
-      setCheckoutError("Order could not be submitted.");
+      setCheckoutError("Order could not be submitted. Please refresh the cart and try again, or contact Tap Rater support with your account email.");
     } finally {
       setIsCheckingOut(false);
     }

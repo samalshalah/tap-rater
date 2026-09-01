@@ -57,7 +57,20 @@ export async function POST(request: Request) {
   });
 
   if (!provisioning.ok) {
-    return NextResponse.json({ error: "Order was submitted, but customer account setup could not be created." }, { status: 500 });
+    console.warn("[manual-checkout] post_order_provisioning_failed", {
+      orderReference: result.orderReference,
+      orderId: result.orderId,
+      reason: provisioning.error
+    });
+
+    return NextResponse.json({
+      checkoutMode: "manual",
+      orderReference: result.orderReference,
+      orderId: result.orderId,
+      accountProvisioned: false,
+      hostedProvisioned: false,
+      provisioningWarning: "Order was submitted. Tap Rater will finish account setup during review."
+    });
   }
 
   return NextResponse.json({
