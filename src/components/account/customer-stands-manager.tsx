@@ -37,7 +37,9 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
             {stand.quantity > 1 ? <span className="rounded-full bg-soft px-2 py-1 text-xs text-muted">Qty {stand.quantity}</span> : null}
             <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-brand">{formatKind(stand.kind)}</span>
           </div>
-          <p className="mt-2 text-sm text-muted">Order {formatOrderReference(stand.orderReference)}</p>
+          <Link href={`/account/orders#order-${encodeURIComponent(formatOrderReference(stand.orderReference))}`} className="mt-2 inline-flex text-sm text-brand hover:underline">
+            Order {formatOrderReference(stand.orderReference)}
+          </Link>
           <div className="mt-4 grid gap-2 text-sm md:grid-cols-2">
             <StatusPill label="Production" value={formatStatus(stand.productionStatus)} />
             <StatusPill label="Shipping" value={formatStatus(stand.shippingStatus)} />

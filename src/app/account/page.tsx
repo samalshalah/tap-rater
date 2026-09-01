@@ -19,7 +19,7 @@ export default async function AccountPage() {
           <p className="tr-eyebrow">Overview</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Use this dashboard for the next step only. Full order records, stand setup, and billing are separated to keep the account easy to manage.
+            Use this dashboard for the next step only. Stands are managed separately from order, invoice, and payment history.
           </p>
         </section>
 
@@ -52,7 +52,7 @@ export default async function AccountPage() {
                   {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"} · {formatStatus(latestOrder.productionStatus)} · {formatStatus(latestOrder.shippingStatus)}
                 </p>
               </div>
-              <Link href="/account/orders" className="tr-button-ghost self-start md:self-auto">Order history</Link>
+              <Link href="/account/orders" className="tr-button-ghost self-start md:self-auto">Orders & billing</Link>
             </div>
           </section>
         ) : null}
@@ -63,20 +63,9 @@ export default async function AccountPage() {
 
 function buildDashboardActions(portal: CustomerPortalData) {
   const actions = [];
-  const proofStand = portal.stands.find((stand) => stand.proofStatus === "needs_review");
   const multiLinkStand = portal.stands.find((stand) => stand.kind === "multilink" && !stand.hostedPageUrl);
   const editableMultiLinkStand = portal.stands.find((stand) => stand.kind === "multilink" && stand.hostedPageUrl);
   const paymentOrder = portal.orders.find((order) => order.paymentStatus === "manual_unpaid");
-
-  if (proofStand) {
-    actions.push({
-      id: "proof",
-      title: "Review branded proof",
-      body: proofStand.title,
-      href: "/account/stands",
-      cta: "Open stand"
-    });
-  }
 
   if (multiLinkStand) {
     actions.push({
@@ -101,8 +90,8 @@ function buildDashboardActions(portal: CustomerPortalData) {
       id: "payment",
       title: "Payment pending review",
       body: formatOrderReference(paymentOrder.reference),
-      href: "/account/billing",
-      cta: "View billing"
+      href: "/account/orders",
+      cta: "View order"
     });
   }
 

@@ -152,6 +152,8 @@ export type StripeCheckoutSessionLike = {
     name?: string | null;
     phone?: string | null;
     address?: unknown;
+    payment_method_details?: Record<string, unknown>;
+    receipt_url?: string | null;
   } | null;
   shipping_details?: {
     name?: string | null;

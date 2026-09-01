@@ -3,7 +3,7 @@ import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
 import { provisionHostedSubscriptionFromCheckout } from "@/lib/hosted-subscription-provisioning";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
-import { savePaidOrderFromCheckoutSession } from "@/lib/orders";
+import { savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
 
 export async function POST(request: Request) {
   const stripeConfig = validateStripeWebhookConfig();
@@ -26,7 +26,8 @@ export async function POST(request: Request) {
       const session = event.data.object;
 
       if ("payment_status" in session && session.payment_status === "paid") {
-        const result = await savePaidOrderFromCheckoutSession(session);
+        const enrichedSession = await enrichCheckoutSessionForBilling(session);
+        const result = await savePaidOrderFromCheckoutSession(enrichedSession);
         if (!result.ok) {
           return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
         }
@@ -90,4 +91,65 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Stripe webhook signature verification failed." }, { status: 400 });
   }
+}
+
+async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLike): Promise<StripeCheckoutSessionLike> {
+  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+  const stripe = getStripeClient() as any;
+
+  if (!paymentIntentId || !stripe.paymentIntents?.retrieve) {
+    return session;
+  }
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+      expand: ["payment_method", "latest_charge"]
+    });
+    const paymentMethod = paymentIntent?.payment_method;
+    const latestCharge = paymentIntent?.latest_charge;
+    const paymentMethodDetails = readPaymentMethodDetails(paymentMethod);
+    const receiptUrl = typeof latestCharge?.receipt_url === "string" ? latestCharge.receipt_url : undefined;
+
+    if (!paymentMethodDetails && !receiptUrl) {
+      return session;
+    }
+
+    return {
+      ...session,
+      customer_details: {
+        ...(session.customer_details ?? {}),
+        ...(paymentMethodDetails ? { payment_method_details: paymentMethodDetails } : {}),
+        ...(receiptUrl ? { receipt_url: receiptUrl } : {})
+      }
+    };
+  } catch (error) {
+    console.warn("[stripe-webhook] payment_method_details_not_loaded", {
+      paymentIntentId,
+      errorName: error instanceof Error ? error.name : "UnknownError"
+    });
+    return session;
+  }
+}
+
+function readPaymentMethodDetails(paymentMethod: unknown) {
+  if (!paymentMethod || typeof paymentMethod !== "object") return null;
+  const row = paymentMethod as Record<string, any>;
+  const type = typeof row.type === "string" ? row.type : undefined;
+
+  if (type === "card" && row.card) {
+    return {
+      type,
+      brand: typeof row.card.brand === "string" ? row.card.brand : undefined,
+      last4: typeof row.card.last4 === "string" ? row.card.last4 : undefined
+    };
+  }
+
+  if (type === "paypal") {
+    return {
+      type,
+      paypalPayerEmail: typeof row.paypal?.payer_email === "string" ? row.paypal.payer_email : undefined
+    };
+  }
+
+  return type ? { type } : null;
 }

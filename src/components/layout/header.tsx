@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BriefcaseBusiness, ChevronDown, CircleUserRound, CreditCard, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, CircleUserRound, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
@@ -293,8 +293,7 @@ export function Header() {
 const accountLinks = [
   { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
   { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
-  { href: "/account/orders", label: "Orders", icon: PackageCheck },
-  { href: "/account/billing", label: "Billing", icon: CreditCard },
+  { href: "/account/orders", label: "Orders & billing", icon: PackageCheck },
   { href: "/account/business", label: "Business profile", icon: BriefcaseBusiness },
   { href: "/support", label: "Support", icon: LifeBuoy },
 ];

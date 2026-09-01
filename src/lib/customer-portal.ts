@@ -39,8 +39,14 @@ export type CustomerPortalOrder = {
   reference: string;
   status: string;
   paymentStatus?: string;
+  paymentMethodLabel: string;
+  paymentReference?: string;
+  invoiceUrl?: string;
+  receiptUrl?: string;
   productionStatus: string;
   shippingStatus: string;
+  subtotalCents: number;
+  shippingAmountCents: number;
   totalCents: number;
   currency: string;
   itemCount: number;
@@ -238,8 +244,14 @@ function normalizeOrder(row: unknown): CustomerPortalOrder | null {
     reference,
     status: readString(value.status) ?? "pending_payment",
     paymentStatus: readString(value.payment_status),
+    paymentMethodLabel: readPaymentMethodLabel(value),
+    paymentReference: readString(value.stripe_payment_intent_id),
+    invoiceUrl: readOrderUrl(value, ["invoice_url", "hosted_invoice_url", "invoicePdfUrl", "invoice_pdf_url"]),
+    receiptUrl: readOrderUrl(value, ["receipt_url", "receiptUrl"]),
     productionStatus: readString(value.production_status) ?? "not_started",
     shippingStatus: readString(value.shipping_status) ?? "not_shipped",
+    subtotalCents: readNumber(value.subtotal_cents) ?? 0,
+    shippingAmountCents: readNumber(value.shipping_amount_cents) ?? 0,
     totalCents: readNumber(value.total_cents) ?? 0,
     currency: readString(value.currency) ?? "usd",
     itemCount: countLineItems(value.line_items_json),
@@ -279,6 +291,43 @@ function readString(value: unknown) {
 
 function readNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function readPaymentMethodLabel(value: Record<string, unknown>) {
+  const methodDetails = readRecord(value.payment_method_details);
+  const customerDetails = readRecord(value.customer_details_json);
+  const nestedMethodDetails = readRecord(customerDetails.payment_method_details);
+  const source = Object.keys(methodDetails).length ? methodDetails : nestedMethodDetails;
+  const type = readString(source.type) ?? readString(value.payment_method_type) ?? readString(customerDetails.payment_method_type);
+  const brand = readString(source.brand) ?? readString(readRecord(source.card).brand);
+  const last4 = readString(source.last4) ?? readString(readRecord(source.card).last4);
+
+  if (type === "card" || brand || last4) {
+    return [brand ? capitalize(brand) : "Card", last4 ? `ending ${last4}` : undefined].filter(Boolean).join(" ");
+  }
+
+  const paypalEmail = readString(source.paypalPayerEmail) ?? readString(readRecord(source.paypal).payer_email);
+  if (type === "paypal" && paypalEmail) return `PayPal ${paypalEmail}`;
+  if (type === "paypal") return "PayPal";
+  if (type) return capitalize(type.replaceAll("_", " "));
+  if (readString(value.stripe_payment_intent_id)) return "Stripe payment";
+  if (readString(value.payment_status) === "manual_unpaid") return "Manual payment review";
+  return "Not recorded yet";
+}
+
+function readOrderUrl(value: Record<string, unknown>, keys: string[]) {
+  const customerDetails = readRecord(value.customer_details_json);
+  for (const key of keys) {
+    const direct = readString(value[key]);
+    if (direct) return direct;
+    const nested = readString(customerDetails[key]);
+    if (nested) return nested;
+  }
+  return undefined;
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function countLineItems(value: unknown) {

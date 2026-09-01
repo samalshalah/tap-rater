@@ -24,13 +24,24 @@ describe("customer portal repository", () => {
         {
           id: "order-1",
           stripe_checkout_session_id: "manual_123",
+          stripe_payment_intent_id: "pi_123",
           email: "owner@example.com",
           status: "pending_payment",
           payment_status: "manual_unpaid",
           production_status: "blocked",
           shipping_status: "not_shipped",
           total_cents: 4900,
+          subtotal_cents: 3900,
+          shipping_amount_cents: 1000,
           currency: "usd",
+          customer_details_json: {
+            payment_method_details: {
+              type: "card",
+              brand: "visa",
+              last4: "4242"
+            },
+            receipt_url: "https://pay.example/receipt"
+          },
           line_items_json: [
             {
               productId: "google-review-stand",
@@ -72,7 +83,16 @@ describe("customer portal repository", () => {
       destinationUrl: "https://example.com/review",
       tapCount: 2
     });
-    expect(portal.orders[0]).toMatchObject({ reference: "manual_123", paymentStatus: "manual_unpaid", itemCount: 1 });
+    expect(portal.orders[0]).toMatchObject({
+      reference: "manual_123",
+      paymentStatus: "manual_unpaid",
+      paymentMethodLabel: "Visa ending 4242",
+      paymentReference: "pi_123",
+      receiptUrl: "https://pay.example/receipt",
+      subtotalCents: 3900,
+      shippingAmountCents: 1000,
+      itemCount: 1
+    });
     expect(portal.stands[0]).toMatchObject({
       title: "Google Review Stand",
       lineItemIndex: 0,
