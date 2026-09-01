@@ -1918,9 +1918,9 @@ function TemplateProofPreview({
   templateUrl: string;
 }) {
   return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] overflow-hidden rounded-lg border border-line bg-white">
+    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] rounded-lg border border-line bg-white">
       <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute grid place-items-center overflow-hidden p-[2%]" style={regionStyle(brandedStandComposition.logoRegion)}>
+      <div className="absolute grid place-items-center p-[2%]" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logoMediaUrl ? (
           <img
             src={logoMediaUrl}
@@ -1935,10 +1935,12 @@ function TemplateProofPreview({
       </div>
       {showBusinessNameOnProof ? (
         <p
-          className="absolute overflow-hidden text-center font-black leading-tight text-ink"
+          className="absolute text-center font-black leading-tight text-ink"
           style={{
             ...regionStyle(brandedStandComposition.businessNameRegion),
-            fontSize: `${17 * fontSizePercent / 100}px`
+            fontSize: `${17 * fontSizePercent / 100}px`,
+            overflow: "visible",
+            whiteSpace: "nowrap"
           }}
         >
           {businessName || "Business name"}
@@ -1978,7 +1980,7 @@ function CleanProofPreview({
 }) {
   return (
     <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
-      <div className="grid min-h-16 w-full place-items-center overflow-hidden rounded-lg border border-dashed border-line bg-soft p-2">
+      <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
         {logoMediaUrl ? (
           <img
             src={logoMediaUrl}
