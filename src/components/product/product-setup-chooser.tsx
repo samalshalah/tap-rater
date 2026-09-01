@@ -738,8 +738,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
             <label
               className={
                 selectedLinkExperience === "multilink"
-                  ? "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                  : "grid cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
+                  ? "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-brand bg-panel p-3 transition"
+                  : "grid cursor-pointer grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
               }
             >
               <input
@@ -750,24 +750,20 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   setSelectedLinkExperience(event.target.checked ? "multilink" : "direct");
                   setError("");
                 }}
-                className="mt-1 h-4 w-4 accent-brand disabled:cursor-not-allowed"
+                className="mt-1 h-4 w-4 shrink-0 accent-brand disabled:cursor-not-allowed"
               />
               <span className="min-w-0">
-                <span className="flex flex-wrap items-start justify-between gap-2">
-                  <span className="text-base font-black leading-5 text-ink">Add Multi-Link hosted page</span>
+                <span className="flex items-start justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block text-base font-black leading-5 text-ink">Add Multi-Link hosted page</span>
+                    <span className="mt-1 block text-sm font-semibold leading-5 text-ink md:whitespace-nowrap">
+                      Optional add-on. QR + NFC open an editable Tap Rater page with up to 10 links.
+                    </span>
+                  </span>
                   <span className="shrink-0 text-sm font-black text-ink">+{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo</span>
-                </span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">Optional add-on. QR + NFC open an editable Tap Rater page with up to 10 links.</span>
-                <span className="mt-1 block text-xs leading-5 text-muted">
-                  Leave unchecked for direct setup with no monthly fee.
                 </span>
               </span>
             </label>
-            {selectedLinkExperience === "multilink" ? (
-              <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
-                Account included. Manage up to 10 links after purchase and change them anytime without replacing your stand.
-              </p>
-            ) : null}
           </div>
         ) : null}
 
