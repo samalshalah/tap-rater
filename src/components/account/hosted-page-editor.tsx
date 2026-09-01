@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Check, Copy, ExternalLink, Eye, Save, Upload } from "lucide-react";
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
 type EditorStatus = "idle" | "saving" | "saved" | "publishing" | "published" | "error";
@@ -12,7 +12,9 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   const [previewHtml, setPreviewHtml] = useState("");
   const [status, setStatus] = useState<EditorStatus>("idle");
   const [message, setMessage] = useState("");
+  const [previewMessage, setPreviewMessage] = useState("");
   const [isDirty, setIsDirty] = useState(false);
+  const previewRequestId = useRef(0);
 
   const permanentUrl = `https://taprater.com/p/${page.code}`;
   const orderedButtons = useMemo(() => [...draft.buttons].sort((a, b) => a.position - b.position), [draft.buttons]);
@@ -27,8 +29,11 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }, [isDirty]);
 
   useEffect(() => {
-    void refreshPreview(draft);
-  }, []);
+    const timeout = window.setTimeout(() => {
+      void refreshPreview(draft);
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [draft, page.code]);
 
   function updateDraft(next: HostedPageEditorDraft) {
     setDraft(next);
@@ -135,13 +140,21 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   async function refreshPreview(nextDraft = draft) {
+    const requestId = previewRequestId.current + 1;
+    previewRequestId.current = requestId;
+    setPreviewMessage("");
     const response = await fetch("/api/account/hosted-page/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code: page.code, draft: nextDraft })
     });
     const body = await response.json().catch(() => null);
-    if (response.ok) setPreviewHtml(body.html ?? "");
+    if (requestId !== previewRequestId.current) return;
+    if (response.ok) {
+      setPreviewHtml(body.html ?? "");
+      return;
+    }
+    setPreviewMessage(body?.error ?? "Preview could not be generated yet.");
   }
 
   async function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
@@ -296,6 +309,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
               <Eye size={16} /> Refresh
             </button>
           </div>
+          {previewMessage ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
           <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[640px] w-full rounded-md border border-line bg-white" />
         </div>
         <div className="tr-card grid gap-3 p-4">
