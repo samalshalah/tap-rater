@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
-import { PageHero, SectionShell } from "@/components/storefront/section";
+import { SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -49,50 +49,54 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="tr-public-shell text-ink">
-      <PageHero
-        eyebrow="Tap Rater shop"
-        title="Shop NFC and QR stands."
-        body="Browse by stand type or business use, then choose the product that fits the customer action."
-      />
-
       <SectionShell tone="soft" spacing="compact">
         <div
           id="stand-types"
           className="tr-container scroll-mt-24"
         >
           <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
-            <div className="lg:hidden">
-              <details className="tr-card-compact group p-0">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
-                  <span className="flex min-h-12 items-center gap-2 px-4">
-                    <SlidersHorizontal size={17} aria-hidden="true" />
-                    Filters
-                  </span>
-                  <span className="px-4 text-brand">
-                    {selectedType || selectedUse ? "Active" : "Type and use"}
-                  </span>
-                </summary>
-                <div className="mt-4 border-t border-line pt-4">
-                  <FilterPanelContent
-                    businessUses={businessUses}
-                    products={products}
-                    selectedType={selectedType}
-                    selectedUse={selectedUse}
-                    standTypes={standTypes}
-                  />
-                </div>
-              </details>
-            </div>
+            <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+              <div>
+                <p className="tr-eyebrow">Tap Rater shop</p>
+                <h1 className="tr-page-title mt-4">Shop NFC and QR stands.</h1>
+                <p className="tr-page-hero-body mt-4">
+                  Browse by stand type or business use, then choose the product that fits the customer action.
+                </p>
+              </div>
 
-            <aside className="tr-card-compact hidden h-fit p-5 lg:sticky lg:top-24 lg:block">
-              <FilterPanelContent
-                businessUses={businessUses}
-                products={products}
-                selectedType={selectedType}
-                selectedUse={selectedUse}
-                standTypes={standTypes}
-              />
-            </aside>
+              <div className="lg:hidden">
+                <details className="tr-card-compact group p-0">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
+                    <span className="flex min-h-12 items-center gap-2 px-4">
+                      <SlidersHorizontal size={17} aria-hidden="true" />
+                      Filters
+                    </span>
+                    <span className="px-4 text-brand">
+                      {selectedType || selectedUse ? "Active" : "Type and use"}
+                    </span>
+                  </summary>
+                  <div className="mt-4 border-t border-line pt-4">
+                    <FilterPanelContent
+                      businessUses={businessUses}
+                      products={products}
+                      selectedType={selectedType}
+                      selectedUse={selectedUse}
+                      standTypes={standTypes}
+                    />
+                  </div>
+                </details>
+              </div>
+
+              <aside className="tr-card-compact hidden h-fit p-5 lg:block">
+                <FilterPanelContent
+                  businessUses={businessUses}
+                  products={products}
+                  selectedType={selectedType}
+                  selectedUse={selectedUse}
+                  standTypes={standTypes}
+                />
+              </aside>
+            </div>
 
             <div>
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
