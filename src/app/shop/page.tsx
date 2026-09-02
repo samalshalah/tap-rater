@@ -62,7 +62,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </p>
           </div>
           <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
-            <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
+            <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <div className="lg:hidden">
                 <details className="tr-card-compact group p-0">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
