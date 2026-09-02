@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
@@ -21,13 +22,13 @@ export default async function MultiLinkPage() {
   return (
     <main className="tr-public-shell text-ink">
       <SectionShell spacing="compact" className="py-10 sm:py-14 lg:py-16">
-        <div className="tr-container grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <div>
+        <div className="tr-container grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+          <div className="lg:py-8">
             <p className="tr-eyebrow">Multi-Link service</p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-black leading-tight text-ink sm:text-5xl">
+            <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">
               One stand. Up to 10 links. Update them anytime.
             </h1>
-            <p className="tr-body mt-4 max-w-2xl text-lg">
+            <p className="tr-body mt-4 max-w-xl text-base">
               Add Multi-Link to a compatible Tap Rater stand for {monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -39,7 +40,19 @@ export default async function MultiLinkPage() {
               </Link>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="relative overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+            <Image
+              src="/uploads/marketing/multi-link-hero-rate-your-experience.png"
+              alt="Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page"
+              width={1536}
+              height={1024}
+              priority
+              unoptimized
+              className="h-auto w-full object-cover"
+            />
+          </div>
+        </div>
+        <div className="tr-container mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
               "QR + NFC point to one permanent Tap Rater URL",
               "Up to 10 editable links",
@@ -48,12 +61,11 @@ export default async function MultiLinkPage() {
               "No need to replace the stand when links change",
               "Mobile-friendly hosted landing page"
             ].map((benefit, index) => (
-              <div key={benefit} className="tr-card p-6">
+              <div key={benefit} className="rounded-[8px] border border-line bg-white p-4">
                 <p className="tr-eyebrow text-brand">{String(index + 1).padStart(2, "0")}</p>
-                <p className="mt-3 text-base font-black leading-6 text-ink">{benefit}</p>
+                <p className="mt-2 text-sm font-medium leading-5 text-ink">{benefit}</p>
               </div>
             ))}
-          </div>
         </div>
       </SectionShell>
 
