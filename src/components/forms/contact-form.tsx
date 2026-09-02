@@ -15,12 +15,7 @@ export function ContactForm() {
     try {
       const response = await fetch("/api/forms/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.get("name"),
-          email: form.get("email"),
-          message: form.get("message")
-        })
+        body: form
       });
       const body = await response.json();
       setStatusType(response.ok ? "success" : "error");
@@ -42,7 +37,12 @@ export function ContactForm() {
       </label>
       <label className="tr-field-label">
         Message
-        <textarea className="tr-textarea" name="message" required />
+        <textarea className="tr-textarea" name="message" placeholder="Tell us what you need. For logo help, include the product name and what should be fixed." required />
+      </label>
+      <label className="tr-field-label">
+        Logo or artwork file
+        <input className="tr-input py-2" name="attachment" type="file" accept="image/png,image/jpeg,image/webp" />
+        <span className="text-xs font-medium leading-5 text-muted">Optional. PNG, JPG, or WEBP up to 10 MB.</span>
       </label>
       <button className="tr-button-secondary" disabled={isSubmitting}>
         {isSubmitting ? "Sending..." : "Send message"}

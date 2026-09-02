@@ -447,9 +447,7 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
   }
 
   if (option.id === "branded_qr_direct") {
-    const manualDesignFlow = setup.designAssistanceRequested === true;
-
-    if (!manualDesignFlow && !setup.logoMediaUrl && !setup.logoStorageKey) {
+    if (!setup.logoMediaUrl && !setup.logoStorageKey) {
       return false;
     }
 
@@ -461,13 +459,7 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
       return false;
     }
 
-    if (manualDesignFlow) {
-      return setup.manualCollectionAcknowledged === true;
-    }
-
-    if (!setup.proofPreviewData || setup.proofApproved !== true) {
-      return false;
-    }
+    return true;
   }
 
   return true;

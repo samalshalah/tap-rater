@@ -42,7 +42,7 @@ export const brandedQrDirectOption: PurchaseOption = {
   id: "branded_qr_direct",
   label: "Branded + QR Direct Stand",
   priceCents: 4900,
-  summary: "Add your logo, business name, and QR code before checkout with a front proof preview.",
+  summary: "Add your logo, business name, and QR code before checkout. Tap Rater reviews artwork after the order.",
   requiresDestinationUrl: true,
   hasQr: true,
   requiresBusinessName: true,

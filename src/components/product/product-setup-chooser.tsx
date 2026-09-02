@@ -11,7 +11,7 @@ import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
-import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
+import { buildDirectProductionTargets } from "@/lib/direct-production";
 import { generateGoogleReviewUrl } from "@/lib/google-review";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
@@ -93,16 +93,11 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
   const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
   const [showBusinessNameOnProof, setShowBusinessNameOnProof] = useState(true);
-  const [designAssistanceRequested, setDesignAssistanceRequested] = useState(false);
-  const [designNotes, setDesignNotes] = useState("");
-  const [manualDesignAcknowledged, setManualDesignAcknowledged] = useState(false);
   const [logoBackgroundMode, setLogoBackgroundMode] = useState<LogoBackgroundMode>("auto_crop");
   const [logoFitMode, setLogoFitMode] = useState<LogoFitMode>("contain");
   const [logoOffsetXPercent, setLogoOffsetXPercent] = useState(0);
   const [logoOffsetYPercent, setLogoOffsetYPercent] = useState(0);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [proofApproved, setProofApproved] = useState(false);
-  const [approvedProofSnapshot, setApprovedProofSnapshot] = useState<ProofApprovalSnapshot | null>(null);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const googleSearchInputRef = useRef<HTMLInputElement | null>(null);
@@ -136,30 +131,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const generatedQrValue = destinationUrl.trim();
   const proofQrValue = selectedLinkExperience === "multilink" ? "https://taprater.com/p/your-page" : generatedQrValue;
   const directTargets = buildDirectProductionTargets(destinationUrl);
-  const currentApprovalSnapshot = selectedOption
-    ? buildProofApprovalSnapshot({
-        productSlug: product.slug,
-        optionCode: selectedOption.id,
-        destinationUrl,
-        businessName,
-        logoStorageKey: selectedLogoStorageKey,
-        logoMediaUrl: selectedLogoMediaUrl,
-        generatedQrValue: proofQrValue,
-        frontTemplateUrl: proofFrontTemplateUrl || undefined,
-        fontSizePercent: proofFontSizePercent,
-        logoSizePercent: proofLogoSizePercent,
-        showBusinessNameOnProof,
-        logoBackgroundMode,
-        logoFitMode,
-        logoOffsetXPercent,
-        logoOffsetYPercent
-      })
-    : undefined;
-  const isApprovedConfigurationCurrent =
-    selectedOption?.id !== "branded_qr_direct" ||
-    designAssistanceRequested ||
-    (proofApproved && currentApprovalSnapshot && isProofApprovalSnapshotCurrent(currentApprovalSnapshot, approvedProofSnapshot));
-
   useEffect(() => {
     if (!isBuilderOpen) return;
 
@@ -180,15 +151,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isBuilderOpen]);
-
-  useEffect(() => {
-    if (selectedOption?.id !== "branded_qr_direct" || !proofApproved) return;
-
-    if (!currentApprovalSnapshot || !isProofApprovalSnapshotCurrent(currentApprovalSnapshot, approvedProofSnapshot)) {
-      setProofApproved(false);
-      setApprovedProofSnapshot(null);
-    }
-  }, [approvedProofSnapshot, currentApprovalSnapshot, proofApproved, selectedOption?.id]);
 
   useEffect(() => {
     if (!selectedSize || selectedSize.code === selectedSizeCode) return;
@@ -273,10 +235,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       })
     );
     setError("");
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
-    setDesignAssistanceRequested(false);
-    setManualDesignAcknowledged(false);
     setStep("choose");
   }
 
@@ -306,8 +264,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     setDestinationUrl(place.reviewUrl);
     setBusinessName((current) => current || place.name);
     setError("");
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
   }
 
   function continueFromDestination() {
@@ -328,8 +284,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
     setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
@@ -346,8 +300,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       }
     }
 
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
     setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
@@ -380,14 +332,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         trimApplied: preparedLogo.trimApplied,
         blankMarginPercent: preparedLogo.blankMarginPercent
       });
-      setDesignAssistanceRequested(false);
-      setManualDesignAcknowledged(false);
-      setProofApproved(false);
-      setApprovedProofSnapshot(null);
     } catch (error) {
       setLogo(null);
-      setProofApproved(false);
-      setApprovedProofSnapshot(null);
       setError(error instanceof Error ? error.message : "Logo upload failed. Please try again.");
     } finally {
       setIsUploadingLogo(false);
@@ -402,28 +348,29 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
       return;
     }
 
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
-    setStep("review");
+    if (!logo) {
+      setError("Upload your business logo before adding this stand to cart. If you need help, contact Tap Rater and upload your file there.");
+      return;
+    }
+
+    setStep("confirmation");
   }
 
   function continueFromProof() {
     setError("");
 
-    if (selectedOption.id === "branded_qr_direct" && !logo && !designAssistanceRequested) {
-      setError("Upload your business logo or choose Tap Rater design help before continuing.");
+    if (selectedOption.id === "branded_qr_direct" && !logo) {
+      setError("Upload your business logo before continuing.");
       return;
     }
 
-    setProofApproved(false);
-    setApprovedProofSnapshot(null);
     setStep("confirmation");
   }
 
   function goToPreviousStep() {
     setError("");
     if (step === "confirmation") {
-      setStep("review");
+      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
       return;
     }
 
@@ -471,28 +418,18 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         return;
       }
 
-      if (!logo && !designAssistanceRequested) {
+      if (!logo) {
         setError("Upload your business logo before adding this stand to cart.");
         setStep("design");
         return;
       }
 
-      if (!designAssistanceRequested && !proofFrontTemplateUrl) {
+      if (!proofFrontTemplateUrl) {
         setError("Branded artwork is not configured for this product yet.");
         setStep("design");
         return;
       }
 
-      if (designAssistanceRequested && !manualDesignAcknowledged) {
-        setError("Confirm that Tap Rater will send the final design proof before production.");
-        setStep("confirmation");
-        return;
-      }
-
-      if (!designAssistanceRequested && (!isApprovedConfigurationCurrent || !currentApprovalSnapshot)) {
-        setError("Confirm the front proof preview before adding this stand to cart.");
-        return;
-      }
     }
 
     cart.addItem({
@@ -532,7 +469,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         logoStorageKey: selectedLogoStorageKey,
         originalLogoMediaUrl: logo?.originalMediaUrl,
         originalLogoStorageKey: logo?.originalStorageKey,
-        designAssistanceRequested: selectedOption.id === "branded_qr_direct" ? designAssistanceRequested : undefined,
         logoBackgroundMode: selectedOption.id === "branded_qr_direct" ? logoBackgroundMode : undefined,
         logoFitMode: selectedOption.id === "branded_qr_direct" ? logoFitMode : undefined,
         logoOffsetXPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetXPercent : undefined,
@@ -544,31 +480,10 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         frontTemplateUrl: selectedOption.hasQr ? proofFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
         fontSizePercent: selectedOption.id === "branded_qr_direct" ? proofFontSizePercent : undefined,
         logoSizePercent: selectedOption.id === "branded_qr_direct" ? proofLogoSizePercent : undefined,
-        designNotes: selectedOption.id === "branded_qr_direct" ? designNotes.trim() || undefined : undefined,
-        proofApprovalSnapshot: selectedOption.id === "branded_qr_direct" && !designAssistanceRequested ? approvedProofSnapshot ?? currentApprovalSnapshot : undefined,
-        proofApprovedAt: selectedOption.id === "branded_qr_direct" && !designAssistanceRequested ? new Date().toISOString() : undefined,
-        proofPreviewData:
-          selectedOption.id === "branded_qr_direct" && !designAssistanceRequested
-            ? {
-                productTitle: product.title,
-                businessName: businessName.trim(),
-                logoMediaUrl: selectedLogoMediaUrl,
-                qrValue: selectedLinkExperience === "multilink" ? proofQrValue : directTargets?.qrTargetUrl,
-                frontTemplateUrl: proofFrontTemplateUrl || undefined,
-                fontSizePercent: proofFontSizePercent,
-                logoSizePercent: proofLogoSizePercent,
-                showBusinessNameOnProof,
-                logoBackgroundMode,
-                logoFitMode,
-                logoOffsetXPercent,
-                logoOffsetYPercent
-              }
-            : undefined,
         hasQr: true,
         nfcOnly: false,
         priceCents: configuredUnitPriceCents,
-        proofApproved: selectedOption.id === "branded_qr_direct" ? !designAssistanceRequested && proofApproved : true,
-        manualCollectionAcknowledged: selectedOption.id === "branded_qr_direct" ? designAssistanceRequested && manualDesignAcknowledged : undefined
+        proofApproved: selectedOption.id === "branded_qr_direct" ? false : true
       }
     });
     router.push("/cart");
@@ -586,27 +501,27 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         : formatPrice(configuredUnitPriceCents).replace(".00", "");
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["Business", "Links", "Logo + name", "Proof", "Confirm"]
+      ? ["Business", "Links", "Logo", "Confirm"]
       : selectedLinkExperience === "multilink"
         ? ["Business", "Links", "Confirm"]
         : selectedOption.id === "branded_qr_direct"
-          ? ["Destination", "Logo + name", "Proof", "Confirm"]
+          ? ["Destination", "Logo", "Confirm"]
         : ["Destination", "Confirm"];
   const stepGridClassName =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? "sm:grid-cols-5"
+      ? "sm:grid-cols-4"
       : selectedLinkExperience === "multilink"
         ? "sm:grid-cols-3"
         : selectedOption.id === "branded_qr_direct"
-          ? "sm:grid-cols-4"
+          ? "sm:grid-cols-3"
           : "sm:grid-cols-2";
   const stepOrder: SetupStep[] =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["destination", "links", "design", "review", "confirmation"]
+      ? ["destination", "links", "design", "confirmation"]
       : selectedLinkExperience === "multilink"
         ? ["destination", "links", "review"]
         : selectedOption.id === "branded_qr_direct"
-          ? ["destination", "design", "review", "confirmation"]
+          ? ["destination", "design", "confirmation"]
           : ["destination", "review"];
   const activeStepIndex = Math.max(0, stepOrder.indexOf(step));
 
@@ -855,8 +770,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                           value={businessName}
                           onChange={(event) => {
                             setBusinessName(event.target.value);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
                           }}
                           placeholder="Your business name"
                         />
@@ -893,8 +806,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                                     setGooglePlaceId("");
                                     setGooglePlaceName("");
                                     setDestinationUrl("");
-                                    setProofApproved(false);
-                                    setApprovedProofSnapshot(null);
                                   }
                                 }}
                                 placeholder="Business name and city"
@@ -922,8 +833,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                             setDestinationUrl(event.target.value);
                             setGooglePlaceId("");
                             setGooglePlaceName("");
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
                           }}
                           placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
                         />
@@ -952,7 +861,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   <div>
                     <p className="text-sm font-semibold text-ink">Logo + business name</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Upload the logo and enter the exact business name for the front proof.
+                      Upload the logo and enter the business name. Tap Rater will review the artwork after the order and send the final proof by email.
                     </p>
                   </div>
 
@@ -963,8 +872,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       value={businessName}
                       onChange={(event) => {
                         setBusinessName(event.target.value);
-                        setProofApproved(false);
-                        setApprovedProofSnapshot(null);
                       }}
                       placeholder="Your business name"
                     />
@@ -991,6 +898,31 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                       />
                     </label>
                   </div>
+                  {logo ? (
+                    <ProofControls
+                      logo={logo}
+                      logoBackgroundMode={logoBackgroundMode}
+                      logoFitMode={logoFitMode}
+                      logoOffsetXPercent={logoOffsetXPercent}
+                      logoOffsetYPercent={logoOffsetYPercent}
+                      proofFontSizePercent={proofFontSizePercent}
+                      proofLogoSizePercent={proofLogoSizePercent}
+                      onLogoBackgroundModeChange={setLogoBackgroundMode}
+                      onLogoFitModeChange={setLogoFitMode}
+                      onLogoOffsetXPercentChange={setLogoOffsetXPercent}
+                      onLogoOffsetYPercentChange={setLogoOffsetYPercent}
+                      onProofFontSizePercentChange={setProofFontSizePercent}
+                      onProofLogoSizePercentChange={setProofLogoSizePercent}
+                      showBusinessNameOnProof={showBusinessNameOnProof}
+                      onShowBusinessNameOnProofChange={setShowBusinessNameOnProof}
+                      isUploadingLogo={isUploadingLogo}
+                      onUploadLogo={(file) => uploadLogo(file)}
+                    />
+                  ) : null}
+                  <div className="rounded-lg border border-line bg-soft p-3 text-sm leading-6 text-muted">
+                    Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file. We will review it and send the proof by email.
+                    <a className="ml-2 font-semibold text-brand hover:text-ink" href="/contact-us">Contact Us</a>
+                  </div>
 
                 </div>
               ) : null}
@@ -998,225 +930,49 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
               {step === "review" ? (
                 <div className="grid gap-3">
                   <div className="sr-only">
-                    <p className="text-sm font-semibold text-ink">{selectedOption.id === "branded_qr_direct" ? "Proof preview" : "Confirm setup"}</p>
+                    <p className="text-sm font-semibold text-ink">Confirm setup</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      {selectedOption.id === "branded_qr_direct"
-                        ? "This is the front proof. Confirm the logo, business name, and QR placement before adding to cart."
-                        : "Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL."}
+                      Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL.
                     </p>
                   </div>
 
-                  {selectedOption.id === "branded_qr_direct" ? (
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted">
-                      <span className="font-semibold text-ink">{product.title}</span>
-                      <span>{selectedOption.label}</span>
-                      <span>{configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</span>
-                      {googlePlaceName ? <span>{googlePlaceName}</span> : null}
-                    </div>
-                  ) : (
-                    <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
-                      <ReviewLine label="Product" value={product.title} />
-                      <ReviewLine label="Setup" value={selectedOption.label} />
-                      <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
-                      <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
-                      <ReviewLine label="SKU" value={finalSku} />
-                      <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
-                      <ReviewLine label="Destination link" value={destinationUrl || "-"} />
-                      {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
-                    </div>
-                  )}
+                  <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
+                    <ReviewLine label="Product" value={product.title} />
+                    <ReviewLine label="Setup" value={selectedOption.label} />
+                    <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
+                    <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
+                    <ReviewLine label="SKU" value={finalSku} />
+                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
+                    <ReviewLine label="Destination link" value={destinationUrl || "-"} />
+                    {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
+                  </div>
 
-                  {selectedOption.id === "branded_qr_direct" ? (
-                    <div className="mx-auto grid w-full max-w-3xl gap-3 rounded-lg border border-line bg-white p-3">
-                      <label className="flex items-start gap-3 text-sm font-semibold text-ink">
-                        <input
-                          className="mt-1"
-                          type="checkbox"
-                          checked={designAssistanceRequested}
-                          onChange={(event) => {
-                            setDesignAssistanceRequested(event.target.checked);
-                            setManualDesignAcknowledged(false);
-                            setProofApproved(false);
-                            setApprovedProofSnapshot(null);
-                          }}
-                        />
-                        <span>
-                          I want Tap Rater to prepare or fix my logo proof.
-                          <span className="mt-1 block text-xs font-medium leading-5 text-muted">
-                            You can continue checkout now. We will send the branded proof for approval before production.
-                          </span>
-                        </span>
-                      </label>
-
-                      {designAssistanceRequested ? (
-                        <label className="grid gap-2 text-sm font-semibold text-ink">
-                          Design notes
-                          <textarea
-                            className="tr-input min-h-24 resize-y"
-                            value={designNotes}
-                            onChange={(event) => setDesignNotes(event.target.value)}
-                            placeholder="Example: use the logo from my website, remove the white background, or I will send the logo later."
-                          />
-                        </label>
-                      ) : null}
-                    </div>
-                  ) : null}
-
-                  {selectedOption.id === "branded_qr_direct" && logo && !designAssistanceRequested ? (
-                    <div className="mx-auto grid w-full max-w-5xl gap-4 lg:grid-cols-[minmax(300px,420px)_minmax(320px,1fr)] lg:items-start">
-                      <ProofPreview
-                        businessName={businessName}
-                        logoMediaUrl={selectedLogoMediaUrl}
-                        logoFitMode={logoFitMode}
-                        logoOffsetXPercent={logoOffsetXPercent}
-                        logoOffsetYPercent={logoOffsetYPercent}
-                        product={product}
-                        qrValue={proofQrValue}
-                        templateUrl={proofFrontTemplateUrl}
-                        fontSizePercent={proofFontSizePercent}
-                        logoSizePercent={proofLogoSizePercent}
-                        showBusinessNameOnProof={showBusinessNameOnProof}
-                      />
-                      <ProofControls
-                        logo={logo}
-                        logoBackgroundMode={logoBackgroundMode}
-                        logoFitMode={logoFitMode}
-                        logoOffsetXPercent={logoOffsetXPercent}
-                        logoOffsetYPercent={logoOffsetYPercent}
-                        proofFontSizePercent={proofFontSizePercent}
-                        proofLogoSizePercent={proofLogoSizePercent}
-                        onLogoBackgroundModeChange={(value) => {
-                          setLogoBackgroundMode(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        onLogoFitModeChange={(value) => {
-                          setLogoFitMode(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        onLogoOffsetXPercentChange={(value) => {
-                          setLogoOffsetXPercent(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        onLogoOffsetYPercentChange={(value) => {
-                          setLogoOffsetYPercent(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        onProofFontSizePercentChange={(value) => {
-                          setProofFontSizePercent(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        onProofLogoSizePercentChange={(value) => {
-                          setProofLogoSizePercent(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        showBusinessNameOnProof={showBusinessNameOnProof}
-                        onShowBusinessNameOnProofChange={(value) => {
-                          setShowBusinessNameOnProof(value);
-                          setProofApproved(false);
-                          setApprovedProofSnapshot(null);
-                        }}
-                        isUploadingLogo={isUploadingLogo}
-                        onUploadLogo={(file) => uploadLogo(file)}
-                      />
-                    </div>
-                  ) : selectedOption.id === "branded_qr_direct" && designAssistanceRequested ? (
-                    <div className="mx-auto grid w-full max-w-2xl gap-3 rounded-lg border border-line bg-white p-4 text-center">
-                      <p className="text-sm font-semibold text-ink">Tap Rater will prepare your branded proof</p>
-                      <p className="mx-auto max-w-xl text-sm leading-6 text-muted">
-                        Your order can continue without an uploaded logo. We will contact you, prepare the front design, and send it for approval before production.
-                      </p>
-                      <ProofPreview
-                        businessName={businessName}
-                        logoMediaUrl={undefined}
-                        logoFitMode={logoFitMode}
-                        logoOffsetXPercent={logoOffsetXPercent}
-                        logoOffsetYPercent={logoOffsetYPercent}
-                        product={product}
-                        qrValue={proofQrValue}
-                        templateUrl={proofFrontTemplateUrl}
-                        fontSizePercent={proofFontSizePercent}
-                        logoSizePercent={proofLogoSizePercent}
-                        showBusinessNameOnProof={showBusinessNameOnProof}
-                        designAssistanceRequested
-                      />
-                    </div>
-                  ) : selectedOption.id === "branded_qr_direct" ? (
-                    <div className="mx-auto grid w-full max-w-2xl gap-2 rounded-lg border border-line bg-white p-4 text-center">
-                      <p className="text-sm font-semibold text-ink">No logo uploaded yet</p>
-                      <p className="mx-auto max-w-xl text-sm leading-6 text-muted">
-                        Upload a logo from the previous step, or choose Tap Rater design help above to continue without one.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
-                      {selectedLinkExperience === "multilink" ? (
-                        <>
-                          <p className="font-semibold text-ink">Multi-Link confirmation</p>
-                          <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them after account activation."}</p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="font-semibold text-ink">Standard Direct confirmation</p>
-                          <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
-                        </>
-                      )}
-                    </div>
-                  )}
+                  <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
+                    {selectedLinkExperience === "multilink" ? (
+                      <>
+                        <p className="font-semibold text-ink">Multi-Link confirmation</p>
+                        <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them after account activation."}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold text-ink">Standard Direct confirmation</p>
+                        <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
+                      </>
+                    )}
+                  </div>
                 </div>
               ) : null}
 
               {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-3">
-                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg border border-line bg-white px-3 py-2 text-sm text-muted">
-                    <span className="font-semibold text-ink">{product.title}</span>
-                    <span>{selectedOption.label}</span>
-                    <span>{configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</span>
-                    {googlePlaceName ? <span>{googlePlaceName}</span> : null}
+                  <div className="rounded-lg border border-line bg-white p-4 text-sm leading-6 text-muted">
+                    <p className="text-base font-semibold text-ink">{product.title}</p>
+                    <p>{selectedOption.label} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</p>
+                    <p>Business: <span className="text-ink">{businessName}</span></p>
+                    <p>Logo: <span className="text-ink">{logo?.filename ?? "Uploaded"}</span></p>
+                    <p>{selectedLinkExperience === "multilink" ? "QR and NFC will open the hosted Multi-Link page." : "QR and NFC will open the destination link."}</p>
+                    <p className="mt-2">Tap Rater will review the artwork after your order and send the final proof by email before production.</p>
                   </div>
-                  <ProofPreview
-                    businessName={businessName}
-                    logoMediaUrl={selectedLogoMediaUrl}
-                    logoFitMode={logoFitMode}
-                    logoOffsetXPercent={logoOffsetXPercent}
-                    logoOffsetYPercent={logoOffsetYPercent}
-                    product={product}
-                    qrValue={proofQrValue}
-                    templateUrl={proofFrontTemplateUrl}
-                    fontSizePercent={proofFontSizePercent}
-                    logoSizePercent={proofLogoSizePercent}
-                    showBusinessNameOnProof={showBusinessNameOnProof}
-                    designAssistanceRequested={designAssistanceRequested}
-                  />
-                  {designAssistanceRequested ? (
-                    <label className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-                      <input
-                        className="mt-1"
-                        type="checkbox"
-                        checked={manualDesignAcknowledged}
-                        onChange={(event) => setManualDesignAcknowledged(event.target.checked)}
-                      />
-                      I understand Tap Rater will send me the branded design proof for approval before production.
-                    </label>
-                  ) : (
-                    <label className="mx-auto flex w-full max-w-2xl items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-                      <input
-                        className="mt-1"
-                        type="checkbox"
-                        checked={proofApproved}
-                        onChange={(event) => {
-                          setProofApproved(event.target.checked);
-                          setApprovedProofSnapshot(event.target.checked && currentApprovalSnapshot ? currentApprovalSnapshot : null);
-                        }}
-                      />
-                      I reviewed the front proof preview and confirm these branded setup details.
-                    </label>
-                  )}
                 </div>
               ) : null}
             </div>
@@ -1251,11 +1007,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
-                    Preview proof
-                  </button>
-                ) : null}
-                {step === "review" && selectedOption.id === "branded_qr_direct" ? (
-                  <button type="button" className="tr-button-primary" onClick={continueFromProof}>
                     Continue to confirmation
                   </button>
                 ) : null}
@@ -1866,7 +1617,7 @@ function ProofPreview({
   return (
     <div className="tr-card p-3 sm:p-4">
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <p className="text-sm font-semibold text-ink">Front proof preview</p>
+        <p className="text-sm font-semibold text-ink">Stand artwork preview</p>
       </div>
       <div className="mt-3 grid justify-items-center">
         {templateUrl ? (
@@ -1930,7 +1681,7 @@ function TemplateProofPreview({
 }) {
   return (
     <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] rounded-lg border border-line bg-white">
-      <img src={templateUrl} alt="Branded front template proof" className="absolute inset-0 h-full w-full object-contain" />
+      <img src={templateUrl} alt="Branded front template" className="absolute inset-0 h-full w-full object-contain" />
       <div className="absolute grid place-items-center p-[2%]" style={regionStyle(brandedStandComposition.logoRegion)}>
         {logoMediaUrl ? (
           <img
@@ -2136,7 +1887,7 @@ function getOptionSummary(option: PurchaseOption) {
   }
 
   if (option.id === "branded_qr_direct") {
-    return "Front proof included";
+    return "Artwork reviewed after order";
   }
 
   return "Direct to your destination link";

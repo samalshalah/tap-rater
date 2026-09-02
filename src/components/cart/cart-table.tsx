@@ -226,18 +226,6 @@ export function CartTable({
                       <span className="text-ink">{row.item.setup?.multiLinkButtons?.length ? `${row.item.setup.multiLinkButtons.length} added` : "Skipped for later"}</span>
                     </p>
                   ) : null}
-                  {row.option.requiresFinalProof ? (
-                    <p>
-                      <span className="text-muted">Front proof:</span>{" "}
-                      <span className="text-ink">
-                        {row.item.setup?.proofApproved
-                          ? "Approved"
-                          : row.item.setup?.designAssistanceRequested
-                            ? "Tap Rater will send proof"
-                            : "Approval required"}
-                      </span>
-                    </p>
-                  ) : null}
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center md:min-w-52 md:grid-cols-1 md:justify-items-end">
@@ -356,7 +344,7 @@ export function CartTable({
         <p className="tr-body-sm">
           {isLiveStripe
             ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
-            : "Tap Rater will review your proof, payment, shipping, and production details before production."}
+            : "Tap Rater will review payment, shipping, and artwork details before production."}
         </p>
         {checkoutError ? (
           <p className="tr-status-warning" role="alert">{checkoutError}</p>

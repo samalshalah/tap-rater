@@ -210,7 +210,7 @@ export async function mapCheckoutRowsToProductionReadyOrderLineItems(
 
   return Promise.all(
     items.map((item, index) =>
-      item.optionId === "branded_qr_direct"
+      item.optionId === "branded_qr_direct" && item.proofApproved === true
         ? generateProductionArtworkForOrderLineItem({ orderReference, lineItemIndex: index, item, assetResolver }, storage)
         : item
     )
