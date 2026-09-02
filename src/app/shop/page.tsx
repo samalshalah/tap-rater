@@ -61,7 +61,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               Browse by stand type or business use, then choose the product that fits the customer action.
             </p>
           </div>
-          <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
+          <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
               <div className="lg:hidden">
                 <details className="tr-card-compact group p-0">
@@ -99,7 +99,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               </aside>
             </div>
 
-            <div>
+            <div className="self-start">
               {selectedType || selectedUse ? (
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap gap-2">
