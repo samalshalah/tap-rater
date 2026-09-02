@@ -44,7 +44,7 @@ export default async function HomePage() {
   const faqs = orderedEnabledFaqs(content.faqs, "global").slice(0, 4);
 
   return (
-    <main className="text-ink">
+    <main className="tr-homepage text-ink">
       <JsonLd data={organizationJsonLd()} />
       <JsonLd data={websiteJsonLd()} />
 

@@ -126,18 +126,18 @@ main h3 {
   }
 
   .tr-page-title {
-    @apply max-w-full text-[2.25rem] font-semibold leading-tight text-ink sm:text-[2.75rem] md:text-[3.1rem];
+    @apply max-w-full text-[1.85rem] font-semibold leading-tight text-ink sm:text-[2.15rem] md:text-[2.35rem];
     letter-spacing: 0;
     overflow-wrap: anywhere;
   }
 
   .tr-section-title {
-    @apply text-[1.85rem] font-semibold leading-[1.1] text-ink sm:text-[2.25rem] lg:text-[2.55rem];
+    @apply text-[1.45rem] font-semibold leading-[1.15] text-ink sm:text-[1.65rem] lg:text-[1.85rem];
     letter-spacing: 0;
   }
 
   .tr-card-title {
-    @apply text-base font-semibold leading-snug text-ink md:text-[1.1rem];
+    @apply text-[0.98rem] font-semibold leading-snug text-ink md:text-[1.02rem];
   }
 
   .tr-body {
@@ -333,23 +333,23 @@ body * {
   }
 }
 
-h1,
-h1[class] {
-  font-size: clamp(2.15rem, 3.2vw, 3.2rem) !important;
+main:not(.tr-homepage) h1,
+main:not(.tr-homepage) h1[class] {
+  font-size: clamp(1.85rem, 2.35vw, 2.45rem) !important;
   font-weight: 500 !important;
   line-height: 1.08 !important;
 }
 
-h2,
-h2[class] {
-  font-size: clamp(1.75rem, 2.35vw, 2.45rem) !important;
+main:not(.tr-homepage) h2,
+main:not(.tr-homepage) h2[class] {
+  font-size: clamp(1.35rem, 1.65vw, 1.85rem) !important;
   font-weight: 500 !important;
   line-height: 1.12 !important;
 }
 
-h3,
-h3[class] {
-  font-size: clamp(1.15rem, 1.35vw, 1.45rem) !important;
+main:not(.tr-homepage) h3,
+main:not(.tr-homepage) h3[class] {
+  font-size: clamp(1.05rem, 1.05vw, 1.2rem) !important;
   font-weight: 500 !important;
   line-height: 1.16 !important;
 }
@@ -406,19 +406,19 @@ a {
 }
 
 @media (max-width: 639px) {
-  h1,
-  h1[class] {
-    font-size: clamp(2rem, 10vw, 2.65rem) !important;
+  main:not(.tr-homepage) h1,
+  main:not(.tr-homepage) h1[class] {
+    font-size: clamp(1.65rem, 8vw, 2.1rem) !important;
   }
 
-  h2,
-  h2[class] {
-    font-size: clamp(1.65rem, 7.5vw, 2.15rem) !important;
+  main:not(.tr-homepage) h2,
+  main:not(.tr-homepage) h2[class] {
+    font-size: clamp(1.25rem, 6vw, 1.65rem) !important;
   }
 
-  h3,
-  h3[class] {
-    font-size: clamp(1.15rem, 5vw, 1.35rem) !important;
+  main:not(.tr-homepage) h3,
+  main:not(.tr-homepage) h3[class] {
+    font-size: clamp(1rem, 4.5vw, 1.2rem) !important;
   }
 }
 
@@ -455,7 +455,7 @@ a {
 .tr-admin-section h1[class],
 .tr-admin-title,
 .tr-admin-title[class] {
-  font-size: clamp(1.55rem, 2vw, 2.05rem) !important;
+  font-size: clamp(1.35rem, 1.6vw, 1.75rem) !important;
   font-weight: 500 !important;
   line-height: 1.14 !important;
 }
@@ -464,14 +464,14 @@ a {
 .tr-admin-section h2[class],
 .tr-admin-card-title,
 .tr-admin-card-title[class] {
-  font-size: clamp(1rem, 1.05vw, 1.15rem) !important;
+  font-size: clamp(0.95rem, 1vw, 1.05rem) !important;
   font-weight: 500 !important;
   line-height: 1.2 !important;
 }
 
 .tr-admin-section h3,
 .tr-admin-section h3[class] {
-  font-size: 1rem !important;
+  font-size: 0.95rem !important;
   font-weight: 500 !important;
   line-height: 1.25 !important;
 }
@@ -480,21 +480,21 @@ a {
 .tr-account-shell h1[class],
 .tr-account-shell .tr-page-title,
 .tr-account-shell .tr-page-title[class] {
-  font-size: clamp(1.65rem, 2.1vw, 2.2rem) !important;
+  font-size: clamp(1.45rem, 1.8vw, 1.85rem) !important;
   font-weight: 500 !important;
   line-height: 1.14 !important;
 }
 
 .tr-account-shell h2,
 .tr-account-shell h2[class] {
-  font-size: clamp(1.15rem, 1.4vw, 1.45rem) !important;
+  font-size: clamp(1.05rem, 1.15vw, 1.25rem) !important;
   font-weight: 500 !important;
   line-height: 1.2 !important;
 }
 
 .tr-account-shell h3,
 .tr-account-shell h3[class] {
-  font-size: 1rem !important;
+  font-size: 0.95rem !important;
   font-weight: 500 !important;
   line-height: 1.25 !important;
 }
