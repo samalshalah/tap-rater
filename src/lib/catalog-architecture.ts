@@ -150,8 +150,8 @@ export const lockedStandTypes: StandType[] = [
   },
   {
     slug: "website-link-stands",
-    title: "Website & Link Stands",
-    description: "Stands that open one website, link hub, information page, or custom URL.",
+    title: "Multi-Link Stand",
+    description: "Compatible stands that can add a hosted Multi-Link page with up to 10 customer links.",
     imageUrl: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
     sortOrder: 60,
     isActive: true

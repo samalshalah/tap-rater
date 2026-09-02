@@ -144,10 +144,10 @@ export const customerActionCards: CustomerActionCard[] = [
     image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Rate Your Experience Stand" }
   },
   {
-    title: "Website Links",
-    description: "Open one website, information page, link hub, or custom URL.",
+    title: "Multi-Link Stand",
+    description: "Add a hosted page for reviews, social profiles, websites, booking, menus, and more.",
     href: "/category/website-link-stands",
-    image: { src: "/uploads/products/visit-website-stand.png", alt: "Website link stand" }
+    image: { src: "/uploads/marketing/multi-link-hero-rate-your-experience.png", alt: "Multi-Link Tap Rater stand" }
   }
 ];
 

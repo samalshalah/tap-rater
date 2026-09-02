@@ -13,10 +13,11 @@ type FooterContent = {
 };
 
 const footerLinkOverrides: Record<string, { label?: string; href?: string }> = {
-  "/category/website-link-stands|Website Link Stands": { label: "Website & Link Stands" },
-  "/category/website-link-stands|Website Links": { label: "Website & Link Stands" },
-  "/category/website-link-stands|Multi-Link": { label: "Website & Link Stands" },
-  "/category/website-link-stands|Multi-Link Stands": { label: "Website & Link Stands" },
+  "/category/website-link-stands|Website & Link Stands": { label: "Multi-Link Stand" },
+  "/category/website-link-stands|Website Link Stands": { label: "Multi-Link Stand" },
+  "/category/website-link-stands|Website Links": { label: "Multi-Link Stand" },
+  "/category/website-link-stands|Multi-Link": { label: "Multi-Link Stand" },
+  "/category/website-link-stands|Multi-Link Stands": { label: "Multi-Link Stand" },
   "/solutions/auto-dealerships|Automotive": { href: "/solutions/automotive" },
   "/solutions/restaurants-cafes|Restaurants": { href: "/solutions/restaurant-food" },
   "/solutions/beauty-wellness|Beauty & Wellness": { href: "/solutions/beauty-salon-wellness" }
@@ -37,7 +38,7 @@ const defaultFooterContent: FooterContent = {
         { label: "All Stands", href: "/shop", order: 10, enabled: true },
         { label: "Review Stands", href: "/category/reviews", order: 20, enabled: true },
         { label: "Menu Stands", href: "/category/menu", order: 30, enabled: true },
-        { label: "Website & Link Stands", href: "/category/website-link-stands", order: 40, enabled: true },
+        { label: "Multi-Link Stand", href: "/category/website-link-stands", order: 40, enabled: true },
         { label: "Multi-Link", href: "/multi-link", order: 50, enabled: true }
       ]
     },

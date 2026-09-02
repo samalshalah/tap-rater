@@ -317,15 +317,15 @@ export const catalogCategories: CatalogCategory[] = [
   },
   {
     slug: "website-links",
-    title: "Website & Link Stands",
-    eyebrow: "Links",
-    description: "NFC and QR tabletop stands that open one website, link hub, information page, or custom URL.",
-    seoTitle: "Website and Link NFC Stands | Tap Rater",
-    seoDescription: "Shop NFC and QR website link stands that open one direct website, link hub, information page, or custom URL.",
-    buyerIntent: "For businesses that want customers to tap or scan and open one direct website or information link.",
+    title: "Multi-Link Stand",
+    eyebrow: "Multi-Link",
+    description: "NFC and QR tabletop stands with an optional hosted Multi-Link page for reviews, social profiles, websites, booking, menus, and more.",
+    seoTitle: "Multi-Link Stand | Tap Rater",
+    seoDescription: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 10 customer links.",
+    buyerIntent: "For businesses that want one stand to open multiple important customer links.",
     aliases: ["website-link-stands", "link-stands", "website-links"],
     seoCopy:
-      "Website and link stands open one direct destination URL. Multi-Link is an optional hosted service add-on for compatible products."
+      "Multi-Link is an optional hosted service add-on for compatible physical stands."
   },
   {
     slug: "custom-stands",

@@ -86,8 +86,8 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
     .map((item) =>
       item.label.toLowerCase() === "shop by type"
         ? { ...item, href: "/shop#stand-types" }
-        : (item.label.toLowerCase() === "multi-link stands" || item.label.toLowerCase() === "website links") && item.href === "/category/website-link-stands"
-          ? { ...item, label: "Website & Link Stands" }
+        : (item.label.toLowerCase() === "multi-link stands" || item.label.toLowerCase() === "website links" || item.label.toLowerCase() === "website & link stands") && item.href === "/category/website-link-stands"
+          ? { ...item, label: "Multi-Link Stand" }
         : item,
     )
     .sort(
