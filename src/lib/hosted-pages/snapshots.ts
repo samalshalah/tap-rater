@@ -318,6 +318,7 @@ function renderShell({
 }) {
   const themeTokens = getThemeTokens(theme);
   const accent = accentColor && /^#[0-9a-fA-F]{6}$/.test(accentColor) ? accentColor : themeTokens.accent;
+  const buttonText = getButtonTextForAccent(accent, themeTokens.buttonText);
   const logoMargin = logoAlign === "left" ? "0 auto 24px 0" : logoAlign === "right" ? "0 0 24px auto" : "0 auto 24px";
   const contentAlign = textAlign === "left" || textAlign === "right" ? textAlign : "center";
 
@@ -329,7 +330,7 @@ function renderShell({
   <meta name="robots" content="noindex">
   <title>${stripTags(title)}</title>
   <style>
-    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; --button-text: ${themeTokens.buttonText}; --shadow: ${themeTokens.shadow}; }
+    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; --button-text: ${buttonText}; --shadow: ${themeTokens.shadow}; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
@@ -409,6 +410,13 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
     buttonText: "#ffffff",
     shadow: "0 18px 50px rgba(23, 33, 31, 0.08)"
   };
+}
+
+function getButtonTextForAccent(accent: string, fallback: string) {
+  const normalized = accent.toLowerCase();
+  if (normalized === "#e5e7eb") return "#111827";
+  if (normalized === "#6b7280") return "#ffffff";
+  return fallback;
 }
 
 function hostedButtonIconSvg(icon: string, fallbackText: string) {

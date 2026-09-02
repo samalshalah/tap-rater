@@ -367,6 +367,8 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
                 <option value="#1d4ed8">Blue</option>
                 <option value="#7c3aed">Violet</option>
                 <option value="#be123c">Rose</option>
+                <option value="#e5e7eb">Light gray</option>
+                <option value="#6b7280">Gray</option>
               </select>
             </label>
           </div>

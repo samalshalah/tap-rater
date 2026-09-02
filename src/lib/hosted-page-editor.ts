@@ -26,7 +26,7 @@ export type HostedPageEditorDbClient = {
 
 const supportedButtonTypes = new Set(supportedHostedPageButtons.map((button) => button.type));
 const supportedThemes = new Set(["light", "warm", "bold"]);
-const supportedAccentColors = new Set(["#0f766e", "#1d4ed8", "#7c3aed", "#be123c"]);
+const supportedAccentColors = new Set(["#0f766e", "#1d4ed8", "#7c3aed", "#be123c", "#e5e7eb", "#6b7280"]);
 const supportedAlignments = new Set(["left", "center", "right"]);
 
 export class HostedPageEditorError extends Error {

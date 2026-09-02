@@ -15,7 +15,7 @@ export type HostedPageEditorButtonType =
   | "custom_link";
 export type HostedPageEditorAppearance = {
   theme: "light" | "warm" | "bold";
-  accentColor: "#0f766e" | "#1d4ed8" | "#7c3aed" | "#be123c";
+  accentColor: "#0f766e" | "#1d4ed8" | "#7c3aed" | "#be123c" | "#e5e7eb" | "#6b7280";
   logoAlign?: "left" | "center" | "right";
   textAlign?: "left" | "center" | "right";
 };

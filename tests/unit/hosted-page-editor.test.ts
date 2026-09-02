@@ -148,6 +148,20 @@ describe("hosted page editor", () => {
     expect(html).not.toContain(">Tap Rater</p>");
   });
 
+  it("accepts neutral accent colors and keeps light gray buttons readable", async () => {
+    const page = await getOwnedPage();
+    const nextDraft = validateHostedPageEditorDraft({
+      ...page.draft,
+      appearance: { ...page.draft.appearance, accentColor: "#e5e7eb" }
+    });
+
+    const html = renderHostedPageDraftPreview({ ...page, draft: nextDraft });
+
+    expect(nextDraft.appearance.accentColor).toBe("#e5e7eb");
+    expect(html).toContain("--accent: #e5e7eb");
+    expect(html).toContain("--button-text: #111827");
+  });
+
   it("publishes through the Milestone 5 storage contract and preserves the previous public version on failure", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-08-23T12:00:00.000Z"));
