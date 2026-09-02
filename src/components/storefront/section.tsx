@@ -117,7 +117,7 @@ export function PageHero({
           ) : null}
         </div>
         {image ? (
-          <div className="tr-page-hero-media tr-premium-surface relative aspect-[4/3]">
+          <div className="tr-page-hero-media relative aspect-[4/3]">
             <Image
               src={image.src}
               alt={image.alt}
