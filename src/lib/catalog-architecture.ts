@@ -112,7 +112,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "review-stands",
     title: "Review Stands",
     description: "Stands that send customers to a review destination.",
-    imageUrl: "/uploads/products/google-review-stand.png",
+    imageUrl: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
     sortOrder: 10,
     isActive: true
   },
@@ -120,7 +120,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "social-media-stands",
     title: "Social Media Stands",
     description: "Stands that open social profiles or follow links.",
-    imageUrl: "/uploads/products/social-media-stand.png",
+    imageUrl: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png",
     sortOrder: 20,
     isActive: true
   },
@@ -136,7 +136,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "feedback-survey-stands",
     title: "Feedback & Survey Stands",
     description: "Stands that collect private feedback or survey responses.",
-    imageUrl: "/uploads/products/rate-your-experience-stand.png",
+    imageUrl: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png",
     sortOrder: 40,
     isActive: true
   },
@@ -144,7 +144,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "menu-info-stands",
     title: "Menu & Info Stands",
     description: "Stands that open menus, services, pricing, or information pages.",
-    imageUrl: "/uploads/products/view-menu-stand.png",
+    imageUrl: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png",
     sortOrder: 50,
     isActive: true
   },
@@ -152,7 +152,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "website-link-stands",
     title: "Website & Link Stands",
     description: "Stands that open one website, link hub, information page, or custom URL.",
-    imageUrl: "/uploads/products/visit-website-stand.png",
+    imageUrl: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
     sortOrder: 60,
     isActive: true
   },
@@ -358,7 +358,7 @@ export const standardDirectProductOption: ProductOption = {
 export const brandedQrDirectProductOption: ProductOption = {
   optionCode: "branded_qr_direct",
   title: "Branded + QR Direct",
-  description: "Branded direct stand with NFC, QR, business name, logo collection, and front proof.",
+  description: "Branded direct stand with NFC, QR, business name, logo collection, and artwork review.",
   priceCents: 4900,
   requiresDestinationUrl: true,
   hasQr: true,
