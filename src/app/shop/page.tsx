@@ -54,16 +54,15 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           id="stand-types"
           className="tr-container scroll-mt-24"
         >
+          <div className="mb-8 max-w-3xl">
+            <p className="tr-eyebrow">Tap Rater shop</p>
+            <h1 className="tr-page-title mt-4">Shop NFC and QR stands.</h1>
+            <p className="tr-page-hero-body mt-4">
+              Browse by stand type or business use, then choose the product that fits the customer action.
+            </p>
+          </div>
           <div className="grid gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-              <div>
-                <p className="tr-eyebrow">Tap Rater shop</p>
-                <h1 className="tr-page-title mt-4">Shop NFC and QR stands.</h1>
-                <p className="tr-page-hero-body mt-4">
-                  Browse by stand type or business use, then choose the product that fits the customer action.
-                </p>
-              </div>
-
               <div className="lg:hidden">
                 <details className="tr-card-compact group p-0">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
