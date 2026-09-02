@@ -77,6 +77,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   <div className="mt-4 border-t border-line pt-4">
                     <FilterPanelContent
                       businessUses={businessUses}
+                      filteredProductCount={filteredProducts.length}
                       products={products}
                       selectedType={selectedType}
                       selectedUse={selectedUse}
@@ -89,6 +90,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               <aside className="tr-card-compact hidden h-fit p-5 lg:block">
                 <FilterPanelContent
                   businessUses={businessUses}
+                  filteredProductCount={filteredProducts.length}
                   products={products}
                   selectedType={selectedType}
                   selectedUse={selectedUse}
@@ -98,38 +100,29 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </div>
 
             <div>
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="tr-eyebrow">All products</p>
-                  <p className="mt-1 text-sm font-medium text-muted">
-                    {filteredProducts.length} of {products.length} products shown.
-                  </p>
-                </div>
-                {selectedType || selectedUse ? (
+              {selectedType || selectedUse ? (
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    {selectedType ? (
+                      <Link
+                        href={buildShopHref({ use: selectedUse?.slug })}
+                        className="tr-pill-neutral bg-white"
+                      >
+                        Type: {selectedType.title} ×
+                      </Link>
+                    ) : null}
+                    {selectedUse ? (
+                      <Link
+                        href={buildShopHref({ type: selectedType?.slug })}
+                        className="tr-pill-neutral bg-white"
+                      >
+                        Use: {selectedUse.title} ×
+                      </Link>
+                    ) : null}
+                  </div>
                   <Link href="/shop" className="tr-button-outline w-fit">
                     Reset filters
                   </Link>
-                ) : null}
-              </div>
-
-              {selectedType || selectedUse ? (
-                <div className="mb-5 flex flex-wrap gap-2">
-                  {selectedType ? (
-                    <Link
-                      href={buildShopHref({ use: selectedUse?.slug })}
-                      className="tr-pill-neutral bg-white"
-                    >
-                      Type: {selectedType.title} ×
-                    </Link>
-                  ) : null}
-                  {selectedUse ? (
-                    <Link
-                      href={buildShopHref({ type: selectedType?.slug })}
-                      className="tr-pill-neutral bg-white"
-                    >
-                      Use: {selectedUse.title} ×
-                    </Link>
-                  ) : null}
                 </div>
               ) : null}
 
@@ -213,12 +206,14 @@ function getPublicStandTypeLabel(standType: StandTypeForFilter) {
 
 function FilterPanelContent({
   businessUses,
+  filteredProductCount,
   products,
   selectedType,
   selectedUse,
   standTypes,
 }: {
   businessUses: BusinessUseForFilter[];
+  filteredProductCount: number;
   products: ProductForFilter[];
   selectedType?: StandTypeForFilter;
   selectedUse?: BusinessUseForFilter;
@@ -227,7 +222,12 @@ function FilterPanelContent({
   return (
     <>
       <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
-        <p className="text-sm font-semibold text-ink">Filters</p>
+        <div>
+          <p className="text-sm font-semibold text-ink">Filters</p>
+          <p className="mt-1 text-xs font-medium text-muted">
+            {filteredProductCount} of {products.length} products
+          </p>
+        </div>
         {selectedType || selectedUse ? (
           <Link href="/shop" className="text-sm font-semibold text-brand">
             Clear all
