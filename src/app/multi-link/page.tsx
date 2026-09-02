@@ -9,6 +9,15 @@ import { formatPrice } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
 
+const benefits = [
+  "QR + NFC point to one permanent Tap Rater URL",
+  "Up to 10 editable links",
+  "Change links anytime",
+  "Customer account included",
+  "No need to replace the stand when links change",
+  "Mobile-friendly hosted landing page"
+];
+
 export const metadata: Metadata = {
   title: "Multi-Link Service | Tap Rater",
   description: "Add Multi-Link to a compatible Tap Rater stand for an editable hosted page with up to 10 customer links."
@@ -31,14 +40,6 @@ export default async function MultiLinkPage() {
             <p className="tr-body mt-5 max-w-3xl text-lg sm:text-xl">
               Add Multi-Link to a compatible Tap Rater stand for {monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="#compatible-stands" className="tr-button-primary">
-                Shop Compatible Stands
-              </Link>
-              <Link href="/shop" className="tr-button-outline">
-                Browse All Stands
-              </Link>
-            </div>
           </div>
           <div className="tr-premium-surface relative aspect-[4/3]">
             <Image
@@ -47,28 +48,39 @@ export default async function MultiLinkPage() {
               fill
               priority
               unoptimized
-              className="object-contain object-center p-4 mix-blend-multiply"
+              className="object-contain p-7 mix-blend-multiply sm:p-10"
             />
           </div>
         </div>
-        <div className="tr-container mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              "QR + NFC point to one permanent Tap Rater URL",
-              "Up to 10 editable links",
-              "Change links anytime",
-              "Customer account included",
-              "No need to replace the stand when links change",
-              "Mobile-friendly hosted landing page"
-            ].map((benefit, index) => (
-              <div key={benefit} className="rounded-[8px] border border-line bg-white p-4">
+      </SectionShell>
+
+      <SectionShell tone="soft">
+        <div className="tr-container">
+          <SectionHeader
+            eyebrow="Hosted page"
+            title="One permanent page for every customer action."
+            body="Multi-Link gives the stand a hosted landing page that can be managed after purchase from the customer account."
+          />
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {benefits.map((benefit, index) => (
+              <article key={benefit} className="tr-card p-5">
                 <p className="tr-eyebrow text-brand">{String(index + 1).padStart(2, "0")}</p>
-                <p className="mt-2 text-sm font-medium leading-5 text-ink">{benefit}</p>
-              </div>
+                <h2 className="mt-3 text-lg font-semibold leading-6 text-ink">{benefit}</h2>
+              </article>
             ))}
+          </div>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="#compatible-stands" className="tr-button-primary">
+              Shop Compatible Stands
+            </Link>
+            <Link href="/shop" className="tr-button-outline">
+              Browse All Stands
+            </Link>
+          </div>
         </div>
       </SectionShell>
 
-      <SectionShell tone="soft" spacing="default">
+      <SectionShell spacing="default">
         <div id="compatible-stands" className="tr-container">
           <SectionHeader
             align="left"
