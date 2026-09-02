@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata = {
   title: "Checkout Canceled | Tap Rater",
@@ -7,13 +8,15 @@ export const metadata = {
 
 export default function CheckoutCancelPage() {
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-16 text-ink">
-      <section className="mx-auto max-w-2xl rounded-[22px] border border-line bg-white p-7 shadow-sm sm:p-8">
-        <p className="tr-eyebrow">Stripe checkout</p>
-        <h1 className="tr-page-title mt-3">Checkout canceled</h1>
-        <p className="mt-4 leading-7 text-muted">
-          No payment was completed. Your cart stays in the browser so you can adjust quantities or try checkout again.
-        </p>
+    <main className="tr-public-shell text-ink">
+      <PageHero
+        eyebrow="Stripe checkout"
+        title="Checkout canceled"
+        body="No payment was completed. Your cart stays in the browser so you can adjust quantities or try checkout again."
+      />
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container-narrow">
+      <section className="tr-card p-6 sm:p-7">
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/cart" className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-white hover:bg-brand">
             Return to cart
@@ -23,6 +26,8 @@ export default function CheckoutCancelPage() {
           </Link>
         </div>
       </section>
+        </div>
+      </SectionShell>
     </main>
   );
 }

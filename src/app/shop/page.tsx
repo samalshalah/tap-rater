@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SlidersHorizontal } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -49,20 +49,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container">
-          <p className="tr-eyebrow">Tap Rater shop</p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-[0.82fr_1fr] lg:items-end">
-            <h1 className="tr-page-title max-w-3xl">
-              Shop NFC and QR stands.
-            </h1>
-            <p className="tr-body max-w-2xl text-[1.05rem]">
-              Browse by stand type or business use, then choose the product that
-              fits the customer action.
-            </p>
-          </div>
-        </div>
-      </SectionShell>
+      <PageHero
+        eyebrow="Tap Rater shop"
+        title="Shop NFC and QR stands."
+        body="Browse by stand type or business use, then choose the product that fits the customer action."
+      />
 
       <SectionShell tone="soft" spacing="compact">
         <div

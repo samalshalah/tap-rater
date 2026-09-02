@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/product-card";
-import { SectionHeader, SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getStorefrontProducts, staticStorefrontProducts } from "@/lib/product-repository";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
@@ -30,29 +29,16 @@ export default async function MultiLinkPage() {
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="hero">
-        <div className="tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center">
-          <div className="lg:pr-6">
-            <p className="tr-eyebrow">Multi-Link service</p>
-            <h1 className="tr-page-title mt-4 max-w-3xl">
-              One stand. Up to 10 links. Update them anytime.
-            </h1>
-            <p className="tr-body mt-5 max-w-3xl text-lg sm:text-xl">
-              Add Multi-Link to a compatible Tap Rater stand for {monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.
-            </p>
-          </div>
-          <div className="tr-premium-surface relative aspect-[4/3]">
-            <Image
-              src="/uploads/marketing/multi-link-hero-rate-your-experience.png"
-              alt="Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page"
-              fill
-              priority
-              unoptimized
-              className="object-contain p-7 sm:p-10"
-            />
-          </div>
-        </div>
-      </SectionShell>
+      <PageHero
+        eyebrow="Multi-Link service"
+        title="One stand. Up to 10 links. Update them anytime."
+        body={`Add Multi-Link to a compatible Tap Rater stand for ${monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.`}
+        image={{
+          src: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
+          alt: "Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page",
+          priority: true
+        }}
+      />
 
       <SectionShell tone="soft">
         <div className="tr-container">

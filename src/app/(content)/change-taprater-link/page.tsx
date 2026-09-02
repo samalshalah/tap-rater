@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ChangeLinkForm } from "@/components/forms/change-link-form";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Change TapRater Link",
@@ -13,15 +13,13 @@ export const metadata: Metadata = {
 export default function ChangeTapRaterLinkPage() {
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <p className="tr-eyebrow">Link update</p>
-            <h1 className="tr-page-title mt-3">Change TapRater Link</h1>
-            <p className="tr-body mt-4">
-              Use this form when your review page, survey, or feedback URL changes. The request is saved in the backend for admin follow-up.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Link update"
+        title="Change TapRater Link"
+        body="Use this form when your review page, survey, or feedback URL changes. The request is saved in the backend for admin follow-up."
+      />
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container-narrow">
           <div className="tr-card p-5 md:p-7">
             <ChangeLinkForm />
           </div>

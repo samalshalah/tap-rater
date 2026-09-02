@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ActivationForm } from "@/components/activation/activation-form";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata = {
   title: "Activate Your Tap Rater",
@@ -23,17 +24,15 @@ export default async function ActivatePage({ searchParams }: ActivatePageProps) 
     process.env.MAPS_PLATFORM_API_KEY;
 
   return (
-    <main className="bg-soft">
-      <section className="mx-auto grid max-w-6xl gap-8 px-4 py-12 md:grid-cols-[0.8fr_1.2fr] md:px-6 md:py-16">
-        <div className="space-y-5">
-          <p className="tr-eyebrow">Tap Rater activation</p>
-          <div className="space-y-4">
-            <h1 className="tr-page-title">Activate your Tap Rater</h1>
-            <p className="text-lg leading-8 text-muted">
-              Connect your stand to your review, booking, or business link. Once activated, every scan of the NFC chip or QR code will use
-              your saved destination.
-            </p>
-          </div>
+    <main className="tr-public-shell text-ink">
+      <PageHero
+        eyebrow="Tap Rater activation"
+        title="Activate your Tap Rater"
+        body="Connect your stand to your review, booking, or business link. Once activated, every scan of the NFC chip or QR code will use your saved destination."
+      />
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
+          <div className="space-y-5">
           <div className="grid gap-3 text-sm text-muted">
             <div className="rounded-md border border-line bg-white p-4">
               <p className="font-bold text-ink">What you need</p>
@@ -53,7 +52,8 @@ export default async function ActivatePage({ searchParams }: ActivatePageProps) 
         </div>
 
         <ActivationForm initialDeviceCode={deviceCode} googleMapsApiKey={googleMapsApiKey} />
-      </section>
+        </div>
+      </SectionShell>
     </main>
   );
 }

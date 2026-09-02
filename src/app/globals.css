@@ -140,6 +140,26 @@ main h3 {
     @apply text-[0.98rem] font-semibold leading-snug text-ink md:text-[1.02rem];
   }
 
+  .tr-page-hero {
+    @apply grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center;
+  }
+
+  .tr-page-hero-text-only {
+    @apply block;
+  }
+
+  .tr-page-hero-copy {
+    @apply max-w-[780px] lg:pr-6;
+  }
+
+  .tr-page-hero-text-only .tr-page-hero-copy {
+    @apply max-w-3xl;
+  }
+
+  .tr-page-hero-body {
+    @apply text-base leading-7 text-muted;
+  }
+
   .tr-body {
     @apply text-base leading-7 text-muted;
   }

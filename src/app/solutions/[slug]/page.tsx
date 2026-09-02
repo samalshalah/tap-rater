@@ -1,10 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
-import { SectionHeader, SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUseBySlug, getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 
@@ -56,27 +55,24 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="hero">
-        <div className="tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center">
-          <div className="lg:pr-6">
-            <Link href="/solutions" className="tr-editorial-link">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              All business uses
-            </Link>
-            <p className="tr-eyebrow mt-6">Shop by use</p>
-            <h1 className="tr-page-title mt-4 max-w-4xl">{businessUse.title}</h1>
-            <p className="tr-body mt-5 max-w-3xl text-lg sm:text-xl">
-              {businessUse.shortDescription || businessUse.description}
-            </p>
+      <PageHero
+        backLink={{ href: "/solutions", label: "All business uses" }}
+        eyebrow="Shop by use"
+        title={businessUse.title}
+        body={
+          <>
+            <p>{businessUse.shortDescription || businessUse.description}</p>
             {businessUse.longContent ? (
-              <div className="tr-body-sm mt-6 max-w-3xl whitespace-pre-line">{businessUse.longContent}</div>
+              <div className="tr-body-sm mt-5 whitespace-pre-line">{businessUse.longContent}</div>
             ) : null}
-          </div>
-          <div className="tr-premium-surface relative aspect-[4/3]">
-            <Image src={heroImage} alt={businessUse.title} fill unoptimized className="object-cover" />
-          </div>
-        </div>
-      </SectionShell>
+          </>
+        }
+        image={{
+          src: heroImage,
+          alt: businessUse.title,
+          fit: "cover"
+        }}
+      />
 
       <SectionShell tone="soft" spacing={hasSingleProduct ? "compact" : "default"}>
         <div className="tr-container">

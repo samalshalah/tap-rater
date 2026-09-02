@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { formatOrderReference } from "@/lib/order-reference";
 
 type CheckoutSuccessPageProps = {
@@ -20,16 +21,18 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
   const isManualOrder = Boolean(manualOrderReference);
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-16 text-ink">
-      <section className="mx-auto max-w-2xl rounded-[22px] border border-line bg-white p-7 shadow-sm sm:p-8">
-        <p className="tr-eyebrow">Order received</p>
-        <h1 className="tr-page-title mt-3">Your order was received</h1>
+    <main className="tr-public-shell text-ink">
+      <PageHero
+        eyebrow="Order received"
+        title="Your order was received"
+        body={isManualOrder
+          ? "Tap Rater will review your stand setup and contact you with the next step for payment and fulfillment."
+          : "Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details before fulfillment starts."}
+      />
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container-narrow">
+      <section className="tr-card p-6 sm:p-7">
         <p className="mt-4 leading-7 text-muted">
-          {isManualOrder
-            ? "Tap Rater will review your stand setup and contact you with the next step for payment and fulfillment."
-            : "Stripe is finalizing the payment confirmation. Tap Rater will review your stand setup and fulfillment details before fulfillment starts."}
-        </p>
-        <p className="mt-3 leading-7 text-muted">
           Standard Direct stands use NFC pointed directly to the destination URL approved during setup.
           Tap Rater reviews the order before fulfillment.
         </p>
@@ -51,6 +54,8 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           </Link>
         </div>
       </section>
+        </div>
+      </SectionShell>
     </main>
   );
 }

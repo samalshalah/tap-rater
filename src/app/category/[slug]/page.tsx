@@ -1,9 +1,7 @@
-import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { catalogCategories, type CatalogCategorySlug } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
@@ -69,33 +67,24 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const title = activeStandType.title || category.title;
   const description = activeStandType.shortDescription || activeStandType.description || category.description;
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
-  const isMultiLinkCategory = category.slug === "website-links";
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className={isMultiLinkCategory ? "tr-container grid gap-8 lg:grid-cols-[0.94fr_1fr] lg:items-center" : "tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center"}>
-          {isMultiLinkCategory ? (
-            <div className="tr-page-hero-media relative aspect-square overflow-hidden bg-white">
-              <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain" />
-            </div>
-          ) : null}
-          <div className={isMultiLinkCategory ? "" : "lg:pr-6"}>
-            <Link href="/shop" className="text-sm font-semibold text-brand">
-              Shop all stands
-            </Link>
-            <p className="tr-eyebrow mt-6">{category.eyebrow}</p>
-            <h1 className="tr-page-title mt-4 max-w-4xl">{title}</h1>
-            <p className="tr-body mt-5 max-w-3xl text-[1.05rem]">{description}</p>
-            {activeStandType.longContent ? <div className="tr-body-sm mt-6 max-w-3xl whitespace-pre-line">{activeStandType.longContent}</div> : null}
-          </div>
-          {!isMultiLinkCategory ? (
-            <div className="tr-page-hero-media tr-premium-surface relative aspect-[4/3]">
-              <Image src={heroImage} alt={activeStandType.title || visual.alt} fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
-            </div>
-          ) : null}
-        </div>
-      </SectionShell>
+      <PageHero
+        backLink={{ href: "/shop", label: "Shop all stands" }}
+        eyebrow={category.eyebrow}
+        title={title}
+        body={
+          <>
+            <p>{description}</p>
+            {activeStandType.longContent ? <div className="tr-body-sm mt-5 whitespace-pre-line">{activeStandType.longContent}</div> : null}
+          </>
+        }
+        image={{
+          src: heroImage,
+          alt: activeStandType.title || visual.alt
+        }}
+      />
 
       <SectionShell tone="soft" spacing={hasSingleProduct ? "compact" : "default"}>
         <div className="tr-container">

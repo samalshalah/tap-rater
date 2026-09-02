@@ -1,8 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { ProcessStepCard } from "@/components/storefront/process-step-card";
-import { SectionHeader, SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "How Tap Rater Works",
@@ -24,20 +23,15 @@ const flows = [
 export default function HowItWorksPage() {
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="hero">
-        <div className="tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center">
-          <div className="lg:pr-6">
-            <p className="tr-eyebrow">How it works</p>
-            <h1 className="tr-page-title mt-4 max-w-3xl">From product page to counter-ready stand.</h1>
-            <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
-              Direct stands are built for fast checkout: choose the stand, add one destination URL, and complete checkout.
-            </p>
-          </div>
-          <div className="tr-premium-surface relative aspect-[4/3]">
-            <Image src="/uploads/products/google-review-stand.png" alt="Tap Rater Google Review stand" fill unoptimized className="object-contain p-7 mix-blend-multiply sm:p-10" />
-          </div>
-        </div>
-      </SectionShell>
+      <PageHero
+        eyebrow="How it works"
+        title="From product page to counter-ready stand."
+        body="Direct stands are built for fast checkout: choose the stand, add one destination URL, and complete checkout."
+        image={{
+          src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
+          alt: "Tap Rater review stand"
+        }}
+      />
 
       <SectionShell tone="soft">
         <div className="tr-container">

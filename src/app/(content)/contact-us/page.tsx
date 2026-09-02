@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ContactForm } from "@/components/forms/contact-form";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Contact Tap Rater",
@@ -13,15 +13,13 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <p className="tr-eyebrow">Contact</p>
-            <h1 className="tr-page-title mt-3">Talk to Tap Rater</h1>
-            <p className="tr-body mt-4">
-              Ask about NFC and QR stands, custom setup, review link changes, hosted multi-link requests, or which Tap Rater product fits your business.
-            </p>
-          </div>
+      <PageHero
+        eyebrow="Contact"
+        title="Talk to Tap Rater"
+        body="Ask about NFC and QR stands, custom setup, review link changes, hosted multi-link requests, or which Tap Rater product fits your business."
+      />
+      <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container-narrow">
           <div className="tr-card p-5 md:p-7">
             <ContactForm />
           </div>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -12,7 +12,7 @@ const sections = [
     title: "Information we collect",
     body: [
       "Tap Rater collects the information needed to sell, customize, support, and fulfill NFC stand orders. This may include your name, email address, business name, destination link, shipping or order details, uploaded logo files, design notes, and support request details.",
-      "For Branded + QR orders, we collect the business name, destination URL, logo file, generated QR value, and proof confirmation details needed to prepare the stand."
+      "For Branded + QR orders, we collect the business name, destination URL, logo file, and generated QR value needed to prepare the stand."
     ]
   },
   {
@@ -24,7 +24,7 @@ const sections = [
   {
     title: "How we use information",
     body: [
-      "We use order and setup information to process checkout, generate QR proofs, prepare order details, answer support requests, update destination links, and communicate about your order.",
+      "We use order and setup information to process checkout, generate QR codes, prepare order details, answer support requests, update destination links, and communicate about your order.",
       "We may review uploaded content to confirm it is appropriate and compatible with the selected stand option."
     ]
   },
@@ -65,13 +65,7 @@ function PolicyPage({
 }) {
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container-narrow">
-          <p className="tr-eyebrow">{eyebrow}</p>
-          <h1 className="tr-page-title mt-4">{title}</h1>
-          <p className="tr-body mt-4">{intro}</p>
-        </div>
-      </SectionShell>
+      <PageHero eyebrow={eyebrow} title={title} body={intro} />
 
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container-narrow grid gap-4">

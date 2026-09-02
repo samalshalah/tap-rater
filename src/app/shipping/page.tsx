@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getShippingSettings } from "@/lib/shipping-settings";
 
 export const metadata: Metadata = {
@@ -23,15 +23,11 @@ export default async function ShippingPage() {
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container-narrow">
-          <p className="tr-eyebrow">Shipping</p>
-          <h1 className="tr-page-title mt-4">Shipping for Tap Rater stands.</h1>
-          <p className="tr-body mt-4">
-            Tap Rater stands are prepared after setup details are complete and the order is ready for fulfillment.
-          </p>
-        </div>
-      </SectionShell>
+      <PageHero
+        eyebrow="Shipping"
+        title="Shipping for Tap Rater stands."
+        body="Tap Rater stands are prepared after setup details are complete and the order is ready for fulfillment."
+      />
 
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container-narrow grid gap-4">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Tap Rater Pricing",
@@ -16,15 +16,11 @@ const prices = [
 export default function PricingPage() {
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact">
-        <div className="tr-container">
-          <p className="tr-eyebrow">Pricing</p>
-          <h1 className="tr-page-title mt-4 max-w-3xl">Simple pricing for direct stands.</h1>
-          <p className="tr-body mt-4 max-w-2xl">
-            Buy ready stands from the shop. Standard Direct includes NFC direct to one link as a one-time physical product purchase.
-          </p>
-        </div>
-      </SectionShell>
+      <PageHero
+        eyebrow="Pricing"
+        title="Simple pricing for direct stands."
+        body="Buy ready stands from the shop. Standard Direct includes NFC direct to one link as a one-time physical product purchase."
+      />
 
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container grid gap-4 md:grid-cols-3">
