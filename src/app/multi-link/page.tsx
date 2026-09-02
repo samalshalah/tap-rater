@@ -21,14 +21,14 @@ export default async function MultiLinkPage() {
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell spacing="compact" className="py-10 sm:py-14 lg:py-16">
-        <div className="tr-container grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
-          <div className="lg:py-8">
+      <SectionShell spacing="hero">
+        <div className="tr-container grid gap-8 lg:grid-cols-[0.82fr_1fr] lg:items-center">
+          <div className="lg:pr-6">
             <p className="tr-eyebrow">Multi-Link service</p>
-            <h1 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">
+            <h1 className="tr-page-title mt-4 max-w-3xl">
               One stand. Up to 10 links. Update them anytime.
             </h1>
-            <p className="tr-body mt-4 max-w-xl text-base">
+            <p className="tr-body mt-5 max-w-3xl text-lg sm:text-xl">
               Add Multi-Link to a compatible Tap Rater stand for {monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -40,15 +40,14 @@ export default async function MultiLinkPage() {
               </Link>
             </div>
           </div>
-          <div className="relative overflow-hidden rounded-[28px] border border-line bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+          <div className="tr-premium-surface relative aspect-[4/3]">
             <Image
               src="/uploads/marketing/multi-link-hero-rate-your-experience.png"
               alt="Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page"
-              width={1536}
-              height={1024}
+              fill
               priority
               unoptimized
-              className="h-auto w-full object-cover"
+              className="object-contain object-center p-4 mix-blend-multiply"
             />
           </div>
         </div>
