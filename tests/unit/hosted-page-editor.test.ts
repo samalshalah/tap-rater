@@ -175,6 +175,32 @@ describe("hosted page editor", () => {
     const reloaded = await getOwnedPage();
     expect(reloaded.draft.businessName).toBe("Failed Publish Cafe");
   });
+
+  it("publishes customer edits when the permanent code was already assigned during order provisioning", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-23T12:00:00.000Z"));
+    const storage = new MemoryHostedStorage();
+    storage.objects.set(
+      "hosted-pages/ABCDEFGHJKM2/assignment.json",
+      JSON.stringify({
+        code: "ABCDEFGHJKM2",
+        physicalProductRef: "manual_order:item_1",
+        assignedAt: "2026-08-20T12:00:00.000Z",
+        assignedBy: "manual:order"
+      })
+    );
+
+    await saveHostedPageDraft("qa-customer@example.com", {
+      businessName: "Already Assigned Cafe",
+      appearance: { theme: "light", accentColor: "#0f766e" },
+      buttons: [{ id: "website", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }]
+    });
+
+    const result = await publishHostedPageDraft("qa-customer@example.com", storage);
+
+    expect(result.snapshot.businessName).toBe("Already Assigned Cafe");
+    expect(storage.currentVersion()).toBe(result.snapshot.version);
+  });
 });
 
 async function getOwnedPage() {

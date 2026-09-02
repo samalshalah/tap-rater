@@ -10,7 +10,7 @@ import {
   type HostedPageEditorDraft,
   type HostedPageEditorRecord
 } from "@/lib/hosted-page-editor-shared";
-import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
+import { assignPermanentHostedPageCode, publishHostedPageSnapshot, readHostedPageAssignment, HostedPageRepositoryError, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { isSafePublicUrl, renderHostedPageHtml, resolveHostedPageLifecycle, validateHostedPageSnapshot, type HostedPageLifecycleStatus, type HostedPageSnapshot } from "@/lib/hosted-pages/snapshots";
 
 export { hostedPageButtonLimit, supportedHostedPageButtons };
@@ -80,15 +80,31 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
   const snapshot = buildSnapshotFromDraft(context.page);
-  await assignPermanentHostedPageCode(storage, {
-    physicalProductRef: context.page.id,
-    code: context.page.code,
-    assignedBy: `customer:${context.page.customerId}`
-  });
+  await ensureHostedPageCodeIsAssigned(storage, context.page);
   await publishHostedPageSnapshot(storage, snapshot);
 
   const page = await markHostedPagePublished(email, snapshot.version, snapshot.publishedAt, code);
   return { page, snapshot };
+}
+
+async function ensureHostedPageCodeIsAssigned(storage: HostedPageTextStorage, page: HostedPageEditorRecord) {
+  try {
+    await assignPermanentHostedPageCode(storage, {
+      physicalProductRef: page.id,
+      code: page.code,
+      assignedBy: `customer:${page.customerId}`
+    });
+    return;
+  } catch (error) {
+    if (!(error instanceof HostedPageRepositoryError) || !error.message.includes("already assigned")) {
+      throw error;
+    }
+  }
+
+  const existingAssignment = await readHostedPageAssignment(storage, page.code);
+  if (!existingAssignment) {
+    throw new HostedPageEditorError("Hosted page code could not be confirmed before publishing.", 500);
+  }
 }
 
 export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean; publicBaseUrl?: string } = {}): HostedPageSnapshot {
