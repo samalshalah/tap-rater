@@ -48,7 +48,7 @@ export default async function MultiLinkPage() {
               fill
               priority
               unoptimized
-              className="object-contain p-7 mix-blend-multiply sm:p-10"
+              className="object-contain p-7 sm:p-10"
             />
           </div>
         </div>
