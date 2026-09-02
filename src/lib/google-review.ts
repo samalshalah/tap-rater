@@ -1,3 +1,3 @@
 export function generateGoogleReviewUrl(placeId: string) {
-  return `https://g.page/r/${encodeURIComponent(placeId.trim())}/review`;
+  return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId.trim())}`;
 }

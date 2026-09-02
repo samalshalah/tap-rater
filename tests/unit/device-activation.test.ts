@@ -34,8 +34,8 @@ describe("device activation", () => {
   });
 
   it("generates Google review links from place IDs", () => {
-    expect(generateGoogleReviewUrl("CftdcrugMuoHEAE")).toBe("https://g.page/r/CftdcrugMuoHEAE/review");
-    expect(generateGoogleReviewUrl("ChIJ-test place")).toBe("https://g.page/r/ChIJ-test%20place/review");
+    expect(generateGoogleReviewUrl("ChIJLocalShop")).toBe("https://search.google.com/local/writereview?placeid=ChIJLocalShop");
+    expect(generateGoogleReviewUrl("ChIJ-test place")).toBe("https://search.google.com/local/writereview?placeid=ChIJ-test%20place");
   });
 
   it("maps activation destination types to platform destination types", () => {
@@ -117,7 +117,7 @@ describe("device activation", () => {
     expect(db.inserted.businesses[0]).toMatchObject({
       business_name: "Local Shop From Google",
       google_place_id: "ChIJLocalShop",
-      google_review_url: "https://g.page/r/ChIJLocalShop/review"
+      google_review_url: "https://search.google.com/local/writereview?placeid=ChIJLocalShop"
     });
   });
 

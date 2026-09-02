@@ -925,7 +925,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                             setProofApproved(false);
                             setApprovedProofSnapshot(null);
                           }}
-                          placeholder={isGoogleReviewProduct ? "https://g.page/r/PLACE_ID/review" : "https://example.com"}
+                          placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
                         />
                       </label>
 

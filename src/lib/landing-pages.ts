@@ -72,7 +72,7 @@ export function getDemoLandingPage(): LandingPage {
     headline: "Choose where you want to leave feedback",
     description: "This demo shows how a hosted Tap Rater page can route customers to reviews, booking, social links, or private feedback.",
     buttons: [
-      { label: "Review us on Google", url: "https://g.page/r/demo/review", platform: "Google", destinationType: "google_review" },
+      { label: "Review us on Google", url: "https://search.google.com/local/writereview?placeid=demo", platform: "Google", destinationType: "google_review" },
       { label: "Visit Facebook", url: "https://facebook.com", platform: "Facebook", destinationType: "facebook_review" },
       { label: "Book an appointment", url: "https://example.com/book", platform: "Booking", destinationType: "booking" }
     ],
