@@ -13,7 +13,23 @@ const configuredStandardPayload = {
         proofApproved: true
       }
     }
-  ]
+  ],
+  customer: {
+    email: "buyer@example.com",
+    name: "Buyer Name",
+    phone: "555-0100",
+    createAccount: false
+  },
+  shippingAddress: {
+    name: "Buyer Name",
+    line1: "100 Main St",
+    line2: "",
+    city: "Washington",
+    state: "DC",
+    postalCode: "20002",
+    country: "US",
+    phone: "555-0100"
+  }
 };
 
 function createCheckoutRequest(payload: unknown) {
@@ -67,7 +83,7 @@ describe("checkout route reliability", () => {
     const body = await response.json();
 
     expect(response.status).toBe(400);
-    expect(body).toEqual({ error: "Cart payload is invalid." });
+    expect(body).toEqual({ error: "Customer and shipping details are required before payment." });
     expect(dependencies.createStripeSession).not.toHaveBeenCalled();
     expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
   });
@@ -89,7 +105,9 @@ describe("checkout route reliability", () => {
               proofApproved: true
             }
           }
-        ]
+        ],
+        customer: configuredStandardPayload.customer,
+        shippingAddress: configuredStandardPayload.shippingAddress
       }),
       dependencies
     );
@@ -219,12 +237,14 @@ describe("checkout route reliability", () => {
     const response = await handleCheckoutPost(
       createCheckoutRequest({
         items: [
-          {
-            ...configuredStandardPayload.items[0],
-            quantity: 2
-          }
-        ]
-      }),
+        {
+          ...configuredStandardPayload.items[0],
+          quantity: 2
+        }
+      ],
+      customer: configuredStandardPayload.customer,
+      shippingAddress: configuredStandardPayload.shippingAddress
+    }),
       dependencies
     );
 

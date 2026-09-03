@@ -16,7 +16,7 @@ import { hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
-import { checkoutCartSchema } from "@/lib/validators";
+import { checkoutRequestSchema, type CheckoutCustomerInput, type CheckoutShippingAddressInput } from "@/lib/validators";
 
 type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
 
@@ -35,12 +35,16 @@ export type CheckoutRouteDependencies = {
     subtotalCents: number;
     totalCents: number;
     currency: string;
+    customer: CheckoutCustomerInput;
+    shippingAddress: CheckoutShippingAddressInput;
     shippingAmountCents?: number;
     shippingMode?: "manual" | "free" | "flat";
   }) => Promise<PendingOrderResult>;
   createRequestId: () => string;
   createStripeSession: (input: {
     cart: Extract<ValidatedCheckoutCart, { ok: true }>;
+    customer: CheckoutCustomerInput;
+    shippingAddress: CheckoutShippingAddressInput;
     siteUrl: string;
     stripeMode: "test" | "live";
     shippingSettings: ShippingSettingsInput;
@@ -56,11 +60,11 @@ export type CheckoutRouteDependencies = {
 
 export async function handleCheckoutPost(request: Request, dependencies: CheckoutRouteDependencies = checkoutRouteDependencies) {
   const requestId = dependencies.createRequestId();
-  const parsed = checkoutCartSchema.safeParse(await request.json().catch(() => null));
+  const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
     logCheckout(dependencies.logger, "warn", requestId, "invalid_payload");
-    return NextResponse.json({ error: "Cart payload is invalid." }, { status: 400 });
+    return NextResponse.json({ error: "Customer and shipping details are required before payment." }, { status: 400 });
   }
 
   logCheckout(dependencies.logger, "info", requestId, "parsed_cart", {
@@ -108,6 +112,11 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
   });
   const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
   const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);
+  const accountRequired = cart.checkoutMode === "subscription";
+  const customer = {
+    ...parsed.data.customer,
+    createAccount: accountRequired || parsed.data.customer.createAccount === true
+  };
 
   try {
     logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_start");
@@ -115,6 +124,8 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     const session = await withTimeout(
       dependencies.createStripeSession({
         cart,
+        customer,
+        shippingAddress: parsed.data.shippingAddress,
         siteUrl: dependencies.getSiteUrl(requestOrigin),
         stripeMode: stripeConfig.mode,
         shippingSettings
@@ -141,8 +152,10 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
         stripeCheckoutSessionId: session.id,
         rows: cart.rows,
         subtotalCents: cart.totalCents,
-        totalCents: cart.totalCents + shippingAmountCents,
+        totalCents: cart.totalCents + cart.recurringTotalCents + shippingAmountCents,
         currency: cart.currency,
+        customer,
+        shippingAddress: parsed.data.shippingAddress,
         shippingAmountCents,
         shippingMode
       }),
@@ -182,11 +195,13 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
 const checkoutRouteDependencies: CheckoutRouteDependencies = {
   createPendingOrder: createPendingOrderForCheckout,
   createRequestId: createCheckoutRequestId,
-  createStripeSession: async ({ cart, siteUrl, stripeMode, shippingSettings }) => {
+  createStripeSession: async ({ cart, customer, shippingAddress, siteUrl, stripeMode, shippingSettings }) => {
     const stripe = getStripeClient();
     return stripe.checkout.sessions.create(
       createCheckoutSessionParams({
         cart,
+        customer,
+        shippingAddress,
         siteUrl,
         stripeMode,
         shippingSettings

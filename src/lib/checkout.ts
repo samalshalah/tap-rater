@@ -19,6 +19,7 @@ import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/sh
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
+import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -246,8 +247,8 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
   };
 }
 
-export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  return rows.flatMap((row) => {
+export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAmountCents = 0): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  const productLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = rows.flatMap((row) => {
     const productData = {
       name: row.title,
       description: `${row.optionLabel} - ${row.shortDescription}`,
@@ -270,52 +271,77 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[]): Stripe.Ch
       return [physicalLine];
     }
 
-    return [
-      physicalLine,
-      {
-        quantity: row.quantity,
-        price_data: {
-          currency: "usd",
-          product_data: {
-            ...productData,
-            name: `${row.title} monthly hosting`,
-            metadata: {
-              ...productData.metadata,
-              line_kind: "hosted_subscription"
-            }
-          },
-          recurring: {
-            interval: "month"
-          },
-          unit_amount: row.monthlyAmountCents ?? 0
-        }
+    const hostedLine: Stripe.Checkout.SessionCreateParams.LineItem = {
+      quantity: row.quantity,
+      price_data: {
+        currency: "usd",
+        product_data: {
+          ...productData,
+          name: `${row.title} monthly hosting`,
+          metadata: {
+            ...productData.metadata,
+            line_kind: "hosted_subscription"
+          }
+        },
+        recurring: {
+          interval: "month" as const
+        },
+        unit_amount: row.monthlyAmountCents ?? 0
       }
-    ];
+    };
+
+    return [physicalLine, hostedLine];
   });
+
+  if (shippingAmountCents <= 0) {
+    return productLineItems;
+  }
+
+  return [
+    ...productLineItems,
+    {
+      quantity: 1,
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: "Standard shipping",
+          description: "Shipping for this Tap Rater order.",
+          metadata: {
+            line_kind: "shipping"
+          }
+        },
+        unit_amount: shippingAmountCents
+      }
+    }
+  ];
 }
 
 export function createCheckoutSessionParams({
   cart,
+  customer,
+  shippingAddress,
   siteUrl,
   stripeMode = getStripeMode(),
   shippingSettings = getDefaultShippingSettings()
 }: {
   cart: Extract<ValidatedCheckoutCart, { ok: true }>;
+  customer?: CheckoutCustomerInput;
+  shippingAddress?: CheckoutShippingAddressInput;
   siteUrl: string;
   stripeMode?: StripeMode;
   shippingSettings?: ShippingSettingsInput;
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
-  const allowedCountries = shippingSettings.allowedCountryCodes as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[];
   const shippingRule = resolveCheckoutShippingRule(cart.totalCents);
-  const shippingOptions = buildStripeShippingOptions(cart.totalCents);
+  const requiresAccount = customer?.createAccount === true || cart.checkoutMode === "subscription";
 
   return {
     mode: cart.checkoutMode,
     ui_mode: "embedded_page",
     integration_identifier: createStripeIntegrationIdentifier(),
-    line_items: buildStripeCheckoutLineItems(cart.rows),
+    line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    ...(customer?.email ? { customer_email: customer.email } : {}),
     billing_address_collection: "auto",
     ...(cart.checkoutMode === "payment" ? {
       customer_creation: "always" as const,
@@ -326,44 +352,30 @@ export function createCheckoutSessionParams({
         setup_future_usage: "off_session" as const
       }
     } : {}),
-    shipping_address_collection: {
-      allowed_countries: allowedCountries.length > 0 ? allowedCountries : ["US"]
-    },
-    ...(shippingOptions.length > 0 ? { shipping_options: shippingOptions } : {}),
     phone_number_collection: {
-      enabled: true
+      enabled: false
     },
     metadata: {
       stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
       recurring_total_cents: String(cart.recurringTotalCents),
+      due_today_cents: String(cart.totalCents + shippingRule.amountCents),
       configured_items: String(cart.rows.length),
       checkout_intent: cart.checkoutMode === "subscription" ? "hosted_subscription" : "direct_payment",
       shipping_mode: shippingRule.mode,
-      shipping_amount_cents: String(shippingRule.amountCents)
+      shipping_amount_cents: String(shippingRule.amountCents),
+      customer_email: customer?.email ?? "",
+      customer_name: customer?.name ?? "",
+      customer_phone: customer?.phone ?? shippingAddress?.phone ?? "",
+      create_account: requiresAccount ? "true" : "false",
+      shipping_country: shippingAddress?.country ?? "US",
+      shipping_postal_code: shippingAddress?.postalCode ?? ""
     }
   };
 }
 
 function createStripeIntegrationIdentifier() {
   return `taprater_checkout_${Math.random().toString(36).slice(2, 10).padEnd(8, "0")}`;
-}
-
-function buildStripeShippingOptions(subtotalCents: number): Stripe.Checkout.SessionCreateParams.ShippingOption[] {
-  const shippingRule = resolveCheckoutShippingRule(subtotalCents);
-
-  return [
-    {
-      shipping_rate_data: {
-        type: "fixed_amount",
-        display_name: shippingRule.displayName,
-        fixed_amount: {
-          amount: shippingRule.amountCents,
-          currency: "usd"
-        }
-      }
-    }
-  ];
 }
 
 function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {

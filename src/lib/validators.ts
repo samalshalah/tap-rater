@@ -585,4 +585,30 @@ export const checkoutCartSchema = z.object({
     .max(50)
 });
 
+export const checkoutCustomerSchema = z.object({
+  email: z.string().trim().email().max(180),
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().max(40).optional().default(""),
+  createAccount: z.boolean().optional().default(false)
+});
+
+export const checkoutShippingAddressSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  line1: z.string().trim().min(2).max(180),
+  line2: z.string().trim().max(180).optional().default(""),
+  city: z.string().trim().min(2).max(120),
+  state: z.string().trim().min(2).max(80),
+  postalCode: z.string().trim().min(3).max(20),
+  country: z.string().trim().regex(/^[A-Z]{2}$/).default("US"),
+  phone: z.string().trim().max(40).optional().default("")
+});
+
+export const checkoutRequestSchema = checkoutCartSchema.extend({
+  customer: checkoutCustomerSchema,
+  shippingAddress: checkoutShippingAddressSchema
+});
+
 export type CheckoutCartInput = z.infer<typeof checkoutCartSchema>;
+export type CheckoutCustomerInput = z.infer<typeof checkoutCustomerSchema>;
+export type CheckoutShippingAddressInput = z.infer<typeof checkoutShippingAddressSchema>;
+export type CheckoutRequestInput = z.infer<typeof checkoutRequestSchema>;

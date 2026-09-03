@@ -26,6 +26,24 @@ const configuredStandardItem = {
   }
 };
 
+const checkoutCustomer = {
+  email: "buyer@example.com",
+  name: "Buyer Name",
+  phone: "555-0100",
+  createAccount: false
+};
+
+const checkoutShippingAddress = {
+  name: "Buyer Name",
+  line1: "100 Main St",
+  line2: "",
+  city: "Washington",
+  state: "DC",
+  postalCode: "20002",
+  country: "US" as const,
+  phone: "555-0100"
+};
+
 const productsWithBackendGoogleVariants = migratedProducts.map((product): MigratedProduct => {
   if (product.slug !== "google-review-stand") {
     return product;
@@ -793,6 +811,8 @@ describe("Stripe checkout helpers", () => {
     if (!result.ok) return;
     const params = createCheckoutSessionParams({
       cart: result,
+      customer: checkoutCustomer,
+      shippingAddress: checkoutShippingAddress,
       siteUrl: "https://taprater.com"
     });
 
@@ -803,6 +823,9 @@ describe("Stripe checkout helpers", () => {
     expect(params).not.toHaveProperty("success_url");
     expect(params).not.toHaveProperty("cancel_url");
     expect(params).not.toHaveProperty("payment_method_types");
+    expect(params).not.toHaveProperty("shipping_address_collection");
+    expect(params).not.toHaveProperty("shipping_options");
+    expect(params.customer_email).toBe("buyer@example.com");
     expect(params.customer_creation).toBe("always");
     expect(params.invoice_creation).toEqual({ enabled: true });
     expect(params.payment_intent_data).toEqual({ setup_future_usage: "off_session" });
@@ -815,24 +838,30 @@ describe("Stripe checkout helpers", () => {
         }
       }
     });
+    expect(params.line_items?.[1]).toMatchObject({
+      price_data: {
+        currency: "usd",
+        unit_amount: 1200,
+        product_data: {
+          name: "Standard shipping",
+          metadata: {
+            line_kind: "shipping"
+          }
+        }
+      }
+    });
     expect(params.metadata?.stripe_mode).toBe("test");
     expect(params.metadata?.total_cents).toBe("3900");
     expect(params.metadata?.recurring_total_cents).toBe("0");
+    expect(params.metadata?.due_today_cents).toBe("5100");
     expect(params.metadata?.checkout_intent).toBe("direct_payment");
     expect(params.metadata?.configured_items).toBe("1");
     expect(params.metadata?.shipping_mode).toBe("flat");
     expect(params.metadata?.shipping_amount_cents).toBe("1200");
-    expect(params.shipping_address_collection?.allowed_countries).toEqual(["US"]);
-    expect(params.shipping_options?.[0]).toMatchObject({
-      shipping_rate_data: {
-        type: "fixed_amount",
-        display_name: "Standard shipping",
-        fixed_amount: {
-          amount: 1200,
-          currency: "usd"
-        }
-      }
-    });
+    expect(params.metadata?.customer_email).toBe("buyer@example.com");
+    expect(params.metadata?.customer_name).toBe("Buyer Name");
+    expect(params.metadata?.create_account).toBe("false");
+    expect(params.phone_number_collection).toEqual({ enabled: false });
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 
@@ -859,6 +888,8 @@ describe("Stripe checkout helpers", () => {
     if (!result.ok) return;
     const params = createCheckoutSessionParams({
       cart: result,
+      customer: checkoutCustomer,
+      shippingAddress: checkoutShippingAddress,
       siteUrl: "https://taprater.com"
     });
 
@@ -869,7 +900,8 @@ describe("Stripe checkout helpers", () => {
     expect(params).not.toHaveProperty("payment_intent_data");
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
     expect(params.metadata?.recurring_total_cents).toBe("999");
-    expect(params.line_items).toHaveLength(2);
+    expect(params.metadata?.create_account).toBe("true");
+    expect(params.line_items).toHaveLength(3);
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         unit_amount: 3900
@@ -880,6 +912,14 @@ describe("Stripe checkout helpers", () => {
         unit_amount: 999,
         recurring: {
           interval: "month"
+        }
+      }
+    });
+    expect(params.line_items?.[2]).toMatchObject({
+      price_data: {
+        unit_amount: 1200,
+        product_data: {
+          name: "Standard shipping"
         }
       }
     });
@@ -1006,13 +1046,15 @@ describe("Stripe checkout helpers", () => {
 
     expect(params.metadata?.shipping_mode).toBe("flat");
     expect(params.metadata?.shipping_amount_cents).toBe("1200");
-    expect(params.shipping_options?.[0]).toMatchObject({
-      shipping_rate_data: {
-        type: "fixed_amount",
-        display_name: "Standard shipping",
-        fixed_amount: {
-          amount: 1200,
-          currency: "usd"
+    expect(params).not.toHaveProperty("shipping_options");
+    expect(params.line_items?.at(-1)).toMatchObject({
+      price_data: {
+        unit_amount: 1200,
+        product_data: {
+          name: "Standard shipping",
+          metadata: {
+            line_kind: "shipping"
+          }
         }
       }
     });
@@ -1025,21 +1067,15 @@ describe("Stripe checkout helpers", () => {
     if (!result.ok) return;
     const params = createCheckoutSessionParams({
       cart: result,
+      customer: checkoutCustomer,
+      shippingAddress: checkoutShippingAddress,
       siteUrl: "https://taprater.com"
     });
 
     expect(params.metadata?.shipping_mode).toBe("free");
     expect(params.metadata?.shipping_amount_cents).toBe("0");
-    expect(params.shipping_options?.[0]).toMatchObject({
-      shipping_rate_data: {
-        type: "fixed_amount",
-        display_name: "Free shipping",
-        fixed_amount: {
-          amount: 0,
-          currency: "usd"
-        }
-      }
-    });
+    expect(params).not.toHaveProperty("shipping_options");
+    expect(params.line_items).toHaveLength(1);
   });
 
   it("records live mode metadata when live checkout is enabled", () => {

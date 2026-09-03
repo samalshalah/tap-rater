@@ -13,6 +13,7 @@ import {
   type ProductionArtworkStorage
 } from "@/lib/production-artwork";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
+import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
@@ -153,8 +154,13 @@ export type StripeCheckoutSessionLike = {
     phone?: string | null;
     address?: unknown;
     payment_method_details?: Record<string, unknown>;
+    stripe_customer_id?: string | null;
+    hosted_invoice_url?: string | null;
+    invoice_pdf_url?: string | null;
+    invoice_number?: string | null;
     receipt_url?: string | null;
   } | null;
+  invoice?: string | { id?: string | null; hosted_invoice_url?: string | null; invoice_pdf?: string | null; number?: string | null } | null;
   shipping_details?: {
     name?: string | null;
     phone?: string | null;
@@ -455,10 +461,13 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
 
 export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLike): OrderRecord {
   const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+  const stripeCustomerId = readStripeObjectId(session.customer);
+  const invoiceDetails = readInvoiceDetails(session.invoice);
   const email = session.customer_details?.email ?? session.customer_email ?? null;
   const lineItems = parseOrderLineItems(session.metadata?.order_items);
   const shippingDetails = session.shipping_details ?? session.collected_information?.shipping_details ?? null;
   const shippingAddress = normalizeShippingAddress(shippingDetails, session.customer_details);
+  const configuredSubtotalCents = readIntegerString(session.metadata?.total_cents);
 
   return {
     stripe_checkout_session_id: session.id ?? "",
@@ -467,11 +476,17 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
     payment_status: session.payment_status ?? null,
     email,
     customer_name: session.customer_details?.name ?? null,
-    subtotal_cents: session.amount_subtotal ?? 0,
+    subtotal_cents: configuredSubtotalCents ?? session.amount_subtotal ?? 0,
     total_cents: session.amount_total ?? 0,
     currency: session.currency ?? "usd",
     line_items_json: lineItems,
-    customer_details_json: session.customer_details ? { ...session.customer_details } : null,
+    customer_details_json: {
+      ...(session.customer_details ?? {}),
+      ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+      ...(invoiceDetails.hostedInvoiceUrl ? { hosted_invoice_url: invoiceDetails.hostedInvoiceUrl } : {}),
+      ...(invoiceDetails.invoicePdfUrl ? { invoice_pdf_url: invoiceDetails.invoicePdfUrl } : {}),
+      ...(invoiceDetails.invoiceNumber ? { invoice_number: invoiceDetails.invoiceNumber } : {})
+    },
     shipping_address_json: shippingAddress,
     shipping_amount_cents: session.shipping_cost?.amount_total ?? readIntegerString(session.metadata?.shipping_amount_cents) ?? 0,
     shipping_mode: readShippingMode(session.metadata?.shipping_mode) ?? null,
@@ -494,6 +509,8 @@ export async function createPendingOrderForCheckout({
   subtotalCents,
   totalCents,
   currency,
+  customer,
+  shippingAddress,
   shippingAmountCents = 0,
   shippingMode = "manual"
 }: {
@@ -502,6 +519,8 @@ export async function createPendingOrderForCheckout({
   subtotalCents: number;
   totalCents: number;
   currency: string;
+  customer: CheckoutCustomerInput;
+  shippingAddress: CheckoutShippingAddressInput;
   shippingAmountCents?: number;
   shippingMode?: "manual" | "free" | "flat";
 }) {
@@ -515,6 +534,8 @@ export async function createPendingOrderForCheckout({
     subtotalCents,
     totalCents,
     currency,
+    customer,
+    shippingAddress,
     shippingAmountCents,
     shippingMode
   });
@@ -528,6 +549,8 @@ export async function createPendingOrderForCheckoutWithClient(
     subtotalCents: number;
     totalCents: number;
     currency: string;
+    customer: CheckoutCustomerInput;
+    shippingAddress: CheckoutShippingAddressInput;
     shippingAmountCents?: number;
     shippingMode?: "manual" | "free" | "flat";
   }
@@ -538,10 +561,20 @@ export async function createPendingOrderForCheckoutWithClient(
       stripe_checkout_session_id: input.stripeCheckoutSessionId,
       status: "pending_payment",
       payment_status: "unpaid",
+      email: input.customer.email,
+      customer_name: input.customer.name,
       subtotal_cents: input.subtotalCents,
       total_cents: input.totalCents,
       currency: input.currency,
       line_items_json: lineItems,
+      customer_details_json: {
+        email: input.customer.email,
+        name: input.customer.name,
+        phone: input.customer.phone || input.shippingAddress.phone || null,
+        create_account: input.customer.createAccount,
+        source: "checkout_before_payment"
+      },
+      shipping_address_json: normalizePrePaymentShippingAddress(input.shippingAddress),
       shipping_amount_cents: input.shippingAmountCents ?? 0,
       shipping_mode: input.shippingMode ?? "manual",
       updated_at: new Date().toISOString()
@@ -668,6 +701,9 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     payload.internal_notes = existingOrder.internal_notes;
     payload.admin_fulfillment_notes = existingOrder.admin_fulfillment_notes;
     payload.shipping_address_json = order.shipping_address_json ?? existingOrder.shipping_address_json ?? null;
+    payload.customer_details_json = mergeOrderDetails(existingOrder.customer_details_json, order.customer_details_json);
+    payload.email = order.email ?? existingOrder.email;
+    payload.customer_name = order.customer_name ?? existingOrder.customer_name;
     payload.shipping_amount_cents = order.shipping_amount_cents || existingOrder.shipping_amount_cents;
     payload.shipping_mode = order.shipping_mode ?? existingOrder.shipping_mode ?? null;
   }
@@ -1060,6 +1096,31 @@ function readShippingMode(value: unknown): "manual" | "free" | "flat" | undefine
   return value === "manual" || value === "free" || value === "flat" ? value : undefined;
 }
 
+function readStripeObjectId(value: unknown) {
+  if (typeof value === "string" && value.trim()) return value;
+  if (value && typeof value === "object") {
+    const id = (value as Record<string, unknown>).id;
+    return typeof id === "string" && id.trim() ? id : null;
+  }
+  return null;
+}
+
+function readInvoiceDetails(invoice: StripeCheckoutSessionLike["invoice"]) {
+  if (!invoice || typeof invoice === "string") {
+    return {
+      hostedInvoiceUrl: undefined,
+      invoicePdfUrl: undefined,
+      invoiceNumber: undefined
+    };
+  }
+
+  return {
+    hostedInvoiceUrl: typeof invoice.hosted_invoice_url === "string" ? invoice.hosted_invoice_url : undefined,
+    invoicePdfUrl: typeof invoice.invoice_pdf === "string" ? invoice.invoice_pdf : undefined,
+    invoiceNumber: typeof invoice.number === "string" ? invoice.number : undefined
+  };
+}
+
 function inferOrderProductionStatus(lineItems: OrderLineItem[]): ProductionStatus {
   if (lineItems.length === 0) return "not_started";
 
@@ -1099,5 +1160,32 @@ function normalizeShippingAddress(
     name: shippingDetails?.name ?? customerDetails?.name ?? null,
     phone: shippingDetails?.phone ?? customerDetails?.phone ?? null,
     address
+  };
+}
+
+function normalizePrePaymentShippingAddress(shippingAddress: CheckoutShippingAddressInput): Record<string, unknown> {
+  return {
+    name: shippingAddress.name,
+    phone: shippingAddress.phone || null,
+    address: {
+      line1: shippingAddress.line1,
+      line2: shippingAddress.line2 || null,
+      city: shippingAddress.city,
+      state: shippingAddress.state,
+      postal_code: shippingAddress.postalCode,
+      country: shippingAddress.country
+    },
+    source: "checkout_before_payment"
+  };
+}
+
+function mergeOrderDetails(
+  existing: Record<string, unknown> | null | undefined,
+  incoming: Record<string, unknown> | null | undefined
+): Record<string, unknown> | null {
+  if (!existing && !incoming) return null;
+  return {
+    ...(existing ?? {}),
+    ...(incoming ?? {})
   };
 }

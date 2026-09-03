@@ -65,41 +65,7 @@ export function CartTable({
   }, []);
 
   async function startCheckout() {
-    setIsCheckingOut(true);
-    setCheckoutError("");
-
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
-      });
-      const body = await response.json().catch(() => ({}));
-
-      if (
-        !response.ok ||
-        body.checkoutMode !== "embedded" ||
-        typeof body.clientSecret !== "string" ||
-        typeof body.sessionId !== "string"
-      ) {
-        setCheckoutError(body.error ?? "Stripe Checkout is not available yet.");
-        return;
-      }
-
-      window.sessionStorage.setItem(
-        `taprater:embedded-checkout:${body.sessionId}`,
-        JSON.stringify({
-          clientSecret: body.clientSecret,
-          sessionId: body.sessionId,
-          createdAt: Date.now(),
-        }),
-      );
-      router.push(`/checkout?session_id=${encodeURIComponent(body.sessionId)}`);
-    } catch {
-      setCheckoutError("Stripe Checkout is not available yet.");
-    } finally {
-      setIsCheckingOut(false);
-    }
+    router.push("/checkout");
   }
 
   async function submitManualOrder() {
@@ -357,7 +323,7 @@ export function CartTable({
         </button>
         <p className="tr-body-sm">
           {usesStripeCheckout
-            ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
+            ? "Enter shipping first, then pay securely inside Tap Rater with Stripe."
             : "Tap Rater will review payment, shipping, and artwork details before production."}
         </p>
         {checkoutError ? (
