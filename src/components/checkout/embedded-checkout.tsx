@@ -500,7 +500,7 @@ function CheckoutInput({
   value: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-medium text-ink">
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">
       {label}
       <input
         type={type}
@@ -508,7 +508,7 @@ function CheckoutInput({
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
         required={required}
-        className="min-h-11 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+        className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
       />
     </label>
   );
