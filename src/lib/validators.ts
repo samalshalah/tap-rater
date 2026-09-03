@@ -483,6 +483,14 @@ export const shippingSettingsSchema = z.object({
     .default("Shipping is $12 under $55 and free at $55 or more.")
 });
 
+export const taxSettingsSchema = z.object({
+  taxMode: z.enum(["manual", "disabled"]).default("manual"),
+  manualTaxRateBps: z.number().int().min(0).max(2500).default(600),
+  taxLabel: z.string().trim().min(2).max(120).default("Virginia sales tax"),
+  taxShipping: z.boolean().default(false),
+  customerFacingTaxNote: z.string().trim().max(1000).default("Estimated sales tax is calculated before payment.")
+});
+
 export const orderFulfillmentUpdateSchema = z.object({
   productionStatus: z.enum(["not_started", "ready_for_production", "in_production", "blocked", "completed"]),
   shippingStatus: z.enum(["not_shipped", "ready_to_ship", "shipped", "delivered", "blocked"]),
@@ -509,6 +517,7 @@ export const orderFulfillmentUpdateSchema = z.object({
 });
 
 export type ShippingSettingsInput = z.infer<typeof shippingSettingsSchema>;
+export type TaxSettingsInput = z.infer<typeof taxSettingsSchema>;
 export type OrderFulfillmentUpdateInput = z.infer<typeof orderFulfillmentUpdateSchema>;
 
 export const checkoutCartSchema = z.object({

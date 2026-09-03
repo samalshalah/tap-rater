@@ -853,11 +853,15 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.stripe_mode).toBe("test");
     expect(params.metadata?.total_cents).toBe("3900");
     expect(params.metadata?.recurring_total_cents).toBe("0");
-    expect(params.metadata?.due_today_cents).toBe("5100");
+    expect(params.metadata?.due_today_cents).toBe("5334");
     expect(params.metadata?.checkout_intent).toBe("direct_payment");
     expect(params.metadata?.configured_items).toBe("1");
     expect(params.metadata?.shipping_mode).toBe("flat");
     expect(params.metadata?.shipping_amount_cents).toBe("1200");
+    expect(params.metadata?.tax_mode).toBe("manual");
+    expect(params.metadata?.tax_label).toBe("Virginia sales tax");
+    expect(params.metadata?.tax_rate_bps).toBe("600");
+    expect(params.metadata?.tax_amount_cents).toBe("234");
     expect(params.metadata?.customer_email).toBe("buyer@example.com");
     expect(params.metadata?.customer_name).toBe("Buyer Name");
     expect(params.metadata?.create_account).toBe("false");
@@ -901,7 +905,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
     expect(params.metadata?.recurring_total_cents).toBe("999");
     expect(params.metadata?.create_account).toBe("true");
-    expect(params.line_items).toHaveLength(3);
+    expect(params.line_items).toHaveLength(4);
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         unit_amount: 3900
@@ -920,6 +924,17 @@ describe("Stripe checkout helpers", () => {
         unit_amount: 1200,
         product_data: {
           name: "Standard shipping"
+        }
+      }
+    });
+    expect(params.line_items?.[3]).toMatchObject({
+      price_data: {
+        unit_amount: 294,
+        product_data: {
+          name: "Virginia sales tax",
+          metadata: {
+            line_kind: "manual_tax"
+          }
         }
       }
     });
@@ -1047,13 +1062,24 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.shipping_mode).toBe("flat");
     expect(params.metadata?.shipping_amount_cents).toBe("1200");
     expect(params).not.toHaveProperty("shipping_options");
-    expect(params.line_items?.at(-1)).toMatchObject({
+    expect(params.line_items?.[1]).toMatchObject({
       price_data: {
         unit_amount: 1200,
         product_data: {
           name: "Standard shipping",
           metadata: {
             line_kind: "shipping"
+          }
+        }
+      }
+    });
+    expect(params.line_items?.[2]).toMatchObject({
+      price_data: {
+        unit_amount: 234,
+        product_data: {
+          name: "Virginia sales tax",
+          metadata: {
+            line_kind: "manual_tax"
           }
         }
       }
@@ -1075,7 +1101,18 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.shipping_mode).toBe("free");
     expect(params.metadata?.shipping_amount_cents).toBe("0");
     expect(params).not.toHaveProperty("shipping_options");
-    expect(params.line_items).toHaveLength(1);
+    expect(params.line_items).toHaveLength(2);
+    expect(params.line_items?.[1]).toMatchObject({
+      price_data: {
+        unit_amount: 468,
+        product_data: {
+          name: "Virginia sales tax",
+          metadata: {
+            line_kind: "manual_tax"
+          }
+        }
+      }
+    });
   });
 
   it("records live mode metadata when live checkout is enabled", () => {

@@ -55,6 +55,13 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
       defaultCarrierNotes: "",
       customerFacingShippingNote: ""
     }),
+    getTaxSettings: vi.fn().mockResolvedValue({
+      taxMode: "manual",
+      manualTaxRateBps: 600,
+      taxLabel: "Virginia sales tax",
+      taxShipping: false,
+      customerFacingTaxNote: "Estimated sales tax is calculated before payment."
+    }),
     getSiteUrl: () => "https://taprater.test",
     hasOrderPersistence: () => true,
     logger: {
@@ -189,14 +196,17 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "test",
-        shippingSettings: expect.objectContaining({ shippingMode: "manual" })
+        shippingSettings: expect.objectContaining({ shippingMode: "manual" }),
+        taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        totalCents: 5100,
+        totalCents: 5334,
         shippingAmountCents: 1200,
-        shippingMode: "flat"
+        shippingMode: "flat",
+        taxAmountCents: 234,
+        taxSettings: expect.objectContaining({ taxLabel: "Virginia sales tax" })
       })
     );
   });
@@ -222,7 +232,7 @@ describe("checkout route reliability", () => {
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         subtotalCents: 3900,
-        totalCents: 5100,
+        totalCents: 5334,
         shippingAmountCents: 1200,
         shippingMode: "flat"
       })
@@ -252,9 +262,10 @@ describe("checkout route reliability", () => {
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         subtotalCents: 7800,
-        totalCents: 7800,
+        totalCents: 8268,
         shippingAmountCents: 0,
-        shippingMode: "free"
+        shippingMode: "free",
+        taxAmountCents: 468
       })
     );
   });
@@ -295,7 +306,8 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "live",
-        shippingSettings: expect.objectContaining({ shippingMode: "manual" })
+        shippingSettings: expect.objectContaining({ shippingMode: "manual" }),
+        taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledOnce();

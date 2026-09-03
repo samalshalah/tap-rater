@@ -10,7 +10,9 @@ import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
+import { formatTaxRate, getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import type { StripePublicConfig } from "@/lib/stripe-public-config";
+import type { TaxSettingsInput } from "@/lib/validators";
 
 type EmbeddedCheckoutSession = {
   clientSecret: string;
@@ -54,7 +56,7 @@ const emptyShipping: ShippingForm = {
   phone: ""
 };
 
-export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicConfig: StripePublicConfig }) {
+export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { stripePublicConfig: StripePublicConfig; taxSettings: TaxSettingsInput }) {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
@@ -62,7 +64,16 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
   const standTotalCents = calculateCartTotalCents(items);
   const recurringTotalCents = calculateRecurringTotalCents(rows);
   const shippingRule = resolveCheckoutShippingRule(standTotalCents);
-  const dueTodayCents = standTotalCents + recurringTotalCents + shippingRule.amountCents;
+  const taxAmountCents = getCheckoutTaxAmountCents(
+    taxSettings,
+    getCheckoutTaxableAmountCents({
+      recurringTotalCents,
+      shippingAmountCents: shippingRule.amountCents,
+      standTotalCents,
+      taxSettings
+    })
+  );
+  const dueTodayCents = standTotalCents + recurringTotalCents + shippingRule.amountCents + taxAmountCents;
   const hasHostedMultiLink = rows.some((row) => row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink");
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
@@ -207,6 +218,8 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
           rows={rows}
           shippingAmountCents={shippingRule.amountCents}
           standTotalCents={standTotalCents}
+          taxAmountCents={taxAmountCents}
+          taxSettings={taxSettings}
         />
 
         <section className="tr-card min-h-[520px] p-4 sm:p-5">
@@ -292,13 +305,17 @@ function CheckoutSummary({
   recurringTotalCents,
   rows,
   shippingAmountCents,
-  standTotalCents
+  standTotalCents,
+  taxAmountCents,
+  taxSettings
 }: {
   dueTodayCents: number;
   recurringTotalCents: number;
   rows: ReturnType<typeof getCartRows>;
   shippingAmountCents: number;
   standTotalCents: number;
+  taxAmountCents: number;
+  taxSettings: TaxSettingsInput;
 }) {
   return (
     <aside className="tr-card p-4 sm:p-5 lg:sticky lg:top-24">
@@ -329,7 +346,8 @@ function CheckoutSummary({
         <SummaryRow label="Stands" value={formatPrice(standTotalCents)} />
         {recurringTotalCents > 0 ? <SummaryRow label="Monthly" value={`${formatPrice(recurringTotalCents)}/mo`} /> : null}
         <SummaryRow label="Shipping" value={shippingAmountCents > 0 ? formatPrice(shippingAmountCents) : "Free"} />
-        <SummaryRow label="Total before tax" value={formatPrice(dueTodayCents)} strong />
+        <SummaryRow label={`${taxSettings.taxLabel} (${formatTaxRate(taxSettings)})`} value={formatPrice(taxAmountCents)} />
+        <SummaryRow label="Total" value={formatPrice(dueTodayCents)} strong />
       </div>
     </aside>
   );

@@ -21,7 +21,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     label: "Commerce",
     items: [
       { label: "Orders", href: "/admin/orders", description: "Paid, pending, production, and shipping fulfillment" },
-      { label: "Products", href: "/admin/products", description: "Sellable products, prices, assets, and production readiness" }
+      { label: "Products", href: "/admin/products", description: "Sellable products, prices, assets, and production readiness" },
+      { label: "Taxes", href: "/admin/taxes", description: "Manual checkout tax shown before Stripe" }
     ]
   },
   {
@@ -49,7 +50,6 @@ export const hiddenAdminNavigationItems: AdminNavigationItem[] = [
   { label: "Stand Types", href: "/admin/stand-types", description: "Storefront taxonomy editor retained off primary navigation", status: "hidden" },
   { label: "Inventory", href: "/admin/inventory", description: "Unfinished inventory tooling hidden until operationally complete", status: "hidden" },
   { label: "Discounts", href: "/admin/discounts", description: "Unfinished discounts hidden until launch requirements demand it", status: "hidden" },
-  { label: "Taxes", href: "/admin/taxes", description: "Tax handling remains a Milestone 8 launch-readiness item", status: "hidden" },
   { label: "Media", href: "/admin/media", description: "Media infrastructure remains available through product/order workflows", status: "hidden" },
   { label: "SEO", href: "/admin/seo", description: "SEO fields remain in product/taxonomy editors", status: "hidden" },
   { label: "Analytics", href: "/admin/analytics", description: "Analytics dashboard hidden because analytics is not core to the frozen product", status: "hidden" }

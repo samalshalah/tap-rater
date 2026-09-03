@@ -468,6 +468,7 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
   const shippingDetails = session.shipping_details ?? session.collected_information?.shipping_details ?? null;
   const shippingAddress = normalizeShippingAddress(shippingDetails, session.customer_details);
   const configuredSubtotalCents = readIntegerString(session.metadata?.total_cents);
+  const taxAmountCents = readIntegerString(session.metadata?.tax_amount_cents) ?? 0;
 
   return {
     stripe_checkout_session_id: session.id ?? "",
@@ -485,7 +486,14 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
       ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
       ...(invoiceDetails.hostedInvoiceUrl ? { hosted_invoice_url: invoiceDetails.hostedInvoiceUrl } : {}),
       ...(invoiceDetails.invoicePdfUrl ? { invoice_pdf_url: invoiceDetails.invoicePdfUrl } : {}),
-      ...(invoiceDetails.invoiceNumber ? { invoice_number: invoiceDetails.invoiceNumber } : {})
+      ...(invoiceDetails.invoiceNumber ? { invoice_number: invoiceDetails.invoiceNumber } : {}),
+      tax_summary: {
+        mode: session.metadata?.tax_mode ?? "unknown",
+        label: session.metadata?.tax_label ?? "Sales tax",
+        rate_bps: readIntegerString(session.metadata?.tax_rate_bps) ?? 0,
+        amount_cents: taxAmountCents,
+        tax_shipping: session.metadata?.tax_shipping === "true"
+      }
     },
     shipping_address_json: shippingAddress,
     shipping_amount_cents: session.shipping_cost?.amount_total ?? readIntegerString(session.metadata?.shipping_amount_cents) ?? 0,
@@ -512,7 +520,9 @@ export async function createPendingOrderForCheckout({
   customer,
   shippingAddress,
   shippingAmountCents = 0,
-  shippingMode = "manual"
+  shippingMode = "manual",
+  taxAmountCents = 0,
+  taxSettings
 }: {
   stripeCheckoutSessionId: string;
   rows: CheckoutCartRow[];
@@ -523,6 +533,8 @@ export async function createPendingOrderForCheckout({
   shippingAddress: CheckoutShippingAddressInput;
   shippingAmountCents?: number;
   shippingMode?: "manual" | "free" | "flat";
+  taxAmountCents?: number;
+  taxSettings?: { taxMode: string; manualTaxRateBps: number; taxLabel: string; taxShipping: boolean };
 }) {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured. Checkout is disabled until order persistence is ready." };
@@ -537,7 +549,9 @@ export async function createPendingOrderForCheckout({
     customer,
     shippingAddress,
     shippingAmountCents,
-    shippingMode
+    shippingMode,
+    taxAmountCents,
+    taxSettings
   });
 }
 
@@ -553,6 +567,8 @@ export async function createPendingOrderForCheckoutWithClient(
     shippingAddress: CheckoutShippingAddressInput;
     shippingAmountCents?: number;
     shippingMode?: "manual" | "free" | "flat";
+    taxAmountCents?: number;
+    taxSettings?: { taxMode: string; manualTaxRateBps: number; taxLabel: string; taxShipping: boolean };
   }
 ) {
   const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(input.rows, input.stripeCheckoutSessionId);
@@ -572,7 +588,22 @@ export async function createPendingOrderForCheckoutWithClient(
         name: input.customer.name,
         phone: input.customer.phone || input.shippingAddress.phone || null,
         create_account: input.customer.createAccount,
-        source: "checkout_before_payment"
+        source: "checkout_before_payment",
+        tax_summary: input.taxSettings
+          ? {
+              mode: input.taxSettings.taxMode,
+              label: input.taxSettings.taxLabel,
+              rate_bps: input.taxSettings.manualTaxRateBps,
+              amount_cents: input.taxAmountCents ?? 0,
+              tax_shipping: input.taxSettings.taxShipping
+            }
+          : {
+              mode: "manual",
+              label: "Sales tax",
+              rate_bps: 0,
+              amount_cents: input.taxAmountCents ?? 0,
+              tax_shipping: false
+            }
       },
       shipping_address_json: normalizePrePaymentShippingAddress(input.shippingAddress),
       shipping_amount_cents: input.shippingAmountCents ?? 0,

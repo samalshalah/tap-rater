@@ -17,6 +17,8 @@ import {
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
+import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
+import { getDefaultTaxSettings, type TaxSettingsInput } from "@/lib/tax-settings";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
@@ -247,7 +249,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
   };
 }
 
-export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAmountCents = 0): Stripe.Checkout.SessionCreateParams.LineItem[] {
+export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAmountCents = 0, taxAmountCents = 0, taxLabel = "Sales tax"): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const productLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = rows.flatMap((row) => {
     const productData = {
       name: row.title,
@@ -293,13 +295,10 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
     return [physicalLine, hostedLine];
   });
 
-  if (shippingAmountCents <= 0) {
-    return productLineItems;
-  }
+  const adjustmentLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
-  return [
-    ...productLineItems,
-    {
+  if (shippingAmountCents > 0) {
+    adjustmentLineItems.push({
       quantity: 1,
       price_data: {
         currency: "usd",
@@ -312,8 +311,27 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
         },
         unit_amount: shippingAmountCents
       }
-    }
-  ];
+    });
+  }
+
+  if (taxAmountCents > 0) {
+    adjustmentLineItems.push({
+      quantity: 1,
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: taxLabel,
+          description: "Manual sales tax collected by Tap Rater.",
+          metadata: {
+            line_kind: "manual_tax"
+          }
+        },
+        unit_amount: taxAmountCents
+      }
+    });
+  }
+
+  return [...productLineItems, ...adjustmentLineItems];
 }
 
 export function createCheckoutSessionParams({
@@ -322,7 +340,8 @@ export function createCheckoutSessionParams({
   shippingAddress,
   siteUrl,
   stripeMode = getStripeMode(),
-  shippingSettings = getDefaultShippingSettings()
+  shippingSettings = getDefaultShippingSettings(),
+  taxSettings = getDefaultTaxSettings()
 }: {
   cart: Extract<ValidatedCheckoutCart, { ok: true }>;
   customer?: CheckoutCustomerInput;
@@ -330,16 +349,27 @@ export function createCheckoutSessionParams({
   siteUrl: string;
   stripeMode?: StripeMode;
   shippingSettings?: ShippingSettingsInput;
+  taxSettings?: TaxSettingsInput;
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
   const shippingRule = resolveCheckoutShippingRule(cart.totalCents);
+  const taxAmountCents = getCheckoutTaxAmountCents(
+    taxSettings,
+    getCheckoutTaxableAmountCents({
+      recurringTotalCents: cart.recurringTotalCents,
+      shippingAmountCents: shippingRule.amountCents,
+      standTotalCents: cart.totalCents,
+      taxSettings
+    })
+  );
+  const dueTodayCents = cart.totalCents + cart.recurringTotalCents + shippingRule.amountCents + taxAmountCents;
   const requiresAccount = customer?.createAccount === true || cart.checkoutMode === "subscription";
 
   return {
     mode: cart.checkoutMode,
     ui_mode: "embedded_page",
     integration_identifier: createStripeIntegrationIdentifier(),
-    line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents),
+    line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents, taxAmountCents, taxSettings.taxLabel),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     ...(customer?.email ? { customer_email: customer.email } : {}),
     billing_address_collection: "auto",
@@ -359,11 +389,16 @@ export function createCheckoutSessionParams({
       stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
       recurring_total_cents: String(cart.recurringTotalCents),
-      due_today_cents: String(cart.totalCents + shippingRule.amountCents),
+      due_today_cents: String(dueTodayCents),
       configured_items: String(cart.rows.length),
       checkout_intent: cart.checkoutMode === "subscription" ? "hosted_subscription" : "direct_payment",
       shipping_mode: shippingRule.mode,
       shipping_amount_cents: String(shippingRule.amountCents),
+      tax_mode: taxSettings.taxMode,
+      tax_label: taxSettings.taxLabel,
+      tax_rate_bps: String(taxSettings.manualTaxRateBps),
+      tax_amount_cents: String(taxAmountCents),
+      tax_shipping: taxSettings.taxShipping ? "true" : "false",
       customer_email: customer?.email ?? "",
       customer_name: customer?.name ?? "",
       customer_phone: customer?.phone ?? shippingAddress?.phone ?? "",

@@ -2,12 +2,14 @@ import { CartTable } from "@/components/cart/cart-table";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getStripeModeSafe } from "@/lib/checkout";
 import { validateStripePublicConfig } from "@/lib/stripe-public-config";
+import { getTaxSettings } from "@/lib/tax-settings";
 
 export const dynamic = "force-dynamic";
 
-export default function CartPage() {
+export default async function CartPage() {
   const stripeMode = getStripeModeSafe() === "live" ? "live" : "test";
   const stripeCheckoutEnabled = validateStripePublicConfig().ok;
+  const taxSettings = await getTaxSettings();
 
   return (
     <main className="tr-public-shell text-ink">
@@ -18,7 +20,7 @@ export default function CartPage() {
       />
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <CartTable stripeMode={stripeMode} stripeCheckoutEnabled={stripeCheckoutEnabled} />
+          <CartTable stripeMode={stripeMode} stripeCheckoutEnabled={stripeCheckoutEnabled} taxSettings={taxSettings} />
         </div>
       </SectionShell>
     </main>

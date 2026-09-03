@@ -13,14 +13,18 @@ import {
   type CartRow,
 } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
+import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents, formatTaxRate } from "@/lib/tax-rules";
 import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals";
+import type { TaxSettingsInput } from "@/lib/validators";
 
 export function CartTable({
   stripeMode = "test",
   stripeCheckoutEnabled = true,
+  taxSettings,
 }: {
   stripeMode?: "test" | "live";
   stripeCheckoutEnabled?: boolean;
+  taxSettings: TaxSettingsInput;
 }) {
   const { clearCart, decreaseItem, increaseItem, items, removeItem } = useCart();
   const router = useRouter();
@@ -35,7 +39,16 @@ export function CartTable({
   const standTotal = calculateCartTotalCents(items);
   const recurringTotal = calculateRecurringTotalCents(rows);
   const shippingRule = resolveCheckoutShippingRule(standTotal);
-  const dueToday = standTotal + recurringTotal + shippingRule.amountCents;
+  const taxAmountCents = getCheckoutTaxAmountCents(
+    taxSettings,
+    getCheckoutTaxableAmountCents({
+      recurringTotalCents: recurringTotal,
+      shippingAmountCents: shippingRule.amountCents,
+      standTotalCents: standTotal,
+      taxSettings
+    })
+  );
+  const dueToday = standTotal + recurringTotal + shippingRule.amountCents + taxAmountCents;
   const checkoutEmail = signedInCustomer?.email ?? customerEmail;
   const checkoutName = signedInCustomer?.name ?? signedInCustomer?.businessName ?? customerName;
 
@@ -301,6 +314,10 @@ export function CartTable({
             <span className="text-right font-medium text-ink">
               {shippingRule.amountCents > 0 ? formatPrice(shippingRule.amountCents) : "Free"}
             </span>
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">{taxSettings.taxLabel} ({formatTaxRate(taxSettings)})</span>
+            <span className="text-right font-medium text-ink">{formatPrice(taxAmountCents)}</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
             <span className="font-medium text-ink">Due now</span>
