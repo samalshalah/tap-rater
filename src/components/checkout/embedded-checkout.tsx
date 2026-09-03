@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
+import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from "@stripe/react-stripe-js/checkout";
 import { loadStripe } from "@stripe/stripe-js";
 import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -83,6 +83,10 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   const [step, setStep] = useState<"details" | "payment">(sessionId ? "payment" : "details");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
   const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
+  const checkoutReturnUrl =
+    typeof window === "undefined" || !session?.sessionId
+      ? ""
+      : `${window.location.origin}/checkout/success?session_id=${encodeURIComponent(session.sessionId)}`;
 
   useEffect(() => {
     let active = true;
@@ -142,7 +146,51 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
     setError("Checkout session could not be loaded. Please return to your cart and start checkout again.");
   }, [sessionId]);
 
-  const options = useMemo(() => (session?.clientSecret ? { clientSecret: session.clientSecret } : undefined), [session?.clientSecret]);
+  const options = useMemo(() => {
+    if (!session?.clientSecret) return undefined;
+
+    return {
+      clientSecret: session.clientSecret,
+      defaultValues: {
+        email: customer.email,
+        phoneNumber: customer.phone || shipping.phone || undefined,
+        shippingAddress: {
+          name: shipping.name || customer.name,
+          address: {
+            line1: shipping.line1,
+            line2: shipping.line2 || undefined,
+            city: shipping.city,
+            state: shipping.state,
+            postal_code: shipping.postalCode,
+            country: shipping.country
+          }
+        },
+        billingAddress: {
+          name: customer.name,
+          address: {
+            line1: shipping.line1,
+            line2: shipping.line2 || undefined,
+            city: shipping.city,
+            state: shipping.state,
+            postal_code: shipping.postalCode,
+            country: shipping.country
+          }
+        }
+      },
+      elementsOptions: {
+        appearance: {
+          theme: "stripe" as const,
+          variables: {
+            borderRadius: "8px",
+            colorPrimary: "#0f766e",
+            colorText: "#111827",
+            colorTextSecondary: "#596879",
+            fontFamily: "Inter, system-ui, sans-serif"
+          }
+        }
+      }
+    };
+  }, [customer.email, customer.name, customer.phone, session?.clientSecret, shipping]);
 
   async function startPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -212,17 +260,20 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start">
-        <CheckoutSummary
-          dueTodayCents={dueTodayCents}
-          recurringTotalCents={recurringTotalCents}
-          rows={rows}
-          shippingAmountCents={shippingRule.amountCents}
-          standTotalCents={standTotalCents}
-          taxAmountCents={taxAmountCents}
-          taxSettings={taxSettings}
-        />
+        {step === "details" ? (
+          <CheckoutSummary
+            compact
+            dueTodayCents={dueTodayCents}
+            recurringTotalCents={recurringTotalCents}
+            rows={rows}
+            shippingAmountCents={shippingRule.amountCents}
+            standTotalCents={standTotalCents}
+            taxAmountCents={taxAmountCents}
+            taxSettings={taxSettings}
+          />
+        ) : null}
 
-        <section className="tr-card min-h-[520px] p-4 sm:p-5">
+        <section className={step === "payment" ? "grid gap-5 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]" : "tr-card min-h-[520px] p-4 sm:p-5"}>
           {step === "details" ? (
             <form className="grid gap-4" onSubmit={startPayment}>
               <div>
@@ -282,15 +333,22 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
           ) : error ? (
             <CheckoutError message={error} />
           ) : session && options ? (
-            <div className="grid gap-3">
-              <div>
-                <p className="tr-eyebrow">Payment</p>
-                <h2 className="mt-1 text-xl font-medium text-ink">Pay securely</h2>
-              </div>
-              <EmbeddedCheckoutProvider stripe={stripePromise} options={options}>
-                <EmbeddedCheckout />
-              </EmbeddedCheckoutProvider>
-            </div>
+            <>
+              <CheckoutSummary
+                dueTodayCents={dueTodayCents}
+                recurringTotalCents={recurringTotalCents}
+                rows={rows}
+                shippingAmountCents={shippingRule.amountCents}
+                standTotalCents={standTotalCents}
+                taxAmountCents={taxAmountCents}
+                taxSettings={taxSettings}
+              />
+              <section className="tr-card min-h-[420px] p-4 sm:p-5">
+                <CheckoutElementsProvider stripe={stripePromise} options={options}>
+                  <StripePaymentForm returnUrl={checkoutReturnUrl} />
+                </CheckoutElementsProvider>
+              </section>
+            </>
           ) : (
             <div className="grid min-h-[480px] place-items-center text-sm font-medium text-muted">Loading secure checkout...</div>
           )}
@@ -301,6 +359,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
 }
 
 function CheckoutSummary({
+  compact = false,
   dueTodayCents,
   recurringTotalCents,
   rows,
@@ -309,6 +368,7 @@ function CheckoutSummary({
   taxAmountCents,
   taxSettings
 }: {
+  compact?: boolean;
   dueTodayCents: number;
   recurringTotalCents: number;
   rows: ReturnType<typeof getCartRows>;
@@ -320,7 +380,7 @@ function CheckoutSummary({
   return (
     <aside className="tr-card p-4 sm:p-5 lg:sticky lg:top-24">
       <p className="tr-eyebrow">Order summary</p>
-      <div className="mt-3 grid gap-3">
+      <div className={`mt-3 grid gap-3 ${compact ? "max-h-[360px] overflow-auto pr-1" : ""}`}>
         {rows.length > 0 ? (
           rows.map((row) => (
             <div key={`${row.item.productId}-${row.option.id}-${row.item.setup?.destinationUrl ?? row.item.setup?.serviceAddon ?? ""}`} className="rounded-md border border-line bg-white p-3">
@@ -350,6 +410,73 @@ function CheckoutSummary({
         <SummaryRow label="Total" value={formatPrice(dueTodayCents)} strong />
       </div>
     </aside>
+  );
+}
+
+function StripePaymentForm({ returnUrl }: { returnUrl: string }) {
+  const result = useCheckoutElements();
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (result.type !== "success" || !result.checkout.canConfirm) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+
+    try {
+      const confirmResult = await result.checkout.confirm({ returnUrl });
+
+      if (confirmResult.type === "error") {
+        setErrorMessage(confirmResult.error.message ?? "Payment could not be completed.");
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Payment could not be completed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  if (result.type === "loading") {
+    return <div className="grid min-h-[360px] place-items-center text-sm font-medium text-muted">Loading secure payment...</div>;
+  }
+
+  if (result.type === "error") {
+    return <CheckoutError message={result.error.message} />;
+  }
+
+  return (
+    <form className="grid gap-4" onSubmit={onSubmit}>
+      <div>
+        <p className="tr-eyebrow">Payment</p>
+        <h2 className="mt-1 text-xl font-medium text-ink">Pay securely</h2>
+      </div>
+      <PaymentElement
+        options={{
+          layout: {
+            type: "accordion",
+            radios: "always"
+          },
+          fields: {
+            billingDetails: {
+              name: "never",
+              email: "never",
+              phone: "never",
+              address: "never"
+            }
+          }
+        }}
+      />
+      {errorMessage ? <p className="tr-status-warning" role="alert">{errorMessage}</p> : null}
+      <button type="submit" disabled={!result.checkout.canConfirm || isSubmitting} className="tr-button-primary min-h-12 w-full">
+        {isSubmitting ? "Processing..." : `Pay ${result.checkout.total.total.amount}`}
+      </button>
+      <p className="text-center text-xs leading-5 text-muted">Payment is processed securely by Stripe.</p>
+    </form>
   );
 }
 

@@ -817,7 +817,7 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.mode).toBe("payment");
-    expect(params.ui_mode).toBe("embedded_page");
+    expect(params.ui_mode).toBe("elements");
     expect(params.integration_identifier).toMatch(/^taprater_checkout_[a-z0-9]{8}$/);
     expect(params.return_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
     expect(params).not.toHaveProperty("success_url");

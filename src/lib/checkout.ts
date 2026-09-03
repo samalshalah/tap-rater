@@ -367,7 +367,7 @@ export function createCheckoutSessionParams({
 
   return {
     mode: cart.checkoutMode,
-    ui_mode: "embedded_page",
+    ui_mode: "elements",
     integration_identifier: createStripeIntegrationIdentifier(),
     line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents, taxAmountCents, taxSettings.taxLabel),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
