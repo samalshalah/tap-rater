@@ -292,7 +292,7 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("allows branded checkout with manual design assistance instead of uploaded logo", () => {
+  it("rejects branded checkout without an uploaded logo", () => {
     const result = validateCheckoutCart(
       [
         {
@@ -318,23 +318,9 @@ describe("Stripe checkout helpers", () => {
       productsWithBrandedGoogleTemplate()
     );
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.rows[0]).toMatchObject({
-      optionId: "branded_qr_direct",
-      logoRequired: true,
-      logoStatus: "manual_collection_required",
-      logoReference: null,
-      proofRequired: true,
-      proofApproved: false,
-      productionStatus: "pending_manual_logo_and_proof",
-      manualProductionRequired: true,
-      productionWarningCodes: ["pending_manual_proof", "do_not_print_until_manual_review"]
-    });
-    expect(result.rows[0].setup).toMatchObject({
-      designAssistanceRequested: true,
-      manualCollectionAcknowledged: true,
-      designNotes: "Please use the logo from my website and remove the white background."
+    expect(result).toMatchObject({
+      ok: false,
+      reason: "empty_cart"
     });
   });
 
@@ -812,10 +798,14 @@ describe("Stripe checkout helpers", () => {
 
     expect(params.mode).toBe("payment");
     expect(params.ui_mode).toBe("embedded_page");
+    expect(params.integration_identifier).toMatch(/^taprater_checkout_[a-z0-9]{8}$/);
     expect(params.return_url).toBe("https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}");
     expect(params).not.toHaveProperty("success_url");
     expect(params).not.toHaveProperty("cancel_url");
-    expect(params.payment_method_types).toEqual(["card"]);
+    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.customer_creation).toBe("always");
+    expect(params.invoice_creation).toEqual({ enabled: true });
+    expect(params.payment_intent_data).toEqual({ setup_future_usage: "off_session" });
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         currency: "usd",
@@ -837,7 +827,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 
-  it("creates card-only subscription Checkout Session params for Multi-Link add-ons with one-time and monthly lines when explicitly enabled", () => {
+  it("creates subscription Checkout Session params for Multi-Link add-ons with dynamic payment methods", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
     const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
     const result = validateCheckoutCart(
@@ -864,7 +854,10 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.mode).toBe("subscription");
-    expect(params.payment_method_types).toEqual(["card"]);
+    expect(params.integration_identifier).toMatch(/^taprater_checkout_[a-z0-9]{8}$/);
+    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params).not.toHaveProperty("customer_creation");
+    expect(params).not.toHaveProperty("payment_intent_data");
     expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
     expect(params.metadata?.recurring_total_cents).toBe("999");
     expect(params.line_items).toHaveLength(2);
@@ -881,6 +874,106 @@ describe("Stripe checkout helpers", () => {
         }
       }
     });
+  });
+
+  it("supports direct, branded, direct with subscription, and branded with subscription checkout combinations", () => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
+    const rateExperienceProduct = migratedProducts.find((product) => product.slug === "rate-your-experience-stand");
+    if (!rateExperienceProduct?.assetSet?.brandedFrontTemplateUrl) throw new Error("Expected Rate Your Experience branded template fixture");
+
+    const brandedSetup = {
+      productSlug: "rate-your-experience-stand",
+      optionCode: "branded_qr_direct" as const,
+      businessName: "Bingo Tires",
+      logoMediaUrl: "/api/media/product/customer/logo.png",
+      logoStorageKey: "products/customer/logo.png",
+      generatedQrValue: "https://taprater.com/p/P7AABGK8ZDVT",
+      qrTargetUrl: "https://taprater.com/p/P7AABGK8ZDVT",
+      nfcTargetUrl: "https://taprater.com/p/P7AABGK8ZDVT",
+      frontTemplateUrl: rateExperienceProduct.assetSet.brandedFrontTemplateUrl,
+      proofApproved: true,
+      proofApprovalSnapshot: {
+        productSlug: "rate-your-experience-stand",
+        optionCode: "branded_qr_direct",
+        businessName: "Bingo Tires",
+        logoMediaUrl: "/api/media/product/customer/logo.png",
+        logoStorageKey: "products/customer/logo.png",
+        generatedQrValue: "https://taprater.com/p/P7AABGK8ZDVT",
+        frontTemplateUrl: rateExperienceProduct.assetSet.brandedFrontTemplateUrl
+      }
+    };
+
+    const cart = validateCheckoutCart(
+      [
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "standard_direct",
+          quantity: 1,
+          setup: {
+            destinationUrl: "https://example.com/direct"
+          }
+        },
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            ...brandedSetup,
+            destinationUrl: "https://example.com/branded-direct",
+            generatedQrValue: "https://example.com/branded-direct",
+            qrTargetUrl: "https://example.com/branded-direct",
+            nfcTargetUrl: "https://example.com/branded-direct",
+            proofApprovalSnapshot: {
+              ...brandedSetup.proofApprovalSnapshot,
+              destinationUrl: "https://example.com/branded-direct",
+              generatedQrValue: "https://example.com/branded-direct"
+            }
+          }
+        },
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "standard_direct",
+          quantity: 1,
+          setup: {
+            serviceMode: "HOSTED",
+            serviceAddon: "hosted_multilink",
+            monthlyPriceCents: 999,
+            businessName: "Bingo Tires",
+            multiLinkLinksSkipped: true
+          }
+        },
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "branded_qr_direct",
+          quantity: 1,
+          setup: {
+            ...brandedSetup,
+            serviceMode: "HOSTED",
+            serviceAddon: "hosted_multilink",
+            monthlyPriceCents: 999,
+            multiLinkLinksSkipped: true
+          }
+        }
+      ],
+      [rateExperienceProduct]
+    );
+
+    expect(cart.ok).toBe(true);
+    if (!cart.ok) return;
+    expect(cart.checkoutMode).toBe("subscription");
+    expect(cart.totalCents).toBe(17600);
+    expect(cart.recurringTotalCents).toBe(1998);
+    expect(cart.rows.map((row) => [row.optionId, row.destinationMode, row.unitAmountCents, row.monthlyAmountCents ?? 0])).toEqual([
+      ["standard_direct", "DIRECT", 3900, 0],
+      ["branded_qr_direct", "DIRECT", 4900, 0],
+      ["standard_direct", "HOSTED", 3900, 999],
+      ["branded_qr_direct", "HOSTED", 4900, 999]
+    ]);
+
+    const lineItems = buildStripeCheckoutLineItems(cart.rows);
+    expect(lineItems).toHaveLength(6);
+    expect(lineItems.map((lineItem) => lineItem.price_data?.unit_amount)).toEqual([3900, 4900, 3900, 999, 4900, 999]);
+    expect(lineItems.filter((lineItem) => Boolean(lineItem.price_data?.recurring))).toHaveLength(2);
   });
 
   it("adds configured flat shipping to Checkout Session params", () => {

@@ -16,8 +16,10 @@ import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals
 
 export function CartTable({
   stripeMode = "test",
+  stripeCheckoutEnabled = true,
 }: {
   stripeMode?: "test" | "live";
+  stripeCheckoutEnabled?: boolean;
 }) {
   const { clearCart, decreaseItem, increaseItem, items, removeItem } = useCart();
   const router = useRouter();
@@ -26,10 +28,12 @@ export function CartTable({
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [signedInCustomer, setSignedInCustomer] = useState<{ email: string; name?: string; businessName?: string } | null>(null);
-  const isLiveStripe = stripeMode === "live";
+  const usesStripeCheckout = stripeCheckoutEnabled;
 
   const rows = getCartRows(items);
-  const total = calculateCartTotalCents(items);
+  const standTotal = calculateCartTotalCents(items);
+  const recurringTotal = calculateRecurringTotalCents(rows);
+  const dueToday = standTotal + recurringTotal;
   const checkoutEmail = signedInCustomer?.email ?? customerEmail;
   const checkoutName = signedInCustomer?.name ?? signedInCustomer?.businessName ?? customerName;
 
@@ -274,9 +278,9 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
-          <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{isLiveStripe ? "Checkout" : "Order review"}</h2>
+          <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{usesStripeCheckout ? "Checkout" : "Order review"}</h2>
         </div>
-        {!isLiveStripe && !signedInCustomer ? (
+        {!usesStripeCheckout && !signedInCustomer ? (
           <div className="grid gap-2">
             <label className="grid gap-2 text-sm font-medium text-ink">
               Customer email
@@ -305,10 +309,20 @@ export function CartTable({
         ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted">Subtotal</span>
-            <span className="font-medium text-ink">{formatPrice(total)}</span>
+            <span className="text-muted">Stands</span>
+            <span className="font-medium text-ink">{formatPrice(standTotal)}</span>
           </div>
-          {!isLiveStripe ? (
+          {recurringTotal > 0 ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-muted">Multi-Link monthly</span>
+              <span className="font-medium text-ink">{formatPrice(recurringTotal)}/mo</span>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Subtotal today</span>
+            <span className="font-medium text-ink">{formatPrice(dueToday)}</span>
+          </div>
+          {!usesStripeCheckout ? (
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted">Payment</span>
               <span className="text-right font-medium text-ink">No payment due now</span>
@@ -316,33 +330,29 @@ export function CartTable({
           ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Shipping</span>
-            <span className="text-right font-medium text-ink">{isLiveStripe ? "Reviewed after payment" : "Confirmed before payment"}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-muted">Order total</span>
-            <span className="font-medium text-ink">{formatPrice(total)}</span>
+            <span className="text-right font-medium text-ink">{usesStripeCheckout ? "Reviewed after payment" : "Confirmed before payment"}</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
             <span className="font-medium text-ink">Due now</span>
-            <span className="font-medium text-ink">{isLiveStripe ? formatPrice(total) : "$0.00"}</span>
+            <span className="font-medium text-ink">{usesStripeCheckout ? formatPrice(dueToday) : "$0.00"}</span>
           </div>
         </div>
         <button
           type="button"
-          disabled={isCheckingOut || (!isLiveStripe && !checkoutEmail.trim())}
+          disabled={isCheckingOut || (!usesStripeCheckout && !checkoutEmail.trim())}
           className="tr-button-primary min-h-12 w-full"
-          onClick={isLiveStripe ? startCheckout : submitManualOrder}
+          onClick={usesStripeCheckout ? startCheckout : submitManualOrder}
         >
           {isCheckingOut
-            ? isLiveStripe
+            ? usesStripeCheckout
               ? "Starting secure checkout..."
               : "Submitting review request..."
-            : isLiveStripe
+            : usesStripeCheckout
               ? "Secure checkout"
               : "Submit order for review"}
         </button>
         <p className="tr-body-sm">
-          {isLiveStripe
+          {usesStripeCheckout
             ? "Payment opens inside Tap Rater with Stripe. No shipping fee is added today."
             : "Tap Rater will review payment, shipping, and artwork details before production."}
         </p>
@@ -374,4 +384,11 @@ function getCartRowImage(row: CartRow) {
 
 function readString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function calculateRecurringTotalCents(rows: CartRow[]) {
+  return rows.reduce((sum, row) => {
+    const hasHostedMultiLink = row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink";
+    return sum + (hasHostedMultiLink ? (row.item.setup?.monthlyPriceCents ?? 0) * row.item.quantity : 0);
+  }, 0);
 }
