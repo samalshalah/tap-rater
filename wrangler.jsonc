@@ -8,6 +8,16 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "taprater.com/*",
+      "zone_name": "taprater.com"
+    },
+    {
+      "pattern": "www.taprater.com/*",
+      "zone_name": "taprater.com"
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "PRODUCT_MEDIA_BUCKET",
@@ -25,7 +35,7 @@
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
     "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://taprater.com",
     "PRODUCT_MEDIA_PUBLIC_BASE_URL": "",
-    "STRIPE_MODE": "test",
+    "STRIPE_MODE": "live",
     "TAP_RATER_ENABLE_PRODUCTION_HOSTED_PAGES": "true",
     "TAP_RATER_ENABLE_HOSTED_PURCHASING": "true"
   }
