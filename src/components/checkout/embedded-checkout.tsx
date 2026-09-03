@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { AlertCircle, LockKeyhole } from "lucide-react";
+import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
@@ -22,7 +22,9 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
   const rows = getCartRows(items);
-  const totalCents = calculateCartTotalCents(items);
+  const standTotalCents = calculateCartTotalCents(items);
+  const recurringTotalCents = calculateRecurringTotalCents(rows);
+  const dueTodayCents = standTotalCents + recurringTotalCents;
   const [session, setSession] = useState<EmbeddedCheckoutSession | null>(null);
   const [error, setError] = useState("");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
@@ -62,53 +64,66 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
   const options = useMemo(() => (session?.clientSecret ? { clientSecret: session.clientSecret } : undefined), [session?.clientSecret]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(360px,1.14fr)] lg:items-start">
-      <aside className="tr-card p-5 sm:p-6">
-        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.1em] text-brand">
+    <div className="grid gap-5 lg:grid-cols-[minmax(300px,0.54fr)_minmax(420px,1.46fr)] lg:items-start">
+      <aside className="tr-card p-4 sm:p-5">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase text-brand">
           <LockKeyhole size={16} />
-          Secure payment powered by Stripe
+          Secure checkout
         </div>
-        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-ink">Checkout inside Tap Rater</h1>
-        <p className="mt-3 text-sm leading-6 text-muted">
-          You are not charged until payment is complete. Tap Rater receives your setup details after Stripe confirms payment.
-        </p>
 
-        <div className="tr-card mt-6 bg-soft p-4">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-muted">Order summary</p>
+        <div className="mt-4">
+          <p className="tr-eyebrow">Order summary</p>
           {rows.length > 0 ? (
-            <div className="mt-4 grid gap-4">
+            <div className="mt-3 grid gap-3">
               {rows.map((row) => (
-                <div key={`${row.item.productId}-${row.option.id}-${row.item.setup?.destinationUrl ?? ""}`} className="border-b border-line pb-4 last:border-b-0 last:pb-0">
+                <div key={`${row.item.productId}-${row.option.id}-${row.item.setup?.destinationUrl ?? ""}`} className="rounded-md border border-line bg-white p-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-ink">{row.product.title}</p>
-                      <p className="mt-1 text-xs font-black uppercase tracking-[0.08em] text-brand">{row.option.label}</p>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-5 text-ink">{row.product.title}</p>
+                      <p className="mt-1 text-xs text-brand">{row.option.label}</p>
                     </div>
-                    <p className="font-black text-ink">{formatPrice(row.lineSubtotalCents)}</p>
+                    <p className="shrink-0 text-sm font-medium text-ink">{formatPrice(row.lineSubtotalCents)}</p>
                   </div>
                   <div className="mt-2 grid gap-1 text-xs leading-5 text-muted">
-                    {row.item.setup?.destinationUrl ? <p>Destination link: {row.item.setup.destinationUrl}</p> : null}
-                    <p>QR and NFC open the destination link directly</p>
                     {row.item.setup?.businessName ? <p>Business: {row.item.setup.businessName}</p> : null}
+                    {row.item.setup?.destinationUrl ? <p className="break-words">Destination: {row.item.setup.destinationUrl}</p> : null}
+                    {row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink" ? (
+                      <p>Multi-Link hosting: {formatPrice(row.item.setup.monthlyPriceCents ?? 0)}/mo</p>
+                    ) : null}
                   </div>
                 </div>
               ))}
-              <div className="flex items-center justify-between pt-1 text-lg font-black text-ink">
-                <span>Total before tax</span>
-                <span>{formatPrice(totalCents)}</span>
-              </div>
             </div>
           ) : (
             <p className="mt-3 text-sm leading-6 text-muted">
-              Your configured order is ready for secure payment. Return to the cart if you need to review or change the setup details.
+              Your configured order is ready for secure payment.
             </p>
           )}
         </div>
 
-        <p className="mt-5 text-xs leading-5 text-muted">
-          Shipping is reviewed after payment. Stripe collects the shipping address, and no shipping fee is added today.
-        </p>
-        <Link href="/cart" className="tr-button-outline mt-5">
+        <div className="mt-4 grid gap-2 border-y border-line py-4 text-sm">
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Stands</span>
+            <span className="font-medium text-ink">{formatPrice(standTotalCents)}</span>
+          </div>
+          {recurringTotalCents > 0 ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-muted">Multi-Link monthly</span>
+              <span className="font-medium text-ink">{formatPrice(recurringTotalCents)}/mo</span>
+            </div>
+          ) : null}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-muted">Shipping</span>
+            <span className="text-right font-medium text-ink">Reviewed after payment</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 pt-2 text-base">
+            <span className="font-medium text-ink">Total before tax</span>
+            <span className="font-medium text-ink">{formatPrice(dueTodayCents)}</span>
+          </div>
+        </div>
+
+        <Link href="/cart" className="tr-button-outline mt-4 inline-flex items-center gap-2">
+          <ArrowLeft size={16} />
           Back to cart
         </Link>
       </aside>
@@ -150,4 +165,11 @@ function CheckoutError({ message }: { message: string }) {
       </div>
     </div>
   );
+}
+
+function calculateRecurringTotalCents(rows: ReturnType<typeof getCartRows>) {
+  return rows.reduce((sum, row) => {
+    const hasHostedMultiLink = row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink";
+    return sum + (hasHostedMultiLink ? (row.item.setup?.monthlyPriceCents ?? 0) * row.item.quantity : 0);
+  }, 0);
 }
