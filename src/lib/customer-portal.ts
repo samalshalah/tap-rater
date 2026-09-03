@@ -41,6 +41,7 @@ export type CustomerPortalOrder = {
   paymentStatus?: string;
   paymentMethodLabel: string;
   paymentReference?: string;
+  invoiceNumber?: string;
   invoiceUrl?: string;
   receiptUrl?: string;
   productionStatus: string;
@@ -98,12 +99,32 @@ export type CustomerPortalSubscription = {
   cancelAtPeriodEnd: boolean;
 };
 
+export type CustomerPortalInvoice = {
+  id: string;
+  orderId?: string;
+  invoiceNumber?: string;
+  status?: string;
+  paymentStatus?: string;
+  paymentMethodLabel: string;
+  invoiceUrl?: string;
+  receiptUrl?: string;
+  subtotalCents: number;
+  taxCents: number;
+  shippingCents: number;
+  totalCents: number;
+  amountPaidCents: number;
+  currency: string;
+  issuedAt?: string;
+  paidAt?: string;
+};
+
 export type CustomerPortalData = {
   configured: boolean;
   customer: CustomerPortalCustomer | null;
   businesses: CustomerPortalBusiness[];
   devices: CustomerPortalDevice[];
   orders: CustomerPortalOrder[];
+  invoices: CustomerPortalInvoice[];
   stands: CustomerPortalStand[];
   subscriptions: CustomerPortalSubscription[];
 };
@@ -136,12 +157,13 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     return emptyPortal(true);
   }
 
-  const [{ data: businessRows }, { data: deviceRows }, { data: eventRows }, { data: orderRows }, { data: subscriptionRows }] = await Promise.all([
+  const [{ data: businessRows }, { data: deviceRows }, { data: eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult] = await Promise.all([
     client.from("businesses").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     client.from("devices").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     client.from("tap_events").select("device_id"),
     client.from("orders").select("*").eq("email", customer.email).order("created_at", { ascending: false }),
-    client.from("hosted_subscriptions").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false })
+    client.from("hosted_subscriptions").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
+    loadCustomerInvoices(client, customer)
   ]);
 
   const tapCounts = new Map<string, number>();
@@ -156,6 +178,7 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
 
   const orders = Array.isArray(orderRows) ? orderRows.map(normalizeOrder).filter((order): order is CustomerPortalOrder => Boolean(order)) : [];
   const subscriptions = Array.isArray(subscriptionRows) ? subscriptionRows.map(normalizeSubscription).filter((subscription): subscription is CustomerPortalSubscription => Boolean(subscription)) : [];
+  const invoices = invoiceResult.ok ? invoiceResult.invoices : deriveInvoicesFromOrders(orders);
 
   return {
     configured: true,
@@ -163,13 +186,14 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     businesses: Array.isArray(businessRows) ? businessRows.map(normalizeBusiness).filter((business): business is CustomerPortalBusiness => Boolean(business)) : [],
     devices: Array.isArray(deviceRows) ? deviceRows.map((row) => normalizeDevice(row, tapCounts)).filter((device): device is CustomerPortalDevice => Boolean(device)) : [],
     orders,
+    invoices,
     stands: buildCustomerStands(orders, subscriptions),
     subscriptions
   };
 }
 
 function emptyPortal(configured: boolean): CustomerPortalData {
-  return { configured, customer: null, businesses: [], devices: [], orders: [], stands: [], subscriptions: [] };
+  return { configured, customer: null, businesses: [], devices: [], orders: [], invoices: [], stands: [], subscriptions: [] };
 }
 
 function normalizeCustomer(row: unknown): CustomerPortalCustomer | null {
@@ -246,7 +270,8 @@ function normalizeOrder(row: unknown): CustomerPortalOrder | null {
     paymentStatus: readString(value.payment_status),
     paymentMethodLabel: readPaymentMethodLabel(value),
     paymentReference: readString(value.stripe_payment_intent_id),
-    invoiceUrl: readOrderUrl(value, ["invoice_url", "hosted_invoice_url", "invoicePdfUrl", "invoice_pdf_url"]),
+    invoiceNumber: readOrderValue(value, ["invoice_number", "invoiceNumber"]),
+    invoiceUrl: readOrderUrl(value, ["invoice_pdf_url", "invoicePdfUrl", "hosted_invoice_url", "invoice_url"]),
     receiptUrl: readOrderUrl(value, ["receipt_url", "receiptUrl"]),
     productionStatus: readString(value.production_status) ?? "not_started",
     shippingStatus: readString(value.shipping_status) ?? "not_shipped",
@@ -279,6 +304,67 @@ function normalizeSubscription(row: unknown): CustomerPortalSubscription | null 
     currentPeriodEnd: readString(value.current_period_end),
     cancelAtPeriodEnd: value.cancel_at_period_end === true
   };
+}
+
+async function loadCustomerInvoices(client: CustomerPortalDbClient, customer: CustomerPortalCustomer) {
+  try {
+    const { data, error } = await client
+      .from("billing_invoices")
+      .select("*")
+      .eq("email", customer.email)
+      .order("created_at", { ascending: false });
+    if (error || !Array.isArray(data)) return { ok: false as const, invoices: [] };
+    return { ok: true as const, invoices: data.map(normalizeInvoice).filter((invoice): invoice is CustomerPortalInvoice => Boolean(invoice)) };
+  } catch {
+    return { ok: false as const, invoices: [] };
+  }
+}
+
+function normalizeInvoice(row: unknown): CustomerPortalInvoice | null {
+  const value = readRecord(row);
+  const id = readString(value.id) ?? readString(value.stripe_invoice_id);
+  if (!id) return null;
+
+  return {
+    id,
+    orderId: readString(value.order_id),
+    invoiceNumber: readString(value.invoice_number),
+    status: readString(value.status),
+    paymentStatus: readString(value.payment_status),
+    paymentMethodLabel: readString(value.payment_method_label) ?? "Stripe payment",
+    invoiceUrl: readOrderUrl(value, ["invoice_pdf_url", "hosted_invoice_url"]),
+    receiptUrl: readString(value.receipt_url),
+    subtotalCents: readNumber(value.subtotal_cents) ?? 0,
+    taxCents: readNumber(value.tax_cents) ?? 0,
+    shippingCents: readNumber(value.shipping_cents) ?? 0,
+    totalCents: readNumber(value.total_cents) ?? 0,
+    amountPaidCents: readNumber(value.amount_paid_cents) ?? 0,
+    currency: readString(value.currency) ?? "usd",
+    issuedAt: readString(value.issued_at) ?? readString(value.created_at),
+    paidAt: readString(value.paid_at)
+  };
+}
+
+function deriveInvoicesFromOrders(orders: CustomerPortalOrder[]): CustomerPortalInvoice[] {
+  return orders
+    .filter((order) => order.invoiceUrl || order.receiptUrl)
+    .map((order) => ({
+      id: order.invoiceNumber ?? order.reference,
+      orderId: order.id,
+      invoiceNumber: order.invoiceNumber,
+      status: order.status,
+      paymentStatus: order.paymentStatus,
+      paymentMethodLabel: order.paymentMethodLabel,
+      invoiceUrl: order.invoiceUrl,
+      receiptUrl: order.receiptUrl,
+      subtotalCents: order.subtotalCents,
+      taxCents: 0,
+      shippingCents: order.shippingAmountCents,
+      totalCents: order.totalCents,
+      amountPaidCents: order.paymentStatus === "paid" || order.status === "paid" ? order.totalCents : 0,
+      currency: order.currency,
+      issuedAt: order.createdAt
+    }));
 }
 
 function readRecord(value: unknown): Record<string, unknown> {
@@ -316,6 +402,10 @@ function readPaymentMethodLabel(value: Record<string, unknown>) {
 }
 
 function readOrderUrl(value: Record<string, unknown>, keys: string[]) {
+  return readOrderValue(value, keys);
+}
+
+function readOrderValue(value: Record<string, unknown>, keys: string[]) {
   const customerDetails = readRecord(value.customer_details_json);
   for (const key of keys) {
     const direct = readString(value[key]);

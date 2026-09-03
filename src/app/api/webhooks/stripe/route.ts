@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { recordBillingInvoiceFromCheckoutSession, recordBillingInvoiceFromStripeInvoice } from "@/lib/billing-invoices";
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
 import { provisionHostedSubscriptionFromCheckout } from "@/lib/hosted-subscription-provisioning";
@@ -30,6 +31,14 @@ export async function POST(request: Request) {
         const result = await savePaidOrderFromCheckoutSession(enrichedSession);
         if (!result.ok) {
           return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
+        }
+
+        const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
+        if (!invoiceResult.ok) {
+          console.warn("[stripe-webhook] billing_invoice_not_saved", {
+            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+            error: invoiceResult.error
+          });
         }
 
         const provisioning = await provisionHostedSubscriptionFromCheckout({
@@ -72,6 +81,17 @@ export async function POST(request: Request) {
       event.type === "invoice.paid" ||
       event.type === "invoice.payment_failed"
     ) {
+      if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
+        const invoiceResult = await recordBillingInvoiceFromStripeInvoice(event.data.object);
+        if (!invoiceResult.ok) {
+          console.warn("[stripe-webhook] billing_invoice_not_saved", {
+            eventId: event.id,
+            eventType: event.type,
+            error: invoiceResult.error
+          });
+        }
+      }
+
       const result = await processHostedSubscriptionLifecycleEvent({
         eventId: event.id,
         eventType: event.type,
@@ -95,40 +115,66 @@ export async function POST(request: Request) {
 
 async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLike): Promise<StripeCheckoutSessionLike> {
   const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+  const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
   const stripe = getStripeClient() as any;
-
-  if (!paymentIntentId || !stripe.paymentIntents?.retrieve) {
-    return session;
-  }
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
-      expand: ["payment_method", "latest_charge"]
-    });
-    const paymentMethod = paymentIntent?.payment_method;
-    const latestCharge = paymentIntent?.latest_charge;
-    const paymentMethodDetails = readPaymentMethodDetails(paymentMethod);
-    const receiptUrl = typeof latestCharge?.receipt_url === "string" ? latestCharge.receipt_url : undefined;
-
-    if (!paymentMethodDetails && !receiptUrl) {
-      return session;
-    }
-
-    return {
-      ...session,
-      customer_details: {
-        ...(session.customer_details ?? {}),
-        ...(paymentMethodDetails ? { payment_method_details: paymentMethodDetails } : {}),
-        ...(receiptUrl ? { receipt_url: receiptUrl } : {})
+  let paymentMethodDetails: Record<string, unknown> | null = null;
+  let receiptUrl: string | undefined;
+  let invoice:
+    | {
+        id?: string | null;
+        hosted_invoice_url?: string | null;
+        invoice_pdf?: string | null;
+        number?: string | null;
       }
-    };
-  } catch (error) {
-    console.warn("[stripe-webhook] payment_method_details_not_loaded", {
-      paymentIntentId,
-      errorName: error instanceof Error ? error.name : "UnknownError"
-    });
+    | undefined;
+
+  if (paymentIntentId && stripe.paymentIntents?.retrieve) {
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+        expand: ["payment_method", "latest_charge"]
+      });
+      const paymentMethod = paymentIntent?.payment_method;
+      const latestCharge = paymentIntent?.latest_charge;
+      paymentMethodDetails = readPaymentMethodDetails(paymentMethod);
+      receiptUrl = typeof latestCharge?.receipt_url === "string" ? latestCharge.receipt_url : undefined;
+    } catch (error) {
+      console.warn("[stripe-webhook] payment_method_details_not_loaded", {
+        paymentIntentId,
+        errorName: error instanceof Error ? error.name : "UnknownError"
+      });
+    }
+  }
+
+  if (invoiceId && stripe.invoices?.retrieve) {
+    try {
+      const stripeInvoice = await stripe.invoices.retrieve(invoiceId);
+      invoice = {
+        id: typeof stripeInvoice?.id === "string" ? stripeInvoice.id : invoiceId,
+        hosted_invoice_url: typeof stripeInvoice?.hosted_invoice_url === "string" ? stripeInvoice.hosted_invoice_url : null,
+        invoice_pdf: typeof stripeInvoice?.invoice_pdf === "string" ? stripeInvoice.invoice_pdf : null,
+        number: typeof stripeInvoice?.number === "string" ? stripeInvoice.number : null
+      };
+    } catch (error) {
+      console.warn("[stripe-webhook] invoice_details_not_loaded", {
+        invoiceId,
+        errorName: error instanceof Error ? error.name : "UnknownError"
+      });
+    }
+  }
+
+  if (!paymentMethodDetails && !receiptUrl && !invoice) {
     return session;
   }
+
+  return {
+    ...session,
+    ...(invoice ? { invoice } : {}),
+    customer_details: {
+      ...(session.customer_details ?? {}),
+      ...(paymentMethodDetails ? { payment_method_details: paymentMethodDetails } : {}),
+      ...(receiptUrl ? { receipt_url: receiptUrl } : {})
+    }
+  };
 }
 
 function readPaymentMethodDetails(paymentMethod: unknown) {

@@ -1,13 +1,19 @@
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
-import { getCustomerPortal, type CustomerPortalOrder } from "@/lib/customer-portal";
+import { getCustomerPortal, type CustomerPortalInvoice, type CustomerPortalOrder } from "@/lib/customer-portal";
 import { formatOrderReference } from "@/lib/order-reference";
 import { formatPrice } from "@/lib/products";
 
-export default async function AccountOrdersPage() {
+export default async function AccountOrdersPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ billing_error?: string }>;
+}) {
   const session = await requireCustomer();
   const portal = await getCustomerPortal(session.email);
   const pendingPayments = portal.orders.filter((order) => order.paymentStatus === "manual_unpaid");
+  const params = await searchParams;
+  const billingError = typeof params?.billing_error === "string" ? params.billing_error : "";
 
   return (
     <AccountShell>
@@ -18,7 +24,18 @@ export default async function AccountOrdersPage() {
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
             Review invoice records, receipts, payment status, and recurring Multi-Link billing in one place.
           </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <form action="/api/account/billing-portal" method="post">
+              <button type="submit" className="tr-button-primary">Manage payment method</button>
+            </form>
+          </div>
         </section>
+
+        {billingError ? (
+          <section className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p>{billingError}</p>
+          </section>
+        ) : null}
 
         {pendingPayments.length ? (
           <section className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -35,11 +52,28 @@ export default async function AccountOrdersPage() {
             <p className="text-sm text-muted">{portal.orders.length} order{portal.orders.length === 1 ? "" : "s"}</p>
           </div>
           <div className="mt-5 divide-y divide-line overflow-hidden rounded-md border border-line bg-white">
-          {portal.orders.length ? (
-            portal.orders.map((order) => <OrderCard key={order.id} order={order} />)
-          ) : (
-            <EmptyState message="No submitted orders are linked to this account yet." />
-          )}
+            {portal.orders.length ? (
+              portal.orders.map((order) => <OrderCard key={order.id} order={order} />)
+            ) : (
+              <EmptyState message="No submitted orders are linked to this account yet." />
+            )}
+          </div>
+        </section>
+
+        <section className="tr-card p-5">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="tr-eyebrow">Invoices</p>
+              <h2 className="mt-2 text-lg font-medium text-ink">Payment documents</h2>
+            </div>
+            <p className="text-sm text-muted">{portal.invoices.length} invoice{portal.invoices.length === 1 ? "" : "s"}</p>
+          </div>
+          <div className="mt-5 divide-y divide-line overflow-hidden rounded-md border border-line bg-white">
+            {portal.invoices.length ? (
+              portal.invoices.map((invoice) => <InvoiceCard key={invoice.id} invoice={invoice} />)
+            ) : (
+              <EmptyState message="Invoices will appear here after Stripe confirms payment." />
+            )}
           </div>
         </section>
 
@@ -80,9 +114,30 @@ export default async function AccountOrdersPage() {
   );
 }
 
+function InvoiceCard({ invoice }: { invoice: CustomerPortalInvoice }) {
+  return (
+    <article className="grid gap-3 p-4 text-sm md:grid-cols-[minmax(0,1fr)_140px_180px] md:items-center">
+      <div className="min-w-0">
+        <h3 className="text-base font-medium text-ink">{invoice.invoiceNumber ?? "Stripe invoice"}</h3>
+        <p className="mt-1 text-muted">
+          {invoice.issuedAt ? new Date(invoice.issuedAt).toLocaleDateString() : "Date pending"} · {invoice.paymentMethodLabel}
+        </p>
+      </div>
+      <div className="md:text-right">
+        <p className="text-xs uppercase text-muted">Paid</p>
+        <p className="mt-1 text-ink">{formatPrice(invoice.amountPaidCents || invoice.totalCents)}</p>
+      </div>
+      <div className="flex flex-wrap gap-2 md:justify-end">
+        {invoice.invoiceUrl ? <a href={invoice.invoiceUrl} target="_blank" rel="noreferrer" className="tr-button-ghost">Download PDF</a> : null}
+        {invoice.receiptUrl ? <a href={invoice.receiptUrl} target="_blank" rel="noreferrer" className="tr-button-ghost">Receipt</a> : null}
+        {!invoice.invoiceUrl && !invoice.receiptUrl ? <StatusBadge label={formatStatus(invoice.paymentStatus ?? invoice.status ?? "pending")} /> : null}
+      </div>
+    </article>
+  );
+}
+
 function OrderCard({ order }: { order: CustomerPortalOrder }) {
   const reference = formatOrderReference(order.reference);
-  const hasInvoiceActions = Boolean(order.invoiceUrl || order.receiptUrl);
 
   return (
     <article id={`order-${reference}`} className="scroll-mt-28 p-4">
@@ -104,15 +159,10 @@ function OrderCard({ order }: { order: CustomerPortalOrder }) {
             ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+            {order.invoiceNumber ? <span>Invoice: {order.invoiceNumber}</span> : null}
             <span>Payment method: {order.paymentMethodLabel}</span>
             {order.paymentReference ? <span>Reference: {order.paymentReference}</span> : null}
           </div>
-          {hasInvoiceActions ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {order.invoiceUrl ? <a href={order.invoiceUrl} target="_blank" rel="noreferrer" className="tr-button-ghost">Invoice</a> : null}
-              {order.receiptUrl ? <a href={order.receiptUrl} target="_blank" rel="noreferrer" className="tr-button-ghost">Receipt</a> : null}
-            </div>
-          ) : null}
         </div>
         <div className="shrink-0 text-left lg:text-right">
           <p className="text-xs uppercase text-muted">Order total</p>

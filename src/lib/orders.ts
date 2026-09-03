@@ -484,6 +484,7 @@ export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLik
     customer_details_json: {
       ...(session.customer_details ?? {}),
       ...(stripeCustomerId ? { stripe_customer_id: stripeCustomerId } : {}),
+      ...(invoiceDetails.invoiceId ? { invoice_id: invoiceDetails.invoiceId } : {}),
       ...(invoiceDetails.hostedInvoiceUrl ? { hosted_invoice_url: invoiceDetails.hostedInvoiceUrl } : {}),
       ...(invoiceDetails.invoicePdfUrl ? { invoice_pdf_url: invoiceDetails.invoicePdfUrl } : {}),
       ...(invoiceDetails.invoiceNumber ? { invoice_number: invoiceDetails.invoiceNumber } : {}),
@@ -739,9 +740,15 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     payload.shipping_mode = order.shipping_mode ?? existingOrder.shipping_mode ?? null;
   }
 
-  const { error } = await client.from("orders").upsert(payload, { onConflict: "stripe_checkout_session_id" });
+  const { data: savedOrder, error } = await client
+    .from("orders")
+    .upsert(payload, { onConflict: "stripe_checkout_session_id" })
+    .select("*")
+    .maybeSingle();
 
-  return error ? { ok: false, error: error.message } : { ok: true, order: mergedOrder, wasAlreadyPaid };
+  return error
+    ? { ok: false, error: error.message }
+    : { ok: true, order: savedOrder ? normalizeOrderRecord(savedOrder) : mergedOrder, wasAlreadyPaid };
 }
 
 export async function getAdminOrders(): Promise<{ configured: boolean; orders: OrderRecord[] }> {
@@ -1139,6 +1146,7 @@ function readStripeObjectId(value: unknown) {
 function readInvoiceDetails(invoice: StripeCheckoutSessionLike["invoice"]) {
   if (!invoice || typeof invoice === "string") {
     return {
+      invoiceId: typeof invoice === "string" ? invoice : undefined,
       hostedInvoiceUrl: undefined,
       invoicePdfUrl: undefined,
       invoiceNumber: undefined
@@ -1146,6 +1154,7 @@ function readInvoiceDetails(invoice: StripeCheckoutSessionLike["invoice"]) {
   }
 
   return {
+    invoiceId: typeof invoice.id === "string" ? invoice.id : undefined,
     hostedInvoiceUrl: typeof invoice.hosted_invoice_url === "string" ? invoice.hosted_invoice_url : undefined,
     invoicePdfUrl: typeof invoice.invoice_pdf === "string" ? invoice.invoice_pdf : undefined,
     invoiceNumber: typeof invoice.number === "string" ? invoice.number : undefined

@@ -70,6 +70,22 @@ describe("customer portal repository", () => {
           lifecycle_status: "ACTIVE",
           cancel_at_period_end: false
         }
+      ],
+      billing_invoices: [
+        {
+          id: "invoice-1",
+          customer_id: "customer-1",
+          order_id: "order-1",
+          email: "owner@example.com",
+          stripe_invoice_id: "in_123",
+          invoice_number: "TR-INV-1001",
+          payment_method_label: "Visa ending 4242",
+          invoice_pdf_url: "https://pay.example/invoice.pdf",
+          receipt_url: "https://pay.example/receipt",
+          total_cents: 4900,
+          amount_paid_cents: 4900,
+          currency: "usd"
+        }
       ]
     });
 
@@ -93,6 +109,14 @@ describe("customer portal repository", () => {
       shippingAmountCents: 1000,
       itemCount: 1
     });
+    expect(portal.invoices[0]).toMatchObject({
+      invoiceNumber: "TR-INV-1001",
+      invoiceUrl: "https://pay.example/invoice.pdf",
+      receiptUrl: "https://pay.example/receipt",
+      paymentMethodLabel: "Visa ending 4242",
+      totalCents: 4900,
+      amountPaidCents: 4900
+    });
     expect(portal.stands[0]).toMatchObject({
       title: "Google Review Stand",
       lineItemIndex: 0,
@@ -105,7 +129,7 @@ describe("customer portal repository", () => {
   });
 
   it("returns empty portal data when customer is not found", async () => {
-    const db = createCustomerPortalDb({ customers: [], businesses: [], devices: [], tap_events: [], orders: [], hosted_subscriptions: [] });
+    const db = createCustomerPortalDb({ customers: [], businesses: [], devices: [], tap_events: [], orders: [], hosted_subscriptions: [], billing_invoices: [] });
 
     const portal = await getCustomerPortalFromClient(db.client, "missing@example.com");
 
@@ -170,7 +194,8 @@ describe("customer portal repository", () => {
           lifecycle_status: "ACTIVE",
           cancel_at_period_end: false
         }
-      ]
+      ],
+      billing_invoices: []
     });
 
     const portal = await getCustomerPortalFromClient(db.client, "owner@example.com");
@@ -185,7 +210,7 @@ describe("customer portal repository", () => {
   });
 });
 
-type TableName = "customers" | "businesses" | "devices" | "tap_events" | "orders" | "hosted_subscriptions";
+type TableName = "customers" | "businesses" | "devices" | "tap_events" | "orders" | "hosted_subscriptions" | "billing_invoices";
 
 function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unknown>>>) {
   const rows = {
@@ -194,7 +219,8 @@ function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unk
     devices: [...seed.devices],
     tap_events: [...seed.tap_events],
     orders: [...seed.orders],
-    hosted_subscriptions: [...seed.hosted_subscriptions]
+    hosted_subscriptions: [...seed.hosted_subscriptions],
+    billing_invoices: [...seed.billing_invoices]
   };
 
   const client = {

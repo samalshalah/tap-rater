@@ -59,6 +59,7 @@ export async function sendPaidOrderEmails(
 }
 
 export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["customer-order-confirmation"]) {
+  const billingLinks = getBillingLinks(order);
   return renderEmailTemplateHtml(template, {
     rows: {
       "Order number": getOrderReference(order),
@@ -70,6 +71,7 @@ export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = d
       "Order summary:",
       ...order.line_items_json.flatMap(formatCustomerLineItem),
       "What happens next: Tap Rater will review the order details before shipping.",
+      ...billingLinks,
       "Support: https://taprater.com/support",
       "Shipping: https://taprater.com/shipping",
       "Refund Policy: https://taprater.com/refund-policy",
@@ -79,6 +81,7 @@ export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = d
 }
 
 export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["admin-new-order"]) {
+  const billingDetails = getBillingDetails(order);
   return renderEmailTemplateHtml(template, {
     rows: {
       "Order number": getOrderReference(order),
@@ -90,6 +93,10 @@ export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defa
       "Shipping amount": formatMoney(order.shipping_amount_cents, order.currency),
       "Production status": order.production_status,
       "Shipping status": order.shipping_status,
+      "Invoice number": billingDetails.invoiceNumber ?? "",
+      "Invoice PDF": billingDetails.invoicePdfUrl ?? "",
+      "Stripe hosted invoice": billingDetails.hostedInvoiceUrl ?? "",
+      "Receipt": billingDetails.receiptUrl ?? "",
       Carrier: order.shipping_carrier ?? "",
       "Tracking number": order.tracking_number ?? "",
       "Tracking URL": order.tracking_url ?? "",
@@ -117,7 +124,7 @@ function formatCustomerLineItem(item: OrderLineItem) {
     lines.push(`Business name: ${summary.businessName ?? "Not provided"}`);
     lines.push(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"}`);
     lines.push(`QR: ${summary.qrTargetUrl ?? summary.generatedQrValue ? "Generated" : "Not generated"}`);
-    lines.push(`Proof confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
+    lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
   }
 
   return lines;
@@ -150,7 +157,7 @@ function formatAdminLineItem(item: OrderLineItem) {
     if (summary.productionArtwork.url) lines.push(`Production artwork: ${summary.productionArtwork.url}`);
     if (summary.productionArtwork.error) lines.push(`Production artwork error: ${summary.productionArtwork.error}`);
   }
-  lines.push(`Proof confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
+  lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
   if (summary.warnings.length > 0) lines.push(`Warnings: ${summary.warnings.join("; ")}`);
 
   return lines;
@@ -158,6 +165,25 @@ function formatAdminLineItem(item: OrderLineItem) {
 
 function getOrderReference(order: OrderRecord) {
   return formatOrderReference(order.stripe_checkout_session_id || order.id);
+}
+
+function getBillingLinks(order: OrderRecord) {
+  const details = getBillingDetails(order);
+  const lines: string[] = [];
+  if (details.invoicePdfUrl) lines.push(`Invoice PDF: ${details.invoicePdfUrl}`);
+  else if (details.hostedInvoiceUrl) lines.push(`Invoice: ${details.hostedInvoiceUrl}`);
+  if (details.receiptUrl) lines.push(`Receipt: ${details.receiptUrl}`);
+  return lines;
+}
+
+function getBillingDetails(order: OrderRecord) {
+  const details = order.customer_details_json && typeof order.customer_details_json === "object" ? order.customer_details_json : {};
+  return {
+    invoiceNumber: readString(details.invoice_number),
+    hostedInvoiceUrl: readString(details.hosted_invoice_url),
+    invoicePdfUrl: readString(details.invoice_pdf_url),
+    receiptUrl: readString(details.receipt_url)
+  };
 }
 
 async function sendPaidOrderEmailSafely(sendEmailFn: SendEmailFn, input: SendEmailInput): Promise<EmailResult> {
@@ -186,4 +212,8 @@ function formatMoney(cents: number, currency: string) {
     style: "currency",
     currency: currency.toUpperCase()
   }).format(cents / 100);
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : undefined;
 }

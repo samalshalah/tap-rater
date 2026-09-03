@@ -270,6 +270,7 @@ create table if not exists products (
   is_special_solution boolean not null default false,
   product_kind text not null default 'normal_direct' check (product_kind in ('normal_direct', 'custom_direct', 'bundle')),
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
+  sort_order integer not null default 1000,
   base_price_cents integer not null check (base_price_cents >= 0),
   sale_price_cents integer check (sale_price_cents >= 0),
   stock_status text not null check (stock_status in ('instock', 'outofstock')),
@@ -324,6 +325,7 @@ alter table products add column if not exists destination_type text;
 alter table products add column if not exists is_special_solution boolean not null default false;
 alter table products add column if not exists product_kind text not null default 'normal_direct';
 alter table products add column if not exists status text not null default 'draft';
+alter table products add column if not exists sort_order integer not null default 1000;
 alter table products add column if not exists service_mode text not null default 'basic_redirect';
 alter table products add column if not exists checkout_mode text not null default 'buy_now' check (checkout_mode in ('buy_now', 'request_quote', 'subscription', 'contact_sales'));
 alter table products add column if not exists requires_account boolean not null default false;
@@ -679,6 +681,7 @@ create index if not exists product_options_product_active_sort_idx on product_op
 create index if not exists products_stand_type_idx on products(stand_type_slug);
 create index if not exists products_primary_platform_idx on products(primary_platform_slug);
 create index if not exists products_status_idx on products(status);
+create index if not exists products_active_sort_idx on products(is_active, sort_order, title);
 
 insert into stand_types (slug, title, description, image_url, sort_order, is_active)
 values
@@ -962,6 +965,44 @@ create index if not exists hosted_subscriptions_business_id_idx
 
 create index if not exists hosted_subscriptions_lifecycle_status_idx
   on hosted_subscriptions(lifecycle_status);
+
+create table if not exists billing_invoices (
+  id uuid primary key default gen_random_uuid(),
+  customer_id uuid references customers(id) on delete set null,
+  order_id uuid references orders(id) on delete set null,
+  hosted_subscription_id uuid references hosted_subscriptions(id) on delete set null,
+  email text not null,
+  stripe_customer_id text,
+  stripe_invoice_id text unique,
+  stripe_checkout_session_id text,
+  stripe_subscription_id text,
+  stripe_payment_intent_id text,
+  invoice_number text,
+  status text,
+  payment_status text,
+  payment_method_label text,
+  hosted_invoice_url text,
+  invoice_pdf_url text,
+  receipt_url text,
+  subtotal_cents integer not null default 0 check (subtotal_cents >= 0),
+  tax_cents integer not null default 0 check (tax_cents >= 0),
+  shipping_cents integer not null default 0 check (shipping_cents >= 0),
+  total_cents integer not null default 0 check (total_cents >= 0),
+  amount_paid_cents integer not null default 0 check (amount_paid_cents >= 0),
+  currency text not null default 'usd',
+  issued_at timestamptz,
+  paid_at timestamptz,
+  period_start timestamptz,
+  period_end timestamptz,
+  metadata_json jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists billing_invoices_customer_id_idx on billing_invoices(customer_id);
+create index if not exists billing_invoices_email_created_at_idx on billing_invoices(email, created_at desc);
+create index if not exists billing_invoices_order_id_idx on billing_invoices(order_id);
+create index if not exists billing_invoices_subscription_id_idx on billing_invoices(stripe_subscription_id);
 
 create table if not exists site_content (
   key text primary key,
