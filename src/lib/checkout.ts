@@ -352,7 +352,7 @@ export function createCheckoutSessionParams({
   taxSettings?: TaxSettingsInput;
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
-  const shippingRule = resolveCheckoutShippingRule(cart.totalCents);
+  const shippingRule = resolveCheckoutShippingRule(cart.totalCents, shippingSettings);
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,
     getCheckoutTaxableAmountCents({

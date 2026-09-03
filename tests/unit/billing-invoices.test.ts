@@ -16,7 +16,8 @@ describe("billing invoice storage", () => {
         }
       ],
       orders: [],
-      billing_invoices: []
+      billing_invoices: [],
+      billing_invoice_items: []
     });
 
     const result = await recordBillingInvoiceFromStripeInvoiceWithClient(client, {
@@ -34,7 +35,7 @@ describe("billing invoice storage", () => {
       created: 1_800_000_000
     });
 
-    expect(result).toEqual({ ok: true, skipped: false });
+    expect(result).toMatchObject({ ok: true, skipped: false });
     expect(client.table("billing_invoices")).toMatchObject([
       {
         customer_id: "customer-1",
@@ -49,6 +50,67 @@ describe("billing invoice storage", () => {
         total_cents: 999,
         amount_paid_cents: 999,
         invoice_pdf_url: "https://pay.stripe.com/invoice.pdf"
+      }
+    ]);
+    expect(client.table("billing_invoice_items")).toMatchObject([
+      {
+        billing_invoice_id: "billing_invoices-1",
+        hosted_subscription_id: "hosted-sub-1",
+        order_id: "order-1",
+        title: "Hosted Multi-Link page",
+        option_label: "Monthly hosting"
+      }
+    ]);
+  });
+
+  it("stores all hosted subscription invoice items when one Stripe invoice covers multiple Multi-Link pages", async () => {
+    const client = new MemoryDbClient({
+      customers: [{ id: "customer-1", email: "owner@example.com" }],
+      hosted_subscriptions: [
+        {
+          id: "hosted-sub-1",
+          customer_id: "customer-1",
+          order_id: "order-1",
+          stripe_subscription_id: "sub_shared",
+          stripe_customer_id: "cus_123",
+          hosted_page_url: "https://taprater.com/p/AAA"
+        },
+        {
+          id: "hosted-sub-2",
+          customer_id: "customer-1",
+          order_id: "order-1",
+          stripe_subscription_id: "sub_shared",
+          stripe_customer_id: "cus_123",
+          hosted_page_url: "https://taprater.com/p/BBB"
+        }
+      ],
+      orders: [],
+      billing_invoices: [],
+      billing_invoice_items: []
+    });
+
+    const result = await recordBillingInvoiceFromStripeInvoiceWithClient(client, {
+      id: "in_shared",
+      status: "paid",
+      paid: true,
+      customer: "cus_123",
+      subscription: "sub_shared",
+      total: 1998,
+      amount_paid: 1998,
+      currency: "usd"
+    });
+
+    expect(result).toMatchObject({ ok: true, skipped: false });
+    expect(client.table("billing_invoice_items")).toMatchObject([
+      {
+        billing_invoice_id: "billing_invoices-1",
+        hosted_subscription_id: "hosted-sub-1",
+        hosted_page_url: "https://taprater.com/p/AAA"
+      },
+      {
+        billing_invoice_id: "billing_invoices-1",
+        hosted_subscription_id: "hosted-sub-2",
+        hosted_page_url: "https://taprater.com/p/BBB"
       }
     ]);
   });
@@ -118,7 +180,10 @@ class MemoryQueryBuilder {
   private async execute(): Promise<{ data: Record<string, any>[] | null; error: null }> {
     const tableRows = (this.rows[this.table] ??= []);
     if (this.action === "upsert") {
-      const existing = this.conflictTarget ? tableRows.find((row) => row[this.conflictTarget!] === this.values[this.conflictTarget!]) : undefined;
+      const conflictColumns = this.conflictTarget?.split(",").map((column) => column.trim()).filter(Boolean) ?? [];
+      const existing = conflictColumns.length
+        ? tableRows.find((row) => conflictColumns.every((column) => row[column] === this.values[column]))
+        : undefined;
       if (existing) {
         Object.assign(existing, this.values);
         return { data: [existing], error: null };

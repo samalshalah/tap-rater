@@ -1,6 +1,12 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createCustomerActivationToken } from "@/lib/customer-account";
-import { sendCustomerAccountSetupEmail, sendHostedSetupEmail, sendPaidCustomerAccountSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
+import {
+  sendCustomerAccountSetupEmail,
+  sendHostedAccountReadyEmail,
+  sendHostedSetupEmail,
+  sendPaidCustomerAccountSetupEmail,
+  type HostedSetupEmailInput
+} from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
@@ -57,7 +63,7 @@ export type PaidCustomerAccountProvisioningResult =
   | {
       ok: true;
       accountProvisioned: boolean;
-      reason?: "missing_customer_email" | "account_not_requested" | "hosted_order";
+      reason?: "missing_customer_email" | "account_not_requested" | "hosted_order" | "account_already_active";
     }
   | {
       ok: false;
@@ -69,6 +75,7 @@ export type HostedSubscriptionProvisioningDependencies = {
   storage: HostedPageTextStorage;
   generateCode?: () => string;
   sendHostedSetupEmailFn?: (input: HostedSetupEmailInput) => Promise<EmailResult>;
+  sendHostedAccountReadyEmailFn?: typeof sendHostedAccountReadyEmail;
   sendCustomerAccountSetupEmailFn?: typeof sendCustomerAccountSetupEmail;
   sendPaidCustomerAccountSetupEmailFn?: typeof sendPaidCustomerAccountSetupEmail;
 };
@@ -235,12 +242,18 @@ export async function provisionHostedSubscriptionFromCheckout(
     .eq("stripe_checkout_session_id", input.session.id);
   if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
 
-  const setupEmail = await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
-    to: email,
-    businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
-    hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
-    activationToken: activation.token
-  });
+  const setupEmail = customer.wasAlreadyActive
+    ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
+        to: email,
+        businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
+        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`
+      })
+    : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+        to: email,
+        businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
+        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
+        activationToken: activation.token
+      });
   if (!setupEmail.sent) {
     console.warn("[hosted-provisioning] setup_email_not_sent", {
       stripeCheckoutSessionId: input.session.id,
@@ -411,12 +424,18 @@ export async function provisionManualCustomerAccountFromOrder(
     .eq("stripe_checkout_session_id", input.order.stripe_checkout_session_id);
   if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
 
-  const setupEmail = await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
-    to: email,
-    businessName: firstHostedPage?.businessName ?? businessName,
-    hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
-    activationToken: activation.token
-  });
+  const setupEmail = customer.wasAlreadyActive
+    ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
+        to: email,
+        businessName: firstHostedPage?.businessName ?? businessName,
+        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`
+      })
+    : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+        to: email,
+        businessName: firstHostedPage?.businessName ?? businessName,
+        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
+        activationToken: activation.token
+      });
   if (!setupEmail.sent) {
     console.warn("[manual-provisioning] hosted_setup_email_not_sent", {
       orderReference: input.order.stripe_checkout_session_id,
@@ -468,17 +487,21 @@ export async function provisionPaidCustomerAccountFromOrder(
   });
   if (!business.ok) return business;
 
+  if (customer.wasAlreadyActive) {
+    return { ok: true, accountProvisioned: false, reason: "account_already_active" };
+  }
+
   const setupEmail = await (dependencies?.sendPaidCustomerAccountSetupEmailFn ?? sendPaidCustomerAccountSetupEmail)({
-    to: email,
-    businessName,
-    orderReference: input.order.stripe_checkout_session_id,
-    activationToken: activation.token
-  });
-  if (!setupEmail.sent) {
-    console.warn("[paid-account-provisioning] account_email_not_sent", {
+      to: email,
+      businessName,
       orderReference: input.order.stripe_checkout_session_id,
-      reason: setupEmail.reason
+      activationToken: activation.token
     });
+  if (!setupEmail.sent) {
+      console.warn("[paid-account-provisioning] account_email_not_sent", {
+        orderReference: input.order.stripe_checkout_session_id,
+        reason: setupEmail.reason
+      });
   }
 
   return { ok: true, accountProvisioned: true };
@@ -538,7 +561,14 @@ async function upsertCustomer(
   const activationExpiresAt = new Date(input.now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const existing = await client.from("customers").select("id,account_status").eq("email", input.email).maybeSingle();
   const existingStatus = readString(existing.data?.account_status);
-  const accountStatus = existingStatus === "active" ? "active" : "pending_activation";
+  const wasAlreadyActive = existingStatus === "active";
+  const accountStatus = wasAlreadyActive ? "active" : "pending_activation";
+  const activationFields = wasAlreadyActive
+    ? {}
+    : {
+        activation_token_hash: input.activationTokenHash,
+        activation_expires_at: activationExpiresAt
+      };
 
   const result = await client
     .from("customers")
@@ -549,8 +579,7 @@ async function upsertCustomer(
         phone: input.phone ?? null,
         role: "customer",
         account_status: accountStatus,
-        activation_token_hash: input.activationTokenHash,
-        activation_expires_at: activationExpiresAt,
+        ...activationFields,
         updated_at: input.now.toISOString()
       },
       { onConflict: "email" }
@@ -558,7 +587,7 @@ async function upsertCustomer(
     .select("id")
     .maybeSingle();
   if (result.error || !result.data?.id) return { ok: false as const, error: result.error?.message ?? "Customer could not be provisioned." };
-  return { ok: true as const, customerId: String(result.data.id) };
+  return { ok: true as const, customerId: String(result.data.id), wasAlreadyActive };
 }
 
 async function createBusiness(client: OrdersDbClient, input: { customerId: string; businessName: string; logoUrl?: string | null; now: Date }) {

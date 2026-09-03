@@ -260,7 +260,7 @@ describe("hosted subscription provisioning", () => {
     expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
     expect(client.table("customers")).toHaveLength(1);
     expect(client.table("customers")[0].account_status).toBe("active");
-    expect(client.table("customers")[0].activation_token_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(client.table("customers")[0].activation_token_hash).toBeUndefined();
     expect(client.table("businesses")).toHaveLength(1);
     expect(client.table("hosted_page_editor_pages")).toHaveLength(1);
     expect(client.table("hosted_subscriptions")).toHaveLength(1);

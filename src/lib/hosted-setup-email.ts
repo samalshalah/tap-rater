@@ -49,6 +49,43 @@ export async function sendHostedSetupEmail(input: HostedSetupEmailInput): Promis
   }
 }
 
+export async function sendHostedAccountReadyEmail(input: {
+  to: string;
+  businessName: string;
+  hostedPageUrl: string;
+  sendEmailFn?: SendEmailFn;
+}): Promise<EmailResult> {
+  try {
+    const sendEmailFn = input.sendEmailFn ?? sendEmail;
+
+    return await sendEmailFn({
+      to: input.to,
+      subject: "Your Tap Rater Multi-Link page is ready",
+      replyTo: getCustomerReplyToEmail(),
+      html: buildEmailHtml({
+        body: [
+          `Your Tap Rater Multi-Link page for ${input.businessName} has been created.`,
+          "Sign in to your Tap Rater account to manage the business name, logo, buttons, links, icons, ordering, and page style.",
+          `Permanent public URL: ${input.hostedPageUrl}`,
+          "That permanent URL stays the same when you update and publish your page links.",
+          "Support: https://taprater.com/support"
+        ],
+        cta: {
+          label: "Open My Account",
+          url: createCustomerAccountUrl()
+        }
+      })
+    });
+  } catch {
+    return { sent: false, reason: "email_send_exception" };
+  }
+}
+
+function createCustomerAccountUrl() {
+  const siteUrl = process.env.NEXT_PUBLIC_ACCOUNT_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  return `${siteUrl.replace(/\/$/, "")}/account`;
+}
+
 export async function sendCustomerAccountSetupEmail(input: {
   to: string;
   businessName: string;

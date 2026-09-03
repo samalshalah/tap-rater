@@ -33,6 +33,14 @@ describe("shipping settings repository", () => {
     expect(getCheckoutShippingMode(settings, 7800)).toBe("free");
   });
 
+  it("uses the saved flat shipping amount and supports manual or free modes", () => {
+    expect(getCheckoutShippingAmountCents({ ...getDefaultShippingSettings(), flatShippingAmountCents: 795 }, 3900)).toBe(795);
+    expect(getCheckoutShippingMode({ ...getDefaultShippingSettings(), shippingMode: "manual" }, 3900)).toBe("manual");
+    expect(getCheckoutShippingAmountCents({ ...getDefaultShippingSettings(), shippingMode: "manual" }, 3900)).toBe(0);
+    expect(getCheckoutShippingMode({ ...getDefaultShippingSettings(), shippingMode: "free" }, 3900)).toBe("free");
+    expect(getCheckoutShippingAmountCents({ ...getDefaultShippingSettings(), shippingMode: "free" }, 3900)).toBe(0);
+  });
+
   it("saves settings to site_content", async () => {
     const upsert = vi.fn().mockResolvedValue({ error: null });
     const client = {

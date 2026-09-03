@@ -75,11 +75,9 @@ export async function saveShippingSettings(client: ShippingSettingsDbClient, inp
 }
 
 export function getCheckoutShippingAmountCents(settings: ShippingSettingsInput, subtotalCents = 0) {
-  void settings;
-  return resolveCheckoutShippingRule(subtotalCents).amountCents;
+  return resolveCheckoutShippingRule(subtotalCents, settings).amountCents;
 }
 
-export function getCheckoutShippingMode(settings: ShippingSettingsInput, subtotalCents = 0): "free" | "flat" {
-  void settings;
-  return resolveCheckoutShippingRule(subtotalCents).mode;
+export function getCheckoutShippingMode(settings: ShippingSettingsInput, subtotalCents = 0): "manual" | "free" | "flat" {
+  return resolveCheckoutShippingRule(subtotalCents, settings).mode;
 }

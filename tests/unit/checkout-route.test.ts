@@ -47,8 +47,8 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
     createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", client_secret: "cs_test_123_secret_unit" }),
     getProducts: vi.fn().mockResolvedValue(migratedProducts),
     getShippingSettings: vi.fn().mockResolvedValue({
-      shippingMode: "manual",
-      flatShippingAmountCents: 0,
+      shippingMode: "flat",
+      flatShippingAmountCents: 1200,
       allowedCountryCodes: ["US"],
       handlingTimeText: "",
       supportedRegionsText: "United States",
@@ -196,7 +196,7 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "test",
-        shippingSettings: expect.objectContaining({ shippingMode: "manual" }),
+        shippingSettings: expect.objectContaining({ shippingMode: "flat" }),
         taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );
@@ -232,8 +232,8 @@ describe("checkout route reliability", () => {
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         subtotalCents: 3900,
-        totalCents: 5334,
-        shippingAmountCents: 1200,
+        totalCents: 4929,
+        shippingAmountCents: 795,
         shippingMode: "flat"
       })
     );
@@ -306,7 +306,7 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "live",
-        shippingSettings: expect.objectContaining({ shippingMode: "manual" }),
+        shippingSettings: expect.objectContaining({ shippingMode: "flat" }),
         taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );

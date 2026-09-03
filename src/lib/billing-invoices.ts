@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import type { OrdersDbClient, OrderRecord, StripeCheckoutSessionLike } from "@/lib/orders";
+import type { OrderLineItem, OrdersDbClient, OrderRecord, StripeCheckoutSessionLike } from "@/lib/orders";
 
 export type BillingInvoiceRecord = {
   customer_id?: string | null;
@@ -28,6 +28,20 @@ export type BillingInvoiceRecord = {
   paid_at?: string | null;
   period_start?: string | null;
   period_end?: string | null;
+  metadata_json?: Record<string, unknown>;
+};
+
+export type BillingInvoiceItemRecord = {
+  billing_invoice_id: string;
+  order_id?: string | null;
+  hosted_subscription_id?: string | null;
+  line_item_index: number;
+  title: string;
+  option_label?: string | null;
+  quantity: number;
+  amount_cents: number;
+  recurring_amount_cents: number;
+  hosted_page_url?: string | null;
   metadata_json?: Record<string, unknown>;
 };
 
@@ -105,7 +119,13 @@ export async function recordBillingInvoiceFromCheckoutSessionWithClient(
     }
   };
 
-  return upsertBillingInvoice(client, record);
+  const savedInvoice = await upsertBillingInvoice(client, record);
+  if (!savedInvoice.ok || !savedInvoice.billingInvoiceId) return savedInvoice;
+
+  const lineResult = await upsertBillingInvoiceItemsForOrder(client, savedInvoice.billingInvoiceId, order);
+  if (!lineResult.ok) return lineResult;
+
+  return savedInvoice;
 }
 
 export async function recordBillingInvoiceFromStripeInvoice(invoice: StripeInvoiceLike) {
@@ -118,7 +138,8 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
   if (!invoiceId) return { ok: true as const, skipped: true as const };
 
   const subscriptionId = readStripeId(invoice.subscription);
-  const hostedSubscription = subscriptionId ? await findHostedSubscriptionByStripeId(client, subscriptionId) : null;
+  const hostedSubscriptions = subscriptionId ? await findHostedSubscriptionsByStripeId(client, subscriptionId) : [];
+  const hostedSubscription = hostedSubscriptions[0] ?? null;
   const stripeCustomerId = readStripeId(invoice.customer);
   const customerByStripeId = stripeCustomerId ? await findCustomerByStripeCustomerId(client, stripeCustomerId) : null;
   const hostedCustomer = hostedSubscription?.customer_id ? await findCustomerById(client, hostedSubscription.customer_id) : null;
@@ -166,7 +187,15 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
     }
   };
 
-  return upsertBillingInvoice(client, record);
+  const savedInvoice = await upsertBillingInvoice(client, record);
+  if (!savedInvoice.ok || !savedInvoice.billingInvoiceId) return savedInvoice;
+
+  if (hostedSubscriptions.length) {
+    const lineResult = await upsertBillingInvoiceItemsForHostedSubscriptions(client, savedInvoice.billingInvoiceId, hostedSubscriptions);
+    if (!lineResult.ok) return lineResult;
+  }
+
+  return savedInvoice;
 }
 
 async function upsertBillingInvoice(client: OrdersDbClient, record: BillingInvoiceRecord) {
@@ -176,7 +205,78 @@ async function upsertBillingInvoice(client: OrdersDbClient, record: BillingInvoi
   };
 
   const { error } = await client.from("billing_invoices").upsert(payload, { onConflict: "stripe_invoice_id" });
-  return error ? { ok: false as const, error: error.message } : { ok: true as const, skipped: false as const };
+  if (error) return { ok: false as const, error: error.message };
+
+  const invoiceId = await findBillingInvoiceId(client, record.stripe_invoice_id);
+  return { ok: true as const, skipped: false as const, billingInvoiceId: invoiceId };
+}
+
+async function findBillingInvoiceId(client: OrdersDbClient, stripeInvoiceId?: string | null) {
+  if (!stripeInvoiceId) return null;
+  const result = await client.from("billing_invoices").select("id").eq("stripe_invoice_id", stripeInvoiceId).maybeSingle();
+  return result.error ? null : readString(readRecord(result.data).id) ?? null;
+}
+
+async function upsertBillingInvoiceItemsForOrder(client: OrdersDbClient, billingInvoiceId: string, order: OrderRecord) {
+  const items = order.line_items_json.map((item, index) => buildInvoiceItemFromOrderLine(billingInvoiceId, order, item, index));
+  return upsertBillingInvoiceItems(client, items);
+}
+
+async function upsertBillingInvoiceItemsForHostedSubscriptions(
+  client: OrdersDbClient,
+  billingInvoiceId: string,
+  subscriptions: Array<{ id: string | null; order_id: string | null; hosted_page_url?: string | null }>
+) {
+  const items = subscriptions.map((subscription, index) => ({
+    billing_invoice_id: billingInvoiceId,
+    order_id: subscription.order_id,
+    hosted_subscription_id: subscription.id,
+    line_item_index: index,
+    title: "Hosted Multi-Link page",
+    option_label: "Monthly hosting",
+    quantity: 1,
+    amount_cents: 0,
+    recurring_amount_cents: 0,
+    hosted_page_url: subscription.hosted_page_url ?? null,
+    metadata_json: { source: "hosted_subscription_invoice" }
+  }));
+  return upsertBillingInvoiceItems(client, items);
+}
+
+async function upsertBillingInvoiceItems(client: OrdersDbClient, items: BillingInvoiceItemRecord[]) {
+  for (const item of items) {
+    const { error } = await client.from("billing_invoice_items").upsert(
+      {
+        ...item,
+        updated_at: new Date().toISOString()
+      },
+      { onConflict: "billing_invoice_id,line_item_index" }
+    );
+    if (error) return { ok: false as const, error: error.message };
+  }
+  return { ok: true as const };
+}
+
+function buildInvoiceItemFromOrderLine(billingInvoiceId: string, order: OrderRecord, item: OrderLineItem, index: number): BillingInvoiceItemRecord {
+  const setup = readRecord(item.setup);
+  return {
+    billing_invoice_id: billingInvoiceId,
+    order_id: order.id ?? null,
+    hosted_subscription_id: null,
+    line_item_index: index,
+    title: item.title,
+    option_label: item.optionLabel ?? null,
+    quantity: item.quantity,
+    amount_cents: item.lineSubtotalCents,
+    recurring_amount_cents: (readNumber(setup.monthlyPriceCents) ?? readNumber(setup.monthly_price_cents) ?? 0) * item.quantity,
+    hosted_page_url: readString(setup.hostedPageUrl) ?? null,
+    metadata_json: {
+      product_id: item.productId,
+      option_id: item.optionId ?? null,
+      sku: item.sku,
+      destination_mode: item.destinationMode ?? null
+    }
+  };
 }
 
 async function findCustomerIdByEmail(client: OrdersDbClient, email: string) {
@@ -184,19 +284,22 @@ async function findCustomerIdByEmail(client: OrdersDbClient, email: string) {
   return result.error ? null : readString(readRecord(result.data).id) ?? null;
 }
 
-async function findHostedSubscriptionByStripeId(client: OrdersDbClient, stripeSubscriptionId: string) {
+async function findHostedSubscriptionsByStripeId(client: OrdersDbClient, stripeSubscriptionId: string) {
   const result = await client
     .from("hosted_subscriptions")
-    .select("id,customer_id,order_id")
+    .select("id,customer_id,order_id,hosted_page_url")
     .eq("stripe_subscription_id", stripeSubscriptionId)
-    .maybeSingle();
-  if (result.error || !result.data) return null;
-  const row = readRecord(result.data);
-  return {
-    id: readString(row.id) ?? null,
-    customer_id: readString(row.customer_id) ?? null,
-    order_id: readString(row.order_id) ?? null
-  };
+    .order("created_at", { ascending: false });
+  if (result.error || !Array.isArray(result.data)) return [];
+  return result.data.map((value: unknown) => {
+    const row = readRecord(value);
+    return {
+      id: readString(row.id) ?? null,
+      customer_id: readString(row.customer_id) ?? null,
+      order_id: readString(row.order_id) ?? null,
+      hosted_page_url: readString(row.hosted_page_url) ?? null
+    };
+  });
 }
 
 async function findCustomerByStripeCustomerId(client: OrdersDbClient, stripeCustomerId: string) {

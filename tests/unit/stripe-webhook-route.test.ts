@@ -89,6 +89,53 @@ describe("Stripe webhook route configuration", () => {
     expect(body).toEqual({ error: "Stripe webhook signature verification failed." });
   });
 
+  it("reports signed webhook processing failures separately from signature failures", async () => {
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({
+        ok: true,
+        mode: "test",
+        secretKey: "sk_test_unit",
+        publishableKey: "pk_test_unit",
+        webhookSecret: "whsec_unit"
+      }),
+      getStripeClient: () => ({
+        webhooks: {
+          constructEvent: () => ({
+            id: "evt_subscription_updated",
+            type: "customer.subscription.updated",
+            data: { object: { id: "sub_test_123", status: "active" } }
+          })
+        }
+      })
+    }));
+    vi.doMock("@/lib/hosted-subscription-lifecycle", () => ({
+      processHostedSubscriptionLifecycleEvent: vi.fn().mockRejectedValue(new Error("database unavailable"))
+    }));
+    vi.doMock("@/lib/orders", () => ({
+      savePaidOrderFromCheckoutSession: vi.fn()
+    }));
+    vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
+      provisionHostedSubscriptionFromCheckout: vi.fn(),
+      provisionPaidCustomerAccountFromOrder: vi.fn()
+    }));
+    vi.doMock("@/lib/order-emails", () => ({
+      sendPaidOrderEmails: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    const response = await POST(
+      new Request("https://taprater.test/api/webhooks/stripe", {
+        method: "POST",
+        body: "{}",
+        headers: { "stripe-signature": "test-signature" }
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "Stripe webhook processing failed." });
+  });
+
   it("dispatches signed subscription lifecycle events without creating checkout resources", async () => {
     const lifecycle = vi.fn().mockResolvedValue({ ok: true, processed: true });
     const savePaidOrder = vi.fn();

@@ -1060,11 +1060,11 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.metadata?.shipping_mode).toBe("flat");
-    expect(params.metadata?.shipping_amount_cents).toBe("1200");
+    expect(params.metadata?.shipping_amount_cents).toBe("795");
     expect(params).not.toHaveProperty("shipping_options");
     expect(params.line_items?.[1]).toMatchObject({
       price_data: {
-        unit_amount: 1200,
+        unit_amount: 795,
         product_data: {
           name: "Standard shipping",
           metadata: {

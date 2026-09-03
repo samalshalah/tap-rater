@@ -19,10 +19,15 @@ export async function POST(request: Request) {
   }
 
   const payload = await request.text();
+  let event: ReturnType<ReturnType<typeof getStripeClient>["webhooks"]["constructEvent"]>;
 
   try {
-    const event = getStripeClient().webhooks.constructEvent(payload, signature, stripeConfig.webhookSecret!);
+    event = getStripeClient().webhooks.constructEvent(payload, signature, stripeConfig.webhookSecret!);
+  } catch {
+    return NextResponse.json({ error: "Stripe webhook signature verification failed." }, { status: 400 });
+  }
 
+  try {
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object;
 
@@ -121,8 +126,14 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch {
-    return NextResponse.json({ error: "Stripe webhook signature verification failed." }, { status: 400 });
+  } catch (error) {
+    console.error("[stripe-webhook] processing_failed", {
+      eventId: event.id,
+      eventType: event.type,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage: error instanceof Error ? error.message : "Unknown webhook processing error"
+    });
+    return NextResponse.json({ error: "Stripe webhook processing failed." }, { status: 500 });
   }
 }
 
