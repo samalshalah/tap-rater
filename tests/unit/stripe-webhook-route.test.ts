@@ -117,7 +117,8 @@ describe("Stripe webhook route configuration", () => {
       savePaidOrderFromCheckoutSession: savePaidOrder
     }));
     vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
-      provisionHostedSubscriptionFromCheckout: vi.fn()
+      provisionHostedSubscriptionFromCheckout: vi.fn(),
+      provisionPaidCustomerAccountFromOrder: vi.fn()
     }));
     vi.doMock("@/lib/order-emails", () => ({
       sendPaidOrderEmails: vi.fn()

@@ -1,6 +1,6 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createCustomerActivationToken } from "@/lib/customer-account";
-import { sendCustomerAccountSetupEmail, sendHostedSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
+import { sendCustomerAccountSetupEmail, sendHostedSetupEmail, sendPaidCustomerAccountSetupEmail, type HostedSetupEmailInput } from "@/lib/hosted-setup-email";
 import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
@@ -53,12 +53,24 @@ export type ManualCustomerAccountProvisioningResult =
       error: string;
     };
 
+export type PaidCustomerAccountProvisioningResult =
+  | {
+      ok: true;
+      accountProvisioned: boolean;
+      reason?: "missing_customer_email" | "account_not_requested" | "hosted_order";
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export type HostedSubscriptionProvisioningDependencies = {
   client: OrdersDbClient;
   storage: HostedPageTextStorage;
   generateCode?: () => string;
   sendHostedSetupEmailFn?: (input: HostedSetupEmailInput) => Promise<EmailResult>;
   sendCustomerAccountSetupEmailFn?: typeof sendCustomerAccountSetupEmail;
+  sendPaidCustomerAccountSetupEmailFn?: typeof sendPaidCustomerAccountSetupEmail;
 };
 
 type StripeSubscriptionLike = {
@@ -243,7 +255,7 @@ export async function provisionManualCustomerAccountFromOrder(
   input: ManualCustomerAccountProvisioningInput,
   dependencies?: HostedSubscriptionProvisioningDependencies
 ): Promise<ManualCustomerAccountProvisioningResult> {
-  const email = normalizeEmail(input.order.email);
+  const email = normalizeEmail(input.order.email ?? "");
   if (!email) {
     return { ok: true, accountProvisioned: false, hostedProvisioned: false, reason: "missing_customer_email" };
   }
@@ -413,6 +425,63 @@ export async function provisionManualCustomerAccountFromOrder(
   }
 
   return { ok: true, accountProvisioned: true, hostedProvisioned: true, code: firstHostedPage?.code, hostedPageUrl: firstHostedPage?.hostedPageUrl };
+}
+
+export async function provisionPaidCustomerAccountFromOrder(
+  input: ManualCustomerAccountProvisioningInput,
+  dependencies?: HostedSubscriptionProvisioningDependencies
+): Promise<PaidCustomerAccountProvisioningResult> {
+  if (getHostedLineItemIndexes(input.order.line_items_json).length) {
+    return { ok: true, accountProvisioned: false, reason: "hosted_order" };
+  }
+
+  if (!orderRequestsAccount(input.order)) {
+    return { ok: true, accountProvisioned: false, reason: "account_not_requested" };
+  }
+
+  const email = normalizeEmail(input.order.email ?? "");
+  if (!email) {
+    return { ok: true, accountProvisioned: false, reason: "missing_customer_email" };
+  }
+
+  const resolved = await resolveClientDependency(dependencies);
+  if (!resolved.ok) return resolved;
+
+  const { client } = resolved;
+  const now = input.now ?? new Date();
+  const activation = createCustomerActivationToken();
+  const businessName = readManualOrderBusinessName(input.order);
+  const customer = await upsertCustomer(client, {
+    email,
+    name: input.order.customer_name ?? null,
+    phone: readCustomerPhone(input.order.customer_details_json),
+    activationTokenHash: activation.tokenHash,
+    now
+  });
+  if (!customer.ok) return customer;
+
+  const business = await createBusiness(client, {
+    customerId: customer.customerId,
+    businessName,
+    logoUrl: readManualOrderLogoUrl(input.order),
+    now
+  });
+  if (!business.ok) return business;
+
+  const setupEmail = await (dependencies?.sendPaidCustomerAccountSetupEmailFn ?? sendPaidCustomerAccountSetupEmail)({
+    to: email,
+    businessName,
+    orderReference: input.order.stripe_checkout_session_id,
+    activationToken: activation.token
+  });
+  if (!setupEmail.sent) {
+    console.warn("[paid-account-provisioning] account_email_not_sent", {
+      orderReference: input.order.stripe_checkout_session_id,
+      reason: setupEmail.reason
+    });
+  }
+
+  return { ok: true, accountProvisioned: true };
 }
 
 export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike, order: Pick<OrderRecord, "line_items_json">) {
@@ -707,6 +776,11 @@ function readManualOrderLogoUrl(order: OrderRecord) {
 
 function readCustomerPhone(value: unknown) {
   return value && typeof value === "object" ? readString((value as Record<string, unknown>).phone) ?? null : null;
+}
+
+function orderRequestsAccount(order: OrderRecord) {
+  const details = order.customer_details_json;
+  return Boolean(details && typeof details === "object" && (details as Record<string, unknown>).create_account === true);
 }
 
 function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = []) {

@@ -115,20 +115,30 @@ export async function recordBillingInvoiceFromStripeInvoice(invoice: StripeInvoi
 
 export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: OrdersDbClient, invoice: StripeInvoiceLike) {
   const invoiceId = readString(invoice.id);
-  const email = readString(invoice.customer_email)?.toLowerCase();
-  if (!invoiceId || !email) return { ok: true as const, skipped: true as const };
+  if (!invoiceId) return { ok: true as const, skipped: true as const };
 
-  const customerId = await findCustomerIdByEmail(client, email);
   const subscriptionId = readStripeId(invoice.subscription);
   const hostedSubscription = subscriptionId ? await findHostedSubscriptionByStripeId(client, subscriptionId) : null;
+  const stripeCustomerId = readStripeId(invoice.customer);
+  const customerByStripeId = stripeCustomerId ? await findCustomerByStripeCustomerId(client, stripeCustomerId) : null;
+  const hostedCustomer = hostedSubscription?.customer_id ? await findCustomerById(client, hostedSubscription.customer_id) : null;
+  const email = (
+    readString(invoice.customer_email) ??
+    readString(hostedCustomer?.email) ??
+    readString(customerByStripeId?.email) ??
+    readStripeCustomerEmail(invoice.customer)
+  )?.toLowerCase();
+  if (!email) return { ok: true as const, skipped: true as const };
+
+  const customerId = hostedSubscription?.customer_id ?? customerByStripeId?.id ?? await findCustomerIdByEmail(client, email);
   const paymentIntentId = readStripeId(invoice.payment_intent);
 
   const record: BillingInvoiceRecord = {
-    customer_id: hostedSubscription?.customer_id ?? customerId,
+    customer_id: customerId,
     order_id: hostedSubscription?.order_id ?? null,
     hosted_subscription_id: hostedSubscription?.id ?? null,
     email,
-    stripe_customer_id: readStripeId(invoice.customer),
+    stripe_customer_id: stripeCustomerId,
     stripe_invoice_id: invoiceId,
     stripe_checkout_session_id: readString(invoice.checkout_session) ?? null,
     stripe_subscription_id: subscriptionId,
@@ -189,6 +199,50 @@ async function findHostedSubscriptionByStripeId(client: OrdersDbClient, stripeSu
   };
 }
 
+async function findCustomerByStripeCustomerId(client: OrdersDbClient, stripeCustomerId: string) {
+  const subscriptionResult = await client
+    .from("hosted_subscriptions")
+    .select("customer_id")
+    .eq("stripe_customer_id", stripeCustomerId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const subscriptionCustomerId = Array.isArray(subscriptionResult.data)
+    ? readString(readRecord(subscriptionResult.data[0]).customer_id)
+    : undefined;
+  if (subscriptionCustomerId) {
+    const customer = await findCustomerById(client, subscriptionCustomerId);
+    if (customer) return customer;
+  }
+
+  const orderResult = await client
+    .from("orders")
+    .select("email,customer_details_json")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (Array.isArray(orderResult.data)) {
+    for (const row of orderResult.data) {
+      const value = readRecord(row);
+      const details = readRecord(value.customer_details_json);
+      if (readString(details.stripe_customer_id) === stripeCustomerId) {
+        const email = readString(value.email);
+        const id = email ? await findCustomerIdByEmail(client, email.toLowerCase()) : null;
+        return email ? { id, email } : null;
+      }
+    }
+  }
+
+  return null;
+}
+
+async function findCustomerById(client: OrdersDbClient, customerId: string) {
+  const result = await client.from("customers").select("id,email").eq("id", customerId).maybeSingle();
+  if (result.error || !result.data) return null;
+  const row = readRecord(result.data);
+  const id = readString(row.id);
+  const email = readString(row.email);
+  return id && email ? { id, email } : null;
+}
+
 function readInvoiceTaxCents(invoice: StripeInvoiceLike) {
   if (typeof invoice.tax === "number" && Number.isFinite(invoice.tax)) return invoice.tax;
   return Array.isArray(invoice.total_tax_amounts)
@@ -222,6 +276,11 @@ function readStripeId(value: unknown) {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (value && typeof value === "object") return readString((value as Record<string, unknown>).id);
   return undefined;
+}
+
+function readStripeCustomerEmail(value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  return readString((value as Record<string, unknown>).email);
 }
 
 function toIso(epochSeconds: unknown) {

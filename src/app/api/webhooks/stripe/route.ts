@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { recordBillingInvoiceFromCheckoutSession, recordBillingInvoiceFromStripeInvoice } from "@/lib/billing-invoices";
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
-import { provisionHostedSubscriptionFromCheckout } from "@/lib/hosted-subscription-provisioning";
+import { provisionHostedSubscriptionFromCheckout, provisionPaidCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
 
@@ -53,6 +53,19 @@ export async function POST(request: Request) {
             error: provisioning.error
           });
           return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
+        }
+
+        if (!provisioning.provisioned && !result.wasAlreadyPaid) {
+          const accountProvisioning = await provisionPaidCustomerAccountFromOrder({
+            order: result.order,
+            siteUrl: new URL(request.url).origin
+          });
+          if (!accountProvisioning.ok) {
+            console.warn("[stripe-webhook] paid_account_provisioning_failed", {
+              stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+              error: accountProvisioning.error
+            });
+          }
         }
 
         if (!result.wasAlreadyPaid) {

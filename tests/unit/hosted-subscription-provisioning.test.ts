@@ -4,6 +4,7 @@ import {
   isHostedSubscriptionCheckout,
   mapStripeSubscriptionLifecycle,
   provisionManualCustomerAccountFromOrder,
+  provisionPaidCustomerAccountFromOrder,
   provisionHostedSubscriptionFromCheckout
 } from "@/lib/hosted-subscription-provisioning";
 import type { HostedPagePutOptions, HostedPageTextStorage } from "@/lib/hosted-pages/repository";
@@ -528,6 +529,54 @@ describe("hosted subscription provisioning", () => {
       to: "owner@example.com",
       businessName: "Manual Brand",
       orderReference: "manual_brand_123",
+      activationToken: expect.any(String)
+    });
+  });
+
+  it("provisions customer account access after paid direct checkout when requested", async () => {
+    const client = new MemoryDbClient();
+    const order = createHostedOrder({
+      lineItems: [
+        {
+          productId: "rate-your-experience-stand",
+          optionId: "standard_direct",
+          optionLabel: "Standard",
+          title: "Rate Your Experience Stand",
+          sku: "TR-RATE",
+          quantity: 1,
+          unitAmountCents: 3900,
+          lineSubtotalCents: 3900,
+          setup: {
+            businessName: "Paid Direct"
+          }
+        }
+      ]
+    });
+    order.stripe_checkout_session_id = "cs_live_direct";
+    order.status = "paid";
+    order.payment_status = "paid";
+    order.customer_details_json = { create_account: true, phone: "555-0100" };
+    client.table("orders")[0] = order as any;
+    const sendPaidCustomerAccountSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await provisionPaidCustomerAccountFromOrder(
+      { order, now: new Date("2026-09-03T12:00:00.000Z") },
+      { client, storage: new MemoryHostedStorage([]), sendPaidCustomerAccountSetupEmailFn }
+    );
+
+    expect(result).toEqual({ ok: true, accountProvisioned: true });
+    expect(client.table("customers")).toMatchObject([
+      {
+        email: "owner@example.com",
+        phone: "555-0100",
+        account_status: "pending_activation"
+      }
+    ]);
+    expect(client.table("businesses")).toMatchObject([{ business_name: "Paid Direct" }]);
+    expect(sendPaidCustomerAccountSetupEmailFn).toHaveBeenCalledWith({
+      to: "owner@example.com",
+      businessName: "Paid Direct",
+      orderReference: "cs_live_direct",
       activationToken: expect.any(String)
     });
   });
