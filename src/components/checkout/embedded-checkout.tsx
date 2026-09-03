@@ -152,7 +152,6 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
     return {
       clientSecret: session.clientSecret,
       defaultValues: {
-        email: customer.email,
         phoneNumber: customer.phone || shipping.phone || undefined,
         shippingAddress: {
           name: shipping.name || customer.name,
@@ -190,7 +189,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
         }
       }
     };
-  }, [customer.email, customer.name, customer.phone, session?.clientSecret, shipping]);
+  }, [customer.name, customer.phone, session?.clientSecret, shipping]);
 
   async function startPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -259,7 +258,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
         </Link>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start">
+      <div className={step === "payment" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start"}>
         {step === "details" ? (
           <CheckoutSummary
             compact
