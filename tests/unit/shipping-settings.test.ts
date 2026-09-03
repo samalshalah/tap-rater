@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { getDefaultShippingSettings, getShippingSettingsWithClient, saveShippingSettings } from "@/lib/shipping-settings";
+import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getDefaultShippingSettings, getShippingSettingsWithClient, saveShippingSettings } from "@/lib/shipping-settings";
 
 describe("shipping settings repository", () => {
-  it("returns manual defaults when no persisted settings exist", async () => {
+  it("returns checkout shipping defaults when no persisted settings exist", async () => {
     const client = {
       from() {
         return {
@@ -20,6 +20,17 @@ describe("shipping settings repository", () => {
     };
 
     await expect(getShippingSettingsWithClient(client)).resolves.toEqual(getDefaultShippingSettings());
+  });
+
+  it("charges $12 shipping under $55 and free shipping at $55 or more", () => {
+    const settings = getDefaultShippingSettings();
+
+    expect(getCheckoutShippingAmountCents(settings, 3900)).toBe(1200);
+    expect(getCheckoutShippingMode(settings, 3900)).toBe("flat");
+    expect(getCheckoutShippingAmountCents(settings, 5500)).toBe(0);
+    expect(getCheckoutShippingMode(settings, 5500)).toBe("free");
+    expect(getCheckoutShippingAmountCents(settings, 7800)).toBe(0);
+    expect(getCheckoutShippingMode(settings, 7800)).toBe("free");
   });
 
   it("saves settings to site_content", async () => {

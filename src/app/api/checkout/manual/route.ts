@@ -5,7 +5,7 @@ import { hasSupabaseAdminConfig } from "@/lib/db";
 import { provisionManualCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { createManualPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
-import { getCheckoutShippingAmountCents, getShippingSettings } from "@/lib/shipping-settings";
+import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings } from "@/lib/shipping-settings";
 import { checkoutCartSchema } from "@/lib/validators";
 
 const manualCheckoutSchema = checkoutCartSchema.extend({
@@ -35,7 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: cart.message, reason: cart.reason }, { status: 400 });
   }
 
-  const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings);
+  const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
+  const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);
   const result = await createManualPendingOrderForCheckout({
     rows: cart.rows,
     subtotalCents: cart.totalCents,
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     customerEmail: parsed.data.customer.email,
     customerName: parsed.data.customer.name,
     shippingAmountCents,
-    shippingMode: shippingSettings.shippingMode
+    shippingMode
   });
 
   if (!result.ok) {

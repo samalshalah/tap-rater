@@ -176,14 +176,14 @@ describe("checkout route reliability", () => {
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        totalCents: 3900,
-        shippingAmountCents: 0,
-        shippingMode: "manual"
+        totalCents: 5100,
+        shippingAmountCents: 1200,
+        shippingMode: "flat"
       })
     );
   });
 
-  it("includes configured flat shipping in the pending order total", async () => {
+  it("adds standard shipping under the free-shipping threshold", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const dependencies = createDependencies({
@@ -204,9 +204,37 @@ describe("checkout route reliability", () => {
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         subtotalCents: 3900,
-        totalCents: 4695,
-        shippingAmountCents: 795,
+        totalCents: 5100,
+        shippingAmountCents: 1200,
         shippingMode: "flat"
+      })
+    );
+  });
+
+  it("records free shipping at or above the threshold", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies();
+
+    const response = await handleCheckoutPost(
+      createCheckoutRequest({
+        items: [
+          {
+            ...configuredStandardPayload.items[0],
+            quantity: 2
+          }
+        ]
+      }),
+      dependencies
+    );
+
+    expect(response.status).toBe(200);
+    expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtotalCents: 7800,
+        totalCents: 7800,
+        shippingAmountCents: 0,
+        shippingMode: "free"
       })
     );
   });

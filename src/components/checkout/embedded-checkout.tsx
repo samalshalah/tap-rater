@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
+import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import type { StripePublicConfig } from "@/lib/stripe-public-config";
 
 type EmbeddedCheckoutSession = {
@@ -24,7 +25,8 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
   const rows = getCartRows(items);
   const standTotalCents = calculateCartTotalCents(items);
   const recurringTotalCents = calculateRecurringTotalCents(rows);
-  const dueTodayCents = standTotalCents + recurringTotalCents;
+  const shippingRule = resolveCheckoutShippingRule(standTotalCents);
+  const dueTodayCents = standTotalCents + recurringTotalCents + shippingRule.amountCents;
   const [session, setSession] = useState<EmbeddedCheckoutSession | null>(null);
   const [error, setError] = useState("");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
@@ -126,7 +128,9 @@ export function EmbeddedCheckoutClient({ stripePublicConfig }: { stripePublicCon
             ) : null}
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted">Shipping</span>
-              <span className="text-right font-medium text-ink">After payment</span>
+              <span className="text-right font-medium text-ink">
+                {shippingRule.amountCents > 0 ? formatPrice(shippingRule.amountCents) : "Free"}
+              </span>
             </div>
             <div className="flex items-center justify-between gap-4 border-t border-line pt-2">
               <span className="font-medium text-ink">Total before tax</span>

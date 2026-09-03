@@ -12,6 +12,7 @@ import {
   getCartRows,
   type CartRow,
 } from "@/lib/cart";
+import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals";
 
 export function CartTable({
@@ -33,7 +34,8 @@ export function CartTable({
   const rows = getCartRows(items);
   const standTotal = calculateCartTotalCents(items);
   const recurringTotal = calculateRecurringTotalCents(rows);
-  const dueToday = standTotal + recurringTotal;
+  const shippingRule = resolveCheckoutShippingRule(standTotal);
+  const dueToday = standTotal + recurringTotal + shippingRule.amountCents;
   const checkoutEmail = signedInCustomer?.email ?? customerEmail;
   const checkoutName = signedInCustomer?.name ?? signedInCustomer?.businessName ?? customerName;
 
@@ -330,7 +332,9 @@ export function CartTable({
           ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Shipping</span>
-            <span className="text-right font-medium text-ink">{usesStripeCheckout ? "Reviewed after payment" : "Confirmed before payment"}</span>
+            <span className="text-right font-medium text-ink">
+              {shippingRule.amountCents > 0 ? formatPrice(shippingRule.amountCents) : "Free"}
+            </span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
             <span className="font-medium text-ink">Due now</span>

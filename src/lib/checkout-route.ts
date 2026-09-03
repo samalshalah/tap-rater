@@ -15,7 +15,7 @@ import {
 import { hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
-import { getCheckoutShippingAmountCents, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
+import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { checkoutCartSchema } from "@/lib/validators";
 
 type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
@@ -106,6 +106,8 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     itemCount: cart.rows.length,
     totalCents: cart.totalCents
   });
+  const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
+  const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);
 
   try {
     logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_start");
@@ -139,10 +141,10 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
         stripeCheckoutSessionId: session.id,
         rows: cart.rows,
         subtotalCents: cart.totalCents,
-        totalCents: cart.totalCents + getCheckoutShippingAmountCents(shippingSettings),
+        totalCents: cart.totalCents + shippingAmountCents,
         currency: cart.currency,
-        shippingAmountCents: getCheckoutShippingAmountCents(shippingSettings),
-        shippingMode: shippingSettings.shippingMode
+        shippingAmountCents,
+        shippingMode
       }),
       dependencies.orderTimeoutMs,
       "Pending order creation"

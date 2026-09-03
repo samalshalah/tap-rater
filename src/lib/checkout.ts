@@ -16,6 +16,7 @@ import {
 } from "@/lib/product-model";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
+import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
@@ -306,15 +307,25 @@ export function createCheckoutSessionParams({
 }): Stripe.Checkout.SessionCreateParams {
   const normalizedSiteUrl = siteUrl.replace(/\/+$/, "");
   const allowedCountries = shippingSettings.allowedCountryCodes as Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[];
-  const shippingOptions = buildStripeShippingOptions(shippingSettings);
+  const shippingRule = resolveCheckoutShippingRule(cart.totalCents);
+  const shippingOptions = buildStripeShippingOptions(cart.totalCents);
 
   return {
     mode: cart.checkoutMode,
     ui_mode: "embedded_page",
-    payment_method_types: ["card"],
+    integration_identifier: createStripeIntegrationIdentifier(),
     line_items: buildStripeCheckoutLineItems(cart.rows),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     billing_address_collection: "auto",
+    ...(cart.checkoutMode === "payment" ? {
+      customer_creation: "always" as const,
+      invoice_creation: {
+        enabled: true
+      },
+      payment_intent_data: {
+        setup_future_usage: "off_session" as const
+      }
+    } : {}),
     shipping_address_collection: {
       allowed_countries: allowedCountries.length > 0 ? allowedCountries : ["US"]
     },
@@ -328,31 +339,26 @@ export function createCheckoutSessionParams({
       recurring_total_cents: String(cart.recurringTotalCents),
       configured_items: String(cart.rows.length),
       checkout_intent: cart.checkoutMode === "subscription" ? "hosted_subscription" : "direct_payment",
-      shipping_mode: shippingSettings.shippingMode,
-      shipping_amount_cents: String(settingsShippingAmountCents(shippingSettings))
+      shipping_mode: shippingRule.mode,
+      shipping_amount_cents: String(shippingRule.amountCents)
     }
   };
 }
 
-function settingsShippingAmountCents(settings: ShippingSettingsInput) {
-  return settings.shippingMode === "flat" ? settings.flatShippingAmountCents : 0;
+function createStripeIntegrationIdentifier() {
+  return `taprater_checkout_${Math.random().toString(36).slice(2, 10).padEnd(8, "0")}`;
 }
 
-function buildStripeShippingOptions(settings: ShippingSettingsInput): Stripe.Checkout.SessionCreateParams.ShippingOption[] {
-  if (settings.shippingMode === "manual") {
-    return [];
-  }
-
-  const amount = settings.shippingMode === "flat" ? settings.flatShippingAmountCents : 0;
-  const displayName = settings.shippingMode === "flat" ? "Flat rate shipping" : "Free shipping";
+function buildStripeShippingOptions(subtotalCents: number): Stripe.Checkout.SessionCreateParams.ShippingOption[] {
+  const shippingRule = resolveCheckoutShippingRule(subtotalCents);
 
   return [
     {
       shipping_rate_data: {
         type: "fixed_amount",
-        display_name: displayName,
+        display_name: shippingRule.displayName,
         fixed_amount: {
-          amount,
+          amount: shippingRule.amountCents,
           currency: "usd"
         }
       }

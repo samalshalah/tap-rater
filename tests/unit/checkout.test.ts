@@ -820,10 +820,19 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.recurring_total_cents).toBe("0");
     expect(params.metadata?.checkout_intent).toBe("direct_payment");
     expect(params.metadata?.configured_items).toBe("1");
-    expect(params.metadata?.shipping_mode).toBe("manual");
-    expect(params.metadata?.shipping_amount_cents).toBe("0");
+    expect(params.metadata?.shipping_mode).toBe("flat");
+    expect(params.metadata?.shipping_amount_cents).toBe("1200");
     expect(params.shipping_address_collection?.allowed_countries).toEqual(["US"]);
-    expect(params.shipping_options).toBeUndefined();
+    expect(params.shipping_options?.[0]).toMatchObject({
+      shipping_rate_data: {
+        type: "fixed_amount",
+        display_name: "Standard shipping",
+        fixed_amount: {
+          amount: 1200,
+          currency: "usd"
+        }
+      }
+    });
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 
@@ -976,7 +985,7 @@ describe("Stripe checkout helpers", () => {
     expect(lineItems.filter((lineItem) => Boolean(lineItem.price_data?.recurring))).toHaveLength(2);
   });
 
-  it("adds configured flat shipping to Checkout Session params", () => {
+  it("adds standard shipping under the free-shipping threshold", () => {
     const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
 
     expect(result.ok).toBe(true);
@@ -996,13 +1005,37 @@ describe("Stripe checkout helpers", () => {
     });
 
     expect(params.metadata?.shipping_mode).toBe("flat");
-    expect(params.metadata?.shipping_amount_cents).toBe("795");
+    expect(params.metadata?.shipping_amount_cents).toBe("1200");
     expect(params.shipping_options?.[0]).toMatchObject({
       shipping_rate_data: {
         type: "fixed_amount",
-        display_name: "Flat rate shipping",
+        display_name: "Standard shipping",
         fixed_amount: {
-          amount: 795,
+          amount: 1200,
+          currency: "usd"
+        }
+      }
+    });
+  });
+
+  it("adds free shipping at or above the threshold", () => {
+    const result = validateCheckoutCart([{ ...configuredStandardItem, quantity: 2 }], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = createCheckoutSessionParams({
+      cart: result,
+      siteUrl: "https://taprater.com"
+    });
+
+    expect(params.metadata?.shipping_mode).toBe("free");
+    expect(params.metadata?.shipping_amount_cents).toBe("0");
+    expect(params.shipping_options?.[0]).toMatchObject({
+      shipping_rate_data: {
+        type: "fixed_amount",
+        display_name: "Free shipping",
+        fixed_amount: {
+          amount: 0,
           currency: "usd"
         }
       }

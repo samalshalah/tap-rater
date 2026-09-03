@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { shippingSettingsSchema, type ShippingSettingsInput } from "@/lib/validators";
 
 export type { ShippingSettingsInput };
@@ -10,13 +11,13 @@ export type ShippingSettingsDbClient = {
 
 export function getDefaultShippingSettings(): ShippingSettingsInput {
   return {
-    shippingMode: "manual",
-    flatShippingAmountCents: 0,
+    shippingMode: "flat",
+    flatShippingAmountCents: 1200,
     allowedCountryCodes: ["US"],
     handlingTimeText: "",
     supportedRegionsText: "United States",
     defaultCarrierNotes: "",
-    customerFacingShippingNote: "Shipping timelines are shown at checkout or shared after order review when applicable."
+    customerFacingShippingNote: "Shipping is $12 under $55 and free at $55 or more."
   };
 }
 
@@ -73,6 +74,12 @@ export async function saveShippingSettings(client: ShippingSettingsDbClient, inp
   }
 }
 
-export function getCheckoutShippingAmountCents(settings: ShippingSettingsInput) {
-  return settings.shippingMode === "flat" ? settings.flatShippingAmountCents : 0;
+export function getCheckoutShippingAmountCents(settings: ShippingSettingsInput, subtotalCents = 0) {
+  void settings;
+  return resolveCheckoutShippingRule(subtotalCents).amountCents;
+}
+
+export function getCheckoutShippingMode(settings: ShippingSettingsInput, subtotalCents = 0): "free" | "flat" {
+  void settings;
+  return resolveCheckoutShippingRule(subtotalCents).mode;
 }

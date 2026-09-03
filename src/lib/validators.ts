@@ -271,6 +271,7 @@ export const productContentSchema = z.object({
   isSpecialSolution: z.boolean().default(false),
   productKind: z.enum(productKinds).default("normal_direct"),
   status: z.enum(productStatuses).default("draft"),
+  sortOrder: z.number().int().min(0).max(100000).default(1000),
   basePriceCents: z.number().int().min(0),
   salePriceCents: z.number().int().min(0).optional(),
   stockStatus: z.enum(["instock", "outofstock"]),
@@ -353,11 +354,17 @@ export const adminProductDeleteSchema = z.object({
     .max(250)
 });
 
+export const adminProductStatusUpdateSchema = z.object({
+  slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+  status: z.enum(productStatuses)
+});
+
 export type HomepageContentInput = z.infer<typeof homepageContentSchema>;
 export type PageContentInput = z.infer<typeof pageContentSchema>;
 export type BusinessUseContentInput = z.infer<typeof businessUseContentSchema>;
 export type StandTypeContentInput = z.infer<typeof standTypeContentSchema>;
 export type ProductContentInput = z.infer<typeof productContentSchema>;
+export type AdminProductStatusUpdateInput = z.infer<typeof adminProductStatusUpdateSchema>;
 
 const deviceProductTypes = [
   "google_review",
@@ -459,8 +466,8 @@ export const adminConfigSchema = z.object({
 export type AdminConfigInput = z.infer<typeof adminConfigSchema>;
 
 export const shippingSettingsSchema = z.object({
-  shippingMode: z.enum(["manual", "free", "flat"]).default("manual"),
-  flatShippingAmountCents: z.number().int().min(0).max(100000).default(0),
+  shippingMode: z.enum(["manual", "free", "flat"]).default("flat"),
+  flatShippingAmountCents: z.number().int().min(0).max(100000).default(1200),
   allowedCountryCodes: z
     .array(z.string().trim().regex(/^[A-Z]{2}$/))
     .min(1)
@@ -473,7 +480,7 @@ export const shippingSettingsSchema = z.object({
     .string()
     .trim()
     .max(1000)
-    .default("Shipping timelines are shown at checkout or shared after order review when applicable.")
+    .default("Shipping is $12 under $55 and free at $55 or more.")
 });
 
 export const orderFulfillmentUpdateSchema = z.object({
