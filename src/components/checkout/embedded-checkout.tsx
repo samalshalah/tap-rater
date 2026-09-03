@@ -83,10 +83,6 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   const [step, setStep] = useState<"details" | "payment">(sessionId ? "payment" : "details");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
   const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
-  const checkoutReturnUrl =
-    typeof window === "undefined" || !session?.sessionId
-      ? ""
-      : `${window.location.origin}/checkout/success?session_id=${encodeURIComponent(session.sessionId)}`;
 
   useEffect(() => {
     let active = true;
@@ -344,7 +340,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
               />
               <section className="tr-card min-h-[420px] p-4 sm:p-5">
                 <CheckoutElementsProvider stripe={stripePromise} options={options}>
-                  <StripePaymentForm returnUrl={checkoutReturnUrl} />
+                  <StripePaymentForm />
                 </CheckoutElementsProvider>
               </section>
             </>
@@ -412,7 +408,7 @@ function CheckoutSummary({
   );
 }
 
-function StripePaymentForm({ returnUrl }: { returnUrl: string }) {
+function StripePaymentForm() {
   const result = useCheckoutElements();
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -428,7 +424,7 @@ function StripePaymentForm({ returnUrl }: { returnUrl: string }) {
     setErrorMessage("");
 
     try {
-      const confirmResult = await result.checkout.confirm({ returnUrl });
+      const confirmResult = await result.checkout.confirm();
 
       if (confirmResult.type === "error") {
         setErrorMessage(confirmResult.error.message ?? "Payment could not be completed.");
