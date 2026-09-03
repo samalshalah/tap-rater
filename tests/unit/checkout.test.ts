@@ -865,7 +865,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.customer_email).toBe("buyer@example.com");
     expect(params.metadata?.customer_name).toBe("Buyer Name");
     expect(params.metadata?.create_account).toBe("false");
-    expect(params.phone_number_collection).toEqual({ enabled: false });
+    expect(params.phone_number_collection).toEqual({ enabled: true });
     expect(params.metadata).not.toHaveProperty("order_items");
   });
 

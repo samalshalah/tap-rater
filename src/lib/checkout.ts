@@ -383,7 +383,7 @@ export function createCheckoutSessionParams({
       }
     } : {}),
     phone_number_collection: {
-      enabled: false
+      enabled: true
     },
     metadata: {
       stripe_mode: stripeMode,
