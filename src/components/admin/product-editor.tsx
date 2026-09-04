@@ -34,15 +34,10 @@ type SaveStatus = {
 type AssetKey =
   | "standardAngledImageUrl"
   | "brandedAngledImageUrl"
-  | "multiLinkAngledImageUrl"
   | "standardFrontTemplateUrl"
-  | "brandedFrontTemplateUrl"
-  | "multiLinkFrontTemplateUrl"
-  | "centerAssetUrl";
+  | "brandedFrontTemplateUrl";
 
-type AssetSetState = Record<AssetKey, string> & {
-  landingPagePreviewReady: boolean;
-};
+type AssetSetState = Record<AssetKey, string>;
 
 type MediaItemState = {
   src: string;
@@ -55,10 +50,7 @@ type MediaUploadRole =
   | "standard_angled"
   | "standard_front"
   | "branded_angled"
-  | "branded_front_template"
-  | "multilink_angled"
-  | "multilink_front_template"
-  | "center_asset";
+  | "branded_front_template";
 
 const normalOptionCodes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
 type OperationalProductKind = Exclude<ProductKind, "hosted_multilink">;
@@ -81,6 +73,7 @@ export function ProductEditor({
   const [sku, setSku] = useState(product.sku || generateProductSku(product.title));
   const [skuEdited, setSkuEdited] = useState(mode === "edit" && Boolean(product.sku));
   const [productKind, setProductKind] = useState<OperationalProductKind>(initialKind);
+  const [sortOrder, setSortOrder] = useState(product.sortOrder ?? 1000);
   const [standTypeSlug, setStandTypeSlug] = useState(product.standTypeSlug ?? standTypes[0]?.slug ?? "");
   const [primaryPlatformSlug, setPrimaryPlatformSlug] = useState(product.primaryPlatformSlug ?? "custom-url");
   const [destinationType, setDestinationType] = useState(product.destinationType ?? selectedPlatformDestinationType(platforms, primaryPlatformSlug));
@@ -91,21 +84,16 @@ export function ProductEditor({
   const [assetSet, setAssetSet] = useState<AssetSetState>(() => ({
     standardAngledImageUrl: product.assetSet?.standardAngledImageUrl ?? product.images[0]?.src ?? "",
     brandedAngledImageUrl: product.assetSet?.brandedAngledImageUrl ?? product.images[1]?.src ?? product.assetSet?.standardAngledImageUrl ?? "",
-    multiLinkAngledImageUrl: product.assetSet?.multiLinkAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl ?? "",
     standardFrontTemplateUrl: product.assetSet?.standardFrontTemplateUrl ?? "",
-    brandedFrontTemplateUrl: product.assetSet?.brandedFrontTemplateUrl ?? "",
-    multiLinkFrontTemplateUrl: product.assetSet?.multiLinkFrontTemplateUrl ?? product.assetSet?.brandedFrontTemplateUrl ?? "",
-    centerAssetUrl: product.assetSet?.centerAssetUrl ?? "",
-    landingPagePreviewReady: Boolean(product.assetSet?.landingPagePreviewConfig && Object.keys(product.assetSet.landingPagePreviewConfig).length > 0)
+    brandedFrontTemplateUrl: product.assetSet?.brandedFrontTemplateUrl ?? ""
   }));
   const [mainImage, setMainImage] = useState<MediaItemState>(() => product.images[0] ?? { src: product.assetSet?.standardAngledImageUrl ?? "", alt: product.title });
   const [galleryImages, setGalleryImages] = useState<MediaItemState[]>(() => product.images.slice(1, 5));
   const [uploadingRoles, setUploadingRoles] = useState<Record<string, boolean>>({});
   const [mediaErrors, setMediaErrors] = useState<Record<string, string>>({});
   const [optionStates, setOptionStates] = useState<ProductOption[]>(() =>
-    buildInitialOptions(productKind, productOptions, optionTemplates)
+    buildInitialOptions(productKind, productOptions, optionTemplates, mode)
   );
-  const [ctaEditable, setCtaEditable] = useState(product.ctaEditable ?? true);
   const [searchTermsText, setSearchTermsText] = useState((product.searchKeywords ?? []).join("\n"));
   const [sizeOptions, setSizeOptions] = useState<ProductSizeOption[]>(() => product.sizeOptions ?? []);
   const [colorOptions, setColorOptions] = useState<ProductColorOption[]>(() => product.colorOptions ?? []);
@@ -129,12 +117,12 @@ export function ProductEditor({
       assetSet: {
         standardAngledImageUrl: readOptionalString(effectiveAssetSet.standardAngledImageUrl),
         brandedAngledImageUrl: readOptionalString(effectiveAssetSet.brandedAngledImageUrl),
-        multiLinkAngledImageUrl: readOptionalString(effectiveAssetSet.multiLinkAngledImageUrl),
         standardFrontTemplateUrl: readOptionalString(effectiveAssetSet.standardFrontTemplateUrl),
         brandedFrontTemplateUrl: readOptionalString(effectiveAssetSet.brandedFrontTemplateUrl),
-        multiLinkFrontTemplateUrl: readOptionalString(effectiveAssetSet.multiLinkFrontTemplateUrl),
-        centerAssetUrl: readOptionalString(effectiveAssetSet.centerAssetUrl),
-        landingPagePreviewConfig: effectiveAssetSet.landingPagePreviewReady ? { ready: true } : undefined
+        multiLinkAngledImageUrl: undefined,
+        multiLinkFrontTemplateUrl: undefined,
+        centerAssetUrl: undefined,
+        landingPagePreviewConfig: undefined
       }
     },
     activeVisibleOptions
@@ -327,13 +315,13 @@ export function ProductEditor({
     const finalSku = readOptionalString(sku) ?? generateProductSku(finalTitle);
     const finalStatus = publishStatus === "active" && canActivate ? "active" : publishStatus === "archived" ? "archived" : "draft";
     const finalIsActive = finalStatus === "active";
+    const finalSortOrder = Math.max(0, Math.min(100000, Math.round(sortOrder || 1000)));
     const finalOptions = visibleOptions.map((option) => ({ ...option, priceCents: Math.max(0, Math.round(option.priceCents)) }));
     const finalActiveOptions = finalOptions.filter((option) => option.isActive);
     const basePriceCents = finalActiveOptions.length > 0 ? Math.min(...finalActiveOptions.map((option) => option.priceCents)) : 3900;
     const supportedDestinations = getSupportedDestinations(primaryPlatformSlug);
     const shortDescription = readOptionalString(String(form.get("shortDescription") ?? "")) ?? `${finalTitle} NFC stand.`;
     const description = readOptionalString(String(form.get("description") ?? "")) ?? shortDescription;
-    const defaultCtaText = readOptionalString(String(form.get("defaultCtaText") ?? "")) ?? defaultCtaForProduct(productKind);
 
     try {
       const response = await fetch("/api/admin/products", {
@@ -351,6 +339,7 @@ export function ProductEditor({
           isSpecialSolution,
           productKind,
           status: finalStatus,
+          sortOrder: finalSortOrder,
           basePriceCents,
           salePriceCents: undefined,
           stockStatus: form.get("stockStatus"),
@@ -372,8 +361,8 @@ export function ProductEditor({
           allowsCustomDesign: false,
           designMode: finalActiveOptions.some((option) => option.requiresLogo) ? "logo" : "standard",
           assetSet: cleanAssetSet(assetSet, mainImage.src),
-          defaultCtaText,
-          ctaEditable,
+          defaultCtaText: undefined,
+          ctaEditable: false,
           assetReadinessStatus: readiness.status,
           productOptions: finalOptions,
           images: collectImagesFromMedia(mainImage, galleryImages, assetSet, finalTitle),
@@ -448,6 +437,18 @@ export function ProductEditor({
                 <option value="outofstock">Out of stock</option>
               </AdminSelect>
             </label>
+            <label className="grid gap-2 text-sm font-semibold text-ink">
+              Product sort number
+              <AdminInput
+                type="number"
+                min={0}
+                max={100000}
+                step={1}
+                value={sortOrder}
+                onChange={(event) => setSortOrder(Number(event.target.value))}
+              />
+              <span className="text-xs font-semibold leading-5 text-muted">Lower numbers show first. Use 10, 20, 30 to leave space.</span>
+            </label>
           </div>
           <Textarea name="shortDescription" label="Short description" defaultValue={product.shortDescription} required={false} />
           <Textarea name="description" label="Full description" defaultValue={product.description} required={false} tall />
@@ -486,7 +487,6 @@ export function ProductEditor({
                 onChange={(patch) => updateOption(option.optionCode, patch)}
                 onUploadAsset={uploadAssetImage}
                 onUpdateAsset={updateAsset}
-                onSetLandingPreview={(ready) => setAssetSet((current) => ({ ...current, landingPagePreviewReady: ready }))}
               />
             ))}
           </div>
@@ -537,28 +537,10 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
-        <EditorCard title="Production Assets" description="Controls the default stand wording and production proof expectations.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input
-              name="defaultCtaText"
-              label="Default CTA text"
-              defaultValue={product.defaultCtaText ?? defaultCtaForProduct(productKind)}
-              required={false}
-            />
-            <label className="grid gap-2 text-sm font-semibold text-ink">
-              CTA editable
-              <AdminSelect
-                value={ctaEditable ? "true" : "false"}
-                onChange={(event) => setCtaEditable(event.target.value === "true")}
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </AdminSelect>
-            </label>
-          </div>
+        <EditorCard title="Production Rules" description="Current storefront rules for each customer setup option.">
           <div className="grid gap-2 text-sm text-muted">
             <RuleRow label="Standard Direct" value="NFC direct. No logo zone, business name zone, QR zone, or design step." />
-            <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and front proof required." />
+            <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and artwork review required." />
             <RuleRow label="Multi-Link add-on" value="Optional hosted page capability controlled in Services & Add-ons. It is not an operational product type." />
           </div>
         </EditorCard>
@@ -856,9 +838,6 @@ export function ProductEditor({
               </div>
             </AdminSoftPanel>
           </div>
-          {activeVisibleOptions.some((option) => option.optionCode === "hosted_multilink") ? (
-            <ReadinessLine label="Landing preview" ready={assetSet.landingPagePreviewReady} />
-          ) : null}
           <div className="mt-2 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs font-bold text-ink">
             Can publish: {canActivate ? "Yes" : "No"}
             {brandedProductionTemplateMissing ? (
@@ -882,7 +861,7 @@ export function ProductEditor({
         <SidebarCard title="Production Notes">
           <ul className="grid gap-2 text-xs leading-5 text-muted">
             <li>Standard Direct includes NFC pointed to the customer-provided URL.</li>
-            <li>Branded + QR requires logo collection, business name, QR generation, front proof, and a branded front template before publishing.</li>
+            <li>Branded + QR requires logo collection, business name, QR generation, artwork review, and a branded front template before publishing.</li>
             <li>Multi-Link is an add-on capability. Enable it in Services & Add-ons for compatible physical products.</li>
           </ul>
         </SidebarCard>
@@ -1084,8 +1063,7 @@ function SetupOptionEditor({
   mediaErrors,
   onChange,
   onUploadAsset,
-  onUpdateAsset,
-  onSetLandingPreview
+  onUpdateAsset
 }: {
   option: ProductOption;
   skuBase: string;
@@ -1095,7 +1073,6 @@ function SetupOptionEditor({
   onChange: (patch: Partial<ProductOption>) => void;
   onUploadAsset: (file: File, key: AssetKey, role: MediaUploadRole) => Promise<void>;
   onUpdateAsset: (key: AssetKey, value: string) => void;
-  onSetLandingPreview: (ready: boolean) => void;
 }) {
   const mediaRequirements = getOptionMediaRequirements(option.optionCode, assetSet);
   const missingRequiredMedia = mediaRequirements.filter((requirement) => requirement.required && !requirement.value);
@@ -1145,16 +1122,6 @@ function SetupOptionEditor({
       <div className="grid gap-4 border-t border-line bg-[#fbfbfc] p-4">
         <div className="grid gap-3 md:grid-cols-3">
           <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
-          {option.optionCode === "hosted_multilink" ? (
-            <>
-              <NumberInput
-                label="Monthly cents"
-                value={option.monthlyPriceCents ?? 990}
-                onChange={(monthlyPriceCents) => onChange({ monthlyPriceCents })}
-              />
-              <NumberInput label="Max links" value={option.maxLinks ?? 10} onChange={(maxLinks) => onChange({ maxLinks })} />
-            </>
-          ) : null}
         </div>
 
         {option.optionCode === "standard_direct" ? (
@@ -1184,31 +1151,13 @@ function SetupOptionEditor({
           </div>
         )}
 
-        {option.optionCode === "hosted_multilink" ? (
-          <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-white p-3 text-sm font-bold text-ink">
-            <span>
-              Landing page preview configuration
-              <span className="mt-1 block text-xs font-normal text-muted">Required before Hosted Multi-Link can be active.</span>
-            </span>
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-line accent-brand"
-              checked={assetSet.landingPagePreviewReady}
-              onChange={(event) => {
-                onSetLandingPreview(event.target.checked);
-                onChange({ landingPageUrlPattern: event.target.checked ? option.landingPageUrlPattern ?? "/l/:client-name" : undefined });
-              }}
-            />
-          </label>
-        ) : null}
-
         <div className="flex flex-wrap gap-2">
           <RulePill active={option.requiresDestinationUrl} label="Destination link" />
           <RulePill active={option.hasQr} label="Printed QR" />
           <RulePill active={option.requiresLogo} label="Logo" />
           <RulePill active={option.requiresBusinessName} label="Business name" />
           <RulePill active={option.requiresDesignStep} label="Design step" />
-          <RulePill active={option.requiresFrontProof} label="Front proof" />
+          <RulePill active={option.requiresFrontProof} label="Artwork review" />
           <RulePill active={option.accountRequired} label="Account" />
           <RulePill active={option.requiresSubscription} label="Subscription" />
         </div>
@@ -1715,13 +1664,14 @@ function ReadinessLine({ label, ready }: { label: string; ready: boolean }) {
   );
 }
 
-function buildInitialOptions(productKind: ProductKind, productOptions: ProductOption[], optionTemplates: ProductOption[]) {
+function buildInitialOptions(productKind: ProductKind, productOptions: ProductOption[], optionTemplates: ProductOption[], mode: "create" | "edit") {
   const templateMap = new Map([...getDefaultOptionsForProductKind(productKind), ...optionTemplates].map((option) => [option.optionCode, option]));
   const savedOptionMap = new Map(productOptions.map((option) => [option.optionCode, option]));
-  const codes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct", "hosted_multilink"];
+  const codes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
 
   return codes.map((code) => ({
-    ...(templateMap.get(code) ?? getDefaultOptionsForProductKind(code === "hosted_multilink" ? "hosted_multilink" : "normal_direct").find((option) => option.optionCode === code)!),
+    ...(templateMap.get(code) ?? getDefaultOptionsForProductKind("normal_direct").find((option) => option.optionCode === code)!),
+    ...(mode === "create" && code === "branded_qr_direct" ? { isActive: false } : {}),
     ...(savedOptionMap.get(code) ?? {})
   }));
 }
@@ -1731,27 +1681,6 @@ function normalizeOperationalProductKind(productKind: ProductKind): OperationalP
 }
 
 function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: AssetSetState) {
-  if (optionCode === "hosted_multilink") {
-    return [
-      {
-        label: "Multi-Link angled image",
-        description: "Used for the hosted product card and product detail page.",
-        assetKey: "multiLinkAngledImageUrl" as const,
-        role: "multilink_angled" as const,
-        value: assetSet.multiLinkAngledImageUrl,
-        required: true
-      },
-      {
-        label: "Multi-Link front template",
-        description: "Used for the branded front proof and hosted stand template.",
-        assetKey: "multiLinkFrontTemplateUrl" as const,
-        role: "multilink_front_template" as const,
-        value: assetSet.multiLinkFrontTemplateUrl,
-        required: true
-      }
-    ];
-  }
-
   if (optionCode === "branded_qr_direct") {
     return [
       {
@@ -1764,19 +1693,11 @@ function getOptionMediaRequirements(optionCode: ProductOptionCode, assetSet: Ass
       },
       {
         label: "Branded front template",
-        description: "Print/proof template with logo, business-name, and QR zones.",
+        description: "Print template with logo, business-name, and QR zones.",
         assetKey: "brandedFrontTemplateUrl" as const,
         role: "branded_front_template" as const,
         value: assetSet.brandedFrontTemplateUrl,
         required: true
-      },
-      {
-        label: "Center platform/icon asset",
-        description: "Optional legacy asset. Google branded production does not require a separate center asset.",
-        assetKey: "centerAssetUrl" as const,
-        role: "center_asset" as const,
-        value: assetSet.centerAssetUrl,
-        required: false
       }
     ];
   }
@@ -1821,7 +1742,7 @@ function getOrganizationIssues({
   if (!standTypeSlug) issues.push("Missing stand type");
   if (!destinationType) issues.push("Missing destination type");
   if (!primaryPlatformSlug) issues.push("Missing platform / destination");
-  if (productKind !== "hosted_multilink" && !isSpecialSolution && businessUseSlugs.length === 0) {
+  if (!isSpecialSolution && businessUseSlugs.length === 0) {
     issues.push("Missing business use");
   }
 
@@ -1832,12 +1753,12 @@ function cleanAssetSet(assetSet: AssetSetState, mainImageSrc?: string) {
   return {
     standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl) ?? readOptionalString(mainImageSrc),
     brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
-    multiLinkAngledImageUrl: readOptionalString(assetSet.multiLinkAngledImageUrl),
+    multiLinkAngledImageUrl: undefined,
     standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
     brandedFrontTemplateUrl: readOptionalString(assetSet.brandedFrontTemplateUrl),
-    multiLinkFrontTemplateUrl: readOptionalString(assetSet.multiLinkFrontTemplateUrl),
-    centerAssetUrl: readOptionalString(assetSet.centerAssetUrl),
-    landingPagePreviewConfig: assetSet.landingPagePreviewReady ? { ready: true } : undefined
+    multiLinkFrontTemplateUrl: undefined,
+    centerAssetUrl: undefined,
+    landingPagePreviewConfig: undefined
   };
 }
 
@@ -1852,10 +1773,8 @@ function collectImagesFromMedia(
     ...galleryImages.map((image) => image.src),
     assetSet.standardAngledImageUrl,
     assetSet.brandedAngledImageUrl,
-    assetSet.multiLinkAngledImageUrl,
     assetSet.standardFrontTemplateUrl,
-    assetSet.brandedFrontTemplateUrl,
-    assetSet.multiLinkFrontTemplateUrl
+    assetSet.brandedFrontTemplateUrl
   ];
   const seen = new Set<string>();
 
@@ -1999,10 +1918,6 @@ function formatOptionPricing(options: ProductOption[]) {
 
   const prices = options.map((option) => option.priceCents).sort((first, second) => first - second);
   return `${formatPrice(prices[0])}-${formatPrice(prices[prices.length - 1])}`;
-}
-
-function defaultCtaForProduct(productKind: ProductKind) {
-  return productKind === "hosted_multilink" ? "CONNECT WITH US" : "Tap to connect";
 }
 
 function generateProductSku(title: string) {

@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
 import { OrderProductionActions } from "@/components/admin/order-production-actions";
+import { OrderRefundForm } from "@/components/admin/order-refund-form";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -68,12 +69,22 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             <InfoCard title="Status">
               <Field label="Payment" value={formatPaymentStatus(order)} />
               <Field label="Payment status" value={order.payment_status} />
+              <Field label="Refund ID" value={order.stripe_refund_id} />
+              <Field label="Refunded at" value={order.refunded_at ? new Date(order.refunded_at).toLocaleString() : null} />
               <Field label="Production" value={order.production_status.replaceAll("_", " ")} />
               <Field label="Shipping" value={order.shipping_status.replaceAll("_", " ")} />
               <Field label="Shipped at" value={order.shipped_at ? new Date(order.shipped_at).toLocaleString() : null} />
               <Field label="Tracking" value={order.tracking_number} />
               <Field label="Tracking URL" value={order.tracking_url} link />
             </InfoCard>
+            {order.id && (order.status === "paid" || order.payment_status === "paid" || order.payment_status === "refunded") ? (
+              <OrderRefundForm
+                orderId={order.id}
+                alreadyRefunded={order.payment_status === "refunded"}
+                hasSubscription={order.line_items_json.some((item) => item.destinationMode === "HOSTED")}
+                refundId={order.stripe_refund_id}
+              />
+            ) : null}
             {order.id ? <OrderProductionActions orderId={order.id} /> : null}
             <OrderFulfillmentForm order={order} />
           </div>
@@ -163,8 +174,8 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
         <Field label="Logo" value={summary.logoReference ?? summary.logoMediaUrl} link={Boolean(summary.logoMediaUrl)} />
         <Field label="QR production value" value={summary.generatedQrValue} link />
         <Field label="Front template" value={summary.frontTemplateUrl} link />
-        <Field label="Proof confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
-        <Field label="Proof approved at" value={readSetupString(item.setup, "proofApprovedAt")} />
+        <Field label="Artwork confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
+        <Field label="Artwork approved at" value={readSetupString(item.setup, "proofApprovedAt")} />
         <Field label="Approval snapshot hash" value={summary.productionArtwork?.approvalSnapshotHash} />
         <Field label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : null} />
         <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? summary.productionArtwork.url : summary.productionArtwork?.error} link={summary.productionArtwork?.status === "generated"} />
@@ -209,13 +220,13 @@ function LineItemVisuals({ item }: { item: OrderLineItem }) {
         <PreviewAsset title="Uploaded logo" src={previewLogo} alt={`${item.title} customer logo`} />
       ) : null}
       {previewTemplate ? (
-        <PreviewAsset title="Approved proof base" src={previewTemplate} alt={`${item.title} proof template`} />
+        <PreviewAsset title="Artwork template" src={previewTemplate} alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
         <PreviewAsset title="Production artwork" src={artworkUrl} alt={`${item.title} production artwork`} />
       ) : (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
-          Production artwork is not generated yet. Use the proof/artwork operations panel after confirming the proof data.
+          Production artwork is not generated yet. Use the artwork operations panel after confirming the artwork data.
         </div>
       )}
     </div>
@@ -273,6 +284,7 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
 }
 
 function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
+  if (order.payment_status === "refunded") return "Refunded";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
   return order.status.replaceAll("_", " ");

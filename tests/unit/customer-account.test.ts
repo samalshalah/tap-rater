@@ -70,7 +70,8 @@ describe("customer account activation", () => {
 function createCustomerDb(seed: { customers: Array<Record<string, unknown>> }) {
   const rows = { customers: [...seed.customers] };
   const client = {
-    from(table: "customers") {
+    from(table: string) {
+      if (table !== "customers") throw new Error(`Unexpected table: ${table}`);
       let filters: Array<{ column: string; value: unknown }> = [];
       let values: Record<string, unknown> | undefined;
       const builder = {
@@ -83,9 +84,9 @@ function createCustomerDb(seed: { customers: Array<Record<string, unknown>> }) {
           values = input;
           return builder;
         }),
-        maybeSingle: vi.fn(async () => ({ data: rows[table].find((row) => filters.every((filter) => row[filter.column] === filter.value)) ?? null, error: null })),
+        maybeSingle: vi.fn(async () => ({ data: rows.customers.find((row) => filters.every((filter) => row[filter.column] === filter.value)) ?? null, error: null })),
         then(resolve: (value: { data: null; error: null }) => void) {
-          rows[table].forEach((row) => {
+          rows.customers.forEach((row) => {
             if (filters.every((filter) => row[filter.column] === filter.value)) {
               Object.assign(row, values);
             }

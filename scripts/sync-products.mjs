@@ -12,6 +12,7 @@ export const FIELD_OWNERSHIP_POLICY = {
     "title",
     "sku",
     "status",
+    "sort_order",
     "stock_status",
     "base_price_cents",
     "sale_price_cents",
@@ -73,6 +74,14 @@ export function parseSyncProductArgs(argv) {
   const help = argv.includes("--help") || argv.includes("-h");
   const allowWrites = apply && argv.includes("--confirm-fill-empty-assets");
   const allowProductSync = apply && argv.includes("--confirm-product-sync");
+  const onlySlugsArg = argv.find((arg) => arg.startsWith("--only-slugs="));
+  const onlySlugs = onlySlugsArg
+    ? onlySlugsArg
+        .slice("--only-slugs=".length)
+        .split(",")
+        .map((slug) => slug.trim())
+        .filter(Boolean)
+    : [];
 
   return {
     mode: allowProductSync ? "product-sync" : allowWrites ? "safe-fill-empty-assets" : "dry-run",
@@ -80,19 +89,21 @@ export function parseSyncProductArgs(argv) {
     allowWrites,
     allowProductSync,
     help,
-    json
+    json,
+    onlySlugs
   };
 }
 
-export function createCatalogReconciliationPlan({ databaseProducts, productOptions = [], productBusinessUses = [] }) {
+export function createCatalogReconciliationPlan({ databaseProducts, productOptions = [], productBusinessUses = [], approvedProductsOverride }) {
+  const planApprovedProducts = approvedProductsOverride ?? approvedProducts;
   const activeDatabaseProducts = databaseProducts.filter((product) => readBoolean(product.is_active) !== false);
   const databaseProductsBySlug = new Map(activeDatabaseProducts.map((product) => [readString(product.slug), product]).filter(([slug]) => slug));
-  const approvedSlugs = new Set(approvedProducts.map((product) => product.slug));
+  const approvedSlugs = new Set(planApprovedProducts.map((product) => product.slug));
   const databaseSlugs = new Set(databaseProductsBySlug.keys());
   const productOptionsBySlug = groupRowsBy(productOptions, "product_slug");
   const businessUsesBySlug = groupRowsBy(productBusinessUses, "product_slug");
 
-  const missingProducts = approvedProducts
+  const missingProducts = planApprovedProducts
     .filter((product) => !databaseSlugs.has(product.slug))
     .map((product) => ({ slug: product.slug, title: product.title, action: "manual-approval-required" }));
   const dbOnlyProducts = activeDatabaseProducts
@@ -114,7 +125,7 @@ export function createCatalogReconciliationPlan({ databaseProducts, productOptio
   const fillIfEmptyAssetUpdates = [];
   const manualAssetRequirements = [];
 
-  for (const approvedProduct of approvedProducts) {
+  for (const approvedProduct of planApprovedProducts) {
     const databaseProduct = databaseProductsBySlug.get(approvedProduct.slug);
     if (!databaseProduct) {
       continue;
@@ -186,7 +197,7 @@ export function createCatalogReconciliationPlan({ databaseProducts, productOptio
 
   return {
     mode: "dry-run",
-    approvedProductCount: approvedProducts.length,
+    approvedProductCount: planApprovedProducts.length,
     databaseActiveProductCount: activeDatabaseProducts.length,
     lockedStandTypeCount: lockedStandTypes.filter((item) => item.isActive).length,
     lockedBusinessUseCount: lockedBusinessUses.filter((item) => item.isActive).length,
@@ -282,16 +293,23 @@ export function formatReconciliationPlan(plan) {
 async function main() {
   const args = parseSyncProductArgs(process.argv.slice(2));
   if (args.help) {
-    console.log("Usage: npm run sync:products -- [--json] [--apply --confirm-fill-empty-assets|--confirm-product-sync]");
+    console.log("Usage: npm run sync:products -- [--json] [--only-slugs=slug-a,slug-b] [--apply --confirm-fill-empty-assets|--apply --confirm-product-sync]");
     console.log("Default mode is a read-only reconciliation dry-run.");
     console.log("--confirm-fill-empty-assets only fills empty asset URL fields.");
     console.log("--confirm-product-sync creates missing approved products, updates catalog-owned fields, options, business-use links, and archives retired storefront products.");
+    console.log("--only-slugs narrows reconciliation and product sync to a comma-separated approved product slug list.");
     return;
   }
 
   const backend = await connectBackend();
   const snapshot = await backend.readCatalogSnapshot();
-  const plan = createCatalogReconciliationPlan(snapshot);
+  const selectedApprovedProducts =
+    args.onlySlugs.length > 0 ? approvedProducts.filter((product) => args.onlySlugs.includes(product.slug)) : approvedProducts;
+  const missingOnlySlugs = args.onlySlugs.filter((slug) => !approvedProducts.some((product) => product.slug === slug));
+  if (missingOnlySlugs.length > 0) {
+    throw new Error(`Unknown approved product slugs: ${missingOnlySlugs.join(", ")}`);
+  }
+  const plan = createCatalogReconciliationPlan({ ...snapshot, approvedProductsOverride: selectedApprovedProducts });
 
   if (args.json) {
     console.log(JSON.stringify(plan, null, 2));
@@ -305,8 +323,8 @@ async function main() {
 
   if (args.allowProductSync) {
     const result = await backend.applyProductCatalogSync({
-      approvedProducts,
-      productOptionsBySlug: new Map(approvedProducts.map((product) => [product.slug, getOptionsForProduct(product)]))
+      approvedProducts: selectedApprovedProducts,
+      productOptionsBySlug: new Map(selectedApprovedProducts.map((product) => [product.slug, getOptionsForProduct(product)]))
     });
     console.log(`Product catalog sync applied: ${JSON.stringify(result)}`);
     return;
@@ -459,6 +477,7 @@ function canonicalProductValue(product, field) {
     is_special_solution: product.isSpecialSolution ?? false,
     product_kind: product.productKind ?? "normal_direct",
     status: product.status ?? "active",
+    sort_order: product.sortOrder ?? 1000,
     base_price_cents: product.basePriceCents,
     sale_price_cents: product.salePriceCents ?? null,
     stock_status: product.stockStatus,
@@ -499,6 +518,7 @@ function productDatabaseRow(product, { includeAdminOwnedFields }) {
     destination_type: product.destinationType ?? null,
     is_special_solution: product.isSpecialSolution ?? false,
     product_kind: product.productKind ?? "normal_direct",
+    sort_order: product.sortOrder ?? 1000,
     product_type: product.productType,
     service_mode: product.serviceMode,
     checkout_mode: product.checkoutMode,

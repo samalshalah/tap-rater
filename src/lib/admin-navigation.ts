@@ -22,6 +22,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     items: [
       { label: "Orders", href: "/admin/orders", description: "Paid, pending, production, and shipping fulfillment" },
       { label: "Products", href: "/admin/products", description: "Sellable products, prices, assets, and production readiness" },
+      { label: "Inventory", href: "/admin/inventory", description: "Product availability and checkout stock status" },
+      { label: "Customers", href: "/admin/customers", description: "Customer accounts, orders, and subscription activity" },
       { label: "Taxes", href: "/admin/taxes", description: "Manual checkout tax shown before Stripe" }
     ]
   },
@@ -45,10 +47,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
 ];
 
 export const hiddenAdminNavigationItems: AdminNavigationItem[] = [
-  { label: "Customers", href: "/admin/customers", description: "Future customer ownership and subscription support", status: "hidden" },
   { label: "Devices", href: "/admin/devices", description: "Legacy activation/device management retained off primary navigation", status: "hidden" },
   { label: "Stand Types", href: "/admin/stand-types", description: "Storefront taxonomy editor retained off primary navigation", status: "hidden" },
-  { label: "Inventory", href: "/admin/inventory", description: "Unfinished inventory tooling hidden until operationally complete", status: "hidden" },
   { label: "Discounts", href: "/admin/discounts", description: "Unfinished discounts hidden until launch requirements demand it", status: "hidden" },
   { label: "Media", href: "/admin/media", description: "Media infrastructure remains available through product/order workflows", status: "hidden" },
   { label: "SEO", href: "/admin/seo", description: "SEO fields remain in product/taxonomy editors", status: "hidden" },

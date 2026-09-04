@@ -16,6 +16,7 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
   return (
     <Link
       href={`/product/${product.slug}`}
+      prefetch={false}
       className={
         isCompact
           ? "tr-hover-card group flex aspect-[4/5] h-full min-h-[300px] flex-col overflow-hidden p-3.5"

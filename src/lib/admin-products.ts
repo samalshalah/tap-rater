@@ -24,6 +24,7 @@ export function createBlankAdminProduct(): MigratedProduct {
     isSpecialSolution: false,
     productKind: "normal_direct",
     status: "draft",
+    sortOrder: 1000,
     basePriceCents: 3900,
     stockStatus: "instock",
     shortDescription: "",
@@ -129,6 +130,11 @@ function compareAdminProducts(first: MigratedProduct, second: MigratedProduct) {
   const statusRank = productStatusRank(first) - productStatusRank(second);
   if (statusRank !== 0) {
     return statusRank;
+  }
+
+  const sortRank = (first.sortOrder ?? 1000) - (second.sortOrder ?? 1000);
+  if (sortRank !== 0) {
+    return sortRank;
   }
 
   return first.title.localeCompare(second.title, undefined, { sensitivity: "base" }) || first.slug.localeCompare(second.slug);

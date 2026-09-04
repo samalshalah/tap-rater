@@ -13,8 +13,10 @@ export function getDefaultTaxSettings(): TaxSettingsInput {
     taxMode: "manual",
     manualTaxRateBps: 600,
     taxLabel: "Virginia sales tax",
+    taxableStates: ["VA"],
+    taxRecurring: false,
     taxShipping: false,
-    customerFacingTaxNote: "Estimated sales tax is calculated before payment."
+    customerFacingTaxNote: "Sales tax is calculated from the shipping address before payment."
   };
 }
 
@@ -53,6 +55,8 @@ export async function saveTaxSettings(client: TaxSettingsDbClient, input: TaxSet
     taxMode: parsed.taxMode,
     manualTaxRateBps: parsed.manualTaxRateBps,
     taxLabel: parsed.taxLabel,
+    taxableStates: parsed.taxableStates,
+    taxRecurring: parsed.taxRecurring,
     taxShipping: parsed.taxShipping,
     customerFacingTaxNote: parsed.customerFacingTaxNote
   };

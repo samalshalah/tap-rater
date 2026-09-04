@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import type { MigratedProduct } from "@/data/migrated-products";
-import type { CartItem, CartMultiLinkButton } from "@/lib/cart";
+import { maxCartItemQuantity, type CartItem, type CartMultiLinkButton } from "@/lib/cart";
 import {
   cartItemRequestsPermanentHostedCode,
   generateProductVariantSku,
@@ -137,7 +137,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     const optionId = item.optionId ?? item.setup?.optionCode;
     const option = optionId ? productOptions.find((purchaseOption) => purchaseOption.id === optionId) : productOptions[0];
 
-    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || !product || !option) {
+    if (!Number.isInteger(item.quantity) || item.quantity <= 0 || item.quantity > maxCartItemQuantity || !product || !option) {
       continue;
     }
 
@@ -357,6 +357,7 @@ export function createCheckoutSessionParams({
     taxSettings,
     getCheckoutTaxableAmountCents({
       recurringTotalCents: cart.recurringTotalCents,
+      shippingState: shippingAddress?.state,
       shippingAmountCents: shippingRule.amountCents,
       standTotalCents: cart.totalCents,
       taxSettings
@@ -398,19 +399,21 @@ export function createCheckoutSessionParams({
       tax_label: taxSettings.taxLabel,
       tax_rate_bps: String(taxSettings.manualTaxRateBps),
       tax_amount_cents: String(taxAmountCents),
+      tax_recurring: taxSettings.taxRecurring ? "true" : "false",
       tax_shipping: taxSettings.taxShipping ? "true" : "false",
       customer_email: customer?.email ?? "",
       customer_name: customer?.name ?? "",
       customer_phone: customer?.phone ?? shippingAddress?.phone ?? "",
       create_account: requiresAccount ? "true" : "false",
       shipping_country: shippingAddress?.country ?? "US",
+      shipping_state: shippingAddress?.state ?? "",
       shipping_postal_code: shippingAddress?.postalCode ?? ""
     }
   };
 }
 
 function createStripeIntegrationIdentifier() {
-  return `taprater_checkout_${Math.random().toString(36).slice(2, 10).padEnd(8, "0")}`;
+  return `taprater_checkout_${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
 }
 
 function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {
@@ -624,7 +627,7 @@ export function validateStripeRuntimeConfig(env: NodeJS.ProcessEnv = process.env
   }
 
   const secretKey = env.STRIPE_SECRET_KEY;
-  const publishableKey = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const publishableKey = getStripePublishableKey(env);
   const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
 
   if (mode === "test") {
@@ -721,4 +724,8 @@ export function getCheckoutSiteUrl(requestOrigin?: string | null) {
   }
 
   return process.env.NEXT_PUBLIC_SITE_URL || "http://127.0.0.1:3000";
+}
+
+export function getStripePublishableKey(env: NodeJS.ProcessEnv = process.env) {
+  return env.STRIPE_PUBLISHABLE_KEY || env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 }

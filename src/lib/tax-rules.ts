@@ -2,16 +2,27 @@ import type { TaxSettingsInput } from "@/lib/validators";
 
 export function getCheckoutTaxableAmountCents({
   recurringTotalCents,
+  shippingState,
   shippingAmountCents,
   standTotalCents,
   taxSettings
 }: {
   recurringTotalCents: number;
+  shippingState?: string;
   shippingAmountCents: number;
   standTotalCents: number;
   taxSettings: TaxSettingsInput;
 }) {
-  return Math.max(0, standTotalCents + recurringTotalCents + (taxSettings.taxShipping ? shippingAmountCents : 0));
+  if (!isShippingStateTaxable(taxSettings, shippingState)) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    standTotalCents +
+      (taxSettings.taxRecurring ? recurringTotalCents : 0) +
+      (taxSettings.taxShipping ? shippingAmountCents : 0)
+  );
 }
 
 export function getCheckoutTaxAmountCents(taxSettings: TaxSettingsInput, taxableAmountCents: number) {
@@ -24,4 +35,13 @@ export function getCheckoutTaxAmountCents(taxSettings: TaxSettingsInput, taxable
 
 export function formatTaxRate(taxSettings: TaxSettingsInput) {
   return `${(taxSettings.manualTaxRateBps / 100).toFixed(2).replace(/\.?0+$/, "")}%`;
+}
+
+export function isShippingStateTaxable(taxSettings: TaxSettingsInput, shippingState?: string) {
+  if (taxSettings.taxMode !== "manual") {
+    return false;
+  }
+
+  const normalizedState = shippingState?.trim().toUpperCase();
+  return Boolean(normalizedState && taxSettings.taxableStates.includes(normalizedState));
 }

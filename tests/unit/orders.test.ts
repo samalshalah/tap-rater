@@ -7,6 +7,7 @@ import {
   mapCheckoutRowsToOrderLineItems,
   mapCheckoutRowsToProductionReadyOrderLineItems,
   mapCheckoutSessionToOrderInput,
+  markCheckoutOrderPaymentFailureWithClient,
   savePaidOrderFromCheckoutSessionWithClient,
   updateOrderFulfillmentWithClient,
   type OrdersDbClient
@@ -71,6 +72,34 @@ const memoryAssetResolver: ProductionArtworkAssetResolver = async (url) => {
 };
 
 describe("orders repository", () => {
+  it("marks only pending checkout orders as expired", async () => {
+    const rows = [
+      {
+        id: "pending",
+        stripe_checkout_session_id: "cs_expired",
+        status: "pending_payment",
+        payment_status: "unpaid"
+      },
+      {
+        id: "paid",
+        stripe_checkout_session_id: "cs_paid",
+        status: "paid",
+        payment_status: "paid"
+      }
+    ];
+
+    const result = await markCheckoutOrderPaymentFailureWithClient(
+      createOrdersMemoryClient(rows),
+      "cs_expired",
+      "canceled",
+      "expired"
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(rows[0]).toMatchObject({ status: "canceled", payment_status: "expired" });
+    expect(rows[1]).toMatchObject({ status: "paid", payment_status: "paid" });
+  });
+
   it("preserves uploaded logo and branded proof status in order line items", () => {
     const items = mapCheckoutRowsToOrderLineItems([
       {
@@ -762,7 +791,11 @@ describe("orders repository", () => {
   });
 
   it("upserts paid orders by Stripe checkout session id", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const upsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+      })
+    });
     const client = {
       from(table: string) {
         expect(table).toBe("orders");
@@ -788,7 +821,11 @@ describe("orders repository", () => {
   });
 
   it("reports when a Stripe Checkout Session was already paid to avoid duplicate emails", async () => {
-    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const upsert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
+      })
+    });
     const client = {
       from(table: string) {
         expect(table).toBe("orders");
@@ -814,7 +851,11 @@ describe("orders repository", () => {
                           sku: "GRS",
                           quantity: 1,
                           unitAmountCents: 3900,
-                          lineSubtotalCents: 3900
+                          lineSubtotalCents: 3900,
+                          setup: {
+                            hostedPageUrl: "https://taprater.com/p/EXISTING123",
+                            generatedQrValue: "https://taprater.com/p/EXISTING123"
+                          }
                         }
                       ]
                     },
@@ -837,7 +878,21 @@ describe("orders repository", () => {
       amount_total: 3900,
       currency: "usd",
       customer_details: { email: "buyer@example.com" },
-      metadata: { order_items: "[]" }
+      metadata: {
+        order_items: JSON.stringify([
+          {
+            productId: "google-review-stand",
+            optionId: "standard_direct",
+            optionLabel: "Standard Direct Stand",
+            title: "Google Review Stand",
+            sku: "GRS",
+            quantity: 1,
+            unitAmountCents: 3900,
+            lineSubtotalCents: 3900,
+            setup: { generatedQrValue: "https://taprater.com/p/your-page" }
+          }
+        ])
+      }
     });
 
     expect(result).toMatchObject({
@@ -847,7 +902,11 @@ describe("orders repository", () => {
         line_items_json: [
           expect.objectContaining({
             productId: "google-review-stand",
-            optionId: "standard_direct"
+            optionId: "standard_direct",
+            setup: expect.objectContaining({
+              hostedPageUrl: "https://taprater.com/p/EXISTING123",
+              generatedQrValue: "https://taprater.com/p/EXISTING123"
+            })
           })
         ]
       }

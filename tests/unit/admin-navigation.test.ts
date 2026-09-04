@@ -9,10 +9,13 @@ describe("admin navigation", () => {
       expect.arrayContaining([
         "/admin",
         "/admin/products",
+        "/admin/inventory",
+        "/admin/customers",
         "/admin/orders",
         "/admin/orders?filter=production",
         "/admin/requests",
         "/admin/shipping",
+        "/admin/taxes",
         "/admin/content",
         "/admin/business-uses",
         "/admin/settings",
@@ -23,11 +26,8 @@ describe("admin navigation", () => {
     expect(hrefs).not.toEqual(
       expect.arrayContaining([
         "/admin/stand-types",
-        "/admin/customers",
         "/admin/devices",
-        "/admin/inventory",
         "/admin/discounts",
-        "/admin/taxes",
         "/admin/media",
         "/admin/seo",
         "/admin/analytics"
@@ -40,12 +40,9 @@ describe("admin navigation", () => {
 
     expect(hiddenItems.map((item) => item.href)).toEqual(
       expect.arrayContaining([
-        "/admin/customers",
         "/admin/devices",
         "/admin/stand-types",
-        "/admin/inventory",
         "/admin/discounts",
-        "/admin/taxes",
         "/admin/media",
         "/admin/seo",
         "/admin/analytics"

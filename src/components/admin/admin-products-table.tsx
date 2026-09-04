@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Edit3, ExternalLink, Search, SlidersHorizontal, Trash2 } from "lucide-react";
-import type { MigratedProduct, ProductKind } from "@/data/migrated-products";
+import type { MigratedProduct, ProductKind, ProductStatus } from "@/data/migrated-products";
 import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
 import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
 import { getBrandedProductionTemplateReadiness, type BrandedTemplateReadiness } from "@/lib/admin-product-readiness";
@@ -68,6 +68,7 @@ export function AdminProductsTable({
   const [mobileFilters, setMobileFilters] = useState<Filters>(defaultFilters);
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [savingStatusSlugs, setSavingStatusSlugs] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<DeleteStatus>(null);
 
   useEffect(() => {
@@ -190,6 +191,54 @@ export function AdminProductsTable({
     }
   }
 
+  async function updateProductStatus(product: MigratedProduct, nextStatus: ProductStatus) {
+    const currentStatus = getProductStatus(product);
+    if (nextStatus === currentStatus || savingStatusSlugs.has(product.slug)) {
+      return;
+    }
+
+    setSavingStatusSlugs((current) => new Set(current).add(product.slug));
+    setStatus(null);
+
+    try {
+      const response = await fetch("/api/admin/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: product.slug, status: nextStatus })
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string; status?: ProductStatus; isActive?: boolean } | null;
+
+      if (!response.ok || !payload?.status) {
+        throw new Error(payload?.error ?? "Product status could not be saved.");
+      }
+
+      setProducts((current) =>
+        current.map((item) =>
+          item.slug === product.slug
+            ? {
+                ...item,
+                status: payload.status,
+                isActive: payload.isActive ?? payload.status === "active"
+              }
+            : item
+        )
+      );
+      setStatus({ tone: "success", message: `${product.title} status changed to ${payload.status}.` });
+      router.refresh();
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Product status could not be saved."
+      });
+    } finally {
+      setSavingStatusSlugs((current) => {
+        const next = new Set(current);
+        next.delete(product.slug);
+        return next;
+      });
+    }
+  }
+
   if (products.length === 0) {
     return (
       <div className="mt-8 rounded-lg border border-dashed border-line bg-white p-10 text-center shadow-sm">
@@ -289,6 +338,7 @@ export function AdminProductsTable({
               </th>
               <th className="px-4 py-3 w-[92px]">Image</th>
               <th className="px-4 py-3 w-[230px]">Product</th>
+              <th className="px-4 py-3 w-[90px]">Sort</th>
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Uses</th>
               <th className="px-4 py-3 w-[130px]">Price</th>
@@ -333,6 +383,7 @@ export function AdminProductsTable({
                     </Link>
                     <span className="mt-1 block text-xs text-muted">{product.sku || product.slug}</span>
                   </td>
+                  <td className="px-4 py-3 font-semibold text-ink">{product.sortOrder ?? 1000}</td>
                   <td className="px-4 py-3 text-muted">{findTitle(standTypes, product.standTypeSlug) ?? "-"}</td>
                   <td className="px-4 py-3 text-muted">{formatBusinessUses(product, businessUses)}</td>
                   <td className="px-4 py-3 font-semibold text-ink">{formatPriceRange(options, product)}</td>
@@ -340,8 +391,11 @@ export function AdminProductsTable({
                     <ReadinessYesNoBadge ready={productReady} />
                   </td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={getProductStatus(product)} />
-                    <StockBadge stockStatus={product.stockStatus} />
+                    <ProductStatusControl
+                      status={getProductStatus(product)}
+                      disabled={savingStatusSlugs.has(product.slug)}
+                      onChange={(nextStatus) => updateProductStatus(product, nextStatus)}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
@@ -349,9 +403,16 @@ export function AdminProductsTable({
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                         Edit
                       </AdminLinkButton>
-                      <AdminExternalButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/product/${product.slug}`} target="_blank" rel="noreferrer">
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                        View in store
+                      <AdminExternalButton
+                        aria-label={`View ${product.title} in store`}
+                        title={`View ${product.title} in store`}
+                        className="h-9 min-h-9 w-9 px-0 py-0"
+                        variant="outline"
+                        href={`/product/${product.slug}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <ExternalLink className="h-4 w-4" aria-hidden="true" />
                       </AdminExternalButton>
                       <AdminIconButton
                         type="button"
@@ -370,7 +431,7 @@ export function AdminProductsTable({
             })}
             {filteredProducts.length === 0 ? (
               <tr>
-                <td className="p-10 text-center text-muted" colSpan={9}>
+                <td className="p-10 text-center text-muted" colSpan={10}>
                   No products match these filters.
                 </td>
               </tr>
@@ -406,26 +467,36 @@ export function AdminProductsTable({
                         {product.title}
                       </Link>
                       <p className="mt-1 text-xs text-muted">{product.sku || product.slug}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <StatusBadge status={getProductStatus(product)} />
-                        <StockBadge stockStatus={product.stockStatus} />
-                      </div>
                     </div>
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <ProductMobileField label="Type" value={findTitle(standTypes, product.standTypeSlug) ?? "-"} />
+                    <ProductMobileField label="Sort" value={String(product.sortOrder ?? 1000)} strong />
                     <ProductMobileField label="Uses" value={formatBusinessUses(product, businessUses)} />
                     <ProductMobileField label="Price" value={formatPriceRange(options, product)} strong />
                     <ProductMobileField label="Readiness" value={productReady ? "Yes" : "No"} strong={productReady} />
                   </dl>
-                  <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <ProductStatusControl
+                      status={getProductStatus(product)}
+                      disabled={savingStatusSlugs.has(product.slug)}
+                      onChange={(nextStatus) => updateProductStatus(product, nextStatus)}
+                    />
+                    <div className="flex flex-wrap justify-end gap-2">
                     <AdminLinkButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/admin/products/${product.slug}`}>
                       <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       Edit
                     </AdminLinkButton>
-                    <AdminExternalButton className="min-h-9 px-3 py-1.5 text-xs" variant="outline" href={`/product/${product.slug}`} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                      View in store
+                    <AdminExternalButton
+                      aria-label={`View ${product.title} in store`}
+                      title={`View ${product.title} in store`}
+                      className="h-9 min-h-9 w-9 px-0 py-0"
+                      variant="outline"
+                      href={`/product/${product.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <ExternalLink className="h-4 w-4" aria-hidden="true" />
                     </AdminExternalButton>
                     <AdminButton
                       className="min-h-9 px-3 py-1.5 text-xs"
@@ -437,6 +508,7 @@ export function AdminProductsTable({
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                       Delete
                     </AdminButton>
+                    </div>
                   </div>
                 </article>
               );
@@ -550,6 +622,32 @@ function ProductThumbnail({ product }: { product: MigratedProduct }) {
   );
 }
 
+function ProductStatusControl({
+  status,
+  disabled,
+  onChange
+}: {
+  status: ProductStatus;
+  disabled: boolean;
+  onChange: (status: ProductStatus) => void;
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.04em] text-muted">
+      Status
+      <AdminSelect
+        className="h-9 min-h-9 w-28 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.04em]"
+        value={status}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value as ProductStatus)}
+      >
+        <option value="active">Active</option>
+        <option value="draft">Draft</option>
+        <option value="archived">Archived</option>
+      </AdminSelect>
+    </label>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const tone =
     status === "active" || status === "DIRECT" || status === "STANDARD"
@@ -559,14 +657,6 @@ function StatusBadge({ status }: { status: string }) {
         : "warning";
 
   return <AdminBadge tone={tone}>{status}</AdminBadge>;
-}
-
-function StockBadge({ stockStatus }: { stockStatus: MigratedProduct["stockStatus"] }) {
-  return (
-    <AdminBadge tone={stockStatus === "instock" ? "success" : "neutral"}>
-      {stockStatus === "instock" ? "In stock" : "Out of stock"}
-    </AdminBadge>
-  );
 }
 
 function ReadinessYesNoBadge({ ready }: { ready: boolean }) {

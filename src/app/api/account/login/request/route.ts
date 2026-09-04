@@ -1,5 +1,7 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { adminCookieName, createAdminSessionValue } from "@/lib/admin-auth";
+import { checkLoginRateLimit, recordLoginAttempt } from "@/lib/auth-rate-limit";
 import { getCustomerPasswordLoginRecord, verifyCustomerPassword } from "@/lib/customer-account";
 import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
 import { accountLoginRequestSchema } from "@/lib/validators";
@@ -15,12 +17,27 @@ export async function POST(request: Request) {
 
   const email = parsed.data.email.toLowerCase();
   const password = parsed.data.password;
+  const adminLogin = isConfiguredAdminEmail(email);
+  const rateLimit = await checkLoginRateLimit({
+    headers: request.headers,
+    identifier: email,
+    scope: adminLogin ? "admin" : "customer"
+  });
 
-  if (isConfiguredAdminEmail(email)) {
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please wait 15 minutes and try again." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } }
+    );
+  }
+
+  if (adminLogin) {
     const expectedPassword = process.env.ADMIN_PASSWORD;
     if (!expectedPassword || !passwordMatches(password, expectedPassword)) {
+      await recordLoginAttempt(rateLimit.context, false);
       return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
     }
+    await recordLoginAttempt(rateLimit.context, true);
     return createAdminLoginResponse(email, request);
   }
 
@@ -30,6 +47,7 @@ export async function POST(request: Request) {
   }
 
   if (!login.customer || !verifyCustomerPassword(password, login.customer.passwordHash)) {
+    await recordLoginAttempt(rateLimit.context, false);
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
@@ -41,6 +59,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This account is not active. Please contact Tap Rater support." }, { status: 403 });
   }
 
+  await recordLoginAttempt(rateLimit.context, true);
   return createLoginResponse(login.customer.email, request);
 }
 
@@ -68,7 +87,9 @@ function createAdminLoginResponse(email: string, request: Request) {
 }
 
 function passwordMatches(actual: string, expected: string) {
-  return actual.length === expected.length && actual === expected;
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+  return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
 }
 
 function isConfiguredAdminEmail(email: string) {

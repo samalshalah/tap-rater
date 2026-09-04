@@ -298,7 +298,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     primaryCta: { label: "Shop Stands", href: "/shop" },
     secondaryCta: { label: "See How It Works", href: "/how-it-works" },
     proofPoints: ["NFC + QR Ready", "No App Needed", "Works Instantly"],
-    image: { src: "/uploads/products/google-review-stand.png", alt: "Google Review Tap Rater stand" }
+    image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater review stand" }
   },
   actions: {
     enabled: true,
@@ -309,7 +309,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "Get Reviews",
         description: "Send happy customers straight to the review page that matters.",
         href: "/category/reviews",
-        image: { src: "/uploads/products/google-review-stand.png", alt: "Google Review Tap Rater stand" },
+        image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater review stand" },
         order: 10,
         enabled: true
       },

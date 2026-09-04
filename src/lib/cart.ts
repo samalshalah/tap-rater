@@ -17,6 +17,7 @@ export type CartProductSnapshot = {
 };
 
 export const cartStorageKey = "taprater:cart";
+export const maxCartItemQuantity = 99;
 
 export type CartMultiLinkButton = {
   id: string;
@@ -98,6 +99,10 @@ function isPositiveQuantity(quantity: unknown): quantity is number {
   return typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0;
 }
 
+function clampCartQuantity(quantity: number) {
+  return Math.min(maxCartItemQuantity, Math.max(1, quantity));
+}
+
 export function normalizeCartItems(value: unknown): CartItem[] {
   if (!Array.isArray(value)) {
     return [];
@@ -141,7 +146,7 @@ export function normalizeCartItems(value: unknown): CartItem[] {
     normalized.set(key, {
       productId,
       optionId: option.id,
-      quantity: (existing?.quantity ?? 0) + quantity,
+      quantity: clampCartQuantity((existing?.quantity ?? 0) + quantity),
       productSnapshot: snapshot,
       setup
     });
@@ -169,7 +174,7 @@ export function mergeCartItem(items: CartItem[], item: CartItem): CartItem[] {
 export function updateCartQuantity(items: CartItem[], productId: string, delta: number): CartItem[] {
   return normalizeCartItems(
     items.map((item) =>
-      getCartItemKey(item) === productId ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
+      getCartItemKey(item) === productId ? { ...item, quantity: clampCartQuantity(item.quantity + delta) } : item
     )
   );
 }

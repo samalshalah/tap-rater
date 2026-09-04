@@ -42,7 +42,7 @@ export function OrderProductionActions({ orderId }: { orderId: string }) {
   }
 
   return (
-    <AdminCard title="Proof and artwork operations" description="Repair branded proof state, regenerate print-ready artwork, or request customer changes before production.">
+    <AdminCard title="Artwork operations" description="Review branded artwork state, regenerate print-ready artwork, or request customer changes before production.">
       <div className="space-y-4">
         <label className="block text-sm font-semibold text-ink">
           Production note
@@ -51,7 +51,7 @@ export function OrderProductionActions({ orderId }: { orderId: string }) {
         <div className="grid gap-2">
           <AdminButton type="button" variant="primary" onClick={() => runAction("approve_proof_manually")} loading={pendingAction === "approve_proof_manually"}>
             <ShieldCheck size={16} />
-            Approve proof and generate artwork
+            Approve artwork and generate print file
           </AdminButton>
           <AdminButton type="button" onClick={() => runAction("regenerate_artwork")} loading={pendingAction === "regenerate_artwork"}>
             <RefreshCw size={16} />

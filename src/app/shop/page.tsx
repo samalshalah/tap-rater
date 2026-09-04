@@ -106,6 +106,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     {selectedType ? (
                       <Link
                         href={buildShopHref({ use: selectedUse?.slug })}
+                        prefetch={false}
                         className="tr-pill-neutral bg-white"
                       >
                         Type: {selectedType.title} ×
@@ -114,13 +115,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     {selectedUse ? (
                       <Link
                         href={buildShopHref({ type: selectedType?.slug })}
+                        prefetch={false}
                         className="tr-pill-neutral bg-white"
                       >
                         Use: {selectedUse.title} ×
                       </Link>
                     ) : null}
                   </div>
-                  <Link href="/shop" className="tr-button-outline w-fit">
+                  <Link href="/shop" prefetch={false} className="tr-button-outline w-fit">
                     Reset filters
                   </Link>
                 </div>
@@ -229,7 +231,7 @@ function FilterPanelContent({
           </p>
         </div>
         {selectedType || selectedUse ? (
-          <Link href="/shop" className="text-sm font-semibold text-brand">
+          <Link href="/shop" prefetch={false} className="text-sm font-semibold text-brand">
             Clear all
           </Link>
         ) : null}
@@ -318,6 +320,7 @@ function FilterLink({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={
         active
           ? "flex min-h-11 items-center justify-between gap-3 rounded-lg bg-panel px-3 py-2 text-sm font-semibold text-ink ring-1 ring-brand/20"

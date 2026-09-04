@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import { deleteProductContentBySlugs, saveProductContent, type CmsDbClient } from "@/lib/cms-repository";
-import { adminProductDeleteSchema, productContentSchema } from "@/lib/validators";
+import { deleteProductContentBySlugs, saveProductContent, updateProductContentStatus, type CmsDbClient } from "@/lib/cms-repository";
+import { adminProductDeleteSchema, adminProductStatusUpdateSchema, productContentSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
   const unauthorized = await requireAdminApi();
@@ -43,5 +43,26 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true, deletedSlugs });
   } catch {
     return NextResponse.json({ error: "Products could not be deleted." }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const unauthorized = await requireAdminApi();
+  if (unauthorized) return unauthorized;
+
+  const parsed = adminProductStatusUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Product status update is invalid." }, { status: 400 });
+  }
+
+  if (!hasSupabaseAdminConfig()) {
+    return NextResponse.json({ error: "Database persistence is not configured yet. Product status cannot be saved." }, { status: 503 });
+  }
+
+  try {
+    await updateProductContentStatus(getSupabaseAdmin() as CmsDbClient, parsed.data);
+    return NextResponse.json({ ok: true, status: parsed.data.status, isActive: parsed.data.status === "active" });
+  } catch {
+    return NextResponse.json({ error: "Product status could not be saved." }, { status: 500 });
   }
 }

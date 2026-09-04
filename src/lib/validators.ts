@@ -487,8 +487,13 @@ export const taxSettingsSchema = z.object({
   taxMode: z.enum(["manual", "disabled"]).default("manual"),
   manualTaxRateBps: z.number().int().min(0).max(2500).default(600),
   taxLabel: z.string().trim().min(2).max(120).default("Virginia sales tax"),
+  taxableStates: z
+    .array(z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/))
+    .max(60)
+    .default(["VA"]),
+  taxRecurring: z.boolean().default(false),
   taxShipping: z.boolean().default(false),
-  customerFacingTaxNote: z.string().trim().max(1000).default("Estimated sales tax is calculated before payment.")
+  customerFacingTaxNote: z.string().trim().max(1000).default("Sales tax is calculated from the shipping address before payment.")
 });
 
 export const orderFulfillmentUpdateSchema = z.object({
@@ -613,6 +618,7 @@ export const checkoutShippingAddressSchema = z.object({
 });
 
 export const checkoutRequestSchema = checkoutCartSchema.extend({
+  checkoutAttemptId: z.string().trim().regex(/^[A-Za-z0-9_-]{16,80}$/),
   customer: checkoutCustomerSchema,
   shippingAddress: checkoutShippingAddressSchema
 });

@@ -20,6 +20,9 @@ describe("admin product CSV", () => {
     expect(PRODUCT_CSV_HEADERS).toContain("images_json");
     expect(PRODUCT_CSV_HEADERS).toContain("size_options_json");
     expect(PRODUCT_CSV_HEADERS).toContain("product_faqs_json");
+    expect(PRODUCT_CSV_HEADERS).not.toContain("landing_page_preview_config_json");
+    expect(PRODUCT_CSV_HEADERS).not.toContain("default_cta_text");
+    expect(PRODUCT_CSV_HEADERS).not.toContain("sale_price_cents");
   });
 
   it("round-trips product options, images, business uses, assets, SEO, multiline copy, unicode, and inactive rows", () => {
@@ -43,9 +46,9 @@ describe("admin product CSV", () => {
     });
     expect(plan.products[0].assetSet).toMatchObject({
       standardAngledImageUrl: "/uploads/products/google-review-stand.png",
-      brandedFrontTemplateUrl: "/uploads/templates/google-branded-2026-08-27.3.svg",
-      landingPagePreviewConfig: { accent: "green" }
+      brandedFrontTemplateUrl: "/uploads/templates/google-branded-2026-08-27.3.svg"
     });
+    expect(plan.products[0].assetSet.landingPagePreviewConfig).toBeUndefined();
     expect(plan.products[0].productOptions).toHaveLength(2);
     expect(plan.products[0].images).toEqual([{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }]);
     expect(plan.products[0].sizeOptions?.[0]).toMatchObject({ code: "regular", skuSuffix: "REG", priceAdjustmentCents: 0 });

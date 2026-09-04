@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BriefcaseBusiness, ChevronDown, CircleUserRound, LayoutDashboard, LifeBuoy, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 
@@ -155,6 +155,7 @@ export function Header() {
         <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 lg:min-h-[78px] lg:grid-cols-[210px_1fr_210px]">
           <Link
             href="/"
+            prefetch={false}
             className="inline-flex items-center"
             onClick={() => setIsMenuOpen(false)}
           >
@@ -164,6 +165,7 @@ export function Header() {
               width={126}
               height={76}
               priority
+              unoptimized
               className="h-12 w-auto object-contain"
             />
           </Link>
@@ -172,6 +174,7 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className="min-h-11 rounded-[var(--tr-radius-control)] px-3.5 py-2.5 transition hover:bg-soft hover:text-brand"
               >
                 {item.label}
@@ -203,6 +206,7 @@ export function Header() {
               ) : (
                 <Link
                   href="/account/login"
+                  prefetch={false}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
                   aria-label="Account"
                   onClick={() => {
@@ -217,6 +221,7 @@ export function Header() {
             </div>
             <Link
               href="/cart"
+              prefetch={false}
               aria-label="Cart"
               className="relative grid h-11 w-11 place-items-center rounded-[var(--tr-radius-control)] border border-line bg-white transition hover:border-brand hover:text-brand"
               onClick={() => {
@@ -252,8 +257,9 @@ export function Header() {
             <nav className="grid gap-2 text-ink" aria-label="Mobile navigation">
               {navItems.map((item) => (
                 <Link
-                key={item.href}
-                href={item.href}
+                  key={item.href}
+                  href={item.href}
+                  prefetch={false}
                   className="rounded-[var(--tr-radius-card)] border border-line bg-white px-4 py-3.5 transition hover:border-brand hover:text-brand"
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -270,6 +276,7 @@ export function Header() {
             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
               <Link
                 href={customerSession.authenticated ? "/account" : "/account/login"}
+                prefetch={false}
                 className="min-h-12 rounded-[var(--tr-radius-control)] border border-line bg-white px-3 py-3 text-center text-sm font-semibold transition hover:border-brand hover:text-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -277,6 +284,7 @@ export function Header() {
               </Link>
               <Link
                 href="/cart"
+                prefetch={false}
                 className="min-h-12 rounded-[var(--tr-radius-control)] border border-ink bg-ink px-3 py-3 text-center text-sm font-semibold text-white transition hover:border-brand hover:bg-brand"
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -294,8 +302,6 @@ const accountLinks = [
   { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
   { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
   { href: "/account/orders", label: "Orders & billing", icon: PackageCheck },
-  { href: "/account/business", label: "Business profile", icon: BriefcaseBusiness },
-  { href: "/support", label: "Support", icon: LifeBuoy },
 ];
 
 function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState; onClose: () => void }) {
@@ -313,6 +319,7 @@ function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState
             <Link
               key={link.href}
               href={link.href}
+              prefetch={false}
               className="flex min-h-10 items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 font-semibold text-ink transition hover:bg-soft hover:text-brand"
               onClick={onClose}
             >

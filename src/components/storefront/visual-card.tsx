@@ -31,6 +31,7 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
   return (
     <Link
       href={href}
+      prefetch={false}
       className="tr-hover-card group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden p-6"
     >
       <div className="relative min-h-0 flex-[1.1] w-full overflow-hidden rounded-[var(--tr-radius-card)] bg-white">
@@ -74,6 +75,7 @@ function ProductStoryCard({
   return (
     <Link
       href={href}
+      prefetch={false}
       className={`tr-hover-card group flex h-full flex-col overflow-hidden ${compact ? "min-h-[520px]" : "min-h-[640px]"}`}
     >
       <div className={compact ? "px-7 pb-3 pt-8 sm:px-8 sm:pt-9" : "px-8 pb-4 pt-10 sm:px-11 sm:pt-12"}>
@@ -96,7 +98,7 @@ function UseCaseCard({ density, description, eyebrow, href, image, title }: Pick
   const compact = density === "compact";
 
   return (
-    <Link href={href} className={compact ? "tr-hover-card group flex h-full min-h-[300px] flex-col overflow-hidden sm:aspect-[4/5] sm:min-h-[360px]" : "tr-hover-card group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden"}>
+    <Link href={href} prefetch={false} className={compact ? "tr-hover-card group flex h-full min-h-[300px] flex-col overflow-hidden sm:aspect-[4/5] sm:min-h-[360px]" : "tr-hover-card group flex aspect-[4/5] h-full min-h-[360px] flex-col overflow-hidden"}>
       <div className={compact ? "px-5 pb-4 pt-6 sm:min-h-0 sm:flex-[0.86] sm:px-6 sm:pt-7" : "min-h-0 flex-[0.86] px-5 pb-4 pt-6 sm:px-6 sm:pt-7"}>
         {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
         <h3 className="tr-card-title mt-3 text-[1.32rem] sm:text-[1.5rem]">{title}</h3>

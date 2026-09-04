@@ -89,16 +89,18 @@ export async function recordBillingInvoiceFromCheckoutSessionWithClient(
   const email = order.email?.trim().toLowerCase();
   if (!email || !invoiceId) return { ok: true as const, skipped: true as const };
 
-  const customerId = await findCustomerIdByEmail(client, email);
+  const hostedSubscriptions = order.id ? await findHostedSubscriptionsByOrderId(client, order.id) : [];
+  const hostedSubscription = hostedSubscriptions[0] ?? null;
+  const customerId = hostedSubscription?.customer_id ?? await findCustomerIdByEmail(client, email);
   const record: BillingInvoiceRecord = {
     customer_id: customerId,
     order_id: order.id ?? null,
-    hosted_subscription_id: null,
+    hosted_subscription_id: hostedSubscription?.id ?? null,
     email,
     stripe_customer_id: readString(details.stripe_customer_id) ?? readStripeId(session.customer),
     stripe_invoice_id: invoiceId,
     stripe_checkout_session_id: order.stripe_checkout_session_id,
-    stripe_subscription_id: readStripeId(session.subscription),
+    stripe_subscription_id: readStripeId(session.subscription) ?? hostedSubscription?.stripe_subscription_id ?? null,
     stripe_payment_intent_id: order.stripe_payment_intent_id ?? null,
     invoice_number: readString(invoice.number) ?? readString(details.invoice_number),
     status: "paid",
@@ -122,7 +124,7 @@ export async function recordBillingInvoiceFromCheckoutSessionWithClient(
   const savedInvoice = await upsertBillingInvoice(client, record);
   if (!savedInvoice.ok || !savedInvoice.billingInvoiceId) return savedInvoice;
 
-  const lineResult = await upsertBillingInvoiceItemsForOrder(client, savedInvoice.billingInvoiceId, order);
+  const lineResult = await upsertBillingInvoiceItemsForOrder(client, savedInvoice.billingInvoiceId, order, hostedSubscriptions);
   if (!lineResult.ok) return lineResult;
 
   return savedInvoice;
@@ -137,6 +139,7 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
   const invoiceId = readString(invoice.id);
   if (!invoiceId) return { ok: true as const, skipped: true as const };
 
+  const existingInvoice = await findBillingInvoiceByStripeId(client, invoiceId);
   const subscriptionId = readStripeId(invoice.subscription);
   const hostedSubscriptions = subscriptionId ? await findHostedSubscriptionsByStripeId(client, subscriptionId) : [];
   const hostedSubscription = hostedSubscriptions[0] ?? null;
@@ -147,41 +150,52 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
     readString(invoice.customer_email) ??
     readString(hostedCustomer?.email) ??
     readString(customerByStripeId?.email) ??
+    readString(existingInvoice.email) ??
     readStripeCustomerEmail(invoice.customer)
   )?.toLowerCase();
   if (!email) return { ok: true as const, skipped: true as const };
 
-  const customerId = hostedSubscription?.customer_id ?? customerByStripeId?.id ?? await findCustomerIdByEmail(client, email);
+  const customerId =
+    hostedSubscription?.customer_id ??
+    customerByStripeId?.id ??
+    readString(existingInvoice.customer_id) ??
+    await findCustomerIdByEmail(client, email);
   const paymentIntentId = readStripeId(invoice.payment_intent);
+  const hasCheckoutBreakdown = Boolean(readString(existingInvoice.order_id) || readString(existingInvoice.stripe_checkout_session_id));
 
   const record: BillingInvoiceRecord = {
     customer_id: customerId,
-    order_id: hostedSubscription?.order_id ?? null,
-    hosted_subscription_id: hostedSubscription?.id ?? null,
+    order_id: hostedSubscription?.order_id ?? readString(existingInvoice.order_id) ?? null,
+    hosted_subscription_id: hostedSubscription?.id ?? readString(existingInvoice.hosted_subscription_id) ?? null,
     email,
-    stripe_customer_id: stripeCustomerId,
+    stripe_customer_id: stripeCustomerId ?? readString(existingInvoice.stripe_customer_id) ?? null,
     stripe_invoice_id: invoiceId,
-    stripe_checkout_session_id: readString(invoice.checkout_session) ?? null,
-    stripe_subscription_id: subscriptionId,
-    stripe_payment_intent_id: paymentIntentId,
-    invoice_number: readString(invoice.number),
-    status: readString(invoice.status),
-    payment_status: invoice.paid ? "paid" : readString(invoice.status),
-    payment_method_label: null,
-    hosted_invoice_url: readString(invoice.hosted_invoice_url),
-    invoice_pdf_url: readString(invoice.invoice_pdf),
-    receipt_url: readString(invoice.receipt_url),
-    subtotal_cents: readNumber(invoice.subtotal) ?? 0,
-    tax_cents: readInvoiceTaxCents(invoice),
-    shipping_cents: readNumber(invoice.shipping_cost?.amount_total) ?? 0,
-    total_cents: readNumber(invoice.total) ?? 0,
-    amount_paid_cents: readNumber(invoice.amount_paid) ?? 0,
-    currency: readString(invoice.currency) ?? "usd",
-    issued_at: toIso(invoice.created),
-    paid_at: toIso(invoice.status_transitions?.paid_at),
-    period_start: toIso(invoice.period_start),
-    period_end: toIso(invoice.period_end),
+    stripe_checkout_session_id: readString(invoice.checkout_session) ?? readString(existingInvoice.stripe_checkout_session_id) ?? null,
+    stripe_subscription_id: subscriptionId ?? readString(existingInvoice.stripe_subscription_id) ?? null,
+    stripe_payment_intent_id: paymentIntentId ?? readString(existingInvoice.stripe_payment_intent_id) ?? null,
+    invoice_number: readString(invoice.number) ?? readString(existingInvoice.invoice_number) ?? null,
+    status: readString(invoice.status) ?? readString(existingInvoice.status) ?? null,
+    payment_status: invoice.paid ? "paid" : readString(invoice.status) ?? readString(existingInvoice.payment_status) ?? null,
+    payment_method_label: readString(existingInvoice.payment_method_label) ?? null,
+    hosted_invoice_url: readString(invoice.hosted_invoice_url) ?? readString(existingInvoice.hosted_invoice_url) ?? null,
+    invoice_pdf_url: readString(invoice.invoice_pdf) ?? readString(existingInvoice.invoice_pdf_url) ?? null,
+    receipt_url: readString(invoice.receipt_url) ?? readString(existingInvoice.receipt_url) ?? null,
+    subtotal_cents: hasCheckoutBreakdown
+      ? readNumber(existingInvoice.subtotal_cents) ?? readNumber(invoice.subtotal) ?? 0
+      : readNumber(invoice.subtotal) ?? 0,
+    tax_cents: hasCheckoutBreakdown ? readNumber(existingInvoice.tax_cents) ?? readInvoiceTaxCents(invoice) : readInvoiceTaxCents(invoice),
+    shipping_cents: hasCheckoutBreakdown
+      ? readNumber(existingInvoice.shipping_cents) ?? readNumber(invoice.shipping_cost?.amount_total) ?? 0
+      : readNumber(invoice.shipping_cost?.amount_total) ?? 0,
+    total_cents: readNumber(invoice.total) ?? readNumber(existingInvoice.total_cents) ?? 0,
+    amount_paid_cents: readNumber(invoice.amount_paid) ?? readNumber(existingInvoice.amount_paid_cents) ?? 0,
+    currency: readString(invoice.currency) ?? readString(existingInvoice.currency) ?? "usd",
+    issued_at: toIso(invoice.created) ?? readString(existingInvoice.issued_at) ?? null,
+    paid_at: toIso(invoice.status_transitions?.paid_at) ?? readString(existingInvoice.paid_at) ?? null,
+    period_start: toIso(invoice.period_start) ?? readString(existingInvoice.period_start) ?? null,
+    period_end: toIso(invoice.period_end) ?? readString(existingInvoice.period_end) ?? null,
     metadata_json: {
+      ...readRecord(existingInvoice.metadata_json),
       source: "invoice.webhook",
       stripe_metadata: invoice.metadata ?? {}
     }
@@ -217,8 +231,22 @@ async function findBillingInvoiceId(client: OrdersDbClient, stripeInvoiceId?: st
   return result.error ? null : readString(readRecord(result.data).id) ?? null;
 }
 
-async function upsertBillingInvoiceItemsForOrder(client: OrdersDbClient, billingInvoiceId: string, order: OrderRecord) {
-  const items = order.line_items_json.map((item, index) => buildInvoiceItemFromOrderLine(billingInvoiceId, order, item, index));
+async function findBillingInvoiceByStripeId(client: OrdersDbClient, stripeInvoiceId: string) {
+  const result = await client.from("billing_invoices").select("*").eq("stripe_invoice_id", stripeInvoiceId).maybeSingle();
+  return result.error ? {} : readRecord(result.data);
+}
+
+async function upsertBillingInvoiceItemsForOrder(
+  client: OrdersDbClient,
+  billingInvoiceId: string,
+  order: OrderRecord,
+  hostedSubscriptions: Array<{ id: string | null; hosted_page_url?: string | null }> = []
+) {
+  let hostedItemIndex = 0;
+  const items = order.line_items_json.map((item, index) => {
+    const hostedSubscription = isHostedOrderLine(item) ? hostedSubscriptions[hostedItemIndex++] ?? null : null;
+    return buildInvoiceItemFromOrderLine(billingInvoiceId, order, item, index, hostedSubscription);
+  });
   return upsertBillingInvoiceItems(client, items);
 }
 
@@ -257,19 +285,25 @@ async function upsertBillingInvoiceItems(client: OrdersDbClient, items: BillingI
   return { ok: true as const };
 }
 
-function buildInvoiceItemFromOrderLine(billingInvoiceId: string, order: OrderRecord, item: OrderLineItem, index: number): BillingInvoiceItemRecord {
+function buildInvoiceItemFromOrderLine(
+  billingInvoiceId: string,
+  order: OrderRecord,
+  item: OrderLineItem,
+  index: number,
+  hostedSubscription: { id: string | null; hosted_page_url?: string | null } | null = null
+): BillingInvoiceItemRecord {
   const setup = readRecord(item.setup);
   return {
     billing_invoice_id: billingInvoiceId,
     order_id: order.id ?? null,
-    hosted_subscription_id: null,
+    hosted_subscription_id: hostedSubscription?.id ?? null,
     line_item_index: index,
     title: item.title,
     option_label: item.optionLabel ?? null,
     quantity: item.quantity,
     amount_cents: item.lineSubtotalCents,
     recurring_amount_cents: (readNumber(setup.monthlyPriceCents) ?? readNumber(setup.monthly_price_cents) ?? 0) * item.quantity,
-    hosted_page_url: readString(setup.hostedPageUrl) ?? null,
+    hosted_page_url: hostedSubscription?.hosted_page_url ?? readString(setup.hostedPageUrl) ?? null,
     metadata_json: {
       product_id: item.productId,
       option_id: item.optionId ?? null,
@@ -277,6 +311,11 @@ function buildInvoiceItemFromOrderLine(billingInvoiceId: string, order: OrderRec
       destination_mode: item.destinationMode ?? null
     }
   };
+}
+
+function isHostedOrderLine(item: OrderLineItem) {
+  const setup = readRecord(item.setup);
+  return item.destinationMode === "HOSTED" || setup.serviceMode === "HOSTED" || setup.serviceAddon === "hosted_multilink";
 }
 
 async function findCustomerIdByEmail(client: OrdersDbClient, email: string) {
@@ -287,7 +326,7 @@ async function findCustomerIdByEmail(client: OrdersDbClient, email: string) {
 async function findHostedSubscriptionsByStripeId(client: OrdersDbClient, stripeSubscriptionId: string) {
   const result = await client
     .from("hosted_subscriptions")
-    .select("id,customer_id,order_id,hosted_page_url")
+    .select("id,customer_id,order_id,hosted_page_url,stripe_subscription_id")
     .eq("stripe_subscription_id", stripeSubscriptionId)
     .order("created_at", { ascending: false });
   if (result.error || !Array.isArray(result.data)) return [];
@@ -297,7 +336,27 @@ async function findHostedSubscriptionsByStripeId(client: OrdersDbClient, stripeS
       id: readString(row.id) ?? null,
       customer_id: readString(row.customer_id) ?? null,
       order_id: readString(row.order_id) ?? null,
-      hosted_page_url: readString(row.hosted_page_url) ?? null
+      hosted_page_url: readString(row.hosted_page_url) ?? null,
+      stripe_subscription_id: readString(row.stripe_subscription_id) ?? null
+    };
+  });
+}
+
+async function findHostedSubscriptionsByOrderId(client: OrdersDbClient, orderId: string) {
+  const result = await client
+    .from("hosted_subscriptions")
+    .select("id,customer_id,order_id,hosted_page_url,stripe_subscription_id")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: true });
+  if (result.error || !Array.isArray(result.data)) return [];
+  return result.data.map((value: unknown) => {
+    const row = readRecord(value);
+    return {
+      id: readString(row.id) ?? null,
+      customer_id: readString(row.customer_id) ?? null,
+      order_id: readString(row.order_id) ?? null,
+      hosted_page_url: readString(row.hosted_page_url) ?? null,
+      stripe_subscription_id: readString(row.stripe_subscription_id) ?? null
     };
   });
 }

@@ -87,6 +87,7 @@ export type MigratedProduct = {
   isSpecialSolution?: boolean;
   productKind?: ProductKind;
   status?: ProductStatus;
+  sortOrder?: number;
   basePriceCents: number;
   salePriceCents?: number;
   stockStatus: "instock" | "outofstock";
@@ -341,73 +342,78 @@ export const catalogCategories: CatalogCategory[] = [
   }
 ];
 
-const googleStandImage = { src: "/uploads/products/google-review-stand.png", alt: "Tap Rater Google Review Stand" };
+const googleStandImage = { src: "/uploads/products/taprater-stands/google/google-standard-angled.png", alt: "Tap Rater Google Review Stand" };
 const googlePlateImage = { src: "/uploads/products/google-review-plate.png", alt: "Tap Rater Google Review Plate" };
-const yelpStandImage = { src: "/uploads/products/yelp-review-stand.png", alt: "Tap Rater Yelp Review Stand" };
+const yelpStandImage = { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater Yelp Review Stand" };
 const yelpPlateImage = { src: "/uploads/products/yelp-review-plate.png", alt: "Tap Rater Yelp Review Plate" };
-const facebookStandImage = { src: "/uploads/products/facebook-review-stand.png", alt: "Tap Rater Facebook Review Stand" };
+const facebookStandImage = { src: "/uploads/products/taprater-stands/facebook/facebook-standard-angled.png", alt: "Tap Rater Facebook Review Stand" };
 const facebookPlateImage = { src: "/uploads/products/facebook-review-plate.png", alt: "Tap Rater Facebook Review Plate" };
-const tripadvisorStandImage = { src: "/uploads/products/tripadvisor-review-stand.png", alt: "Tap Rater TripAdvisor Review Stand" };
+const tripadvisorStandImage = { src: "/uploads/products/taprater-stands/tripadvisor/tripadvisor-standard-angled.png", alt: "Tap Rater TripAdvisor Review Stand" };
 const tripadvisorPlateImage = { src: "/uploads/products/tripadvisor-review-plate.png", alt: "Tap Rater TripAdvisor Review Plate" };
-const experienceStandImage = { src: "/uploads/products/rate-your-experience-stand.png", alt: "Tap Rater Rate Your Experience Stand" };
+const experienceStandImage = { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png", alt: "Tap Rater Rate Your Experience Stand" };
 const experiencePlateImage = { src: "/uploads/products/rate-your-experience-plate.png", alt: "Tap Rater Rate Your Experience Plate" };
-const socialStandImage = { src: "/uploads/products/social-media-stand.png", alt: "Tap Rater Follow Us on Social Media Stand" };
+const socialStandImage = { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png", alt: "Tap Rater Follow Us on Social Media Stand" };
 const socialPlateImage = { src: "/uploads/products/social-media-plate.png", alt: "Tap Rater Follow Us on Social Media Plate" };
-const facebookFollowStandImage = { src: "/uploads/products/facebook-follow-stand.png", alt: "Tap Rater Follow Us on Facebook Stand" };
-const instagramFollowStandImage = { src: "/uploads/products/instagram-follow-stand.png", alt: "Tap Rater Follow Us on Instagram Stand" };
-const tiktokFollowStandImage = { src: "/uploads/products/tiktok-follow-stand.png", alt: "Tap Rater Follow Us on TikTok Stand" };
-const youtubeFollowStandImage = { src: "/uploads/products/youtube-follow-stand.png", alt: "Tap Rater Follow Us on YouTube Stand" };
-const linkedinFollowStandImage = { src: "/uploads/products/linkedin-follow-stand.png", alt: "Tap Rater Follow Us on LinkedIn Stand" };
-const xFollowStandImage = { src: "/uploads/products/x-follow-stand.png", alt: "Tap Rater Follow Us on X Stand" };
-const snapchatFollowStandImage = { src: "/uploads/products/snapchat-follow-stand.png", alt: "Tap Rater Follow Us on Snapchat Stand" };
-const pinterestFollowStandImage = { src: "/uploads/products/pinterest-follow-stand.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
-const ubereatsReviewStandImage = { src: "/uploads/products/ubereats-review-stand.png", alt: "Tap Rater Uber Eats Review Stand" };
-const angiReviewStandImage = { src: "/uploads/products/angi-review-stand.png", alt: "Tap Rater Angi Review Stand" };
-const dealerraterReviewStandImage = { src: "/uploads/products/dealerrater-review-stand.png", alt: "Tap Rater DealerRater Review Stand" };
-const autotraderReviewStandImage = { src: "/uploads/products/autotrader-review-stand.png", alt: "Tap Rater Autotrader Review Stand" };
-const carfaxReviewStandImage = { src: "/uploads/products/carfax-review-stand.png", alt: "Tap Rater CARFAX Review Stand" };
-const edmundsReviewStandImage = { src: "/uploads/products/edmunds-review-stand.png", alt: "Tap Rater Edmunds Review Stand" };
-const carsReviewStandImage = { src: "/uploads/products/cars-review-stand.png", alt: "Tap Rater Cars.com Review Stand" };
-const cargurusReviewStandImage = { src: "/uploads/products/cargurus-review-stand.png", alt: "Tap Rater CarGurus Review Stand" };
+const facebookFollowStandImage = { src: "/uploads/products/taprater-stands/facebook-follow/facebook-follow-standard-angled.png", alt: "Tap Rater Follow Us on Facebook Stand" };
+const instagramFollowStandImage = { src: "/uploads/products/taprater-stands/instagram-follow/instagram-follow-standard-angled.png", alt: "Tap Rater Follow Us on Instagram Stand" };
+const tiktokFollowStandImage = { src: "/uploads/products/taprater-stands/tiktok-follow/tiktok-follow-standard-angled.png", alt: "Tap Rater Follow Us on TikTok Stand" };
+const youtubeFollowStandImage = { src: "/uploads/products/taprater-stands/youtube-follow/youtube-follow-standard-angled.png", alt: "Tap Rater Follow Us on YouTube Stand" };
+const linkedinFollowStandImage = { src: "/uploads/products/taprater-stands/linkedin-follow/linkedin-follow-standard-angled.png", alt: "Tap Rater Follow Us on LinkedIn Stand" };
+const xFollowStandImage = { src: "/uploads/products/taprater-stands/x-follow/x-follow-standard-angled.png", alt: "Tap Rater Follow Us on X Stand" };
+const snapchatFollowStandImage = { src: "/uploads/products/taprater-stands/snapchat-follow/snapchat-follow-standard-angled.png", alt: "Tap Rater Follow Us on Snapchat Stand" };
+const pinterestFollowStandImage = { src: "/uploads/products/taprater-stands/pinterest-follow/pinterest-follow-standard-angled.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
+const ubereatsReviewStandImage = { src: "/uploads/products/taprater-stands/uber-eats/uber-eats-standard-angled.png", alt: "Tap Rater Uber Eats Review Stand" };
+const angiReviewStandImage = { src: "/uploads/products/taprater-stands/angi/angi-standard-angled.png", alt: "Tap Rater Angi Review Stand" };
+const dealerraterReviewStandImage = { src: "/uploads/products/taprater-stands/dealerrater/dealerrater-standard-angled.png", alt: "Tap Rater DealerRater Review Stand" };
+const autotraderReviewStandImage = { src: "/uploads/products/taprater-stands/autotrader/autotrader-standard-angled.png", alt: "Tap Rater Autotrader Review Stand" };
+const carfaxReviewStandImage = { src: "/uploads/products/taprater-stands/carfax/carfax-standard-angled.png", alt: "Tap Rater CARFAX Review Stand" };
+const edmundsReviewStandImage = { src: "/uploads/products/taprater-stands/edmunds/edmunds-standard-angled.png", alt: "Tap Rater Edmunds Review Stand" };
+const carsReviewStandImage = { src: "/uploads/products/taprater-stands/cars-com/cars-com-standard-angled.png", alt: "Tap Rater Cars.com Review Stand" };
+const cargurusReviewStandImage = { src: "/uploads/products/taprater-stands/cargurus/cargurus-standard-angled.png", alt: "Tap Rater CarGurus Review Stand" };
 const repairpalReviewStandImage = { src: "/uploads/products/repairpal-review-stand.png", alt: "Tap Rater RepairPal Review Stand" };
 const surecriticReviewStandImage = { src: "/uploads/products/surecritic-review-stand.png", alt: "Tap Rater SureCritic Review Stand" };
-const bbbReviewStandImage = { src: "/uploads/products/bbb-review-stand.png", alt: "Tap Rater BBB Review Stand" };
-const nextdoorReviewStandImage = { src: "/uploads/products/nextdoor-review-stand.png", alt: "Tap Rater Nextdoor Review Stand" };
-const avvoReviewStandImage = { src: "/uploads/products/avvo-review-stand.png", alt: "Tap Rater Avvo Review Stand" };
-const taskrabbitReviewStandImage = { src: "/uploads/products/taskrabbit-review-stand.png", alt: "Tap Rater Taskrabbit Review Stand" };
-const martindaleReviewStandImage = { src: "/uploads/products/martindale-review-stand.png", alt: "Tap Rater Martindale Review Stand" };
+const bbbReviewStandImage = { src: "/uploads/products/taprater-stands/bbb/bbb-standard-angled.png", alt: "Tap Rater BBB Review Stand" };
+const nextdoorReviewStandImage = { src: "/uploads/products/taprater-stands/nextdoor/nextdoor-standard-angled.png", alt: "Tap Rater Nextdoor Review Stand" };
+const avvoReviewStandImage = { src: "/uploads/products/taprater-stands/avvo/avvo-standard-angled.png", alt: "Tap Rater Avvo Review Stand" };
+const taskrabbitReviewStandImage = { src: "/uploads/products/taprater-stands/taskrabbit/taskrabbit-standard-angled.png", alt: "Tap Rater Taskrabbit Review Stand" };
+const martindaleReviewStandImage = { src: "/uploads/products/taprater-stands/martindale/martindale-standard-angled.png", alt: "Tap Rater Martindale Review Stand" };
 const justiaReviewStandImage = { src: "/uploads/products/justia-review-stand.png", alt: "Tap Rater Justia Review Stand" };
-const findlawReviewStandImage = { src: "/uploads/products/findlaw-review-stand.png", alt: "Tap Rater FindLaw Review Stand" };
-const lawyersReviewStandImage = { src: "/uploads/products/lawyers-review-stand.png", alt: "Tap Rater Lawyers.com Review Stand" };
-const zillowReviewStandImage = { src: "/uploads/products/zillow-review-stand.png", alt: "Tap Rater Zillow Review Stand" };
-const realtorReviewStandImage = { src: "/uploads/products/realtor-review-stand.png", alt: "Tap Rater Realtor.com Review Stand" };
-const homesReviewStandImage = { src: "/uploads/products/homes-review-stand.png", alt: "Tap Rater Homes.com Review Stand" };
-const homeadvisorReviewStandImage = { src: "/uploads/products/homeadvisor-review-stand.png", alt: "Tap Rater HomeAdvisor Review Stand" };
-const thumbtackReviewStandImage = { src: "/uploads/products/thumbtack-review-stand.png", alt: "Tap Rater Thumbtack Review Stand" };
-const houzzReviewStandImage = { src: "/uploads/products/houzz-review-stand.png", alt: "Tap Rater Houzz Review Stand" };
-const porchReviewStandImage = { src: "/uploads/products/porch-review-stand.png", alt: "Tap Rater Porch Review Stand" };
-const airbnbReviewStandImage = { src: "/uploads/products/airbnb-review-stand.png", alt: "Tap Rater Airbnb Review Stand" };
-const agodaReviewStandImage = { src: "/uploads/products/agoda-review-stand.png", alt: "Tap Rater Agoda Review Stand" };
-const vrboReviewStandImage = { src: "/uploads/products/vrbo-review-stand.png", alt: "Tap Rater Vrbo Review Stand" };
-const hotelsReviewStandImage = { src: "/uploads/products/hotels-review-stand.png", alt: "Tap Rater Hotels.com Review Stand" };
-const healthgradesReviewStandImage = { src: "/uploads/products/healthgrades-review-stand.png", alt: "Tap Rater Healthgrades Review Stand" };
-const vitalsReviewStandImage = { src: "/uploads/products/vitals-review-stand.png", alt: "Tap Rater Vitals Review Stand" };
-const zocdocReviewStandImage = { src: "/uploads/products/zocdoc-review-stand.png", alt: "Tap Rater Zocdoc Review Stand" };
-const ratemdsReviewStandImage = { src: "/uploads/products/ratemds-review-stand.png", alt: "Tap Rater RateMDs Review Stand" };
-const caredashReviewStandImage = { src: "/uploads/products/caredash-review-stand.png", alt: "Tap Rater CareDash Review Stand" };
-const opencareReviewStandImage = { src: "/uploads/products/opencare-review-stand.png", alt: "Tap Rater Opencare Review Stand" };
-const freshaReviewStandImage = { src: "/uploads/products/fresha-review-stand.png", alt: "Tap Rater Fresha Review Stand" };
-const booksyReviewStandImage = { src: "/uploads/products/booksy-review-stand.png", alt: "Tap Rater Booksy Review Stand" };
-const styleseatReviewStandImage = { src: "/uploads/products/styleseat-review-stand.png", alt: "Tap Rater StyleSeat Review Stand" };
-const vagaroReviewStandImage = { src: "/uploads/products/vagaro-review-stand.png", alt: "Tap Rater Vagaro Review Stand" };
-const apartmentsReviewStandImage = { src: "/uploads/products/apartments-review-stand.png", alt: "Tap Rater Apartments.com Review Stand" };
-const truliaReviewStandImage = { src: "/uploads/products/trulia-review-stand.png", alt: "Tap Rater Trulia Review Stand" };
+const findlawReviewStandImage = { src: "/uploads/products/taprater-stands/findlaw/findlaw-standard-angled.png", alt: "Tap Rater FindLaw Review Stand" };
+const lawyersReviewStandImage = { src: "/uploads/products/taprater-stands/lawyers-com/lawyers-com-standard-angled.png", alt: "Tap Rater Lawyers.com Review Stand" };
+const zillowReviewStandImage = { src: "/uploads/products/taprater-stands/zillow/zillow-standard-angled.png", alt: "Tap Rater Zillow Review Stand" };
+const realtorReviewStandImage = { src: "/uploads/products/taprater-stands/realtor-com/realtor-com-standard-angled.png", alt: "Tap Rater Realtor.com Review Stand" };
+const homesReviewStandImage = { src: "/uploads/products/taprater-stands/homes-com/homes-com-standard-angled.png", alt: "Tap Rater Homes.com Review Stand" };
+const homeadvisorReviewStandImage = { src: "/uploads/products/taprater-stands/homeadvisor/homeadvisor-standard-angled.png", alt: "Tap Rater HomeAdvisor Review Stand" };
+const thumbtackReviewStandImage = { src: "/uploads/products/taprater-stands/thumbtack/thumbtack-standard-angled.png", alt: "Tap Rater Thumbtack Review Stand" };
+const houzzReviewStandImage = { src: "/uploads/products/taprater-stands/houzz/houzz-standard-angled.png", alt: "Tap Rater Houzz Review Stand" };
+const porchReviewStandImage = { src: "/uploads/products/taprater-stands/porch/porch-standard-angled.png", alt: "Tap Rater Porch Review Stand" };
+const airbnbReviewStandImage = { src: "/uploads/products/taprater-stands/airbnb/airbnb-standard-angled.png", alt: "Tap Rater Airbnb Review Stand" };
+const agodaReviewStandImage = { src: "/uploads/products/taprater-stands/agoda/agoda-standard-angled.png", alt: "Tap Rater Agoda Review Stand" };
+const vrboReviewStandImage = { src: "/uploads/products/taprater-stands/vrbo/vrbo-standard-angled.png", alt: "Tap Rater Vrbo Review Stand" };
+const hotelsReviewStandImage = { src: "/uploads/products/taprater-stands/hotels-com/hotels-com-standard-angled.png", alt: "Tap Rater Hotels.com Review Stand" };
+const healthgradesReviewStandImage = { src: "/uploads/products/taprater-stands/healthgrades/healthgrades-standard-angled.png", alt: "Tap Rater Healthgrades Review Stand" };
+const vitalsReviewStandImage = { src: "/uploads/products/taprater-stands/vitals/vitals-standard-angled.png", alt: "Tap Rater Vitals Review Stand" };
+const zocdocReviewStandImage = { src: "/uploads/products/taprater-stands/zocdoc/zocdoc-standard-angled.png", alt: "Tap Rater Zocdoc Review Stand" };
+const ratemdsReviewStandImage = { src: "/uploads/products/taprater-stands/ratemds/ratemds-standard-angled.png", alt: "Tap Rater RateMDs Review Stand" };
+const caredashReviewStandImage = { src: "/uploads/products/taprater-stands/caredash/caredash-standard-angled.png", alt: "Tap Rater CareDash Review Stand" };
+const opencareReviewStandImage = { src: "/uploads/products/taprater-stands/opencare/opencare-standard-angled.png", alt: "Tap Rater Opencare Review Stand" };
+const freshaReviewStandImage = { src: "/uploads/products/taprater-stands/fresha/fresha-standard-angled.png", alt: "Tap Rater Fresha Review Stand" };
+const booksyReviewStandImage = { src: "/uploads/products/taprater-stands/booksy/booksy-standard-angled.png", alt: "Tap Rater Booksy Review Stand" };
+const styleseatReviewStandImage = { src: "/uploads/products/taprater-stands/styleseat/styleseat-standard-angled.png", alt: "Tap Rater StyleSeat Review Stand" };
+const vagaroReviewStandImage = { src: "/uploads/products/taprater-stands/vagaro/vagaro-standard-angled.png", alt: "Tap Rater Vagaro Review Stand" };
+const apartmentsReviewStandImage = { src: "/uploads/products/taprater-stands/apartments-com/apartments-com-standard-angled.png", alt: "Tap Rater Apartments.com Review Stand" };
+const truliaReviewStandImage = { src: "/uploads/products/taprater-stands/trulia/trulia-standard-angled.png", alt: "Tap Rater Trulia Review Stand" };
 const whatsappMessageStandImage = { src: "/uploads/products/whatsapp-message-stand.png", alt: "Tap Rater WhatsApp Message Stand" };
 const telegramMessageStandImage = { src: "/uploads/products/telegram-message-stand.png", alt: "Tap Rater Telegram Message Stand" };
 const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
 const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
 const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
 const menuPlateImage = { src: "/uploads/products/view-menu-plate.png", alt: "Tap Rater View Our Menu Plate" };
+const menuAndOrderStandImage = { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png", alt: "Tap Rater Menu and Order Stand" };
+const patientResourcesStandImage = { src: "/uploads/products/taprater-text-stands/patient-resources/patient-resources-standard-angled.png", alt: "Tap Rater Patient Resources Stand" };
+const checkOurInformationStandImage = { src: "/uploads/products/taprater-text-stands/check-our-information/check-our-information-standard-angled.png", alt: "Tap Rater Check Our Information Stand" };
+const exploreOurServicesStandImage = { src: "/uploads/products/taprater-text-stands/explore-our-services/explore-our-services-standard-angled.png", alt: "Tap Rater Explore Our Services Stand" };
+const connectWithUsStandImage = { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-standard-angled.png", alt: "Tap Rater Connect With Us Stand" };
 
 const standPriceCents = 3900;
 const platePriceCents = 3900;
@@ -418,6 +424,46 @@ const colors = [
   { id: "black", label: "Black", suffix: "B" }
 ];
 
+function createTapraterStandAssetSet(imageSrc: string): ProductAssetSet | undefined {
+  const match = imageSrc.match(/^\/uploads\/products\/taprater-stands\/([^/]+)\/\1-standard-angled\.png$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const folder = match[1];
+  const basePath = `/uploads/products/taprater-stands/${folder}`;
+
+  return {
+    standardAngledImageUrl: `${basePath}/${folder}-standard-angled.png`,
+    brandedAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
+    multiLinkAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
+    standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png`,
+    brandedFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`,
+    multiLinkFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`
+  };
+}
+
+function createTapraterTextStandAssetSet(imageSrc: string): ProductAssetSet | undefined {
+  const match = imageSrc.match(/^\/uploads\/products\/taprater-text-stands\/([^/]+)\/\1-standard-angled\.png$/);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const folder = match[1];
+  const basePath = `/uploads/products/taprater-text-stands/${folder}`;
+
+  return {
+    standardAngledImageUrl: `${basePath}/${folder}-standard-angled.png`,
+    brandedAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
+    multiLinkAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
+    standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png`,
+    brandedFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`,
+    multiLinkFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`
+  };
+}
+
 type PhaseOneProductInput = {
   slug: string;
   title: string;
@@ -427,6 +473,7 @@ type PhaseOneProductInput = {
   primaryPlatformSlug?: string;
   destinationType?: string;
   businessUseSlugs?: string[];
+  sortOrder?: number;
   basePriceCents: number;
   shortDescription: string;
   description: string;
@@ -450,6 +497,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     primaryPlatformSlug: input.primaryPlatformSlug,
     destinationType: input.destinationType,
     businessUseSlugs: input.businessUseSlugs,
+    sortOrder: input.sortOrder,
     basePriceCents: input.basePriceCents,
     stockStatus: "instock",
     shortDescription: input.shortDescription,
@@ -470,7 +518,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     allowsCustomDesign: false,
     designMode: "standard",
     displayText: input.displayText,
-    assetSet: input.assetSet,
+    assetSet: input.assetSet ?? createTapraterStandAssetSet(input.image.src) ?? createTapraterTextStandAssetSet(input.image.src),
     images: [input.image],
     variants: colors.map((color) => ({
       id: color.id,
@@ -485,7 +533,70 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
   };
 }
 
-export const migratedProducts: MigratedProduct[] = [
+const marketSortOrderBySlug = new Map<string, number>([
+  ["google-review-stand", 10],
+  ["yelp-review-stand", 20],
+  ["facebook-review-stand", 30],
+  ["rate-your-experience-stand", 40],
+  ["follow-us-social-media-stand", 50],
+  ["instagram-follow-stand", 60],
+  ["facebook-follow-stand", 70],
+  ["tiktok-follow-stand", 80],
+  ["menu-and-order-stand", 90],
+  ["connect-with-us-stand", 100],
+  ["check-our-information-stand", 110],
+  ["explore-our-services-stand", 120],
+  ["patient-resources-stand", 130],
+  ["tripadvisor-review-stand", 140],
+  ["airbnb-review-stand", 150],
+  ["vrbo-review-stand", 160],
+  ["agoda-review-stand", 170],
+  ["hotels-review-stand", 180],
+  ["zillow-review-stand", 190],
+  ["realtor-review-stand", 200],
+  ["homes-review-stand", 210],
+  ["apartments-review-stand", 220],
+  ["trulia-review-stand", 230],
+  ["zocdoc-review-stand", 240],
+  ["healthgrades-review-stand", 250],
+  ["vitals-review-stand", 260],
+  ["ratemds-review-stand", 270],
+  ["opencare-review-stand", 280],
+  ["caredash-review-stand", 290],
+  ["cars-review-stand", 300],
+  ["autotrader-review-stand", 310],
+  ["cargurus-review-stand", 320],
+  ["dealerrater-review-stand", 330],
+  ["edmunds-review-stand", 340],
+  ["carfax-review-stand", 350],
+  ["angi-review-stand", 360],
+  ["thumbtack-review-stand", 370],
+  ["houzz-review-stand", 380],
+  ["homeadvisor-review-stand", 390],
+  ["porch-review-stand", 400],
+  ["taskrabbit-review-stand", 410],
+  ["fresha-review-stand", 420],
+  ["booksy-review-stand", 430],
+  ["vagaro-review-stand", 440],
+  ["styleseat-review-stand", 450],
+  ["avvo-review-stand", 460],
+  ["findlaw-review-stand", 470],
+  ["lawyers-review-stand", 480],
+  ["martindale-review-stand", 490],
+  ["linkedin-connect-stand", 500],
+  ["linkedin-follow-stand", 510],
+  ["youtube-follow-stand", 520],
+  ["x-follow-stand", 530],
+  ["pinterest-follow-stand", 540],
+  ["snapchat-follow-stand", 550],
+  ["bbb-review-stand", 560],
+  ["nextdoor-review-stand", 570],
+  ["ubereats-review-stand", 580],
+  ["visit-our-website-stand", 590],
+  ["custom-direct-stand", 600]
+]);
+
+const migratedProductsWithoutMarketSort: MigratedProduct[] = [
   {
     slug: "google-review-stand",
     title: "Google Review Stand",
@@ -514,7 +625,7 @@ export const migratedProducts: MigratedProduct[] = [
     shortDescription:
       "Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
     description:
-      "Make it easy for customers to leave a Google review at your counter, reception desk, checkout area, or service desk. The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide. Choose Standard for the ready-made Tap Rater Google design, or Branded to add your logo and business name with a front proof before production.",
+      "Make it easy for customers to leave a Google review at your counter, reception desk, checkout area, or service desk. The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide. Choose Standard for the ready-made Tap Rater Google design, or Branded to add your logo and business name for Tap Rater artwork review after the order.",
     productType: "physical_redirect",
     serviceMode: "basic_redirect",
     checkoutMode: "buy_now",
@@ -532,10 +643,12 @@ export const migratedProducts: MigratedProduct[] = [
     designMode: "standard",
     displayText: "Review us on Google",
     assetSet: {
-      standardAngledImageUrl: "/uploads/products/google-review-stand.png",
-      brandedAngledImageUrl: "/uploads/products/google-review-stand-branded-angled.jpg",
-      brandedFrontTemplateUrl: "/uploads/products/google-review-stand-branded-front-template.jpg",
-      multiLinkFrontTemplateUrl: "/uploads/products/google-review-stand-multilink-front-template.jpg"
+      standardAngledImageUrl: "/uploads/products/taprater-stands/google/google-standard-angled.png",
+      brandedAngledImageUrl: "/uploads/products/taprater-stands/google/google-custom-angled.png",
+      multiLinkAngledImageUrl: "/uploads/products/taprater-stands/google/google-custom-angled.png",
+      standardFrontTemplateUrl: "/uploads/products/taprater-stands/google/google-standard-front.png",
+      brandedFrontTemplateUrl: "/uploads/products/taprater-stands/google/google-custom-front.png",
+      multiLinkFrontTemplateUrl: "/uploads/products/taprater-stands/google/google-custom-front.png"
     },
     purchaseOptions: [
       {
@@ -562,7 +675,7 @@ export const migratedProducts: MigratedProduct[] = [
         optionCode: "branded_qr_direct",
         title: "Branded",
         description:
-          "Custom Google Review Stand with your logo and business name, plus QR and NFC programmed to the same Google review link. Includes front proof approval before production.",
+          "Custom Google Review Stand with your logo and business name, plus QR and NFC programmed to the same Google review link. Tap Rater reviews artwork before production.",
         priceCents: 4900,
         requiresDestinationUrl: true,
         hasQr: true,
@@ -580,7 +693,7 @@ export const migratedProducts: MigratedProduct[] = [
     ],
     images: [
       googleStandImage,
-      { src: "/uploads/products/google-review-stand-branded-angled.jpg", alt: "Branded Google Review Stand example" }
+      { src: "/uploads/products/taprater-stands/google/google-custom-angled.png", alt: "Branded Google Review Stand example" }
     ],
     variants: [],
     isActive: true,
@@ -1525,6 +1638,7 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Rate Your Experience Stand",
     sku: "TR-EXPERIENCE-STAND",
     categorySlug: "feedback",
+    sortOrder: 10,
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand for collecting customer experience feedback through a Tap Rater destination.",
     description:
@@ -1558,6 +1672,7 @@ export const migratedProducts: MigratedProduct[] = [
     title: "Follow Us on Social Media Stand",
     sku: "TR-SOCIAL-STAND",
     categorySlug: "social-media",
+    sortOrder: 20,
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a social media hub or direct social profile.",
     description:
@@ -1585,6 +1700,111 @@ export const migratedProducts: MigratedProduct[] = [
     seoTitle: "Follow Us on Social Media Plate | NFC Social Follow Plate",
     seoDescription: "Low-profile NFC plate that opens a social media hub or direct social profile for Facebook, X, Instagram, and YouTube.",
     searchKeywords: ["social media nfc plate", "follow us social media plate", "social follow plate"]
+  }),
+  phaseOneProduct({
+    slug: "menu-and-order-stand",
+    title: "Menu and Order Stand",
+    sku: "TR-MENU-ORDER-STAND",
+    categorySlug: "menu",
+    standTypeSlug: "menu-info-stands",
+    destinationType: "menu",
+    businessUseSlugs: ["restaurant-food", "retail-local-business"],
+    sortOrder: 50,
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens a menu, online ordering page, or service list.",
+    description:
+      "Menu and Order Stand is a tabletop NFC and QR display for restaurants, cafes, food trucks, and service counters. It connects directly to one menu, ordering, or service-list URL and is tap or scan ready.",
+    supportedDestinations: ["menu", "custom-menu-url", "website", "custom"],
+    displayText: "Menu and Order",
+    supportsMultiLink: true,
+    image: menuAndOrderStandImage,
+    seoTitle: "Menu and Order Stand | NFC and QR Menu Stand",
+    seoDescription: "Buy a Menu and Order Stand that opens a menu, online ordering page, or service list with one tap or scan.",
+    searchKeywords: ["menu and order stand", "nfc menu stand", "qr menu stand", "online ordering stand"]
+  }),
+  phaseOneProduct({
+    slug: "patient-resources-stand",
+    title: "Patient Resources Stand",
+    sku: "TR-PATIENT-RESOURCES-STAND",
+    categorySlug: "website-links",
+    standTypeSlug: "website-link-stands",
+    destinationType: "website",
+    businessUseSlugs: ["healthcare-dental"],
+    sortOrder: 60,
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens patient resources, forms, instructions, or a healthcare information page.",
+    description:
+      "Patient Resources Stand is a tabletop NFC and QR display for clinics, dental offices, and patient-facing reception desks. It connects directly to one patient resources URL, form page, instructions page, or hosted information page.",
+    supportedDestinations: ["website", "feedback", "custom-url", "custom"],
+    displayText: "Patient Resources",
+    supportsMultiLink: true,
+    image: patientResourcesStandImage,
+    seoTitle: "Patient Resources Stand | NFC and QR Healthcare Information Stand",
+    seoDescription: "Buy a Patient Resources Stand that opens forms, instructions, patient resources, or a healthcare information page.",
+    searchKeywords: ["patient resources stand", "healthcare nfc stand", "patient forms qr stand", "dental office information stand"]
+  }),
+  phaseOneProduct({
+    slug: "check-our-information-stand",
+    title: "Check Our Information Stand",
+    sku: "TR-CHECK-INFORMATION-STAND",
+    categorySlug: "website-links",
+    standTypeSlug: "website-link-stands",
+    destinationType: "website",
+    businessUseSlugs: ["retail-local-business", "home-services", "healthcare-dental", "legal", "real-estate"],
+    sortOrder: 30,
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens business information, instructions, or a custom information page.",
+    description:
+      "Check Our Information Stand is a tabletop NFC and QR display for sending customers to business information, instructions, documents, or a custom information page. It connects directly to one approved destination URL.",
+    supportedDestinations: ["website", "custom-url", "custom"],
+    displayText: "Check Our Information",
+    supportsMultiLink: true,
+    image: checkOurInformationStandImage,
+    seoTitle: "Check Our Information Stand | NFC and QR Information Stand",
+    seoDescription: "Buy a Check Our Information Stand that opens business information, instructions, documents, or a custom information page.",
+    searchKeywords: ["check our information stand", "information nfc stand", "business info qr stand", "custom information stand"]
+  }),
+  phaseOneProduct({
+    slug: "explore-our-services-stand",
+    title: "Explore Our Services Stand",
+    sku: "TR-EXPLORE-SERVICES-STAND",
+    categorySlug: "website-links",
+    standTypeSlug: "website-link-stands",
+    destinationType: "website",
+    businessUseSlugs: ["home-services", "beauty-salon-wellness", "healthcare-dental", "legal", "retail-local-business"],
+    sortOrder: 70,
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens a services page, booking page, or service menu.",
+    description:
+      "Explore Our Services Stand is a tabletop NFC and QR display for service businesses that want customers to view services, packages, booking pages, or a service menu. It connects directly to one approved destination URL.",
+    supportedDestinations: ["website", "booking", "menu", "custom-url", "custom"],
+    displayText: "Explore Our Services",
+    supportsMultiLink: true,
+    image: exploreOurServicesStandImage,
+    seoTitle: "Explore Our Services Stand | NFC and QR Services Stand",
+    seoDescription: "Buy an Explore Our Services Stand that opens a services page, booking page, package page, or service menu.",
+    searchKeywords: ["explore our services stand", "services nfc stand", "service menu qr stand", "booking services stand"]
+  }),
+  phaseOneProduct({
+    slug: "connect-with-us-stand",
+    title: "Connect With Us Stand",
+    sku: "TR-CONNECT-WITH-US-STAND",
+    categorySlug: "website-links",
+    standTypeSlug: "website-link-stands",
+    destinationType: "website",
+    businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services", "legal"],
+    sortOrder: 40,
+    basePriceCents: standPriceCents,
+    shortDescription: "Countertop NFC and QR stand that opens a contact page, social link, message link, or custom connection page.",
+    description:
+      "Connect With Us Stand is a tabletop NFC and QR display for sending customers to a contact page, social profile, message link, or custom connection page. It connects directly to one approved destination URL.",
+    supportedDestinations: ["website", "facebook", "instagram", "whatsapp", "telegram", "custom-url", "custom"],
+    displayText: "Connect With Us",
+    supportsMultiLink: true,
+    image: connectWithUsStandImage,
+    seoTitle: "Connect With Us Stand | NFC and QR Contact Stand",
+    seoDescription: "Buy a Connect With Us Stand that opens a contact page, social profile, message link, or custom connection page.",
+    searchKeywords: ["connect with us stand", "contact nfc stand", "social qr stand", "message link stand"]
   }),
   phaseOneProduct({
     slug: "facebook-follow-stand",
@@ -1913,3 +2133,8 @@ export const migratedProducts: MigratedProduct[] = [
     searchKeywords: ["custom nfc stand", "custom qr stand", "custom review stand"]
   }
 ];
+
+export const migratedProducts: MigratedProduct[] = migratedProductsWithoutMarketSort.map((product) => ({
+  ...product,
+  sortOrder: marketSortOrderBySlug.get(product.slug) ?? product.sortOrder ?? 1000
+}));

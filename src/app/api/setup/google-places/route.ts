@@ -23,7 +23,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "Search for a business name or address." }, { status: 400 });
   }
 
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey =
+    process.env.GOOGLE_PLACES_API_KEY ||
+    process.env.GOOGLE_MAPS_API_KEY ||
+    process.env.GOOGLE_MAPS_PLATFORM_API_KEY ||
+    process.env.MAPS_PLATFORM_API_KEY ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
   if (!apiKey) {
     return NextResponse.json({
@@ -45,10 +50,12 @@ export async function GET(request: Request) {
     const body = (await response.json().catch(() => ({}))) as GooglePlacesTextSearchResponse;
 
     if (!response.ok || (body.status && !["OK", "ZERO_RESULTS"].includes(body.status))) {
+      const googleStatus = body.status ?? `HTTP_${response.status}`;
       return NextResponse.json({
         ok: true,
         configured: true,
         results: [],
+        googleStatus,
         message: "Search is unavailable right now. Paste your Google review link manually."
       });
     }

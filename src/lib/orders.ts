@@ -76,6 +76,8 @@ export type OrderRecord = {
   id?: string;
   stripe_checkout_session_id: string;
   stripe_payment_intent_id?: string | null;
+  stripe_refund_id?: string | null;
+  refunded_at?: string | null;
   status: "pending_payment" | "paid" | "failed" | "canceled";
   payment_status?: string | null;
   email?: string | null;
@@ -111,6 +113,12 @@ export type PaidOrderSaveResult =
       ok: false;
       error: string;
     };
+
+export type CheckoutPaymentFailureStatus = "failed" | "canceled";
+
+export type OrderRefundSaveResult =
+  | { ok: true }
+  | { ok: false; error: string };
 
 export type FulfillmentUpdateResult =
   | {
@@ -535,7 +543,14 @@ export async function createPendingOrderForCheckout({
   shippingAmountCents?: number;
   shippingMode?: "manual" | "free" | "flat";
   taxAmountCents?: number;
-  taxSettings?: { taxMode: string; manualTaxRateBps: number; taxLabel: string; taxShipping: boolean };
+  taxSettings?: {
+    taxMode: string;
+    manualTaxRateBps: number;
+    taxLabel: string;
+    taxableStates: string[];
+    taxRecurring: boolean;
+    taxShipping: boolean;
+  };
 }) {
   if (!hasSupabaseAdminConfig()) {
     return { ok: false, error: "Database persistence is not configured. Checkout is disabled until order persistence is ready." };
@@ -569,7 +584,14 @@ export async function createPendingOrderForCheckoutWithClient(
     shippingAmountCents?: number;
     shippingMode?: "manual" | "free" | "flat";
     taxAmountCents?: number;
-    taxSettings?: { taxMode: string; manualTaxRateBps: number; taxLabel: string; taxShipping: boolean };
+    taxSettings?: {
+      taxMode: string;
+      manualTaxRateBps: number;
+      taxLabel: string;
+      taxableStates: string[];
+      taxRecurring: boolean;
+      taxShipping: boolean;
+    };
   }
 ) {
   const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(input.rows, input.stripeCheckoutSessionId);
@@ -596,6 +618,8 @@ export async function createPendingOrderForCheckoutWithClient(
               label: input.taxSettings.taxLabel,
               rate_bps: input.taxSettings.manualTaxRateBps,
               amount_cents: input.taxAmountCents ?? 0,
+              taxable_states: input.taxSettings.taxableStates,
+              tax_recurring: input.taxSettings.taxRecurring,
               tax_shipping: input.taxSettings.taxShipping
             }
           : {
@@ -697,6 +721,42 @@ export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSe
   return savePaidOrderFromCheckoutSessionWithClient(getSupabaseAdmin() as OrdersDbClient, session);
 }
 
+export async function markCheckoutOrderPaymentFailure(
+  stripeCheckoutSessionId: string,
+  status: CheckoutPaymentFailureStatus,
+  paymentStatus: "failed" | "expired"
+) {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false as const, error: "Database persistence is not configured." };
+  }
+
+  return markCheckoutOrderPaymentFailureWithClient(
+    getSupabaseAdmin() as OrdersDbClient,
+    stripeCheckoutSessionId,
+    status,
+    paymentStatus
+  );
+}
+
+export async function markCheckoutOrderPaymentFailureWithClient(
+  client: OrdersDbClient,
+  stripeCheckoutSessionId: string,
+  status: CheckoutPaymentFailureStatus,
+  paymentStatus: "failed" | "expired"
+) {
+  const { error } = await client
+    .from("orders")
+    .update({
+      status,
+      payment_status: paymentStatus,
+      updated_at: new Date().toISOString()
+    })
+    .eq("stripe_checkout_session_id", stripeCheckoutSessionId)
+    .eq("status", "pending_payment");
+
+  return error ? { ok: false as const, error: error.message } : { ok: true as const };
+}
+
 export async function savePaidOrderFromCheckoutSessionWithClient(
   client: OrdersDbClient,
   session: StripeCheckoutSessionLike
@@ -709,14 +769,20 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
 
   const existingOrder = await getOrderByStripeCheckoutSessionId(client, order.stripe_checkout_session_id);
   const wasAlreadyPaid = existingOrder?.status === "paid" || existingOrder?.payment_status === "paid";
+  const shouldPreserveExistingLineItems = Boolean(wasAlreadyPaid && existingOrder?.line_items_json.length);
+  const mergedLineItems = shouldPreserveExistingLineItems
+    ? existingOrder?.line_items_json ?? []
+    : order.line_items_json.length > 0
+      ? order.line_items_json
+      : existingOrder?.line_items_json ?? [];
   const mergedOrder: OrderRecord = {
     ...existingOrder,
     ...order,
-    line_items_json: order.line_items_json.length > 0 ? order.line_items_json : existingOrder?.line_items_json ?? []
+    line_items_json: mergedLineItems
   };
 
   const payload: Record<string, unknown> = { ...order };
-  if (mergedOrder.line_items_json.length > 0 && order.line_items_json.length === 0) {
+  if (shouldPreserveExistingLineItems || (mergedOrder.line_items_json.length > 0 && order.line_items_json.length === 0)) {
     payload.line_items_json = mergedOrder.line_items_json;
   } else if (order.line_items_json.length === 0) {
     delete payload.line_items_json;
@@ -793,6 +859,43 @@ export async function getAdminOrderById(orderId: string): Promise<{ configured: 
   } catch {
     return { configured: true, order: null };
   }
+}
+
+export async function markAdminOrderRefunded(
+  orderId: string,
+  refundId: string,
+  refundedAt: string,
+): Promise<OrderRefundSaveResult> {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false, error: "Database persistence is not configured." };
+  }
+
+  return markAdminOrderRefundedWithClient(
+    getSupabaseAdmin() as OrdersDbClient,
+    orderId,
+    refundId,
+    refundedAt,
+  );
+}
+
+export async function markAdminOrderRefundedWithClient(
+  client: OrdersDbClient,
+  orderId: string,
+  refundId: string,
+  refundedAt: string,
+): Promise<OrderRefundSaveResult> {
+  const { error } = await client
+    .from("orders")
+    .update({
+      status: "canceled",
+      payment_status: "refunded",
+      stripe_refund_id: refundId,
+      refunded_at: refundedAt,
+      updated_at: refundedAt,
+    })
+    .eq("id", orderId);
+
+  return error ? { ok: false, error: error.message } : { ok: true };
 }
 
 export async function updateOrderFulfillment(orderId: string, input: OrderFulfillmentUpdateInput): Promise<FulfillmentUpdateResult> {
@@ -1000,6 +1103,8 @@ function normalizeOrderRecord(value: unknown): OrderRecord {
     id: readString(row.id),
     stripe_checkout_session_id: readString(row.stripe_checkout_session_id) ?? "",
     stripe_payment_intent_id: readString(row.stripe_payment_intent_id) ?? null,
+    stripe_refund_id: readString(row.stripe_refund_id) ?? null,
+    refunded_at: readString(row.refunded_at) ?? null,
     status: readOrderStatus(row.status) ?? "pending_payment",
     payment_status: readString(row.payment_status) ?? null,
     email: readString(row.email) ?? null,

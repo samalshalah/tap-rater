@@ -135,6 +135,67 @@ describe("product repository", () => {
     expect(products.map((product) => product.title)).not.toContain("Old active tag");
   });
 
+  it("orders storefront products by product sort number before title", async () => {
+    const products = await getStorefrontProductsFromClient(mockProductsClient([
+      {
+        slug: "z-last-review-stand",
+        title: "A Lower Priority Stand",
+        sku: "LOW-1",
+        category_slug: "reviews",
+        format: "stand",
+        sort_order: 90,
+        base_price_cents: 3900,
+        stock_status: "instock",
+        short_description: "Lower priority stand",
+        description: "Lower priority stand",
+        product_type: "physical_redirect",
+        service_mode: "basic_redirect",
+        checkout_mode: "buy_now",
+        requires_account: false,
+        requires_subscription: false,
+        requires_landing_page: false,
+        supported_destinations: ["google"],
+        activation_type: "free_basic_activation",
+        included_service_label: "Free basic activation",
+        customization_options: ["standard_design", "add_logo"],
+        allows_logo_upload: true,
+        allows_custom_design: false,
+        design_mode: "standard",
+        images: [{ src: "/uploads/products/low.png", alt: "Lower priority stand" }],
+        is_active: true
+      },
+      {
+        slug: "a-first-review-stand",
+        title: "Z Higher Priority Stand",
+        sku: "HIGH-1",
+        category_slug: "reviews",
+        format: "stand",
+        sort_order: 10,
+        base_price_cents: 3900,
+        stock_status: "instock",
+        short_description: "Higher priority stand",
+        description: "Higher priority stand",
+        product_type: "physical_redirect",
+        service_mode: "basic_redirect",
+        checkout_mode: "buy_now",
+        requires_account: false,
+        requires_subscription: false,
+        requires_landing_page: false,
+        supported_destinations: ["google"],
+        activation_type: "free_basic_activation",
+        included_service_label: "Free basic activation",
+        customization_options: ["standard_design", "add_logo"],
+        allows_logo_upload: true,
+        allows_custom_design: false,
+        design_mode: "standard",
+        images: [{ src: "/uploads/products/high.png", alt: "Higher priority stand" }],
+        is_active: true
+      }
+    ]));
+
+    expect(products.map((product) => product.slug)).toEqual(["a-first-review-stand", "z-last-review-stand"]);
+  });
+
   it("returns active database-only products that are not in the legacy static catalog", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient([
       {

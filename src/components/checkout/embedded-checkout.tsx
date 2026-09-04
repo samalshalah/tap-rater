@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from "@stripe/react-stripe-js/checkout";
 import { loadStripe } from "@stripe/stripe-js";
 import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
@@ -60,6 +60,8 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
+  const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
+  const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const rows = getCartRows(items);
   const standTotalCents = calculateCartTotalCents(items);
   const recurringTotalCents = calculateRecurringTotalCents(rows);
@@ -68,6 +70,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
     taxSettings,
     getCheckoutTaxableAmountCents({
       recurringTotalCents,
+      shippingState: shipping.state,
       shippingAmountCents: shippingRule.amountCents,
       standTotalCents,
       taxSettings
@@ -75,12 +78,11 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   );
   const dueTodayCents = standTotalCents + recurringTotalCents + shippingRule.amountCents + taxAmountCents;
   const hasHostedMultiLink = rows.some((row) => row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink");
-  const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
-  const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const [session, setSession] = useState<EmbeddedCheckoutSession | null>(null);
   const [error, setError] = useState("");
   const [isStartingPayment, setIsStartingPayment] = useState(false);
   const [step, setStep] = useState<"details" | "payment">(sessionId ? "payment" : "details");
+  const checkoutAttemptId = useRef("");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
   const stripePromise = useMemo(() => (publishableKey ? loadStripe(publishableKey) : null), [publishableKey]);
 
@@ -199,10 +201,15 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
     }
 
     try {
+      if (!checkoutAttemptId.current) {
+        checkoutAttemptId.current = createCheckoutAttemptId();
+      }
+
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          checkoutAttemptId: checkoutAttemptId.current,
           items,
           customer: {
             ...customer,
@@ -264,6 +271,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
             shippingAmountCents={shippingRule.amountCents}
             standTotalCents={standTotalCents}
             taxAmountCents={taxAmountCents}
+            taxCalculationPending={taxSettings.taxMode === "manual" && !shipping.state.trim()}
             taxSettings={taxSettings}
           />
         ) : null}
@@ -290,7 +298,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
               <div className="grid gap-3">
                 <CheckoutInput label="Address" value={shipping.line1} autoComplete="shipping address-line1" onChange={(value) => setShipping((current) => ({ ...current, line1: value }))} required />
                 <CheckoutInput label="Apartment, suite, unit" value={shipping.line2} autoComplete="shipping address-line2" onChange={(value) => setShipping((current) => ({ ...current, line2: value }))} />
-                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_130px]">
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_96px_112px]">
                   <CheckoutInput label="City" value={shipping.city} autoComplete="shipping address-level2" onChange={(value) => setShipping((current) => ({ ...current, city: value }))} required />
                   <CheckoutInput label="State" value={shipping.state} autoComplete="shipping address-level1" onChange={(value) => setShipping((current) => ({ ...current, state: value.toUpperCase().slice(0, 2) }))} required />
                   <CheckoutInput label="ZIP code" value={shipping.postalCode} autoComplete="shipping postal-code" onChange={(value) => setShipping((current) => ({ ...current, postalCode: value }))} required />
@@ -336,6 +344,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
                 shippingAmountCents={shippingRule.amountCents}
                 standTotalCents={standTotalCents}
                 taxAmountCents={taxAmountCents}
+                taxCalculationPending={false}
                 taxSettings={taxSettings}
               />
               <section className="tr-card min-h-[420px] p-4 sm:p-5">
@@ -353,6 +362,14 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   );
 }
 
+function createCheckoutAttemptId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `attempt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
+}
+
 function CheckoutSummary({
   compact = false,
   dueTodayCents,
@@ -361,6 +378,7 @@ function CheckoutSummary({
   shippingAmountCents,
   standTotalCents,
   taxAmountCents,
+  taxCalculationPending,
   taxSettings
 }: {
   compact?: boolean;
@@ -370,6 +388,7 @@ function CheckoutSummary({
   shippingAmountCents: number;
   standTotalCents: number;
   taxAmountCents: number;
+  taxCalculationPending: boolean;
   taxSettings: TaxSettingsInput;
 }) {
   return (
@@ -401,7 +420,10 @@ function CheckoutSummary({
         <SummaryRow label="Stands" value={formatPrice(standTotalCents)} />
         {recurringTotalCents > 0 ? <SummaryRow label="Monthly" value={`${formatPrice(recurringTotalCents)}/mo`} /> : null}
         <SummaryRow label="Shipping" value={shippingAmountCents > 0 ? formatPrice(shippingAmountCents) : "Free"} />
-        <SummaryRow label={`${taxSettings.taxLabel} (${formatTaxRate(taxSettings)})`} value={formatPrice(taxAmountCents)} />
+        <SummaryRow
+          label={`${taxSettings.taxLabel} (${formatTaxRate(taxSettings)})`}
+          value={taxCalculationPending ? "Calculated after address" : formatPrice(taxAmountCents)}
+        />
         <SummaryRow label="Total" value={formatPrice(dueTodayCents)} strong />
       </div>
     </aside>

@@ -43,6 +43,7 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "is_special_solution",
   "product_kind",
   "status",
+  "sort_order",
   "format",
   "base_price_cents",
   "sale_price_cents",
@@ -114,7 +115,7 @@ const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
 ].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
-  return migratedProducts.filter(isPublicLaunchStorefrontProduct);
+  return migratedProducts.filter(isPublicLaunchStorefrontProduct).sort(compareStorefrontProducts);
 }
 
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
@@ -162,7 +163,7 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
   const products = await getStorefrontProducts();
   const categorySlug = getCategoryBySlug(slug)?.slug ?? slug;
 
-  return products.filter((product) => product.categorySlug === categorySlug && product.isActive);
+  return products.filter((product) => product.categorySlug === categorySlug && product.isActive).sort(compareStorefrontProducts);
 }
 
 export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3): MigratedProduct[] {
@@ -170,7 +171,7 @@ export function getStorefrontRelatedProducts(product: MigratedProduct, products:
     (item) => item.slug !== product.slug && item.categorySlug === product.categorySlug && item.isActive && item.stockStatus === "instock"
   );
 
-  return sameCategory.slice(0, limit);
+  return sameCategory.sort(compareStorefrontProducts).slice(0, limit);
 }
 
 export async function getStorefrontProductBySlugFromClient(
@@ -256,6 +257,7 @@ export async function getStorefrontProductsByCategoryFromClient(
   return products
     .map((product) => withAttachedOptions(product, optionsByProduct))
     .filter(isPublicLaunchStorefrontProduct)
+    .sort(compareStorefrontProducts)
     .slice(0, limit);
 }
 
@@ -272,7 +274,8 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
   const optionsByProduct = await getActiveProductOptionsFromClient(client, products.map((product) => product.slug));
   const productsWithOptions = products
     .map((product) => withAttachedOptions(product, optionsByProduct))
-    .filter(isPublicLaunchStorefrontProduct);
+    .filter(isPublicLaunchStorefrontProduct)
+    .sort(compareStorefrontProducts);
 
   primeStorefrontProductCaches(productsWithOptions);
 
@@ -437,6 +440,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     readBoolean(productRow.is_special_solution) ?? readBoolean(productRow.isSpecialSolution) ?? staticProduct?.isSpecialSolution ?? false;
   const productKind = readProductKind(productRow.product_kind) ?? readProductKind(productRow.productKind) ?? staticProduct?.productKind;
   const status = readProductStatus(productRow.status) ?? staticProduct?.status;
+  const sortOrder = readNumber(productRow.sort_order) ?? readNumber(productRow.sortOrder) ?? staticProduct?.sortOrder ?? 1000;
   const matchedCategory = rawCategorySlug ? getCategoryBySlug(rawCategorySlug) : undefined;
   const categorySlug = categorySlugForStandType(standTypeSlug) ?? categorySlugForStandType(rawCategorySlug) ?? matchedCategory?.slug ?? staticProduct?.categorySlug ?? rawCategorySlug;
   const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents ?? 3900;
@@ -545,6 +549,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     isSpecialSolution,
     productKind,
     status,
+    sortOrder,
     basePriceCents,
     salePriceCents: readNumber(productRow.sale_price_cents) ?? readNumber(productRow.salePriceCents),
     stockStatus,
@@ -588,6 +593,15 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
   };
 
   return options.sanitizePublicCopy === false ? product : sanitizePublicStorefrontProduct(product);
+}
+
+function compareStorefrontProducts(first: MigratedProduct, second: MigratedProduct) {
+  const sortRank = (first.sortOrder ?? 1000) - (second.sortOrder ?? 1000);
+  if (sortRank !== 0) {
+    return sortRank;
+  }
+
+  return first.title.localeCompare(second.title, undefined, { sensitivity: "base" }) || first.slug.localeCompare(second.slug);
 }
 
 function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {

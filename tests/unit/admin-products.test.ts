@@ -83,9 +83,9 @@ describe("admin products", () => {
     });
 
     expect(products.map((product) => product.slug)).toEqual([
-      "avvo-review-stand",
       "google-review-stand",
       "yelp-review-stand",
+      "avvo-review-stand",
       "draft-product"
     ]);
   });

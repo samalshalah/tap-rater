@@ -12,7 +12,8 @@ type TaxSettingsFormProps = {
 export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
   const [form, setForm] = useState({
     ...settings,
-    manualTaxRatePercent: (settings.manualTaxRateBps / 100).toFixed(2).replace(/\.?0+$/, "")
+    manualTaxRatePercent: (settings.manualTaxRateBps / 100).toFixed(2).replace(/\.?0+$/, ""),
+    taxableStatesText: settings.taxableStates.join(", ")
   });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +29,11 @@ export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
       taxMode: form.taxMode,
       manualTaxRateBps: Math.round(Number(form.manualTaxRatePercent || 0) * 100),
       taxLabel: form.taxLabel,
+      taxableStates: form.taxableStatesText
+        .split(",")
+        .map((value) => value.trim().toUpperCase())
+        .filter(Boolean),
+      taxRecurring: form.taxRecurring,
       taxShipping: form.taxShipping,
       customerFacingTaxNote: form.customerFacingTaxNote
     };
@@ -55,7 +61,7 @@ export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <AdminCard title="Checkout tax" description="Manual tax is shown before Stripe and sent to Stripe as a checkout line item. Stripe automatic tax is not enabled here.">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <label className="block text-sm font-medium text-ink">
             Tax mode
             <AdminSelect
@@ -82,20 +88,29 @@ export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
             onChange={(value) => setForm((current) => ({ ...current, taxLabel: value }))}
             placeholder="Virginia sales tax"
           />
+
+          <TextField
+            label="Taxable states"
+            value={form.taxableStatesText}
+            onChange={(value) => setForm((current) => ({ ...current, taxableStatesText: value }))}
+            placeholder="VA"
+          />
         </div>
 
-        <label className="mt-4 flex items-start gap-3 rounded-md border border-line bg-soft p-3 text-sm text-ink">
-          <input
-            type="checkbox"
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <TaxCheckbox
             checked={form.taxShipping}
-            onChange={(event) => setForm((current) => ({ ...current, taxShipping: event.target.checked }))}
-            className="mt-1 h-4 w-4 accent-brand"
+            description="Leave off unless your accountant confirms shipping should be taxable."
+            label="Apply tax to shipping"
+            onChange={(checked) => setForm((current) => ({ ...current, taxShipping: checked }))}
           />
-          <span>
-            <span className="block font-medium">Apply tax to shipping</span>
-            <span className="mt-1 block text-xs leading-5 text-muted">Leave off unless your accountant confirms shipping should be taxable for the order.</span>
-          </span>
-        </label>
+          <TaxCheckbox
+            checked={form.taxRecurring}
+            description="Leave off unless your accountant confirms Multi-Link service is taxable."
+            label="Apply tax to recurring service"
+            onChange={(checked) => setForm((current) => ({ ...current, taxRecurring: checked }))}
+          />
+        </div>
       </AdminCard>
 
       <AdminCard title="Customer note">
@@ -103,7 +118,7 @@ export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
           label="Checkout note"
           value={form.customerFacingTaxNote}
           onChange={(value) => setForm((current) => ({ ...current, customerFacingTaxNote: value }))}
-          placeholder="Estimated sales tax is calculated before payment."
+          placeholder="Sales tax is calculated from the shipping address before payment."
         />
       </AdminCard>
 
@@ -117,6 +132,33 @@ export function TaxSettingsForm({ settings }: TaxSettingsFormProps) {
         </AdminButton>
       </div>
     </form>
+  );
+}
+
+function TaxCheckbox({
+  checked,
+  description,
+  label,
+  onChange
+}: {
+  checked: boolean;
+  description: string;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 rounded-md border border-line bg-soft p-3 text-sm text-ink">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-1 h-4 w-4 accent-brand"
+      />
+      <span>
+        <span className="block font-medium">{label}</span>
+        <span className="mt-1 block text-xs leading-5 text-muted">{description}</span>
+      </span>
+    </label>
   );
 }
 

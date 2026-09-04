@@ -168,6 +168,15 @@ create table if not exists device_activation_attempts (
   created_at timestamptz default now()
 );
 
+create table if not exists auth_login_attempts (
+  id uuid primary key default gen_random_uuid(),
+  scope text not null check (scope in ('admin', 'customer')),
+  identifier_hash text not null,
+  ip_hash text,
+  success boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists customers_email_idx on customers(email);
 create index if not exists customers_activation_token_hash_idx
   on customers(activation_token_hash)
@@ -186,6 +195,8 @@ create index if not exists tap_events_landing_page_id_idx on tap_events(landing_
 create index if not exists tap_events_created_at_idx on tap_events(created_at desc);
 create index if not exists device_activation_attempts_device_code_created_at_idx on device_activation_attempts(device_code, created_at desc);
 create index if not exists device_activation_attempts_ip_hash_created_at_idx on device_activation_attempts(ip_hash, created_at desc);
+create index if not exists auth_login_attempts_identifier_created_at_idx on auth_login_attempts(scope, identifier_hash, created_at desc);
+create index if not exists auth_login_attempts_ip_created_at_idx on auth_login_attempts(scope, ip_hash, created_at desc) where ip_hash is not null;
 
 create table if not exists hosted_page_codes (
   code text primary key,
@@ -895,6 +906,8 @@ create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
   stripe_checkout_session_id text not null unique,
   stripe_payment_intent_id text,
+  stripe_refund_id text,
+  refunded_at timestamptz,
   status text not null default 'pending_payment' check (status in ('pending_payment', 'paid', 'failed', 'canceled')),
   payment_status text,
   email text,

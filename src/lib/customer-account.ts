@@ -12,7 +12,7 @@ const passwordKeyLength = 64;
 const activationTokenBytes = 32;
 
 export function createCustomerActivationUrl(token: string) {
-  const siteUrl = process.env.NEXT_PUBLIC_ACCOUNT_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_ACCOUNT_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
   return `${siteUrl.replace(/\/$/, "")}/account/activate?token=${encodeURIComponent(token)}`;
 }
 

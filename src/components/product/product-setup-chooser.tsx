@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ImageUp, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, ImageUp, Minus, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { maxCartItemQuantity } from "@/lib/cart";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
 import { formatPrice } from "@/lib/products";
@@ -12,7 +13,7 @@ import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type Purchase
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets } from "@/lib/direct-production";
-import { generateGoogleReviewUrl } from "@/lib/google-review";
+import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 
@@ -46,7 +47,6 @@ type MultiLinkDraftButton = Pick<HostedPageEditorButton, "id" | "type" | "label"
 
 type ProductSetupChooserProps = {
   product: ProductSetupChooserProduct;
-  googleMapsApiKey?: string;
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
@@ -66,16 +66,7 @@ type UploadedLogo = {
 type LogoBackgroundMode = "auto_crop" | "original";
 type LogoFitMode = "contain" | "fill";
 
-type GooglePlaceResult = {
-  placeId: string;
-  name: string;
-  formattedAddress: string;
-  reviewUrl: string;
-};
-
-let productGoogleMapsScriptPromise: Promise<void> | null = null;
-
-export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
@@ -83,11 +74,13 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [destinationUrl, setDestinationUrl] = useState("");
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
   const [googleAutocompleteStatus, setGoogleAutocompleteStatus] = useState<"idle" | "loading" | "ready" | "fallback">("idle");
+  const [googleSearchResults, setGoogleSearchResults] = useState<GoogleBusinessSelection[]>([]);
   const [googlePlaceId, setGooglePlaceId] = useState("");
   const [googlePlaceName, setGooglePlaceName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => createInitialMultiLinkButtons());
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
+  const [quantity, setQuantity] = useState(1);
   const [selectedSizeCode, setSelectedSizeCode] = useState(() => getDefaultProductSize(product)?.code ?? "");
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
   const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
@@ -100,7 +93,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const googleSearchInputRef = useRef<HTMLInputElement | null>(null);
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -131,6 +123,8 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   const generatedQrValue = destinationUrl.trim();
   const proofQrValue = selectedLinkExperience === "multilink" ? "https://taprater.com/p/your-page" : generatedQrValue;
   const directTargets = buildDirectProductionTargets(destinationUrl);
+  const quantityEnabled = selectedLinkExperience === "direct";
+  const selectedQuantity = quantityEnabled ? quantity : 1;
   useEffect(() => {
     if (!isBuilderOpen) return;
 
@@ -164,52 +158,33 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
   useEffect(() => {
     if (!isGoogleReviewProduct || step !== "destination") return;
 
-    if (!googleMapsApiKey || !googleSearchInputRef.current) {
-      setGoogleAutocompleteStatus("fallback");
+    const normalizedQuery = googleSearchQuery.trim();
+    if (normalizedQuery.length < 3 || googlePlaceId) {
+      setGoogleSearchResults([]);
+      setGoogleAutocompleteStatus("idle");
       return;
     }
 
-    let mounted = true;
-    setGoogleAutocompleteStatus("loading");
-
-    loadProductGooglePlaces(googleMapsApiKey)
-      .then(() => {
-        if (!mounted || !googleSearchInputRef.current || !window.google?.maps?.places?.Autocomplete) {
-          return;
-        }
-
-        const autocomplete = new window.google.maps.places.Autocomplete(googleSearchInputRef.current, {
-          fields: ["place_id", "name", "formatted_address"],
-          types: ["establishment"],
-          componentRestrictions: { country: "us" }
-        });
-
-        autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          if (!place.place_id || !place.name) {
-            return;
-          }
-
-          useGooglePlace({
-            placeId: place.place_id,
-            name: place.name,
-            formattedAddress: place.formatted_address ?? "",
-            reviewUrl: generateGoogleReviewUrl(place.place_id)
-          });
-        });
-
-        setGoogleAutocompleteStatus("ready");
-      })
-      .catch(() => {
-        if (mounted) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setGoogleAutocompleteStatus("loading");
+      searchGoogleBusinesses(normalizedQuery, controller.signal)
+        .then((result) => {
+          setGoogleSearchResults(result.results);
+          setGoogleAutocompleteStatus(result.configured && !result.message ? "ready" : "fallback");
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setGoogleSearchResults([]);
           setGoogleAutocompleteStatus("fallback");
-        }
-      });
+        });
+    }, 350);
 
     return () => {
-      mounted = false;
+      window.clearTimeout(timer);
+      controller.abort();
     };
-  }, [googleMapsApiKey, isGoogleReviewProduct, step]);
+  }, [googlePlaceId, googleSearchQuery, isGoogleReviewProduct, step]);
 
   if (!selectedOption || !selectedImage) {
     return (
@@ -238,6 +213,19 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     setStep("choose");
   }
 
+  function setClampedQuantity(value: number) {
+    if (!Number.isFinite(value)) {
+      setQuantity(1);
+      return;
+    }
+
+    setQuantity(Math.min(maxCartItemQuantity, Math.max(1, Math.trunc(value))));
+  }
+
+  function updateQuantityFromInput(value: string) {
+    setClampedQuantity(Number(value));
+  }
+
   function openBuilder(optionId: PurchaseOptionId) {
     chooseOption(optionId);
 
@@ -256,11 +244,13 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     setError("");
   }
 
-  function useGooglePlace(place: GooglePlaceResult) {
+  function useGooglePlace(place: GoogleBusinessSelection) {
     const selectedQuery = `${place.name}${place.formattedAddress ? ` - ${place.formattedAddress}` : ""}`;
     setGooglePlaceId(place.placeId);
     setGooglePlaceName(place.name);
     setGoogleSearchQuery(selectedQuery);
+    setGoogleSearchResults([]);
+    setGoogleAutocompleteStatus("idle");
     setDestinationUrl(place.reviewUrl);
     setBusinessName((current) => current || place.name);
     setError("");
@@ -435,7 +425,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     cart.addItem({
       productId: product.slug,
       optionId: selectedOption.id,
-      quantity: 1,
+      quantity: selectedQuantity,
       productSnapshot: {
         title: product.title,
         sku: finalSku,
@@ -499,6 +489,11 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
     configuredUnitPriceCents === null
         ? "Unavailable"
         : formatPrice(configuredUnitPriceCents).replace(".00", "");
+  const selectedStandTotalPrice =
+    configuredUnitPriceCents === null
+        ? "Unavailable"
+        : formatPrice(configuredUnitPriceCents * selectedQuantity).replace(".00", "");
+  const setupButtonLabel = selectedQuantity > 1 ? `Set Up My ${selectedQuantity} Stands - ${selectedStandTotalPrice}` : `Set Up My Stand - ${selectedStandTotalPrice}`;
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
       ? ["Business", "Links", "Logo", "Confirm"]
@@ -663,6 +658,9 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 disabled={!hostedPurchasingEnabled}
                 onChange={(event) => {
                   setSelectedLinkExperience(event.target.checked ? "multilink" : "direct");
+                  if (event.target.checked) {
+                    setQuantity(1);
+                  }
                   setError("");
                 }}
                 className="mt-1 h-4 w-4 shrink-0 accent-brand disabled:cursor-not-allowed"
@@ -682,6 +680,50 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
           </div>
         ) : null}
 
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-3">
+          <div>
+            <p className="text-sm font-black text-ink">Qty</p>
+            <p className="text-xs font-semibold leading-5 text-muted">
+              {quantityEnabled
+                ? configuredUnitPriceCents === null
+                  ? "Select an available size"
+                  : `${selectedPrice} each`
+                : "One Multi-Link page per setup"}
+            </p>
+          </div>
+          <div className="flex h-11 items-center overflow-hidden rounded-lg border border-line bg-white">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              className="grid h-11 w-11 place-items-center text-ink transition hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
+              disabled={!quantityEnabled || selectedQuantity <= 1}
+              onClick={() => setClampedQuantity(selectedQuantity - 1)}
+            >
+              <Minus size={16} />
+            </button>
+            <input
+              type="number"
+              min={1}
+              max={maxCartItemQuantity}
+              inputMode="numeric"
+              aria-label="Quantity"
+              className="h-11 w-16 border-x border-line text-center text-sm font-black text-ink outline-none disabled:bg-soft disabled:text-muted"
+              disabled={!quantityEnabled}
+              value={selectedQuantity}
+              onChange={(event) => updateQuantityFromInput(event.target.value)}
+            />
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              className="grid h-11 w-11 place-items-center text-ink transition hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
+              disabled={!quantityEnabled || selectedQuantity >= maxCartItemQuantity}
+              onClick={() => setClampedQuantity(selectedQuantity + 1)}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        </div>
+
         <button
           type="button"
           className="tr-button-primary w-full"
@@ -690,7 +732,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
         >
           {selectedLinkExperience === "multilink" && !hostedPurchasingEnabled
             ? "Multi-Link Checkout Coming Soon"
-            : `Set Up My Stand - ${selectedPrice}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
+            : `${setupButtonLabel}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
         </button>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
           <span>QR + NFC</span>
@@ -753,7 +795,14 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
               {step === "destination" ? (
                 <div className="grid gap-4">
-                  <BuilderSummary image={selectedImage} option={selectedOption} productTitle={product.title} linkExperience={selectedLinkExperience} />
+                  <BuilderSummary
+                    image={selectedImage}
+                    option={selectedOption}
+                    productTitle={product.title}
+                    quantity={selectedQuantity}
+                    unitPriceCents={configuredUnitPriceCents}
+                    linkExperience={selectedLinkExperience}
+                  />
                   {selectedLinkExperience === "multilink" ? (
                     <>
                       <div>
@@ -797,7 +846,6 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                             <div className="relative">
                               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
                               <input
-                                ref={googleSearchInputRef}
                                 className="tr-input min-w-0 pl-10 pr-24"
                                 value={googleSearchQuery}
                                 onChange={(event) => {
@@ -819,6 +867,32 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
 
                           {googleAutocompleteStatus === "fallback" ? (
                             <p className="text-sm font-semibold text-muted" role="status">Google business search is unavailable. Paste your Google review link manually.</p>
+                          ) : null}
+
+                          {googleAutocompleteStatus === "idle" && !googlePlaceId ? (
+                            <p className="text-sm text-muted" role="status">Enter at least 3 characters to search.</p>
+                          ) : null}
+
+                          {googleAutocompleteStatus === "ready" && googleSearchResults.length === 0 && !googlePlaceId ? (
+                            <p className="text-sm text-muted" role="status">No matching businesses found. Add a city or paste the review URL manually.</p>
+                          ) : null}
+
+                          {googleSearchResults.length > 0 ? (
+                            <div className="grid overflow-hidden rounded-md border border-line bg-white" role="listbox" aria-label="Google Business search results">
+                              {googleSearchResults.map((place) => (
+                                <button
+                                  key={place.placeId}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={false}
+                                  className="border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-soft"
+                                  onClick={() => useGooglePlace(place)}
+                                >
+                                  <span className="block font-semibold text-ink">{place.name}</span>
+                                  {place.formattedAddress ? <span className="mt-1 block text-muted">{place.formattedAddress}</span> : null}
+                                </button>
+                              ))}
+                            </div>
                           ) : null}
                         </div>
                       ) : null}
@@ -861,7 +935,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   <div>
                     <p className="text-sm font-semibold text-ink">Logo + business name</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Upload the logo and enter the business name. Tap Rater will review the artwork after the order and send the final proof by email.
+                      Upload the logo and enter the business name. Tap Rater will review the artwork after the order before production.
                     </p>
                   </div>
 
@@ -920,7 +994,7 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     />
                   ) : null}
                   <div className="rounded-lg border border-line bg-soft p-3 text-sm leading-6 text-muted">
-                    Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file. We will review it and send the proof by email.
+                    Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file before ordering.
                     <a className="ml-2 font-semibold text-brand hover:text-ink" href="/contact-us">Contact Us</a>
                   </div>
 
@@ -932,7 +1006,9 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                   <div className="sr-only">
                     <p className="text-sm font-semibold text-ink">Confirm setup</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL.
+                      {selectedLinkExperience === "multilink"
+                        ? "Confirm the hosted Multi-Link setup before adding this stand to cart."
+                        : "Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL."}
                     </p>
                   </div>
 
@@ -941,9 +1017,10 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                     <ReviewLine label="Setup" value={selectedOption.label} />
                     <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
                     <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
+                    <ReviewLine label="Qty" value={String(selectedQuantity)} />
                     <ReviewLine label="SKU" value={finalSku} />
-                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)} />
-                    <ReviewLine label="Destination link" value={destinationUrl || "-"} />
+                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)} />
+                    {selectedLinkExperience !== "multilink" ? <ReviewLine label="Destination link" value={destinationUrl || "-"} /> : null}
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                   </div>
 
@@ -967,11 +1044,11 @@ export function ProductSetupChooser({ product, googleMapsApiKey, selectedOptionI
                 <div className="grid gap-3">
                   <div className="rounded-lg border border-line bg-white p-4 text-sm leading-6 text-muted">
                     <p className="text-base font-semibold text-ink">{product.title}</p>
-                    <p>{selectedOption.label} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents)}</p>
+                    <p>{selectedOption.label} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)}</p>
                     <p>Business: <span className="text-ink">{businessName}</span></p>
                     <p>Logo: <span className="text-ink">{logo?.filename ?? "Uploaded"}</span></p>
                     <p>{selectedLinkExperience === "multilink" ? "QR and NFC will open the hosted Multi-Link page." : "QR and NFC will open the destination link."}</p>
-                    <p className="mt-2">Tap Rater will review the artwork after your order and send the final proof by email before production.</p>
+                    <p className="mt-2">Tap Rater will review the artwork after your order before production.</p>
                   </div>
                 </div>
               ) : null}
@@ -1033,14 +1110,19 @@ function BuilderSummary({
   image,
   linkExperience,
   productTitle,
+  quantity,
+  unitPriceCents,
   option
 }: {
   image: { src: string; alt: string };
   linkExperience: LinkExperienceId;
   productTitle: string;
+  quantity: number;
+  unitPriceCents: number | null;
   option: PurchaseOption;
 }) {
   const serviceLabel = linkExperience === "multilink" ? "Hosted Multi-Link" : "QR and NFC direct";
+  const itemPrice = unitPriceCents ?? option.priceCents;
 
   return (
     <div className="tr-panel-muted grid gap-3 p-3 sm:grid-cols-[96px_1fr] sm:items-center">
@@ -1049,7 +1131,7 @@ function BuilderSummary({
       </div>
       <div>
         <p className="text-sm font-semibold text-ink">{productTitle}</p>
-        <p className="mt-1 text-sm text-muted">{option.label} · {formatPrice(option.priceCents)}</p>
+        <p className="mt-1 text-sm text-muted">{option.label} · {formatPrice(itemPrice)}{quantity > 1 ? ` · Qty ${quantity}` : ""}</p>
         <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.05em] text-brand">
           <CheckCircle2 size={14} />
           {serviceLabel}
@@ -1691,7 +1773,7 @@ function TemplateProofPreview({
           />
         ) : (
           <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-center text-[9px] font-black uppercase leading-tight text-muted">
-            {designAssistanceRequested ? "Proof by Tap Rater" : "Logo zone"}
+            {designAssistanceRequested ? "Tap Rater design help" : "Logo zone"}
           </span>
         )}
       </div>
@@ -1750,7 +1832,7 @@ function CleanProofPreview({
             style={logoImageStyle({ fitMode: logoFitMode, logoSizePercent, offsetXPercent: logoOffsetXPercent, offsetYPercent: logoOffsetYPercent })}
           />
         ) : (
-          <span className="text-xs font-black uppercase text-muted">{designAssistanceRequested ? "Proof by Tap Rater" : "Logo zone"}</span>
+          <span className="text-xs font-black uppercase text-muted">{designAssistanceRequested ? "Tap Rater design help" : "Logo zone"}</span>
         )}
       </div>
       {showBusinessNameOnProof ? (
@@ -2003,34 +2085,6 @@ function platformMark(product: ProductSetupChooserProduct) {
   if (platform === "tripadvisor") return "T";
   if (platform === "facebook") return "f";
   return product.displayText?.slice(0, 1).toUpperCase() || "T";
-}
-
-function loadProductGooglePlaces(apiKey: string) {
-  if (window.google?.maps?.places?.Autocomplete) {
-    return Promise.resolve();
-  }
-
-  if (!productGoogleMapsScriptPromise) {
-    productGoogleMapsScriptPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector<HTMLScriptElement>('script[data-taprater-google-places="true"]');
-      if (existing) {
-        existing.addEventListener("load", () => resolve());
-        existing.addEventListener("error", () => reject(new Error("Google Maps script failed to load.")));
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.dataset.tapraterGooglePlaces = "true";
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Google Maps script failed to load."));
-      document.head.appendChild(script);
-    });
-  }
-
-  return productGoogleMapsScriptPromise;
 }
 
 function isHttpUrl(value: string) {

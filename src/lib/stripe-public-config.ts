@@ -1,5 +1,6 @@
 import {
   getStripeModeSafe,
+  getStripePublishableKey,
   isStripeLivePublishableKey,
   isStripeTestPublishableKey,
   type StripeMode
@@ -28,7 +29,7 @@ export function validateStripePublicConfig(env: NodeJS.ProcessEnv = process.env)
     };
   }
 
-  const publishableKey = env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  const publishableKey = getStripePublishableKey(env);
 
   if (mode === "test" && !isStripeTestPublishableKey(publishableKey)) {
     return {

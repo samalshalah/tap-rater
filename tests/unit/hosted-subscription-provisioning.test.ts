@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildProvisioningSnapshotVersion,
   isHostedSubscriptionCheckout,
   mapStripeSubscriptionLifecycle,
   provisionManualCustomerAccountFromOrder,
@@ -11,6 +12,17 @@ import type { HostedPagePutOptions, HostedPageTextStorage } from "@/lib/hosted-p
 import type { OrderRecord, OrdersDbClient } from "@/lib/orders";
 
 describe("hosted subscription provisioning", () => {
+  it("keeps snapshot versions valid for production-length Stripe Checkout IDs", () => {
+    const version = buildProvisioningSnapshotVersion(
+      new Date("2026-09-04T22:41:51.000Z"),
+      `cs_test_${"a".repeat(72)}`,
+      0
+    );
+
+    expect(version.length).toBeLessThanOrEqual(80);
+    expect(version).toMatch(/^provisioned-\d+-a{24}-1$/);
+  });
+
   it("does not treat ordinary DIRECT paid orders as hosted provisioning work", async () => {
     const order = createHostedOrder({ lineItems: [{ productId: "google-review-stand", optionId: "standard_direct", title: "Google", sku: "G", quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900 }] });
 
@@ -153,6 +165,7 @@ describe("hosted subscription provisioning", () => {
   it("does not consume a second code for duplicate Stripe events", async () => {
     const client = new MemoryDbClient();
     const storage = new MemoryHostedStorage(["ABCDEFGHJKM2", "BBBBBBBBBBB2"]);
+    const sendHostedSetupEmailFn = vi.fn().mockResolvedValue({ sent: true });
     const input = {
       eventId: "evt_duplicate",
       eventType: "checkout.session.completed",
@@ -168,11 +181,17 @@ describe("hosted subscription provisioning", () => {
       siteUrl: "https://taprater.com"
     };
 
-    await provisionHostedSubscriptionFromCheckout(input, { client, storage, generateCode: () => "ABCDEFGHJKM2" });
-    const duplicate = await provisionHostedSubscriptionFromCheckout(input, { client, storage, generateCode: () => "BBBBBBBBBBB2" });
+    const dependencies = { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn };
+    await provisionHostedSubscriptionFromCheckout(input, dependencies);
+    client.table("hosted_subscriptions")[0].hosted_page_url = "http://localhost:3000/p/ABCDEFGHJKM2";
+    client.table("orders")[0].line_items_json = createHostedOrder().line_items_json;
+    const duplicate = await provisionHostedSubscriptionFromCheckout(input, dependencies);
 
     expect(duplicate).toEqual({ ok: true, provisioned: false, reason: "duplicate_event" });
     expect(storage.assignedCodes).toEqual(["ABCDEFGHJKM2"]);
+    expect(sendHostedSetupEmailFn).toHaveBeenCalledTimes(1);
+    expect(client.table("hosted_subscriptions")[0].hosted_page_url).toBe("https://taprater.com/p/ABCDEFGHJKM2");
+    expect(client.table("orders")[0].line_items_json[0].setup.hostedPageUrl).toBe("https://taprater.com/p/ABCDEFGHJKM2");
   });
 
   it("does not allocate permanent resources for an unpaid hosted checkout session", async () => {

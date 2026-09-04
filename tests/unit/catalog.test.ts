@@ -17,7 +17,7 @@ describe("catalog categories", () => {
       "Appointment & Reservation Stands",
       "Menu & Info Stands",
       "Feedback Stands",
-      "Website & Link Stands",
+      "Multi-Link Stand",
       "Custom Stands"
     ]);
   });
@@ -118,9 +118,9 @@ describe("catalog categories", () => {
     expect(reviewProducts).toHaveLength(45);
     expect(socialProducts).toHaveLength(11);
     expect(appointmentProducts).toHaveLength(1);
-    expect(menuProducts).toHaveLength(1);
+    expect(menuProducts).toHaveLength(2);
     expect(feedbackProducts).toHaveLength(1);
-    expect(websiteProducts).toHaveLength(1);
+    expect(websiteProducts).toHaveLength(5);
     expect(customProducts).toHaveLength(1);
     expect(reviewProducts.filter((product) => product.format === "stand")).toHaveLength(45);
     expect(getActiveProducts().every((product) => product.format === "stand")).toBe(true);
@@ -130,7 +130,7 @@ describe("catalog categories", () => {
     const products = getActiveProducts();
     const titles = products.map((product) => product.title);
 
-    expect(products).toHaveLength(61);
+    expect(products).toHaveLength(66);
     expect(titles).toEqual(
       expect.arrayContaining([
         "Google Review Stand",
@@ -191,7 +191,12 @@ describe("catalog categories", () => {
         "WhatsApp Message Stand",
         "Telegram Message Stand",
         "Book Your Next Visit Stand",
+        "Menu and Order Stand",
         "View Our Menu Stand",
+        "Patient Resources Stand",
+        "Check Our Information Stand",
+        "Explore Our Services Stand",
+        "Connect With Us Stand",
         "Visit Our Website Stand",
         "Custom Stand"
       ])
@@ -208,7 +213,7 @@ describe("catalog categories", () => {
   it("keeps menu products menu-only", () => {
     const menuProducts = getActiveProducts().filter((product) => product.slug.includes("menu"));
 
-    expect(menuProducts).toHaveLength(1);
+    expect(menuProducts).toHaveLength(2);
     expect(JSON.stringify(menuProducts)).not.toMatch(/wifi/i);
   });
 

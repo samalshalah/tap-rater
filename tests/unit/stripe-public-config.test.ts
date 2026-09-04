@@ -9,6 +9,20 @@ function env(values: Partial<NodeJS.ProcessEnv>): NodeJS.ProcessEnv {
 }
 
 describe("Stripe public config", () => {
+  it("prefers the Cloudflare runtime publishable key binding", () => {
+    expect(
+      validateStripePublicConfig(env({
+        STRIPE_MODE: "test",
+        STRIPE_PUBLISHABLE_KEY: "pk_test_runtime",
+        NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_live_compiled"
+      }))
+    ).toEqual({
+      ok: true,
+      mode: "test",
+      publishableKey: "pk_test_runtime"
+    });
+  });
+
   it("exposes only a test publishable key in test mode", () => {
     expect(
       validateStripePublicConfig(env({

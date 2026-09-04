@@ -5,7 +5,6 @@ import { GoogleBusinessSearch, type GoogleBusinessSelection } from "@/components
 
 type ActivationFormProps = {
   initialDeviceCode?: string;
-  googleMapsApiKey?: string;
 };
 
 type FormState = {
@@ -30,7 +29,7 @@ const destinationOptions = [
   { value: "social_url", label: "Social profile link" }
 ];
 
-export function ActivationForm({ initialDeviceCode = "", googleMapsApiKey }: ActivationFormProps) {
+export function ActivationForm({ initialDeviceCode = "" }: ActivationFormProps) {
   const [form, setForm] = useState<FormState>({
     deviceCode: initialDeviceCode,
     activationCode: "",
@@ -195,7 +194,7 @@ export function ActivationForm({ initialDeviceCode = "", googleMapsApiKey }: Act
       </div>
 
       {form.destinationType === "google_review_url" ? (
-        <GoogleBusinessSearch apiKey={googleMapsApiKey} onConfirm={useGoogleBusiness} />
+        <GoogleBusinessSearch onConfirm={useGoogleBusiness} />
       ) : null}
 
       {form.googlePlaceId ? (

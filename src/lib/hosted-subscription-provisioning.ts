@@ -7,7 +7,12 @@ import {
   sendPaidCustomerAccountSetupEmail,
   type HostedSetupEmailInput
 } from "@/lib/hosted-setup-email";
-import { assignPermanentHostedPageCode, publishHostedPageSnapshot, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
+import {
+  assignPermanentHostedPageCode,
+  publishHostedPageSnapshot,
+  readCurrentHostedPageSnapshot,
+  type HostedPageTextStorage
+} from "@/lib/hosted-pages/repository";
 import { validateHostedPageSnapshot, type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
 import { supportedHostedPageButtons, type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
@@ -108,11 +113,13 @@ export async function provisionHostedSubscriptionFromCheckout(
 
   const { client, storage } = resolved;
   const now = input.now ?? new Date();
+  const publicSiteUrl = resolvePublicSiteUrl(input.siteUrl);
+  let duplicateEvent = false;
 
   if (input.eventId) {
     const recorded = await recordStripeEventIfNew(client, input.eventId, input.eventType ?? "checkout.session.completed", now);
     if (!recorded.ok) return recorded;
-    if (!recorded.created) return { ok: true, provisioned: false, reason: "duplicate_event" };
+    duplicateEvent = !recorded.created;
   }
 
   const email = normalizeEmail(input.session.customer_details?.email ?? input.session.customer_email ?? input.order.email);
@@ -122,7 +129,8 @@ export async function provisionHostedSubscriptionFromCheckout(
   if (!hostedItemIndexes.length) return { ok: false, error: "Paid order does not contain a hosted line item." };
   const stripeSubscriptionId = readStripeId(input.session.subscription) ?? `checkout:${input.session.id}`;
   const stripeCustomerId = readStripeId(input.session.customer);
-  const subscriptionStatus = readSubscriptionStatus(input.session.subscription);
+  const readStatus = readSubscriptionStatus(input.session.subscription);
+  const subscriptionStatus = readStatus === "unknown" ? "active" : readStatus;
   const lifecycleStatus = mapStripeSubscriptionLifecycle(input.session.subscription, now);
   const paidThrough = readCurrentPeriodEnd(input.session.subscription);
   const activation = createCustomerActivationToken();
@@ -168,8 +176,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           now,
           generateCode: dependencies?.generateCode
         });
-    const hostedPageUrl =
-      existingHostedSubscription?.hosted_page_url ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/p/${assignment.code}`;
+    const hostedPageUrl = resolveHostedPageUrl(existingHostedSubscription?.hosted_page_url, publicSiteUrl, assignment.code);
     lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
       stripeSubscriptionId: lineSubscriptionId,
       subscriptionStatus
@@ -214,20 +221,23 @@ export async function provisionHostedSubscriptionFromCheckout(
     });
     if (!subscription.ok) return subscription;
 
-    await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
-      schemaVersion: 1,
-      code: assignment.code,
-      version: `provisioned-${now.getTime()}-${input.session.id}-line-${hostedItemIndex + 1}`,
-      publishedAt: now.toISOString(),
-      lifecycleStatus,
-      businessName,
-      logoUrl: logoUrl ?? undefined,
-      headline: businessName,
-      buttons: buildSnapshotButtons(initialButtons),
-      description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
-      appearance: { theme: "light", accentColor: "#0f766e" },
-      subscriptionPaidThrough: paidThrough ?? undefined
-    }));
+    const publishedPage = duplicateEvent ? await readCurrentHostedPageSnapshot(storage, assignment.code) : null;
+    if (!publishedPage) {
+      await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
+        schemaVersion: 1,
+        code: assignment.code,
+        version: buildProvisioningSnapshotVersion(now, input.session.id, hostedItemIndex, duplicateEvent),
+        publishedAt: now.toISOString(),
+        lifecycleStatus,
+        businessName,
+        logoUrl: logoUrl ?? undefined,
+        headline: businessName,
+        buttons: buildSnapshotButtons(initialButtons),
+        description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+        appearance: { theme: "light", accentColor: "#0f766e" },
+        subscriptionPaidThrough: paidThrough ?? undefined
+      }));
+    }
 
     firstHostedPage ??= { code: assignment.code, hostedPageUrl, businessName };
   }
@@ -242,23 +252,29 @@ export async function provisionHostedSubscriptionFromCheckout(
     .eq("stripe_checkout_session_id", input.session.id);
   if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
 
-  const setupEmail = customer.wasAlreadyActive
-    ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
-        to: email,
-        businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
-        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`
-      })
-    : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
-        to: email,
-        businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
-        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
-        activationToken: activation.token
+  if (!duplicateEvent) {
+    const setupEmail = customer.wasAlreadyActive
+      ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
+          to: email,
+          businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
+          hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`
+        })
+      : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+          to: email,
+          businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
+          hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`,
+          activationToken: activation.token
+        });
+    if (!setupEmail.sent) {
+      console.warn("[hosted-provisioning] setup_email_not_sent", {
+        stripeCheckoutSessionId: input.session.id,
+        reason: setupEmail.reason
       });
-  if (!setupEmail.sent) {
-    console.warn("[hosted-provisioning] setup_email_not_sent", {
-      stripeCheckoutSessionId: input.session.id,
-      reason: setupEmail.reason
-    });
+    }
+  }
+
+  if (duplicateEvent) {
+    return { ok: true, provisioned: false, reason: "duplicate_event" };
   }
 
   return { ok: true, provisioned: true, code: firstHostedPage?.code, hostedPageUrl: firstHostedPage?.hostedPageUrl };
@@ -901,6 +917,31 @@ function readStripeId(value: unknown) {
 
 function readSubscriptionObject(value: unknown): StripeSubscriptionLike | null {
   return value && typeof value === "object" ? (value as StripeSubscriptionLike) : null;
+}
+
+function resolvePublicSiteUrl(siteUrl?: string) {
+  return (siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "");
+}
+
+export function buildProvisioningSnapshotVersion(now: Date, checkoutSessionId: string, itemIndex: number, isReconciliation = false) {
+  const sessionSuffix = checkoutSessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-24) || "checkout";
+  const prefix = isReconciliation ? "reconciled" : "provisioned";
+  return `${prefix}-${now.getTime()}-${sessionSuffix}-${itemIndex + 1}`;
+}
+
+function resolveHostedPageUrl(existingUrl: string | null | undefined, siteUrl: string, code: string) {
+  const canonicalUrl = `${siteUrl}/p/${code}`;
+  if (!existingUrl) return canonicalUrl;
+
+  try {
+    const existing = new URL(existingUrl);
+    const canonical = new URL(canonicalUrl);
+    const existingIsLocal = existing.hostname === "localhost" || existing.hostname === "127.0.0.1";
+    const canonicalIsPublic = canonical.hostname !== "localhost" && canonical.hostname !== "127.0.0.1";
+    return existingIsLocal && canonicalIsPublic ? canonicalUrl : existingUrl;
+  } catch {
+    return canonicalUrl;
+  }
 }
 
 function readSubscriptionStatus(value: unknown): HostedSubscriptionStatus {

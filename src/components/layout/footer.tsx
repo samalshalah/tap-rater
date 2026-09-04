@@ -120,7 +120,7 @@ export function Footer() {
           <div key={column.label} className="grid content-start gap-2 text-sm text-muted">
             <p className="tr-eyebrow mb-2 text-ink">{column.label}</p>
             {column.links.map((link) => (
-              <Link key={`${column.label}-${link.href}-${link.label}`} href={link.href} className="min-h-8 transition hover:text-brand">
+              <Link key={`${column.label}-${link.href}-${link.label}`} href={link.href} prefetch={false} className="min-h-8 transition hover:text-brand">
                 {link.label}
               </Link>
             ))}

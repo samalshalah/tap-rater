@@ -21,37 +21,22 @@ export const PRODUCT_CSV_HEADERS = [
   "product_kind",
   "status",
   "base_price_cents",
-  "sale_price_cents",
   "stock_status",
   "short_description",
   "description",
-  "product_type",
-  "service_mode",
-  "checkout_mode",
-  "requires_account",
-  "requires_subscription",
-  "requires_landing_page",
   "supports_multilink",
   "supported_destinations",
-  "activation_type",
-  "included_service_label",
   "format",
   "customization_options",
   "allows_logo_upload",
   "allows_custom_design",
   "design_mode",
   "display_text",
-  "default_cta_text",
-  "cta_editable",
   "asset_readiness_status",
   "standard_angled_image_url",
   "branded_angled_image_url",
-  "multilink_angled_image_url",
   "standard_front_template_url",
   "branded_front_template_url",
-  "multilink_front_template_url",
-  "center_asset_url",
-  "landing_page_preview_config_json",
   "product_options_json",
   "images_json",
   "seo_title",
@@ -283,37 +268,22 @@ function productToCsvRow(product: MigratedProduct): Record<string, string> {
     product_kind: product.productKind ?? "normal_direct",
     status: product.status ?? (product.isActive ? "active" : "draft"),
     base_price_cents: String(product.basePriceCents),
-    sale_price_cents: product.salePriceCents === undefined ? "" : String(product.salePriceCents),
     stock_status: product.stockStatus,
     short_description: product.shortDescription,
     description: product.description,
-    product_type: product.productType,
-    service_mode: product.serviceMode,
-    checkout_mode: product.checkoutMode,
-    requires_account: serializeBoolean(product.requiresAccount),
-    requires_subscription: serializeBoolean(product.requiresSubscription),
-    requires_landing_page: serializeBoolean(product.requiresLandingPage),
     supports_multilink: serializeBoolean(product.supportsMultiLink ?? false),
     supported_destinations: serializeList(product.supportedDestinations),
-    activation_type: product.activationType,
-    included_service_label: product.includedServiceLabel,
     format: product.format,
     customization_options: serializeList(product.customizationOptions),
     allows_logo_upload: serializeBoolean(product.allowsLogoUpload),
     allows_custom_design: serializeBoolean(product.allowsCustomDesign),
     design_mode: product.designMode,
     display_text: product.displayText ?? "",
-    default_cta_text: product.defaultCtaText ?? "",
-    cta_editable: serializeBoolean(product.ctaEditable ?? false),
     asset_readiness_status: product.assetReadinessStatus ?? "draft_missing_assets",
     standard_angled_image_url: product.assetSet?.standardAngledImageUrl ?? "",
     branded_angled_image_url: product.assetSet?.brandedAngledImageUrl ?? "",
-    multilink_angled_image_url: product.assetSet?.multiLinkAngledImageUrl ?? "",
     standard_front_template_url: product.assetSet?.standardFrontTemplateUrl ?? "",
     branded_front_template_url: product.assetSet?.brandedFrontTemplateUrl ?? "",
-    multilink_front_template_url: product.assetSet?.multiLinkFrontTemplateUrl ?? "",
-    center_asset_url: product.assetSet?.centerAssetUrl ?? "",
-    landing_page_preview_config_json: JSON.stringify(product.assetSet?.landingPagePreviewConfig ?? {}),
     product_options_json: JSON.stringify(product.purchaseOptions ?? []),
     images_json: JSON.stringify(product.images ?? []),
     seo_title: product.seoTitle ?? "",
@@ -332,75 +302,69 @@ function productToCsvRow(product: MigratedProduct): Record<string, string> {
 }
 
 function csvRowToProduct(row: Record<string, string>, rowNumber: number, errors: ProductCsvValidationError[]) {
-  const productOptions = readJson<ProductPurchaseOptionSnapshot[]>(row.product_options_json, rowNumber, "product_options_json", errors, []);
-  const images = readJson<{ src: string; alt: string }[]>(row.images_json, rowNumber, "images_json", errors, []);
-  const landingPagePreviewConfig = readJson<Record<string, unknown>>(row.landing_page_preview_config_json, rowNumber, "landing_page_preview_config_json", errors, {});
-  const sizeOptions = readJson<unknown[]>(row.size_options_json, rowNumber, "size_options_json", errors, []);
-  const colorOptions = readJson<unknown[]>(row.color_options_json, rowNumber, "color_options_json", errors, []);
-  const keyFeatures = readJson<unknown[]>(row.key_features_json, rowNumber, "key_features_json", errors, []);
-  const howItWorks = readJson<unknown[]>(row.how_it_works_json, rowNumber, "how_it_works_json", errors, []);
-  const specifications = readJson<unknown[]>(row.specifications_json, rowNumber, "specifications_json", errors, []);
-  const includedItems = readJson<unknown[]>(row.included_items_json, rowNumber, "included_items_json", errors, []);
-  const productFaqs = readJson<unknown[]>(row.product_faqs_json, rowNumber, "product_faqs_json", errors, []);
+  const productOptions = readJson<ProductPurchaseOptionSnapshot[]>(csvValue(row, "product_options_json"), rowNumber, "product_options_json", errors, []);
+  const images = readJson<{ src: string; alt: string }[]>(csvValue(row, "images_json"), rowNumber, "images_json", errors, []);
+  const sizeOptions = readJson<unknown[]>(csvValue(row, "size_options_json"), rowNumber, "size_options_json", errors, []);
+  const colorOptions = readJson<unknown[]>(csvValue(row, "color_options_json"), rowNumber, "color_options_json", errors, []);
+  const keyFeatures = readJson<unknown[]>(csvValue(row, "key_features_json"), rowNumber, "key_features_json", errors, []);
+  const howItWorks = readJson<unknown[]>(csvValue(row, "how_it_works_json"), rowNumber, "how_it_works_json", errors, []);
+  const specifications = readJson<unknown[]>(csvValue(row, "specifications_json"), rowNumber, "specifications_json", errors, []);
+  const includedItems = readJson<unknown[]>(csvValue(row, "included_items_json"), rowNumber, "included_items_json", errors, []);
+  const productFaqs = readJson<unknown[]>(csvValue(row, "product_faqs_json"), rowNumber, "product_faqs_json", errors, []);
   const booleans = {
-    isSpecialSolution: readBoolean(row.is_special_solution, rowNumber, "is_special_solution", errors),
-    requiresAccount: readBoolean(row.requires_account, rowNumber, "requires_account", errors),
-    requiresSubscription: readBoolean(row.requires_subscription, rowNumber, "requires_subscription", errors),
-    requiresLandingPage: readBoolean(row.requires_landing_page, rowNumber, "requires_landing_page", errors),
-    supportsMultiLink: readBoolean(row.supports_multilink, rowNumber, "supports_multilink", errors),
-    allowsLogoUpload: readBoolean(row.allows_logo_upload, rowNumber, "allows_logo_upload", errors),
-    allowsCustomDesign: readBoolean(row.allows_custom_design, rowNumber, "allows_custom_design", errors),
-    ctaEditable: readBoolean(row.cta_editable, rowNumber, "cta_editable", errors),
-    isActive: readBoolean(row.is_active, rowNumber, "is_active", errors)
+    isSpecialSolution: readBoolean(csvValue(row, "is_special_solution", "false"), rowNumber, "is_special_solution", errors),
+    supportsMultiLink: readBoolean(csvValue(row, "supports_multilink", "false"), rowNumber, "supports_multilink", errors),
+    allowsLogoUpload: readBoolean(csvValue(row, "allows_logo_upload", "false"), rowNumber, "allows_logo_upload", errors),
+    allowsCustomDesign: readBoolean(csvValue(row, "allows_custom_design", "false"), rowNumber, "allows_custom_design", errors),
+    isActive: readBoolean(csvValue(row, "is_active", "false"), rowNumber, "is_active", errors)
   };
-  const basePriceCents = readInteger(row.base_price_cents, rowNumber, "base_price_cents", errors);
-  const salePriceCents = row.sale_price_cents.trim() ? readInteger(row.sale_price_cents, rowNumber, "sale_price_cents", errors) : undefined;
+  const basePriceCents = readInteger(csvValue(row, "base_price_cents"), rowNumber, "base_price_cents", errors);
 
   const candidate = productContentSchema.safeParse({
-    slug: row.slug,
-    title: row.title,
-    sku: row.sku,
-    categorySlug: row.category_slug,
-    standTypeSlug: optionalString(row.stand_type_slug),
-    primaryPlatformSlug: optionalString(row.primary_platform_slug),
-    destinationType: optionalString(row.destination_type),
-    businessUseSlugs: parseList(row.business_use_slugs),
+    slug: csvValue(row, "slug"),
+    title: csvValue(row, "title"),
+    sku: csvValue(row, "sku"),
+    categorySlug: csvValue(row, "category_slug"),
+    standTypeSlug: optionalString(csvValue(row, "stand_type_slug")),
+    primaryPlatformSlug: optionalString(csvValue(row, "primary_platform_slug")),
+    destinationType: optionalString(csvValue(row, "destination_type")),
+    businessUseSlugs: parseList(csvValue(row, "business_use_slugs")),
     isSpecialSolution: booleans.isSpecialSolution,
-    productKind: row.product_kind || "normal_direct",
-    status: row.status || "draft",
+    productKind: csvValue(row, "product_kind", "normal_direct"),
+    status: csvValue(row, "status", "draft"),
     basePriceCents,
-    salePriceCents,
-    stockStatus: row.stock_status,
-    shortDescription: row.short_description,
-    description: row.description,
-    productType: row.product_type,
-    serviceMode: row.service_mode,
-    checkoutMode: row.checkout_mode,
-    requiresAccount: booleans.requiresAccount,
-    requiresSubscription: booleans.requiresSubscription,
-    requiresLandingPage: booleans.requiresLandingPage,
+    salePriceCents: undefined,
+    stockStatus: csvValue(row, "stock_status"),
+    shortDescription: csvValue(row, "short_description"),
+    description: csvValue(row, "description"),
+    productType: "physical_redirect",
+    serviceMode: "basic_redirect",
+    checkoutMode: "buy_now",
+    requiresAccount: false,
+    requiresSubscription: false,
+    requiresLandingPage: false,
     supportsMultiLink: booleans.supportsMultiLink,
-    supportedDestinations: parseList(row.supported_destinations),
-    activationType: row.activation_type,
-    includedServiceLabel: row.included_service_label,
-    format: row.format,
-    customizationOptions: parseList(row.customization_options),
+    supportedDestinations: parseList(csvValue(row, "supported_destinations")),
+    activationType: "free_basic_activation",
+    includedServiceLabel: "Free basic activation",
+    format: csvValue(row, "format", "stand"),
+    customizationOptions: parseList(csvValue(row, "customization_options", "standard_design")),
     allowsLogoUpload: booleans.allowsLogoUpload,
     allowsCustomDesign: booleans.allowsCustomDesign,
-    designMode: row.design_mode,
-    displayText: optionalString(row.display_text),
-    defaultCtaText: optionalString(row.default_cta_text),
-    ctaEditable: booleans.ctaEditable,
-    assetReadinessStatus: row.asset_readiness_status,
+    designMode: csvValue(row, "design_mode", "standard"),
+    displayText: optionalString(csvValue(row, "display_text")),
+    defaultCtaText: undefined,
+    ctaEditable: false,
+    assetReadinessStatus: csvValue(row, "asset_readiness_status", "draft_missing_assets"),
     assetSet: {
-      standardAngledImageUrl: optionalString(row.standard_angled_image_url),
-      brandedAngledImageUrl: optionalString(row.branded_angled_image_url),
-      multiLinkAngledImageUrl: optionalString(row.multilink_angled_image_url),
-      standardFrontTemplateUrl: optionalString(row.standard_front_template_url),
-      brandedFrontTemplateUrl: optionalString(row.branded_front_template_url),
-      multiLinkFrontTemplateUrl: optionalString(row.multilink_front_template_url),
-      centerAssetUrl: optionalString(row.center_asset_url),
-      landingPagePreviewConfig
+      standardAngledImageUrl: optionalString(csvValue(row, "standard_angled_image_url")),
+      brandedAngledImageUrl: optionalString(csvValue(row, "branded_angled_image_url")),
+      multiLinkAngledImageUrl: undefined,
+      standardFrontTemplateUrl: optionalString(csvValue(row, "standard_front_template_url")),
+      brandedFrontTemplateUrl: optionalString(csvValue(row, "branded_front_template_url")),
+      multiLinkFrontTemplateUrl: undefined,
+      centerAssetUrl: undefined,
+      landingPagePreviewConfig: undefined
     },
     productOptions,
     images,
@@ -531,6 +495,10 @@ function hasUnsafeObjectKey(value: unknown): boolean {
 
 function parseList(value: string) {
   return Array.from(new Set(value.split("|").map((item) => item.trim()).filter(Boolean)));
+}
+
+function csvValue(row: Record<string, string>, column: string, fallback = "") {
+  return typeof row[column] === "string" ? row[column] : fallback;
 }
 
 function serializeList(values: string[] | undefined) {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CheckoutSuccessEffects } from "@/components/checkout/checkout-success-effects";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { formatOrderReference } from "@/lib/order-reference";
@@ -28,6 +29,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
 
   return (
     <main className="tr-public-shell text-ink">
+      <CheckoutSuccessEffects sessionId={sessionId} />
       <PageHero
         eyebrow="Order received"
         title="Your order was received"

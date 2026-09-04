@@ -119,7 +119,7 @@ describe("paid order emails", () => {
     expect(html).toContain("Business name: QA Menu Business");
     expect(html).toContain("Logo: Uploaded");
     expect(html).toContain("QR: Generated");
-    expect(html).toContain("Proof confirmed: Yes");
+    expect(html).toContain("Artwork confirmed: Yes");
     expect(html).toContain("https://taprater.com/shipping");
     expect(html).toContain("https://taprater.com/refund-policy");
     expect(html).toContain("https://taprater.com/terms");

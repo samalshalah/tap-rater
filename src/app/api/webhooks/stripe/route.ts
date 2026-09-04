@@ -4,7 +4,7 @@ import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
 import { provisionHostedSubscriptionFromCheckout, provisionPaidCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
-import { savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
+import { markCheckoutOrderPaymentFailure, savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
 
 export async function POST(request: Request) {
   const stripeConfig = validateStripeWebhookConfig();
@@ -28,6 +28,25 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (event.type === "checkout.session.async_payment_failed" || event.type === "checkout.session.expired") {
+      const session = event.data.object;
+      const result = await markCheckoutOrderPaymentFailure(
+        session.id,
+        event.type === "checkout.session.expired" ? "canceled" : "failed",
+        event.type === "checkout.session.expired" ? "expired" : "failed"
+      );
+
+      if (!result.ok) {
+        console.warn("[stripe-webhook] checkout_failure_not_saved", {
+          eventId: event.id,
+          eventType: event.type,
+          stripeCheckoutSessionId: session.id,
+          error: result.error
+        });
+        return NextResponse.json({ error: "Checkout payment failure could not be saved." }, { status: 500 });
+      }
+    }
+
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object;
 
@@ -38,19 +57,12 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
         }
 
-        const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
-        if (!invoiceResult.ok) {
-          console.warn("[stripe-webhook] billing_invoice_not_saved", {
-            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-            error: invoiceResult.error
-          });
-        }
-
         const provisioning = await provisionHostedSubscriptionFromCheckout({
-          session,
+          session: enrichedSession,
           order: result.order,
           eventId: event.id,
-          eventType: event.type
+          eventType: event.type,
+          siteUrl: new URL(request.url).origin
         });
         if (!provisioning.ok) {
           console.warn("[stripe-webhook] hosted_subscription_provisioning_failed", {
@@ -58,6 +70,14 @@ export async function POST(request: Request) {
             error: provisioning.error
           });
           return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
+        }
+
+        const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
+        if (!invoiceResult.ok) {
+          console.warn("[stripe-webhook] billing_invoice_not_saved", {
+            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+            error: invoiceResult.error
+          });
         }
 
         if (!provisioning.provisioned && !result.wasAlreadyPaid) {
@@ -140,6 +160,7 @@ export async function POST(request: Request) {
 async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLike): Promise<StripeCheckoutSessionLike> {
   const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
   const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
+  const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
   const stripe = getStripeClient() as any;
   let paymentMethodDetails: Record<string, unknown> | null = null;
   let receiptUrl: string | undefined;
@@ -151,6 +172,7 @@ async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLik
         number?: string | null;
       }
     | undefined;
+  let subscription: StripeCheckoutSessionLike["subscription"] | undefined;
 
   if (paymentIntentId && stripe.paymentIntents?.retrieve) {
     try {
@@ -186,13 +208,37 @@ async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLik
     }
   }
 
-  if (!paymentMethodDetails && !receiptUrl && !invoice) {
+  if (subscriptionId && stripe.subscriptions?.retrieve) {
+    try {
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const firstItem = stripeSubscription?.items?.data?.[0];
+      subscription = {
+        id: subscriptionId,
+        status: typeof stripeSubscription?.status === "string" ? stripeSubscription.status : null,
+        current_period_end:
+          typeof stripeSubscription?.current_period_end === "number"
+            ? stripeSubscription.current_period_end
+            : typeof firstItem?.current_period_end === "number"
+              ? firstItem.current_period_end
+              : null,
+        cancel_at_period_end: Boolean(stripeSubscription?.cancel_at_period_end)
+      };
+    } catch (error) {
+      console.warn("[stripe-webhook] subscription_details_not_loaded", {
+        subscriptionId,
+        errorName: error instanceof Error ? error.name : "UnknownError"
+      });
+    }
+  }
+
+  if (!paymentMethodDetails && !receiptUrl && !invoice && !subscription) {
     return session;
   }
 
   return {
     ...session,
     ...(invoice ? { invoice } : {}),
+    ...(subscription ? { subscription } : {}),
     customer_details: {
       ...(session.customer_details ?? {}),
       ...(paymentMethodDetails ? { payment_method_details: paymentMethodDetails } : {}),

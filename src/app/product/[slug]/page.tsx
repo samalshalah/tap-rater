@@ -89,12 +89,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const productFaqs = getProductFaqs(product);
   const standardPrice = formatPrice(purchaseOptions.find((option) => option.id === "standard_direct")?.priceCents ?? product.basePriceCents).replace(".00", "");
   const brandedPrice = formatPrice(purchaseOptions.find((option) => option.id === "branded_qr_direct")?.priceCents ?? product.basePriceCents).replace(".00", "");
-  const googleMapsApiKey =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    process.env.GOOGLE_PLACES_API_KEY ||
-    process.env.GOOGLE_MAPS_API_KEY ||
-    process.env.GOOGLE_MAPS_PLATFORM_API_KEY ||
-    process.env.MAPS_PLATFORM_API_KEY;
 
   return (
     <main className="tr-public-shell text-ink">
@@ -102,7 +96,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
-        <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} googleMapsApiKey={googleMapsApiKey} />
+        <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} />
       </SectionShell>
 
       <SectionShell tone="soft" spacing="compact">

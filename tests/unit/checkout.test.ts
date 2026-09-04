@@ -37,9 +37,9 @@ const checkoutShippingAddress = {
   name: "Buyer Name",
   line1: "100 Main St",
   line2: "",
-  city: "Washington",
-  state: "DC",
-  postalCode: "20002",
+  city: "Richmond",
+  state: "VA",
+  postalCode: "23219",
   country: "US" as const,
   phone: "555-0100"
 };
@@ -121,6 +121,12 @@ describe("Stripe checkout helpers", () => {
       lineSubtotalCents: 7800
     });
     expect(result.totalCents).toBe(7800);
+  });
+
+  it("rejects cart quantities above the shared product quantity cap", () => {
+    const result = validateCheckoutCart([{ ...configuredStandardItem, quantity: 100 }], migratedProducts);
+
+    expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("maps Standard Direct QR and NFC targets to the customer destination URL", () => {
@@ -929,7 +935,7 @@ describe("Stripe checkout helpers", () => {
     });
     expect(params.line_items?.[3]).toMatchObject({
       price_data: {
-        unit_amount: 294,
+        unit_amount: 234,
         product_data: {
           name: "Virginia sales tax",
           metadata: {
@@ -1047,6 +1053,7 @@ describe("Stripe checkout helpers", () => {
     if (!result.ok) return;
     const params = createCheckoutSessionParams({
       cart: result,
+      shippingAddress: checkoutShippingAddress,
       siteUrl: "https://taprater.com",
       shippingSettings: {
         shippingMode: "flat",

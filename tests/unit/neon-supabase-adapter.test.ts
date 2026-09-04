@@ -140,6 +140,29 @@ describe("Neon Supabase adapter", () => {
     expect(query.mock.calls[0][0]).not.toContain("option_code = excluded.option_code");
   });
 
+  it("allows invoice line-item upserts", async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const client = createNeonSupabaseAdapter(query);
+
+    const result = await client.from("billing_invoice_items").upsert(
+      {
+        billing_invoice_id: "11111111-1111-1111-1111-111111111111",
+        line_item_index: 0,
+        title: "Google Review Stand",
+        quantity: 1,
+        amount_cents: 3900,
+        recurring_amount_cents: 0,
+        metadata_json: { source: "checkout" }
+      },
+      { onConflict: "billing_invoice_id,line_item_index" }
+    );
+
+    expect(result.error).toBeNull();
+    expect(query.mock.calls[0][0]).toContain("insert into billing_invoice_items");
+    expect(query.mock.calls[0][0]).toContain("on conflict (billing_invoice_id, line_item_index) do update");
+    expect(query.mock.calls[0][0]).toContain("::jsonb");
+  });
+
   it("builds one filtered delete query for product slugs", async () => {
     const query = vi.fn().mockResolvedValue([{ slug: "google-review-stand" }]);
     const client = createNeonSupabaseAdapter(query);

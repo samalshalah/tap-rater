@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { recordBillingInvoiceFromStripeInvoiceWithClient } from "@/lib/billing-invoices";
+import {
+  recordBillingInvoiceFromCheckoutSessionWithClient,
+  recordBillingInvoiceFromStripeInvoiceWithClient
+} from "@/lib/billing-invoices";
 import type { OrdersDbClient } from "@/lib/orders";
 
 describe("billing invoice storage", () => {
@@ -111,6 +114,92 @@ describe("billing invoice storage", () => {
         billing_invoice_id: "billing_invoices-1",
         hosted_subscription_id: "hosted-sub-2",
         hosted_page_url: "https://taprater.com/p/BBB"
+      }
+    ]);
+  });
+
+  it("preserves checkout links and amount breakdown when invoice.paid is replayed", async () => {
+    const client = new MemoryDbClient({
+      customers: [{ id: "customer-1", email: "buyer@example.com" }],
+      hosted_subscriptions: [],
+      orders: [],
+      billing_invoices: [],
+      billing_invoice_items: []
+    });
+    const order = {
+      id: "order-1",
+      stripe_checkout_session_id: "cs_test_123",
+      stripe_payment_intent_id: "pi_123",
+      status: "paid",
+      payment_status: "paid",
+      email: "buyer@example.com",
+      customer_name: "Buyer",
+      subtotal_cents: 3900,
+      shipping_amount_cents: 1200,
+      total_cents: 5334,
+      currency: "usd",
+      line_items_json: [
+        {
+          productId: "google-review-stand",
+          title: "Google Review Stand",
+          sku: "TR-GOOGLE-REV-ST-STD",
+          quantity: 1,
+          unitAmountCents: 3900,
+          lineSubtotalCents: 3900
+        }
+      ],
+      customer_details_json: {
+        stripe_customer_id: "cus_123",
+        receipt_url: "https://pay.stripe.com/receipt",
+        tax_summary: { amount_cents: 234 },
+        payment_method_details: { type: "card", brand: "visa", last4: "4242" }
+      }
+    } as any;
+
+    const checkoutResult = await recordBillingInvoiceFromCheckoutSessionWithClient(client, order, {
+      id: "cs_test_123",
+      customer: "cus_123",
+      invoice: {
+        id: "in_123",
+        number: "INV-123",
+        hosted_invoice_url: "https://pay.stripe.com/invoice/initial"
+      }
+    } as any);
+    expect(checkoutResult).toMatchObject({ ok: true, skipped: false });
+
+    const webhookResult = await recordBillingInvoiceFromStripeInvoiceWithClient(client, {
+      id: "in_123",
+      number: "INV-123",
+      status: "paid",
+      customer: "cus_123",
+      subtotal: 5334,
+      total: 5334,
+      amount_paid: 5334,
+      currency: "usd",
+      hosted_invoice_url: "https://pay.stripe.com/invoice/final"
+    });
+
+    expect(webhookResult).toMatchObject({ ok: true, skipped: false });
+    expect(client.table("billing_invoices")).toMatchObject([
+      {
+        order_id: "order-1",
+        customer_id: "customer-1",
+        stripe_checkout_session_id: "cs_test_123",
+        stripe_payment_intent_id: "pi_123",
+        payment_method_label: "Visa ending 4242",
+        subtotal_cents: 3900,
+        tax_cents: 234,
+        shipping_cents: 1200,
+        total_cents: 5334,
+        hosted_invoice_url: "https://pay.stripe.com/invoice/final"
+      }
+    ]);
+    expect(client.table("billing_invoice_items")).toMatchObject([
+      {
+        order_id: "order-1",
+        title: "Google Review Stand",
+        quantity: 1,
+        amount_cents: 3900
       }
     ]);
   });

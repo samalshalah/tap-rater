@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import type { AdminConfigInput, HomepageContentInput, PageContentInput, ProductContentInput } from "@/lib/validators";
+import type { AdminConfigInput, AdminProductStatusUpdateInput, HomepageContentInput, PageContentInput, ProductContentInput } from "@/lib/validators";
 
 type MutationResult = PromiseLike<{ error: null | { message: string } }>;
 type UpsertResult = MutationResult;
@@ -11,6 +11,9 @@ export type CmsDbClient = {
   from: (table: string) => {
     upsert: (values: Record<string, unknown> | Record<string, unknown>[], options?: Record<string, unknown>) => UpsertResult;
     insert: (values: Record<string, unknown> | Record<string, unknown>[]) => MutationResult;
+    update: (values: Record<string, unknown>) => {
+      eq: (column: string, value: string) => MutationResult;
+    };
     delete: () => {
       eq: (column: string, value: string) => MutationResult;
       in: (column: string, values: string[]) => {
@@ -95,6 +98,7 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     is_special_solution: input.isSpecialSolution,
     product_kind: input.productKind,
     status: input.status,
+    sort_order: input.sortOrder,
     base_price_cents: input.basePriceCents,
     sale_price_cents: input.salePriceCents ?? null,
     stock_status: input.stockStatus,
@@ -158,6 +162,21 @@ export async function deleteProductContentBySlugs(client: CmsDbClient, slugs: st
   }
 
   return (data ?? []).map((row) => row.slug);
+}
+
+export async function updateProductContentStatus(client: CmsDbClient, input: AdminProductStatusUpdateInput) {
+  const { error } = await client
+    .from("products")
+    .update({
+      status: input.status,
+      is_active: input.status === "active",
+      updated_at: new Date().toISOString()
+    })
+    .eq("slug", input.slug);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 async function upsertOrThrow(client: CmsDbClient, table: string, values: Record<string, unknown>) {

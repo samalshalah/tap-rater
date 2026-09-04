@@ -188,4 +188,55 @@ describe("Stripe webhook route configuration", () => {
     });
     expect(savePaidOrder).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["checkout.session.async_payment_failed", "failed", "failed"],
+    ["checkout.session.expired", "canceled", "expired"]
+  ] as const)("records %s against the pending order", async (eventType, orderStatus, paymentStatus) => {
+    const markPaymentFailure = vi.fn().mockResolvedValue({ ok: true });
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({
+        ok: true,
+        mode: "test",
+        secretKey: "sk_test_unit",
+        publishableKey: "pk_test_unit",
+        webhookSecret: "whsec_unit"
+      }),
+      getStripeClient: () => ({
+        webhooks: {
+          constructEvent: () => ({
+            id: `evt_${paymentStatus}`,
+            type: eventType,
+            data: { object: { id: "cs_test_failure" } }
+          })
+        }
+      })
+    }));
+    vi.doMock("@/lib/orders", () => ({
+      markCheckoutOrderPaymentFailure: markPaymentFailure,
+      savePaidOrderFromCheckoutSession: vi.fn()
+    }));
+    vi.doMock("@/lib/hosted-subscription-lifecycle", () => ({
+      processHostedSubscriptionLifecycleEvent: vi.fn()
+    }));
+    vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
+      provisionHostedSubscriptionFromCheckout: vi.fn(),
+      provisionPaidCustomerAccountFromOrder: vi.fn()
+    }));
+    vi.doMock("@/lib/order-emails", () => ({
+      sendPaidOrderEmails: vi.fn()
+    }));
+
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    const response = await POST(
+      new Request("https://taprater.test/api/webhooks/stripe", {
+        method: "POST",
+        body: "{}",
+        headers: { "stripe-signature": "test-signature" }
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(markPaymentFailure).toHaveBeenCalledWith("cs_test_failure", orderStatus, paymentStatus);
+  });
 });

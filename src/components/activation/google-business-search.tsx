@@ -1,123 +1,99 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { generateGoogleReviewUrl } from "@/lib/google-review";
+import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 
 type GoogleBusinessSearchProps = {
-  apiKey?: string;
   onConfirm: (place: GoogleBusinessSelection) => void;
 };
 
-export type GoogleBusinessSelection = {
-  placeId: string;
-  name: string;
-  formattedAddress: string;
-  reviewUrl: string;
-};
+export type { GoogleBusinessSelection } from "@/lib/google-places-client";
 
-declare global {
-  interface Window {
-    google?: {
-      maps?: {
-        places?: {
-          Autocomplete: new (
-            input: HTMLInputElement,
-            options: {
-              fields: string[];
-              types: string[];
-              componentRestrictions: { country: string };
-            }
-          ) => {
-            addListener: (eventName: "place_changed", callback: () => void) => void;
-            getPlace: () => {
-              place_id?: string;
-              name?: string;
-              formatted_address?: string;
-            };
-          };
-        };
-      };
-    };
-  }
-}
-
-let googleMapsScriptPromise: Promise<void> | null = null;
-
-export function GoogleBusinessSearch({ apiKey, onConfirm }: GoogleBusinessSearchProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+export function GoogleBusinessSearch({ onConfirm }: GoogleBusinessSearchProps) {
+  const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "fallback">("idle");
+  const [results, setResults] = useState<GoogleBusinessSelection[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<GoogleBusinessSelection | null>(null);
 
   useEffect(() => {
-    if (!apiKey || !inputRef.current) {
-      setStatus("fallback");
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length < 3) {
+      setResults([]);
+      setStatus("idle");
       return;
     }
 
-    let mounted = true;
-    setStatus("loading");
-
-    loadGooglePlaces(apiKey)
-      .then(() => {
-        if (!mounted || !inputRef.current || !window.google?.maps?.places?.Autocomplete) {
-          return;
-        }
-
-        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          fields: ["place_id", "name", "formatted_address"],
-          types: ["establishment"],
-          componentRestrictions: { country: "us" }
-        });
-
-        autocomplete.addListener("place_changed", () => {
-          const place = autocomplete.getPlace();
-          if (!place.place_id || !place.name) {
-            return;
-          }
-
-          setSelectedPlace({
-            placeId: place.place_id,
-            name: place.name,
-            formattedAddress: place.formatted_address ?? "",
-            reviewUrl: generateGoogleReviewUrl(place.place_id)
-          });
-        });
-
-        setStatus("ready");
-      })
-      .catch(() => {
-        if (mounted) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setStatus("loading");
+      searchGoogleBusinesses(normalizedQuery, controller.signal)
+        .then((result) => {
+          setResults(result.results);
+          setStatus(result.configured && !result.message ? "ready" : "fallback");
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setResults([]);
           setStatus("fallback");
-        }
-      });
+        });
+    }, 350);
 
     return () => {
-      mounted = false;
+      window.clearTimeout(timer);
+      controller.abort();
     };
-  }, [apiKey]);
+  }, [query]);
 
-  if (!apiKey) {
-    return (
-      <div className="rounded-md border border-line bg-soft p-4 text-sm text-muted">
-        Google business search is not configured yet. Paste your Google review URL manually below.
-      </div>
-    );
+  function selectPlace(place: GoogleBusinessSelection) {
+    setSelectedPlace(place);
+    setQuery(`${place.name}${place.formattedAddress ? ` - ${place.formattedAddress}` : ""}`);
+    setResults([]);
   }
 
   return (
     <div className="grid gap-3 rounded-md border border-line bg-soft p-4">
       <label className="grid gap-2 text-sm font-semibold text-ink">
         Search Google Business Profile
-        <input
-          ref={inputRef}
-          className="rounded-md border border-line bg-white px-4 py-3 text-sm font-medium outline-none focus:border-brand"
-          placeholder="Start typing your business name"
-          autoComplete="off"
-        />
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+          <input
+            className="w-full rounded-md border border-line bg-white py-3 pl-10 pr-4 text-sm font-medium outline-none focus:border-brand"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedPlace(null);
+            }}
+            placeholder="Business name and city"
+            autoComplete="off"
+          />
+        </div>
       </label>
 
-      {status === "loading" ? <p className="text-sm text-muted">Loading Google business search...</p> : null}
-      {status === "fallback" ? <p className="text-sm text-muted">Google search could not load. Paste your Google review URL manually below.</p> : null}
+      {status === "idle" ? <p className="text-sm text-muted">Enter at least 3 characters to search.</p> : null}
+      {status === "loading" ? <p className="text-sm text-muted">Searching Google Business Profiles...</p> : null}
+      {status === "fallback" ? <p className="text-sm text-muted">Google search is unavailable right now. Paste your Google review URL manually below.</p> : null}
+      {status === "ready" && query.trim().length >= 3 && results.length === 0 && !selectedPlace ? (
+        <p className="text-sm text-muted">No matching businesses found. Add a city or paste the review URL manually.</p>
+      ) : null}
+
+      {results.length > 0 ? (
+        <div className="grid overflow-hidden rounded-md border border-line bg-white" role="listbox" aria-label="Google Business search results">
+          {results.map((place) => (
+            <button
+              key={place.placeId}
+              type="button"
+              role="option"
+              aria-selected={selectedPlace?.placeId === place.placeId}
+              onClick={() => selectPlace(place)}
+              className="border-b border-line px-4 py-3 text-left text-sm transition last:border-b-0 hover:bg-soft"
+            >
+              <span className="block font-semibold text-ink">{place.name}</span>
+              {place.formattedAddress ? <span className="mt-1 block text-muted">{place.formattedAddress}</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {selectedPlace ? (
         <div className="rounded-md border border-line bg-white p-4 text-sm">
@@ -135,32 +111,4 @@ export function GoogleBusinessSearch({ apiKey, onConfirm }: GoogleBusinessSearch
       ) : null}
     </div>
   );
-}
-
-function loadGooglePlaces(apiKey: string) {
-  if (window.google?.maps?.places?.Autocomplete) {
-    return Promise.resolve();
-  }
-
-  if (!googleMapsScriptPromise) {
-    googleMapsScriptPromise = new Promise((resolve, reject) => {
-      const existing = document.querySelector<HTMLScriptElement>('script[data-taprater-google-places="true"]');
-      if (existing) {
-        existing.addEventListener("load", () => resolve());
-        existing.addEventListener("error", () => reject(new Error("Google Maps script failed to load.")));
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.dataset.tapraterGooglePlaces = "true";
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error("Google Maps script failed to load."));
-      document.head.appendChild(script);
-    });
-  }
-
-  return googleMapsScriptPromise;
 }

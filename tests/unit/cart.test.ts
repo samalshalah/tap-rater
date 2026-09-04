@@ -23,6 +23,17 @@ describe("cart utilities", () => {
     expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 1 });
   });
 
+  it("caps merged and updated quantities at the checkout limit", () => {
+    const merged = mergeCartItem([{ productId: "google-review-stand", quantity: 98 }], {
+      productId: "google-review-stand",
+      quantity: 3
+    });
+    const updated = updateCartQuantity(merged, getCartItemKey(merged[0]), 5);
+
+    expect(merged[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 99 });
+    expect(updated[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 99 });
+  });
+
   it("removes stale product ids and invalid quantities from stored carts", () => {
     const items = normalizeCartItems([
       { productId: "google-review-stand", quantity: 2 },

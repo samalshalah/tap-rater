@@ -3,6 +3,7 @@ import { migratedProducts } from "@/data/migrated-products";
 import { handleCheckoutPost, type CheckoutRouteDependencies } from "@/lib/checkout-route";
 
 const configuredStandardPayload = {
+  checkoutAttemptId: "checkout-attempt-unit-001",
   items: [
     {
       productId: "google-review-stand",
@@ -24,9 +25,9 @@ const configuredStandardPayload = {
     name: "Buyer Name",
     line1: "100 Main St",
     line2: "",
-    city: "Washington",
-    state: "DC",
-    postalCode: "20002",
+    city: "Richmond",
+    state: "VA",
+    postalCode: "23219",
     country: "US",
     phone: "555-0100"
   }
@@ -59,8 +60,10 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
       taxMode: "manual",
       manualTaxRateBps: 600,
       taxLabel: "Virginia sales tax",
+      taxableStates: ["VA"],
+      taxRecurring: false,
       taxShipping: false,
-      customerFacingTaxNote: "Estimated sales tax is calculated before payment."
+      customerFacingTaxNote: "Sales tax is calculated from the shipping address before payment."
     }),
     getSiteUrl: () => "https://taprater.test",
     hasOrderPersistence: () => true,
@@ -114,6 +117,7 @@ describe("checkout route reliability", () => {
           }
         ],
         customer: configuredStandardPayload.customer,
+        checkoutAttemptId: configuredStandardPayload.checkoutAttemptId,
         shippingAddress: configuredStandardPayload.shippingAddress
       }),
       dependencies
@@ -195,6 +199,7 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledOnce();
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
+        idempotencyKey: "checkout-checkout-attempt-unit-001",
         stripeMode: "test",
         shippingSettings: expect.objectContaining({ shippingMode: "flat" }),
         taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
@@ -252,6 +257,7 @@ describe("checkout route reliability", () => {
           quantity: 2
         }
       ],
+      checkoutAttemptId: configuredStandardPayload.checkoutAttemptId,
       customer: configuredStandardPayload.customer,
       shippingAddress: configuredStandardPayload.shippingAddress
     }),

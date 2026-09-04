@@ -121,7 +121,7 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
               <ComparisonRow label="Ready-made design" standard="Yes" branded="No" />
               <ComparisonRow label="Your logo" standard="No" branded="Yes" />
               <ComparisonRow label="Business name" standard="No" branded="Yes" />
-              <ComparisonRow label="Front proof" standard="No" branded="Yes" />
+              <ComparisonRow label="Artwork review" standard="No" branded="Yes" />
               <ComparisonRow label="Monthly subscription" standard="None" branded="None" />
               <ComparisonRow label="Price" standard={standardPrice} branded={brandedPrice} />
             </div>

@@ -400,7 +400,7 @@ function readProductMediaKeyFromUrl(url: string) {
 
 function toAbsoluteAssetUrl(url: string) {
   if (/^https?:\/\//i.test(url)) return url;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
   return new URL(url, siteUrl).toString();
 }
 

@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function CartPage() {
   const stripeMode = getStripeModeSafe() === "live" ? "live" : "test";
   const stripeCheckoutEnabled = validateStripePublicConfig().ok;
+  const manualCheckoutEnabled = process.env.TAP_RATER_ENABLE_MANUAL_CHECKOUT === "true";
   const taxSettings = await getTaxSettings();
 
   return (
@@ -16,11 +17,16 @@ export default async function CartPage() {
       <PageHero
         eyebrow="Cart"
         title="Review your order"
-        body="Confirm each configured stand before Tap Rater reviews payment, shipping, and artwork details."
+        body="Confirm each configured stand before entering shipping and payment details."
       />
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <CartTable stripeMode={stripeMode} stripeCheckoutEnabled={stripeCheckoutEnabled} taxSettings={taxSettings} />
+          <CartTable
+            manualCheckoutEnabled={manualCheckoutEnabled}
+            stripeMode={stripeMode}
+            stripeCheckoutEnabled={stripeCheckoutEnabled}
+            taxSettings={taxSettings}
+          />
         </div>
       </SectionShell>
     </main>

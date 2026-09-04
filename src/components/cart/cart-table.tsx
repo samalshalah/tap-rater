@@ -10,6 +10,7 @@ import {
   calculateCartTotalCents,
   getCartItemKey,
   getCartRows,
+  maxCartItemQuantity,
   type CartRow,
 } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
@@ -18,10 +19,12 @@ import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals
 import type { TaxSettingsInput } from "@/lib/validators";
 
 export function CartTable({
+  manualCheckoutEnabled = false,
   stripeMode = "test",
   stripeCheckoutEnabled = true,
   taxSettings,
 }: {
+  manualCheckoutEnabled?: boolean;
   stripeMode?: "test" | "live";
   stripeCheckoutEnabled?: boolean;
   taxSettings: TaxSettingsInput;
@@ -34,6 +37,8 @@ export function CartTable({
   const [customerName, setCustomerName] = useState("");
   const [signedInCustomer, setSignedInCustomer] = useState<{ email: string; name?: string; businessName?: string } | null>(null);
   const usesStripeCheckout = stripeCheckoutEnabled;
+  const usesManualCheckout = !usesStripeCheckout && manualCheckoutEnabled;
+  const checkoutAvailable = usesStripeCheckout || usesManualCheckout;
 
   const rows = getCartRows(items);
   const standTotal = calculateCartTotalCents(items);
@@ -230,7 +235,8 @@ export function CartTable({
                   <button
                     type="button"
                     aria-label={`Increase ${row.product.title} quantity`}
-                    className="grid h-10 w-10 place-items-center text-ink hover:bg-soft"
+                    className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
+                    disabled={row.item.quantity >= maxCartItemQuantity}
                     onClick={() => increaseItem(cartKey)}
                   >
                     <Plus size={16} />
@@ -259,9 +265,9 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
-          <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{usesStripeCheckout ? "Checkout" : "Order review"}</h2>
+          <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{usesManualCheckout ? "Order review" : "Checkout"}</h2>
         </div>
-        {!usesStripeCheckout && !signedInCustomer ? (
+        {usesManualCheckout && !signedInCustomer ? (
           <div className="grid gap-2">
             <label className="grid gap-2 text-sm font-medium text-ink">
               Customer email
@@ -303,10 +309,15 @@ export function CartTable({
             <span className="text-muted">Subtotal today</span>
             <span className="font-medium text-ink">{formatPrice(dueToday)}</span>
           </div>
-          {!usesStripeCheckout ? (
+          {usesManualCheckout ? (
             <div className="flex items-center justify-between gap-4">
               <span className="text-muted">Payment</span>
               <span className="text-right font-medium text-ink">No payment due now</span>
+            </div>
+          ) : !usesStripeCheckout ? (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-muted">Payment</span>
+              <span className="text-right font-medium text-ink">Temporarily unavailable</span>
             </div>
           ) : null}
           <div className="flex items-center justify-between gap-4">
@@ -317,18 +328,23 @@ export function CartTable({
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">{taxSettings.taxLabel} ({formatTaxRate(taxSettings)})</span>
-            <span className="text-right font-medium text-ink">{formatPrice(taxAmountCents)}</span>
+            <span className="text-right font-medium text-ink">Calculated after address</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
-            <span className="font-medium text-ink">Due now</span>
-            <span className="font-medium text-ink">{usesStripeCheckout ? formatPrice(dueToday) : "$0.00"}</span>
+            <span className="font-medium text-ink">Estimated total</span>
+            <span className="font-medium text-ink">{usesManualCheckout ? "$0.00" : formatPrice(dueToday)}</span>
           </div>
         </div>
+        {!checkoutAvailable ? (
+          <p className="tr-status-warning" role="alert">
+            Secure checkout is temporarily unavailable. Your cart is saved; please try again shortly.
+          </p>
+        ) : null}
         <button
           type="button"
-          disabled={isCheckingOut || (!usesStripeCheckout && !checkoutEmail.trim())}
+          disabled={!checkoutAvailable || isCheckingOut || (usesManualCheckout && !checkoutEmail.trim())}
           className="tr-button-primary min-h-12 w-full"
-          onClick={usesStripeCheckout ? startCheckout : submitManualOrder}
+          onClick={usesStripeCheckout ? startCheckout : usesManualCheckout ? submitManualOrder : undefined}
         >
           {isCheckingOut
             ? usesStripeCheckout
@@ -336,12 +352,16 @@ export function CartTable({
               : "Submitting review request..."
             : usesStripeCheckout
               ? "Secure checkout"
-              : "Submit order for review"}
+              : usesManualCheckout
+                ? "Submit order for review"
+                : "Checkout unavailable"}
         </button>
         <p className="tr-body-sm">
           {usesStripeCheckout
             ? "Enter shipping first, then pay securely inside Tap Rater with Stripe."
-            : "Tap Rater will review payment, shipping, and artwork details before production."}
+            : usesManualCheckout
+              ? "Tap Rater will review payment, shipping, and artwork details before production."
+              : "No order will be submitted until secure payment is available."}
         </p>
         {checkoutError ? (
           <p className="tr-status-warning" role="alert">{checkoutError}</p>

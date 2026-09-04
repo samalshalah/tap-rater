@@ -26,11 +26,11 @@ export const productImageFallback: StorefrontVisual = {
 
 const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
   reviews: {
-    src: "/uploads/products/google-review-stand.png",
-    alt: "Google Review Stand"
+    src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
+    alt: "Yelp Review Stand"
   },
   "social-media": {
-    src: "/uploads/products/social-media-stand.png",
+    src: "/uploads/products/taprater-stands/social-media/social-media-standard-angled.png",
     alt: "Social Media Stand"
   },
   appointments: {
@@ -117,7 +117,7 @@ export const customerActionCards: CustomerActionCard[] = [
     title: "Get Reviews",
     description: "Send customers to Google, Yelp, Tripadvisor, or another review page.",
     href: "/category/reviews",
-    image: { src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }
+    image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Yelp Review Stand" }
   },
   {
     title: "Book Appointments",
@@ -135,7 +135,7 @@ export const customerActionCards: CustomerActionCard[] = [
     title: "Follow Us",
     description: "Grow Instagram, Facebook, TikTok, LinkedIn, and social profiles.",
     href: "/category/social-media",
-    image: { src: "/uploads/products/social-media-stand.png", alt: "Social Media Stand" }
+    image: { src: "/uploads/products/taprater-stands/social-media/social-media-standard-angled.png", alt: "Social Media Stand" }
   },
   {
     title: "Collect Feedback",
