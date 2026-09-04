@@ -63,7 +63,7 @@ describe("hosted subscription lifecycle processing", () => {
       {
         eventId: "evt_payment_failed",
         eventType: "invoice.payment_failed",
-        object: { subscription: "sub_test_123" },
+        object: { parent: { subscription_details: { subscription: "sub_test_123" } } },
         now
       },
       { client, storage }
@@ -91,7 +91,7 @@ describe("hosted subscription lifecycle processing", () => {
       {
         eventId: "evt_invoice_paid",
         eventType: "invoice.paid",
-        object: { subscription: "sub_test_123" },
+        object: { parent: { subscription_details: { subscription: "sub_test_123" } } },
         now: new Date("2026-08-25T12:00:00.000Z")
       },
       { client, storage }

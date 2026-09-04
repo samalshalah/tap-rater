@@ -54,6 +54,12 @@ export type StripeInvoiceLike = {
   customer_email?: string | null;
   customer_name?: string | null;
   subscription?: string | { id?: string | null } | null;
+  parent?: {
+    type?: string | null;
+    subscription_details?: {
+      subscription?: string | { id?: string | null } | null;
+    } | null;
+  } | null;
   payment_intent?: string | { id?: string | null } | null;
   checkout_session?: string | null;
   hosted_invoice_url?: string | null;
@@ -62,6 +68,7 @@ export type StripeInvoiceLike = {
   subtotal?: number | null;
   tax?: number | null;
   total_tax_amounts?: Array<{ amount?: number | null }> | null;
+  total_taxes?: Array<{ amount?: number | null }> | null;
   shipping_cost?: { amount_total?: number | null } | null;
   total?: number | null;
   amount_paid?: number | null;
@@ -140,7 +147,18 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
   if (!invoiceId) return { ok: true as const, skipped: true as const };
 
   const existingInvoice = await findBillingInvoiceByStripeId(client, invoiceId);
-  const subscriptionId = readStripeId(invoice.subscription);
+  const subscriptionId = readStripeInvoiceSubscriptionId(invoice);
+  const hasCheckoutReference = Boolean(
+    readString(existingInvoice.order_id) || readString(existingInvoice.stripe_checkout_session_id)
+  );
+
+  // Checkout is authoritative for one-time order totals and links. Skipping an
+  // invoice-first delivery prevents a concurrent invoice webhook from replacing
+  // the checkout breakdown with Stripe's flattened invoice subtotal.
+  if (!subscriptionId && !hasCheckoutReference) {
+    return { ok: true as const, skipped: true as const };
+  }
+
   const hostedSubscriptions = subscriptionId ? await findHostedSubscriptionsByStripeId(client, subscriptionId) : [];
   const hostedSubscription = hostedSubscriptions[0] ?? null;
   const stripeCustomerId = readStripeId(invoice.customer);
@@ -161,7 +179,7 @@ export async function recordBillingInvoiceFromStripeInvoiceWithClient(client: Or
     readString(existingInvoice.customer_id) ??
     await findCustomerIdByEmail(client, email);
   const paymentIntentId = readStripeId(invoice.payment_intent);
-  const hasCheckoutBreakdown = Boolean(readString(existingInvoice.order_id) || readString(existingInvoice.stripe_checkout_session_id));
+  const hasCheckoutBreakdown = hasCheckoutReference;
 
   const record: BillingInvoiceRecord = {
     customer_id: customerId,
@@ -407,9 +425,12 @@ async function findCustomerById(client: OrdersDbClient, customerId: string) {
 
 function readInvoiceTaxCents(invoice: StripeInvoiceLike) {
   if (typeof invoice.tax === "number" && Number.isFinite(invoice.tax)) return invoice.tax;
-  return Array.isArray(invoice.total_tax_amounts)
-    ? invoice.total_tax_amounts.reduce((total, row) => total + (readNumber(row.amount) ?? 0), 0)
-    : 0;
+  const taxes = Array.isArray(invoice.total_taxes) ? invoice.total_taxes : invoice.total_tax_amounts;
+  return Array.isArray(taxes) ? taxes.reduce((total, row) => total + (readNumber(row.amount) ?? 0), 0) : 0;
+}
+
+function readStripeInvoiceSubscriptionId(invoice: StripeInvoiceLike) {
+  return readStripeId(invoice.subscription) ?? readStripeId(invoice.parent?.subscription_details?.subscription);
 }
 
 function readPaymentMethodLabel(details: Record<string, unknown>) {

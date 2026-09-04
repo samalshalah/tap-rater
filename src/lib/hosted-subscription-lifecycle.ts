@@ -40,6 +40,11 @@ type StripeSubscriptionObject = {
 
 type StripeInvoiceObject = {
   subscription?: string | { id?: string | null } | null;
+  parent?: {
+    subscription_details?: {
+      subscription?: string | { id?: string | null } | null;
+    } | null;
+  } | null;
   customer?: string | { id?: string | null } | null;
 };
 
@@ -128,7 +133,7 @@ function deriveLifecycleUpdate(type: HostedSubscriptionLifecycleEventType, objec
   if (type === "invoice.paid") {
     const invoice = readInvoiceObject(object);
     return {
-      subscriptionId: readStripeId(invoice?.subscription),
+      subscriptionId: readInvoiceSubscriptionId(invoice),
       status: "active",
       lifecycleStatus: "ACTIVE" as HostedPageLifecycleStatus,
       currentPeriodEnd: null,
@@ -142,7 +147,7 @@ function deriveLifecycleUpdate(type: HostedSubscriptionLifecycleEventType, objec
     const invoice = readInvoiceObject(object);
     const pastDueSince = now.toISOString();
     return {
-      subscriptionId: readStripeId(invoice?.subscription),
+      subscriptionId: readInvoiceSubscriptionId(invoice),
       status: "past_due",
       lifecycleStatus: "PAST_DUE" as HostedPageLifecycleStatus,
       currentPeriodEnd: null,
@@ -254,6 +259,10 @@ function readSubscriptionObject(value: unknown): StripeSubscriptionObject | null
 
 function readInvoiceObject(value: unknown): StripeInvoiceObject | null {
   return value && typeof value === "object" ? (value as StripeInvoiceObject) : null;
+}
+
+function readInvoiceSubscriptionId(invoice: StripeInvoiceObject | null) {
+  return readStripeId(invoice?.subscription) ?? readStripeId(invoice?.parent?.subscription_details?.subscription);
 }
 
 function readStripeId(value: unknown) {

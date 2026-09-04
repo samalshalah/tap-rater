@@ -29,9 +29,14 @@ describe("billing invoice storage", () => {
       status: "paid",
       paid: true,
       customer: "cus_123",
-      subscription: "sub_123",
-      total: 999,
-      amount_paid: 999,
+      parent: {
+        type: "subscription_details",
+        subscription_details: { subscription: "sub_123" }
+      },
+      subtotal: 999,
+      total_taxes: [{ amount: 60 }],
+      total: 1059,
+      amount_paid: 1059,
       currency: "usd",
       hosted_invoice_url: "https://pay.stripe.com/invoice",
       invoice_pdf: "https://pay.stripe.com/invoice.pdf",
@@ -50,8 +55,9 @@ describe("billing invoice storage", () => {
         stripe_subscription_id: "sub_123",
         invoice_number: "INV-123",
         payment_status: "paid",
-        total_cents: 999,
-        amount_paid_cents: 999,
+        tax_cents: 60,
+        total_cents: 1059,
+        amount_paid_cents: 1059,
         invoice_pdf_url: "https://pay.stripe.com/invoice.pdf"
       }
     ]);
@@ -64,6 +70,30 @@ describe("billing invoice storage", () => {
         option_label: "Monthly hosting"
       }
     ]);
+  });
+
+  it("skips an invoice-first one-time delivery so checkout remains authoritative", async () => {
+    const client = new MemoryDbClient({
+      customers: [],
+      hosted_subscriptions: [],
+      orders: [],
+      billing_invoices: [],
+      billing_invoice_items: []
+    });
+
+    const invoiceResult = await recordBillingInvoiceFromStripeInvoiceWithClient(client, {
+      id: "in_one_time",
+      status: "paid",
+      paid: true,
+      customer: { id: "cus_one_time", email: "buyer@example.com" },
+      subtotal: 6394,
+      total: 6394,
+      amount_paid: 6394,
+      currency: "usd"
+    });
+
+    expect(invoiceResult).toEqual({ ok: true, skipped: true });
+    expect(client.table("billing_invoices")).toEqual([]);
   });
 
   it("stores all hosted subscription invoice items when one Stripe invoice covers multiple Multi-Link pages", async () => {
