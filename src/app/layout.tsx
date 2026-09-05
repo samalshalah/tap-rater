@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteShell } from "@/components/layout/site-shell";
+import { getPublicSiteUrl } from "@/lib/public-site-url";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com"),
+  metadataBase: new URL(getPublicSiteUrl()),
   title: {
     default: "Tap Rater | NFC and QR Stands for Local Businesses",
     template: "%s | Tap Rater"

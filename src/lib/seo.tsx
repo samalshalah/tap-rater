@@ -2,8 +2,9 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { getProductBaseSku } from "@/lib/product-model";
 import { resolveProductSeo } from "@/lib/product-seo";
 import { getProductPriceCents } from "@/lib/products";
+import { getPublicSiteUrl } from "@/lib/public-site-url";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com";
+const siteUrl = getPublicSiteUrl();
 
 export function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();

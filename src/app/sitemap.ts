@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { catalogCategories } from "@/data/migrated-products";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
+import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { getStorefrontProducts } from "@/lib/product-repository";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com").replace(/\/+$/, "");
+const siteUrl = getPublicSiteUrl();
 const staticRoutes = [
   "",
   "/shop",

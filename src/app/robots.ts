@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { getPublicSiteUrl } from "@/lib/public-site-url";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com").replace(/\/+$/, "");
+const siteUrl = getPublicSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {
