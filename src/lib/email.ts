@@ -146,6 +146,30 @@ export async function sendCustomerLoginLinkEmail(input: { to: string; loginUrl: 
   });
 }
 
+export async function sendCustomerPasswordResetEmail(input: { to: string; resetUrl: string } & EmailClientInput) {
+  return sendEmail({
+    to: input.to,
+    subject: "Reset your Tap Rater password",
+    html: buildEmailHtml({
+      body: ["A password reset was requested for your Tap Rater account.", "This link expires in 20 minutes and can be used once. If you did not request it, you can ignore this email."],
+      cta: { label: "Reset password", url: input.resetUrl }
+    }),
+    delivery: { messageType: "customer_password_reset", audience: "customer", retryable: false },
+    replyTo: getCustomerReplyToEmail(),
+    resendClient: input.resendClient
+  });
+}
+
+export async function sendCustomerPasswordChangedEmail(to: string) {
+  return sendEmail({
+    to,
+    subject: "Your Tap Rater password was changed",
+    html: buildEmailHtml({ body: ["Your Tap Rater password has been changed. Previous account sessions have been signed out.", "If you did not make this change, contact Tap Rater support immediately by replying to this email."] }),
+    delivery: { messageType: "customer_password_changed", audience: "customer", retryable: false },
+    replyTo: getCustomerReplyToEmail()
+  });
+}
+
 export async function sendQuoteRequestNotificationEmail(
   input: { to: string; name: string; email: string; businessName: string; notes?: string } & EmailClientInput
 ) {

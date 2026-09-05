@@ -69,7 +69,11 @@ const nextConfig: NextConfig = {
       ...privateRoutePatterns.map((source) => ({
         source,
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
-      }))
+      })),
+      {
+        source: "/account/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }]
+      }
     ];
   }
 };

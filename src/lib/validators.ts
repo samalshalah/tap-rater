@@ -447,6 +447,18 @@ export const accountActivateSchema = z.object({
   password: z.string().min(8).max(200)
 });
 
+export const accountForgotPasswordSchema = z.object({
+  email: z.string().trim().email().max(180)
+});
+
+export const accountResetPasswordSchema = z.object({
+  token: z.string().regex(/^[A-Za-z0-9_-]{43}$/),
+  password: z.string().min(8).max(200),
+  confirmPassword: z.string().min(8).max(200)
+}).refine((value) => value.password === value.confirmPassword, {
+  message: "Passwords do not match.", path: ["confirmPassword"]
+});
+
 export const accountChangeRequestSchema = z.object({
   tapraterId: z.string().trim().min(3).max(80),
   newReviewUrl: z

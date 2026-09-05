@@ -6,7 +6,7 @@ import { getTaxSettings } from "@/lib/tax-settings";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Checkout | Tap Rater",
+  title: "Checkout",
   description: "Complete your Tap Rater order with secure embedded Stripe checkout."
 };
 

@@ -7,6 +7,7 @@ import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
 import { getCategoryBySlug } from "@/lib/products";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
+import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   }
 
   return {
-    title: standType?.seoTitle || category.seoTitle.replace(" | Tap Rater", ""),
+    title: withoutSiteTitleSuffix(standType?.seoTitle || category.seoTitle),
     description: standType?.seoDescription || category.seoDescription,
     alternates: {
       canonical: getCategoryHref(category.slug)

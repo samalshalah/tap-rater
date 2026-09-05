@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata = {
-  title: "Checkout Canceled | Tap Rater",
+  title: "Checkout Canceled",
   description: "Your Tap Rater Stripe checkout was canceled."
 };
 

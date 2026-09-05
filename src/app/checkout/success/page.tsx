@@ -13,7 +13,7 @@ type CheckoutSuccessPageProps = {
 };
 
 export const metadata = {
-  title: "Checkout Success | Tap Rater",
+  title: "Checkout Success",
   description: "Your Tap Rater order was received."
 };
 

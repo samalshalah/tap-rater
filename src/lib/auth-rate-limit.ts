@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 
-export type LoginRateLimitScope = "admin" | "customer";
+export type LoginRateLimitScope = "admin" | "customer" | "customer_recovery";
 
 type AuthRateLimitDbClient = {
   from: (table: string) => any;
@@ -39,21 +39,24 @@ export async function checkLoginRateLimit(input: {
 export async function checkLoginRateLimitWithClient(
   client: AuthRateLimitDbClient,
   context: LoginRateLimitContext,
-  now = new Date()
+  now = new Date(),
+  strict = false
 ) {
   const since = new Date(now.getTime() - rateLimitWindowMs).toISOString();
   const identifierFailures = await countRecentFailures(client, {
     column: "identifier_hash",
     context,
     since,
-    value: context.identifierHash
+    value: context.identifierHash,
+    strict
   });
   const ipFailures = context.ipHash
     ? await countRecentFailures(client, {
         column: "ip_hash",
         context,
         since,
-        value: context.ipHash
+        value: context.ipHash,
+        strict
       })
     : 0;
 
@@ -62,6 +65,24 @@ export async function checkLoginRateLimitWithClient(
     limited: identifierFailures >= maxFailuresPerIdentifier || ipFailures >= maxFailuresPerIp,
     retryAfterSeconds: Math.ceil(rateLimitWindowMs / 1000)
   };
+}
+
+export async function consumeCustomerRecoveryAttempt(headers: Headers, identifier: string) {
+  const context = createLoginRateLimitContext({ headers, identifier, scope: "customer_recovery" });
+  if (!context.configured) return { available: false, limited: false, retryAfterSeconds: 0 };
+
+  try {
+    const client = getSupabaseAdmin() as AuthRateLimitDbClient;
+    const result = await checkLoginRateLimitWithClient(client, context, new Date(), true);
+    if (!result.limited) {
+      // Count every recovery request, including unknown addresses and successful resets.
+      const attempt = await recordLoginAttemptWithClient(client, context, false);
+      if (attempt.error) throw new Error("Recovery rate limit unavailable.");
+    }
+    return { available: true, limited: result.limited, retryAfterSeconds: result.retryAfterSeconds };
+  } catch {
+    return { available: false, limited: false, retryAfterSeconds: 0 };
+  }
 }
 
 export async function recordLoginAttempt(context: LoginRateLimitContext, success: boolean) {
@@ -125,6 +146,7 @@ async function countRecentFailures(
     context: LoginRateLimitContext;
     since: string;
     value: string;
+    strict?: boolean;
   }
 ) {
   const { data, error } = await client
@@ -137,6 +159,7 @@ async function countRecentFailures(
     .limit(maxFailuresPerIp);
 
   if (error || !Array.isArray(data)) {
+    if (input.strict) throw new Error("Recovery rate limit unavailable.");
     return 0;
   }
 

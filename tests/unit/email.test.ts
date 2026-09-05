@@ -5,11 +5,23 @@ import {
   getDefaultFromEmail,
   sendEmail,
   sendCustomerLoginLinkEmail,
+  sendCustomerPasswordResetEmail,
   sendLinkChangeRequestEmail,
   sendQuoteRequestConfirmationEmail
 } from "@/lib/email";
 
 describe("email utility", () => {
+  it("sends recovery links with expiry and a support reply address", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const send = vi.fn().mockResolvedValue({ data: { id: "email-1" }, error: null });
+    const resetUrl = "https://taprater.com/account/reset-password?token=fixture";
+    expect(await sendCustomerPasswordResetEmail({ to: "owner@example.com", resetUrl, resendClient: { emails: { send } } })).toEqual({ sent: true });
+    expect(send.mock.calls[0][0]).toMatchObject({ subject: "Reset your Tap Rater password", replyTo: "support@taprater.com" });
+    expect(send.mock.calls[0][0].html).toContain(resetUrl);
+    expect(send.mock.calls[0][0].html).toContain("20 minutes");
+    expect(send.mock.calls[0][0].html).toContain("used once");
+  });
+
   afterEach(() => {
     delete process.env.RESEND_API_KEY;
     delete process.env.RESEND_FROM_EMAIL;

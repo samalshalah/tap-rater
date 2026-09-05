@@ -7,7 +7,7 @@ export async function GET() {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
-  if (!session || !(await isActiveCustomerSession(session.email))) {
+  if (!session || !(await isActiveCustomerSession(session.email, session.issuedAt))) {
     return NextResponse.json({ authenticated: false });
   }
 

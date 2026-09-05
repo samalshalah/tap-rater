@@ -9,6 +9,7 @@ import { accountLoginRequestSchema } from "@/lib/validators";
 const customerSessionMaxAgeSeconds = 30 * 24 * 60 * 60;
 
 export async function POST(request: Request) {
+  const loginStartedAt = Date.now();
   const parsed = accountLoginRequestSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {
@@ -60,12 +61,12 @@ export async function POST(request: Request) {
   }
 
   await recordLoginAttempt(rateLimit.context, true);
-  return createLoginResponse(login.customer.email, request);
+  return createLoginResponse(login.customer.email, request, loginStartedAt);
 }
 
-function createLoginResponse(email: string, request: Request) {
+function createLoginResponse(email: string, request: Request, issuedAt: number) {
   const response = NextResponse.json({ ok: true, redirectTo: "/account" });
-  response.cookies.set(customerCookieName, createCustomerSessionValue(email), {
+  response.cookies.set(customerCookieName, createCustomerSessionValue(email, issuedAt), {
     httpOnly: true,
     sameSite: "lax",
     secure: new URL(request.url).protocol === "https:",

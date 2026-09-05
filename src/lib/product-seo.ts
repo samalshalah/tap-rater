@@ -2,6 +2,7 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import { lockedBusinessUses, lockedPlatforms, lockedStandTypes } from "@/lib/catalog-architecture";
 import { formatPrice, getCategoryBySlug, getProductPriceCents } from "@/lib/products";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
+import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 
 export type ProductSeo = {
   title: string;
@@ -51,7 +52,7 @@ export function resolveProductSeo(product: MigratedProduct): ProductSeo {
 
   return {
     ...generated,
-    title: customTitle ? clampSeoText(stripTapRaterSuffix(customTitle), MAX_TITLE_LENGTH) : generated.generatedTitle,
+    title: customTitle ? clampSeoText(withoutSiteTitleSuffix(customTitle), MAX_TITLE_LENGTH) : generated.generatedTitle,
     description: clampSeoText(description, MAX_DESCRIPTION_LENGTH),
     isTitleCustom: Boolean(customTitle),
     isDescriptionCustom: Boolean(customDescription)
@@ -169,10 +170,6 @@ function sanitizeRetiredPublicCopy(value: string) {
     .replace(/\bNo monthly fee\.?/gi, "One-time physical product purchase.")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function stripTapRaterSuffix(value: string) {
-  return value.replace(/\s*\|\s*Tap Rater\s*$/i, "").trim();
 }
 
 function singularizeStandType(value: string) {

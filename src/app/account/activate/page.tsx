@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AccountActivationForm } from "@/components/account/account-activation-form";
 
 export const metadata = {
-  title: "Activate Account | Tap Rater",
+  title: "Activate Account",
   description: "Activate your Tap Rater Multi-Link account and create your password."
 };
 

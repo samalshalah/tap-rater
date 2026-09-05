@@ -56,6 +56,9 @@ create table if not exists customers (
   phone text,
   role text default 'customer',
   password_hash text,
+  password_reset_token_hash text,
+  password_reset_expires_at timestamptz,
+  sessions_invalid_before timestamptz,
   account_status text not null default 'pending_activation',
   activation_token_hash text,
   activation_expires_at timestamptz,
@@ -65,6 +68,9 @@ create table if not exists customers (
   updated_at timestamptz default now(),
   constraint customers_account_status_check check (account_status in ('pending_activation', 'active', 'disabled'))
 );
+
+create unique index if not exists customers_password_reset_token_hash_idx
+  on customers(password_reset_token_hash) where password_reset_token_hash is not null;
 
 create table if not exists businesses (
   id uuid primary key default gen_random_uuid(),
@@ -188,7 +194,7 @@ create table if not exists device_activation_attempts (
 
 create table if not exists auth_login_attempts (
   id uuid primary key default gen_random_uuid(),
-  scope text not null check (scope in ('admin', 'customer')),
+  scope text not null check (scope in ('admin', 'customer', 'customer_recovery')),
   identifier_hash text not null,
   ip_hash text,
   success boolean not null default false,

@@ -89,6 +89,20 @@ describe("customer billing profiles", () => {
     await expect(findAuthenticatedStripeCustomerIdForCheckout(client, request, "owner@example.com", "live")).resolves.toBeNull();
   });
 
+  it("does not reuse saved Stripe details after the customer resets their password", async () => {
+    process.env.CUSTOMER_SESSION_SECRET = "customer-session-secret-for-tests";
+    const issuedAt = Date.now() - 1000;
+    const client = createBillingDb({
+      customers: [{ id: "customer-1", email: "owner@example.com", account_status: "active", sessions_invalid_before: new Date().toISOString() }],
+      hosted_subscriptions: [{ customer_id: "customer-1", stripe_customer_id: "cus_owner", stripe_checkout_session_id: "cs_test_owner" }],
+      orders: []
+    });
+    const request = new Request("https://taprater.com/api/checkout", {
+      headers: { cookie: `taprater_customer=${createCustomerSessionValue("owner@example.com", issuedAt)}` }
+    });
+    await expect(findAuthenticatedStripeCustomerIdForCheckout(client, request, "owner@example.com", "test")).resolves.toBeNull();
+  });
+
   it("does not reuse saved Stripe details from a disabled account session", async () => {
     process.env.CUSTOMER_SESSION_SECRET = "customer-session-secret-for-tests";
     const client = createBillingDb({

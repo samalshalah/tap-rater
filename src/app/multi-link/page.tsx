@@ -18,7 +18,7 @@ const benefits = [
 ];
 
 export const metadata: Metadata = {
-  title: "Multi-Link Service | Tap Rater",
+  title: "Multi-Link Service",
   description: "Add Multi-Link to a compatible Tap Rater stand for an editable hosted page with up to 10 customer links.",
   alternates: { canonical: "/multi-link" }
 };

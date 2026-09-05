@@ -1,4 +1,4 @@
-import { customerCookieName, parseCustomerSession } from "@/lib/customer-auth";
+import { customerCookieName, isActiveCustomerSessionWithClient, parseCustomerSession } from "@/lib/customer-auth";
 
 export type CustomerBillingDbClient = {
   from: (table: string) => any;
@@ -58,6 +58,8 @@ export async function findAuthenticatedStripeCustomerIdForCheckout(
   if (!session || normalizeEmail(session.email) !== normalizeEmail(checkoutEmail)) {
     return null;
   }
+
+  if (!(await isActiveCustomerSessionWithClient(client, session.email, session.issuedAt))) return null;
 
   return findStripeCustomerIdForEmail(client, session.email, { requireActiveAccount: true, stripeMode });
 }

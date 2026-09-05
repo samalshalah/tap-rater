@@ -1,7 +1,7 @@
 import { AccountLoginForm } from "@/components/account/account-login-form";
 
 export const metadata = {
-  title: "Customer Login | Tap Rater",
+  title: "Customer Login",
   description: "Log in to manage your Tap Rater Multi-Link page."
 };
 

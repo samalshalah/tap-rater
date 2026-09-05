@@ -22,13 +22,13 @@ describe("customer auth", () => {
   it("creates and validates signed customer sessions", () => {
     const session = createCustomerSessionValue("OWNER@EXAMPLE.COM");
 
-    expect(parseCustomerSession(session)).toEqual({ email: "owner@example.com" });
+    expect(parseCustomerSession(session)).toEqual({ email: "owner@example.com", issuedAt: Date.now() });
   });
 
   it("validates URL-encoded signed customer sessions from response cookies", () => {
     const session = createCustomerSessionValue("owner@example.com");
 
-    expect(parseCustomerSession(encodeURIComponent(session))).toEqual({ email: "owner@example.com" });
+    expect(parseCustomerSession(encodeURIComponent(session))).toEqual({ email: "owner@example.com", issuedAt: Date.now() });
   });
 
   it("rejects expired customer sessions", () => {
@@ -46,9 +46,19 @@ describe("customer auth", () => {
   it("creates short-lived login tokens", () => {
     const token = createCustomerLoginToken("owner@example.com");
 
-    expect(parseCustomerLoginToken(token)).toEqual({ email: "owner@example.com" });
+    expect(parseCustomerLoginToken(token)).toEqual({ email: "owner@example.com", issuedAt: Date.now() });
     vi.setSystemTime(new Date("2026-07-09T12:20:01.000Z"));
     expect(parseCustomerLoginToken(token)).toBeNull();
+  });
+
+  it("rejects sessions issued before a password reset, including legacy sessions without timestamps", async () => {
+    const invalidBefore = new Date().toISOString();
+    const builder = { select: () => builder, eq: () => builder, maybeSingle: async () => ({ data: { account_status: "active", sessions_invalid_before: invalidBefore }, error: null }) };
+    const client = { from: () => builder };
+    for (const issuedAt of [undefined, Date.now() - 1, Date.now()]) {
+      expect(await isActiveCustomerSessionWithClient(client, "owner@example.com", issuedAt)).toBe(false);
+    }
+    expect(await isActiveCustomerSessionWithClient(client, "owner@example.com", Date.now() + 1)).toBe(true);
   });
 
   it("accepts persisted sessions only while the customer account remains active", async () => {

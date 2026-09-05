@@ -25,7 +25,7 @@ import { GET } from "@/app/api/account/session/route";
 describe("customer session route", () => {
   beforeEach(() => {
     mocks.parseCustomerSession.mockReset();
-    mocks.parseCustomerSession.mockReturnValue({ email: "owner@example.com" });
+    mocks.parseCustomerSession.mockReturnValue({ email: "owner@example.com", issuedAt: 1000 });
     mocks.isActiveCustomerSession.mockReset();
     mocks.isActiveCustomerSession.mockResolvedValue(true);
     mocks.getCustomerPortal.mockReset();
@@ -50,5 +50,6 @@ describe("customer session route", () => {
       name: "Owner"
     });
     expect(mocks.getCustomerPortal).toHaveBeenCalledWith("owner@example.com");
+    expect(mocks.isActiveCustomerSession).toHaveBeenCalledWith("owner@example.com", 1000);
   });
 });

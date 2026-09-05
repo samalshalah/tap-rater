@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUseBySlug, getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 
 type BusinessUsePageProps = {
   params: Promise<{ slug: string }>;
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: BusinessUsePageProps): Promis
   }
 
   return {
-    title: businessUse.seoTitle || `${businessUse.title} NFC Stands`,
+    title: withoutSiteTitleSuffix(businessUse.seoTitle || `${businessUse.title} NFC Stands`),
     description: businessUse.seoDescription || businessUse.shortDescription || businessUse.description,
     alternates: { canonical: `/solutions/${businessUse.slug}` },
     openGraph: {
