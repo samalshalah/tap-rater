@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ImageUp, Minus, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
-import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { maxCartItemQuantity } from "@/lib/cart";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -94,6 +94,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const builderContentRef = useRef<HTMLDivElement>(null);
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -135,6 +136,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       document.body.style.overflow = originalOverflow;
     };
   }, [isBuilderOpen]);
+
+  useEffect(() => {
+    if (!isBuilderOpen || !builderContentRef.current) return;
+    builderContentRef.current.scrollTop = 0;
+  }, [isBuilderOpen, step]);
 
   useEffect(() => {
     if (!isBuilderOpen) return;
@@ -505,12 +511,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         : ["Destination", "Confirm"];
   const stepGridClassName =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? "sm:grid-cols-4"
+      ? "grid-cols-4"
       : selectedLinkExperience === "multilink"
-        ? "sm:grid-cols-3"
+        ? "grid-cols-3"
         : selectedOption.id === "branded_qr_direct"
-          ? "sm:grid-cols-3"
-          : "sm:grid-cols-2";
+          ? "grid-cols-3"
+          : "grid-cols-2";
   const stepOrder: SetupStep[] =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
       ? ["destination", "links", "design", "confirmation"]
@@ -756,10 +762,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       {isBuilderOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={modalTitle}>
           <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden bg-white" style={{ borderRadius: "var(--tr-radius-card)", boxShadow: "var(--tr-shadow-elevated)" }}>
-            <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-4 sm:px-6">
-              <div>
+            <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
+              <div className="min-w-0">
                 <p className="tr-eyebrow">{product.title}</p>
-                <h2 className="mt-1 text-2xl font-semibold text-ink">{modalTitle}</h2>
+                <h2 className="mt-1 break-words text-xl font-semibold text-ink sm:text-2xl">{modalTitle}</h2>
               </div>
               <button type="button" className="tr-icon-button shrink-0" onClick={closeBuilder} aria-label="Close builder">
                 <X size={18} />
@@ -767,27 +773,27 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             </div>
 
             <div className="border-b border-line px-4 py-3 sm:px-6">
-              <ol className={`grid gap-2 text-xs font-semibold uppercase text-muted ${stepGridClassName}`}>
+              <ol className={`grid gap-2 text-[10px] font-semibold uppercase text-muted sm:text-xs ${stepGridClassName}`}>
                 {stepLabels.map((label, index) => (
                   <li key={label} className={index < activeStepIndex ? "rounded-lg bg-panel text-brand" : index === activeStepIndex ? "rounded-lg bg-ink text-white" : "rounded-lg border border-line"}>
                     <button
                       type="button"
-                      className="flex w-full items-center px-3 py-2 text-left disabled:cursor-default"
+                      className="flex h-full min-h-12 w-full min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-center disabled:cursor-default sm:min-h-0 sm:flex-row sm:justify-start sm:gap-0 sm:px-3 sm:text-left"
                       disabled={index >= activeStepIndex}
                       onClick={() => {
                         const targetStep = stepOrder[index];
                         if (targetStep) setStep(targetStep);
                       }}
                     >
-                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink">{index + 1}</span>
-                      <span>{label}</span>
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink sm:mr-2">{index + 1}</span>
+                      <span className="min-w-0 leading-3 sm:leading-normal">{label}</span>
                     </button>
                   </li>
                 ))}
               </ol>
             </div>
 
-            <div className="overflow-y-auto px-4 py-3 sm:px-6">
+            <div ref={builderContentRef} className="overflow-y-auto px-4 py-3 sm:px-6">
               {step !== "destination" ? (
                 <button type="button" className="mb-3 text-sm font-semibold text-brand hover:text-ink" onClick={goToPreviousStep}>
                   Back to previous step
@@ -796,14 +802,6 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
               {step === "destination" ? (
                 <div className="grid gap-4">
-                  <BuilderSummary
-                    image={selectedImage}
-                    option={selectedOption}
-                    productTitle={product.title}
-                    quantity={selectedQuantity}
-                    unitPriceCents={configuredUnitPriceCents}
-                    linkExperience={selectedLinkExperience}
-                  />
                   {selectedLinkExperience === "multilink" ? (
                     <>
                       <div>
@@ -920,6 +918,15 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                       ) : null}
                     </>
                   )}
+                  <BuilderSummary
+                    className="sm:order-first"
+                    image={selectedImage}
+                    option={selectedOption}
+                    productTitle={product.title}
+                    quantity={selectedQuantity}
+                    unitPriceCents={configuredUnitPriceCents}
+                    linkExperience={selectedLinkExperience}
+                  />
                 </div>
               ) : null}
 
@@ -1004,7 +1011,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
               {step === "review" ? (
                 <div className="grid gap-3">
-                  <div className="sr-only">
+                  <div>
                     <p className="text-sm font-semibold text-ink">Confirm setup</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
                       {selectedLinkExperience === "multilink"
@@ -1043,6 +1050,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
               {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Confirm setup</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">Review the branded stand details before adding it to your cart.</p>
+                  </div>
                   <div className="rounded-lg border border-line bg-white p-4 text-sm leading-6 text-muted">
                     <p className="text-base font-semibold text-ink">{product.title}</p>
                     <p>{selectedOption.label} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)}</p>
@@ -1057,7 +1068,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 
             <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
               {error ? <p className="tr-status-error mb-3" role="alert">{error}</p> : null}
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
                   className="tr-button-outline"
@@ -1108,6 +1119,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
 }
 
 function BuilderSummary({
+  className = "",
   image,
   linkExperience,
   productTitle,
@@ -1115,6 +1127,7 @@ function BuilderSummary({
   unitPriceCents,
   option
 }: {
+  className?: string;
   image: { src: string; alt: string };
   linkExperience: LinkExperienceId;
   productTitle: string;
@@ -1126,7 +1139,7 @@ function BuilderSummary({
   const itemPrice = unitPriceCents ?? option.priceCents;
 
   return (
-    <div className="tr-panel-muted grid gap-3 p-3 sm:grid-cols-[96px_1fr] sm:items-center">
+    <div className={`tr-panel-muted grid grid-cols-[72px_minmax(0,1fr)] items-center gap-3 p-3 sm:grid-cols-[96px_minmax(0,1fr)] ${className}`}>
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
         <Image src={optimizedUploadSrc(image.src, 160)} alt={image.alt} fill unoptimized className="object-contain p-2" />
       </div>
