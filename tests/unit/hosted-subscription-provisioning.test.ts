@@ -35,6 +35,7 @@ describe("hosted subscription provisioning", () => {
     const order = createHostedOrder({
       setup: {
         businessName: "Owner Example",
+        logoMediaUrl: "/api/media/product/owner-logo.png",
         multiLinkButtons: [
           { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 },
           { id: "link-2", type: "google_review", label: "Review us", url: "https://g.page/example/review", enabled: true, position: 1 }
@@ -121,6 +122,7 @@ describe("hosted subscription provisioning", () => {
       { id: "link-1", label: "Website", type: "website", url: "https://example.com", isVisible: true },
       { id: "link-2", label: "Review us", type: "review", url: "https://g.page/example/review", isVisible: true }
     ]);
+    expect(snapshot.logoUrl).toBe("https://taprater.com/api/media/product/owner-logo.png");
     expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({
       to: "owner@example.com",
       businessName: "Owner Example",
@@ -290,6 +292,84 @@ describe("hosted subscription provisioning", () => {
       lifecycle_status: "ACTIVE"
     });
     expect(storage.assignedCodes).toEqual([]);
+  });
+
+  it("creates a separate page when an active customer buys another Multi-Link stand", async () => {
+    const client = new MemoryDbClient();
+    client.table("customers").push({ id: "customers-1", email: "owner@example.com", name: "Owner Example", account_status: "active" });
+    client.table("businesses").push({ id: "businesses-1", customer_id: "customers-1", business_name: "First Location" });
+    client.table("hosted_page_editor_pages").push({
+      id: "hosted_page_editor_pages-1",
+      customer_id: "customers-1",
+      business_id: "businesses-1",
+      code: "ABCDEFGHJKM2",
+      lifecycle_status: "ACTIVE",
+      draft_json: { businessName: "First Location", appearance: { theme: "light", accentColor: "#0f766e" }, buttons: [] }
+    });
+    client.table("hosted_subscriptions").push({
+      id: "hosted_subscriptions-1",
+      customer_id: "customers-1",
+      business_id: "businesses-1",
+      hosted_page_id: "hosted_page_editor_pages-1",
+      order_id: "old-order",
+      stripe_checkout_session_id: "cs_test_old",
+      stripe_customer_id: "cus_test_old",
+      stripe_subscription_id: "sub_test_old",
+      permanent_code: "ABCDEFGHJKM2",
+      hosted_page_url: "https://taprater.com/p/ABCDEFGHJKM2",
+      status: "active",
+      lifecycle_status: "ACTIVE",
+      created_at: "2026-08-01T00:00:00.000Z",
+      updated_at: "2026-08-01T00:00:00.000Z"
+    });
+    const storage = new MemoryHostedStorage(["BBBBBBBBBBB2"]);
+    const secondOrder = {
+      ...createHostedOrder({ setup: { businessName: "Second Location" } }),
+      id: "new-order",
+      stripe_checkout_session_id: "cs_test_new"
+    };
+    client.table("orders")[0] = secondOrder as any;
+
+    const result = await provisionHostedSubscriptionFromCheckout(
+      {
+        eventId: "evt_second_active_page",
+        eventType: "checkout.session.completed",
+        session: {
+          id: "cs_test_new",
+          payment_status: "paid",
+          customer: "cus_test_new",
+          customer_details: { email: "owner@example.com", name: "Owner Example" },
+          metadata: { checkout_intent: "hosted_subscription" },
+          subscription: { id: "sub_test_new", status: "active" }
+        },
+        order: secondOrder,
+        now: new Date("2026-08-23T12:00:00.000Z"),
+        siteUrl: "https://taprater.com"
+      },
+      { client, storage, generateCode: () => "BBBBBBBBBBB2" }
+    );
+
+    expect(result).toMatchObject({ ok: true, provisioned: true, code: "BBBBBBBBBBB2" });
+    expect(client.table("businesses")).toHaveLength(2);
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(2);
+    expect(client.table("hosted_subscriptions")).toHaveLength(2);
+    expect(client.table("hosted_subscriptions")[0]).toMatchObject({
+      stripe_checkout_session_id: "cs_test_old",
+      stripe_subscription_id: "sub_test_old",
+      permanent_code: "ABCDEFGHJKM2",
+      lifecycle_status: "ACTIVE"
+    });
+    expect(client.table("hosted_subscriptions")[1]).toMatchObject({
+      stripe_checkout_session_id: "cs_test_new",
+      stripe_subscription_id: "sub_test_new",
+      permanent_code: "BBBBBBBBBBB2",
+      lifecycle_status: "ACTIVE"
+    });
+    expect(client.table("orders")[0].line_items_json[0].setup).toMatchObject({
+      hostedPageCode: "BBBBBBBBBBB2",
+      hostedPageUrl: "https://taprater.com/p/BBBBBBBBBBB2"
+    });
+    expect(storage.assignedCodes).toEqual(["BBBBBBBBBBB2"]);
   });
 
   it("does not send hosted setup email from the browser success page", async () => {

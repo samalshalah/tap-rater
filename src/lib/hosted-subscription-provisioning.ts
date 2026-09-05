@@ -92,6 +92,20 @@ type StripeSubscriptionLike = {
   cancel_at_period_end?: boolean | null;
 };
 
+type ExistingHostedSubscription = {
+  id: string;
+  business_id: string;
+  hosted_page_id: string;
+  permanent_code: string;
+  hosted_page_url: string;
+  updated_at?: string;
+};
+
+type ExistingHostedSubscriptionMatch = {
+  subscription: ExistingHostedSubscription;
+  reason: "checkout_session" | "expired_customer_page";
+};
+
 export async function provisionHostedSubscriptionFromCheckout(
   input: HostedSubscriptionProvisioningInput,
   dependencies?: HostedSubscriptionProvisioningDependencies
@@ -152,15 +166,29 @@ export async function provisionHostedSubscriptionFromCheckout(
     const hostedItem = input.order.line_items_json[hostedItemIndex];
     const setup = readSetup(hostedItem);
     const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
-    const logoUrl = readString(setup.logoMediaUrl);
+    const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
     const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-    const existingHostedSubscription = shouldReuseExistingCustomerPage ? await findExistingHostedSubscriptionForCustomer(client, customer.customerId) : null;
     const lineSessionId = hostedItemIndexes.length > 1 ? `${input.session.id}:line:${hostedItemIndex + 1}` : input.session.id;
+    const existingMatch = await findHostedSubscriptionForProvisioning(client, {
+      customerId: customer.customerId,
+      checkoutSessionId: lineSessionId,
+      allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage
+    });
+    if (!existingMatch.ok) return existingMatch;
+    const existingHostedSubscription = existingMatch.match?.subscription ?? null;
     const lineSubscriptionId = stripeSubscriptionId;
     const physicalProductRef = buildPhysicalProductRef(input.order, input.session.id, hostedItemIndex);
-    const business = existingHostedSubscription
-      ? { ok: true as const, businessId: existingHostedSubscription.business_id }
-      : await createBusiness(client, {
+    const business = existingMatch.match?.reason === "expired_customer_page"
+      ? await updateBusiness(client, {
+          businessId: existingHostedSubscription!.business_id,
+          customerId: customer.customerId,
+          businessName,
+          logoUrl: logoUrl ?? null,
+          now
+        })
+      : existingHostedSubscription
+        ? { ok: true as const, businessId: existingHostedSubscription.business_id }
+        : await createBusiness(client, {
           customerId: customer.customerId,
           businessName,
           logoUrl: logoUrl ?? null,
@@ -189,16 +217,18 @@ export async function provisionHostedSubscriptionFromCheckout(
     });
     if (!hostedPageCode.ok) return hostedPageCode;
 
-    const page = await upsertHostedEditorPage(client, {
-      customerId: customer.customerId,
-      businessId: business.businessId,
-      code: assignment.code,
-      lifecycleStatus,
-      businessName,
-      logoUrl: logoUrl ?? null,
-      initialButtons,
-      now
-    });
+    const page = existingMatch.match?.reason === "checkout_session"
+      ? { ok: true as const, pageId: existingHostedSubscription!.hosted_page_id }
+      : await upsertHostedEditorPage(client, {
+          customerId: customer.customerId,
+          businessId: business.businessId,
+          code: assignment.code,
+          lifecycleStatus,
+          businessName,
+          logoUrl: logoUrl ?? null,
+          initialButtons,
+          now
+        });
     if (!page.ok) return page;
 
     const subscription = await upsertHostedSubscription(client, {
@@ -222,7 +252,7 @@ export async function provisionHostedSubscriptionFromCheckout(
     if (!subscription.ok) return subscription;
 
     const publishedPage = duplicateEvent ? await readCurrentHostedPageSnapshot(storage, assignment.code) : null;
-    if (!publishedPage) {
+    if (!publishedPage || snapshotPredatesProvisioning(publishedPage.publishedAt, existingHostedSubscription?.updated_at)) {
       await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
         schemaVersion: 1,
         code: assignment.code,
@@ -338,20 +368,35 @@ export async function provisionManualCustomerAccountFromOrder(
   let lineItems = input.order.line_items_json;
   let firstHostedPage: { code: string; hostedPageUrl: string; businessName: string } | null = null;
   const shouldReuseExistingCustomerPage = hostedItemIndexes.length === 1;
+  const publicSiteUrl = resolvePublicSiteUrl(input.siteUrl);
 
   for (const hostedItemIndex of hostedItemIndexes) {
     const hostedItem = input.order.line_items_json[hostedItemIndex];
     const setup = readSetup(hostedItem);
     const itemBusinessName = readString(setup.businessName) ?? businessName;
-    const logoUrl = readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order);
+    const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order) ?? undefined, publicSiteUrl);
     const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-    const existingHostedSubscription = shouldReuseExistingCustomerPage ? await findExistingHostedSubscriptionForCustomer(client, customer.customerId) : null;
     const lineSessionId = hostedItemIndexes.length > 1 ? `${input.order.stripe_checkout_session_id}:line:${hostedItemIndex + 1}` : input.order.stripe_checkout_session_id;
+    const existingMatch = await findHostedSubscriptionForProvisioning(client, {
+      customerId: customer.customerId,
+      checkoutSessionId: lineSessionId,
+      allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage
+    });
+    if (!existingMatch.ok) return existingMatch;
+    const existingHostedSubscription = existingMatch.match?.subscription ?? null;
     const stripeSubscriptionId = `manual:${lineSessionId}`;
     const physicalProductRef = buildPhysicalProductRef(input.order, input.order.stripe_checkout_session_id, hostedItemIndex);
-    const business = existingHostedSubscription
-      ? { ok: true as const, businessId: existingHostedSubscription.business_id }
-      : await createBusiness(client, {
+    const business = existingMatch.match?.reason === "expired_customer_page"
+      ? await updateBusiness(client, {
+          businessId: existingHostedSubscription!.business_id,
+          customerId: customer.customerId,
+          businessName: itemBusinessName,
+          logoUrl: logoUrl ?? null,
+          now
+        })
+      : existingHostedSubscription
+        ? { ok: true as const, businessId: existingHostedSubscription.business_id }
+        : await createBusiness(client, {
           customerId: customer.customerId,
           businessName: itemBusinessName,
           logoUrl: logoUrl ?? null,
@@ -367,8 +412,7 @@ export async function provisionManualCustomerAccountFromOrder(
           now,
           generateCode: dependencies?.generateCode
         });
-    const hostedPageUrl =
-      existingHostedSubscription?.hosted_page_url ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/p/${assignment.code}`;
+    const hostedPageUrl = existingHostedSubscription?.hosted_page_url ?? `${publicSiteUrl}/p/${assignment.code}`;
     lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
       stripeSubscriptionId,
       subscriptionStatus: "unknown"
@@ -381,16 +425,18 @@ export async function provisionManualCustomerAccountFromOrder(
     });
     if (!hostedPageCode.ok) return hostedPageCode;
 
-    const page = await upsertHostedEditorPage(client, {
-      customerId: customer.customerId,
-      businessId: business.businessId,
-      code: assignment.code,
-      lifecycleStatus: "ACTIVE",
-      businessName: itemBusinessName,
-      logoUrl: logoUrl ?? null,
-      initialButtons,
-      now
-    });
+    const page = existingMatch.match?.reason === "checkout_session"
+      ? { ok: true as const, pageId: existingHostedSubscription!.hosted_page_id }
+      : await upsertHostedEditorPage(client, {
+          customerId: customer.customerId,
+          businessId: business.businessId,
+          code: assignment.code,
+          lifecycleStatus: "ACTIVE",
+          businessName: itemBusinessName,
+          logoUrl: logoUrl ?? null,
+          initialButtons,
+          now
+        });
     if (!page.ok) return page;
 
     const subscription = await upsertHostedSubscription(client, {
@@ -623,6 +669,24 @@ async function createBusiness(client: OrdersDbClient, input: { customerId: strin
   return { ok: true as const, businessId: String(result.data.id) };
 }
 
+async function updateBusiness(
+  client: OrdersDbClient,
+  input: { businessId: string; customerId: string; businessName: string; logoUrl?: string | null; now: Date }
+) {
+  const result = await client
+    .from("businesses")
+    .update({
+      business_name: input.businessName,
+      logo_url: input.logoUrl ?? null,
+      status: "active",
+      updated_at: input.now.toISOString()
+    })
+    .eq("id", input.businessId)
+    .eq("customer_id", input.customerId);
+  if (result.error) return { ok: false as const, error: result.error.message };
+  return { ok: true as const, businessId: input.businessId };
+}
+
 async function upsertHostedEditorPage(
   client: OrdersDbClient,
   input: { customerId: string; businessId: string; code: string; lifecycleStatus: HostedPageLifecycleStatus; businessName: string; logoUrl?: string | null; initialButtons?: HostedPageEditorButton[]; now: Date }
@@ -735,18 +799,42 @@ async function upsertHostedSubscription(
   return { ok: true as const };
 }
 
-async function findExistingHostedSubscriptionForCustomer(client: OrdersDbClient, customerId: string) {
-  const result = await client
+async function findHostedSubscriptionForProvisioning(
+  client: OrdersDbClient,
+  input: { customerId: string; checkoutSessionId: string; allowExpiredCustomerPageReuse: boolean }
+): Promise<{ ok: true; match: ExistingHostedSubscriptionMatch | null } | { ok: false; error: string }> {
+  const checkoutResult = await client
     .from("hosted_subscriptions")
     .select("*")
-    .eq("customer_id", customerId)
+    .eq("stripe_checkout_session_id", input.checkoutSessionId)
+    .maybeSingle();
+  if (checkoutResult.error) return { ok: false, error: checkoutResult.error.message };
+
+  const checkoutSubscription = normalizeExistingHostedSubscription(checkoutResult.data);
+  if (checkoutSubscription) {
+    return { ok: true, match: { subscription: checkoutSubscription, reason: "checkout_session" } };
+  }
+
+  if (!input.allowExpiredCustomerPageReuse) return { ok: true, match: null };
+
+  const expiredResult = await client
+    .from("hosted_subscriptions")
+    .select("*")
+    .eq("customer_id", input.customerId)
+    .eq("lifecycle_status", "EXPIRED")
     .order("created_at", { ascending: false })
     .limit(1);
-  if (result.error || !Array.isArray(result.data)) return null;
-  return normalizeExistingHostedSubscription(result.data[0]);
+  if (expiredResult.error) return { ok: false, error: expiredResult.error.message };
+  if (!Array.isArray(expiredResult.data)) return { ok: true, match: null };
+
+  const expiredSubscription = normalizeExistingHostedSubscription(expiredResult.data[0]);
+  return {
+    ok: true,
+    match: expiredSubscription ? { subscription: expiredSubscription, reason: "expired_customer_page" } : null
+  };
 }
 
-function normalizeExistingHostedSubscription(row: unknown) {
+function normalizeExistingHostedSubscription(row: unknown): ExistingHostedSubscription | null {
   if (!row || typeof row !== "object") return null;
   const value = row as Record<string, unknown>;
   const id = readString(value.id);
@@ -760,7 +848,8 @@ function normalizeExistingHostedSubscription(row: unknown) {
     business_id: businessId,
     hosted_page_id: hostedPageId,
     permanent_code: permanentCode,
-    hosted_page_url: hostedPageUrl
+    hosted_page_url: hostedPageUrl,
+    updated_at: readString(value.updated_at)
   };
 }
 
@@ -921,6 +1010,23 @@ function readSubscriptionObject(value: unknown): StripeSubscriptionLike | null {
 
 function resolvePublicSiteUrl(siteUrl?: string) {
   return (siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "");
+}
+
+function resolvePublicAssetUrl(value: string | undefined, siteUrl: string) {
+  if (!value) return undefined;
+
+  try {
+    return new URL(value, `${siteUrl}/`).toString();
+  } catch {
+    return undefined;
+  }
+}
+
+function snapshotPredatesProvisioning(publishedAt: string, subscriptionUpdatedAt: string | undefined) {
+  if (!subscriptionUpdatedAt) return false;
+  const publishedTime = Date.parse(publishedAt);
+  const subscriptionTime = Date.parse(subscriptionUpdatedAt);
+  return Number.isFinite(publishedTime) && Number.isFinite(subscriptionTime) && publishedTime < subscriptionTime;
 }
 
 export function buildProvisioningSnapshotVersion(now: Date, checkoutSessionId: string, itemIndex: number, isReconciliation = false) {
