@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/commerce-recovery", () => ({ runCommerceRecovery: async (event: any, siteUrl: string) => (await import("@/lib/stripe-commerce-processing")).processStripeCommerceEvent(event, siteUrl) }));
+vi.mock("@/lib/billing-invoices", () => ({ recordBillingInvoiceFromCheckoutSession: vi.fn().mockResolvedValue({ ok: true }), recordBillingInvoiceFromStripeInvoice: vi.fn().mockResolvedValue({ ok: true }) }));
 
 vi.mock("@/lib/order-refunds", () => ({ processStripeRefundEvent: vi.fn().mockResolvedValue({ ok: true }) }));
 vi.mock("@/lib/stripe-processing", async (importOriginal) => ({

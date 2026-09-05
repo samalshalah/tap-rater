@@ -22,6 +22,8 @@ type QueryOptions = {
 };
 
 const tableColumns = {
+  commerce_recovery_jobs: ["id", "kind", "object_id", "stripe_mode", "status", "attempts", "last_error", "updated_at", "created_at"],
+  commerce_email_outbox: ["id", "entity_id", "status", "payload", "first_attempt_at", "updated_at"],
   contact_requests: ["id", "name", "email", "message", "status", "admin_notes", "resolved_at", "created_at", "updated_at"],
   setup_requests: ["id", "name", "email", "business_name", "review_url", "notes", "status", "admin_notes", "resolved_at", "created_at", "updated_at"],
   change_link_requests: ["id", "name", "email", "taprater_id", "new_review_url", "notes", "status", "admin_notes", "resolved_at", "created_at", "updated_at"],
@@ -37,6 +39,7 @@ const tableColumns = {
     "sessions_invalid_before",
     "account_status",
     "activation_token_hash",
+    "activation_token_ciphertext",
     "activation_expires_at",
     "activated_at",
     "email_verified_at",
@@ -607,7 +610,7 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
 
     const params: unknown[] = [];
     const valueGroups = rows.map((row) => {
-      return `(${columns.map((column) => addParam(params, column, row[column])).join(", ")})`;
+      return `(${columns.map((column) => addParam(params, column, row[column], table)).join(", ")})`;
     });
     const returning = this.selectedColumns ? ` returning ${buildSelectClause(table, this.selectedColumns, { forReturning: true })}` : "";
     const conflict = isUpsert ? this.buildUpsertConflict(table, columns) : "";
@@ -631,7 +634,7 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
     const columns = Object.keys(values);
     assertColumns(table, columns);
     const params: unknown[] = [];
-    const assignments = columns.map((column) => `${column} = ${addParam(params, column, values[column])}`);
+    const assignments = columns.map((column) => `${column} = ${addParam(params, column, values[column], table)}`);
     const where = this.buildWhereClause(table, params);
     const returning = this.selectedColumns ? ` returning ${buildSelectClause(table, this.selectedColumns, { forReturning: true })}` : "";
 
@@ -700,7 +703,7 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
         return `${column} = any($${params.length}::text[])`;
       }
 
-      const placeholder = addParam(params, filter.column, filter.value);
+      const placeholder = addParam(params, filter.column, filter.value, table);
       return `${column} ${filter.operator === "eq" ? "=" : ">="} ${placeholder}`;
     });
 
@@ -785,11 +788,12 @@ function splitSelectColumns(columns: string) {
   return parts;
 }
 
-function addParam(params: unknown[], column: string, value: unknown) {
-  params.push(prepareParam(column, value));
+function addParam(params: unknown[], column: string, value: unknown, table?: TableName) {
+  const jsonb = jsonbColumns.has(column) && !(table === "commerce_email_outbox" && column === "payload");
+  params.push(jsonb ? JSON.stringify(value ?? null) : value);
   const placeholder = `$${params.length}`;
 
-  if (jsonbColumns.has(column)) {
+  if (jsonb) {
     return `${placeholder}::jsonb`;
   }
 
@@ -798,14 +802,6 @@ function addParam(params: unknown[], column: string, value: unknown) {
   }
 
   return placeholder;
-}
-
-function prepareParam(column: string, value: unknown) {
-  if (jsonbColumns.has(column)) {
-    return JSON.stringify(value ?? null);
-  }
-
-  return value;
 }
 
 function qualifiedColumn(table: TableName, column: string) {

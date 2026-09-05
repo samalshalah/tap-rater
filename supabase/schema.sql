@@ -329,6 +329,30 @@ create index if not exists hosted_page_editor_pages_customer_id_idx
 create index if not exists hosted_page_editor_pages_business_id_idx
   on hosted_page_editor_pages(business_id);
 
+CREATE TABLE IF NOT EXISTS commerce_recovery_jobs (
+  id text PRIMARY KEY,
+  kind text NOT NULL CHECK (kind IN ('checkout', 'invoice')),
+  object_id text NOT NULL,
+  stripe_mode text NOT NULL CHECK (stripe_mode IN ('test', 'live')),
+  status text NOT NULL CHECK (status IN ('pending', 'failed', 'completed')),
+  attempts integer NOT NULL DEFAULT 0,
+  last_error text,
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE commerce_recovery_jobs ENABLE ROW LEVEL SECURITY;
+CREATE INDEX IF NOT EXISTS commerce_recovery_jobs_status_idx ON commerce_recovery_jobs(status, updated_at);
+CREATE TABLE IF NOT EXISTS commerce_email_outbox (
+  id text PRIMARY KEY,
+  entity_id text,
+  status text NOT NULL CHECK (status IN ('pending', 'accepted', 'needs_review')),
+  payload text,
+  first_attempt_at timestamptz,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE commerce_email_outbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS activation_token_ciphertext text;
+
 create table if not exists stripe_events (
   id text primary key,
   type text not null,

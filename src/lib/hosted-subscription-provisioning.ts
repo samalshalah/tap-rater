@@ -22,6 +22,9 @@ import { getStripeClient } from "@/lib/checkout";
 import { completeStripeReceipt, hasStripeReceipt, withStripeResourceLock } from "@/lib/stripe-processing";
 import { createHash, randomUUID } from "node:crypto";
 import { hostedSubscriptionGracePeriodDays, mapSubscriptionLifecycle } from "@/lib/hosted-subscription-lifecycle";
+import { decryptCommerceData, encryptCommerceData } from "@/lib/commerce-encryption";
+import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
+import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 
 export type HostedSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "trialing" | "unknown";
 export type HostedSubscriptionProvisioningStatus = "ready_for_customer_setup" | "provisioning_failed";
@@ -152,6 +155,7 @@ export async function provisionHostedSubscriptionFromCheckout(
 
     const email = normalizeEmail(input.session.customer_details?.email ?? input.session.customer_email ?? input.order.email);
     if (!email) return { ok: false, error: "Customer email is required for hosted provisioning." };
+    return withStripeResourceLock<HostedSubscriptionProvisioningResult>(client, `customer:${createHash("sha256").update(email).digest("hex")}`, async () => {
 
     const hostedItemIndexes = getHostedLineItemIndexes(input.order.line_items_json);
     if (!hostedItemIndexes.length) return { ok: false, error: "Paid order does not contain a hosted line item." };
@@ -167,6 +171,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       name: input.session.customer_details?.name ?? input.order.customer_name ?? null,
       phone: input.session.customer_details?.phone ?? null,
       activationTokenHash: activation.tokenHash,
+      activationToken: activation.token,
       now
     });
     if (!customer.ok) return customer;
@@ -323,29 +328,37 @@ export async function provisionHostedSubscriptionFromCheckout(
     if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
 
     {
-      const setupEmail = customer.wasAlreadyActive
+      const notificationSender = (message: import("@/lib/email").SendEmailInput) => sendCommerceEmail({ ...message,
+        delivery: { ...message.delivery!, idempotencyKey: createEmailIdempotencyKey("hosted_checkout_setup", checkoutSessionId) } }, { client });
+      const setupEmail = customer.activationPending
+        ? { sent: true as const }
+        : customer.wasAlreadyActive
         ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
           to: email,
           businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
-          hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`
+          hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`,
+          sendEmailFn: notificationSender
         })
         : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
           to: email,
           businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
           hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`,
-          activationToken: activation.token
+          activationToken: customer.activationToken!,
+          sendEmailFn: notificationSender
         });
       if (!setupEmail.sent) {
         console.warn("[hosted-provisioning] setup_email_not_sent", {
           stripeCheckoutSessionId: input.session.id,
           reason: setupEmail.reason
         });
+        return { ok: false, error: "Hosted account notification needs recovery." };
       }
     }
 
     await assertActive();
     await completeStripeReceipt(client, receiptId, input.eventType ?? "checkout.session.completed", now);
     return { ok: true, provisioned: true, code: firstHostedPage?.code, hostedPageUrl: firstHostedPage?.hostedPageUrl };
+    });
   });
 }
 
@@ -597,16 +610,21 @@ export async function provisionPaidCustomerAccountFromOrder(
   const now = input.now ?? new Date();
   const activation = createCustomerActivationToken();
   const businessName = readManualOrderBusinessName(input.order);
+  return withStripeResourceLock<PaidCustomerAccountProvisioningResult>(client, `customer:${createHash("sha256").update(email).digest("hex")}`, async (assertActive) => {
+  const receiptId = `checkout:${input.order.stripe_checkout_session_id}:account:v1`;
+  if (await hasStripeReceipt(client, receiptId)) return { ok: true, accountProvisioned: false, reason: "account_already_active" };
   const customer = await upsertCustomer(client, {
     email,
     name: input.order.customer_name ?? null,
     phone: readCustomerPhone(input.order.customer_details_json),
     activationTokenHash: activation.tokenHash,
+    activationToken: activation.token,
     now
   });
   if (!customer.ok) return customer;
 
   const business = await createBusiness(client, {
+    id: buildHostedBusinessId(input.order.stripe_checkout_session_id, -1),
     customerId: customer.customerId,
     businessName,
     logoUrl: readManualOrderLogoUrl(input.order),
@@ -614,7 +632,9 @@ export async function provisionPaidCustomerAccountFromOrder(
   });
   if (!business.ok) return business;
 
-  if (customer.wasAlreadyActive) {
+  if (customer.wasAlreadyActive || customer.activationPending) {
+    await assertActive();
+    await completeStripeReceipt(client, receiptId, "checkout.account");
     return { ok: true, accountProvisioned: false, reason: "account_already_active" };
   }
 
@@ -622,16 +642,21 @@ export async function provisionPaidCustomerAccountFromOrder(
     to: email,
     businessName,
     orderReference: input.order.stripe_checkout_session_id,
-    activationToken: activation.token
+    activationToken: customer.activationToken!,
+    sendEmailFn: message => sendCommerceEmail({ ...message, delivery: { ...message.delivery!,
+      idempotencyKey: createEmailIdempotencyKey("paid_customer_activation", input.order.stripe_checkout_session_id) } }, { client })
   });
   if (!setupEmail.sent) {
     console.warn("[paid-account-provisioning] account_email_not_sent", {
       orderReference: input.order.stripe_checkout_session_id,
       reason: setupEmail.reason
     });
+    return { ok: false, error: "Customer activation email needs recovery." };
   }
-
+  await assertActive();
+  await completeStripeReceipt(client, receiptId, "checkout.account");
   return { ok: true, accountProvisioned: true };
+  });
 }
 
 export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike, order: Pick<OrderRecord, "line_items_json">) {
@@ -664,12 +689,31 @@ async function resolveClientDependency(dependencies?: Pick<HostedSubscriptionPro
 
 async function upsertCustomer(
   client: OrdersDbClient,
-  input: { email: string; name?: string | null; phone?: string | null; activationTokenHash: string; now: Date }
+  input: { email: string; name?: string | null; phone?: string | null; activationTokenHash: string; activationToken?: string; now: Date }
 ) {
   const activationExpiresAt = new Date(input.now.getTime() + customerActivationTtlMs).toISOString();
-  const existing = await client.from("customers").select("id,account_status").eq("email", input.email).maybeSingle();
+  const existing = await client.from("customers").select("id,account_status,activation_token_hash,activation_expires_at,activation_token_ciphertext").eq("email", input.email).maybeSingle();
+  if (existing.error) return { ok: false as const, error: "Customer lookup failed." };
   const existingStatus = readString(existing.data?.account_status);
+  if (existingStatus === "disabled") return { ok: false as const, error: "Customer account is disabled. Staff review is required." };
   const wasAlreadyActive = existingStatus === "active";
+  if (wasAlreadyActive) {
+    if (existing.data.activation_token_hash || existing.data.activation_token_ciphertext) {
+      const cleared = await client.from("customers").update({ activation_token_hash: null, activation_expires_at: null, activation_token_ciphertext: null })
+        .eq("id", existing.data.id).eq("account_status", "active").select("id").maybeSingle();
+      if (cleared.error || !cleared.data) return { ok: false as const, error: "Active customer changed during recovery." };
+    }
+    return { ok: true as const, customerId: String(existing.data.id), wasAlreadyActive: true, activationPending: false, activationToken: undefined };
+  }
+  if (input.activationToken && existing.data?.activation_token_hash && Date.parse(existing.data.activation_expires_at) <= input.now.getTime()) {
+    return { ok: false as const, error: "Activation has expired. Resend activation from Customers before retrying." };
+  }
+  if (input.activationToken && existing.data?.activation_token_hash && Date.parse(existing.data.activation_expires_at) > input.now.getTime()) {
+    const token = existing.data.activation_token_ciphertext
+      ? decryptCommerceData<string>(existing.data.activation_token_ciphertext, `activation:${input.email}`) : undefined;
+    const matches = token && createHash("sha256").update(token).digest("hex") === existing.data.activation_token_hash;
+    return { ok: true as const, customerId: String(existing.data.id), wasAlreadyActive: false, activationPending: !matches, activationToken: matches ? token : undefined };
+  }
   const accountStatus = wasAlreadyActive ? "active" : "pending_activation";
   const activationFields = wasAlreadyActive
     ? {
@@ -678,13 +722,11 @@ async function upsertCustomer(
     }
     : {
       activation_token_hash: input.activationTokenHash,
-      activation_expires_at: activationExpiresAt
+      activation_expires_at: activationExpiresAt,
+      activation_token_ciphertext: input.activationToken ? encryptCommerceData(input.activationToken, `activation:${input.email}`) : null
     };
 
-  const result = await client
-    .from("customers")
-    .upsert(
-      {
+  const values = {
         email: input.email,
         name: input.name ?? null,
         phone: input.phone ?? null,
@@ -692,13 +734,16 @@ async function upsertCustomer(
         account_status: accountStatus,
         ...activationFields,
         updated_at: input.now.toISOString()
-      },
-      { onConflict: "email" }
-    )
+      };
+  const query = existing.data
+    ? client.from("customers").update(values).eq("id", existing.data.id).eq("account_status", existing.data.account_status)
+      .eq("activation_token_hash", existing.data.activation_token_hash ?? null)
+    : client.from("customers").insert(values);
+  const result = await query
     .select("id")
     .maybeSingle();
   if (result.error || !result.data?.id) return { ok: false as const, error: result.error?.message ?? "Customer could not be provisioned." };
-  return { ok: true as const, customerId: String(result.data.id), wasAlreadyActive };
+  return { ok: true as const, customerId: String(result.data.id), wasAlreadyActive, activationPending: false, activationToken: input.activationToken };
 }
 
 function buildHostedBusinessId(checkoutSessionId: string, itemIndex: number) {

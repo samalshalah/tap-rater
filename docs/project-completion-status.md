@@ -14,6 +14,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
 - Deployed Phase 1 release: `206d8d6f-14a3-492e-ac9c-c0140deba84f`; 701 tests passing across 111 files, plus 5 explicitly run isolated-database integration tests.
+- Current Phase 2 release: `893445a3-c31b-43ca-88c8-e1bc0d2711cb`; 729 tests and 8 explicitly run isolated-database tests pass. Deployed recovery, replay, and test refund passed after retries; first-pass hosting capacity remains an acceptance gate.
 - Active application database verified from a new deployed checkout: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. Recovery checkpoint retained; branch protection and restore acceptance remain open.
 
 ## Commerce Corrections
@@ -21,7 +22,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 | Phase | Status | Completion evidence still required |
 | --- | --- | --- |
 | 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
-| 2. Account, invoice, email recovery | Open | Durable retries and failure-recovery proof |
+| 2. Account, invoice, email recovery | Implemented; recovery/replay test passed | Hosting capacity and fresh first-pass completion; see `docs/ecommerce-phase-2.md` |
 | 3. Store operating controls | Open | Pricing authority, inventory policy, fulfillment acceptance |
 | 4. Security and recovery | Open | Token isolation, branch protection, backup/restore coverage |
 | 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
@@ -54,7 +55,7 @@ The following historical estimates predate the ecommerce failure-path audit and 
 - Admin can securely resend a pending customer's activation email with token rotation, cooldown protection, and failure rollback.
 - Admin can inspect provider acceptance and delivery outcomes for transactional email, filter failures, and retry regenerable order or shipping messages.
 - Transactional email sends use idempotency keys; order and shipping keys are stable hashes that do not expose source identifiers.
-- Email delivery storage contains metadata only and deliberately excludes HTML bodies, passwords, activation tokens, and payment data.
+- The email delivery ledger remains metadata-only. Phase 2 adds a separate encrypted pending-message outbox and encrypted reusable activation credentials; see its key-custody runbook before live launch.
 - Product quantity, shipping, tax, production, fulfillment, refund, catalog, CMS, customer, and hosted-page backend surfaces are deployed.
 - Payment-hold and post-shipment guards prevent invalid production or fulfillment actions at both the admin UI and API layers.
 - First-shipment transitions preserve the original shipped timestamp and attempt one tracked shipping notification without rolling back saved state when email delivery fails.
@@ -157,7 +158,7 @@ Detailed procedure: `docs/recovery-runbook.md`.
 
 ## Autonomous Work Queue
 
-The ecommerce audit reopened engineering work. Phase 1 release verification is now complete in test mode; Phase 2 account/invoice/email recovery, Phase 3 pricing and operating controls, and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
+The ecommerce audit reopened engineering work. Phase 1 release verification is complete in test mode. Phase 2 code and tests are deployed, but its full request hit the current Workers Free runtime limit; upgrade approval and completed deployed recovery verification remain open. Phase 3 pricing and operating controls and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
 
 ## Safety Rules
 

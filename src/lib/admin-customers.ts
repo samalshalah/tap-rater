@@ -93,7 +93,7 @@ export async function resendAdminCustomerActivationWithClient(
   const now = dependencies.now ?? new Date();
   const { data: customer, error: customerError } = await client
     .from("customers")
-    .select("id,email,account_status,activation_token_hash,activation_expires_at")
+    .select("id,email,account_status,activation_token_hash,activation_expires_at,activation_token_ciphertext")
     .eq("id", id)
     .maybeSingle();
 
@@ -113,6 +113,7 @@ export async function resendAdminCustomerActivationWithClient(
 
   const previousExpiresAt = readString(customer.activation_expires_at) ?? null;
   const previousTokenHash = readString(customer.activation_token_hash) ?? null;
+  const previousCiphertext = readString(customer.activation_token_ciphertext) ?? null;
   const cooldown = getActivationResendCooldown(previousExpiresAt, now);
   if (cooldown > 0) {
     return {
@@ -130,6 +131,7 @@ export async function resendAdminCustomerActivationWithClient(
     .from("customers")
     .update({
       activation_token_hash: activation.tokenHash,
+      activation_token_ciphertext: null,
       activation_expires_at: activationExpiresAt,
       updated_at: now.toISOString()
     })
@@ -162,6 +164,7 @@ export async function resendAdminCustomerActivationWithClient(
       .from("customers")
       .update({
         activation_token_hash: previousTokenHash,
+        activation_token_ciphertext: previousCiphertext,
         activation_expires_at: previousExpiresAt,
         updated_at: now.toISOString()
       })
@@ -202,7 +205,7 @@ export async function updateAdminCustomerAccessWithClient(
     .from("customers")
     .update({
       account_status: status,
-      ...(status === "disabled" ? { activation_token_hash: null, activation_expires_at: null } : {}),
+      ...(status === "disabled" ? { activation_token_hash: null, activation_expires_at: null, activation_token_ciphertext: null } : {}),
       updated_at: new Date().toISOString()
     })
     .eq("id", id);

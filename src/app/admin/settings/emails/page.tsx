@@ -4,9 +4,12 @@ import { EmailTemplatesForm } from "@/components/admin/email-templates-form";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminEmailDeliveries } from "@/lib/email-deliveries";
 import { getAllEmailTemplates } from "@/lib/email-templates";
+import { getCommerceRecoveryJobs } from "@/lib/commerce-recovery";
+import { CommerceRecoveryList } from "@/components/admin/commerce-recovery-list";
 
 export default async function AdminEmailTemplatesPage() {
   await requireAdmin();
+  const recovery = await getCommerceRecoveryJobs();
   const [templates, deliveryOverview] = await Promise.all([
     getAllEmailTemplates(),
     getAdminEmailDeliveries()
@@ -21,6 +24,10 @@ export default async function AdminEmailTemplatesPage() {
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
             Manage safe email copy for operational notifications. Product, order, setup, shipping, and policy details are still generated from trusted order data.
           </p>
+        </div>
+        <div className="mt-8 border-y border-line py-6">
+          <h2 className="mb-4 text-lg font-semibold">Payment recovery</h2>
+          <CommerceRecoveryList {...recovery} />
         </div>
         <div className="mt-8">
           <EmailTemplatesForm initialTemplates={templates} />

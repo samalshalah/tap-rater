@@ -91,6 +91,7 @@ export async function activateCustomerAccountWithClient(client: CustomerAccountD
       email_verified_at: now.toISOString(),
       activated_at: now.toISOString(),
       activation_token_hash: null,
+      activation_token_ciphertext: null,
       activation_expires_at: null,
       updated_at: now.toISOString()
     })

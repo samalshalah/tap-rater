@@ -35,7 +35,8 @@ class Query {
     let matches = rows.filter(row => this.filters.every(filter => filter(row)));
     if (this.action === "insert" || this.action === "upsert") {
       const key = this.table === "stripe_processing_locks" ? "resource_key" : this.table === "orders" ? "stripe_checkout_session_id" : this.conflict;
-      const existing = rows.find(row => this.values[key] != null && row[key] === this.values[key]);
+      const keys = key.split(",");
+      const existing = rows.find(row => keys.every(column => this.values[column] != null && row[column] === this.values[column]));
       if (existing && this.action === "insert") return { data: null, error: { message: "duplicate key" } };
       const row = existing ?? { id: randomUUID() };
       Object.assign(row, structuredClone(this.values));

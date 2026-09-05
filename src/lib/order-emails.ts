@@ -1,5 +1,6 @@
-import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getCustomerReplyToEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
+import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
 import {
   defaultEmailTemplates,
   getEmailTemplate,
@@ -29,7 +30,7 @@ export async function sendPaidOrderEmails(
     env?: Record<string, string | undefined>;
   } = {}
 ): Promise<PaidOrderEmailResult> {
-  const sendEmailFn = options.sendEmailFn ?? sendEmail;
+  const sendEmailFn = options.sendEmailFn ?? (message => sendCommerceEmail(message, { sourceCreatedAt: order.created_at }));
   const getTemplateFn = options.getTemplateFn ?? getEmailTemplate;
   const env = options.env ?? process.env;
   const customerEmail = order.email?.trim();

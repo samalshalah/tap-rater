@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 import {
   buildProvisioningSnapshotVersion,
@@ -13,6 +13,8 @@ import { publishHostedPageSnapshot, readCurrentHostedPageSnapshot, type HostedPa
 import type { OrderRecord, OrdersDbClient } from "@/lib/orders";
 
 describe("hosted subscription provisioning", () => {
+  beforeEach(() => vi.stubEnv("COMMERCE_RECOVERY_SECRET", "a".repeat(64)));
+  afterEach(() => vi.unstubAllEnvs());
   it("keeps snapshot versions valid for production-length Stripe Checkout IDs", () => {
     const version = buildProvisioningSnapshotVersion(
       new Date("2026-09-04T22:41:51.000Z"),
@@ -128,11 +130,12 @@ describe("hosted subscription provisioning", () => {
       to: "owner@example.com",
       businessName: "Owner Example",
       hostedPageUrl: "https://taprater.com/p/ABCDEFGHJKM2",
-      activationToken: expect.any(String)
+      activationToken: expect.any(String),
+      sendEmailFn: expect.any(Function)
     });
   });
 
-  it("does not roll back hosted provisioning when setup email fails", async () => {
+  it("keeps provisioned resources but leaves a failed setup email retryable", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const client = new MemoryDbClient();
     const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
@@ -159,10 +162,11 @@ describe("hosted subscription provisioning", () => {
       }
     );
 
-    expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
+    expect(result).toMatchObject({ ok: false, error: "Hosted account notification needs recovery." });
     expect(client.table("hosted_subscriptions")).toHaveLength(1);
     expect(storage.objects.has("hosted-pages/ABCDEFGHJKM2/current.json")).toBe(true);
     expect(warn).toHaveBeenCalledWith("[hosted-provisioning] setup_email_not_sent", expect.objectContaining({ reason: "missing_api_key" }));
+    expect(client.table("stripe_events")).toHaveLength(0);
   });
 
   it("does not consume a second code for duplicate Stripe events", async () => {
@@ -342,7 +346,7 @@ describe("hosted subscription provisioning", () => {
         now: new Date("2026-08-23T12:00:00.000Z"),
         siteUrl: "https://taprater.com"
       },
-      { client, storage, generateCode: () => "BBBBBBBBBBB2" }
+      { client, storage, generateCode: () => "BBBBBBBBBBB2", sendHostedAccountReadyEmailFn: vi.fn().mockResolvedValue({ sent: true }) }
     );
 
     expect(result).toMatchObject({ ok: true, provisioned: true, code: "ABCDEFGHJKM2" });
@@ -416,7 +420,7 @@ describe("hosted subscription provisioning", () => {
         now: new Date("2026-08-23T12:00:00.000Z"),
         siteUrl: "https://taprater.com"
       },
-      { client, storage, generateCode: () => "BBBBBBBBBBB2" }
+      { client, storage, generateCode: () => "BBBBBBBBBBB2", sendHostedAccountReadyEmailFn: vi.fn().mockResolvedValue({ sent: true }) }
     );
 
     expect(result).toMatchObject({ ok: true, provisioned: true, code: "BBBBBBBBBBB2" });
@@ -746,7 +750,8 @@ describe("hosted subscription provisioning", () => {
       to: "owner@example.com",
       businessName: "Paid Direct",
       orderReference: "cs_live_direct",
-      activationToken: expect.any(String)
+      activationToken: expect.any(String),
+      sendEmailFn: expect.any(Function)
     });
   });
 });

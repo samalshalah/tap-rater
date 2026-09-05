@@ -2,6 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 import { createNeonSupabaseAdapter, getDatabaseUrlFromEnv } from "@/lib/neon-supabase-adapter";
 
 describe("Neon Supabase adapter", () => {
+  it("stores outbox ciphertext as text and clears it with SQL null", async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const client = createNeonSupabaseAdapter(query);
+    await client.from("commerce_email_outbox").insert({ id: "email-qa", status: "pending", payload: "iv.tag.ciphertext" });
+    expect(query.mock.calls[0][0]).not.toContain("::jsonb");
+    expect(query.mock.calls[0][1]).toEqual(["email-qa", "pending", "iv.tag.ciphertext"]);
+    await client.from("commerce_email_outbox").update({ payload: null }).eq("id", "email-qa");
+    expect(query.mock.calls[1][0]).not.toContain("::jsonb");
+    expect(query.mock.calls[1][1]).toEqual([null, "email-qa"]);
+  });
+
   it("detects Neon connection strings without requiring Supabase env vars", () => {
     expect(getDatabaseUrlFromEnv({ DATABASE_URL: "postgres://user:pass@example.com/db" })).toBe("postgres://user:pass@example.com/db");
     expect(getDatabaseUrlFromEnv({ NEON_DATABASE_URL: "postgres://user:pass@example.com/neon" })).toBe("postgres://user:pass@example.com/neon");

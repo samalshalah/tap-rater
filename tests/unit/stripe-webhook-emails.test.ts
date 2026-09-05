@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/lib/commerce-recovery", () => ({ runCommerceRecovery: async (event: any, siteUrl: string) => (await import("@/lib/stripe-commerce-processing")).processStripeCommerceEvent(event, siteUrl) }));
+vi.mock("@/lib/billing-invoices", () => ({ recordBillingInvoiceFromCheckoutSession: vi.fn().mockResolvedValue({ ok: true }), recordBillingInvoiceFromStripeInvoice: vi.fn().mockResolvedValue({ ok: true }) }));
 
 vi.mock("@/lib/order-refunds", () => ({ processStripeRefundEvent: vi.fn() }));
 vi.mock("@/lib/stripe-processing", async (importOriginal) => ({
@@ -22,7 +24,7 @@ describe("Stripe webhook paid order emails", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not fail the webhook when paid order email sending fails", async () => {
+  it("fails the webhook so a paid order email exception remains retryable", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.doMock("@/lib/checkout", () => ({
       validateStripeWebhookConfig: () => ({
@@ -78,8 +80,8 @@ describe("Stripe webhook paid order emails", () => {
     const response = await POST(createSignedWebhookRequest());
     const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body).toEqual({ received: true });
+    expect(response.status).toBe(500);
+    expect(body).toEqual({ error: "Order email recovery failed." });
     expect(warn).toHaveBeenCalledWith(
       "[stripe-webhook] paid_order_email_failed",
       expect.objectContaining({
@@ -89,8 +91,8 @@ describe("Stripe webhook paid order emails", () => {
     );
   });
 
-  it("skips paid order emails for duplicate paid webhook events", async () => {
-    const sendPaidOrderEmails = vi.fn();
+  it("reconciles paid order emails even when the order was already paid", async () => {
+    const sendPaidOrderEmails = vi.fn().mockResolvedValue({ customer: { sent: true }, admin: { sent: true } });
     vi.doMock("@/lib/checkout", () => ({
       validateStripeWebhookConfig: () => ({
         ok: true,
@@ -142,7 +144,7 @@ describe("Stripe webhook paid order emails", () => {
     const response = await POST(createSignedWebhookRequest());
 
     expect(response.status).toBe(200);
-    expect(sendPaidOrderEmails).not.toHaveBeenCalled();
+    expect(sendPaidOrderEmails).toHaveBeenCalledOnce();
   });
 
   it("provisions a requested direct customer account after first paid checkout", async () => {
