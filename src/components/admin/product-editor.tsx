@@ -559,10 +559,11 @@ export function ProductEditor({
                 When enabled, this product shows the Direct / Multi-Link link experience selector on the product page and appears on /multi-link.
               </span>
               <span className="text-xs font-bold uppercase tracking-[0.04em] text-brand">
-                {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/month service add-on · {hostedMultiLinkServiceAddon.maxLinks} editable links
+                {hostedMultiLinkServiceAddon.maxLinks} editable links
               </span>
             </span>
           </label>
+          <InfoPill label="Fixed Multi-Link plan (read-only)" value={`${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month`} />
         </EditorCard>
 
         <EditorCard title="Variants" description="Structured size and color options. A price-pending size is visible for QA but blocked from checkout.">

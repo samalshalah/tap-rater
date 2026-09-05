@@ -5,13 +5,15 @@ import type { FormEvent } from "react";
 import { useState } from "react";
 import type { OrderRecord } from "@/lib/orders";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
-import { canAdvanceOrderFulfillment } from "@/lib/order-fulfillment-rules";
+import { canAdvanceOrderFulfillment, validateOrderFulfillmentTransition } from "@/lib/order-fulfillment-rules";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import { AdminAlert, AdminButton, AdminCard, AdminInput, AdminSelect, AdminTextarea } from "./admin-ui";
 
-export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
+export function OrderFulfillmentForm({ order, productionBlockers = [] }: { order: OrderRecord; productionBlockers?: string[] }) {
   const router = useRouter();
   const canOperate = canAdvanceOrderFulfillment(order);
+  const hasShipped = Boolean(order.shipped_at) || order.shipping_status === "shipped" || order.shipping_status === "delivered";
+  const needsProductionSetup = !hasShipped && productionBlockers.length > 0;
   const [form, setForm] = useState<OrderFulfillmentUpdateInput>({
     productionStatus: order.production_status,
     shippingStatus: order.shipping_status,
@@ -67,20 +69,26 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
       {!canOperate ? (
         <AdminAlert tone="warning">{order.payment_status?.includes("refund") ? "This order has a refund. Production and shipping are locked." : "Payment must be confirmed before production or shipping status can advance."} Internal notes can still be saved.</AdminAlert>
       ) : null}
+      {canOperate && needsProductionSetup ? (
+        <AdminAlert tone="warning">
+          <p className="font-semibold">Production setup needs attention</p>
+          <ul className="mt-2 list-disc space-y-1 pl-4">{productionBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
+        </AdminAlert>
+      ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm font-semibold text-ink">
           Production status
           <AdminSelect
             value={form.productionStatus}
-            disabled={!canOperate}
+            disabled={!canOperate || hasShipped}
             onChange={(event) => setForm((current) => ({ ...current, productionStatus: event.target.value as OrderFulfillmentUpdateInput["productionStatus"] }))}
             className="mt-2"
           >
             <option value="not_started">Not started</option>
-            <option value="ready_for_production">Ready for production</option>
-            <option value="in_production">In production</option>
+            <option value="ready_for_production" disabled={needsProductionSetup}>Ready for production</option>
+            <option value="in_production" disabled={needsProductionSetup}>In production</option>
             <option value="blocked">Blocked</option>
-            <option value="completed">Completed</option>
+            <option value="completed" disabled={needsProductionSetup}>Completed</option>
           </AdminSelect>
         </label>
 
@@ -92,11 +100,17 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
             onChange={(event) => setForm((current) => ({ ...current, shippingStatus: event.target.value as OrderFulfillmentUpdateInput["shippingStatus"] }))}
             className="mt-2"
           >
-            <option value="not_shipped">Not shipped</option>
-            <option value="ready_to_ship">Ready to ship</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="blocked">Blocked</option>
+            {([
+              ["not_shipped", "Not shipped"], ["ready_to_ship", "Ready to ship"], ["shipped", "Shipped"],
+              ["delivered", "Delivered"], ["blocked", "Blocked"]
+            ] as const).map(([value, label]) => (
+              <option key={value} value={value} disabled={
+                value !== order.shipping_status && (
+                  !validateOrderFulfillmentTransition(order, { ...form, shippingStatus: value }).ok ||
+                  (needsProductionSetup && ["ready_to_ship", "shipped", "delivered"].includes(value))
+                )
+              }>{label}</option>
+            ))}
           </AdminSelect>
         </label>
       </div>

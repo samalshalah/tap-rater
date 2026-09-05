@@ -87,6 +87,29 @@ describe("checkout route reliability", () => {
     delete process.env.STRIPE_WEBHOOK_SECRET;
   });
 
+  it("does not create a payment or order when the authoritative catalog cannot be read", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies({ getProducts: vi.fn().mockRejectedValue(new Error("catalog unavailable")) });
+    const response = await handleCheckoutPost(createCheckoutRequest(configuredStandardPayload), dependencies);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "Product pricing and availability could not be verified. Please try again." });
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+    expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
+  });
+
+  it("does not create a partial payment when one cart item becomes unavailable", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies();
+    const response = await handleCheckoutPost(createCheckoutRequest({ ...configuredStandardPayload,
+      items: [...configuredStandardPayload.items, { ...configuredStandardPayload.items[0], productId: "unavailable" }]
+    }), dependencies);
+    expect(response.status).toBe(400);
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+    expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
+  });
+
   it("returns invalid payloads quickly before checking Stripe configuration", async () => {
     const dependencies = createDependencies();
 

@@ -16,7 +16,7 @@ import {
 import { findAuthenticatedStripeCustomerIdForCheckout } from "@/lib/customer-billing";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
-import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCheckoutProducts } from "@/lib/product-repository";
 import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import { getTaxSettings, type TaxSettingsInput } from "@/lib/tax-settings";
@@ -107,7 +107,13 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     return NextResponse.json({ error: "Database order persistence is required before checkout can be used." }, { status: 503 });
   }
 
-  const products = await dependencies.getProducts();
+  let products: MigratedProduct[];
+  try {
+    products = await dependencies.getProducts();
+  } catch {
+    logCheckout(dependencies.logger, "warn", requestId, "catalog_unavailable");
+    return NextResponse.json({ error: "Product pricing and availability could not be verified. Please try again." }, { status: 503 });
+  }
   const shippingSettings = await dependencies.getShippingSettings();
   const taxSettings = await dependencies.getTaxSettings();
   logCheckout(dependencies.logger, "info", requestId, "products_loaded", { count: products.length });
@@ -253,7 +259,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
       { idempotencyKey }
     );
   },
-  getProducts: getStorefrontProducts,
+  getProducts: getCheckoutProducts,
   resolveStripeCustomerId: async ({ request, email, stripeMode }) => {
     try {
       return await findAuthenticatedStripeCustomerIdForCheckout(getSupabaseAdmin(), request, email, stripeMode);

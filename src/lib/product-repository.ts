@@ -23,15 +23,6 @@ export type ProductRepositoryClient = {
 };
 
 type ProductRow = Record<string, unknown>;
-const STOREFRONT_PRODUCT_CACHE_MS = 60_000;
-
-type StorefrontCacheEntry<T> = {
-  expiresAt: number;
-  value: T;
-};
-
-const productBySlugCache = new Map<string, StorefrontCacheEntry<MigratedProduct | undefined>>();
-const categoryProductsCache = new Map<string, StorefrontCacheEntry<MigratedProduct[]>>();
 const STOREFRONT_PRODUCT_COLUMNS = [
   "slug",
   "title",
@@ -129,33 +120,32 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
     const databaseProducts = await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
     return databaseProducts;
   } catch (error) {
-    console.warn("[product-repository] storefront_static_fallback_used", {
+    console.warn("[product-repository] storefront_unavailable", {
       reason: error instanceof Error ? error.message : "unknown database query failure"
     });
-    return staticStorefrontProducts();
+    return [];
   }
 }
 
+export async function getCheckoutProducts(): Promise<MigratedProduct[]> {
+  if (!hasSupabaseAdminConfig()) throw new Error("Checkout catalog storage is not configured.");
+  return getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
+}
+
 export const getStorefrontProductBySlug = cache(async (slug: string): Promise<MigratedProduct | undefined> => {
+  noStore();
   if (!hasSupabaseAdminConfig()) {
     return getStaticStorefrontProductBySlug(slug);
   }
 
   try {
-    const cachedProduct = readCache(productBySlugCache, slug);
-    if (cachedProduct !== undefined) {
-      return cachedProduct;
-    }
-
-    const product = await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
-    writeCache(productBySlugCache, slug, product);
-    return product;
+    return await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
   } catch (error) {
-    console.warn("[product-repository] storefront_product_static_fallback_used", {
+    console.warn("[product-repository] storefront_product_unavailable", {
       slug,
       reason: error instanceof Error ? error.message : "unknown database query failure"
     });
-    return getStaticStorefrontProductBySlug(slug);
+    return undefined;
   }
 });
 
@@ -208,15 +198,7 @@ export async function getRelatedStorefrontProductsForProduct(product: MigratedPr
 
   try {
     const fetchLimit = Math.max(limit + 4, 8);
-    const cacheKey = `${product.categorySlug}:${fetchLimit}`;
-    const cachedCategoryProducts = readCache(categoryProductsCache, cacheKey);
-    const categoryProducts =
-      cachedCategoryProducts ??
-      (await getStorefrontProductsByCategoryFromClient(getSupabaseAdmin() as ProductRepositoryClient, product.categorySlug, fetchLimit));
-
-    if (!cachedCategoryProducts) {
-      writeCache(categoryProductsCache, cacheKey, categoryProducts);
-    }
+    const categoryProducts = await getStorefrontProductsByCategoryFromClient(getSupabaseAdmin() as ProductRepositoryClient, product.categorySlug, fetchLimit);
 
     return getStorefrontRelatedProducts(product, categoryProducts, limit);
   } catch {
@@ -265,7 +247,7 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
   const { data, error } = await client.from("products").select(STOREFRONT_PRODUCT_COLUMNS).eq("is_active", true);
 
   if (error || !data) {
-    return [];
+    throw new Error(error?.message ?? "Catalog query returned no data.");
   }
 
   const products = data
@@ -276,8 +258,6 @@ export async function getStorefrontProductsFromClient(client: ProductRepositoryC
     .map((product) => withAttachedOptions(product, optionsByProduct))
     .filter(isPublicLaunchStorefrontProduct)
     .sort(compareStorefrontProducts);
-
-  primeStorefrontProductCaches(productsWithOptions);
 
   return productsWithOptions;
 }
@@ -324,10 +304,8 @@ function getStaticStorefrontProductBySlug(slug: string) {
 }
 
 function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {
-  const options = optionsByProduct.get(product.slug);
-  if (!options) {
-    return sanitizePublicStorefrontProduct(product);
-  }
+  // An empty database option set must not restore code-defined sellable options.
+  const options = optionsByProduct.get(product.slug) ?? [];
 
   const sanitizedProduct = sanitizePublicStorefrontProduct(product);
   const publicOptions = options
@@ -338,7 +316,7 @@ function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<str
 }
 
 export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boolean {
-  if (!product.isActive || product.status === "archived" || product.stockStatus !== "instock") {
+  if (!product.isActive || product.status === "archived" || product.status === "draft" || product.stockStatus !== "instock") {
     return false;
   }
 
@@ -367,51 +345,6 @@ function isNonProductionStorefrontSlug(slug: string): boolean {
     normalized.includes("-test-") ||
     normalized.includes("-demo-")
   );
-}
-
-function readCache<T>(cacheStore: Map<string, StorefrontCacheEntry<T>>, key: string): T | undefined {
-  const entry = cacheStore.get(key);
-  if (!entry) {
-    return undefined;
-  }
-
-  if (entry.expiresAt <= Date.now()) {
-    cacheStore.delete(key);
-    return undefined;
-  }
-
-  return entry.value;
-}
-
-function writeCache<T>(cacheStore: Map<string, StorefrontCacheEntry<T>>, key: string, value: T) {
-  if (cacheStore.size > 256) {
-    cacheStore.clear();
-  }
-
-  cacheStore.set(key, {
-    expiresAt: Date.now() + STOREFRONT_PRODUCT_CACHE_MS,
-    value
-  });
-}
-
-function primeStorefrontProductCaches(products: MigratedProduct[]) {
-  const byCategory = new Map<string, MigratedProduct[]>();
-
-  for (const product of products) {
-    writeCache(productBySlugCache, product.slug, product);
-
-    if (product.stockStatus !== "instock") {
-      continue;
-    }
-
-    const categoryProducts = byCategory.get(product.categorySlug) ?? [];
-    categoryProducts.push(product);
-    byCategory.set(product.categorySlug, categoryProducts);
-  }
-
-  for (const [categorySlug, categoryProducts] of byCategory) {
-    writeCache(categoryProductsCache, `${categorySlug}:8`, categoryProducts);
-  }
 }
 
 export function normalizeStorefrontProductRow(row: unknown, options: { sanitizePublicCopy?: boolean } = {}): MigratedProduct | null {
@@ -642,7 +575,6 @@ function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): 
     ...option,
     title: "Standard Direct",
     description: "Ready-made stand with NFC tap connected directly to one destination link.",
-    priceCents: 3900,
     requiresDestinationUrl: true,
     hasQr: false,
     requiresLogo: false,

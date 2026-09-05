@@ -28,14 +28,19 @@ export function isOrderPaymentConfirmed(status: OrderRecord["status"], paymentSt
 }
 
 export function validateOrderFulfillmentTransition(
-  order: Pick<OrderRecord, "status" | "payment_status" | "production_status" | "shipping_status">,
+  order: Pick<OrderRecord, "status" | "payment_status" | "production_status" | "shipping_status" | "shipped_at">,
   input: OrderFulfillmentUpdateInput
 ): OrderFulfillmentValidation {
   const shippingStatus = input.markShipped ? "shipped" : input.shippingStatus;
   const stateChanged = input.productionStatus !== order.production_status || shippingStatus !== order.shipping_status;
+  const hasShipped = Boolean(order.shipped_at) || order.shipping_status === "shipped" || order.shipping_status === "delivered";
 
   if (stateChanged && !canAdvanceOrderFulfillment(order)) {
     return { ok: false, error: "Fulfillment cannot advance until payment is confirmed.", status: 409 };
+  }
+
+  if (hasShipped && input.productionStatus !== order.production_status) {
+    return { ok: false, error: "Production cannot be changed after shipment.", status: 409 };
   }
 
   if (["ready_to_ship", "shipped", "delivered"].includes(shippingStatus) && input.productionStatus !== "completed") {
@@ -47,7 +52,7 @@ export function validateOrderFulfillmentTransition(
   }
 
   if (
-    order.shipping_status === "shipped" &&
+    hasShipped &&
     shippingStatus !== "shipped" &&
     shippingStatus !== "delivered" &&
     shippingStatus !== "blocked"
@@ -62,7 +67,6 @@ export function validateOrderFulfillmentTransition(
   return {
     ok: true,
     shippingStatus,
-    isFirstShippedTransition:
-      shippingStatus === "shipped" && order.shipping_status !== "shipped" && order.shipping_status !== "delivered"
+    isFirstShippedTransition: shippingStatus === "shipped" && !hasShipped
   };
 }

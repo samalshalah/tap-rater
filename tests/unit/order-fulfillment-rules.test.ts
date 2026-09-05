@@ -95,6 +95,15 @@ describe("order fulfillment rules", () => {
     });
   });
 
+  it("retains shipment history while blocked", () => {
+    const order = { ...paidOrder, production_status: "completed" as const, shipping_status: "blocked" as const, shipped_at: "2026-09-05T12:00:00.000Z" };
+    for (const shippingStatus of ["not_shipped", "ready_to_ship"] as const) {
+      expect(validateOrderFulfillmentTransition(order, { ...input, productionStatus: "completed", shippingStatus })).toMatchObject({ ok: false, status: 409 });
+    }
+    expect(validateOrderFulfillmentTransition(order, { ...input, productionStatus: "in_production", shippingStatus: "blocked" })).toMatchObject({ ok: false, status: 409 });
+    expect(validateOrderFulfillmentTransition(order, { ...input, productionStatus: "completed", shippingStatus: "shipped" })).toEqual({ ok: true, shippingStatus: "shipped", isFirstShippedTransition: false });
+  });
+
   it("prevents backward shipping transitions", () => {
     expect(validateOrderFulfillmentTransition(
       { ...paidOrder, production_status: "completed", shipping_status: "delivered" },

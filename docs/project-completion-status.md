@@ -6,7 +6,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
-The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1 and 2 are complete in test mode**: payment/refund reliability, durable account/invoice/email recovery, replay safety, and a fresh first-pass paid checkout were verified. Four correction phases remain. No new overall readiness percentage has been calculated, and live launch is not approved. See `docs/ecommerce-phase-1.md`, `docs/ecommerce-phase-2.md`, and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
+The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1-3 are complete in test mode**, with Phase 3 scoped to the existing made-to-order model. Payment/refund reliability, durable recovery, catalog price authority, availability enforcement, and a dedicated production/shipment/support/refund drill were verified. Three correction phases remain. Owner inbox, physical fulfillment, and operating-policy acceptance remain open; live launch is not approved. No new overall readiness percentage has been calculated. See `docs/ecommerce-phase-1.md`, `docs/ecommerce-phase-2.md`, `docs/ecommerce-phase-3.md`, and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
 
 - Configuration readiness: 88%
 - Blocked configuration checks: 0
@@ -14,7 +14,8 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
 - Deployed Phase 1 release: `206d8d6f-14a3-492e-ac9c-c0140deba84f`; 701 tests passing across 111 files, plus 5 explicitly run isolated-database integration tests.
-- Current Phase 2 release: `5cf96db6-18ca-4bb8-85aa-483d9b8bab0e`; 729 tests and 8 explicitly run isolated-database tests pass. Deployed recovery, replay, and a fresh first-pass checkout/invoice/email test passed. Dedicated QA orders were fully refunded; concurrent refund notification retries reconciled to 200.
+- Previous Phase 2 release: `5cf96db6-18ca-4bb8-85aa-483d9b8bab0e`; 729 tests and 8 explicitly run isolated-database tests passed. Deployed recovery, replay, and a fresh first-pass checkout/invoice/email test passed. Dedicated QA orders were fully refunded; concurrent refund notification retries reconciled to 200.
+- Current Phase 3 release: `f7c4fd2c-9b4a-40f5-a9e3-55fd9038a614`; 747 tests and 9 explicitly run isolated-database tests passed. Price round-trip, stale-cart rejection, production/shipment guards, support resolution, and a fully refunded $53.34 Stripe test order are recorded in `docs/ecommerce-phase-3.md`. Public catalog prices remain unchanged; Multi-Link stays fixed at $9.99/month.
 - Cloudflare Workers Paid is active at the owner-approved $5/month plus usage. The deployed Worker explicitly allows 30,000 ms CPU and 1,000 subrequests per invocation. Stripe remains in test mode.
 - Active application database verified from a new deployed checkout: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. Recovery checkpoint retained; branch protection and restore acceptance remain open.
 
@@ -24,7 +25,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 | --- | --- | --- |
 | 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
 | 2. Account, invoice, email recovery | Complete in test mode | Owner inbox/account acceptance belongs to Phase 5; live equivalents to Phase 6. See `docs/ecommerce-phase-2.md` |
-| 3. Store operating controls | Open | Pricing authority, inventory policy, fulfillment acceptance |
+| 3. Store operating controls | Complete in test mode (made to order) | Owner operating-policy and physical fulfillment acceptance belong to Phase 5; finite stock is not implemented. See `docs/ecommerce-phase-3.md` |
 | 4. Security and recovery | Open | Token isolation, branch protection, backup/restore coverage |
 | 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
 | 6. Real-money launch | Open | Tax/policy decision, live configuration, controlled real purchases and reconciliation |

@@ -8,7 +8,6 @@ import { hasSupabaseAdminConfig } from "@/lib/db";
 import {
   getBusinessUses,
   getPlatforms,
-  getProductOptions,
   getProductOptionTemplates,
   getStandTypes
 } from "@/lib/catalog-architecture-repository";
@@ -32,7 +31,9 @@ export default async function AdminProductEditorPage({ params }: AdminProductEdi
     getBusinessUses(),
     getPlatforms(),
     getProductOptionTemplates(),
-    isCreate ? Promise.resolve([]) : getProductOptions(product.slug)
+    Promise.resolve((product.purchaseOptions ?? []).map(option => ({
+      ...option, supportsReorderableLinks: option.supportsReorderableLinks ?? false, supportsLinkVisibility: option.supportsLinkVisibility ?? false
+    })))
   ]);
   const canSave = hasSupabaseAdminConfig();
 

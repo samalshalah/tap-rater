@@ -1,0 +1,139 @@
+{
+  "checkedAt": "2026-09-05T19:40:07.593Z",
+  "release": "9319b45e-6451-4283-a1ab-0679190e27e9",
+  "orderId": "176806a8-8709-4ac9-acbb-eb2805585bce",
+  "sessionId": "cs_test_b1vLp3qQURrLngr3QBoJYMLD9sZpT0YysLNHq1hhz0mVJinHNOQy9J0rb4",
+  "before": {
+    "id": "176806a8-8709-4ac9-acbb-eb2805585bce",
+    "stripe_checkout_session_id": "cs_test_b1vLp3qQURrLngr3QBoJYMLD9sZpT0YysLNHq1hhz0mVJinHNOQy9J0rb4",
+    "customer_name": "Phase 3 Operations QA - Do Not Fulfill",
+    "status": "paid",
+    "payment_status": "paid",
+    "production_status": "completed",
+    "shipping_status": "delivered",
+    "shipped_at": "2026-09-05T19:39:55.448Z",
+    "tracking_number": "PHASE3-TEST-NOT-A-PARCEL",
+    "total_cents": 5334,
+    "stripe_refund_id": null,
+    "refund_status": null
+  },
+  "operations": [
+    {
+      "label": "dedicated test refund",
+      "status": 200,
+      "result": {
+        "ok": true,
+        "refundId": "re_3UCPPRJfXGmPO60V1Jp72QGv",
+        "refundStatus": "succeeded",
+        "alreadyRefunded": false
+      }
+    },
+    {
+      "label": "post-refund production remains locked",
+      "status": 409,
+      "result": {
+        "error": "Only internal notes can be changed until payment is confirmed."
+      }
+    },
+    {
+      "label": "unauthenticated fulfillment rejected",
+      "status": 401,
+      "result": {
+        "error": "Admin authentication required."
+      }
+    }
+  ],
+  "after": {
+    "id": "176806a8-8709-4ac9-acbb-eb2805585bce",
+    "stripe_checkout_session_id": "cs_test_b1vLp3qQURrLngr3QBoJYMLD9sZpT0YysLNHq1hhz0mVJinHNOQy9J0rb4",
+    "customer_name": "Phase 3 Operations QA - Do Not Fulfill",
+    "status": "canceled",
+    "payment_status": "refunded",
+    "production_status": "completed",
+    "shipping_status": "delivered",
+    "shipped_at": "2026-09-05T19:39:55.448Z",
+    "tracking_number": "PHASE3-TEST-NOT-A-PARCEL",
+    "total_cents": 5334,
+    "stripe_refund_id": "re_3UCPPRJfXGmPO60V1Jp72QGv",
+    "refund_status": "succeeded"
+  },
+  "invoices": [
+    {
+      "stripe_invoice_id": "in_1UCPPUJfXGmPO60VPtRYWYim",
+      "status": "paid",
+      "total_cents": 5334
+    }
+  ],
+  "emails": [
+    {
+      "message_type": "paid_order_customer",
+      "status": "accepted",
+      "attempt_number": 1,
+      "accepted_at": "2026-09-05T19:38:01.825Z"
+    },
+    {
+      "message_type": "paid_order_admin",
+      "status": "accepted",
+      "attempt_number": 1,
+      "accepted_at": "2026-09-05T19:38:02.339Z"
+    },
+    {
+      "message_type": "shipping_tracking_customer",
+      "status": "accepted",
+      "attempt_number": 1,
+      "accepted_at": "2026-09-05T19:39:55.610Z"
+    }
+  ],
+  "smoke": [
+    {
+      "path": "/",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/product/google-review-stand",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/cart",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/checkout",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/orders/176806a8-8709-4ac9-acbb-eb2805585bce",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/inventory",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/requests",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/settings/emails",
+      "status": 200,
+      "serverError": false
+    }
+  ]
+}

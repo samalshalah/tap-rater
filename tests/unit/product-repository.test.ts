@@ -297,7 +297,7 @@ describe("product repository", () => {
         optionCode: "standard_direct",
         title: "Standard Direct",
         description: "Ready-made stand with NFC tap connected directly to one destination link.",
-        priceCents: 3900,
+        priceCents: 4200,
         hasQr: false,
         footerLabel: "NFC direct",
         isActive: true
@@ -857,9 +857,13 @@ describe("product repository", () => {
   });
 
   it("fails closed instead of restoring static products when the configured product query fails", async () => {
-    const products = await getStorefrontProductsFromClient(mockProductsClient(null, { message: "query failed" }));
+    await expect(getStorefrontProductsFromClient(mockProductsClient(null, { message: "query failed" }))).rejects.toThrow("query failed");
+  });
 
-    expect(products).toEqual([]);
+  it("does not restore default options when every database option is disabled or missing", async () => {
+    const row = { slug: "google-review-stand", title: "Google Review Stand", is_active: true, stock_status: "instock" };
+    expect(await getStorefrontProductsFromClient(mockProductsClient([row], null, createQueryCalls(), []))).toEqual([]);
+    expect(await getStorefrontProductBySlugFromClient(mockProductsClient([row], null, createQueryCalls(), []), row.slug)).toBeUndefined();
   });
 });
 
@@ -877,7 +881,10 @@ function mockProductsClient(
   data: unknown[] | null,
   error: null | { message: string } = null,
   calls = createQueryCalls(),
-  productOptions: unknown[] = []
+  productOptions: unknown[] = (data ?? []).map(row => ({
+    product_slug: (row as { slug: string }).slug, option_code: "standard_direct", title: "Standard Direct",
+    price_cents: 3900, requires_destination_url: true, is_active: true, sort_order: 1
+  }))
 ): ProductRepositoryClient {
   return {
     from(table: string) {

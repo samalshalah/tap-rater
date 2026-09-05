@@ -1,7 +1,9 @@
-import type { MigratedProduct } from "@/data/migrated-products";
+import { unstable_noStore as noStore } from "next/cache";
+import type { MigratedProduct, ProductPurchaseOptionSnapshot } from "@/data/migrated-products";
 import { migratedProducts } from "@/data/migrated-products";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { normalizeStorefrontProductRow } from "@/lib/product-repository";
+import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 
 type AdminProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
 
@@ -57,31 +59,39 @@ export function createBlankAdminProduct(): MigratedProduct {
 }
 
 export async function getAdminProducts(): Promise<MigratedProduct[]> {
+  noStore();
   if (!hasSupabaseAdminConfig()) {
     return migratedProducts;
   }
 
-  try {
-    return await getAdminProductsFromClient(getSupabaseAdmin() as AdminProductClient);
-  } catch {
-    return migratedProducts;
-  }
+  return getAdminProductsFromClient(getSupabaseAdmin() as AdminProductClient);
 }
 
 export async function getAdminProductsFromClient(client: AdminProductClient): Promise<MigratedProduct[]> {
   const { data, error } = await client.from("products").select("*");
 
   if (error || !data) {
-    return migratedProducts;
+    throw new Error(error?.message ?? "Admin catalog query returned no data.");
   }
 
   const businessUseSlugsByProductSlug = await getProductBusinessUseSlugsByProductSlug(client);
+  const optionResult = await client.from("product_options").select("*");
+  if (optionResult.error || !optionResult.data) throw new Error(optionResult.error?.message ?? "Admin options query returned no data.");
+  const optionsByProduct = new Map<string, ProductPurchaseOptionSnapshot[]>();
+  for (const row of optionResult.data) {
+    const option = normalizeProductOptionRow(row);
+    if (!option?.productSlug) continue;
+    const options = optionsByProduct.get(option.productSlug) ?? [];
+    options.push(option);
+    optionsByProduct.set(option.productSlug, options);
+  }
 
   return data
     .map((row) => normalizeStorefrontProductRow(row, { sanitizePublicCopy: false }))
     .filter((product): product is MigratedProduct => Boolean(product))
     .map((product) => ({
       ...product,
+      purchaseOptions: (optionsByProduct.get(product.slug) ?? []).sort((a, b) => a.sortOrder - b.sortOrder),
       businessUseSlugs: businessUseSlugsByProductSlug.get(product.slug) ?? product.businessUseSlugs ?? []
     }))
     .sort(compareAdminProducts);

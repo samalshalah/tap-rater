@@ -380,6 +380,7 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   const productionArtwork = readProductionArtworkReference(item);
 
   if (fulfillmentKind === "standard") {
+    const warnings = destinationUrl && qrTargetUrl && nfcTargetUrl ? [] : ["Missing direct destination URL"];
     return {
       fulfillmentKind,
       optionLabel: "Standard Direct",
@@ -394,9 +395,9 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
       productionArtwork,
       proofRequired: false,
       proofConfirmed: false,
-      statusLabel: "Ready for direct fulfillment",
-      statusTone: "ready",
-      warnings: []
+      statusLabel: warnings.length ? "Needs setup review" : "Ready for direct fulfillment",
+      statusTone: warnings.length ? "warning" : "ready",
+      warnings
     };
   }
 
@@ -405,6 +406,13 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
     if (!qrTargetUrl) hostedWarnings.push("Missing hosted QR target URL");
     if (!nfcTargetUrl) hostedWarnings.push("Missing hosted NFC target URL");
     if (!readSetupString(item.setup, "hostedPageCode") && !readSetupString(item.setup, "permanentPageCode")) hostedWarnings.push("Missing permanent hosted page code");
+    if (item.optionId === "branded_qr_direct") {
+      if (!businessName) hostedWarnings.push("Missing business name");
+      if (!logoReference) hostedWarnings.push("Missing logo");
+      if (!frontTemplateUrl) hostedWarnings.push("Missing branded front template");
+      if (!item.proofApproved) hostedWarnings.push("Proof not confirmed");
+      if (productionArtwork?.status !== "generated") hostedWarnings.push(productionArtwork?.error ?? "Production artwork not generated");
+    }
 
     return {
       fulfillmentKind,
@@ -473,6 +481,13 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
     statusTone: isComplete ? "ready" : "warning",
     warnings
   };
+}
+
+export function getOrderProductionBlockers(order: Pick<OrderRecord, "line_items_json">): string[] {
+  if (!order.line_items_json.length) return ["Order has no production line items."];
+  return order.line_items_json.flatMap((item, index) =>
+    getOrderLineItemProductionSummary(item).warnings.map((warning) => `Item ${index + 1} (${item.title}): ${warning}`)
+  );
 }
 
 export function mapCheckoutSessionToOrderInput(session: StripeCheckoutSessionLike): OrderRecord {
@@ -963,6 +978,17 @@ export async function updateOrderFulfillmentWithClient(
   const transition = validateOrderFulfillmentTransition(existingOrder, input);
   if (!transition.ok) return transition;
 
+  const advancesProduction = input.productionStatus !== existingOrder.production_status &&
+    ["ready_for_production", "in_production", "completed"].includes(input.productionStatus);
+  const advancesShipping = transition.shippingStatus !== existingOrder.shipping_status &&
+    ["ready_to_ship", "shipped", "delivered"].includes(transition.shippingStatus);
+  if (canRunOrderProductionActions(existingOrder) && (advancesProduction || advancesShipping)) {
+    const blockers = getOrderProductionBlockers(existingOrder);
+    if (blockers.length) {
+      return { ok: false, error: `Resolve production setup before advancing fulfillment. ${blockers.join("; ")}`, status: 409 };
+    }
+  }
+
   const now = options.now?.() ?? new Date().toISOString();
   const shippingStatus = transition.shippingStatus;
   const shouldSendShippingEmail =
@@ -1072,7 +1098,7 @@ export async function applyAdminOrderProductionActionWithClient(
     if (input.action === "approve_proof_manually") {
       lineItems = lineItems.map((item) => {
         const summary = getOrderLineItemProductionSummary(item);
-        if (summary.fulfillmentKind !== "branded" && summary.fulfillmentKind !== "custom") {
+        if (summary.fulfillmentKind !== "branded" && summary.fulfillmentKind !== "custom" && item.optionId !== "branded_qr_direct") {
           return item;
         }
 
@@ -1091,7 +1117,7 @@ export async function applyAdminOrderProductionActionWithClient(
 
     lineItems = await Promise.all(
       lineItems.map((item, index) =>
-        getOrderLineItemProductionSummary(item).fulfillmentKind === "branded"
+        (item.optionId === "branded_qr_direct" || getOrderLineItemProductionSummary(item).fulfillmentKind === "branded")
           ? generateProductionArtworkForOrderLineItem(
               {
                 orderReference: existingOrder.stripe_checkout_session_id || existingOrder.id || orderId,

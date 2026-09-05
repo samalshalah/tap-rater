@@ -49,7 +49,7 @@ describe("admin products", () => {
       from(table: string) {
         return {
           select() {
-            expect(["products", "product_business_uses"]).toContain(table);
+            expect(["products", "product_business_uses", "product_options"]).toContain(table);
             return Promise.resolve({ data: [], error: null });
           }
         };
@@ -64,7 +64,7 @@ describe("admin products", () => {
       from(table: string) {
         return {
           select() {
-            if (table === "product_business_uses") {
+            if (table === "product_business_uses" || table === "product_options") {
               return Promise.resolve({ data: [], error: null });
             }
 

@@ -7,6 +7,7 @@ describe("admin product editor Multi-Link add-on controls", () => {
   it("shows Multi-Link as a services add-on instead of an operational product type", () => {
     expect(source).toContain('EditorCard title="Services & Add-ons"');
     expect(source).toContain("Supports Multi-Link");
+    expect(source).toContain("Fixed Multi-Link plan (read-only)");
     expect(source).toContain("setSupportsMultiLink(event.target.checked)");
     expect(source).not.toContain('<option value="hosted_multilink">Hosted Multi-Link</option>');
   });

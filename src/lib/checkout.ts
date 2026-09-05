@@ -126,7 +126,7 @@ export type ValidatedCheckoutCart =
 export function validateCheckoutCart(items: CartItem[], products: MigratedProduct[]): ValidatedCheckoutCart {
   const productById = new Map(
     products
-      .filter((product) => product.isActive && product.stockStatus === "instock" && (product.checkoutMode === "buy_now" || product.checkoutMode === "subscription"))
+      .filter((product) => product.isActive && product.status !== "draft" && product.status !== "archived" && product.stockStatus === "instock" && (product.checkoutMode === "buy_now" || product.checkoutMode === "subscription"))
       .map((product) => [product.slug, product])
   );
   const rows: CheckoutCartRow[] = [];
@@ -144,6 +144,10 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     const setup = normalizeCheckoutSetup(item.setup);
     const hasMultiLinkAddon =
       setup.serviceAddon === hostedMultiLinkServiceAddon.code && productSupportsMultiLink(product) && isHostedPurchaseOptionEnabled();
+
+    if (setup.serviceAddon === hostedMultiLinkServiceAddon.code && !hasMultiLinkAddon) {
+      continue;
+    }
 
     if (!isProductOptionArchitectureConsistent(product, option) || cartItemRequestsPermanentHostedCode(item) || !isValidCheckoutSetup(option, setup, hasMultiLinkAddon)) {
       continue;
@@ -235,7 +239,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     });
   }
 
-  if (rows.length === 0) {
+  if (rows.length === 0 || rows.length !== items.length) {
     return { ok: false, reason: "empty_cart", message: "Your cart is empty or contains unavailable products." };
   }
 

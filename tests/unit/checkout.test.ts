@@ -98,9 +98,7 @@ describe("Stripe checkout helpers", () => {
   it("validates cart items server-side against active in-stock products", () => {
     const result = validateCheckoutCart(
       [
-        { ...configuredStandardItem, quantity: 2 },
-        { productId: "old-product", quantity: 5 },
-        { productId: "stale-platform-product", quantity: 1 }
+        { ...configuredStandardItem, quantity: 2 }
       ],
       migratedProducts
     );
@@ -121,6 +119,18 @@ describe("Stripe checkout helpers", () => {
       lineSubtotalCents: 7800
     });
     expect(result.totalCents).toBe(7800);
+  });
+
+  it("rejects the entire checkout instead of silently dropping unavailable or invalid items", () => {
+    expect(validateCheckoutCart([configuredStandardItem, { productId: "missing", quantity: 1 }], migratedProducts)).toMatchObject({ ok: false });
+    expect(validateCheckoutCart([configuredStandardItem, { ...configuredStandardItem, quantity: 100 }], migratedProducts)).toMatchObject({ ok: false });
+  });
+
+  it("rejects an active-flagged draft or archived product", () => {
+    const product = migratedProducts.find(item => item.slug === configuredStandardItem.productId)!;
+    for (const status of ["draft", "archived"] as const) {
+      expect(validateCheckoutCart([configuredStandardItem], [{ ...product, isActive: true, status }])).toMatchObject({ ok: false });
+    }
   });
 
   it("rejects cart quantities above the shared product quantity cap", () => {
@@ -592,6 +602,15 @@ describe("Stripe checkout helpers", () => {
     );
 
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
+  });
+
+  it.each(["product", "global"])("rejects stale Multi-Link carts after %s availability is disabled", (level) => {
+    process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = level === "global" ? "false" : "true";
+    const source = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
+    const product = { ...source, supportsMultiLink: level !== "product" };
+    const result = validateCheckoutCart([{ productId: product.slug, optionId: "standard_direct", quantity: 1,
+      setup: { serviceMode: "HOSTED", serviceAddon: "hosted_multilink", destinationUrl: "https://example.com" } }], [product]);
+    expect(result).toMatchObject({ ok: false });
   });
 
   it("accepts Multi-Link as a service add-on without assigning a permanent code when explicitly enabled", () => {

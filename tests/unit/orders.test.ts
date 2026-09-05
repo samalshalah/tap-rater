@@ -600,7 +600,7 @@ describe("orders repository", () => {
         subtotal_cents: 3900,
         total_cents: 3900,
         currency: "usd",
-        line_items_json: [],
+        line_items_json: [directFulfillmentItem()],
         shipping_amount_cents: 0,
         production_status: "completed",
         shipping_status: "ready_to_ship",
@@ -682,7 +682,7 @@ describe("orders repository", () => {
         subtotal_cents: 3900,
         total_cents: 3900,
         currency: "usd",
-        line_items_json: [],
+        line_items_json: [directFulfillmentItem()],
         shipping_amount_cents: 0,
         production_status: "completed",
         shipping_status: "shipped",
@@ -728,7 +728,7 @@ describe("orders repository", () => {
         subtotal_cents: 3900,
         total_cents: 3900,
         currency: "usd",
-        line_items_json: [],
+        line_items_json: [directFulfillmentItem()],
         shipping_amount_cents: 0,
         production_status: "completed",
         shipping_status: "ready_to_ship",
@@ -783,6 +783,33 @@ describe("orders repository", () => {
     expect(result).toEqual({ ok: true, shippingEmail: { sent: false, reason: "email_send_exception" } });
     expect(rows[0]).toMatchObject({ shipping_status: "shipped", tracking_number: "TRACK789" });
     expect(warn).toHaveBeenCalledWith("[orders] shipping_email_not_sent", expect.objectContaining({ reason: "email_send_exception" }));
+  });
+
+  it.each([
+    { lineItems: [] },
+    { lineItems: [directFulfillmentItem({ setup: {} })] },
+    { lineItems: [directFulfillmentItem({ optionId: "branded_qr_direct", proofApproved: false })] },
+    { lineItems: [directFulfillmentItem({ optionId: "branded_qr_direct", destinationMode: "HOSTED", setup: { serviceMode: "HOSTED", hostedPageCode: "ABC123", qrTargetUrl: "https://taprater.com/p/ABC123", nfcTargetUrl: "https://taprater.com/p/ABC123" } })] }
+  ])(
+    "blocks unresolved production setup but preserves notes-only edits: %j", async ({ lineItems }) => {
+      const rows = [fulfillmentOrder({ line_items_json: lineItems })];
+      const client = createOrdersMemoryClient(rows);
+      const input = orderFulfillmentUpdateSchema.parse({ productionStatus: "completed", shippingStatus: "not_shipped" });
+      expect(await updateOrderFulfillmentWithClient(client, "order-123", input)).toMatchObject({ ok: false, status: 409, error: expect.stringContaining("Resolve production setup") });
+      expect(rows[0].production_status).toBe("not_started");
+      expect(await updateOrderFulfillmentWithClient(client, "order-123", { ...input, productionStatus: "not_started", internalNotes: "Setup review needed" })).toEqual({ ok: true });
+      expect(rows[0].internal_notes).toBe("Setup review needed");
+    }
+  );
+
+  it("does not resend shipping mail when a shipped order returns from blocked", async () => {
+    const shippedAt = "2026-09-05T12:00:00.000Z";
+    const rows = [fulfillmentOrder({ production_status: "completed", shipping_status: "blocked", shipped_at: shippedAt })];
+    const sendShippingNotificationEmailFn = vi.fn();
+    const input = orderFulfillmentUpdateSchema.parse({ productionStatus: "completed", shippingStatus: "shipped", trackingNumber: "QA-TRACKING" });
+    expect(await updateOrderFulfillmentWithClient(createOrdersMemoryClient(rows), "order-123", input, { sendShippingNotificationEmailFn })).toEqual({ ok: true });
+    expect(sendShippingNotificationEmailFn).not.toHaveBeenCalled();
+    expect(rows[0]).toMatchObject({ shipped_at: shippedAt });
   });
 
   it("blocks fulfillment and production actions while payment is unconfirmed", async () => {
@@ -1098,6 +1125,10 @@ describe("orders repository", () => {
   });
 });
 
+function directFulfillmentItem(overrides: Record<string, unknown> = {}) {
+  return { productId: "google-review-stand", optionId: "standard_direct", title: "Google Review Stand", sku: "GRS", quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900, setup: { destinationUrl: "https://g.page/example/review" }, ...overrides };
+}
+
 function fulfillmentOrder(overrides: Record<string, unknown> = {}) {
   return {
     id: "order-123",
@@ -1109,7 +1140,7 @@ function fulfillmentOrder(overrides: Record<string, unknown> = {}) {
     subtotal_cents: 3900,
     total_cents: 3900,
     currency: "usd",
-    line_items_json: [],
+    line_items_json: [directFulfillmentItem()],
     shipping_amount_cents: 0,
     production_status: "not_started",
     shipping_status: "not_shipped",
