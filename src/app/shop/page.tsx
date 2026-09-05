@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SlidersHorizontal } from "lucide-react";
+import { Plus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { ShopControls } from "@/components/product/shop-controls";
 import { SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { getShopResultWindow, searchAndSortShopProducts } from "@/lib/shop-catalog";
+import { buildShopHref, normalizeShopQuery, type ShopQuery, type ShopSearchParams } from "@/lib/shop-query";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -15,14 +18,11 @@ export const metadata: Metadata = {
 };
 
 type ShopPageProps = {
-  searchParams?: Promise<{
-    type?: string;
-    use?: string;
-  }>;
+  searchParams?: Promise<ShopSearchParams>;
 };
 
 export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const filters = await searchParams;
+  const filters = normalizeShopQuery(await searchParams);
   const [products, businessUses, standTypes] = await Promise.all([
     getStorefrontProducts(),
     getPublicBusinessUses(),
@@ -32,7 +32,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const selectedUse = businessUses.find(
     (businessUse) => businessUse.slug === filters?.use,
   );
-  const filteredProducts = products.filter((product) => {
+  const query: ShopQuery = { ...filters, type: selectedType?.slug, use: selectedUse?.slug };
+  const filteredProducts = searchAndSortShopProducts(products.filter((product) => {
     const selectedCategorySlug = selectedType
       ? standTypeToCategorySlug(selectedType.slug)
       : undefined;
@@ -45,7 +46,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         product.businessUseSlugs?.includes(selectedUse.slug)
       : true;
     return matchesType && matchesUse;
-  });
+  }), query);
+  const { visibleCount, nextPage } = getShopResultWindow(filteredProducts.length, query.page);
+  const visibleProducts = filteredProducts.slice(0, visibleCount);
+  const hasFilters = Boolean(selectedType || selectedUse || query.q);
 
   return (
     <main className="tr-public-shell text-ink">
@@ -54,17 +58,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           id="stand-types"
           className="tr-container scroll-mt-24"
         >
-          <div className="mb-8 max-w-3xl">
+          <div className="mb-6 max-w-3xl sm:mb-8">
             <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="tr-page-title mt-4">Shop NFC and QR stands.</h1>
-            <p className="tr-page-hero-body mt-4">
-              Browse by stand type or business use, then choose the product that fits the customer action.
-            </p>
           </div>
-          <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr] lg:gap-8">
+          <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <div className="lg:hidden">
-                <details className="tr-card-compact group p-0">
+                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className="tr-card-compact group p-0">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
                     <span className="flex min-h-12 items-center gap-2 px-4">
                       <SlidersHorizontal size={17} aria-hidden="true" />
@@ -74,7 +75,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       {selectedType || selectedUse ? "Active" : "Type and use"}
                     </span>
                   </summary>
-                  <div className="mt-4 border-t border-line pt-4">
+                  <div className="border-t border-line p-4">
                     <FilterPanelContent
                       businessUses={businessUses}
                       filteredProductCount={filteredProducts.length}
@@ -82,6 +83,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       selectedType={selectedType}
                       selectedUse={selectedUse}
                       standTypes={standTypes}
+                      query={query}
                     />
                   </div>
                 </details>
@@ -95,55 +97,78 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                   selectedType={selectedType}
                   selectedUse={selectedUse}
                   standTypes={standTypes}
+                  query={query}
                 />
               </aside>
             </div>
 
-            <div className="self-start">
-              {selectedType || selectedUse ? (
-                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 self-start" id="shop-results">
+              <ShopControls query={query} />
+              <p role="status" className="my-4 break-words text-sm text-muted">
+                Showing {visibleCount} of {filteredProducts.length} products{query.q ? ` for "${query.q}"` : ""}
+              </p>
+              {hasFilters ? (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     {selectedType ? (
                       <Link
-                        href={buildShopHref({ use: selectedUse?.slug })}
+                        href={buildShopHref({ ...query, type: undefined, page: undefined })}
                         prefetch={false}
-                        className="tr-pill-neutral bg-white"
+                        scroll={false}
+                        aria-label={`Remove type filter: ${selectedType.title}`}
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand"
                       >
-                        Type: {selectedType.title} ×
+                        {selectedType.title} <X size={14} aria-hidden="true" />
                       </Link>
                     ) : null}
                     {selectedUse ? (
                       <Link
-                        href={buildShopHref({ type: selectedType?.slug })}
+                        href={buildShopHref({ ...query, use: undefined, page: undefined })}
                         prefetch={false}
-                        className="tr-pill-neutral bg-white"
+                        scroll={false}
+                        aria-label={`Remove use filter: ${selectedUse.title}`}
+                        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand"
                       >
-                        Use: {selectedUse.title} ×
+                        {selectedUse.title} <X size={14} aria-hidden="true" />
+                      </Link>
+                    ) : null}
+                    {query.q ? (
+                      <Link href={buildShopHref({ ...query, q: undefined, page: undefined })} prefetch={false} scroll={false} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand">
+                        Clear search <X size={14} aria-hidden="true" />
                       </Link>
                     ) : null}
                   </div>
-                  <Link href="/shop" prefetch={false} className="tr-button-outline w-fit">
-                    Reset filters
+                  <Link href="/shop" prefetch={false} scroll={false} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">
+                    Reset all
                   </Link>
                 </div>
               ) : null}
 
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-6">
-                {filteredProducts.length > 0 ? (
-                  filteredProducts.map((product) => (
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+                {visibleProducts.length > 0 ? (
+                  visibleProducts.map((product) => (
                     <ProductCard
                       key={product.slug}
                       product={product}
-                      density="compact"
+                      density="catalog"
                     />
                   ))
                 ) : (
-                  <div className="tr-card p-8 text-sm font-semibold text-muted sm:col-span-2 xl:col-span-4">
-                    No products match these filters. Clear filters to view all
-                    stands.
+                  <div className="col-span-full grid justify-items-start gap-3 border-y border-line py-10">
+                    <SearchX size={24} className="text-muted" aria-hidden="true" />
+                    <h2 className="text-lg font-semibold text-ink">No matching stands</h2>
+                    <Link href="/shop" prefetch={false} scroll={false} className="tr-button-outline">View all stands</Link>
                   </div>
                 )}
               </div>
+              {nextPage ? (
+                <div className="mt-6 flex flex-col items-center gap-2">
+                  <Link href={buildShopHref({ ...query, page: nextPage })} prefetch={false} scroll={false} className="tr-button-outline gap-2" aria-label="Load more products">
+                    <Plus size={16} aria-hidden="true" /> Load more
+                  </Link>
+                  <p className="text-xs text-muted">{filteredProducts.length - visibleCount} more products</p>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -213,6 +238,7 @@ function FilterPanelContent({
   selectedType,
   selectedUse,
   standTypes,
+  query,
 }: {
   businessUses: BusinessUseForFilter[];
   filteredProductCount: number;
@@ -220,6 +246,7 @@ function FilterPanelContent({
   selectedType?: StandTypeForFilter;
   selectedUse?: BusinessUseForFilter;
   standTypes: StandTypeForFilter[];
+  query: ShopQuery;
 }) {
   return (
     <>
@@ -231,7 +258,7 @@ function FilterPanelContent({
           </p>
         </div>
         {selectedType || selectedUse ? (
-          <Link href="/shop" prefetch={false} className="text-sm font-semibold text-brand">
+          <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className="text-sm font-semibold text-brand">
             Clear all
           </Link>
         ) : null}
@@ -250,6 +277,8 @@ function FilterPanelContent({
               active={selectedType?.slug === standType.slug}
               count={count}
               href={buildShopHref({
+                q: query.q,
+                sort: query.sort,
                 type:
                   selectedType?.slug === standType.slug
                     ? undefined
@@ -275,6 +304,8 @@ function FilterPanelContent({
               ).length
             }
             href={buildShopHref({
+              q: query.q,
+              sort: query.sort,
               type: selectedType?.slug,
               use:
                 selectedUse?.slug === businessUse.slug
@@ -321,13 +352,14 @@ function FilterLink({
     <Link
       href={href}
       prefetch={false}
+      aria-current={active ? "true" : undefined}
       className={
         active
           ? "flex min-h-11 items-center justify-between gap-3 rounded-lg bg-panel px-3 py-2 text-sm font-semibold text-ink ring-1 ring-brand/20"
           : "flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"
       }
     >
-      <span className="min-w-0 truncate">{label}</span>
+      <span className="min-w-0">{label}</span>
       <span
         className={
           active
@@ -339,12 +371,4 @@ function FilterLink({
       </span>
     </Link>
   );
-}
-
-function buildShopHref({ type, use }: { type?: string; use?: string }) {
-  const params = new URLSearchParams();
-  if (type) params.set("type", type);
-  if (use) params.set("use", use);
-  const query = params.toString();
-  return query ? `/shop?${query}` : "/shop";
 }
