@@ -167,8 +167,9 @@ Fresh first-pass acceptance on the explicit-limit deployment, never fulfill:
 5. `COMMERCE_RECOVERY_SECRET` is a random 32-byte key represented as 64 hex digits.
    It is separate from session and webhook secrets. An encrypted, Windows-user-
    bound DPAPI backup is in ignored `.wrangler/commerce-recovery-key.dpapi`.
-   This backup is not portable disaster recovery. Before live launch, arrange
-   owner-controlled vault custody and test restoration as part of Phase 4.
+   This local backup is not portable disaster recovery. Phase 4 accepted an
+   additional Bitwarden backup on September 5, 2026: owner-attested phone
+   retrieval and a local exact-match receipt. See `docs/ecommerce-phase-4.md`.
 6. Do not rotate this key while pending payloads or activation credentials depend
    on it. A rotation needs a versioned decrypt/re-encrypt migration. Never print,
    commit, include in screenshots, or send the key to a customer.

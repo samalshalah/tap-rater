@@ -1,0 +1,11 @@
+﻿{
+    "recordedAt":  "2026-09-05T21:31:07.7398545Z",
+    "secretName":  "COMMERCE_RECOVERY_SECRET",
+    "vault":  "Bitwarden",
+    "itemName":  "Tap Rater - Commerce recovery key",
+    "keyMatchesLocalDpapi":  true,
+    "independentDeviceRetrievalOwnerAttested":  true,
+    "vaultInspectedByAgent":  false,
+    "method":  "Owner saved a secure note, retrieved it on another device, and manually typed its value into a masked local verifier.",
+    "containsSecret":  false
+}

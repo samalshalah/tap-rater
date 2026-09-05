@@ -82,7 +82,25 @@ Phase 4 passed 770 regression tests, nine separately run isolated database tests
 
 `COMMERCE_RECOVERY_SECRET` is needed to decrypt pending email bodies and activation credentials after database recovery. Do not rotate it without a versioned decrypt/re-encrypt migration. The ignored `.wrangler/commerce-recovery-key.dpapi` was decrypted locally and its 64-hex-character format verified without exposing the value.
 
-This copy is Windows-user-bound, not portable disaster recovery. **Phase 4 remains open for the owner's vault choice, secure off-computer storage, and independent retrieval verification.** Never place the key in chat, Git, evidence files, public pages, or the media backup bucket.
+This local copy is Windows-user-bound, not portable disaster recovery. **Portable key custody was accepted on September 5, 2026 at 21:31:07 UTC, closing Phase 4.** The owner saved the key in Bitwarden, confirmed retrieving it on their phone, and obtained MATCH VERIFIED in the local helper. `artifacts/ecommerce-phase-4/key-custody.json` records the exact-match result and owner-attested independent-device retrieval, without a key value or hash. The agent did not inspect the vault or independently observe the phone. The deployed key was not rotated. Never place the key in chat, Git, evidence files, public pages, or the media backup bucket.
+
+Use the local owner-operated helper (Windows PowerShell, STA):
+
+```powershell
+powershell.exe -NoProfile -STA -File artifacts/ecommerce-phase-4/recovery-key-handoff.ps1
+```
+
+1. Manually add a Bitwarden Secure note named `Tap Rater - Commerce recovery key`.
+2. In the local helper, click **Copy recovery key**, paste into the note, and save. The helper reads only the existing local DPAPI key; it does not rotate the deployed secret or automate Bitwarden.
+3. Click **Saved - clear transfer clipboard**. While running, the helper also expires its own unchanged clipboard copy after 60 seconds. Copy uses the Windows Forms clipboard API with 20 retries at 100 ms, verifies a read-back match before reporting success, and requests exclusion from Windows clipboard history/sync using the native `ExcludeClipboardContentFromMonitorProcessing`, `CanIncludeInClipboardHistory`, and `CanUploadToCloudClipboard` formats. This does not control third-party clipboard recorders; do not use such recorders during the transfer.
+4. Open the saved note on another device. Manually type its full key into the helper's masked field, confirm that independent retrieval, and click **Verify retrieved key**. Do not copy it back through an ordinary clipboard or send screenshots.
+5. A successful exact, case-sensitive match writes only sanitized `artifacts/ecommerce-phase-4/key-custody.json`: timestamp, key name, vault/item label, match result, and the owner's independent-device attestation. The helper does not inspect the vault, independently observe the second device, or include the key/hash in evidence. Review that distinction before closing the gate.
+
+`-SelfTest` checks local DPAPI decryption/format, exact-match validation, clipboard privacy formats, and initial UI gates without clipboard writes, vault access, or custody evidence. `-ClipboardSelfTest` exercises the actual button handler, replacing the decrypted value with dummy text before any clipboard write. It verifies copy/paste, privacy formats, the Saved button's cleanup, and preservation of a newer copy, then clears its own dummy clipboard contents. Never infer vault storage from either self-test. Copy failures record only a stage, timestamp, exception class, allowlisted command name, and numeric error codes in ignored `.wrangler/key-handoff-copy-error.json`, never the key or an exception message containing arguments.
+
+Launcher regression: `Start-Process` from PowerShell 7 inherited incompatible module search paths into Windows PowerShell 5.1. The visible helper failed to auto-load `ConvertTo-SecureString`, although direct command-line tests passed. It now explicitly imports the security module from its own `$PSHOME`. Clipboard testing runs after the window opens, using a timer-dispatched click. Run `artifacts/ecommerce-phase-4/test-recovery-key-handoff.ps1` from the normal PowerShell 7 terminal to repeat both tests with the actual hidden-window launch method. Both tests passed after reproducing the original `read-key` failure under that launcher. These tests do not copy the real key or prove vault custody.
+
+Clipboard behavior: [Microsoft clipboard privacy formats](https://learn.microsoft.com/en-us/windows/win32/dataxchg/clipboard-formats) and [Windows Forms retrying clipboard API](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.clipboard.setdataobject).
 
 ## Owner-observed drill
 
@@ -91,7 +109,7 @@ Complete this before live launch while the owner is at the computer:
 1. Review/repeat the active branch's point-in-time recovery into a temporary branch and prove the read-only validation checklist.
 2. Roll the Cloudflare application Worker back to a known-good version, run smoke checks, then roll forward to the release version.
 3. Rebuild one static image variant and republish one disposable hosted-page snapshot.
-4. Observe the disposable media recovery drill and complete independent encryption-key custody/retrieval.
+4. Observe the disposable media recovery drill. Independent encryption-key custody/retrieval was already accepted in Phase 4; review its receipt and repeat only if custody has changed.
 5. Record timings, gaps, and the final recovery point objective and recovery time objective.
 
 Sources: [Neon root-branch snapshot requirement](https://neon.com/docs/ai/ai-database-versioning), [Neon history retention](https://neon.com/docs/manage/projects), [R2 Worker API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/), [R2 lifecycle retention](https://developers.cloudflare.com/r2/buckets/object-lifecycles/).

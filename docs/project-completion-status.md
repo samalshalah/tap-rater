@@ -6,7 +6,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
-The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1-3 are complete in test mode**, with Phase 3 scoped to made-to-order operations. **Phase 4 engineering is deployed and verified, but portable encryption-key custody remains open.** Token isolation, actual database protection/PITR, private media backups, and isolated database/deployed media restoration are now proven. Owner acceptance and real-money launch remain Phases 5 and 6. No new overall readiness percentage has been calculated. See `docs/ecommerce-phase-1.md` through `docs/ecommerce-phase-4.md` and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier UI/UX phases.
+The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1-4 are complete with Stripe remaining in test mode**, with Phase 3 scoped to made-to-order operations. **Phase 4 portable encryption-key custody is now accepted:** the owner retrieved the saved Bitwarden entry on their phone and completed an exact-match check in the local helper. Token isolation, actual database protection/PITR, private media backups, and isolated database/deployed media restoration are proven. Owner acceptance and real-money launch remain Phases 5 and 6. No new overall readiness percentage has been calculated. See `docs/ecommerce-phase-1.md` through `docs/ecommerce-phase-4.md` and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier UI/UX phases.
 
 - Configuration readiness: 88%
 - Blocked configuration checks: 0
@@ -27,7 +27,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 | 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
 | 2. Account, invoice, email recovery | Complete in test mode | Owner inbox/account acceptance belongs to Phase 5; live equivalents to Phase 6. See `docs/ecommerce-phase-2.md` |
 | 3. Store operating controls | Complete in test mode (made to order) | Owner operating-policy and physical fulfillment acceptance belong to Phase 5; finite stock is not implemented. See `docs/ecommerce-phase-3.md` |
-| 4. Security and recovery | Engineering deployed; one owner gate open | Portable encryption-key vault custody and independent retrieval. See `docs/ecommerce-phase-4.md` |
+| 4. Security and recovery | Complete | Engineering/restore evidence plus exact-match verification and owner-attested phone retrieval at September 5, 21:31 UTC. See `docs/ecommerce-phase-4.md` |
 | 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
 | 6. Real-money launch | Open | Tax/policy decision, live configuration, controlled real purchases and reconciliation |
 
@@ -71,7 +71,7 @@ The following historical estimates predate the ecommerce failure-path audit and 
 - Storefront image variants are generated deterministically at 160, 640, and 1200 pixels, reducing the generated image set to about 12.16 MB from about 93.13 MB of source imagery.
 - Mobile Lighthouse scores are 96/100/100/100 on the homepage and 97/100/100/100 on the product page; desktop homepage scores are 100/100/100/100.
 - The active Neon branch is protected with seven-day PITR and a verified isolated restore. The separately named production branch's snapshots are historical coverage for that branch only, not the deployed store.
-- Private media backups retain daily copies for 30 days; first copy and disposable-object restoration are verified. Recovery configuration has a 40-check gate and an updated runbook. Portable encryption-key custody remains open.
+- Private media backups retain daily copies for 30 days; first copy and disposable-object restoration are verified. Recovery configuration has a 40-check gate and an updated runbook. Portable encryption-key custody is accepted with an exact-match receipt and the owner's phone-retrieval confirmation; no secret is included in evidence.
 
 ## Owner At Computer Queue
 
@@ -145,14 +145,14 @@ Perform only while the owner is present and after the tax decision:
 
 Completion evidence: all four live cases reconcile between Stripe, Tap Rater Admin, the customer account, email delivery, and the production database.
 
-### 7. Observe recovery and complete key custody
+### 7. Observe recovery
 
 Perform this with the owner present before live launch:
 
 1. Review/repeat the active branch's verified point-in-time recovery into a temporary branch and run the read-only validation checklist.
 2. Roll the application Worker back to an identified known-good version, smoke test it, and roll forward to the release version.
 3. Rebuild one static image variant and republish one disposable hosted-page snapshot.
-4. Observe the verified disposable-media restore and review the configured daily/30-day retention policy. Select secure off-computer encryption-key custody and prove independent retrieval; this is the remaining Phase 4 gate.
+4. Observe the verified disposable-media restore and review the configured daily/30-day retention policy. Key custody and independent retrieval were already accepted in Phase 4; review `artifacts/ecommerce-phase-4/key-custody.json` without exposing the key.
 5. Record restore timing, rollback timing, the recovery point objective, and the recovery time objective.
 
 Completion evidence: temporary-branch restore, Worker rollback/roll-forward, hosted snapshot recovery, and disposable product-media restore are all observed and documented.
@@ -161,7 +161,7 @@ Detailed procedure: `docs/recovery-runbook.md`.
 
 ## Autonomous Work Queue
 
-Phases 1-3 are complete in test mode. Phase 4 token isolation, active database protection/PITR, media backups, and restore testing are deployed and verified. Owner-controlled portable recovery-key custody is its remaining gate. Owner acceptance and live launch remain Phases 5 and 6. Keep the owner-at-computer queue until each item has direct completion evidence; do not mark vault custody or live launch complete from code/configuration checks alone.
+Phases 1-4 are complete with Stripe in test mode. Phase 4 token isolation, active database protection/PITR, media backups, and restore testing are deployed and verified. Portable key custody is accepted based on the exact-match receipt and owner-attested phone retrieval. Owner acceptance and live launch remain Phases 5 and 6. Keep the remaining owner-at-computer queue until each item has direct completion evidence; the custody receipt does not close broader owner acceptance or live launch.
 
 ## Safety Rules
 
