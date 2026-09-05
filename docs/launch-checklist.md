@@ -1,5 +1,7 @@
 # Tap Rater Launch Checklist
 
+> Current completion evidence and owner-required follow-ups are tracked in `docs/project-completion-status.md`. This file is the detailed baseline checklist; unchecked boxes here do not necessarily mean the item is still unverified.
+
 Use this checklist before selling or shipping Tap Rater devices that point to `https://taprater.com/r/{deviceCode}`. It covers QA, security, packaging, and operational checks for the current platform stage.
 
 Stripe checkout is available for test mode only. Live payments, live paid orders, tax, and shipping calculation are intentionally not live yet.

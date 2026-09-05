@@ -12,6 +12,41 @@ export type HostedSetupEmailInput = {
   sendEmailFn?: SendEmailFn;
 };
 
+export function buildCustomerActivationEmailHtml(input: { activationUrl: string }) {
+  return buildEmailHtml({
+    body: [
+      "A new activation link was requested for your Tap Rater account.",
+      "Activate your account and set your password to access your orders, invoices, billing details, and Multi-Link pages.",
+      "This activation link expires in 7 days. If you did not expect this email, you can ignore it.",
+      "Support: https://taprater.com/support"
+    ],
+    cta: {
+      label: "Activate My Account",
+      url: input.activationUrl
+    }
+  });
+}
+
+export async function sendCustomerActivationEmail(input: {
+  to: string;
+  activationToken: string;
+  sendEmailFn?: SendEmailFn;
+}): Promise<EmailResult> {
+  try {
+    const activationUrl = createCustomerActivationUrl(input.activationToken);
+    const sendEmailFn = input.sendEmailFn ?? sendEmail;
+
+    return await sendEmailFn({
+      to: input.to,
+      subject: "Activate your Tap Rater account",
+      replyTo: getCustomerReplyToEmail(),
+      html: buildCustomerActivationEmailHtml({ activationUrl })
+    });
+  } catch {
+    return { sent: false, reason: "email_send_exception" };
+  }
+}
+
 export function buildHostedSetupEmailHtml(input: Pick<HostedSetupEmailInput, "businessName" | "hostedPageUrl"> & { activationUrl: string }) {
   return buildEmailHtml({
     body: [

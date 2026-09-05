@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, ShieldOff } from "lucide-react";
+import { Mail, ShieldCheck, ShieldOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AdminButton } from "@/components/admin/admin-ui";
@@ -17,13 +17,28 @@ export function CustomerAccessControl({
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  if (accountStatus !== "active" && accountStatus !== "disabled") {
-    return <span className="text-xs text-muted">Awaiting activation</span>;
-  }
+  const [message, setMessage] = useState("");
 
   const disabling = accountStatus === "active";
   const disabled = saving || (!disabling && !canReactivate);
+
+  async function resendActivation() {
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(`/api/admin/customers/${encodeURIComponent(customerId)}/activation`, {
+        method: "POST"
+      });
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) throw new Error(body?.error ?? "The activation email could not be sent.");
+      setMessage("Activation email sent.");
+    } catch (sendError) {
+      setError(sendError instanceof Error ? sendError.message : "The activation email could not be sent.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function updateAccess() {
     if (
@@ -35,6 +50,7 @@ export function CustomerAccessControl({
 
     setSaving(true);
     setError("");
+    setMessage("");
     try {
       const response = await fetch(`/api/admin/customers/${encodeURIComponent(customerId)}/access`, {
         method: "PATCH",
@@ -49,6 +65,30 @@ export function CustomerAccessControl({
     } finally {
       setSaving(false);
     }
+  }
+
+  if (accountStatus === "pending_activation") {
+    return (
+      <div className="grid justify-items-start gap-2">
+        <AdminButton
+          type="button"
+          variant="outline"
+          disabled={saving}
+          loading={saving}
+          onClick={resendActivation}
+          className="min-h-9 px-3 py-1.5 text-xs"
+        >
+          <Mail aria-hidden="true" className="h-4 w-4" />
+          Resend activation
+        </AdminButton>
+        {message ? <span className="max-w-52 text-xs leading-5 text-brand">{message}</span> : null}
+        {error ? <span className="max-w-52 text-xs leading-5 text-red-700">{error}</span> : null}
+      </div>
+    );
+  }
+
+  if (accountStatus !== "active" && accountStatus !== "disabled") {
+    return <span className="text-xs text-muted">Awaiting activation</span>;
   }
 
   return (

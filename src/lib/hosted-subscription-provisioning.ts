@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import { createCustomerActivationToken } from "@/lib/customer-account";
+import { createCustomerActivationToken, customerActivationTtlMs } from "@/lib/customer-account";
 import {
   sendCustomerAccountSetupEmail,
   sendHostedAccountReadyEmail,
@@ -620,7 +620,7 @@ async function upsertCustomer(
   client: OrdersDbClient,
   input: { email: string; name?: string | null; phone?: string | null; activationTokenHash: string; now: Date }
 ) {
-  const activationExpiresAt = new Date(input.now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const activationExpiresAt = new Date(input.now.getTime() + customerActivationTtlMs).toISOString();
   const existing = await client.from("customers").select("id,account_status").eq("email", input.email).maybeSingle();
   const existingStatus = readString(existing.data?.account_status);
   const wasAlreadyActive = existingStatus === "active";

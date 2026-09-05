@@ -1,7 +1,25 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import {
+  createCustomerActivationToken,
+  customerActivationTtlMs,
+  type CustomerAccountStatus
+} from "@/lib/customer-account";
+import { sendCustomerActivationEmail } from "@/lib/hosted-setup-email";
 
 type AdminCustomersDbClient = {
   from: (table: string) => any;
+};
+
+const activationResendCooldownMs = 5 * 60 * 1000;
+
+export type AdminCustomerActivationResult =
+  | { ok: true }
+  | { ok: false; error: string; status: number; retryAfterSeconds?: number };
+
+type AdminCustomerActivationDependencies = {
+  now?: Date;
+  createActivationTokenFn?: typeof createCustomerActivationToken;
+  sendCustomerActivationEmailFn?: typeof sendCustomerActivationEmail;
 };
 
 export type AdminCustomerSummary = {
@@ -57,6 +75,104 @@ export async function updateAdminCustomerAccess(id: string, status: "active" | "
   }
 
   return updateAdminCustomerAccessWithClient(getSupabaseAdmin() as AdminCustomersDbClient, id, status);
+}
+
+export async function resendAdminCustomerActivation(id: string): Promise<AdminCustomerActivationResult> {
+  if (!hasSupabaseAdminConfig()) {
+    return { ok: false, error: "Customer storage is not configured.", status: 503 };
+  }
+
+  return resendAdminCustomerActivationWithClient(getSupabaseAdmin() as AdminCustomersDbClient, id);
+}
+
+export async function resendAdminCustomerActivationWithClient(
+  client: AdminCustomersDbClient,
+  id: string,
+  dependencies: AdminCustomerActivationDependencies = {}
+): Promise<AdminCustomerActivationResult> {
+  const now = dependencies.now ?? new Date();
+  const { data: customer, error: customerError } = await client
+    .from("customers")
+    .select("id,email,account_status,activation_token_hash,activation_expires_at")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (customerError || !customer?.id) {
+    return { ok: false, error: "Customer account was not found.", status: 404 };
+  }
+
+  const accountStatus = readString(customer.account_status) as CustomerAccountStatus | undefined;
+  if (accountStatus !== "pending_activation") {
+    return { ok: false, error: "Only pending customer accounts can receive an activation email.", status: 409 };
+  }
+
+  const email = readString(customer.email)?.toLowerCase();
+  if (!email) {
+    return { ok: false, error: "Customer email is missing.", status: 409 };
+  }
+
+  const previousExpiresAt = readString(customer.activation_expires_at) ?? null;
+  const previousTokenHash = readString(customer.activation_token_hash) ?? null;
+  const cooldown = getActivationResendCooldown(previousExpiresAt, now);
+  if (cooldown > 0) {
+    return {
+      ok: false,
+      error: "An activation email was sent recently. Wait a few minutes before trying again.",
+      status: 429,
+      retryAfterSeconds: cooldown
+    };
+  }
+
+  const createActivationTokenFn = dependencies.createActivationTokenFn ?? createCustomerActivationToken;
+  const activation = createActivationTokenFn();
+  const activationExpiresAt = new Date(now.getTime() + customerActivationTtlMs).toISOString();
+  const { data: updatedCustomer, error: updateError } = await client
+    .from("customers")
+    .update({
+      activation_token_hash: activation.tokenHash,
+      activation_expires_at: activationExpiresAt,
+      updated_at: now.toISOString()
+    })
+    .eq("id", id)
+    .eq("account_status", "pending_activation")
+    .select("id")
+    .maybeSingle();
+
+  if (updateError) {
+    return { ok: false, error: "A new activation link could not be created.", status: 500 };
+  }
+  if (!updatedCustomer?.id) {
+    return { ok: false, error: "The customer account is no longer pending activation.", status: 409 };
+  }
+
+  const sendCustomerActivationEmailFn = dependencies.sendCustomerActivationEmailFn ?? sendCustomerActivationEmail;
+  let emailResult;
+  try {
+    emailResult = await sendCustomerActivationEmailFn({ to: email, activationToken: activation.token });
+  } catch {
+    emailResult = { sent: false as const, reason: "email_send_exception" };
+  }
+
+  if (!emailResult.sent) {
+    const { error: rollbackError } = await client
+      .from("customers")
+      .update({
+        activation_token_hash: previousTokenHash,
+        activation_expires_at: previousExpiresAt,
+        updated_at: now.toISOString()
+      })
+      .eq("id", id)
+      .eq("activation_token_hash", activation.tokenHash);
+
+    console.warn("[admin-customers] activation_email_not_sent", {
+      customerId: id,
+      reason: emailResult.reason,
+      activationStateRestored: !rollbackError
+    });
+    return { ok: false, error: "The activation email could not be sent. Try again.", status: 502 };
+  }
+
+  return { ok: true };
 }
 
 export async function updateAdminCustomerAccessWithClient(
@@ -179,6 +295,16 @@ function readString(value: unknown) {
 
 function readInteger(value: unknown) {
   return typeof value === "number" && Number.isInteger(value) ? value : 0;
+}
+
+function getActivationResendCooldown(activationExpiresAt: string | null, now: Date) {
+  if (!activationExpiresAt) return 0;
+  const expiresAt = new Date(activationExpiresAt);
+  if (!Number.isFinite(expiresAt.getTime())) return 0;
+
+  const issuedAt = expiresAt.getTime() - customerActivationTtlMs;
+  const remainingMs = activationResendCooldownMs - (now.getTime() - issuedAt);
+  return remainingMs > 0 ? Math.ceil(remainingMs / 1000) : 0;
 }
 
 function isActiveSubscription(row: Record<string, unknown>) {

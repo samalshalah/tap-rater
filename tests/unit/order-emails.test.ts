@@ -5,7 +5,11 @@ import {
   sendPaidOrderEmails
 } from "@/lib/order-emails";
 import { buildShippingNotificationEmailHtml } from "@/lib/shipping-emails";
-import { buildHostedSetupEmailHtml } from "@/lib/hosted-setup-email";
+import {
+  buildCustomerActivationEmailHtml,
+  buildHostedSetupEmailHtml,
+  sendCustomerActivationEmail
+} from "@/lib/hosted-setup-email";
 import type { OrderRecord } from "@/lib/orders";
 
 const paidOrder: OrderRecord = {
@@ -257,6 +261,32 @@ describe("paid order emails", () => {
     expect(html).toContain("https://app.taprater.com/account/activate?token=signed-token");
     expect(html).toContain("https://taprater.com/support");
     expect(html).not.toMatch(/analytics|clicks|conversion|device|subscription|localhost|workers\\.dev/i);
+  });
+
+  it("sends a generic customer activation email without exposing internal account data", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+    const activationUrl = "https://taprater.com/account/activate?token=raw-token";
+
+    const html = buildCustomerActivationEmailHtml({ activationUrl });
+    const result = await sendCustomerActivationEmail({
+      to: "owner@example.com",
+      activationToken: "raw-token",
+      sendEmailFn
+    });
+
+    expect(result).toEqual({ sent: true });
+    expect(html).toContain("A new activation link was requested");
+    expect(html).toContain(activationUrl);
+    expect(html).toContain("expires in 7 days");
+    expect(html).not.toMatch(/password_hash|activation_token_hash|customer_id/i);
+    expect(sendEmailFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "owner@example.com",
+        subject: "Activate your Tap Rater account",
+        replyTo: "support@taprater.com",
+        html: expect.stringContaining("token=raw-token")
+      })
+    );
   });
 
   it("renders shipping email without leaking internal notes or operational fields", () => {

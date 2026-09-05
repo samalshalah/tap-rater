@@ -10,6 +10,7 @@ export type CustomerAccountStatus = "pending_activation" | "active" | "disabled"
 const passwordHashPrefix = "scrypt";
 const passwordKeyLength = 64;
 const activationTokenBytes = 32;
+export const customerActivationTtlMs = 7 * 24 * 60 * 60 * 1000;
 
 export function createCustomerActivationUrl(token: string) {
   const siteUrl = process.env.NEXT_PUBLIC_ACCOUNT_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
