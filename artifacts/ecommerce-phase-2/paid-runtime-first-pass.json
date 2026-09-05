@@ -1,0 +1,87 @@
+{
+  "jobs": [
+    {
+      "id": "test:invoice:in_1UCOsuJfXGmPO60VhXfVZpxm",
+      "kind": "invoice",
+      "status": "completed",
+      "attempts": 1,
+      "object_id": "in_1UCOsuJfXGmPO60VhXfVZpxm",
+      "created_at": "2026-09-05T19:04:21.000482+00:00",
+      "last_error": null,
+      "updated_at": "2026-09-05T19:04:21.292+00:00",
+      "stripe_mode": "test"
+    },
+    {
+      "id": "test:checkout:cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+      "kind": "checkout",
+      "status": "completed",
+      "attempts": 1,
+      "object_id": "cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+      "created_at": "2026-09-05T19:04:19.931233+00:00",
+      "last_error": null,
+      "updated_at": "2026-09-05T19:04:21.939+00:00",
+      "stripe_mode": "test"
+    }
+  ],
+  "items": 1,
+  "order": {
+    "id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+    "status": "paid",
+    "total_cents": 5334,
+    "customer_name": "Phase 2 Paid Runtime QA - Do Not Fulfill",
+    "payment_intent": "pi_3UCOssJfXGmPO60V0cQ4CmAo",
+    "payment_status": "paid"
+  },
+  "outbox": [
+    {
+      "id": "taprater/paid_order_customer/24ae492cea15fdbcc5296c054e249ca650c567b2201026e13107cf05048088af",
+      "status": "accepted",
+      "payload_cleared": true
+    },
+    {
+      "id": "taprater/paid_order_admin/eda31eef9f786b46af9693db9be4bdcb2602e895fb01965e424cfaa0b97eaf22",
+      "status": "accepted",
+      "payload_cleared": true
+    },
+    {
+      "id": "taprater/paid_customer_activation/44e4576f7fa93a2a58f5d6413789bc13d39ab65143222ac8f99b5013913018ba",
+      "status": "accepted",
+      "payload_cleared": true
+    }
+  ],
+  "invoices": [
+    {
+      "id": "35e790b6-1661-447b-a836-ced1c071dd6f",
+      "status": "paid",
+      "has_pdf": true,
+      "payment_status": "paid",
+      "has_invoice_link": true,
+      "amount_paid_cents": 5334,
+      "stripe_invoice_id": "in_1UCOsuJfXGmPO60VhXfVZpxm"
+    }
+  ],
+  "checked_at": "2026-09-05T19:04:42.234108+00:00",
+  "deliveries": [
+    {
+      "status": "accepted",
+      "accepted_at": "2026-09-05T19:04:21.067+00:00",
+      "message_type": "paid_customer_activation",
+      "provider_message_id": "d2e2e551-c2d6-4daf-8381-7fdf9e47a6f6"
+    },
+    {
+      "status": "accepted",
+      "accepted_at": "2026-09-05T19:04:21.496+00:00",
+      "message_type": "paid_order_customer",
+      "provider_message_id": "8e641f39-76f4-4ca1-b074-c4d6e600c79e"
+    },
+    {
+      "status": "accepted",
+      "accepted_at": "2026-09-05T19:04:21.815+00:00",
+      "message_type": "paid_order_admin",
+      "provider_message_id": "6dbb8107-56b2-4977-bf0b-14a87554c982"
+    }
+  ],
+  "business_count": 3,
+  "customer_count": 1,
+  "outstanding_jobs": 0
+}

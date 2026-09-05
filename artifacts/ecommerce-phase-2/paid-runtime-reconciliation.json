@@ -1,0 +1,113 @@
+{
+  "orders": [
+    {
+      "id": "2b2352db-d8c0-4e16-bbac-5c38df03bbe8",
+      "status": "canceled",
+      "refund_id": "re_3UCOlmJfXGmPO60V16edJbAP",
+      "total_cents": 5334,
+      "refund_status": "succeeded",
+      "payment_status": "refunded",
+      "refunded_cents": 5334,
+      "pending_refund_cents": 0
+    },
+    {
+      "id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+      "status": "canceled",
+      "refund_id": "re_3UCOssJfXGmPO60V0t5G8Ry5",
+      "total_cents": 5334,
+      "refund_status": "succeeded",
+      "payment_status": "refunded",
+      "refunded_cents": 5334,
+      "pending_refund_cents": 0
+    }
+  ],
+  "outbox": [
+    {
+      "status": "accepted",
+      "entity_id": "cs_test_b1Y5AR6S3Mlt2m7CBsOvaIyDsBuHBeTVJty3mmwitaxp5p87VCW4gnKwzQ",
+      "payload_cleared": true
+    },
+    {
+      "status": "accepted",
+      "entity_id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+      "payload_cleared": true
+    },
+    {
+      "status": "accepted",
+      "entity_id": "2b2352db-d8c0-4e16-bbac-5c38df03bbe8",
+      "payload_cleared": true
+    },
+    {
+      "status": "accepted",
+      "entity_id": "2b2352db-d8c0-4e16-bbac-5c38df03bbe8",
+      "payload_cleared": true
+    },
+    {
+      "status": "accepted",
+      "entity_id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+      "payload_cleared": true
+    },
+    {
+      "status": "accepted",
+      "entity_id": "cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+      "payload_cleared": true
+    }
+  ],
+  "checked_at": "2026-09-05T19:07:51.551905+00:00",
+  "email_counts": [
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "2b2352db-d8c0-4e16-bbac-5c38df03bbe8",
+      "message_type": "paid_order_admin"
+    },
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "2b2352db-d8c0-4e16-bbac-5c38df03bbe8",
+      "message_type": "paid_order_customer"
+    },
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+      "message_type": "paid_order_admin"
+    },
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+      "message_type": "paid_order_customer"
+    },
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "cs_test_b1Y5AR6S3Mlt2m7CBsOvaIyDsBuHBeTVJty3mmwitaxp5p87VCW4gnKwzQ",
+      "message_type": "paid_customer_activation"
+    },
+    {
+      "accepted": 1,
+      "attempts": 1,
+      "entity_id": "cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+      "message_type": "paid_customer_activation"
+    }
+  ],
+  "checkout_jobs": [
+    {
+      "status": "completed",
+      "attempts": 2,
+      "object_id": "cs_test_b1Y5AR6S3Mlt2m7CBsOvaIyDsBuHBeTVJty3mmwitaxp5p87VCW4gnKwzQ",
+      "last_error": null
+    },
+    {
+      "status": "completed",
+      "attempts": 1,
+      "object_id": "cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+      "last_error": null
+    }
+  ],
+  "business_count": 3,
+  "customer_count": 1,
+  "outstanding_jobs": 0,
+  "invoice_ownership_correct": true
+}

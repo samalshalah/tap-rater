@@ -6,7 +6,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
-The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phase 1 is complete in test mode**: migration, deployment, refund subscriptions, and a deployed payment/refund/replay drill passed. Five correction phases remain. No new overall readiness percentage has been calculated, and live launch is not approved. See `docs/ecommerce-phase-1.md` and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
+The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1 and 2 are complete in test mode**: payment/refund reliability, durable account/invoice/email recovery, replay safety, and a fresh first-pass paid checkout were verified. Four correction phases remain. No new overall readiness percentage has been calculated, and live launch is not approved. See `docs/ecommerce-phase-1.md`, `docs/ecommerce-phase-2.md`, and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
 
 - Configuration readiness: 88%
 - Blocked configuration checks: 0
@@ -14,7 +14,8 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
 - Deployed Phase 1 release: `206d8d6f-14a3-492e-ac9c-c0140deba84f`; 701 tests passing across 111 files, plus 5 explicitly run isolated-database integration tests.
-- Current Phase 2 release: `893445a3-c31b-43ca-88c8-e1bc0d2711cb`; 729 tests and 8 explicitly run isolated-database tests pass. Deployed recovery, replay, and test refund passed after retries; first-pass hosting capacity remains an acceptance gate.
+- Current Phase 2 release: `5cf96db6-18ca-4bb8-85aa-483d9b8bab0e`; 729 tests and 8 explicitly run isolated-database tests pass. Deployed recovery, replay, and a fresh first-pass checkout/invoice/email test passed. Dedicated QA orders were fully refunded; concurrent refund notification retries reconciled to 200.
+- Cloudflare Workers Paid is active at the owner-approved $5/month plus usage. The deployed Worker explicitly allows 30,000 ms CPU and 1,000 subrequests per invocation. Stripe remains in test mode.
 - Active application database verified from a new deployed checkout: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. Recovery checkpoint retained; branch protection and restore acceptance remain open.
 
 ## Commerce Corrections
@@ -22,7 +23,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 | Phase | Status | Completion evidence still required |
 | --- | --- | --- |
 | 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
-| 2. Account, invoice, email recovery | Implemented; recovery/replay test passed | Hosting capacity and fresh first-pass completion; see `docs/ecommerce-phase-2.md` |
+| 2. Account, invoice, email recovery | Complete in test mode | Owner inbox/account acceptance belongs to Phase 5; live equivalents to Phase 6. See `docs/ecommerce-phase-2.md` |
 | 3. Store operating controls | Open | Pricing authority, inventory policy, fulfillment acceptance |
 | 4. Security and recovery | Open | Token isolation, branch protection, backup/restore coverage |
 | 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
@@ -158,7 +159,7 @@ Detailed procedure: `docs/recovery-runbook.md`.
 
 ## Autonomous Work Queue
 
-The ecommerce audit reopened engineering work. Phase 1 release verification is complete in test mode. Phase 2 code and tests are deployed, but its full request hit the current Workers Free runtime limit; upgrade approval and completed deployed recovery verification remain open. Phase 3 pricing and operating controls and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
+The ecommerce audit reopened engineering work. Phases 1 and 2 release verification are complete in test mode. The approved Workers Paid upgrade, explicit runtime limits, and a fresh first-pass checkout closed Phase 2's capacity acceptance gate. Phase 3 pricing and operating controls and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
 
 ## Safety Rules
 

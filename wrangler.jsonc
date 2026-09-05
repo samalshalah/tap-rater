@@ -4,6 +4,10 @@
   "main": "custom-worker.ts",
   "compatibility_date": "2026-09-05",
   "compatibility_flags": ["nodejs_compat"],
+  "limits": {
+    "cpu_ms": 30000,
+    "subrequests": 1000
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

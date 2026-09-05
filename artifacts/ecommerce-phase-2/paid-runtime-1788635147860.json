@@ -1,0 +1,58 @@
+{
+  "checkedAt": "2026-09-05T19:05:45.812Z",
+  "selected": "final",
+  "orderId": "35cf3d65-70dd-4f0b-8c62-73dcd2f5a4ff",
+  "sessionId": "cs_test_b1d97WSkPqNOcj7nwrZoFYOcnUux9j6HnTFzrEsEBG5YNufbI6jKzZYKPl",
+  "results": [
+    {
+      "operation": "refund_dedicated_test",
+      "status": 200,
+      "body": {
+        "ok": true,
+        "refundId": "re_3UCOssJfXGmPO60V0t5G8Ry5",
+        "refundStatus": "succeeded",
+        "alreadyRefunded": false
+      }
+    }
+  ],
+  "unauthenticatedRetryStatus": 401,
+  "smoke": [
+    {
+      "path": "/",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/shop",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/product/google-review-stand",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/cart",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/checkout",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/account/login",
+      "status": 200,
+      "serverError": false
+    },
+    {
+      "path": "/admin/settings/emails",
+      "status": 200,
+      "serverError": false,
+      "recoveryPanel": true,
+      "emptyQueue": true
+    }
+  ]
+}
