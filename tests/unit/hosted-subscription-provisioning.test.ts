@@ -119,8 +119,8 @@ describe("hosted subscription provisioning", () => {
     const pointer = JSON.parse(storage.objects.get("hosted-pages/ABCDEFGHJKM2/current.json") ?? "{}");
     const snapshot = JSON.parse(storage.objects.get(`hosted-pages/ABCDEFGHJKM2/versions/${pointer.currentVersion}.json`) ?? "{}");
     expect(snapshot.buttons).toEqual([
-      { id: "link-1", label: "Website", type: "website", url: "https://example.com", isVisible: true },
-      { id: "link-2", label: "Review us", type: "review", url: "https://g.page/example/review", isVisible: true }
+      { id: "link-1", label: "Website", type: "website", iconKey: "website", url: "https://example.com", isVisible: true },
+      { id: "link-2", label: "Review us", type: "review", iconKey: "google_review", url: "https://g.page/example/review", isVisible: true }
     ]);
     expect(snapshot.logoUrl).toBe("https://taprater.com/api/media/product/owner-logo.png");
     expect(sendHostedSetupEmailFn).toHaveBeenCalledWith({

@@ -960,6 +960,7 @@ function buildSnapshotButtons(buttons: HostedPageEditorButton[]): HostedPageButt
       id: button.id,
       label: button.label,
       type: supportedHostedPageButtons.find((item) => item.type === button.type)?.snapshotType ?? "website",
+      iconKey: button.type,
       url: button.url,
       isVisible: true
     }));
