@@ -1,3 +1,4 @@
+import { CreditCard } from "lucide-react";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerPortal, type CustomerPortalInvoice, type CustomerPortalOrder } from "@/lib/customer-portal";
@@ -24,11 +25,16 @@ export default async function AccountOrdersPage({
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
             Review invoice records, receipts, payment status, and recurring Multi-Link billing in one place.
           </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <form action="/api/account/billing-portal" method="post">
-              <button type="submit" className="tr-button-primary">Manage payment method</button>
-            </form>
-          </div>
+          {portal.subscriptions.length === 0 ? (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <form action="/api/account/billing-portal" method="post">
+                <button type="submit" className="tr-button-primary inline-flex items-center gap-2">
+                  <CreditCard aria-hidden="true" className="h-4 w-4" />
+                  Manage payment method
+                </button>
+              </form>
+            </div>
+          ) : null}
         </section>
 
         {billingError ? (
@@ -96,10 +102,23 @@ export default async function AccountOrdersPage({
                         {subscription.hostedPageUrl}
                       </a>
                     </div>
-                    <div className="flex flex-wrap gap-2 text-sm md:justify-end">
-                      <StatusBadge label={formatStatus(subscription.status)} />
-                      <StatusBadge label={formatStatus(subscription.lifecycleStatus)} />
-                      <StatusBadge label={subscription.currentPeriodEnd ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}` : "Renewal not recorded"} />
+                    <div className="flex flex-col gap-2 md:items-end">
+                      <div className="flex flex-wrap gap-2 text-sm md:justify-end">
+                        <StatusBadge label={formatStatus(subscription.status)} />
+                        <StatusBadge label={formatStatus(subscription.lifecycleStatus)} />
+                        <StatusBadge label={subscription.currentPeriodEnd ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}` : "Renewal not recorded"} />
+                      </div>
+                      {subscription.billingProfileAvailable ? (
+                        <form action="/api/account/billing-portal" method="post">
+                          <input type="hidden" name="subscription_id" value={subscription.id} />
+                          <button type="submit" className="tr-button-ghost inline-flex items-center gap-2">
+                            <CreditCard aria-hidden="true" className="h-4 w-4" />
+                            Manage billing
+                          </button>
+                        </form>
+                      ) : (
+                        <StatusBadge label="Billing managed by Tap Rater" />
+                      )}
                     </div>
                   </div>
                 </article>

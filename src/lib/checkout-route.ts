@@ -13,7 +13,8 @@ import {
   type CheckoutCartRow,
   type ValidatedCheckoutCart
 } from "@/lib/checkout";
-import { hasSupabaseAdminConfig } from "@/lib/db";
+import { findAuthenticatedStripeCustomerIdForCheckout } from "@/lib/customer-billing";
+import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
@@ -51,12 +52,14 @@ export type CheckoutRouteDependencies = {
     customer: CheckoutCustomerInput;
     shippingAddress: CheckoutShippingAddressInput;
     siteUrl: string;
+    stripeCustomerId?: string | null;
     stripeMode: "test" | "live";
     shippingSettings: ShippingSettingsInput;
     taxSettings: TaxSettingsInput;
     idempotencyKey: string;
   }) => Promise<StripeCheckoutSessionResult>;
   getProducts: () => Promise<MigratedProduct[]>;
+  resolveStripeCustomerId: (input: { request: Request; email: string; stripeMode: "test" | "live" }) => Promise<string | null>;
   getShippingSettings: () => Promise<ShippingSettingsInput>;
   getTaxSettings: () => Promise<TaxSettingsInput>;
   getSiteUrl: (requestOrigin?: string | null) => string;
@@ -138,6 +141,11 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
   };
 
   try {
+    const stripeCustomerId = await dependencies.resolveStripeCustomerId({
+      request,
+      email: customer.email,
+      stripeMode: stripeConfig.mode
+    });
     logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_start");
     const requestOrigin = new URL(request.url).origin;
     const session = await withTimeout(
@@ -147,6 +155,7 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
         idempotencyKey: `checkout-${parsed.data.checkoutAttemptId}`,
         shippingAddress: parsed.data.shippingAddress,
         siteUrl: dependencies.getSiteUrl(requestOrigin),
+        stripeCustomerId,
         stripeMode: stripeConfig.mode,
         shippingSettings,
         taxSettings
@@ -218,7 +227,17 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
 const checkoutRouteDependencies: CheckoutRouteDependencies = {
   createPendingOrder: createPendingOrderForCheckout,
   createRequestId: createCheckoutRequestId,
-  createStripeSession: async ({ cart, customer, idempotencyKey, shippingAddress, siteUrl, stripeMode, shippingSettings, taxSettings }) => {
+  createStripeSession: async ({
+    cart,
+    customer,
+    idempotencyKey,
+    shippingAddress,
+    siteUrl,
+    stripeCustomerId,
+    stripeMode,
+    shippingSettings,
+    taxSettings
+  }) => {
     const stripe = getStripeClient();
     return stripe.checkout.sessions.create(
       createCheckoutSessionParams({
@@ -226,6 +245,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
         customer,
         shippingAddress,
         siteUrl,
+        stripeCustomerId,
         stripeMode,
         shippingSettings,
         taxSettings
@@ -234,6 +254,13 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
     );
   },
   getProducts: getStorefrontProducts,
+  resolveStripeCustomerId: async ({ request, email, stripeMode }) => {
+    try {
+      return await findAuthenticatedStripeCustomerIdForCheckout(getSupabaseAdmin(), request, email, stripeMode);
+    } catch {
+      return null;
+    }
+  },
   getShippingSettings,
   getTaxSettings,
   getSiteUrl: getCheckoutSiteUrl,

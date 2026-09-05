@@ -413,8 +413,13 @@ export const adminDeviceUpdateSchema = z.object({
   label: z.string().trim().max(160).optional().default("")
 });
 
+export const adminCustomerAccessSchema = z.object({
+  status: z.enum(["active", "disabled"])
+});
+
 export type AdminDeviceCreateInput = z.infer<typeof adminDeviceCreateSchema>;
 export type AdminDeviceUpdateInput = z.infer<typeof adminDeviceUpdateSchema>;
+export type AdminCustomerAccessInput = z.infer<typeof adminCustomerAccessSchema>;
 
 export const accountLoginRequestSchema = z.object({
   email: z.string().trim().email().max(180),

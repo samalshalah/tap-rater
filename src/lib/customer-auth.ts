@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
+import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 
 export const customerCookieName = "taprater_customer";
 
@@ -11,6 +12,10 @@ const futureClockSkewMs = 5 * 60 * 1000;
 
 export type CustomerSession = {
   email: string;
+};
+
+export type CustomerAuthDbClient = {
+  from: (table: string) => any;
 };
 
 export function createCustomerSessionValue(email: string, issuedAt = Date.now()) {
@@ -35,7 +40,7 @@ export async function requireCustomer() {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
-  if (!session) {
+  if (!session || !(await isActiveCustomerSession(session.email))) {
     redirect("/account/login");
   }
 
@@ -46,11 +51,31 @@ export async function requireCustomerApi() {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
-  if (!session) {
+  if (!session || !(await isActiveCustomerSession(session.email))) {
     return { response: NextResponse.json({ error: "Customer authentication required." }, { status: 401 }), session: null };
   }
 
   return { response: null, session };
+}
+
+export async function isActiveCustomerSession(email: string) {
+  if (!hasSupabaseAdminConfig()) return false;
+
+  try {
+    return await isActiveCustomerSessionWithClient(getSupabaseAdmin() as CustomerAuthDbClient, email);
+  } catch {
+    return false;
+  }
+}
+
+export async function isActiveCustomerSessionWithClient(client: CustomerAuthDbClient, email: string) {
+  const { data, error } = await client
+    .from("customers")
+    .select("account_status")
+    .eq("email", normalizeEmail(email))
+    .maybeSingle();
+
+  return !error && data?.account_status === "active";
 }
 
 function createSignedValue(email: string, issuedAt: number) {

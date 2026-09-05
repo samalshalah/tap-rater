@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireCustomerApi } from "@/lib/customer-auth";
+import { findStripeCustomerIdForEmail, type CustomerBillingDbClient } from "@/lib/customer-billing";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCheckoutSiteUrl, getStripeClient, validateStripeRuntimeConfig } from "@/lib/checkout";
-
-type BillingPortalDbClient = {
-  from: (table: string) => any;
-};
 
 export async function POST(request: Request) {
   const auth = await requireCustomerApi();
@@ -20,9 +17,23 @@ export async function POST(request: Request) {
     return redirectWithError(request, "Customer billing storage is not configured.");
   }
 
-  const stripeCustomerId = await findStripeCustomerIdForEmail(getSupabaseAdmin() as BillingPortalDbClient, auth.session.email);
+  const subscriptionSelection = await readSubscriptionSelection(request);
+  if (!subscriptionSelection.ok) {
+    return redirectWithError(request, "The selected billing profile is invalid.");
+  }
+
+  const stripeCustomerId = await findStripeCustomerIdForEmail(
+    getSupabaseAdmin() as CustomerBillingDbClient,
+    auth.session.email,
+    { stripeMode: stripeConfig.mode, subscriptionId: subscriptionSelection.subscriptionId }
+  );
   if (!stripeCustomerId) {
-    return redirectWithError(request, "No Stripe billing profile is connected to this account yet.");
+    return redirectWithError(
+      request,
+      subscriptionSelection.subscriptionId
+        ? "That subscription does not have a billing profile connected to this account."
+        : "No Stripe billing profile is connected to this account yet."
+    );
   }
 
   try {
@@ -43,61 +54,26 @@ export async function POST(request: Request) {
   }
 }
 
-async function findStripeCustomerIdForEmail(client: BillingPortalDbClient, email: string) {
-  const normalizedEmail = email.trim().toLowerCase();
-  const { data: customer } = await client.from("customers").select("id,email").eq("email", normalizedEmail).maybeSingle();
-  const customerId = readString(customer?.id);
-
-  if (customerId) {
-    const { data: subscriptions } = await client
-      .from("hosted_subscriptions")
-      .select("stripe_customer_id,created_at")
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-    const subscriptionCustomerId = firstStripeCustomerId(subscriptions);
-    if (subscriptionCustomerId) return subscriptionCustomerId;
+async function readSubscriptionSelection(request: Request): Promise<
+  { ok: true; subscriptionId: string | null } | { ok: false }
+> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/x-www-form-urlencoded") && !contentType.includes("multipart/form-data")) {
+    return { ok: true, subscriptionId: null };
   }
 
-  const { data: orders } = await client
-    .from("orders")
-    .select("customer_details_json,created_at")
-    .eq("email", normalizedEmail)
-    .order("created_at", { ascending: false })
-    .limit(10);
-
-  return firstStripeCustomerIdFromOrders(orders);
-}
-
-function firstStripeCustomerId(rows: unknown) {
-  if (!Array.isArray(rows)) return null;
-  for (const row of rows) {
-    const id = readString(readRecord(row).stripe_customer_id);
-    if (id) return id;
+  try {
+    const value = (await request.formData()).get("subscription_id");
+    if (value === null) return { ok: true, subscriptionId: null };
+    if (typeof value !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) return { ok: false };
+    return { ok: true, subscriptionId: value };
+  } catch {
+    return { ok: false };
   }
-  return null;
-}
-
-function firstStripeCustomerIdFromOrders(rows: unknown) {
-  if (!Array.isArray(rows)) return null;
-  for (const row of rows) {
-    const details = readRecord(readRecord(row).customer_details_json);
-    const id = readString(details.stripe_customer_id);
-    if (id) return id;
-  }
-  return null;
 }
 
 function redirectWithError(request: Request, message: string) {
   const url = new URL("/account/orders", request.url);
   url.searchParams.set("billing_error", message);
   return NextResponse.redirect(url, { status: 303 });
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : null;
 }

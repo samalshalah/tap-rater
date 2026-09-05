@@ -68,7 +68,8 @@ describe("customer portal repository", () => {
           permanent_code: "ABC123ABC123",
           status: "active",
           lifecycle_status: "ACTIVE",
-          cancel_at_period_end: false
+          cancel_at_period_end: false,
+          stripe_customer_id: "cus_test_123"
         }
       ],
       billing_invoices: [
@@ -125,7 +126,11 @@ describe("customer portal repository", () => {
       productionStatus: "blocked",
       shippingStatus: "not_shipped"
     });
-    expect(portal.subscriptions[0]).toMatchObject({ hostedPageUrl: "https://taprater.com/p/ABC123ABC123", lifecycleStatus: "ACTIVE" });
+    expect(portal.subscriptions[0]).toMatchObject({
+      hostedPageUrl: "https://taprater.com/p/ABC123ABC123",
+      lifecycleStatus: "ACTIVE",
+      billingProfileAvailable: true
+    });
   });
 
   it("returns empty portal data when customer is not found", async () => {

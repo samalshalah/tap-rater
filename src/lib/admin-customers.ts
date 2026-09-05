@@ -16,6 +16,7 @@ export type AdminCustomerSummary = {
   subscriptionCount: number;
   activeSubscriptionCount: number;
   createdAt?: string;
+  canReactivate: boolean;
 };
 
 export async function getAdminCustomers(): Promise<{ configured: boolean; customers: AdminCustomerSummary[] }> {
@@ -26,7 +27,7 @@ export async function getAdminCustomers(): Promise<{ configured: boolean; custom
   try {
     const client = getSupabaseAdmin() as AdminCustomersDbClient;
     const [customerResult, businessResult, orderResult, subscriptionResult] = await Promise.all([
-      client.from("customers").select("id,email,name,phone,account_status,created_at").order("created_at", { ascending: false }).limit(500),
+      client.from("customers").select("id,email,name,phone,password_hash,account_status,created_at").order("created_at", { ascending: false }).limit(500),
       client.from("businesses").select("id,customer_id,business_name,status").limit(1000),
       client.from("orders").select("id,email,total_cents,status,created_at").limit(2000),
       client.from("hosted_subscriptions").select("id,customer_id,status,lifecycle_status").limit(1000)
@@ -48,6 +49,49 @@ export async function getAdminCustomers(): Promise<{ configured: boolean; custom
   } catch {
     return { configured: true, customers: [] };
   }
+}
+
+export async function updateAdminCustomerAccess(id: string, status: "active" | "disabled") {
+  if (!hasSupabaseAdminConfig()) {
+    throw new Error("Customer storage is not configured.");
+  }
+
+  return updateAdminCustomerAccessWithClient(getSupabaseAdmin() as AdminCustomersDbClient, id, status);
+}
+
+export async function updateAdminCustomerAccessWithClient(
+  client: AdminCustomersDbClient,
+  id: string,
+  status: "active" | "disabled"
+) {
+  const { data: customer, error: customerError } = await client
+    .from("customers")
+    .select("id,account_status,password_hash")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (customerError || !customer?.id) {
+    throw new Error("Customer account was not found.");
+  }
+
+  if (status === "active" && !readString(customer.password_hash)) {
+    throw new Error("This customer must activate the account and create a password before access can be enabled.");
+  }
+
+  const { error } = await client
+    .from("customers")
+    .update({
+      account_status: status,
+      ...(status === "disabled" ? { activation_token_hash: null, activation_expires_at: null } : {}),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", id);
+
+  if (error) {
+    throw new Error("Customer access could not be updated.");
+  }
+
+  return { ok: true as const, status };
 }
 
 export function buildAdminCustomerSummaries(input: {
@@ -75,7 +119,8 @@ export function buildAdminCustomerSummaries(input: {
       paidTotalCents: 0,
       subscriptionCount: 0,
       activeSubscriptionCount: 0,
-      createdAt: readString(row.created_at)
+      createdAt: readString(row.created_at),
+      canReactivate: Boolean(readString(row.password_hash))
     });
   }
 
@@ -91,7 +136,8 @@ export function buildAdminCustomerSummaries(input: {
       paidTotalCents: 0,
       subscriptionCount: 0,
       activeSubscriptionCount: 0,
-      createdAt: readString(row.created_at)
+      createdAt: readString(row.created_at),
+      canReactivate: false
     };
     summary.orderCount += 1;
     if (row.status === "paid") {

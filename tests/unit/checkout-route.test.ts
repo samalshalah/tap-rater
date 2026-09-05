@@ -47,6 +47,7 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
     createRequestId: () => "checkout_test_request",
     createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", client_secret: "cs_test_123_secret_unit" }),
     getProducts: vi.fn().mockResolvedValue(migratedProducts),
+    resolveStripeCustomerId: vi.fn().mockResolvedValue(null),
     getShippingSettings: vi.fn().mockResolvedValue({
       shippingMode: "flat",
       flatShippingAmountCents: 1200,
@@ -213,6 +214,27 @@ describe("checkout route reliability", () => {
         taxAmountCents: 234,
         taxSettings: expect.objectContaining({ taxLabel: "Virginia sales tax" })
       })
+    );
+  });
+
+  it("passes an authenticated customer's existing Stripe profile into Checkout", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies({
+      resolveStripeCustomerId: vi.fn().mockResolvedValue("cus_test_existing")
+    });
+
+    const request = createCheckoutRequest(configuredStandardPayload);
+    const response = await handleCheckoutPost(request, dependencies);
+
+    expect(response.status).toBe(200);
+    expect(dependencies.resolveStripeCustomerId).toHaveBeenCalledWith({
+      request,
+      email: "buyer@example.com",
+      stripeMode: "test"
+    });
+    expect(dependencies.createStripeSession).toHaveBeenCalledWith(
+      expect.objectContaining({ stripeCustomerId: "cus_test_existing" })
     );
   });
 

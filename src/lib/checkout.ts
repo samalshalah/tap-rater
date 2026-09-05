@@ -339,6 +339,7 @@ export function createCheckoutSessionParams({
   customer,
   shippingAddress,
   siteUrl,
+  stripeCustomerId,
   stripeMode = getStripeMode(),
   shippingSettings = getDefaultShippingSettings(),
   taxSettings = getDefaultTaxSettings()
@@ -347,6 +348,7 @@ export function createCheckoutSessionParams({
   customer?: CheckoutCustomerInput;
   shippingAddress?: CheckoutShippingAddressInput;
   siteUrl: string;
+  stripeCustomerId?: string | null;
   stripeMode?: StripeMode;
   shippingSettings?: ShippingSettingsInput;
   taxSettings?: TaxSettingsInput;
@@ -372,10 +374,10 @@ export function createCheckoutSessionParams({
     integration_identifier: createStripeIntegrationIdentifier(),
     line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents, taxAmountCents, taxSettings.taxLabel),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    ...(customer?.email ? { customer_email: customer.email } : {}),
+    ...(stripeCustomerId ? { customer: stripeCustomerId } : customer?.email ? { customer_email: customer.email } : {}),
     billing_address_collection: "auto",
     ...(cart.checkoutMode === "payment" ? {
-      customer_creation: "always" as const,
+      ...(stripeCustomerId ? {} : { customer_creation: "always" as const }),
       invoice_creation: {
         enabled: true
       },

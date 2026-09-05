@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createCustomerLoginToken,
   createCustomerSessionValue,
+  isActiveCustomerSessionWithClient,
   parseCustomerLoginToken,
   parseCustomerSession
 } from "@/lib/customer-auth";
@@ -48,5 +49,26 @@ describe("customer auth", () => {
     expect(parseCustomerLoginToken(token)).toEqual({ email: "owner@example.com" });
     vi.setSystemTime(new Date("2026-07-09T12:20:01.000Z"));
     expect(parseCustomerLoginToken(token)).toBeNull();
+  });
+
+  it("accepts persisted sessions only while the customer account remains active", async () => {
+    const createClient = (accountStatus: string | null) => ({
+      from: () => {
+        const builder = {
+          select: () => builder,
+          eq: () => builder,
+          maybeSingle: async () => ({
+            data: accountStatus ? { account_status: accountStatus } : null,
+            error: null
+          })
+        };
+        return builder;
+      }
+    });
+
+    await expect(isActiveCustomerSessionWithClient(createClient("active"), "OWNER@example.com")).resolves.toBe(true);
+    await expect(isActiveCustomerSessionWithClient(createClient("pending_activation"), "owner@example.com")).resolves.toBe(false);
+    await expect(isActiveCustomerSessionWithClient(createClient("disabled"), "owner@example.com")).resolves.toBe(false);
+    await expect(isActiveCustomerSessionWithClient(createClient(null), "owner@example.com")).resolves.toBe(false);
   });
 });

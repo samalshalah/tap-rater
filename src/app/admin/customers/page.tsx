@@ -1,4 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
+import { CustomerAccessControl } from "@/components/admin/customer-access-control";
 import {
   AdminAlert,
   AdminBadge,
@@ -68,7 +69,7 @@ export default async function AdminCustomersPage() {
           className="mt-5 overflow-hidden"
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-xs uppercase text-muted">
                   <th className="pb-3 pr-4 font-semibold">Customer</th>
@@ -77,6 +78,7 @@ export default async function AdminCustomersPage() {
                   <th className="pb-3 pr-4 font-semibold">Orders</th>
                   <th className="pb-3 pr-4 font-semibold">Paid total</th>
                   <th className="pb-3 font-semibold">Multi-Link</th>
+                  <th className="pb-3 pl-4 font-semibold">Access</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -101,14 +103,18 @@ export default async function AdminCustomersPage() {
                             ? "success"
                             : customer.accountStatus === "guest"
                               ? "neutral"
-                              : "warning"
+                              : customer.accountStatus === "disabled"
+                                ? "danger"
+                                : "warning"
                         }
                       >
                         {customer.accountStatus === "active"
                           ? "Active"
                           : customer.accountStatus === "guest"
                             ? "Guest"
-                            : "Pending"}
+                            : customer.accountStatus === "disabled"
+                              ? "Disabled"
+                              : "Pending"}
                       </AdminBadge>
                     </td>
                     <td className="py-3 pr-4 text-ink">{customer.orderCount.toLocaleString()}</td>
@@ -122,11 +128,20 @@ export default async function AdminCustomersPage() {
                         "-"
                       )}
                     </td>
+                    <td className="py-3 pl-4">
+                      {customer.accountStatus === "guest" ? "-" : (
+                        <CustomerAccessControl
+                          customerId={customer.id}
+                          accountStatus={customer.accountStatus}
+                          canReactivate={customer.canReactivate}
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {customers.length === 0 ? (
                   <tr>
-                    <td className="py-8 text-center text-muted" colSpan={6}>No customer or order records yet.</td>
+                    <td className="py-8 text-center text-muted" colSpan={7}>No customer or order records yet.</td>
                   </tr>
                 ) : null}
               </tbody>

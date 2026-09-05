@@ -1,13 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { customerCookieName, parseCustomerSession } from "@/lib/customer-auth";
+import { customerCookieName, isActiveCustomerSession, parseCustomerSession } from "@/lib/customer-auth";
 import { getCustomerPortal } from "@/lib/customer-portal";
 
 export async function GET() {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
-  if (!session) {
+  if (!session || !(await isActiveCustomerSession(session.email))) {
     return NextResponse.json({ authenticated: false });
   }
 

@@ -97,6 +97,7 @@ export type CustomerPortalSubscription = {
   lifecycleStatus: string;
   currentPeriodEnd?: string;
   cancelAtPeriodEnd: boolean;
+  billingProfileAvailable: boolean;
 };
 
 export type CustomerPortalInvoice = {
@@ -302,7 +303,8 @@ function normalizeSubscription(row: unknown): CustomerPortalSubscription | null 
     status: readString(value.status) ?? "unknown",
     lifecycleStatus: readString(value.lifecycle_status) ?? "ACTIVE",
     currentPeriodEnd: readString(value.current_period_end),
-    cancelAtPeriodEnd: value.cancel_at_period_end === true
+    cancelAtPeriodEnd: value.cancel_at_period_end === true,
+    billingProfileAvailable: Boolean(readString(value.stripe_customer_id))
   };
 }
 

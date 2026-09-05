@@ -946,6 +946,26 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
+  it("reuses an authenticated customer's Stripe profile without creating a duplicate", () => {
+    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const params = createCheckoutSessionParams({
+      cart: result,
+      customer: checkoutCustomer,
+      shippingAddress: checkoutShippingAddress,
+      siteUrl: "https://taprater.com",
+      stripeCustomerId: "cus_test_existing"
+    });
+
+    expect(params.customer).toBe("cus_test_existing");
+    expect(params).not.toHaveProperty("customer_email");
+    expect(params).not.toHaveProperty("customer_creation");
+    expect(params.invoice_creation).toEqual({ enabled: true });
+    expect(params.payment_intent_data).toEqual({ setup_future_usage: "off_session" });
+  });
+
   it("supports direct, branded, direct with subscription, and branded with subscription checkout combinations", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
     const rateExperienceProduct = migratedProducts.find((product) => product.slug === "rate-your-experience-stand");
