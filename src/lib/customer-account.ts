@@ -60,11 +60,15 @@ export async function activateCustomerAccountWithClient(client: CustomerAccountD
   const tokenHash = hashActivationToken(token);
   const { data: customer, error } = await client
     .from("customers")
-    .select("id,email,activation_expires_at")
+    .select("id,email,account_status,activation_expires_at")
     .eq("activation_token_hash", tokenHash)
     .maybeSingle();
 
   if (error || !customer?.id) {
+    return { ok: false as const, error: "Activation link is invalid or expired.", status: 401 };
+  }
+
+  if (customer.account_status !== "pending_activation") {
     return { ok: false as const, error: "Activation link is invalid or expired.", status: 401 };
   }
 

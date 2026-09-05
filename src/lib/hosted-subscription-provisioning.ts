@@ -626,7 +626,10 @@ async function upsertCustomer(
   const wasAlreadyActive = existingStatus === "active";
   const accountStatus = wasAlreadyActive ? "active" : "pending_activation";
   const activationFields = wasAlreadyActive
-    ? {}
+    ? {
+        activation_token_hash: null,
+        activation_expires_at: null
+      }
     : {
         activation_token_hash: input.activationTokenHash,
         activation_expires_at: activationExpiresAt

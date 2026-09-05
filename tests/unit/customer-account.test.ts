@@ -65,6 +65,33 @@ describe("customer account activation", () => {
     expect(result).toMatchObject({ ok: false, status: 401 });
     expect(db.rows.customers[0].account_status).not.toBe("active");
   });
+
+  it("rejects stale activation tokens for an already-active customer", async () => {
+    const staleActivation = createCustomerActivationToken();
+    const existingPasswordHash = hashCustomerPassword("existing-password");
+    const db = createCustomerDb({
+      customers: [
+        {
+          id: "customer-1",
+          email: "owner@example.com",
+          account_status: "active",
+          password_hash: existingPasswordHash,
+          activation_token_hash: staleActivation.tokenHash,
+          activation_expires_at: "2026-09-07T12:00:00.000Z"
+        }
+      ]
+    });
+
+    const result = await activateCustomerAccountWithClient(
+      db.client,
+      staleActivation.token,
+      "replacement-password",
+      new Date("2026-08-31T12:00:00.000Z")
+    );
+
+    expect(result).toMatchObject({ ok: false, status: 401 });
+    expect(db.rows.customers[0].password_hash).toBe(existingPasswordHash);
+  });
 });
 
 function createCustomerDb(seed: { customers: Array<Record<string, unknown>> }) {
