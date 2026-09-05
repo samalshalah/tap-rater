@@ -11,7 +11,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 - Manual confirmations: 3
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
-- Automated verification: 87 test files and 509 tests passing in the current release candidate
+- Automated verification: 94 test files and 552 tests passing in the current release candidate
 
 ## Phase Progress
 
@@ -19,10 +19,10 @@ These are engineering estimates based on implemented behavior and verification e
 
 | Phase | Complete | Remaining work |
 | --- | ---: | --- |
-| Product catalog, inventory, and storefront | 96% | Final cross-device regression and an inventory operations drill |
+| Product catalog, inventory, and storefront | 97% | Final cross-device regression and an owner-observed inventory toggle drill |
 | Checkout, orders, and Stripe test payments | 94% | Live-mode cutover and four controlled real purchases with the owner present |
 | Customer accounts, billing, and Multi-Link | 94% | Owner activation of the Stripe-backed QA account and both Billing Portal checks |
-| Admin operations and fulfillment | 90% | End-to-end fulfillment, refund, inventory, and support drills |
+| Admin operations and fulfillment | 96% | One owner-observed test-mode operations drill before live launch |
 | Transactional email operations | 94% | Owner configuration of the signed Resend webhook and controlled launch-mailbox verification |
 | Security, accessibility, performance, and recovery | 86% | Final audit plus backup, restore, and rollback exercises |
 | Tax and legal readiness | 55% | Written accountant/legal operating decision |
@@ -42,6 +42,11 @@ These are engineering estimates based on implemented behavior and verification e
 - Transactional email sends use idempotency keys; order and shipping keys are stable hashes that do not expose source identifiers.
 - Email delivery storage contains metadata only and deliberately excludes HTML bodies, passwords, activation tokens, and payment data.
 - Product quantity, shipping, tax, production, fulfillment, refund, catalog, CMS, customer, and hosted-page backend surfaces are deployed.
+- Payment-hold and post-shipment guards prevent invalid production or fulfillment actions at both the admin UI and API layers.
+- First-shipment transitions preserve the original shipped timestamp and attempt one tracked shipping notification without rolling back saved state when email delivery fails.
+- Admin inventory controls update storefront availability directly, and server-side checkout rejects out-of-stock products.
+- Contact, setup, and link-change requests have a searchable staff queue with new, in-progress, and resolved states plus internal notes.
+- Full-refund handling requires explicit confirmation, uses a stable Stripe idempotency key, and reports Stripe/local persistence split failures for reconciliation.
 
 ## Owner At Computer Queue
 
@@ -77,7 +82,22 @@ Completion evidence: the account is active and both subscription billing profile
 
 Completion evidence: the launch-readiness check is Ready and the controlled message has a Delivered event in Tap Rater Admin.
 
-### 4. Tax and legal decision
+### 4. Run the controlled admin operations drill
+
+Use dedicated Stripe test data and owner-controlled email addresses only:
+
+1. Open one paid test order and move it through ready for production, in production, completed, ready to ship, shipped, and delivered.
+2. Add test tracking before shipment and confirm the shipping attempt appears in `/admin/settings/emails`.
+3. Toggle one designated QA product out of stock, verify checkout rejects it, and immediately restore it to in stock.
+4. Move one designated QA request from New to In progress to Resolved, verify its internal note, and restore it if the request is not disposable test data.
+5. Create a dedicated paid Stripe test order, issue its full refund in Tap Rater Admin, and reconcile the refund ID and state with Stripe test mode.
+6. For any Multi-Link order, separately verify that refunding the charge does not cancel its subscription.
+
+Completion evidence: the order lifecycle, shipping email attempt, inventory gate, support queue, and refund all reconcile between the admin UI, Stripe test mode, and the production database.
+
+Detailed procedure: `docs/admin-operations-runbook.md`.
+
+### 5. Tax and legal decision
 
 Confirm with an accountant or qualified adviser:
 
@@ -88,7 +108,7 @@ Confirm with an accountant or qualified adviser:
 
 Completion evidence: a written operating decision identifies jurisdictions, taxable items, filing owner, and whether manual tax or Stripe Tax is authorized.
 
-### 5. Live Stripe launch and real purchases
+### 6. Live Stripe launch and real purchases
 
 Perform only while the owner is present and after the tax decision:
 
@@ -102,8 +122,7 @@ Completion evidence: all four live cases reconcile between Stripe, Tap Rater Adm
 
 ## Autonomous Work Queue
 
-1. Production operations QA for fulfillment, refunds, inventory, and customer support.
-2. Security, accessibility, SEO, performance, backup, and rollback verification.
+1. Security, accessibility, SEO, performance, backup, and rollback verification.
 
 ## Safety Rules
 

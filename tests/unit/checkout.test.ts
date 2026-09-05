@@ -129,6 +129,19 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
+  it("rejects checkout when admin inventory marks a product out of stock", () => {
+    const products = migratedProducts.map((product): MigratedProduct =>
+      product.slug === configuredStandardItem.productId
+        ? { ...product, stockStatus: "outofstock" }
+        : product
+    );
+
+    expect(validateCheckoutCart([configuredStandardItem], products)).toMatchObject({
+      ok: false,
+      reason: "empty_cart"
+    });
+  });
+
   it("maps Standard Direct QR and NFC targets to the customer destination URL", () => {
     const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
 

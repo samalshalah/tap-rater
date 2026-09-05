@@ -51,24 +51,30 @@ describe("admin list UI display rules", () => {
   });
 
   it("chooses one order action from the current workflow state", () => {
-    expect(getPrimaryOrderAction({ productionStatus: "not_started", shippingStatus: "not_shipped" })).toMatchObject({
+    expect(getPrimaryOrderAction({ status: "paid", paymentStatus: "paid", productionStatus: "not_started", shippingStatus: "not_shipped" })).toMatchObject({
       kind: "action",
       action: "ready_for_production",
       label: "Ready"
     });
-    expect(getPrimaryOrderAction({ productionStatus: "ready_for_production", shippingStatus: "not_shipped" })).toMatchObject({
+    expect(getPrimaryOrderAction({ status: "paid", paymentStatus: "paid", productionStatus: "ready_for_production", shippingStatus: "not_shipped" })).toMatchObject({
       kind: "action",
       action: "in_production",
       label: "In production"
     });
-    expect(getPrimaryOrderAction({ productionStatus: "completed", shippingStatus: "ready_to_ship" })).toMatchObject({
+    expect(getPrimaryOrderAction({ status: "paid", paymentStatus: "paid", productionStatus: "completed", shippingStatus: "ready_to_ship" })).toMatchObject({
       kind: "action",
       action: "mark_shipped",
       label: "Shipped"
     });
-    expect(getPrimaryOrderAction({ productionStatus: "completed", shippingStatus: "shipped" })).toEqual({
+    expect(getPrimaryOrderAction({ status: "paid", paymentStatus: "paid", productionStatus: "completed", shippingStatus: "shipped" })).toEqual({
       kind: "status",
-      label: "Shipped"
+      label: "Shipped",
+      tone: "ready"
+    });
+    expect(getPrimaryOrderAction({ status: "pending_payment", paymentStatus: "manual_unpaid", productionStatus: "ready_for_production", shippingStatus: "not_shipped" })).toEqual({
+      kind: "status",
+      label: "Payment required",
+      tone: "warning"
     });
   });
 });

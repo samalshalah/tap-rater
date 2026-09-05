@@ -359,12 +359,23 @@ export const adminProductStatusUpdateSchema = z.object({
   status: z.enum(productStatuses)
 });
 
+export const adminInventoryUpdateSchema = z.object({
+  stockStatus: z.enum(["instock", "outofstock"])
+});
+
+export const adminRequestUpdateSchema = z.object({
+  status: z.enum(["new", "in_progress", "resolved"]),
+  adminNotes: z.string().trim().max(2000).default("")
+});
+
 export type HomepageContentInput = z.infer<typeof homepageContentSchema>;
 export type PageContentInput = z.infer<typeof pageContentSchema>;
 export type BusinessUseContentInput = z.infer<typeof businessUseContentSchema>;
 export type StandTypeContentInput = z.infer<typeof standTypeContentSchema>;
 export type ProductContentInput = z.infer<typeof productContentSchema>;
 export type AdminProductStatusUpdateInput = z.infer<typeof adminProductStatusUpdateSchema>;
+export type AdminInventoryUpdateInput = z.infer<typeof adminInventoryUpdateSchema>;
+export type AdminRequestUpdateInput = z.infer<typeof adminRequestUpdateSchema>;
 
 const deviceProductTypes = [
   "google_review",

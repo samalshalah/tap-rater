@@ -12,6 +12,9 @@ export async function POST(request: Request, context: RouteContext) {
   if (unauthorized) return unauthorized;
 
   const { id } = await context.params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+    return NextResponse.json({ error: "Order identifier is invalid." }, { status: 400 });
+  }
   const parsed = orderFulfillmentUpdateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Fulfillment update is invalid." }, { status: 400 });
@@ -19,7 +22,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const result = await updateOrderFulfillment(id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    return NextResponse.json({ error: result.error }, { status: result.status ?? 500 });
   }
 
   return NextResponse.json({ ok: true, shippingEmail: result.shippingEmail });

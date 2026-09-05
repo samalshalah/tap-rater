@@ -1,4 +1,5 @@
 import type { AdminOrderAction } from "@/lib/admin-order-actions";
+import { isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
 
 export const adminProductListFilterLabels = [
   "Search",
@@ -42,21 +43,31 @@ export function formatOrderItemSummary(items: OrderSummaryItem[]) {
 }
 
 type OrderWorkflowState = {
+  status: "pending_payment" | "paid" | "failed" | "canceled";
+  paymentStatus?: string;
   productionStatus: string;
   shippingStatus: string;
 };
 
 type PrimaryOrderAction =
   | { kind: "action"; action: AdminOrderAction; label: string }
-  | { kind: "status"; label: string };
+  | { kind: "status"; label: string; tone: "ready" | "warning" };
 
 export function getPrimaryOrderAction(state: OrderWorkflowState): PrimaryOrderAction {
+  if (!isOrderPaymentConfirmed(state.status, state.paymentStatus)) {
+    return {
+      kind: "status" as const,
+      label: state.paymentStatus === "refunded" ? "Refunded" : "Payment required",
+      tone: "warning"
+    };
+  }
+
   if (state.shippingStatus === "delivered") {
-    return { kind: "status" as const, label: "Delivered" };
+    return { kind: "status" as const, label: "Delivered", tone: "ready" };
   }
 
   if (state.shippingStatus === "shipped") {
-    return { kind: "status" as const, label: "Shipped" };
+    return { kind: "status" as const, label: "Shipped", tone: "ready" };
   }
 
   if (state.productionStatus === "completed" && state.shippingStatus === "ready_to_ship") {

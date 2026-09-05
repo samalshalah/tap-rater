@@ -60,6 +60,9 @@ export async function refundAdminOrder(
   if (order.payment_status === "refunded" && order.stripe_refund_id) {
     return { ok: true, refundId: order.stripe_refund_id, alreadyRefunded: true };
   }
+  if (order.payment_status === "refunded") {
+    return { ok: false, status: 409, error: "This order is marked refunded but has no Stripe refund reference." };
+  }
   if (order.status !== "paid" && order.payment_status !== "paid") {
     return { ok: false, status: 409, error: "Only paid orders can be refunded." };
   }

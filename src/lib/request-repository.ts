@@ -1,4 +1,6 @@
-import type { ChangeLinkFormInput, ContactFormInput, SetupFormInput } from "@/lib/validators";
+import type { AdminRequestUpdateInput, ChangeLinkFormInput, ContactFormInput, SetupFormInput } from "@/lib/validators";
+
+export type AdminRequestStatus = AdminRequestUpdateInput["status"];
 
 type InsertResult = PromiseLike<{ error: null | { message: string } }>;
 type SelectResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
@@ -22,7 +24,10 @@ export type AdminContactRequest = {
   name: string;
   email: string;
   message: string;
-  status?: string;
+  status: AdminRequestStatus;
+  adminNotes: string;
+  updatedAt?: string;
+  resolvedAt?: string;
   createdAt?: string;
 };
 
@@ -33,7 +38,10 @@ export type AdminSetupRequest = {
   businessName: string;
   reviewUrl: string;
   notes: string;
-  status?: string;
+  status: AdminRequestStatus;
+  adminNotes: string;
+  updatedAt?: string;
+  resolvedAt?: string;
   createdAt?: string;
 };
 
@@ -44,7 +52,10 @@ export type AdminLinkChangeRequest = {
   tapraterId: string;
   newReviewUrl: string;
   notes: string;
-  status?: string;
+  status: AdminRequestStatus;
+  adminNotes: string;
+  updatedAt?: string;
+  resolvedAt?: string;
   createdAt?: string;
 };
 
@@ -130,8 +141,11 @@ function normalizeContactRequest(row: unknown): AdminContactRequest {
     name: readString(value.name) ?? "",
     email: readString(value.email) ?? "",
     message: readString(value.message) ?? "",
-    status: readString(value.status),
-    createdAt: readString(value.created_at)
+    status: readRequestStatus(value.status),
+    adminNotes: readString(value.admin_notes) ?? "",
+    createdAt: readString(value.created_at),
+    updatedAt: readString(value.updated_at),
+    resolvedAt: readString(value.resolved_at)
   };
 }
 
@@ -145,8 +159,11 @@ function normalizeSetupRequest(row: unknown): AdminSetupRequest {
     businessName: readString(value.business_name) ?? "",
     reviewUrl: readString(value.review_url) ?? "",
     notes: readString(value.notes) ?? "",
-    status: readString(value.status),
-    createdAt: readString(value.created_at)
+    status: readRequestStatus(value.status),
+    adminNotes: readString(value.admin_notes) ?? "",
+    createdAt: readString(value.created_at),
+    updatedAt: readString(value.updated_at),
+    resolvedAt: readString(value.resolved_at)
   };
 }
 
@@ -160,8 +177,11 @@ function normalizeLinkChangeRequest(row: unknown): AdminLinkChangeRequest {
     tapraterId: readString(value.taprater_id) ?? "",
     newReviewUrl: readString(value.new_review_url) ?? "",
     notes: readString(value.notes) ?? "",
-    status: readString(value.status),
-    createdAt: readString(value.created_at)
+    status: readRequestStatus(value.status),
+    adminNotes: readString(value.admin_notes) ?? "",
+    createdAt: readString(value.created_at),
+    updatedAt: readString(value.updated_at),
+    resolvedAt: readString(value.resolved_at)
   };
 }
 
@@ -171,4 +191,10 @@ function readRecord(value: unknown): Record<string, unknown> {
 
 function readString(value: unknown) {
   return typeof value === "string" ? value : undefined;
+}
+
+function readRequestStatus(value: unknown): AdminRequestStatus {
+  if (value === "resolved" || value === "closed" || value === "completed") return "resolved";
+  if (value === "in_progress" || value === "open") return "in_progress";
+  return "new";
 }

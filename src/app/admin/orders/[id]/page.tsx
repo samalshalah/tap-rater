@@ -6,7 +6,8 @@ import { OrderRefundForm } from "@/components/admin/order-refund-form";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getAdminOrderById, getOrderLineItemProductionSummary, type OrderLineItem } from "@/lib/orders";
+import { canAdvanceOrderFulfillment, canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
+import { getAdminOrderById, getOrderLineItemProductionSummary, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
 type AdminOrderDetailPageProps = {
@@ -85,7 +86,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
                 refundId={order.stripe_refund_id}
               />
             ) : null}
-            {order.id ? <OrderProductionActions orderId={order.id} /> : null}
+            {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} /> : null}
             <OrderFulfillmentForm order={order} />
           </div>
         </div>
@@ -291,11 +292,13 @@ function formatPaymentStatus(order: { status: string; payment_status?: string | 
 }
 
 function buildAttentionItems(
-  order: { status: string; payment_status?: string | null },
+  order: Pick<OrderRecord, "status" | "payment_status">,
   summaries: ReturnType<typeof getOrderLineItemProductionSummary>[]
 ) {
   const items = new Set<string>();
-  if (order.payment_status === "manual_unpaid") items.add("Customer submitted the order manually. Collect or confirm payment before production.");
+  if (!canAdvanceOrderFulfillment(order)) {
+    items.add("Payment is not confirmed. Production and fulfillment actions are locked for this order.");
+  }
 
   for (const summary of summaries) {
     if (summary.productionArtwork?.status === "generation_failed") {

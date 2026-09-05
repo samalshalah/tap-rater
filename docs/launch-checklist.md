@@ -62,6 +62,20 @@ Stripe checkout is available for test mode only. Live payments, live paid orders
 - [ ] Protected admin pages are not reachable without an admin session.
 - [ ] Admin navigation includes Products, Requests, Devices, and Analytics.
 
+## Admin Commerce Operations QA
+
+- [ ] Unpaid, failed, canceled, and refunded orders cannot advance production or shipping state.
+- [ ] Payment-hold orders allow internal notes but reject carrier, tracking, production, and shipping changes.
+- [ ] Shipping cannot advance until production is completed.
+- [ ] Delivered orders cannot move backward, and shipped orders cannot return to a pre-shipment state.
+- [ ] The first shipped transition preserves one `shipped_at` timestamp and attempts one tracked shipping notification.
+- [ ] Artwork generation and approval actions are unavailable after shipment.
+- [ ] A full refund requires explicit confirmation and stores the Stripe refund reference.
+- [ ] Refunding a Multi-Link order does not silently cancel its subscription; subscription handling is completed separately.
+- [ ] Admin can mark a product out of stock and server-side checkout rejects it until availability is restored.
+- [ ] Admin can move contact, setup, and link-change requests through New, In progress, and Resolved with internal notes.
+- [ ] Run the controlled workflow in `docs/admin-operations-runbook.md` with dedicated test data.
+
 ## Device Creation QA
 
 - [ ] Admin can open `/admin/devices`.

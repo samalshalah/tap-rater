@@ -14,6 +14,7 @@ import {
 } from "@/lib/production-artwork";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
+import { canAdvanceOrderFulfillment, canRunOrderProductionActions, validateOrderFulfillmentTransition } from "@/lib/order-fulfillment-rules";
 
 export type OrdersDbClient = {
   from: (table: string) => any;
@@ -128,6 +129,7 @@ export type FulfillmentUpdateResult =
   | {
       ok: false;
       error: string;
+      status?: number;
     };
 
 export type AdminOrderProductionActionInput = {
@@ -143,6 +145,7 @@ export type AdminOrderProductionActionResult =
   | {
       ok: false;
       error: string;
+      status?: number;
     };
 
 export type StripeCheckoutSessionLike = {
@@ -900,7 +903,7 @@ export async function markAdminOrderRefundedWithClient(
 
 export async function updateOrderFulfillment(orderId: string, input: OrderFulfillmentUpdateInput): Promise<FulfillmentUpdateResult> {
   if (!hasSupabaseAdminConfig()) {
-    return { ok: false, error: "Database persistence is not configured." };
+    return { ok: false, error: "Database persistence is not configured.", status: 503 };
   }
 
   return updateOrderFulfillmentWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
@@ -912,16 +915,36 @@ export async function updateOrderFulfillmentWithClient(
   input: OrderFulfillmentUpdateInput,
   options: {
     sendShippingNotificationEmailFn?: (input: ShippingEmailInput) => ReturnType<typeof sendShippingNotificationEmail>;
+    now?: () => string;
   } = {}
 ): Promise<FulfillmentUpdateResult> {
-  const now = new Date().toISOString();
-  const shippingStatus = input.markShipped ? "shipped" : input.shippingStatus;
   const existingOrder = await getOrderByIdForFulfillment(client, orderId);
+  if (!existingOrder) {
+    return { ok: false, error: "Order was not found.", status: 404 };
+  }
+
+  if (
+    !canAdvanceOrderFulfillment(existingOrder) &&
+    (
+      input.productionStatus !== existingOrder.production_status ||
+      (input.markShipped ? "shipped" : input.shippingStatus) !== existingOrder.shipping_status ||
+      input.shippingMethod !== (existingOrder.shipping_method ?? "") ||
+      input.shippingCarrier !== (existingOrder.shipping_carrier ?? "") ||
+      input.trackingNumber !== (existingOrder.tracking_number ?? "") ||
+      input.trackingUrl !== (existingOrder.tracking_url ?? "")
+    )
+  ) {
+    return { ok: false, error: "Only internal notes can be changed until payment is confirmed.", status: 409 };
+  }
+
+  const transition = validateOrderFulfillmentTransition(existingOrder, input);
+  if (!transition.ok) return transition;
+
+  const now = options.now?.() ?? new Date().toISOString();
+  const shippingStatus = transition.shippingStatus;
   const shouldSendShippingEmail =
-    Boolean(input.markShipped) &&
-    existingOrder?.shipping_status !== "shipped" &&
-    existingOrder?.shipping_status !== "delivered" &&
-    Boolean(existingOrder?.email) &&
+    transition.isFirstShippedTransition &&
+    Boolean(existingOrder.email) &&
     Boolean(input.trackingNumber || input.trackingUrl);
   const payload: Record<string, unknown> = {
     production_status: input.productionStatus,
@@ -935,32 +958,37 @@ export async function updateOrderFulfillmentWithClient(
     updated_at: now
   };
 
-  if (input.markShipped) {
-    payload.shipped_at = now;
+  if (shippingStatus === "shipped" || shippingStatus === "delivered") {
+    payload.shipped_at = existingOrder.shipped_at ?? now;
   }
 
   const { error } = await client.from("orders").update(payload).eq("id", orderId);
   if (error) return { ok: false, error: error.message };
 
-  if (!shouldSendShippingEmail || !existingOrder) {
+  if (!shouldSendShippingEmail) {
     return { ok: true };
   }
 
-  const shippingEmail = await (options.sendShippingNotificationEmailFn ?? sendShippingNotificationEmail)({
-    order: {
-      ...existingOrder,
-      production_status: input.productionStatus,
-      shipping_status: "shipped",
-      shipping_method: input.shippingMethod,
-      shipping_carrier: input.shippingCarrier,
-      tracking_number: input.trackingNumber,
-      tracking_url: input.trackingUrl,
-      internal_notes: input.internalNotes,
-      admin_fulfillment_notes: input.adminFulfillmentNotes,
-      shipped_at: input.markShipped ? now : existingOrder.shipped_at,
-      updated_at: now
-    }
-  });
+  let shippingEmail: Awaited<ReturnType<typeof sendShippingNotificationEmail>>;
+  try {
+    shippingEmail = await (options.sendShippingNotificationEmailFn ?? sendShippingNotificationEmail)({
+      order: {
+        ...existingOrder,
+        production_status: input.productionStatus,
+        shipping_status: "shipped",
+        shipping_method: input.shippingMethod,
+        shipping_carrier: input.shippingCarrier,
+        tracking_number: input.trackingNumber,
+        tracking_url: input.trackingUrl,
+        internal_notes: input.internalNotes,
+        admin_fulfillment_notes: input.adminFulfillmentNotes,
+        shipped_at: existingOrder.shipped_at ?? now,
+        updated_at: now
+      }
+    });
+  } catch {
+    shippingEmail = { sent: false, reason: "email_send_exception" };
+  }
 
   if (!shippingEmail.sent) {
     console.warn("[orders] shipping_email_not_sent", {
@@ -974,7 +1002,7 @@ export async function updateOrderFulfillmentWithClient(
 
 export async function applyAdminOrderProductionAction(orderId: string, input: AdminOrderProductionActionInput): Promise<AdminOrderProductionActionResult> {
   if (!hasSupabaseAdminConfig()) {
-    return { ok: false, error: "Database persistence is not configured." };
+    return { ok: false, error: "Database persistence is not configured.", status: 503 };
   }
 
   return applyAdminOrderProductionActionWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
@@ -991,16 +1019,32 @@ export async function applyAdminOrderProductionActionWithClient(
 ): Promise<AdminOrderProductionActionResult> {
   const existingOrder = await getOrderByIdForFulfillment(client, orderId);
   if (!existingOrder) {
-    return { ok: false, error: "Order was not found." };
+    return { ok: false, error: "Order was not found.", status: 404 };
+  }
+  if (!canAdvanceOrderFulfillment(existingOrder)) {
+    return {
+      ok: false,
+      error: "Production actions are unavailable until payment is confirmed.",
+      status: 409
+    };
+  }
+  if (!canRunOrderProductionActions(existingOrder)) {
+    return {
+      ok: false,
+      error: "Production actions are unavailable after an order has shipped.",
+      status: 409
+    };
   }
 
   const now = new Date().toISOString();
   let lineItems = existingOrder.line_items_json.map(applyOrderLineItemFulfillmentInference);
   let productionStatus: ProductionStatus = existingOrder.production_status;
+  let shippingStatus: ShippingStatus = existingOrder.shipping_status;
   const actionNote = formatProductionActionNote(input.action, input.note, now);
 
   if (input.action === "request_customer_changes") {
     productionStatus = "blocked";
+    shippingStatus = "blocked";
   } else {
     if (input.action === "approve_proof_manually") {
       lineItems = lineItems.map((item) => {
@@ -1045,6 +1089,7 @@ export async function applyAdminOrderProductionActionWithClient(
     ...existingOrder,
     line_items_json: lineItems,
     production_status: productionStatus,
+    shipping_status: shippingStatus,
     internal_notes: appendAdminNote(existingOrder.internal_notes, actionNote),
     updated_at: now
   };
@@ -1054,6 +1099,7 @@ export async function applyAdminOrderProductionActionWithClient(
     .update({
       line_items_json: updatedOrder.line_items_json,
       production_status: updatedOrder.production_status,
+      shipping_status: updatedOrder.shipping_status,
       internal_notes: updatedOrder.internal_notes,
       updated_at: now
     })

@@ -7,6 +7,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderActionSource } from "@/lib/admin-order-actions";
 import { formatOrderItemSummary, getPrimaryOrderAction } from "@/lib/admin-list-display";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
+import { canAdvanceOrderFulfillment } from "@/lib/order-fulfillment-rules";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminResponsiveTable, AdminSelect, AdminSummaryCard, AdminTextarea } from "./admin-ui";
 
@@ -93,7 +94,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
       if (!matchesSearch) return false;
       if (filter === "paid") return order.status === "paid";
       if (filter === "pending") return order.status === "pending_payment";
-      if (filter === "production") return order.productionStatus !== "completed" && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
+      if (filter === "production") return canOperateOrder(order) && order.productionStatus !== "completed" && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
       if (filter === "ready_to_ship") return order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship";
       if (filter === "shipped") return order.shippingStatus === "shipped" || order.shippingStatus === "delivered";
       if (filter === "blocked") return order.productionStatus === "blocked" || order.shippingStatus === "blocked";
@@ -101,14 +102,15 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
     });
   }, [filter, orderRows, query]);
 
-  const allVisibleSelected = visibleOrders.length > 0 && visibleOrders.every((order) => selectedIds.includes(order.id));
+  const selectableVisibleOrders = visibleOrders.filter(canOperateOrder);
+  const allVisibleSelected = selectableVisibleOrders.length > 0 && selectableVisibleOrders.every((order) => selectedIds.includes(order.id));
 
   async function applyAction(order: AdminOrdersWorkspaceOrder, action: AdminOrderAction) {
     await saveOrder(order, createAdminOrderActionPayload(order, action), actionLabel(action));
   }
 
   async function applyBulkAction() {
-    const selectedOrders = orderRows.filter((order) => selectedIds.includes(order.id));
+    const selectedOrders = orderRows.filter((order) => selectedIds.includes(order.id) && canOperateOrder(order));
     if (selectedOrders.length === 0) return;
 
     setMessage(null);
@@ -185,7 +187,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
       if (allVisibleSelected) {
         return current.filter((id) => !visibleOrders.some((order) => order.id === id));
       }
-      return Array.from(new Set([...current, ...visibleOrders.map((order) => order.id)]));
+      return Array.from(new Set([...current, ...selectableVisibleOrders.map((order) => order.id)]));
     });
   }
 
@@ -247,9 +249,10 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
         </details>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <AdminSummaryCard label="Total orders" value={String(orderRows.length)} />
-        <AdminSummaryCard label="Needs production" value={String(orderRows.filter((order) => order.productionStatus !== "completed").length)} />
+        <AdminSummaryCard label="Payment holds" value={String(orderRows.filter((order) => !canOperateOrder(order)).length)} />
+        <AdminSummaryCard label="Needs production" value={String(orderRows.filter((order) => canOperateOrder(order) && order.productionStatus !== "completed").length)} />
         <AdminSummaryCard label="Ready to ship" value={String(orderRows.filter((order) => order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship").length)} />
         <AdminSummaryCard label="Shipped / delivered" value={String(orderRows.filter((order) => order.shippingStatus === "shipped" || order.shippingStatus === "delivered").length)} />
       </div>
@@ -399,12 +402,13 @@ function OrderRow({
 }) {
   const itemSummary = formatOrderItemSummary(order.items);
   const primaryAction = getPrimaryOrderAction(order);
+  const canOperate = canOperateOrder(order);
 
   return (
     <>
       <tr className="border-b border-line last:border-b-0">
         <td className="px-4 py-4 align-top">
-          <input type="checkbox" checked={selected} onChange={onToggleSelected} className="h-4 w-4" aria-label={`Select ${itemSummary.title}`} />
+          <input type="checkbox" checked={selected} onChange={onToggleSelected} disabled={!canOperate} className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Select ${itemSummary.title}`} />
         </td>
         <td className="px-4 py-4 align-top">
           <p className="max-w-[240px] truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
@@ -437,7 +441,7 @@ function OrderRow({
                 {primaryAction.label}
               </QuickActionButton>
             ) : (
-              <StatusPill tone="ready">{primaryAction.label}</StatusPill>
+              <StatusPill tone={primaryAction.tone}>{primaryAction.label}</StatusPill>
             )}
             <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
               {editorOpen ? "Close" : "Edit"}
@@ -451,7 +455,7 @@ function OrderRow({
       {editorOpen ? (
         <tr className="border-b border-line bg-gray-50">
           <td colSpan={8} className="px-4 py-4">
-            <OrderInlineEditor order={order} saving={saving} onSave={onSave} />
+            <OrderInlineEditor order={order} saving={saving} canOperate={canOperate} onSave={onSave} />
           </td>
         </tr>
       ) : null}
@@ -462,10 +466,12 @@ function OrderRow({
 function OrderInlineEditor({
   order,
   saving,
+  canOperate,
   onSave
 }: {
   order: AdminOrdersWorkspaceOrder;
   saving: boolean;
+  canOperate: boolean;
   onSave: (payload: OrderFulfillmentUpdateInput) => void;
 }) {
   const [form, setForm] = useState<OrderFulfillmentUpdateInput>({
@@ -482,6 +488,9 @@ function OrderInlineEditor({
 
   return (
     <div className="space-y-4">
+      {!canOperate ? (
+        <AdminAlert tone="warning">Payment must be confirmed before production or shipping status can advance. Internal notes can still be saved.</AdminAlert>
+      ) : null}
       <AdminCard title="Order items" className="p-4">
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           {order.items.map((item) => (
@@ -498,34 +507,30 @@ function OrderInlineEditor({
       </AdminCard>
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
         <div className="grid gap-3 md:grid-cols-2">
-          <SelectField label="Production" value={form.productionStatus} onChange={(value) => setForm((current) => ({ ...current, productionStatus: value as OrderFulfillmentUpdateInput["productionStatus"] }))}>
+          <SelectField label="Production" value={form.productionStatus} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, productionStatus: value as OrderFulfillmentUpdateInput["productionStatus"] }))}>
             <option value="not_started">Not started</option>
             <option value="ready_for_production">Ready for production</option>
             <option value="in_production">In production</option>
             <option value="blocked">Blocked</option>
             <option value="completed">Completed</option>
           </SelectField>
-          <SelectField label="Shipping" value={form.shippingStatus} onChange={(value) => setForm((current) => ({ ...current, shippingStatus: value as OrderFulfillmentUpdateInput["shippingStatus"] }))}>
+          <SelectField label="Shipping" value={form.shippingStatus} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, shippingStatus: value as OrderFulfillmentUpdateInput["shippingStatus"] }))}>
             <option value="not_shipped">Not shipped</option>
             <option value="ready_to_ship">Ready to ship</option>
             <option value="shipped">Shipped</option>
             <option value="delivered">Delivered</option>
             <option value="blocked">Blocked</option>
           </SelectField>
-          <TextField label="Shipping method" value={form.shippingMethod} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
-          <TextField label="Carrier" value={form.shippingCarrier} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
-          <TextField label="Tracking number" value={form.trackingNumber} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
-          <TextField label="Tracking URL" value={form.trackingUrl} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
+          <TextField label="Shipping method" value={form.shippingMethod} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, shippingMethod: value }))} />
+          <TextField label="Carrier" value={form.shippingCarrier} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, shippingCarrier: value }))} />
+          <TextField label="Tracking number" value={form.trackingNumber} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, trackingNumber: value }))} />
+          <TextField label="Tracking URL" value={form.trackingUrl} disabled={!canOperate} onChange={(value) => setForm((current) => ({ ...current, trackingUrl: value }))} />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <TextArea label="Internal notes" value={form.internalNotes} onChange={(value) => setForm((current) => ({ ...current, internalNotes: value }))} />
           <TextArea label="Fulfillment notes" value={form.adminFulfillmentNotes} onChange={(value) => setForm((current) => ({ ...current, adminFulfillmentNotes: value }))} />
         </div>
-        <div className="space-y-3">
-          <label className="flex items-center gap-2 text-sm font-bold text-ink">
-            <input type="checkbox" checked={form.markShipped} onChange={(event) => setForm((current) => ({ ...current, markShipped: event.target.checked }))} className="h-4 w-4" />
-            Set shipped date
-          </label>
+        <div>
           <AdminButton type="button" disabled={saving} loading={saving} onClick={() => onSave(form)} className="w-full" variant="primary">
             {saving ? "Saving..." : "Save controls"}
           </AdminButton>
@@ -535,22 +540,22 @@ function OrderInlineEditor({
   );
 }
 
-function SelectField({ label, value, onChange, children }: { label: string; value: string; onChange: (value: string) => void; children: ReactNode }) {
+function SelectField({ label, value, disabled = false, onChange, children }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void; children: ReactNode }) {
   return (
     <label className="block text-sm font-semibold text-ink">
       {label}
-      <AdminSelect value={value} onChange={(event) => onChange(event.target.value)} className="mt-2">
+      <AdminSelect value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="mt-2">
         {children}
       </AdminSelect>
     </label>
   );
 }
 
-function TextField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+function TextField({ label, value, disabled = false, onChange }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void }) {
   return (
     <label className="block text-sm font-semibold text-ink">
       {label}
-      <AdminInput value={value} onChange={(event) => onChange(event.target.value)} className="mt-2" />
+      <AdminInput value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} className="mt-2" />
     </label>
   );
 }
@@ -609,11 +614,12 @@ function OrderMobileCard({
 }) {
   const itemSummary = formatOrderItemSummary(order.items);
   const primaryAction = getPrimaryOrderAction(order);
+  const canOperate = canOperateOrder(order);
 
   return (
     <article className={selected ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
       <div className="flex items-start gap-3">
-        <input type="checkbox" checked={selected} onChange={onToggleSelected} className="mt-1 h-4 w-4" aria-label={`Select ${itemSummary.title}`} />
+        <input type="checkbox" checked={selected} onChange={onToggleSelected} disabled={!canOperate} className="mt-1 h-4 w-4 disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Select ${itemSummary.title}`} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
           <p className="mt-1 text-sm font-semibold text-muted">{itemSummary.count}</p>
@@ -633,7 +639,7 @@ function OrderMobileCard({
             {primaryAction.label}
           </QuickActionButton>
         ) : (
-          <StatusPill tone="ready">{primaryAction.label}</StatusPill>
+          <StatusPill tone={primaryAction.tone}>{primaryAction.label}</StatusPill>
         )}
         <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
           {editorOpen ? "Close" : "Edit"}
@@ -644,7 +650,7 @@ function OrderMobileCard({
       </div>
       {editorOpen ? (
         <div className="mt-4 border-t border-line pt-4">
-          <OrderInlineEditor order={order} saving={saving} onSave={onSave} />
+          <OrderInlineEditor order={order} saving={saving} canOperate={canOperate} onSave={onSave} />
         </div>
       ) : null}
     </article>
@@ -658,4 +664,8 @@ function OrderMobileField({ label, children }: { label: string; children: ReactN
       <span className="min-w-0 text-ink">{children}</span>
     </div>
   );
+}
+
+function canOperateOrder(order: Pick<AdminOrdersWorkspaceOrder, "status" | "paymentStatus">) {
+  return canAdvanceOrderFulfillment({ status: order.status, payment_status: order.paymentStatus });
 }

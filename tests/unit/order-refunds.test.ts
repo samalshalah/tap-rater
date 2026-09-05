@@ -65,6 +65,22 @@ describe("admin order refunds", () => {
     expect(dependencies.createRefund).not.toHaveBeenCalled();
   });
 
+  it("stops when a refunded order has no Stripe refund reference", async () => {
+    const dependencies = createDependencies({
+      ...paidOrder,
+      status: "canceled",
+      payment_status: "refunded",
+      stripe_refund_id: null
+    });
+
+    await expect(refundAdminOrder("order-1", dependencies)).resolves.toEqual({
+      ok: false,
+      status: 409,
+      error: "This order is marked refunded but has no Stripe refund reference."
+    });
+    expect(dependencies.createRefund).not.toHaveBeenCalled();
+  });
+
   it("rejects an unpaid order", async () => {
     const dependencies = createDependencies({
       ...paidOrder,
@@ -78,5 +94,39 @@ describe("admin order refunds", () => {
       error: "Only paid orders can be refunded.",
     });
     expect(dependencies.createRefund).not.toHaveBeenCalled();
+  });
+
+  it("rejects paid orders that have no Stripe payment reference", async () => {
+    const dependencies = createDependencies({ ...paidOrder, stripe_payment_intent_id: null });
+
+    await expect(refundAdminOrder("order-1", dependencies)).resolves.toEqual({
+      ok: false,
+      status: 409,
+      error: "This order has no Stripe payment reference."
+    });
+    expect(dependencies.createRefund).not.toHaveBeenCalled();
+  });
+
+  it("leaves the order untouched when Stripe rejects the refund", async () => {
+    const dependencies = createDependencies(paidOrder);
+    vi.mocked(dependencies.createRefund).mockRejectedValue(new Error("Stripe refund failed."));
+
+    await expect(refundAdminOrder("order-1", dependencies)).resolves.toEqual({
+      ok: false,
+      status: 502,
+      error: "Stripe refund failed."
+    });
+    expect(dependencies.markRefunded).not.toHaveBeenCalled();
+  });
+
+  it("reports when Stripe succeeded but the local order update failed", async () => {
+    const dependencies = createDependencies(paidOrder);
+    vi.mocked(dependencies.markRefunded).mockResolvedValue({ ok: false, error: "database unavailable" });
+
+    await expect(refundAdminOrder("order-1", dependencies)).resolves.toEqual({
+      ok: false,
+      status: 500,
+      error: "Stripe created the refund, but the order update failed: database unavailable"
+    });
   });
 });

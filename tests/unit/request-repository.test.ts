@@ -82,6 +82,8 @@ describe("request repository", () => {
           email: "contact@example.com",
           message: "I need help.",
           status: "new",
+          admin_notes: "Needs a reply.",
+          updated_at: "2026-07-09T12:30:00.000Z",
           created_at: "2026-07-09T12:00:00.000Z"
         }
       ],
@@ -105,6 +107,7 @@ describe("request repository", () => {
           new_review_url: "https://example.com/new",
           notes: "Change link.",
           status: "open",
+          resolved_at: null,
           created_at: "2026-07-09T10:00:00.000Z"
         }
       ]
@@ -129,9 +132,19 @@ describe("request repository", () => {
 
     const requests = await getAdminRequestsFromClient(client);
 
-    expect(requests.contacts[0]).toMatchObject({ name: "Contact Customer", status: "new" });
-    expect(requests.setups[0]).toMatchObject({ businessName: "Local Shop", reviewUrl: "https://example.com/review" });
-    expect(requests.linkChanges[0]).toMatchObject({ tapraterId: "TRATER01-W", status: "open" });
+    expect(requests.contacts[0]).toMatchObject({
+      name: "Contact Customer",
+      status: "new",
+      adminNotes: "Needs a reply.",
+      updatedAt: "2026-07-09T12:30:00.000Z"
+    });
+    expect(requests.setups[0]).toMatchObject({
+      businessName: "Local Shop",
+      reviewUrl: "https://example.com/review",
+      status: "new",
+      adminNotes: ""
+    });
+    expect(requests.linkChanges[0]).toMatchObject({ tapraterId: "TRATER01-W", status: "in_progress" });
     expect(order).toHaveBeenCalledTimes(3);
   });
 });

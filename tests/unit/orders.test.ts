@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { formatOrderReference } from "@/lib/order-reference";
 import {
+  applyAdminOrderProductionActionWithClient,
   applyOrderLineItemFulfillmentInference,
   getOrderLineItemFulfillmentKind,
   getOrderLineItemProductionSummary,
@@ -554,15 +555,8 @@ describe("orders repository", () => {
   });
 
   it("updates fulfillment fields and sets shipped timestamp when marking shipped", async () => {
-    const update = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null })
-    });
-    const client = {
-      from(table: string) {
-        expect(table).toBe("orders");
-        return { update };
-      }
-    } as unknown as OrdersDbClient;
+    const rows = [fulfillmentOrder({ production_status: "in_production" })];
+    const client = createOrdersMemoryClient(rows);
 
     const result = await updateOrderFulfillmentWithClient(client, "order-123", {
       productionStatus: "completed",
@@ -574,10 +568,13 @@ describe("orders repository", () => {
       internalNotes: "Packed carefully.",
       adminFulfillmentNotes: "Ready.",
       markShipped: true
+    }, {
+      now: () => "2026-09-05T12:00:00.000Z",
+      sendShippingNotificationEmailFn: vi.fn().mockResolvedValue({ sent: true })
     });
 
-    expect(result).toEqual({ ok: true });
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(result).toEqual({ ok: true, shippingEmail: { sent: true } });
+    expect(rows[0]).toMatchObject({
       production_status: "completed",
       shipping_status: "shipped",
       shipping_method: "Ground",
@@ -586,8 +583,8 @@ describe("orders repository", () => {
       tracking_url: "https://example.com/track/TRACK123",
       internal_notes: "Packed carefully.",
       admin_fulfillment_notes: "Ready.",
-      shipped_at: expect.any(String)
-    }));
+      shipped_at: "2026-09-05T12:00:00.000Z"
+    });
   });
 
   it("sends shipping notification once when transitioning to shipped with tracking", async () => {
@@ -644,6 +641,35 @@ describe("orders repository", () => {
     });
   });
 
+  it("treats selecting shipped directly as the first shipping transition", async () => {
+    const rows = [fulfillmentOrder({ production_status: "completed", shipping_status: "ready_to_ship" })];
+    const sendShippingNotificationEmailFn = vi.fn().mockResolvedValue({ sent: true });
+
+    const result = await updateOrderFulfillmentWithClient(
+      createOrdersMemoryClient(rows),
+      "order-123",
+      {
+        productionStatus: "completed",
+        shippingStatus: "shipped",
+        shippingMethod: "Ground",
+        shippingCarrier: "USPS",
+        trackingNumber: "TRACK456",
+        trackingUrl: "https://example.com/track/TRACK456",
+        internalNotes: "",
+        adminFulfillmentNotes: "",
+        markShipped: false
+      },
+      { sendShippingNotificationEmailFn, now: () => "2026-09-05T14:00:00.000Z" }
+    );
+
+    expect(result).toEqual({ ok: true, shippingEmail: { sent: true } });
+    expect(rows[0]).toMatchObject({
+      shipping_status: "shipped",
+      shipped_at: "2026-09-05T14:00:00.000Z"
+    });
+    expect(sendShippingNotificationEmailFn).toHaveBeenCalledTimes(1);
+  });
+
   it("does not resend shipping email for unrelated edits to an already shipped order", async () => {
     const rows: Record<string, any>[] = [
       {
@@ -659,6 +685,7 @@ describe("orders repository", () => {
         shipping_amount_cents: 0,
         production_status: "completed",
         shipping_status: "shipped",
+        shipped_at: "2026-09-04T12:00:00.000Z",
         tracking_number: "TRACK123",
         internal_notes: "",
         admin_fulfillment_notes: ""
@@ -685,6 +712,7 @@ describe("orders repository", () => {
 
     expect(result).toEqual({ ok: true });
     expect(sendShippingNotificationEmailFn).not.toHaveBeenCalled();
+    expect(rows[0].shipped_at).toBe("2026-09-04T12:00:00.000Z");
   });
 
   it("does not roll back shipping state when shipping email fails", async () => {
@@ -730,16 +758,152 @@ describe("orders repository", () => {
     expect(warn).toHaveBeenCalledWith("[orders] shipping_email_not_sent", expect.objectContaining({ reason: "missing_api_key" }));
   });
 
-  it("clears fulfillment text fields with intentional empty strings", async () => {
-    const update = vi.fn().mockReturnValue({
-      eq: vi.fn().mockResolvedValue({ error: null })
+  it("keeps a shipped order saved when the email sender throws", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const rows = [fulfillmentOrder({ production_status: "completed", shipping_status: "ready_to_ship" })];
+
+    const result = await updateOrderFulfillmentWithClient(
+      createOrdersMemoryClient(rows),
+      "order-123",
+      {
+        productionStatus: "completed",
+        shippingStatus: "shipped",
+        shippingMethod: "Ground",
+        shippingCarrier: "USPS",
+        trackingNumber: "TRACK789",
+        trackingUrl: "",
+        internalNotes: "",
+        adminFulfillmentNotes: "",
+        markShipped: false
+      },
+      { sendShippingNotificationEmailFn: vi.fn().mockRejectedValue(new Error("provider unavailable")) }
+    );
+
+    expect(result).toEqual({ ok: true, shippingEmail: { sent: false, reason: "email_send_exception" } });
+    expect(rows[0]).toMatchObject({ shipping_status: "shipped", tracking_number: "TRACK789" });
+    expect(warn).toHaveBeenCalledWith("[orders] shipping_email_not_sent", expect.objectContaining({ reason: "email_send_exception" }));
+  });
+
+  it("blocks fulfillment and production actions while payment is unconfirmed", async () => {
+    const rows = [fulfillmentOrder({
+      status: "pending_payment",
+      payment_status: "manual_unpaid",
+      production_status: "ready_for_production"
+    })];
+    const client = createOrdersMemoryClient(rows);
+
+    await expect(
+      updateOrderFulfillmentWithClient(client, "order-123", {
+        productionStatus: "in_production",
+        shippingStatus: "not_shipped",
+        shippingMethod: "",
+        shippingCarrier: "",
+        trackingNumber: "",
+        trackingUrl: "",
+        internalNotes: "",
+        adminFulfillmentNotes: "",
+        markShipped: false
+      })
+    ).resolves.toEqual({
+      ok: false,
+      error: "Only internal notes can be changed until payment is confirmed.",
+      status: 409
     });
-    const client = {
-      from(table: string) {
-        expect(table).toBe("orders");
-        return { update };
-      }
-    } as unknown as OrdersDbClient;
+    await expect(
+      applyAdminOrderProductionActionWithClient(client, "order-123", { action: "regenerate_artwork" })
+    ).resolves.toEqual({
+      ok: false,
+      error: "Production actions are unavailable until payment is confirmed.",
+      status: 409
+    });
+    expect(rows[0].production_status).toBe("ready_for_production");
+  });
+
+  it("allows notes-only saves while an order is on payment hold", async () => {
+    const rows = [fulfillmentOrder({
+      status: "pending_payment",
+      payment_status: "manual_unpaid",
+      production_status: "ready_for_production"
+    })];
+
+    await expect(
+      updateOrderFulfillmentWithClient(createOrdersMemoryClient(rows), "order-123", {
+        productionStatus: "ready_for_production",
+        shippingStatus: "not_shipped",
+        shippingMethod: "",
+        shippingCarrier: "",
+        trackingNumber: "",
+        trackingUrl: "",
+        internalNotes: "Awaiting payment confirmation.",
+        adminFulfillmentNotes: "Do not produce yet.",
+        markShipped: false
+      })
+    ).resolves.toEqual({ ok: true });
+    expect(rows[0]).toMatchObject({
+      production_status: "ready_for_production",
+      internal_notes: "Awaiting payment confirmation.",
+      admin_fulfillment_notes: "Do not produce yet."
+    });
+  });
+
+  it("blocks production actions after shipment", async () => {
+    const rows = [fulfillmentOrder({ production_status: "completed", shipping_status: "shipped" })];
+
+    await expect(
+      applyAdminOrderProductionActionWithClient(
+        createOrdersMemoryClient(rows),
+        "order-123",
+        { action: "request_customer_changes" }
+      )
+    ).resolves.toEqual({
+      ok: false,
+      error: "Production actions are unavailable after an order has shipped.",
+      status: 409
+    });
+  });
+
+  it("blocks both production and shipping when customer artwork changes are requested", async () => {
+    const rows = [fulfillmentOrder({ production_status: "completed", shipping_status: "ready_to_ship" })];
+
+    const result = await applyAdminOrderProductionActionWithClient(
+      createOrdersMemoryClient(rows),
+      "order-123",
+      { action: "request_customer_changes", note: "Logo needs replacement." }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      order: { production_status: "blocked", shipping_status: "blocked" }
+    });
+    expect(rows[0]).toMatchObject({ production_status: "blocked", shipping_status: "blocked" });
+  });
+
+  it("reports missing orders without issuing fulfillment writes", async () => {
+    await expect(
+      updateOrderFulfillmentWithClient(createOrdersMemoryClient([]), "missing-order", {
+        productionStatus: "not_started",
+        shippingStatus: "not_shipped",
+        shippingMethod: "",
+        shippingCarrier: "",
+        trackingNumber: "",
+        trackingUrl: "",
+        internalNotes: "",
+        adminFulfillmentNotes: "",
+        markShipped: false
+      })
+    ).resolves.toEqual({ ok: false, error: "Order was not found.", status: 404 });
+  });
+
+  it("clears fulfillment text fields with intentional empty strings", async () => {
+    const rows = [fulfillmentOrder({
+      shipping_method: "Ground",
+      shipping_carrier: "USPS",
+      tracking_number: "TRACK123",
+      tracking_url: "https://example.com/track/TRACK123",
+      internal_notes: "Internal",
+      admin_fulfillment_notes: "Admin"
+    })];
+    const client = createOrdersMemoryClient(rows);
 
     const result = await updateOrderFulfillmentWithClient(client, "order-123", {
       productionStatus: "not_started",
@@ -754,14 +918,14 @@ describe("orders repository", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+    expect(rows[0]).toMatchObject({
       shipping_method: "",
       shipping_carrier: "",
       tracking_number: "",
       tracking_url: "",
       internal_notes: "",
       admin_fulfillment_notes: ""
-    }));
+    });
   });
 
   it("allows empty tracking URL but rejects invalid non-empty tracking URL", () => {
@@ -913,6 +1077,31 @@ describe("orders repository", () => {
     });
   });
 });
+
+function fulfillmentOrder(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "order-123",
+    stripe_checkout_session_id: "cs_test_fulfillment",
+    status: "paid",
+    payment_status: "paid",
+    email: "buyer@example.com",
+    customer_name: "Buyer",
+    subtotal_cents: 3900,
+    total_cents: 3900,
+    currency: "usd",
+    line_items_json: [],
+    shipping_amount_cents: 0,
+    production_status: "not_started",
+    shipping_status: "not_shipped",
+    shipping_method: "",
+    shipping_carrier: "",
+    tracking_number: "",
+    tracking_url: "",
+    internal_notes: "",
+    admin_fulfillment_notes: "",
+    ...overrides
+  };
+}
 
 function createOrdersMemoryClient(rows: Record<string, any>[]): OrdersDbClient {
   return {

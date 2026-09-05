@@ -192,6 +192,26 @@ describe("Neon Supabase adapter", () => {
     expect(query.mock.calls[1][0]).toContain("email_deliveries.status = $4");
   });
 
+  it("allows staff workflow fields on customer request tables", async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const client = createNeonSupabaseAdapter(query);
+
+    await client
+      .from("contact_requests")
+      .update({
+        status: "resolved",
+        admin_notes: "Customer received a reply.",
+        resolved_at: "2026-09-05T12:00:00.000Z",
+        updated_at: "2026-09-05T12:00:00.000Z"
+      })
+      .eq("id", "11111111-1111-4111-8111-111111111111");
+
+    expect(query.mock.calls[0][0]).toContain("update contact_requests set");
+    expect(query.mock.calls[0][0]).toContain("admin_notes");
+    expect(query.mock.calls[0][0]).toContain("resolved_at");
+    expect(query.mock.calls[0][0]).toContain("updated_at");
+  });
+
   it("builds one filtered delete query for product slugs", async () => {
     const query = vi.fn().mockResolvedValue([{ slug: "google-review-stand" }]);
     const client = createNeonSupabaseAdapter(query);

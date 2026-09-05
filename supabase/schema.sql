@@ -6,7 +6,10 @@ create table if not exists contact_requests (
   email text not null,
   message text not null,
   status text not null default 'new',
-  created_at timestamptz not null default now()
+  admin_notes text not null default '',
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists setup_requests (
@@ -17,7 +20,10 @@ create table if not exists setup_requests (
   review_url text not null,
   notes text not null default '',
   status text not null default 'new',
-  created_at timestamptz not null default now()
+  admin_notes text not null default '',
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists change_link_requests (
@@ -28,8 +34,20 @@ create table if not exists change_link_requests (
   new_review_url text not null,
   notes text not null default '',
   status text not null default 'new',
-  created_at timestamptz not null default now()
+  admin_notes text not null default '',
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
+
+create index if not exists contact_requests_status_updated_at_idx
+  on contact_requests(status, updated_at desc);
+
+create index if not exists setup_requests_status_updated_at_idx
+  on setup_requests(status, updated_at desc);
+
+create index if not exists change_link_requests_status_updated_at_idx
+  on change_link_requests(status, updated_at desc);
 
 create table if not exists customers (
   id uuid primary key default gen_random_uuid(),
