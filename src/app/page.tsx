@@ -6,9 +6,10 @@ import { ProductCard } from "@/components/product/product-card";
 import { FaqList } from "@/components/storefront/faq-list";
 import { ProcessStepCard } from "@/components/storefront/process-step-card";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
-import { VisualCard } from "@/components/storefront/visual-card";
+import { HomepageBrowseCard } from "@/components/storefront/homepage-browse-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { selectMobileHomepageProducts } from "@/lib/homepage-products";
 import { getCatalogCategories } from "@/lib/products";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
@@ -43,6 +44,7 @@ export default async function HomePage() {
     }))
     .filter((section) => section.products.length > 0);
   const faqs = orderedEnabledFaqs(content.faqs, "global").slice(0, 4);
+  const mobileProducts = selectMobileHomepageProducts(productSections.map((section) => section.products));
 
   return (
     <main className="tr-homepage text-ink">
@@ -50,15 +52,15 @@ export default async function HomePage() {
       <JsonLd data={websiteJsonLd()} />
 
       {content.hero.enabled ? (
-        <SectionShell spacing="hero">
+        <SectionShell spacing="hero" className="pb-6 pt-6 sm:pb-12 sm:pt-10 lg:pb-20 lg:pt-14">
           <div className="tr-container grid gap-7 lg:grid-cols-[0.84fr_1.16fr] lg:items-start">
             <div className="max-w-[660px] lg:pt-8">
               <p className="tr-eyebrow">{content.hero.eyebrow}</p>
-              <h1 className="tr-hero-title mt-5">
+              <h1 className="tr-hero-title mt-3 lg:mt-5">
                 {content.hero.headline}
               </h1>
-              <p className="tr-body mt-6 max-w-[580px] text-lg sm:text-xl">{content.hero.body}</p>
-              <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-5">
+              <p className="tr-body mt-4 max-w-[580px] text-lg sm:text-xl lg:mt-6">{content.hero.body}</p>
+              <div className="mt-5 flex flex-wrap items-center gap-3 sm:gap-5 lg:mt-8">
                 <Link href={content.hero.primaryCta.href} className="tr-button-primary px-7">
                   {content.hero.primaryCta.label}
                 </Link>
@@ -70,7 +72,7 @@ export default async function HomePage() {
                 ) : null}
               </div>
               {content.hero.proofPoints.length > 0 ? (
-                <div className="mt-6 flex flex-wrap gap-2.5">
+                <div className="mt-4 flex flex-wrap gap-2.5 lg:mt-6">
                   {content.hero.proofPoints.map((point) => (
                     <span key={point} className="tr-pill-neutral bg-white">
                       {point}
@@ -80,7 +82,7 @@ export default async function HomePage() {
               ) : null}
             </div>
 
-            <div className="relative min-h-[330px] overflow-hidden sm:min-h-[480px] lg:min-h-[580px]">
+            <div className="relative h-[240px] overflow-hidden sm:h-[360px] lg:h-auto lg:min-h-[580px]">
               <Image
                 src={optimizedUploadSrc(content.hero.image.src, 1200)}
                 alt={content.hero.image.alt}
@@ -96,22 +98,32 @@ export default async function HomePage() {
         </SectionShell>
       ) : null}
 
+      {mobileProducts.length > 0 ? (
+        <SectionShell className="py-8 sm:py-10 lg:hidden">
+          <div className="tr-container">
+            <SectionHeader eyebrow="Tap Rater stands" title="Shop stands" cta={{ href: "/shop", label: "View all stands" }} />
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3" data-home-mobile-products>
+              {mobileProducts.map((product) => <ProductCard key={product.slug} product={product} density="catalog" />)}
+            </div>
+          </div>
+        </SectionShell>
+      ) : null}
+
       {content.actions.enabled ? (
-        <SectionShell tone="soft">
+        <SectionShell tone="soft" className="py-8 sm:py-10 lg:py-20">
           <div className="tr-container">
             <SectionHeader eyebrow={content.actions.eyebrow} title={content.actions.headline} cta={{ href: "/shop", label: "Shop All Stands" }} />
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid divide-y divide-line lg:mt-10 lg:grid-cols-2 lg:gap-5 lg:divide-y-0 xl:grid-cols-4">
               {content.actions.items
                 .filter((item) => item.enabled)
                 .sort((first, second) => first.order - second.order)
                 .map((item) => (
-                  <VisualCard
+                  <HomepageBrowseCard
                     key={`${item.title}-${item.href}`}
                     href={item.href}
                     title={item.title}
                     description={item.description}
                     image={item.image}
-                    cta="Learn more"
                     variant="type"
                   />
                 ))}
@@ -121,12 +133,12 @@ export default async function HomePage() {
       ) : null}
 
       {content.featuredUses.enabled && featuredUses.length > 0 ? (
-        <SectionShell>
+        <SectionShell className="py-8 sm:py-10 lg:py-20">
           <div className="tr-container">
             <SectionHeader eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} cta={{ href: "/solutions", label: "View all" }} />
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid divide-y divide-line lg:mt-10 lg:grid-cols-2 lg:gap-5 lg:divide-y-0 xl:grid-cols-4">
               {featuredUses.map((useCase) => (
-                <VisualCard
+                <HomepageBrowseCard
                   key={useCase.slug}
                   href={`/solutions/${useCase.slug}`}
                   title={useCase.title}
@@ -135,7 +147,6 @@ export default async function HomePage() {
                     src: useCase.bannerImageUrl || useCase.imageUrl || "/uploads/products/no-photo-available.png",
                     alt: useCase.title
                   }}
-                  imageFit="cover"
                   variant="use-case"
                 />
               ))}
@@ -145,7 +156,7 @@ export default async function HomePage() {
       ) : null}
 
       {productSections.length > 0 ? (
-        <SectionShell>
+        <SectionShell className="hidden lg:block">
           <div className="tr-container grid gap-12">
             {productSections.map(({ category, products: categoryProducts }) => (
               <div key={category.slug}>
@@ -167,8 +178,8 @@ export default async function HomePage() {
       ) : null}
 
       {content.multilink.enabled && isHostedPurchaseOptionEnabled() ? (
-        <SectionShell tone="soft">
-          <div className="tr-container grid gap-10 lg:grid-cols-[1fr_0.92fr] lg:items-center">
+        <SectionShell tone="soft" className="py-8 sm:py-10 lg:py-20">
+          <div className="tr-container grid gap-5 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:gap-10">
             <MarketingVisual content={content.multilink} />
             <MarketingCopy eyebrow={content.multilink.eyebrow} headline={content.multilink.headline} body={content.multilink.body} cta={content.multilink.cta} />
           </div>
@@ -178,8 +189,8 @@ export default async function HomePage() {
       {content.howItWorks.enabled ? <HowItWorks content={content.howItWorks} /> : null}
 
       {content.customBranding.enabled ? (
-        <SectionShell>
-          <div className="tr-container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <SectionShell className="py-8 sm:py-10 lg:py-20">
+          <div className="tr-container grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-10">
             <MarketingCopy
               eyebrow={content.customBranding.eyebrow}
               headline={content.customBranding.headline}
@@ -187,7 +198,7 @@ export default async function HomePage() {
               cta={content.customBranding.cta}
               bullets={content.customBranding.bullets}
             />
-            <div className="relative min-h-[560px] sm:min-h-[700px]">
+            <div className="relative h-[240px] sm:h-[360px] lg:h-auto lg:min-h-[700px]">
               <Image
                 src={optimizedUploadSrc(content.customBranding.image.src, 1200)}
                 alt={content.customBranding.image.alt}
@@ -202,7 +213,7 @@ export default async function HomePage() {
       ) : null}
 
       {faqs.length > 0 ? (
-        <SectionShell tone="soft">
+        <SectionShell tone="soft" className="py-8 sm:py-10 lg:py-20">
           <div className="tr-container">
             <SectionHeader align="center" eyebrow="FAQ" title="Answers before you buy." />
             <FaqList faqs={faqs} />
@@ -211,13 +222,13 @@ export default async function HomePage() {
       ) : null}
 
       {content.finalCta.enabled ? (
-        <SectionShell spacing="default">
+        <SectionShell spacing="default" className="py-8 sm:py-10 lg:py-20">
           <div className="tr-container text-center">
             <p className="tr-eyebrow">{content.finalCta.eyebrow}</p>
-            <h2 className="tr-section-title mx-auto mt-5 max-w-[860px]">
+            <h2 className="tr-section-title mx-auto mt-3 max-w-[860px] lg:mt-5">
               {content.finalCta.headline}
             </h2>
-            <div className="mt-9 flex flex-wrap justify-center gap-3 sm:gap-5">
+            <div className="mt-5 flex flex-wrap justify-center gap-3 sm:gap-5 lg:mt-9">
               <Link href={content.finalCta.primaryCta.href} className="tr-button-primary px-7">
                 {content.finalCta.primaryCta.label}
               </Link>
@@ -271,16 +282,16 @@ function MarketingCopy({
   return (
     <div className="max-w-[610px]">
       <p className="tr-eyebrow">{eyebrow}</p>
-      <h2 className="tr-section-title mt-5">{headline}</h2>
-      <p className="tr-body mt-5 text-lg sm:text-xl">{body}</p>
+      <h2 className="tr-section-title mt-3 lg:mt-5">{headline}</h2>
+      <p className="tr-body mt-3 text-lg sm:text-xl lg:mt-5">{body}</p>
       {bullets.length > 0 ? (
-        <div className="mt-7 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2 lg:mt-7">
           {bullets.map((bullet) => (
             <span key={bullet} className="tr-pill-neutral">{bullet}</span>
           ))}
         </div>
       ) : null}
-      <Link href={cta.href} className="tr-editorial-link mt-9 text-base">
+      <Link href={cta.href} className="tr-editorial-link mt-4 text-base lg:mt-9">
         {cta.label}
         <ArrowRight className="h-5 w-5" />
       </Link>
@@ -290,11 +301,11 @@ function MarketingCopy({
 
 function MarketingVisual({ content }: { content: { image: { src: string; alt: string }; bullets: string[] } }) {
   return (
-    <div className="tr-premium-surface relative min-h-[520px] overflow-hidden sm:min-h-[680px]">
-      <div className="absolute inset-y-8 left-0 w-[58%] sm:w-[60%] lg:left-[-12%] lg:w-[66%]">
+    <div className="relative h-[240px] overflow-hidden sm:h-[360px] lg:tr-premium-surface lg:h-auto lg:min-h-[680px]">
+      <div className="absolute inset-0 lg:inset-y-8 lg:left-[-12%] lg:right-auto lg:w-[66%]">
         <Image src={optimizedUploadSrc(content.image.src, 1200)} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 34vw, 58vw" />
       </div>
-      <div className="absolute right-5 top-12 w-[54%] max-w-[320px] rounded-[var(--tr-radius-feature)] bg-white p-5 shadow-[var(--tr-shadow-elevated)] ring-1 ring-black/[0.04] sm:right-10 sm:top-16 sm:w-[48%]">
+      <div className="absolute right-10 top-16 hidden w-[48%] max-w-[320px] rounded-[var(--tr-radius-feature)] bg-white p-5 shadow-[var(--tr-shadow-elevated)] ring-1 ring-black/[0.04] lg:block">
         <div className="rounded-[var(--tr-radius-card)] bg-soft p-5">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand text-sm font-semibold text-white">TR</div>
           <p className="mt-4 text-center text-base font-semibold text-ink">Tap Rater Page</p>
@@ -308,7 +319,7 @@ function MarketingVisual({ content }: { content: { image: { src: string; alt: st
           </div>
         </div>
       </div>
-      <p className="absolute bottom-8 left-8 max-w-[270px] text-sm font-semibold leading-6 text-muted">
+      <p className="absolute bottom-8 left-8 hidden max-w-[270px] text-sm font-semibold leading-6 text-muted lg:block">
         One physical stand opens one editable branded page.
       </p>
     </div>
@@ -319,17 +330,17 @@ function HowItWorks({ content }: { content: HomepageHowItWorksContent }) {
   const icons = { shop: ShoppingBag, link: Link2, truck: Truck };
 
   return (
-    <SectionShell>
+    <SectionShell className="py-8 sm:py-10 lg:py-20">
       <div className="tr-container">
         <SectionHeader align="center" eyebrow={content.eyebrow} title={content.headline} />
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-5 grid md:grid-cols-3 md:gap-5 lg:mt-10">
           {content.steps
             .slice()
             .sort((first, second) => first.order - second.order)
             .map((step, index) => {
               const Icon = icons[step.icon];
               return (
-                <ProcessStepCard key={step.title} description={step.description} icon={Icon} index={index} title={step.title} />
+                <ProcessStepCard key={step.title} description={step.description} icon={Icon} index={index} title={step.title} compactOnMobile />
               );
             })}
         </div>

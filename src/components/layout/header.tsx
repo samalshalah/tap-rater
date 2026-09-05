@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
 type HeaderNavigationContent = {
@@ -43,16 +45,6 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
     },
     { label: "Resources", href: "/support", order: 60, enabled: true },
   ],
-};
-
-const mobileNavigationDescriptions: Record<string, string> = {
-  Home: "Start from the main Tap Rater storefront.",
-  Shop: "Browse all stands with filters.",
-  "Shop by Type": "Choose review, menu, link, and other stand types.",
-  "By Use": "Shop by business or customer action.",
-  "How It Works": "See the buying and setup flow.",
-  "Multi-Link": "Add an editable hosted page to compatible stands.",
-  Resources: "FAQ, support, and help pages.",
 };
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
@@ -99,6 +91,10 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
 
 export function Header() {
   const cart = useCart();
+  const pathname = usePathname();
+  const headerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [customerSession, setCustomerSession] = useState<CustomerSessionState>({ authenticated: false });
@@ -112,6 +108,47 @@ export function Header() {
   const accountLabel = customerSession.authenticated
     ? `Welcome, ${getCustomerFirstName(customerSession)}`
     : "Account";
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+    setIsAccountOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    function closeMobileMenu() {
+      if (desktop.matches) setIsMenuOpen(false);
+    }
+    desktop.addEventListener("change", closeMobileMenu);
+    return () => desktop.removeEventListener("change", closeMobileMenu);
+  }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen && !isAccountOpen) return;
+
+    function closeOutside(event: Event) {
+      if (event.target instanceof Node && !headerRef.current?.contains(event.target)) {
+        setIsMenuOpen(false);
+        setIsAccountOpen(false);
+      }
+    }
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setIsMenuOpen(false);
+      setIsAccountOpen(false);
+      (isMenuOpen ? menuButtonRef : accountButtonRef).current?.focus();
+    }
+
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("focusin", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("focusin", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isMenuOpen, isAccountOpen]);
 
   useEffect(() => {
     let active = true;
@@ -151,9 +188,9 @@ export function Header() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+    <header ref={headerRef} className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
       <div className="tr-container-wide">
-        <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 lg:min-h-[78px] lg:grid-cols-[210px_1fr_210px]">
+        <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
           <Link
             href="/"
             prefetch={false}
@@ -170,7 +207,7 @@ export function Header() {
               className="h-12 w-auto object-contain"
             />
           </Link>
-          <nav className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm lg:flex">
+          <nav className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
@@ -187,6 +224,7 @@ export function Header() {
               {customerSession.authenticated ? (
                 <>
                   <button
+                    ref={accountButtonRef}
                     type="button"
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
                     aria-label="Open account menu"
@@ -236,8 +274,9 @@ export function Header() {
               </span>
             </Link>
             <button
+              ref={menuButtonRef}
               type="button"
-              className="tr-icon-button lg:hidden"
+              className="tr-icon-button xl:hidden"
               aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               aria-controls="mobile-site-navigation"
               aria-expanded={isMenuOpen}
@@ -251,48 +290,14 @@ export function Header() {
           </div>
         </div>
         {isMenuOpen ? (
-          <div
-            id="mobile-site-navigation"
-            className="border-t border-line py-3 lg:hidden"
-          >
-            <nav className="grid gap-2 text-ink" aria-label="Mobile navigation">
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  prefetch={false}
-                  className="rounded-[var(--tr-radius-card)] border border-line bg-white px-4 py-3.5 transition hover:border-brand hover:text-brand"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="block text-base font-semibold">
-                    {item.label}
-                  </span>
-                  <span className="mt-1 block text-sm font-normal leading-5 text-muted">
-                    {mobileNavigationDescriptions[item.label] ??
-                      "Open this section."}
-                  </span>
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
-              <Link
-                href={customerSession.authenticated ? "/account" : "/account/login"}
-                prefetch={false}
-                className="min-h-12 rounded-[var(--tr-radius-control)] border border-line bg-white px-3 py-3 text-center text-sm font-semibold transition hover:border-brand hover:text-brand"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {customerSession.authenticated ? accountLabel : "Account"}
-              </Link>
-              <Link
-                href="/cart"
-                prefetch={false}
-                className="min-h-12 rounded-[var(--tr-radius-control)] border border-ink bg-ink px-3 py-3 text-center text-sm font-semibold text-white transition hover:border-brand hover:bg-brand"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Cart ({cart.count})
-              </Link>
-            </div>
-          </div>
+          <MobileNavigation
+            items={navItems}
+            pathname={pathname}
+            accountHref={customerSession.authenticated ? "/account" : "/account/login"}
+            accountLabel={customerSession.authenticated ? accountLabel : "Account"}
+            cartCount={cart.count}
+            onNavigate={() => setIsMenuOpen(false)}
+          />
         ) : null}
       </div>
     </header>
