@@ -5,13 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from "@stripe/react-stripe-js/checkout";
 import { loadStripe } from "@stripe/stripe-js";
 import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type InvalidEvent } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { formatTaxRate, getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import type { StripePublicConfig } from "@/lib/stripe-public-config";
+import { US_STATE_OPTIONS } from "@/lib/us-states";
 import type { TaxSettingsInput } from "@/lib/validators";
 
 type EmbeddedCheckoutSession = {
@@ -298,9 +299,9 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
               <div className="grid gap-3">
                 <CheckoutInput label="Address" value={shipping.line1} autoComplete="shipping address-line1" onChange={(value) => setShipping((current) => ({ ...current, line1: value }))} required />
                 <CheckoutInput label="Apartment, suite, unit" value={shipping.line2} autoComplete="shipping address-line2" onChange={(value) => setShipping((current) => ({ ...current, line2: value }))} />
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_96px_112px]">
+                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_180px_128px]">
                   <CheckoutInput label="City" value={shipping.city} autoComplete="shipping address-level2" onChange={(value) => setShipping((current) => ({ ...current, city: value }))} required />
-                  <CheckoutInput label="State" value={shipping.state} autoComplete="shipping address-level1" onChange={(value) => setShipping((current) => ({ ...current, state: value.toUpperCase().slice(0, 2) }))} required />
+                  <CheckoutStateSelect value={shipping.state} onChange={(value) => setShipping((current) => ({ ...current, state: value }))} />
                   <CheckoutInput label="ZIP code" value={shipping.postalCode} autoComplete="shipping postal-code" onChange={(value) => setShipping((current) => ({ ...current, postalCode: value }))} required />
                 </div>
               </div>
@@ -530,10 +531,46 @@ function CheckoutInput({
         onChange={(event) => onChange(event.target.value)}
         autoComplete={autoComplete}
         required={required}
-        className="min-h-11 w-full min-w-0 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+        onInvalid={revealFirstInvalidControl}
+        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
       />
     </label>
   );
+}
+
+function CheckoutStateSelect({ onChange, value }: { onChange: (value: string) => void; value: string }) {
+  return (
+    <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">
+      State
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onInvalid={revealFirstInvalidControl}
+        autoComplete="shipping address-level1"
+        required
+        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+      >
+        <option value="">Select state</option>
+        {US_STATE_OPTIONS.map((option) => (
+          <option key={option.code} value={option.code}>
+            {option.name} ({option.code})
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function revealFirstInvalidControl(event: InvalidEvent<HTMLInputElement | HTMLSelectElement>) {
+  const control = event.currentTarget;
+
+  if (control.form?.querySelector(":invalid") !== control) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    control.scrollIntoView({ block: "center", inline: "nearest" });
+  });
 }
 
 function CheckoutError({ message }: { message: string }) {

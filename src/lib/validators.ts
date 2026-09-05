@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isUsStateCode } from "@/lib/us-states";
 
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
 const productFormats = ["stand", "plate", "bundle", "platform"] as const;
@@ -622,12 +623,18 @@ export const checkoutCustomerSchema = z.object({
   createAccount: z.boolean().optional().default(false)
 });
 
+const checkoutStateCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .refine((value): boolean => isUsStateCode(value), "Select a valid U.S. state or territory.");
+
 export const checkoutShippingAddressSchema = z.object({
   name: z.string().trim().min(2).max(120),
   line1: z.string().trim().min(2).max(180),
   line2: z.string().trim().max(180).optional().default(""),
   city: z.string().trim().min(2).max(120),
-  state: z.string().trim().min(2).max(80),
+  state: checkoutStateCodeSchema,
   postalCode: z.string().trim().min(3).max(20),
   country: z.string().trim().regex(/^[A-Z]{2}$/).default("US"),
   phone: z.string().trim().max(40).optional().default("")

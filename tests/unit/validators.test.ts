@@ -6,6 +6,7 @@ import {
   activationFormSchema,
   adminProductDeleteSchema,
   changeLinkFormSchema,
+  checkoutShippingAddressSchema,
   contactFormSchema,
   setupFormSchema
 } from "@/lib/validators";
@@ -137,6 +138,26 @@ describe("backend validators", () => {
     expect(product.customizationOptions).toEqual(["standard_design", "custom_design"]);
     expect(product.allowsCustomDesign).toBe(true);
     expect(product.designMode).toBe("custom");
+  });
+
+  it("normalizes and validates U.S. checkout state codes", () => {
+    const shippingAddress = {
+      name: "Tap Rater Customer",
+      line1: "123 Main Street",
+      line2: "",
+      city: "Richmond",
+      postalCode: "23219",
+      country: "US",
+      phone: "",
+    };
+
+    expect(checkoutShippingAddressSchema.parse({ ...shippingAddress, state: " va " }).state).toBe("VA");
+    expect(() => checkoutShippingAddressSchema.parse({ ...shippingAddress, state: "Virginia" })).toThrow(
+      "Select a valid U.S. state or territory.",
+    );
+    expect(() => checkoutShippingAddressSchema.parse({ ...shippingAddress, state: "ZZ" })).toThrow(
+      "Select a valid U.S. state or territory.",
+    );
   });
 
   it("validates admin product bulk delete payloads by slug only", () => {
