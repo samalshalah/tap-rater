@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-09-05T20:03:12.684Z",
+  "checks": [
+    "Unauthenticated recovery reads and writes return 401",
+    "Correctly signed legacy, wrong-purpose, and wrong-admin-identity cookies return 401",
+    "/: 200",
+    "/product/google-review-stand: 200",
+    "/cart: 200",
+    "/account/login: 200",
+    "/admin/login: 200"
+  ],
+  "runtime": {
+    "customerSecretSeparated": true,
+    "databaseHost": "ep-silent-queen-at9qd228-pooler.c-9.us-east-1.aws.neon.tech",
+    "stripeMode": "test",
+    "media": null
+  },
+  "backup": {
+    "runId": "2026-09-05-b5d200a1-a70c-4b9b-b908-148eace95cf4",
+    "startedAt": "2026-09-05T20:03:14.276Z",
+    "objects": 103,
+    "bytes": 25908194,
+    "leaseUntil": 0,
+    "completedAt": "2026-09-05T20:04:00.277Z",
+    "lastCompletedAt": "2026-09-05T20:04:00.277Z"
+  },
+  "mediaDrill": {
+    "ok": true,
+    "backupKey": "drills/a07123ac-8986-48c2-be27-efb6f58c1115/original.png",
+    "bytes": 68,
+    "sha256": "6cb6680242620f4102466cf38bb7ecfdaf718f4777030d8fe043b37f1bb93974",
+    "originalRemoved": true,
+    "metadataVerified": true
+  }
+}

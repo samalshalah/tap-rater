@@ -1,0 +1,23 @@
+{
+  "date": "2026-09-05",
+  "project": "winter-grass-30947546",
+  "sourceBranch": "br-restless-shape-at38e1nu",
+  "sourceProtected": true,
+  "historyRetentionSeconds": 604800,
+  "requestedRestoreTime": "2026-09-05T19:50:00Z",
+  "resolvedRestoreTime": "2026-09-05T19:48:39Z",
+  "resolvedRestoreLsn": "0/1F39A840",
+  "recoveryBranch": "br-lucky-dream-atl7pz5h",
+  "recoveryHost": "ep-old-bird-atgnoxi1.c-9.us-east-1.aws.neon.tech",
+  "schemaDiff": "",
+  "sourceAndRecoveryRowsMatch": [
+    { "table": "orders", "rows": 18, "fingerprint": "fc4cef711935da2d3426ed0d64d81f5e" },
+    { "table": "products", "rows": 58, "fingerprint": "067274ef39267e4b0bafbd4d0e525016" },
+    { "table": "billing_invoices", "rows": 10, "fingerprint": "6be9b074d53b2ededebb242ea41f4a7a" },
+    { "table": "billing_invoice_items", "rows": 10, "fingerprint": "2338352d7db180d556eb46465a35749f" },
+    { "table": "customers", "rows": 4, "fingerprint": "9c58faa9316db7e7c1e883f65698e4e6" },
+    { "table": "hosted_subscriptions", "rows": 3, "fingerprint": "5bc95cdd3b0f77f011c82b1d4b23b766" }
+  ],
+  "sourceWritesOrCutover": false,
+  "snapshotSchedule": "Unsupported on the active non-root branch. Seven-day continuous PITR is the active database backup policy."
+}

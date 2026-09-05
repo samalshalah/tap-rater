@@ -20,6 +20,10 @@
   ],
   "r2_buckets": [
     {
+      "binding": "RECOVERY_BACKUPS",
+      "bucket_name": "tap-rater-recovery-backups"
+    },
+    {
       "binding": "PRODUCT_MEDIA_BUCKET",
       "bucket_name": "tap-rater-product-media"
     },
@@ -48,6 +52,7 @@
   "observability": {
     "enabled": true
   },
+  "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
     "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://taprater.com",

@@ -1,18 +1,21 @@
 import { createHmac } from "node:crypto";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAdminSessionValue, isValidAdminSession } from "@/lib/admin-auth";
 
 describe("admin auth", () => {
   const originalSecret = process.env.ADMIN_SESSION_SECRET;
   const originalTtl = process.env.ADMIN_SESSION_TTL_HOURS;
+  beforeEach(() => { vi.stubEnv("ADMIN_EMAIL", "admin@taprater.com"); });
 
   afterEach(() => {
     process.env.ADMIN_SESSION_SECRET = originalSecret;
     process.env.ADMIN_SESSION_TTL_HOURS = originalTtl;
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   function signedSession(payload: string) {
+    payload = `v2:admin-session:${payload}`;
     const signature = createHmac("sha256", process.env.ADMIN_SESSION_SECRET ?? "").update(payload).digest("hex");
     return `${payload}.${signature}`;
   }

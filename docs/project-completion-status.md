@@ -6,7 +6,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
-The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1-3 are complete in test mode**, with Phase 3 scoped to the existing made-to-order model. Payment/refund reliability, durable recovery, catalog price authority, availability enforcement, and a dedicated production/shipment/support/refund drill were verified. Three correction phases remain. Owner inbox, physical fulfillment, and operating-policy acceptance remain open; live launch is not approved. No new overall readiness percentage has been calculated. See `docs/ecommerce-phase-1.md`, `docs/ecommerce-phase-2.md`, `docs/ecommerce-phase-3.md`, and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
+The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phases 1-3 are complete in test mode**, with Phase 3 scoped to made-to-order operations. **Phase 4 engineering is deployed and verified, but portable encryption-key custody remains open.** Token isolation, actual database protection/PITR, private media backups, and isolated database/deployed media restoration are now proven. Owner acceptance and real-money launch remain Phases 5 and 6. No new overall readiness percentage has been calculated. See `docs/ecommerce-phase-1.md` through `docs/ecommerce-phase-4.md` and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier UI/UX phases.
 
 - Configuration readiness: 88%
 - Blocked configuration checks: 0
@@ -15,9 +15,10 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 - Production application: `tap-rater-app-git` on `taprater.com`
 - Deployed Phase 1 release: `206d8d6f-14a3-492e-ac9c-c0140deba84f`; 701 tests passing across 111 files, plus 5 explicitly run isolated-database integration tests.
 - Previous Phase 2 release: `5cf96db6-18ca-4bb8-85aa-483d9b8bab0e`; 729 tests and 8 explicitly run isolated-database tests passed. Deployed recovery, replay, and a fresh first-pass checkout/invoice/email test passed. Dedicated QA orders were fully refunded; concurrent refund notification retries reconciled to 200.
-- Current Phase 3 release: `f7c4fd2c-9b4a-40f5-a9e3-55fd9038a614`; 747 tests and 9 explicitly run isolated-database tests passed. Price round-trip, stale-cart rejection, production/shipment guards, support resolution, and a fully refunded $53.34 Stripe test order are recorded in `docs/ecommerce-phase-3.md`. Public catalog prices remain unchanged; Multi-Link stays fixed at $9.99/month.
+- Previous Phase 3 release: `f7c4fd2c-9b4a-40f5-a9e3-55fd9038a614`; 747 tests and 9 isolated-database tests passed. Catalog/operating drill evidence is in `docs/ecommerce-phase-3.md`. Public prices remain unchanged; Multi-Link stays fixed at $9.99/month.
+- Current Phase 4 release: `d33d12e1-bf61-4927-a338-9012a39771df`; 770 tests and 9 separately run isolated-database tests passed. Correctly signed wrong-purpose/identity and legacy admin cookies return 401. All 103 uploaded-media objects are backed up, with a successful disposable-image restore. Existing users must sign in again after the session-format upgrade.
 - Cloudflare Workers Paid is active at the owner-approved $5/month plus usage. The deployed Worker explicitly allows 30,000 ms CPU and 1,000 subrequests per invocation. Stripe remains in test mode.
-- Active application database verified from a new deployed checkout: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. Recovery checkpoint retained; branch protection and restore acceptance remain open.
+- Active database independently confirmed through deployed diagnostics: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. It is now protected with seven-day PITR, tested on isolated `br-lucky-dream-atl7pz5h`. Native scheduled snapshots are unsupported on this child branch; they are not claimed as coverage. Owner restore/rollback acceptance remains open.
 
 ## Commerce Corrections
 
@@ -26,7 +27,7 @@ The September 5 ecommerce audit supersedes the historical percentages below: app
 | 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
 | 2. Account, invoice, email recovery | Complete in test mode | Owner inbox/account acceptance belongs to Phase 5; live equivalents to Phase 6. See `docs/ecommerce-phase-2.md` |
 | 3. Store operating controls | Complete in test mode (made to order) | Owner operating-policy and physical fulfillment acceptance belong to Phase 5; finite stock is not implemented. See `docs/ecommerce-phase-3.md` |
-| 4. Security and recovery | Open | Token isolation, branch protection, backup/restore coverage |
+| 4. Security and recovery | Engineering deployed; one owner gate open | Portable encryption-key vault custody and independent retrieval. See `docs/ecommerce-phase-4.md` |
 | 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
 | 6. Real-money launch | Open | Tax/policy decision, live configuration, controlled real purchases and reconciliation |
 
@@ -69,8 +70,8 @@ The following historical estimates predate the ecommerce failure-path audit and 
 - HTTP and `www` traffic is canonicalized by the Cloudflare Worker; private/action routes are no-indexed and public pages publish route-specific canonical URLs.
 - Storefront image variants are generated deterministically at 160, 640, and 1200 pixels, reducing the generated image set to about 12.16 MB from about 93.13 MB of source imagery.
 - Mobile Lighthouse scores are 96/100/100/100 on the homepage and 97/100/100/100 on the product page; desktop homepage scores are 100/100/100/100.
-- The Neon production branch is protected, point-in-time history is seven days, daily snapshots are enabled, and a pre-hardening snapshot is retained through October 5, 2026.
-- Recovery configuration has an automated 36-check gate and a documented Neon, Cloudflare, and R2 runbook.
+- The active Neon branch is protected with seven-day PITR and a verified isolated restore. The separately named production branch's snapshots are historical coverage for that branch only, not the deployed store.
+- Private media backups retain daily copies for 30 days; first copy and disposable-object restoration are verified. Recovery configuration has a 40-check gate and an updated runbook. Portable encryption-key custody remains open.
 
 ## Owner At Computer Queue
 
@@ -144,14 +145,14 @@ Perform only while the owner is present and after the tax decision:
 
 Completion evidence: all four live cases reconcile between Stripe, Tap Rater Admin, the customer account, email delivery, and the production database.
 
-### 7. Run the recovery drill and choose the media backup policy
+### 7. Observe recovery and complete key custody
 
 Perform this with the owner present before live launch:
 
-1. Restore the latest Neon snapshot to a temporary branch and run the read-only validation checklist.
+1. Review/repeat the active branch's verified point-in-time recovery into a temporary branch and run the read-only validation checklist.
 2. Roll the application Worker back to an identified known-good version, smoke test it, and roll forward to the release version.
 3. Rebuild one static image variant and republish one disposable hosted-page snapshot.
-4. Choose and test a separate backup/export process for customer-uploaded product media in R2.
+4. Observe the verified disposable-media restore and review the configured daily/30-day retention policy. Select secure off-computer encryption-key custody and prove independent retrieval; this is the remaining Phase 4 gate.
 5. Record restore timing, rollback timing, the recovery point objective, and the recovery time objective.
 
 Completion evidence: temporary-branch restore, Worker rollback/roll-forward, hosted snapshot recovery, and disposable product-media restore are all observed and documented.
@@ -160,7 +161,7 @@ Detailed procedure: `docs/recovery-runbook.md`.
 
 ## Autonomous Work Queue
 
-The ecommerce audit reopened engineering work. Phases 1 and 2 release verification are complete in test mode. The approved Workers Paid upgrade, explicit runtime limits, and a fresh first-pass checkout closed Phase 2's capacity acceptance gate. Phase 3 pricing and operating controls and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
+Phases 1-3 are complete in test mode. Phase 4 token isolation, active database protection/PITR, media backups, and restore testing are deployed and verified. Owner-controlled portable recovery-key custody is its remaining gate. Owner acceptance and live launch remain Phases 5 and 6. Keep the owner-at-computer queue until each item has direct completion evidence; do not mark vault custody or live launch complete from code/configuration checks alone.
 
 ## Safety Rules
 

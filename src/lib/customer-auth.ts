@@ -1,14 +1,13 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { createSessionToken, parseSessionToken } from "@/lib/session-token";
 
 export const customerCookieName = "taprater_customer";
 
 const defaultSessionTtlMs = 30 * 24 * 60 * 60 * 1000;
 const loginTokenTtlMs = 20 * 60 * 1000;
-const futureClockSkewMs = 5 * 60 * 1000;
 
 export type CustomerSession = {
   email: string;
@@ -20,20 +19,20 @@ export type CustomerAuthDbClient = {
 };
 
 export function createCustomerSessionValue(email: string, issuedAt = Date.now()) {
-  return createSignedValue(normalizeEmail(email), issuedAt);
+  return createSessionToken("customer-session", email, issuedAt, requireCustomerSecret());
 }
 
 export function parseCustomerSession(value: string | undefined, now = Date.now()): CustomerSession | null {
-  const payload = parseSignedValue(value, defaultSessionTtlMs, now);
+  const payload = parseSessionToken(value, "customer-session", getCustomerSecret(), defaultSessionTtlMs, now);
   return payload;
 }
 
 export function createCustomerLoginToken(email: string, issuedAt = Date.now()) {
-  return createSignedValue(normalizeEmail(email), issuedAt);
+  return createSessionToken("customer-login", email, issuedAt, requireCustomerSecret());
 }
 
 export function parseCustomerLoginToken(value: string | undefined, now = Date.now()): CustomerSession | null {
-  const payload = parseSignedValue(value, loginTokenTtlMs, now);
+  const payload = parseSessionToken(value, "customer-login", getCustomerSecret(), loginTokenTtlMs, now);
   return payload;
 }
 
@@ -82,79 +81,17 @@ export async function isActiveCustomerSessionWithClient(client: CustomerAuthDbCl
   return Number.isFinite(invalidBefore) && typeof issuedAt === "number" && issuedAt > invalidBefore;
 }
 
-function createSignedValue(email: string, issuedAt: number) {
-  const payload = `${email}:${issuedAt}`;
-  return `${payload}.${sign(payload)}`;
-}
-
-function parseSignedValue(value: string | undefined, maxAgeMs: number, now: number): CustomerSession | null {
-  if (!value) {
-    return null;
-  }
-
-  const decodedValue = decodeCookieValue(value);
-  if (decodedValue && decodedValue !== value) {
-    return parseSignedValue(decodedValue, maxAgeMs, now);
-  }
-
-  const separatorIndex = value.lastIndexOf(".");
-  if (separatorIndex === -1) {
-    return null;
-  }
-
-  const payload = value.slice(0, separatorIndex);
-  const signature = value.slice(separatorIndex + 1);
-  const payloadParts = payload.split(":");
-
-  if (payloadParts.length < 2) {
-    return null;
-  }
-
-  const timestampText = payloadParts.at(-1) ?? "";
-  const email = payloadParts.slice(0, -1).join(":");
-  if (!email || !/^\d+$/.test(timestampText)) {
-    return null;
-  }
-
-  const timestamp = Number(timestampText);
-  if (!Number.isSafeInteger(timestamp)) {
-    return null;
-  }
-
-  const expected = sign(payload);
-  if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-    return null;
-  }
-
-  if (timestamp > now + futureClockSkewMs || now - timestamp > maxAgeMs) {
-    return null;
-  }
-
-  return { email, issuedAt: timestamp };
-}
-
-function sign(value: string) {
-  return createHmac("sha256", getCustomerSecret()).update(value).digest("hex");
-}
-
 function getCustomerSecret() {
-  const secret = process.env.CUSTOMER_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
+  const secret = process.env.CUSTOMER_SESSION_SECRET;
+  return secret && secret !== process.env.ADMIN_SESSION_SECRET ? secret : undefined;
+}
 
-  if (!secret) {
-    throw new Error("CUSTOMER_SESSION_SECRET or ADMIN_SESSION_SECRET is not configured.");
-  }
-
+function requireCustomerSecret() {
+  const secret = getCustomerSecret();
+  if (!secret) throw new Error("CUSTOMER_SESSION_SECRET must be configured separately from ADMIN_SESSION_SECRET.");
   return secret;
 }
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-function decodeCookieValue(value: string) {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return null;
-  }
 }

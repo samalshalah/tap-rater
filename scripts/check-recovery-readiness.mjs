@@ -17,6 +17,8 @@ for (const [index, config] of appConfigs.entries()) {
   assert(hasRoute(config, "taprater.com/*"), `${label} must route taprater.com.`);
   assert(hasRoute(config, "www.taprater.com/*"), `${label} must route www.taprater.com.`);
   assert(hasBinding(config.r2_buckets, "PRODUCT_MEDIA_BUCKET"), `${label} is missing product media storage.`);
+  assert(hasBinding(config.r2_buckets, "RECOVERY_BACKUPS"), `${label} is missing private recovery backup storage.`);
+  assert(config.triggers?.crons?.includes("*/15 * * * *"), `${label} is missing resumable daily media backups.`);
   assert(hasBinding(config.r2_buckets, "HOSTED_PAGE_SNAPSHOTS"), `${label} is missing hosted-page snapshot storage.`);
   assert(hasRateLimit(config, "PUBLIC_FORM_RATE_LIMITER", 10), `${label} is missing the public form rate limit.`);
   assert(hasRateLimit(config, "PUBLIC_CHECKOUT_RATE_LIMITER", 10), `${label} is missing the checkout rate limit.`);

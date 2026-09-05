@@ -15,7 +15,7 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
   const webhook = validateStripeWebhookConfig(env);
   const databaseConfigured = Boolean(env.DATABASE_URL || (env.NEXT_PUBLIC_SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY));
   const adminConfigured = Boolean(env.ADMIN_EMAIL && env.ADMIN_PASSWORD && env.ADMIN_SESSION_SECRET);
-  const customerAuthConfigured = Boolean(env.CUSTOMER_SESSION_SECRET || env.ADMIN_SESSION_SECRET);
+  const customerAuthConfigured = Boolean(env.CUSTOMER_SESSION_SECRET && env.CUSTOMER_SESSION_SECRET !== env.ADMIN_SESSION_SECRET);
   const resendConfigured = hasResendApiKey(env) && Boolean(env.RESEND_FROM_EMAIL);
   const resendWebhookConfigured = Boolean(env.RESEND_WEBHOOK_SECRET);
   const hostedPagesConfigured = env.TAP_RATER_ENABLE_PRODUCTION_HOSTED_PAGES === "true";
@@ -64,7 +64,7 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
     {
       id: "customer-auth",
       label: "Customer authentication",
-      detail: customerAuthConfigured ? "Customer sessions can be signed." : "CUSTOMER_SESSION_SECRET is missing.",
+      detail: customerAuthConfigured ? "Customer sessions use a separate signing secret and token purpose." : "CUSTOMER_SESSION_SECRET must be present and different from ADMIN_SESSION_SECRET.",
       status: customerAuthConfigured ? "ready" : "blocked"
     },
     {

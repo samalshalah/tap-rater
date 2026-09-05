@@ -1,11 +1,10 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
+import { createSessionToken, parseSessionToken } from "@/lib/session-token";
 
 export const adminCookieName = "taprater_admin";
 const defaultSessionTtlHours = 7 * 24;
-const futureClockSkewMs = 5 * 60 * 1000;
 
 function isLocalAdminOpen() {
   return process.env.NODE_ENV === "development";
@@ -21,10 +20,6 @@ function getAdminSecret() {
   return secret;
 }
 
-function sign(value: string) {
-  return createHmac("sha256", getAdminSecret()).update(value).digest("hex");
-}
-
 function getSessionTtlMs() {
   const configured = Number(process.env.ADMIN_SESSION_TTL_HOURS);
   const ttlHours = Number.isFinite(configured) && configured > 0 ? configured : defaultSessionTtlHours;
@@ -32,64 +27,16 @@ function getSessionTtlMs() {
   return ttlHours * 60 * 60 * 1000;
 }
 
-function getPayloadTimestamp(payload: string) {
-  if (!payload) {
-    return null;
-  }
-
-  const separatorIndex = payload.lastIndexOf(":");
-  if (separatorIndex <= 0 || separatorIndex === payload.length - 1) {
-    return null;
-  }
-
-  const timestampValue = payload.slice(separatorIndex + 1);
-  if (!/^\d+$/.test(timestampValue)) {
-    return null;
-  }
-
-  const timestamp = Number(timestampValue);
-  return Number.isSafeInteger(timestamp) ? timestamp : null;
-}
-
 export function createAdminSessionValue(email: string) {
-  const payload = `${email}:${Date.now()}`;
-  return `${payload}.${sign(payload)}`;
+  if (!process.env.ADMIN_EMAIL || email.trim().toLowerCase() !== process.env.ADMIN_EMAIL.trim().toLowerCase()) {
+    throw new Error("Admin identity does not match the configured owner.");
+  }
+  return createSessionToken("admin-session", email, Date.now(), getAdminSecret());
 }
 
 export function isValidAdminSession(value: string | undefined) {
-  if (!value) {
-    return false;
-  }
-
-  const separatorIndex = value.lastIndexOf(".");
-  if (separatorIndex === -1) {
-    return false;
-  }
-
-  const payload = value.slice(0, separatorIndex);
-  const signature = value.slice(separatorIndex + 1);
-  const timestamp = getPayloadTimestamp(payload);
-
-  if (timestamp === null) {
-    return false;
-  }
-
-  const expected = sign(payload);
-
-  if (signature.length !== expected.length) {
-    return false;
-  }
-
-  if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
-    return false;
-  }
-
-  const now = Date.now();
-  if (timestamp > now + futureClockSkewMs) {
-    return false;
-  }
-
-  return now - timestamp <= getSessionTtlMs();
+  const session = parseSessionToken(value, "admin-session", process.env.ADMIN_SESSION_SECRET, getSessionTtlMs());
+  return Boolean(session && process.env.ADMIN_EMAIL && session.email === process.env.ADMIN_EMAIL.trim().toLowerCase());
 }
 
 export async function requireAdmin() {

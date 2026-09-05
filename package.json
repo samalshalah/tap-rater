@@ -46,12 +46,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260905.1",
     "@opennextjs/cloudflare": "1.20.6",
     "@types/node": "^22.10.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
+    "miniflare": "5.20260903.0-alpha",
     "postcss": "^8.4.49",
     "sharp": "0.35.4",
     "tailwindcss": "^3.4.16",
