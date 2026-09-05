@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getReviewDestination } from "@/lib/product-page-content";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
@@ -25,7 +26,7 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
     >
       <div className={isCompact ? "relative min-h-0 flex-[1.42] bg-white" : "relative min-h-0 flex-[1.38] bg-white"}>
         <Image
-          src={image.src}
+          src={optimizedUploadSrc(image.src, 640)}
           alt={image.alt}
           fill
           unoptimized

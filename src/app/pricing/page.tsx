@@ -4,7 +4,8 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Tap Rater Pricing",
-  description: "Simple launch pricing for Tap Rater physical NFC and QR tabletop stands."
+  description: "Simple launch pricing for Tap Rater physical NFC and QR tabletop stands.",
+  alternates: { canonical: "/pricing" }
 };
 
 const prices = [

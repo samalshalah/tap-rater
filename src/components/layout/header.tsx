@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -160,7 +161,7 @@ export function Header() {
             onClick={() => setIsMenuOpen(false)}
           >
             <Image
-              src="/uploads/brand/tap-rater-logo.png"
+              src={optimizedUploadSrc("/uploads/brand/tap-rater-logo.png", 160)}
               alt="Tap Rater"
               width={126}
               height={76}
@@ -222,7 +223,7 @@ export function Header() {
             <Link
               href="/cart"
               prefetch={false}
-              aria-label="Cart"
+              aria-label={`Cart, ${cart.count} ${cart.count === 1 ? "item" : "items"}`}
               className="relative grid h-11 w-11 place-items-center rounded-[var(--tr-radius-control)] border border-line bg-white transition hover:border-brand hover:text-brand"
               onClick={() => {
                 setIsMenuOpen(false);

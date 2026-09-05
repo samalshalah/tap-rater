@@ -4,7 +4,8 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "Tap Rater refund and replacement guidance for NFC stands, branded artwork, damaged items, and customer-provided setup details."
+  description: "Tap Rater refund and replacement guidance for NFC stands, branded artwork, damaged items, and customer-provided setup details.",
+  alternates: { canonical: "/refund-policy" }
 };
 
 const sections = [

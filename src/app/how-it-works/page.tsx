@@ -5,7 +5,8 @@ import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/s
 
 export const metadata: Metadata = {
   title: "How Tap Rater Works",
-  description: "Choose a stand, add your link, and get a Tap Rater stand ready for your counter."
+  description: "Choose a stand, add your link, and get a Tap Rater stand ready for your counter.",
+  alternates: { canonical: "/how-it-works" }
 };
 
 const steps = [

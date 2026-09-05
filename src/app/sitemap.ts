@@ -11,6 +11,7 @@ const staticRoutes = [
   "/solutions",
   "/how-it-works",
   "/custom-stands",
+  "/multi-link",
   "/pricing",
   "/support",
   "/faqs",
@@ -23,8 +24,7 @@ const staticRoutes = [
 
 function route(path: string): MetadataRoute.Sitemap[number] {
   return {
-    url: `${siteUrl}${path}`,
-    lastModified: new Date()
+    url: `${siteUrl}${path}`
   };
 }
 

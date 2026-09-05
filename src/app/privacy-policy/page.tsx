@@ -4,7 +4,8 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: "How Tap Rater handles contact details, order information, destination links, uploaded logos, support requests, and payment processing."
+  description: "How Tap Rater handles contact details, order information, destination links, uploaded logos, support requests, and payment processing.",
+  alternates: { canonical: "/privacy-policy" }
 };
 
 const sections = [

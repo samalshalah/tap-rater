@@ -4,14 +4,14 @@ import type { NextConfig } from "next";
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
-  "connect-src 'self' https://api.stripe.com https://*.stripe.com",
+  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.link.com",
   "font-src 'self' data:",
   "form-action 'self' https://*.stripe.com",
   "frame-ancestors 'none'",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com",
+  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com",
   "img-src 'self' data: blob: https:",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "worker-src 'self' blob:",
   "upgrade-insecure-requests"
@@ -26,6 +26,18 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" }
+];
+
+const privateRoutePatterns = [
+  "/admin/:path*",
+  "/account/:path*",
+  "/api/:path*",
+  "/cart",
+  "/checkout/:path*",
+  "/activate",
+  "/p/:path*",
+  "/l/:path*",
+  "/r/:path*"
 ];
 
 const nextConfig: NextConfig = {
@@ -53,7 +65,11 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders
-      }
+      },
+      ...privateRoutePatterns.map((source) => ({
+        source,
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
+      }))
     ];
   }
 };

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import type { StorefrontVisual } from "@/lib/storefront-visuals";
 
 type VisualCardProps = {
@@ -36,7 +37,7 @@ function TypeCard({ cta, description, href, image, title }: Pick<VisualCardProps
     >
       <div className="relative min-h-0 flex-[1.1] w-full overflow-hidden rounded-[var(--tr-radius-card)] bg-white">
         <Image
-          src={image.src}
+          src={optimizedUploadSrc(image.src, 640)}
           alt={image.alt}
           fill
           unoptimized
@@ -88,7 +89,7 @@ function ProductStoryCard({
         </span>
       </div>
       <div className={imageFit === "cover" ? `relative mt-auto bg-soft ${compact ? "min-h-[300px]" : "min-h-[390px]"}` : `relative mt-auto bg-white ${compact ? "min-h-[300px]" : "min-h-[430px]"}`}>
-        <Image src={image.src} alt={image.alt} fill unoptimized className={imageClassName} />
+        <Image src={optimizedUploadSrc(image.src, 640)} alt={image.alt} fill unoptimized className={imageClassName} />
       </div>
     </Link>
   );
@@ -105,7 +106,7 @@ function UseCaseCard({ density, description, eyebrow, href, image, title }: Pick
         <p className="tr-body-sm mt-3 max-w-xl">{description}</p>
       </div>
       <div className={compact ? "relative mt-auto min-h-[160px] overflow-hidden bg-white sm:min-h-0 sm:flex-[1.14]" : "relative mt-auto min-h-0 flex-[1.14] overflow-hidden bg-white"}>
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
+        <Image src={optimizedUploadSrc(image.src, 640)} alt={image.alt} fill unoptimized className="object-cover transition duration-300 group-hover:scale-[1.018]" />
       </div>
     </Link>
   );

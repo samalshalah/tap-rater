@@ -1,9 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   checkLoginRateLimitWithClient,
+  createLoginRateLimitContext,
   recordLoginAttemptWithClient,
   type LoginRateLimitContext
 } from "@/lib/auth-rate-limit";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 const context: LoginRateLimitContext = {
   configured: true,
@@ -13,6 +18,35 @@ const context: LoginRateLimitContext = {
 };
 
 describe("login rate limiting", () => {
+  it("stays disabled instead of using a public hashing fallback when secrets are missing", () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://example.invalid/taprater");
+    vi.stubEnv("ADMIN_SESSION_SECRET", "");
+    vi.stubEnv("CUSTOMER_SESSION_SECRET", "");
+
+    const result = createLoginRateLimitContext({
+      headers: new Headers({ "cf-connecting-ip": "203.0.113.10" }),
+      identifier: "OWNER@EXAMPLE.COM",
+      scope: "admin"
+    });
+
+    expect(result).toMatchObject({ configured: false, identifierHash: "", ipHash: undefined });
+  });
+
+  it("uses configured secrets for login identifiers and IPs", () => {
+    vi.stubEnv("DATABASE_URL", "postgresql://example.invalid/taprater");
+    vi.stubEnv("ADMIN_SESSION_SECRET", "unit-test-session-secret");
+    const result = createLoginRateLimitContext({
+      headers: new Headers({ "cf-connecting-ip": "203.0.113.10" }),
+      identifier: "OWNER@EXAMPLE.COM",
+      scope: "admin"
+    });
+
+    expect(result.configured).toBe(true);
+    expect(result.identifierHash).toMatch(/^[a-f0-9]{64}$/u);
+    expect(result.ipHash).toMatch(/^[a-f0-9]{64}$/u);
+    expect(result.identifierHash).not.toContain("owner@example.com");
+  });
+
   it("blocks an identifier after five recent failures", async () => {
     const rows = Array.from({ length: 5 }, (_, index) => ({
       id: String(index),

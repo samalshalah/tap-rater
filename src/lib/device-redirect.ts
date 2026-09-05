@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHmac } from "node:crypto";
 
 export type DeviceStatus = "unactivated" | "active" | "paused" | "lost" | "retired";
 export type DeviceServiceMode = "basic_redirect" | "managed_redirect" | "premium_landing_page";
@@ -37,12 +37,16 @@ export function isSafeRedirectUrl(value: string | undefined): value is string {
   }
 }
 
-export function hashIpAddress(value: string | undefined) {
-  if (!value) {
+export function hashIpAddress(value: string | undefined, secret = getIpHashSecret()) {
+  if (!value || !secret) {
     return undefined;
   }
 
-  return createHash("sha256").update(value).digest("hex");
+  return createHmac("sha256", secret).update(value).digest("hex");
+}
+
+function getIpHashSecret() {
+  return process.env.IP_HASH_SECRET || process.env.CUSTOMER_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
 }
 
 export function getDeviceRedirectAction(device: PlatformDevice | null): DeviceRedirectAction {

@@ -5,7 +5,8 @@ import { getShippingSettings } from "@/lib/shipping-settings";
 
 export const metadata: Metadata = {
   title: "Shipping",
-  description: "Tap Rater shipping information for NFC and QR stands."
+  description: "Tap Rater shipping information for NFC and QR stands.",
+  alternates: { canonical: "/shipping" }
 };
 
 export default async function ShippingPage() {

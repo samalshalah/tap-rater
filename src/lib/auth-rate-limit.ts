@@ -94,11 +94,12 @@ export function createLoginRateLimitContext(input: {
   scope: LoginRateLimitScope;
 }): LoginRateLimitContext {
   const ip = getRequestIp(input.headers);
+  const secret = getAuthRateLimitSecret();
 
   return {
-    configured: hasSupabaseAdminConfig(),
-    identifierHash: hashLoginIdentifier(input.identifier.trim().toLowerCase()),
-    ipHash: ip ? hashLoginIdentifier(ip) : undefined,
+    configured: hasSupabaseAdminConfig() && Boolean(secret),
+    identifierHash: secret ? hashLoginIdentifier(input.identifier.trim().toLowerCase(), secret) : "",
+    ipHash: ip && secret ? hashLoginIdentifier(ip, secret) : undefined,
     scope: input.scope
   };
 }
@@ -109,9 +110,12 @@ function getRequestIp(headers: Headers) {
   return cloudflareIp || forwardedFor || headers.get("x-real-ip")?.trim() || undefined;
 }
 
-function hashLoginIdentifier(value: string) {
-  const secret = process.env.ADMIN_SESSION_SECRET || process.env.CUSTOMER_SESSION_SECRET || "tap-rater-auth-rate-limit";
+function hashLoginIdentifier(value: string, secret: string) {
   return createHmac("sha256", secret).update(value || "missing").digest("hex");
+}
+
+function getAuthRateLimitSecret() {
+  return process.env.ADMIN_SESSION_SECRET || process.env.CUSTOMER_SESSION_SECRET;
 }
 
 async function countRecentFailures(

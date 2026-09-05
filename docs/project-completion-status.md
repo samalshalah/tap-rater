@@ -1,6 +1,6 @@
 # Tap Rater Project Completion Status
 
-Last verified: September 4, 2026 (America/New_York)
+Last verified: September 5, 2026 (America/New_York)
 
 This is the current completion ledger. `docs/launch-checklist.md` remains the detailed QA reference, but its original unchecked boxes are not an accurate record of work already proven.
 
@@ -11,7 +11,7 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 - Manual confirmations: 3
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
-- Automated verification: 94 test files and 552 tests passing in the current release candidate
+- Automated verification: 100 test files and 573 tests passing in the current release candidate
 
 ## Phase Progress
 
@@ -24,7 +24,7 @@ These are engineering estimates based on implemented behavior and verification e
 | Customer accounts, billing, and Multi-Link | 94% | Owner activation of the Stripe-backed QA account and both Billing Portal checks |
 | Admin operations and fulfillment | 96% | One owner-observed test-mode operations drill before live launch |
 | Transactional email operations | 94% | Owner configuration of the signed Resend webhook and controlled launch-mailbox verification |
-| Security, accessibility, performance, and recovery | 86% | Final audit plus backup, restore, and rollback exercises |
+| Security, accessibility, performance, and recovery | 96% | Owner-observed restore/rollback drill and a customer-uploaded media backup policy |
 | Tax and legal readiness | 55% | Written accountant/legal operating decision |
 | Live launch validation | 65% | Live credentials, live webhook proof, four real transactions, and reconciliation |
 
@@ -47,6 +47,13 @@ These are engineering estimates based on implemented behavior and verification e
 - Admin inventory controls update storefront availability directly, and server-side checkout rejects out-of-stock products.
 - Contact, setup, and link-change requests have a searchable staff queue with new, in-progress, and resolved states plus internal notes.
 - Full-refund handling requires explicit confirmation, uses a stable Stripe idempotency key, and reports Stripe/local persistence split failures for reconciliation.
+- Public forms, checkout creation, setup uploads, hosted-page submissions, and click events use Cloudflare-native per-client rate limits.
+- Webhook bodies are bounded before signature processing, IP identifiers use keyed HMACs, and login rate limiting no longer has a public fallback secret.
+- HTTP and `www` traffic is canonicalized by the Cloudflare Worker; private/action routes are no-indexed and public pages publish route-specific canonical URLs.
+- Storefront image variants are generated deterministically at 160, 640, and 1200 pixels, reducing the generated image set to about 12.16 MB from about 93.13 MB of source imagery.
+- Mobile Lighthouse scores are 96/100/100/100 on the homepage and 97/100/100/100 on the product page; desktop homepage scores are 100/100/100/100.
+- The Neon production branch is protected, point-in-time history is seven days, daily snapshots are enabled, and a pre-hardening snapshot is retained through October 5, 2026.
+- Recovery configuration has an automated 36-check gate and a documented Neon, Cloudflare, and R2 runbook.
 
 ## Owner At Computer Queue
 
@@ -120,9 +127,23 @@ Perform only while the owner is present and after the tax decision:
 
 Completion evidence: all four live cases reconcile between Stripe, Tap Rater Admin, the customer account, email delivery, and the production database.
 
+### 7. Run the recovery drill and choose the media backup policy
+
+Perform this with the owner present before live launch:
+
+1. Restore the latest Neon snapshot to a temporary branch and run the read-only validation checklist.
+2. Roll the application Worker back to an identified known-good version, smoke test it, and roll forward to the release version.
+3. Rebuild one static image variant and republish one disposable hosted-page snapshot.
+4. Choose and test a separate backup/export process for customer-uploaded product media in R2.
+5. Record restore timing, rollback timing, the recovery point objective, and the recovery time objective.
+
+Completion evidence: temporary-branch restore, Worker rollback/roll-forward, hosted snapshot recovery, and disposable product-media restore are all observed and documented.
+
+Detailed procedure: `docs/recovery-runbook.md`.
+
 ## Autonomous Work Queue
 
-1. Security, accessibility, SEO, performance, backup, and rollback verification.
+No unattended engineering work remains in this phase. The remaining recovery exercise requires the owner to observe provider-level rollback and restore actions.
 
 ## Safety Rules
 

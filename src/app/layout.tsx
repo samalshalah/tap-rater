@@ -19,14 +19,13 @@ export const metadata: Metadata = {
     "NFC menu stand",
     "customer feedback NFC stand"
   ],
-  alternates: {
-    canonical: "/"
+  icons: {
+    icon: [{ url: "/uploads-optimized/brand/tap-rater-logo-w160.webp", type: "image/webp" }]
   },
   openGraph: {
     title: "Tap Rater | NFC and QR Stands for Local Businesses",
     description:
       "Custom NFC and QR tabletop stands that help customers open your important link with one tap or scan.",
-    url: "/",
     siteName: "Tap Rater",
     type: "website"
   }

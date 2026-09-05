@@ -4,7 +4,8 @@ import { getHomepageThemeContent } from "@/lib/website-content";
 
 export const metadata: Metadata = {
   title: "Custom NFC and QR Stands",
-  description: "Custom Branding options for Tap Rater tabletop NFC and QR stands where supported."
+  description: "Custom Branding options for Tap Rater tabletop NFC and QR stands where supported.",
+  alternates: { canonical: "/custom-stands" }
 };
 
 export default async function CustomStandsPage() {

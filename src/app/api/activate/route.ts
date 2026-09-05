@@ -23,6 +23,7 @@ export async function POST(request: Request) {
 }
 
 function getRequestIp(headers: Headers) {
+  const cloudflareIp = headers.get("cf-connecting-ip")?.trim();
   const forwardedFor = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwardedFor || headers.get("x-real-ip") || undefined;
+  return cloudflareIp || forwardedFor || headers.get("x-real-ip")?.trim() || undefined;
 }

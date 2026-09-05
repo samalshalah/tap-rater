@@ -5,7 +5,8 @@ import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/s
 
 export const metadata: Metadata = {
   title: "Tap Rater Support",
-  description: "Get help with Tap Rater stand setup, custom stand requests, order questions, logo questions, and link changes."
+  description: "Get help with Tap Rater stand setup, custom stand requests, order questions, logo questions, and link changes.",
+  alternates: { canonical: "/support" }
 };
 
 const supportLinks = [

@@ -4,6 +4,7 @@ import {
   isLandingPageRepositoryConfigured,
   saveLandingPageSubmission
 } from "@/lib/landing-pages";
+import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -12,6 +13,9 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = await checkPublicRateLimit(request, "hosted-submit", "PUBLIC_FORM_RATE_LIMITER");
+  if (rateLimit.limited) return rateLimitResponse();
+
   const { slug } = await context.params;
   const page = await getLandingPageBySlug(slug);
 

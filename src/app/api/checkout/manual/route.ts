@@ -5,6 +5,7 @@ import { hasSupabaseAdminConfig } from "@/lib/db";
 import { provisionManualCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { createManualPendingOrderForCheckout } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
+import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings } from "@/lib/shipping-settings";
 import { checkoutCartSchema } from "@/lib/validators";
 
@@ -16,6 +17,9 @@ const manualCheckoutSchema = checkoutCartSchema.extend({
 });
 
 export async function POST(request: Request) {
+  const rateLimit = await checkPublicRateLimit(request, "manual-checkout", "PUBLIC_CHECKOUT_RATE_LIMITER");
+  if (rateLimit.limited) return rateLimitResponse();
+
   if (getStripeModeSafe() === "live") {
     return NextResponse.json({ error: "Manual checkout is disabled while live Stripe checkout is active." }, { status: 403 });
   }

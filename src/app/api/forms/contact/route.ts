@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { ProductMediaStorageError, uploadProductMedia } from "@/lib/admin-media-storage";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 import { saveContactRequest } from "@/lib/request-repository";
 import { sendRequestNotification } from "@/lib/request-notifications";
 import { contactFormSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  const rateLimit = await checkPublicRateLimit(request, "contact", "PUBLIC_FORM_RATE_LIMITER");
+  if (rateLimit.limited) return rateLimitResponse();
+
   const payload = await readContactPayload(request);
   const parsed = contactFormSchema.safeParse(payload.fields);
 

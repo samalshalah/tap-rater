@@ -16,6 +16,7 @@ import { buildDirectProductionTargets } from "@/lib/direct-production";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -1127,7 +1128,7 @@ function BuilderSummary({
   return (
     <div className="tr-panel-muted grid gap-3 p-3 sm:grid-cols-[96px_1fr] sm:items-center">
       <div className="relative aspect-square overflow-hidden rounded-lg bg-white">
-        <Image src={image.src} alt={image.alt} fill unoptimized className="object-contain p-2" />
+        <Image src={optimizedUploadSrc(image.src, 160)} alt={image.alt} fill unoptimized className="object-contain p-2" />
       </div>
       <div>
         <p className="text-sm font-semibold text-ink">{productTitle}</p>

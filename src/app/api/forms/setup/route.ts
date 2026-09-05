@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 import { saveSetupRequest } from "@/lib/request-repository";
 import { sendRequestNotification } from "@/lib/request-notifications";
 import { setupFormSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
+  const rateLimit = await checkPublicRateLimit(request, "setup", "PUBLIC_FORM_RATE_LIMITER");
+  if (rateLimit.limited) return rateLimitResponse();
+
   const parsed = setupFormSchema.safeParse(await request.json().catch(() => null));
 
   if (!parsed.success) {

@@ -10,6 +10,7 @@ import { VisualCard } from "@/components/storefront/visual-card";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getCatalogCategories } from "@/lib/products";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
@@ -81,10 +82,11 @@ export default async function HomePage() {
 
             <div className="relative min-h-[330px] overflow-hidden sm:min-h-[480px] lg:min-h-[580px]">
               <Image
-                src={content.hero.image.src}
+                src={optimizedUploadSrc(content.hero.image.src, 1200)}
                 alt={content.hero.image.alt}
                 fill
                 priority
+                fetchPriority="high"
                 unoptimized
                 className="scale-[0.96] object-contain object-center mix-blend-multiply sm:scale-100 lg:scale-[1.03]"
                 sizes="(min-width: 1024px) 58vw, 100vw"
@@ -187,7 +189,7 @@ export default async function HomePage() {
             />
             <div className="relative min-h-[560px] sm:min-h-[700px]">
               <Image
-                src={content.customBranding.image.src}
+                src={optimizedUploadSrc(content.customBranding.image.src, 1200)}
                 alt={content.customBranding.image.alt}
                 fill
                 unoptimized
@@ -290,7 +292,7 @@ function MarketingVisual({ content }: { content: { image: { src: string; alt: st
   return (
     <div className="tr-premium-surface relative min-h-[520px] overflow-hidden sm:min-h-[680px]">
       <div className="absolute inset-y-8 left-0 w-[58%] sm:w-[60%] lg:left-[-12%] lg:w-[66%]">
-        <Image src={content.image.src} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 34vw, 58vw" />
+        <Image src={optimizedUploadSrc(content.image.src, 1200)} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 34vw, 58vw" />
       </div>
       <div className="absolute right-5 top-12 w-[54%] max-w-[320px] rounded-[var(--tr-radius-feature)] bg-white p-5 shadow-[var(--tr-shadow-elevated)] ring-1 ring-black/[0.04] sm:right-10 sm:top-16 sm:w-[48%]">
         <div className="rounded-[var(--tr-radius-card)] bg-soft p-5">

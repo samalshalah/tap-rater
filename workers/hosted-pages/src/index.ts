@@ -8,10 +8,19 @@ import {
   type HostedPageResolution
 } from "../../../src/lib/hosted-pages/snapshots";
 
+const securityHeaders = {
+  "Content-Security-Policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-Robots-Tag": "noindex, nofollow, noarchive"
+};
+
 const htmlHeaders = {
-  "Content-Type": "text/html; charset=utf-8",
+  ...securityHeaders,
   "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-  "X-Robots-Tag": "noindex"
+  "Content-Type": "text/html; charset=utf-8"
 };
 
 export default {
@@ -24,7 +33,7 @@ export async function handleHostedPageRequest(request: Request, env: Env, ctx: E
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method not allowed", {
       status: 405,
-      headers: { Allow: "GET, HEAD" }
+      headers: { ...securityHeaders, Allow: "GET, HEAD" }
     });
   }
 

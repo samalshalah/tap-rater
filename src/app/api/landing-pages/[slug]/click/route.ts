@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hashIpAddress } from "@/lib/device-redirect";
 import { getLandingPageBySlug, isLandingPageRepositoryConfigured, logLandingPageClick } from "@/lib/landing-pages";
+import { checkPublicRateLimit, getTrustedRequestIp, rateLimitResponse } from "@/lib/public-rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -11,6 +12,9 @@ type RouteContext = {
 const destinationTypes = new Set(["google_review", "facebook_review", "yelp_profile", "booking", "social", "menu", "wifi", "custom", "landing_page"]);
 
 export async function POST(request: Request, context: RouteContext) {
+  const rateLimit = await checkPublicRateLimit(request, "hosted-click", "PUBLIC_EVENT_RATE_LIMITER");
+  if (rateLimit.limited) return rateLimitResponse();
+
   const { slug } = await context.params;
   const page = await getLandingPageBySlug(slug);
 
@@ -24,8 +28,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   const body = readRecord(await request.json().catch(() => null));
   const destinationType = normalizeDestinationType(body.destinationType ?? body.destination_type);
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ipHash = hashIpAddress(forwardedFor || request.headers.get("x-real-ip") || undefined);
+  const ipHash = hashIpAddress(getTrustedRequestIp(request.headers));
 
   await logLandingPageClick({
     landingPageId: page.id,

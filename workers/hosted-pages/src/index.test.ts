@@ -21,6 +21,10 @@ describe("hosted page Worker", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("X-Tap-Rater-Hosted-Page-State")).toBe("available");
+    expect(response.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(response.headers.get("X-Frame-Options")).toBe("DENY");
+    expect(response.headers.get("X-Robots-Tag")).toBe("noindex, nofollow, noarchive");
     await expect(response.text()).resolves.toContain("Worker Cafe");
   });
 

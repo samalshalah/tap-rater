@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ProductMediaStorageError, uploadProductMedia } from "@/lib/admin-media-storage";
+import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +8,9 @@ const maxSetupLogoUploadRequestBytes = 11 * 1024 * 1024;
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await checkPublicRateLimit(request, "setup-logo", "PUBLIC_FORM_RATE_LIMITER");
+    if (rateLimit.limited) return rateLimitResponse();
+
     const contentLength = Number(request.headers.get("content-length") ?? 0);
     if (contentLength > maxSetupLogoUploadRequestBytes) {
       return NextResponse.json({ error: "Logo image must be 10 MB or smaller." }, { status: 413 });

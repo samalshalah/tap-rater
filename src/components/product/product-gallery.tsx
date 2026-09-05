@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { PurchaseOptionId } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
 export function ProductGallery({ product, selectedOptionId }: { product: MigratedProduct; selectedOptionId?: PurchaseOptionId }) {
   const [activeOptionId, setActiveOptionId] = useState<PurchaseOptionId | undefined>(selectedOptionId);
@@ -37,7 +38,15 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
   return (
     <div className="grid content-center gap-3 lg:sticky lg:top-24">
       <div className="tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
-        <Image src={image.src} alt={image.alt} fill priority unoptimized className="object-contain p-4 mix-blend-multiply sm:p-6" />
+        <Image
+          src={optimizedUploadSrc(image.src, 1200)}
+          alt={image.alt}
+          fill
+          priority
+          fetchPriority="high"
+          unoptimized
+          className="object-contain p-4 mix-blend-multiply sm:p-6"
+        />
       </div>
       {galleryImages.length > 1 ? (
         <div className="mx-auto flex w-full max-w-[292px] justify-center gap-2 overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
@@ -51,7 +60,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
               }`}
               aria-label={`View ${thumbnail.alt}`}
             >
-              <Image src={thumbnail.src} alt="" fill unoptimized className="object-contain p-1.5 mix-blend-multiply" />
+              <Image src={optimizedUploadSrc(thumbnail.src, 160)} alt="" fill unoptimized className="object-contain p-1.5 mix-blend-multiply" />
             </button>
           ))}
         </div>

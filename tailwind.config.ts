@@ -12,7 +12,7 @@ const config: Config = {
         "brand-dark": "#075E59",
         soft: "#F7F8F6",
         panel: "#F2F6F5",
-        accent: "#F5A524"
+        accent: "#9B5700"
       },
       borderRadius: {
         card: "8px",

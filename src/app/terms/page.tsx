@@ -4,7 +4,8 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Terms",
-  description: "Basic Tap Rater terms for NFC stands, destination links, logo rights, order review, and product use."
+  description: "Basic Tap Rater terms for NFC stands, destination links, logo rights, order review, and product use.",
+  alternates: { canonical: "/terms" }
 };
 
 const sections = [

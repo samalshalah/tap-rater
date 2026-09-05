@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { applyResendWebhookEvent } from "@/lib/email-deliveries";
+import { readRequestTextWithLimit, RequestBodyTooLargeError } from "@/lib/http-request";
+
+const maxWebhookBodyBytes = 1024 * 1024;
 
 export async function POST(request: Request) {
   const webhookSecret = process.env.RESEND_WEBHOOK_SECRET;
@@ -8,7 +11,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Resend webhook signing secret is not configured." }, { status: 503 });
   }
 
-  const payload = await request.text();
+  let payload: string;
+  try {
+    payload = await readRequestTextWithLimit(request, maxWebhookBodyBytes);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Resend webhook payload is too large." }, { status: 413 });
+    }
+    throw error;
+  }
   let event;
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);

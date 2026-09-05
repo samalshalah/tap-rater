@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
 type SectionTone = "white" | "soft";
 type SectionSpacing = "hero" | "default" | "compact";
@@ -119,10 +120,11 @@ export function PageHero({
         {image ? (
           <div className="tr-page-hero-media relative aspect-[4/3]">
             <Image
-              src={image.src}
+              src={optimizedUploadSrc(image.src, 1200)}
               alt={image.alt}
               fill
               priority={image.priority}
+              fetchPriority={image.priority ? "high" : undefined}
               unoptimized
               className={cx(
                 imageFit === "cover" ? "object-cover" : "object-contain p-7 sm:p-10",

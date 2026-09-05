@@ -17,5 +17,18 @@ describe("production security headers", () => {
     expect(source).toContain("https://js.stripe.com");
     expect(source).toContain("https://api.stripe.com");
     expect(source).toContain("https://hooks.stripe.com");
+    expect(source).toContain("https://*.link.com");
+  });
+
+  it("allows the Cloudflare Web Analytics loader", () => {
+    expect(source).toContain("https://static.cloudflareinsights.com");
+  });
+
+  it("prevents private and action routes from being indexed", () => {
+    expect(source).toContain("X-Robots-Tag");
+    expect(source).toContain("noindex, nofollow, noarchive");
+    for (const route of ["/admin/:path*", "/account/:path*", "/api/:path*", "/cart", "/checkout/:path*"]) {
+      expect(source).toContain(`\"${route}\"`);
+    }
   });
 });

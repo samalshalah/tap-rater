@@ -6,7 +6,8 @@ import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 export const metadata: Metadata = {
   title: "Tap Rater Solutions by Business Use",
   description:
-    "Shop Tap Rater NFC and QR tabletop stands by business use: restaurants, dealerships, healthcare, beauty, hospitality, retail, real estate, events, and more."
+    "Shop Tap Rater NFC and QR tabletop stands by business use: restaurants, dealerships, healthcare, beauty, hospitality, retail, real estate, events, and more.",
+  alternates: { canonical: "/solutions" }
 };
 
 export default async function SolutionsPage() {

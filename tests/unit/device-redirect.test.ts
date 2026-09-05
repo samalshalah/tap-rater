@@ -21,11 +21,12 @@ describe("device redirect", () => {
   });
 
   it("hashes IP values instead of returning raw IPs", () => {
-    const hash = hashIpAddress("203.0.113.10");
+    const hash = hashIpAddress("203.0.113.10", "unit-test-secret");
 
     expect(hash).not.toBe("203.0.113.10");
     expect(hash).toHaveLength(64);
-    expect(hashIpAddress("203.0.113.10")).toBe(hash);
+    expect(hashIpAddress("203.0.113.10", "unit-test-secret")).toBe(hash);
+    expect(hashIpAddress("203.0.113.10", "")).toBeUndefined();
   });
 
   it("sends unactivated devices to activation", () => {

@@ -3,8 +3,11 @@ import { recordBillingInvoiceFromCheckoutSession, recordBillingInvoiceFromStripe
 import { getStripeClient, validateStripeWebhookConfig } from "@/lib/checkout";
 import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscription-lifecycle";
 import { provisionHostedSubscriptionFromCheckout, provisionPaidCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
+import { readRequestTextWithLimit, RequestBodyTooLargeError } from "@/lib/http-request";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { markCheckoutOrderPaymentFailure, savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
+
+const maxWebhookBodyBytes = 1024 * 1024;
 
 export async function POST(request: Request) {
   const stripeConfig = validateStripeWebhookConfig();
@@ -18,7 +21,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Stripe signature is missing." }, { status: 400 });
   }
 
-  const payload = await request.text();
+  let payload: string;
+  try {
+    payload = await readRequestTextWithLimit(request, maxWebhookBodyBytes);
+  } catch (error) {
+    if (error instanceof RequestBodyTooLargeError) {
+      return NextResponse.json({ error: "Stripe webhook payload is too large." }, { status: 413 });
+    }
+    throw error;
+  }
   let event: ReturnType<ReturnType<typeof getStripeClient>["webhooks"]["constructEvent"]>;
 
   try {
