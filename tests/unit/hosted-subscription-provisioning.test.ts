@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { describe, expect, it, vi } from "vitest";
+import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 import {
   buildProvisioningSnapshotVersion,
   isHostedSubscriptionCheckout,
@@ -8,7 +9,7 @@ import {
   provisionPaidCustomerAccountFromOrder,
   provisionHostedSubscriptionFromCheckout
 } from "@/lib/hosted-subscription-provisioning";
-import type { HostedPagePutOptions, HostedPageTextStorage } from "@/lib/hosted-pages/repository";
+import { publishHostedPageSnapshot, readCurrentHostedPageSnapshot, type HostedPagePutOptions, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import type { OrderRecord, OrdersDbClient } from "@/lib/orders";
 
 describe("hosted subscription provisioning", () => {
@@ -221,6 +222,65 @@ describe("hosted subscription provisioning", () => {
     expect(client.table("hosted_subscriptions")).toHaveLength(0);
     expect(client.table("hosted_page_editor_pages")).toHaveLength(0);
     expect(storage.assignedCodes).toEqual([]);
+  });
+
+  it.each([
+    ["hosted_subscriptions", "upsert"],
+    ["orders", "update"],
+  ] as const)("recovers a failed %s write without duplicate ownership resources", async (table, action) => {
+    const order = createHostedOrder();
+    const client = new PaymentMemoryDb({ orders: [structuredClone(order)] });
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+    const input = { eventId: "evt_provision_retry", session: { id: "cs_test_hosted", payment_status: "paid", customer_details: { email: "owner@example.com" }, subscription: { id: "sub_retry", status: "active" }, metadata: { checkout_intent: "hosted_subscription" } }, order, siteUrl: "https://taprater.com" };
+    const deps = { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true }) };
+    client.failures.push({ table, action, message: "Injected database interruption" });
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: false });
+    expect(client.table("stripe_events")).toHaveLength(0);
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: true, provisioned: true });
+    expect(client.table("businesses")).toHaveLength(1);
+    expect(client.table("hosted_page_editor_pages")).toHaveLength(1);
+    expect(client.table("hosted_subscriptions")).toHaveLength(1);
+    expect(storage.assignedCodes).toEqual(["ABCDEFGHJKM2"]);
+  });
+
+  it.each(["canceled", "past_due"])("reconciles a partial provisioning retry with current %s state without losing customer content", async (status) => {
+    const order = createHostedOrder();
+    const client = new PaymentMemoryDb({ orders: [structuredClone(order)] });
+    const storage = new MemoryHostedStorage([]);
+    const firstStatus = status === "past_due" ? status : "active";
+    const input = { eventId: "evt_state_retry", now: new Date("2026-09-01T00:00:00Z"), session: { id: "cs_test_hosted", payment_status: "paid", customer_details: { email: "owner@example.com" }, subscription: { id: "sub_retry", status: firstStatus }, metadata: { checkout_intent: "hosted_subscription" } }, order, siteUrl: "https://taprater.com" };
+    const retrieveSubscription = vi.fn().mockResolvedValue({ id: "sub_retry", status: firstStatus });
+    const deps = { client, storage, retrieveSubscription, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true }) };
+    client.failures.push({ table: "orders", action: "update", message: "Interrupted after publication" });
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: false });
+    const published = await readCurrentHostedPageSnapshot(storage, "ABCDEFGHJKM2");
+    await publishHostedPageSnapshot(storage, { ...published!, headline: "Customer-authored headline", version: "customer-v2" });
+    retrieveSubscription.mockResolvedValue({ id: "sub_retry", status });
+    expect(await provisionHostedSubscriptionFromCheckout({ ...input, now: new Date("2026-09-03T00:00:00Z") }, deps)).toMatchObject({ ok: true });
+    const current = await readCurrentHostedPageSnapshot(storage, "ABCDEFGHJKM2");
+    const lifecycle = status === "canceled" ? "EXPIRED" : "PAST_DUE";
+    expect(current).toMatchObject({ headline: "Customer-authored headline", lifecycleStatus: lifecycle });
+    expect(client.table("hosted_page_editor_pages")[0].lifecycle_status).toBe(lifecycle);
+    expect(client.table("hosted_subscriptions")[0]).toMatchObject({ status, lifecycle_status: lifecycle });
+    if (status === "past_due") {
+      expect(current?.subscriptionPastDueSince).toBe("2026-09-01T00:00:00.000Z");
+      expect(client.table("hosted_subscriptions")[0].grace_ends_at).toBe("2026-09-08T00:00:00.000Z");
+    }
+  });
+
+  it("deduplicates different completion event IDs without resetting production or subscription state", async () => {
+    const client = new MemoryDbClient();
+    const storage = new MemoryHostedStorage(["ABCDEFGHJKM2"]);
+    const input = { eventId: "evt_completed", session: { id: "cs_test_hosted", payment_status: "paid", customer_details: { email: "owner@example.com" }, subscription: { id: "sub_duplicate", status: "active" }, metadata: { checkout_intent: "hosted_subscription" } }, order: createHostedOrder(), siteUrl: "https://taprater.com" };
+    const deps = { client, storage, generateCode: () => "ABCDEFGHJKM2", sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true }) };
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: true });
+    client.table("orders")[0].production_status = "completed";
+    client.table("hosted_subscriptions")[0].lifecycle_status = "EXPIRED";
+    client.table("hosted_subscriptions")[0].status = "canceled";
+    expect(await provisionHostedSubscriptionFromCheckout({ ...input, eventId: "evt_async_succeeded" }, deps)).toMatchObject({ ok: true, reason: "duplicate_event" });
+    expect(client.table("orders")[0].production_status).toBe("completed");
+    expect(client.table("hosted_subscriptions")[0]).toMatchObject({ lifecycle_status: "EXPIRED", status: "canceled" });
+    expect(deps.sendHostedSetupEmailFn).toHaveBeenCalledTimes(1);
   });
 
   it("reactivates an expired customer using the existing hosted page and permanent code", async () => {
@@ -852,12 +912,12 @@ class MemoryQueryBuilder {
     }
 
     if (this.action === "update") {
-      const matches = tableRows.filter((row) => this.filters.every((filter) => row[filter.column] === filter.value));
+      const matches = tableRows.filter((row) => this.filters.every((filter) => (row[filter.column] ?? null) === (filter.value ?? null)));
       matches.forEach((row) => Object.assign(row, this.values));
       return { data: this.selected ? matches : null, error: null };
     }
 
-    const matches = tableRows.filter((row) => this.filters.every((filter) => row[filter.column] === filter.value));
+    const matches = tableRows.filter((row) => this.filters.every((filter) => (row[filter.column] ?? null) === (filter.value ?? null)));
     return { data: matches, error: null };
   }
 }

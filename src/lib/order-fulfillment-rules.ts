@@ -21,7 +21,7 @@ export function canRunOrderProductionActions(
 }
 
 export function isOrderPaymentConfirmed(status: OrderRecord["status"], paymentStatus?: string | null) {
-  if (status === "canceled" || status === "failed" || paymentStatus === "refunded") {
+  if (status === "canceled" || status === "failed" || paymentStatus?.includes("refund")) {
     return false;
   }
   return paymentStatus === "paid" || status === "paid";

@@ -31,6 +31,7 @@ export async function POST(request: Request, context: RefundRouteContext) {
   return NextResponse.json({
     ok: true,
     refundId: result.refundId,
+    refundStatus: result.refundStatus,
     alreadyRefunded: result.alreadyRefunded,
   });
 }

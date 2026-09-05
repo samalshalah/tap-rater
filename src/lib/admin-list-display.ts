@@ -57,7 +57,8 @@ export function getPrimaryOrderAction(state: OrderWorkflowState): PrimaryOrderAc
   if (!isOrderPaymentConfirmed(state.status, state.paymentStatus)) {
     return {
       kind: "status" as const,
-      label: state.paymentStatus === "refunded" ? "Refunded" : "Payment required",
+      label: state.paymentStatus === "refunded" ? "Refunded" : state.paymentStatus === "refund_pending" ? "Refund pending"
+        : state.paymentStatus === "refund_failed" ? "Refund needs review" : state.paymentStatus === "partially_refunded" ? "Partially refunded" : "Payment required",
       tone: "warning"
     };
   }

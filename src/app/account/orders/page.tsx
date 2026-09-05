@@ -205,6 +205,7 @@ function EmptyState({ message }: { message: string }) {
 }
 
 function formatPayment(order: { status: string; paymentStatus?: string }) {
+  if (order.paymentStatus?.includes("refund")) return formatStatus(order.paymentStatus);
   if (order.paymentStatus === "manual_unpaid") return "submitted - payment pending review";
   if (order.status === "paid" || order.paymentStatus === "paid") return "paid";
   return formatStatus(order.status);

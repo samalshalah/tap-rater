@@ -196,6 +196,7 @@ const tableColumns = {
     "updated_at"
   ],
   stripe_events: ["id", "type", "processed_at", "created_at"],
+  stripe_processing_locks: ["resource_key", "owner_token", "expires_at", "attempts", "last_error", "updated_at"],
   device_activation_attempts: ["id", "device_code", "email", "ip_hash", "success", "reason", "created_at"],
   auth_login_attempts: ["id", "scope", "identifier_hash", "ip_hash", "success", "created_at"],
   email_deliveries: [
@@ -383,6 +384,10 @@ const tableColumns = {
     "stripe_payment_intent_id",
     "stripe_refund_id",
     "refunded_at",
+    "refund_status",
+    "refunded_amount_cents",
+    "refund_pending_amount_cents",
+    "refund_failure_reason",
     "status",
     "payment_status",
     "email",

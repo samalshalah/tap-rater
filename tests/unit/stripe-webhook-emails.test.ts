@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/order-refunds", () => ({ processStripeRefundEvent: vi.fn() }));
+vi.mock("@/lib/stripe-processing", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/stripe-processing")>(),
+  withStripePaymentLock: vi.fn(async (_key, work) => work(async () => {})),
+}));
+
 function createSignedWebhookRequest() {
   return new Request("https://taprater.test/api/webhooks/stripe", {
     method: "POST",

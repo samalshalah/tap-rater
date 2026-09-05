@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/order-refunds", () => ({ processStripeRefundEvent: vi.fn().mockResolvedValue({ ok: true }) }));
+vi.mock("@/lib/stripe-processing", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/stripe-processing")>(),
+  withStripePaymentLock: vi.fn(async (_key, work) => work(async () => {})),
+}));
+
 function createWebhookRequest() {
   return new Request("https://taprater.test/api/webhooks/stripe", {
     method: "POST",
@@ -238,5 +244,81 @@ describe("Stripe webhook route configuration", () => {
 
     expect(response.status).toBe(200);
     expect(markPaymentFailure).toHaveBeenCalledWith("cs_test_failure", orderStatus, paymentStatus);
+  });
+
+  it.each(["refund.created", "refund.updated", "refund.failed", "charge.refunded"])("dispatches signed %s events", async (type) => {
+    const { processStripeRefundEvent } = await import("@/lib/order-refunds");
+    vi.mocked(processStripeRefundEvent).mockResolvedValue({ ok: true });
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({ ok: true, webhookSecret: "whsec_unit" }),
+      getStripeClient: () => ({ webhooks: { constructEvent: () => ({ id: "evt_refund", type, data: { object: { id: type === "charge.refunded" ? "ch_test" : "re_test", payment_intent: "pi_test" } } }) } }),
+    }));
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    const response = await POST(new Request("https://taprater.test/api/webhooks/stripe", { method: "POST", body: "{}", headers: { "stripe-signature": "signed" } }));
+    expect(response.status).toBe(200);
+    expect(processStripeRefundEvent).toHaveBeenCalledWith({ paymentIntentId: "pi_test", ...(type === "charge.refunded" ? {} : { refundId: "re_test" }) });
+  });
+
+  it("returns a retryable error when refund synchronization fails", async () => {
+    const { processStripeRefundEvent } = await import("@/lib/order-refunds");
+    vi.mocked(processStripeRefundEvent).mockResolvedValue({ ok: false, error: "Database unavailable" });
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({ ok: true, webhookSecret: "whsec_unit" }),
+      getStripeClient: () => ({ webhooks: { constructEvent: () => ({ id: "evt_refund", type: "refund.updated", data: { object: { id: "re_test", payment_intent: "pi_test" } } }) } }),
+    }));
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    expect((await POST(new Request("https://taprater.test/api/webhooks/stripe", { method: "POST", body: "{}", headers: { "stripe-signature": "signed" } }))).status).toBe(500);
+  });
+
+  it.each([true, false])("verifies real SDK refund signatures (valid=%s)", async (valid) => {
+    const { default: Stripe } = await import("stripe");
+    const stripe = new Stripe("sk_test_unit");
+    const payload = JSON.stringify({ id: "evt_signed_refund", type: "refund.updated", data: { object: { id: "re_signed", payment_intent: "pi_signed" } } });
+    const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: valid ? "whsec_unit" : "whsec_wrong" });
+    const { processStripeRefundEvent } = await import("@/lib/order-refunds");
+    vi.mocked(processStripeRefundEvent).mockClear().mockResolvedValue({ ok: true });
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({ ok: true, webhookSecret: "whsec_unit" }),
+      getStripeClient: () => stripe,
+    }));
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    const response = await POST(new Request("https://taprater.test/api/webhooks/stripe", { method: "POST", body: payload, headers: { "stripe-signature": signature } }));
+    expect(response.status).toBe(valid ? 200 : 400);
+    expect(processStripeRefundEvent).toHaveBeenCalledTimes(valid ? 1 : 0);
+  });
+
+  it.each([1, 0, 2])("resolves a subscription checkout's payment reference only when unambiguous (%s references)", async (count) => {
+    const list = vi.fn().mockResolvedValue({ data: Array.from({ length: count }, (_, index) => ({ payment: { payment_intent: `pi_invoice_${index}` } })), has_more: false });
+    const save = vi.fn().mockResolvedValue({ ok: true, paymentReversed: true, wasAlreadyPaid: true, order: {} });
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({ ok: true, webhookSecret: "whsec_unit" }),
+      getStripeClient: () => ({
+        invoicePayments: { list },
+        webhooks: { constructEvent: () => ({ id: "evt_invoice_checkout", type: "checkout.session.completed", data: { object: { id: "cs_test_invoice", payment_status: "paid", subscription: "sub_test", invoice: "in_test" } } }) },
+      }),
+    }));
+    vi.doMock("@/lib/orders", () => ({ savePaidOrderFromCheckoutSession: save }));
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    const response = await POST(new Request("https://taprater.test/api/webhooks/stripe", { method: "POST", body: "{}", headers: { "stripe-signature": "signed" } }));
+    expect(list).toHaveBeenCalledWith({ invoice: "in_test", status: "paid", limit: 100 });
+    expect(response.status).toBe(count === 1 ? 200 : 500);
+    if (count === 1) expect(save).toHaveBeenCalledWith(expect.objectContaining({ payment_intent: "pi_invoice_0" }));
+    else expect(save).not.toHaveBeenCalled();
+  });
+
+  it("does not provision or send purchase emails for replayed refunded orders", async () => {
+    vi.doMock("@/lib/checkout", () => ({
+      validateStripeWebhookConfig: () => ({ ok: true, webhookSecret: "whsec_unit" }),
+      getStripeClient: () => ({ webhooks: { constructEvent: () => ({ id: "evt_replay", type: "checkout.session.completed", data: { object: { id: "cs_test", payment_status: "paid" } } }) } }),
+    }));
+    vi.doMock("@/lib/orders", () => ({ savePaidOrderFromCheckoutSession: vi.fn().mockResolvedValue({ ok: true, paymentReversed: true, wasAlreadyPaid: true, order: { payment_status: "refunded" } }) }));
+    const provision = vi.fn();
+    const emails = vi.fn();
+    vi.doMock("@/lib/hosted-subscription-provisioning", () => ({ provisionHostedSubscriptionFromCheckout: provision, provisionPaidCustomerAccountFromOrder: vi.fn() }));
+    vi.doMock("@/lib/order-emails", () => ({ sendPaidOrderEmails: emails }));
+    const { POST } = await import("@/app/api/webhooks/stripe/route");
+    expect((await POST(new Request("https://taprater.test/api/webhooks/stripe", { method: "POST", body: "{}", headers: { "stripe-signature": "signed" } }))).status).toBe(200);
+    expect(provision).not.toHaveBeenCalled();
+    expect(emails).not.toHaveBeenCalled();
   });
 });

@@ -14,6 +14,7 @@ import {
   type OrdersDbClient
 } from "@/lib/orders";
 import { orderFulfillmentUpdateSchema } from "@/lib/validators";
+import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 import type { EmbeddedProductionAsset, ProductionArtworkAssetResolver } from "@/lib/production-artwork";
 
 const generatedProductionArtwork = {
@@ -954,18 +955,8 @@ describe("orders repository", () => {
     }).success).toBe(false);
   });
 
-  it("upserts paid orders by Stripe checkout session id", async () => {
-    const upsert = vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null })
-      })
-    });
-    const client = {
-      from(table: string) {
-        expect(table).toBe("orders");
-        return { upsert };
-      }
-    } as unknown as OrdersDbClient;
+  it("inserts paid orders once by Stripe checkout session id", async () => {
+    const client = new PaymentMemoryDb();
 
     const result = await savePaidOrderFromCheckoutSessionWithClient(client, {
       id: "cs_test_123",
@@ -979,9 +970,37 @@ describe("orders repository", () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ stripe_checkout_session_id: "cs_test_123" }), {
-      onConflict: "stripe_checkout_session_id"
-    });
+    expect(client.table("orders")).toHaveLength(1);
+    expect(client.table("orders")[0]).toMatchObject({ stripe_checkout_session_id: "cs_test_123", payment_status: "paid" });
+  });
+
+  it.each(["refunded", "refund_pending", "refund_failed", "partially_refunded"])("does not resurrect a %s order on checkout replay", async (payment_status) => {
+    const client = new PaymentMemoryDb({ orders: [{ id: "order_replay", stripe_checkout_session_id: "cs_replay", status: "canceled", payment_status, stripe_refund_id: "re_1", line_items_json: [] }] });
+    const before = structuredClone(client.table("orders"));
+    expect(await savePaidOrderFromCheckoutSessionWithClient(client, { id: "cs_replay", payment_status: "paid" })).toMatchObject({ ok: true, wasAlreadyPaid: true, paymentReversed: true });
+    expect(client.table("orders")).toEqual(before);
+  });
+
+  it("does not overwrite a concurrent refund when confirming a pending payment", async () => {
+    const client = new PaymentMemoryDb({ orders: [{ id: "order_race", stripe_checkout_session_id: "cs_race", status: "pending_payment", payment_status: "unpaid", line_items_json: [] }] });
+    client.beforeQuery = async (table, action) => {
+      if (table === "orders" && action === "update") Object.assign(client.table("orders")[0], { status: "canceled", payment_status: "refunded", stripe_refund_id: "re_race" });
+    };
+    expect(await savePaidOrderFromCheckoutSessionWithClient(client, { id: "cs_race", payment_status: "paid" })).toMatchObject({ ok: false });
+    expect(client.table("orders")[0].payment_status).toBe("refunded");
+  });
+
+  it("fails closed when the existing order lookup fails", async () => {
+    const client = new PaymentMemoryDb();
+    client.failures.push({ table: "orders", action: "select", message: "database unavailable" });
+    expect(await savePaidOrderFromCheckoutSessionWithClient(client, { id: "cs_failed_lookup", payment_status: "paid" })).toMatchObject({ ok: false });
+    expect(client.table("orders")).toHaveLength(0);
+  });
+
+  it("repairs a missing payment reference without rewriting paid order progress", async () => {
+    const client = new PaymentMemoryDb({ orders: [{ id: "order_repair", stripe_checkout_session_id: "cs_repair", status: "paid", payment_status: "paid", production_status: "completed", shipping_status: "shipped", line_items_json: [] }] });
+    expect(await savePaidOrderFromCheckoutSessionWithClient(client, { id: "cs_repair", payment_status: "paid", payment_intent: "pi_repair" })).toMatchObject({ ok: true, wasAlreadyPaid: true });
+    expect(client.table("orders")[0]).toMatchObject({ stripe_payment_intent_id: "pi_repair", production_status: "completed", shipping_status: "shipped" });
   });
 
   it("reports when a Stripe Checkout Session was already paid to avoid duplicate emails", async () => {
@@ -1001,6 +1020,7 @@ describe("orders repository", () => {
                   maybeSingle: vi.fn().mockResolvedValue({
                     data: {
                       stripe_checkout_session_id: "cs_test_123",
+                      stripe_payment_intent_id: "pi_test_123",
                       status: "paid",
                       payment_status: "paid",
                       subtotal_cents: 3900,

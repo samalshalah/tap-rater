@@ -388,6 +388,7 @@ export function createCheckoutSessionParams({
     phone_number_collection: {
       enabled: true
     },
+    ...(cart.checkoutMode === "subscription" ? { subscription_data: { metadata: { tap_rater: "hosted_multilink" } } } : {}),
     metadata: {
       stripe_mode: stripeMode,
       total_cents: String(cart.totalCents),
@@ -716,6 +717,7 @@ export function getStripeSecretKey() {
 export function getStripeClient() {
   return new Stripe(getStripeSecretKey(), {
     httpClient: Stripe.createFetchHttpClient(),
+    timeout: 30_000,
     maxNetworkRetries: 0
   });
 }

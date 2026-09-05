@@ -18,22 +18,26 @@ import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
 import { supportedHostedPageButtons, type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
 import type { EmailResult } from "@/lib/email";
 import type { OrderLineItem, OrderRecord, OrdersDbClient, StripeCheckoutSessionLike } from "@/lib/orders";
+import { getStripeClient } from "@/lib/checkout";
+import { completeStripeReceipt, hasStripeReceipt, withStripeResourceLock } from "@/lib/stripe-processing";
+import { createHash, randomUUID } from "node:crypto";
+import { hostedSubscriptionGracePeriodDays, mapSubscriptionLifecycle } from "@/lib/hosted-subscription-lifecycle";
 
 export type HostedSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "trialing" | "unknown";
 export type HostedSubscriptionProvisioningStatus = "ready_for_customer_setup" | "provisioning_failed";
 
 export type HostedSubscriptionProvisioningResult =
   | {
-      ok: true;
-      provisioned: boolean;
-      code?: string;
-      hostedPageUrl?: string;
-      reason?: "not_hosted_checkout" | "duplicate_event" | "unpaid_checkout";
-    }
+    ok: true;
+    provisioned: boolean;
+    code?: string;
+    hostedPageUrl?: string;
+    reason?: "not_hosted_checkout" | "duplicate_event" | "unpaid_checkout";
+  }
   | {
-      ok: false;
-      error: string;
-    };
+    ok: false;
+    error: string;
+  };
 
 export type HostedSubscriptionProvisioningInput = {
   session: StripeCheckoutSessionLike;
@@ -52,28 +56,28 @@ export type ManualCustomerAccountProvisioningInput = {
 
 export type ManualCustomerAccountProvisioningResult =
   | {
-      ok: true;
-      accountProvisioned: boolean;
-      hostedProvisioned: boolean;
-      code?: string;
-      hostedPageUrl?: string;
-      reason?: "missing_customer_email";
-    }
+    ok: true;
+    accountProvisioned: boolean;
+    hostedProvisioned: boolean;
+    code?: string;
+    hostedPageUrl?: string;
+    reason?: "missing_customer_email";
+  }
   | {
-      ok: false;
-      error: string;
-    };
+    ok: false;
+    error: string;
+  };
 
 export type PaidCustomerAccountProvisioningResult =
   | {
-      ok: true;
-      accountProvisioned: boolean;
-      reason?: "missing_customer_email" | "account_not_requested" | "hosted_order" | "account_already_active";
-    }
+    ok: true;
+    accountProvisioned: boolean;
+    reason?: "missing_customer_email" | "account_not_requested" | "hosted_order" | "account_already_active";
+  }
   | {
-      ok: false;
-      error: string;
-    };
+    ok: false;
+    error: string;
+  };
 
 export type HostedSubscriptionProvisioningDependencies = {
   client: OrdersDbClient;
@@ -83,6 +87,7 @@ export type HostedSubscriptionProvisioningDependencies = {
   sendHostedAccountReadyEmailFn?: typeof sendHostedAccountReadyEmail;
   sendCustomerAccountSetupEmailFn?: typeof sendCustomerAccountSetupEmail;
   sendPaidCustomerAccountSetupEmailFn?: typeof sendPaidCustomerAccountSetupEmail;
+  retrieveSubscription?: (id: string) => Promise<StripeSubscriptionLike>;
 };
 
 type StripeSubscriptionLike = {
@@ -90,6 +95,7 @@ type StripeSubscriptionLike = {
   status?: string | null;
   current_period_end?: number | null;
   cancel_at_period_end?: boolean | null;
+  items?: { data?: Array<{ current_period_end?: number | null }> };
 };
 
 type ExistingHostedSubscription = {
@@ -99,6 +105,9 @@ type ExistingHostedSubscription = {
   permanent_code: string;
   hosted_page_url: string;
   updated_at?: string;
+  lifecycle_status?: string;
+  past_due_since?: string;
+  current_period_end?: string;
 };
 
 type ExistingHostedSubscriptionMatch = {
@@ -128,186 +137,242 @@ export async function provisionHostedSubscriptionFromCheckout(
   const { client, storage } = resolved;
   const now = input.now ?? new Date();
   const publicSiteUrl = resolvePublicSiteUrl(input.siteUrl);
-  let duplicateEvent = false;
-
-  if (input.eventId) {
-    const recorded = await recordStripeEventIfNew(client, input.eventId, input.eventType ?? "checkout.session.completed", now);
-    if (!recorded.ok) return recorded;
-    duplicateEvent = !recorded.created;
-  }
-
-  const email = normalizeEmail(input.session.customer_details?.email ?? input.session.customer_email ?? input.order.email);
-  if (!email) return { ok: false, error: "Customer email is required for hosted provisioning." };
-
-  const hostedItemIndexes = getHostedLineItemIndexes(input.order.line_items_json);
-  if (!hostedItemIndexes.length) return { ok: false, error: "Paid order does not contain a hosted line item." };
+  const checkoutSessionId = input.session.id;
   const stripeSubscriptionId = readStripeId(input.session.subscription) ?? `checkout:${input.session.id}`;
-  const stripeCustomerId = readStripeId(input.session.customer);
-  const readStatus = readSubscriptionStatus(input.session.subscription);
-  const subscriptionStatus = readStatus === "unknown" ? "active" : readStatus;
-  const lifecycleStatus = mapStripeSubscriptionLifecycle(input.session.subscription, now);
-  const paidThrough = readCurrentPeriodEnd(input.session.subscription);
-  const activation = createCustomerActivationToken();
+  return withStripeResourceLock<HostedSubscriptionProvisioningResult>(client, `subscription:${stripeSubscriptionId}`, async (assertActive) => {
+    const receiptId = `checkout:${input.session.id}:provision:v2`;
+    if (await hasStripeReceipt(client, receiptId)) {
+      await assertActive();
+      await repairHostedOrderTargets(client, checkoutSessionId, publicSiteUrl);
+      return { ok: true, provisioned: false, reason: "duplicate_event" };
+    }
+    const subscriptionSource = resolved.retrieveSubscription
+      ? await resolved.retrieveSubscription(stripeSubscriptionId) : input.session.subscription;
+    await assertActive();
 
-  const customer = await upsertCustomer(client, {
-    email,
-    name: input.session.customer_details?.name ?? input.order.customer_name ?? null,
-    phone: input.session.customer_details?.phone ?? null,
-    activationTokenHash: activation.tokenHash,
-    now
-  });
-  if (!customer.ok) return customer;
+    const email = normalizeEmail(input.session.customer_details?.email ?? input.session.customer_email ?? input.order.email);
+    if (!email) return { ok: false, error: "Customer email is required for hosted provisioning." };
 
-  let lineItems = input.order.line_items_json;
-  let firstHostedPage: { code: string; hostedPageUrl: string; businessName: string } | null = null;
-  const shouldReuseExistingCustomerPage = hostedItemIndexes.length === 1;
+    const hostedItemIndexes = getHostedLineItemIndexes(input.order.line_items_json);
+    if (!hostedItemIndexes.length) return { ok: false, error: "Paid order does not contain a hosted line item." };
+    const stripeCustomerId = readStripeId(input.session.customer);
+    const readStatus = readSubscriptionStatus(subscriptionSource);
+    const subscriptionStatus = readStatus === "unknown" ? "active" : readStatus;
+    const lifecycleStatus = mapStripeSubscriptionLifecycle(subscriptionSource, now);
+    const paidThrough = readCurrentPeriodEnd(subscriptionSource);
+    const activation = createCustomerActivationToken();
 
-  for (const hostedItemIndex of hostedItemIndexes) {
-    const hostedItem = input.order.line_items_json[hostedItemIndex];
-    const setup = readSetup(hostedItem);
-    const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
-    const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
-    const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-    const lineSessionId = hostedItemIndexes.length > 1 ? `${input.session.id}:line:${hostedItemIndex + 1}` : input.session.id;
-    const existingMatch = await findHostedSubscriptionForProvisioning(client, {
-      customerId: customer.customerId,
-      checkoutSessionId: lineSessionId,
-      allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage
+    const customer = await upsertCustomer(client, {
+      email,
+      name: input.session.customer_details?.name ?? input.order.customer_name ?? null,
+      phone: input.session.customer_details?.phone ?? null,
+      activationTokenHash: activation.tokenHash,
+      now
     });
-    if (!existingMatch.ok) return existingMatch;
-    const existingHostedSubscription = existingMatch.match?.subscription ?? null;
-    const lineSubscriptionId = stripeSubscriptionId;
-    const physicalProductRef = buildPhysicalProductRef(input.order, input.session.id, hostedItemIndex);
-    const business = existingMatch.match?.reason === "expired_customer_page"
-      ? await updateBusiness(client, {
+    if (!customer.ok) return customer;
+
+    let lineItems = input.order.line_items_json;
+    let firstHostedPage: { code: string; hostedPageUrl: string; businessName: string } | null = null;
+    const shouldReuseExistingCustomerPage = hostedItemIndexes.length === 1;
+
+    for (const hostedItemIndex of hostedItemIndexes) {
+      await assertActive();
+      const hostedItem = input.order.line_items_json[hostedItemIndex];
+      const setup = readSetup(hostedItem);
+      const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
+      const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
+      const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
+      const lineSessionId = hostedItemIndexes.length > 1 ? `${checkoutSessionId}:line:${hostedItemIndex + 1}` : checkoutSessionId;
+      const existingMatch = await findHostedSubscriptionForProvisioning(client, {
+        customerId: customer.customerId,
+        checkoutSessionId: lineSessionId,
+        allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage
+      });
+      if (!existingMatch.ok) return existingMatch;
+      const existingHostedSubscription = existingMatch.match?.subscription ?? null;
+      const retained = existingMatch.match?.reason === "checkout_session" ? existingHostedSubscription : null;
+      const itemLifecycleStatus = retained?.lifecycle_status === "RETIRED_INTERNAL" ? "RETIRED_INTERNAL" : lifecycleStatus;
+      const itemPaidThrough = paidThrough ?? retained?.current_period_end ?? null;
+      const pastDueSince = itemLifecycleStatus === "PAST_DUE" ? retained?.past_due_since ?? now.toISOString() : null;
+      const lineSubscriptionId = stripeSubscriptionId;
+      const physicalProductRef = buildPhysicalProductRef(input.order, checkoutSessionId, hostedItemIndex);
+      const business = existingMatch.match?.reason === "expired_customer_page"
+        ? await updateBusiness(client, {
           businessId: existingHostedSubscription!.business_id,
           customerId: customer.customerId,
           businessName,
           logoUrl: logoUrl ?? null,
           now
         })
-      : existingHostedSubscription
-        ? { ok: true as const, businessId: existingHostedSubscription.business_id }
-        : await createBusiness(client, {
-          customerId: customer.customerId,
-          businessName,
-          logoUrl: logoUrl ?? null,
-          now
-        });
-    if (!business.ok) return business;
+        : existingHostedSubscription
+          ? { ok: true as const, businessId: existingHostedSubscription.business_id }
+          : await createBusiness(client, {
+            id: buildHostedBusinessId(checkoutSessionId, hostedItemIndex),
+            customerId: customer.customerId,
+            businessName,
+            logoUrl: logoUrl ?? null,
+            now
+          });
+      if (!business.ok) return business;
 
-    const assignment = existingHostedSubscription
-      ? { code: existingHostedSubscription.permanent_code }
-      : await assignPermanentHostedPageCode(storage, {
+      const assignment = existingHostedSubscription
+        ? { code: existingHostedSubscription.permanent_code }
+        : await assignPermanentHostedPageCode(storage, {
           physicalProductRef,
           assignedBy: `stripe:${input.session.id}`,
           now,
           generateCode: dependencies?.generateCode
         });
-    const hostedPageUrl = resolveHostedPageUrl(existingHostedSubscription?.hosted_page_url, publicSiteUrl, assignment.code);
-    lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
-      stripeSubscriptionId: lineSubscriptionId,
-      subscriptionStatus
-    });
-    const hostedPageCode = await upsertHostedPageCode(client, {
-      code: assignment.code,
-      physicalProductRef,
-      assignedBy: `stripe:${input.session.id}`,
-      assignedAt: now.toISOString()
-    });
-    if (!hostedPageCode.ok) return hostedPageCode;
+      const hostedPageUrl = resolveHostedPageUrl(existingHostedSubscription?.hosted_page_url, publicSiteUrl, assignment.code);
+      lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
+        stripeSubscriptionId: lineSubscriptionId,
+        subscriptionStatus
+      });
+      const hostedPageCode = await upsertHostedPageCode(client, {
+        code: assignment.code,
+        physicalProductRef,
+        assignedBy: `stripe:${input.session.id}`,
+        assignedAt: now.toISOString()
+      });
+      if (!hostedPageCode.ok) return hostedPageCode;
 
-    const page = existingMatch.match?.reason === "checkout_session"
-      ? { ok: true as const, pageId: existingHostedSubscription!.hosted_page_id }
-      : await upsertHostedEditorPage(client, {
+      const page = existingMatch.match?.reason === "checkout_session"
+        ? { ok: true as const, pageId: existingHostedSubscription!.hosted_page_id }
+        : await upsertHostedEditorPage(client, {
           customerId: customer.customerId,
           businessId: business.businessId,
           code: assignment.code,
-          lifecycleStatus,
+          lifecycleStatus: itemLifecycleStatus,
           businessName,
           logoUrl: logoUrl ?? null,
           initialButtons,
           now
         });
-    if (!page.ok) return page;
+      if (!page.ok) return page;
+      if (retained) {
+        const pageUpdate = await client.from("hosted_page_editor_pages")
+          .update({ lifecycle_status: itemLifecycleStatus, updated_at: now.toISOString() }).eq("id", page.pageId);
+        if (pageUpdate.error) return { ok: false, error: pageUpdate.error.message };
+      }
 
-    const subscription = await upsertHostedSubscription(client, {
-      existingSubscriptionId: existingHostedSubscription?.id,
-      customerId: customer.customerId,
-      businessId: business.businessId,
-      hostedPageId: page.pageId,
-      orderId: input.order.id ?? null,
-      stripeCheckoutSessionId: lineSessionId,
-      stripeCustomerId,
-      stripeSubscriptionId: lineSubscriptionId,
-      permanentCode: assignment.code,
-      hostedPageUrl,
-      status: subscriptionStatus,
-      lifecycleStatus,
-      currentPeriodEnd: paidThrough,
-      cancelAtPeriodEnd: Boolean(readSubscriptionObject(input.session.subscription)?.cancel_at_period_end),
-      provisioningStatus: "ready_for_customer_setup",
-      now
-    });
-    if (!subscription.ok) return subscription;
+      const subscription = await upsertHostedSubscription(client, {
+        existingSubscriptionId: existingHostedSubscription?.id,
+        customerId: customer.customerId,
+        businessId: business.businessId,
+        hostedPageId: page.pageId,
+        orderId: input.order.id ?? null,
+        stripeCheckoutSessionId: lineSessionId,
+        stripeCustomerId,
+        stripeSubscriptionId: lineSubscriptionId,
+        permanentCode: assignment.code,
+        hostedPageUrl,
+        status: subscriptionStatus,
+        lifecycleStatus: itemLifecycleStatus,
+        currentPeriodEnd: itemPaidThrough,
+        pastDueSince,
+        cancelAtPeriodEnd: Boolean(readSubscriptionObject(subscriptionSource)?.cancel_at_period_end),
+        provisioningStatus: "ready_for_customer_setup",
+        now
+      });
+      if (!subscription.ok) return subscription;
 
-    const publishedPage = duplicateEvent ? await readCurrentHostedPageSnapshot(storage, assignment.code) : null;
-    if (!publishedPage || snapshotPredatesProvisioning(publishedPage.publishedAt, existingHostedSubscription?.updated_at)) {
-      await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
-        schemaVersion: 1,
-        code: assignment.code,
-        version: buildProvisioningSnapshotVersion(now, input.session.id, hostedItemIndex, duplicateEvent),
-        publishedAt: now.toISOString(),
-        lifecycleStatus,
-        businessName,
-        logoUrl: logoUrl ?? undefined,
-        headline: businessName,
-        buttons: buildSnapshotButtons(initialButtons),
-        description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
-        appearance: { theme: "light", accentColor: "#0f766e" },
-        subscriptionPaidThrough: paidThrough ?? undefined
-      }));
+      const publishedPage = await readCurrentHostedPageSnapshot(storage, assignment.code);
+      if (!publishedPage || existingMatch.match?.reason === "expired_customer_page") {
+        await assertActive();
+        await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
+          schemaVersion: 1,
+          code: assignment.code,
+          version: `${buildProvisioningSnapshotVersion(now, checkoutSessionId, hostedItemIndex, Boolean(existingHostedSubscription))}-${randomUUID().slice(0, 8)}`,
+          publishedAt: now.toISOString(),
+          lifecycleStatus: itemLifecycleStatus,
+          businessName,
+          logoUrl: logoUrl ?? undefined,
+          headline: businessName,
+          buttons: buildSnapshotButtons(initialButtons),
+          description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+          appearance: { theme: "light", accentColor: "#0f766e" },
+          subscriptionPaidThrough: itemPaidThrough ?? undefined,
+          subscriptionPastDueSince: pastDueSince ?? undefined
+        }));
+      } else if (publishedPage.lifecycleStatus !== itemLifecycleStatus ||
+        publishedPage.subscriptionPaidThrough !== (itemPaidThrough ?? undefined) ||
+        publishedPage.subscriptionPastDueSince !== (pastDueSince ?? undefined)) {
+        await assertActive();
+        await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
+          ...publishedPage,
+          lifecycleStatus: itemLifecycleStatus,
+          subscriptionPaidThrough: itemPaidThrough ?? undefined,
+          subscriptionPastDueSince: pastDueSince ?? undefined,
+          version: `provision-retry-${Date.now()}-${randomUUID()}`,
+          publishedAt: now.toISOString()
+        }));
+      }
+
+      firstHostedPage ??= { code: assignment.code, hostedPageUrl, businessName };
     }
 
-    firstHostedPage ??= { code: assignment.code, hostedPageUrl, businessName };
-  }
+    await assertActive();
+    const orderUpdate = await client
+      .from("orders")
+      .update({
+        line_items_json: lineItems,
+        production_status: input.order.production_status === "not_started" ? "ready_for_production" : input.order.production_status,
+        updated_at: now.toISOString()
+      })
+      .eq("stripe_checkout_session_id", input.session.id);
+    if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
 
-  const orderUpdate = await client
-    .from("orders")
-    .update({
-      line_items_json: lineItems,
-      production_status: "ready_for_production",
-      updated_at: now.toISOString()
-    })
-    .eq("stripe_checkout_session_id", input.session.id);
-  if (orderUpdate.error) return { ok: false, error: orderUpdate.error.message };
-
-  if (!duplicateEvent) {
-    const setupEmail = customer.wasAlreadyActive
-      ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
+    {
+      const setupEmail = customer.wasAlreadyActive
+        ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
           to: email,
           businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
           hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`
         })
-      : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
+        : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
           to: email,
           businessName: firstHostedPage?.businessName ?? input.order.customer_name ?? "Tap Rater Customer",
           hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${publicSiteUrl}/account`,
           activationToken: activation.token
         });
-    if (!setupEmail.sent) {
-      console.warn("[hosted-provisioning] setup_email_not_sent", {
-        stripeCheckoutSessionId: input.session.id,
-        reason: setupEmail.reason
-      });
+      if (!setupEmail.sent) {
+        console.warn("[hosted-provisioning] setup_email_not_sent", {
+          stripeCheckoutSessionId: input.session.id,
+          reason: setupEmail.reason
+        });
+      }
     }
-  }
 
-  if (duplicateEvent) {
-    return { ok: true, provisioned: false, reason: "duplicate_event" };
-  }
+    await assertActive();
+    await completeStripeReceipt(client, receiptId, input.eventType ?? "checkout.session.completed", now);
+    return { ok: true, provisioned: true, code: firstHostedPage?.code, hostedPageUrl: firstHostedPage?.hostedPageUrl };
+  });
+}
 
-  return { ok: true, provisioned: true, code: firstHostedPage?.code, hostedPageUrl: firstHostedPage?.hostedPageUrl };
+async function repairHostedOrderTargets(client: OrdersDbClient, checkoutSessionId: string, siteUrl: string) {
+  const lookup = await client.from("orders").select("*").eq("stripe_checkout_session_id", checkoutSessionId).maybeSingle();
+  if (lookup.error || !lookup.data) throw new Error(lookup.error?.message ?? "Provisioned order is missing.");
+  if (lookup.data.payment_status?.includes("refund") || lookup.data.stripe_refund_id) return;
+  const original = lookup.data.line_items_json as OrderLineItem[];
+  let lineItems = original;
+  const indexes = getHostedLineItemIndexes(lineItems);
+  for (const index of indexes) {
+    const lineSessionId = indexes.length > 1 ? `${checkoutSessionId}:line:${index + 1}` : checkoutSessionId;
+    const subscription = await client.from("hosted_subscriptions").select("*").eq("stripe_checkout_session_id", lineSessionId).maybeSingle();
+    if (subscription.error || !subscription.data) throw new Error(subscription.error?.message ?? "Provisioned subscription is missing.");
+    const row = subscription.data;
+    const url = resolveHostedPageUrl(row.hosted_page_url, siteUrl, row.permanent_code);
+    if (url !== row.hosted_page_url) {
+      const update = await client.from("hosted_subscriptions").update({ hosted_page_url: url }).eq("id", row.id);
+      if (update.error) throw new Error(update.error.message);
+    }
+    lineItems = attachHostedTargets(lineItems, index, row.permanent_code, url, { stripeSubscriptionId: row.stripe_subscription_id, subscriptionStatus: row.status });
+  }
+  if (JSON.stringify(original) !== JSON.stringify(lineItems)) {
+    const update = await client.from("orders").update({ line_items_json: lineItems }).eq("stripe_checkout_session_id", checkoutSessionId)
+      .eq("payment_status", lookup.data.payment_status ?? null).eq("stripe_refund_id", lookup.data.stripe_refund_id ?? null);
+    if (update.error) throw new Error(update.error.message);
+  }
 }
 
 export async function provisionManualCustomerAccountFromOrder(
@@ -388,12 +453,12 @@ export async function provisionManualCustomerAccountFromOrder(
     const physicalProductRef = buildPhysicalProductRef(input.order, input.order.stripe_checkout_session_id, hostedItemIndex);
     const business = existingMatch.match?.reason === "expired_customer_page"
       ? await updateBusiness(client, {
-          businessId: existingHostedSubscription!.business_id,
-          customerId: customer.customerId,
-          businessName: itemBusinessName,
-          logoUrl: logoUrl ?? null,
-          now
-        })
+        businessId: existingHostedSubscription!.business_id,
+        customerId: customer.customerId,
+        businessName: itemBusinessName,
+        logoUrl: logoUrl ?? null,
+        now
+      })
       : existingHostedSubscription
         ? { ok: true as const, businessId: existingHostedSubscription.business_id }
         : await createBusiness(client, {
@@ -407,11 +472,11 @@ export async function provisionManualCustomerAccountFromOrder(
     const assignment = existingHostedSubscription
       ? { code: existingHostedSubscription.permanent_code }
       : await assignPermanentHostedPageCode(storage, {
-          physicalProductRef,
-          assignedBy: `manual:${input.order.stripe_checkout_session_id}`,
-          now,
-          generateCode: dependencies?.generateCode
-        });
+        physicalProductRef,
+        assignedBy: `manual:${input.order.stripe_checkout_session_id}`,
+        now,
+        generateCode: dependencies?.generateCode
+      });
     const hostedPageUrl = existingHostedSubscription?.hosted_page_url ?? `${publicSiteUrl}/p/${assignment.code}`;
     lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
       stripeSubscriptionId,
@@ -428,15 +493,15 @@ export async function provisionManualCustomerAccountFromOrder(
     const page = existingMatch.match?.reason === "checkout_session"
       ? { ok: true as const, pageId: existingHostedSubscription!.hosted_page_id }
       : await upsertHostedEditorPage(client, {
-          customerId: customer.customerId,
-          businessId: business.businessId,
-          code: assignment.code,
-          lifecycleStatus: "ACTIVE",
-          businessName: itemBusinessName,
-          logoUrl: logoUrl ?? null,
-          initialButtons,
-          now
-        });
+        customerId: customer.customerId,
+        businessId: business.businessId,
+        code: assignment.code,
+        lifecycleStatus: "ACTIVE",
+        businessName: itemBusinessName,
+        logoUrl: logoUrl ?? null,
+        initialButtons,
+        now
+      });
     if (!page.ok) return page;
 
     const subscription = await upsertHostedSubscription(client, {
@@ -488,16 +553,16 @@ export async function provisionManualCustomerAccountFromOrder(
 
   const setupEmail = customer.wasAlreadyActive
     ? await (dependencies?.sendHostedAccountReadyEmailFn ?? sendHostedAccountReadyEmail)({
-        to: email,
-        businessName: firstHostedPage?.businessName ?? businessName,
-        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`
-      })
+      to: email,
+      businessName: firstHostedPage?.businessName ?? businessName,
+      hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`
+    })
     : await (dependencies?.sendHostedSetupEmailFn ?? sendHostedSetupEmail)({
-        to: email,
-        businessName: firstHostedPage?.businessName ?? businessName,
-        hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
-        activationToken: activation.token
-      });
+      to: email,
+      businessName: firstHostedPage?.businessName ?? businessName,
+      hostedPageUrl: firstHostedPage?.hostedPageUrl ?? `${(input.siteUrl ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://taprater.com").replace(/\/+$/, "")}/account`,
+      activationToken: activation.token
+    });
   if (!setupEmail.sent) {
     console.warn("[manual-provisioning] hosted_setup_email_not_sent", {
       orderReference: input.order.stripe_checkout_session_id,
@@ -554,16 +619,16 @@ export async function provisionPaidCustomerAccountFromOrder(
   }
 
   const setupEmail = await (dependencies?.sendPaidCustomerAccountSetupEmailFn ?? sendPaidCustomerAccountSetupEmail)({
-      to: email,
-      businessName,
-      orderReference: input.order.stripe_checkout_session_id,
-      activationToken: activation.token
-    });
+    to: email,
+    businessName,
+    orderReference: input.order.stripe_checkout_session_id,
+    activationToken: activation.token
+  });
   if (!setupEmail.sent) {
-      console.warn("[paid-account-provisioning] account_email_not_sent", {
-        orderReference: input.order.stripe_checkout_session_id,
-        reason: setupEmail.reason
-      });
+    console.warn("[paid-account-provisioning] account_email_not_sent", {
+      orderReference: input.order.stripe_checkout_session_id,
+      reason: setupEmail.reason
+    });
   }
 
   return { ok: true, accountProvisioned: true };
@@ -574,15 +639,8 @@ export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike,
   return metadataIntent === "hosted_subscription" || order.line_items_json.some((item) => getHostedLineItem(item));
 }
 
-export function mapStripeSubscriptionLifecycle(subscription: unknown, now = new Date()): HostedPageLifecycleStatus {
-  const value = readSubscriptionObject(subscription);
-  const status = value?.status ?? "active";
-
-  if (status === "past_due" || status === "unpaid" || status === "incomplete") return "PAST_DUE";
-  if (status === "canceled") return "EXPIRED";
-  if (value?.cancel_at_period_end) return "CANCELLED_AT_PERIOD_END";
-  if (status === "active" || status === "trialing") return "ACTIVE";
-  return now.getTime() >= 0 ? "ACTIVE" : "ACTIVE";
+export function mapStripeSubscriptionLifecycle(subscription: unknown, _now = new Date()): HostedPageLifecycleStatus {
+  return mapSubscriptionLifecycle(subscription);
 }
 
 async function resolveDependencies(dependencies?: HostedSubscriptionProvisioningDependencies) {
@@ -592,28 +650,16 @@ async function resolveDependencies(dependencies?: HostedSubscriptionProvisioning
   const storage = await getHostedPageStorage();
   if (!storage) return { ok: false as const, error: "Hosted page snapshot storage is not configured." };
 
-  return { ok: true as const, client: getSupabaseAdmin() as OrdersDbClient, storage };
+  return {
+    ok: true as const, client: getSupabaseAdmin() as OrdersDbClient, storage,
+    retrieveSubscription: (id: string) => getStripeClient().subscriptions.retrieve(id),
+  };
 }
 
 async function resolveClientDependency(dependencies?: Pick<HostedSubscriptionProvisioningDependencies, "client">) {
   if (dependencies?.client) return { ok: true as const, client: dependencies.client };
   if (!hasSupabaseAdminConfig()) return { ok: false as const, error: "Database persistence is not configured." };
   return { ok: true as const, client: getSupabaseAdmin() as OrdersDbClient };
-}
-
-async function recordStripeEventIfNew(client: OrdersDbClient, eventId: string, eventType: string, now: Date) {
-  const existing = await client.from("stripe_events").select("id").eq("id", eventId).maybeSingle();
-  if (existing.error) return { ok: false as const, error: existing.error.message };
-  if (existing.data) return { ok: true as const, created: false };
-
-  const inserted = await client.from("stripe_events").insert({
-    id: eventId,
-    type: eventType,
-    processed_at: now.toISOString(),
-    created_at: now.toISOString()
-  });
-  if (inserted.error) return { ok: false as const, error: inserted.error.message };
-  return { ok: true as const, created: true };
 }
 
 async function upsertCustomer(
@@ -627,13 +673,13 @@ async function upsertCustomer(
   const accountStatus = wasAlreadyActive ? "active" : "pending_activation";
   const activationFields = wasAlreadyActive
     ? {
-        activation_token_hash: null,
-        activation_expires_at: null
-      }
+      activation_token_hash: null,
+      activation_expires_at: null
+    }
     : {
-        activation_token_hash: input.activationTokenHash,
-        activation_expires_at: activationExpiresAt
-      };
+      activation_token_hash: input.activationTokenHash,
+      activation_expires_at: activationExpiresAt
+    };
 
   const result = await client
     .from("customers")
@@ -655,10 +701,22 @@ async function upsertCustomer(
   return { ok: true as const, customerId: String(result.data.id), wasAlreadyActive };
 }
 
-async function createBusiness(client: OrdersDbClient, input: { customerId: string; businessName: string; logoUrl?: string | null; now: Date }) {
+function buildHostedBusinessId(checkoutSessionId: string, itemIndex: number) {
+  const hex = createHash("sha256").update(`taprater-business:${checkoutSessionId}:${itemIndex}`).digest("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+async function createBusiness(client: OrdersDbClient, input: { id?: string; customerId: string; businessName: string; logoUrl?: string | null; now: Date }) {
+  if (input.id) {
+    const existing = await client.from("businesses").select("id,customer_id").eq("id", input.id).maybeSingle();
+    if (existing.error) return { ok: false as const, error: existing.error.message };
+    if (existing.data) return existing.data.customer_id === input.customerId
+      ? { ok: true as const, businessId: input.id } : { ok: false as const, error: "Provisioning business ownership does not match." };
+  }
   const result = await client
     .from("businesses")
     .insert({
+      ...(input.id ? { id: input.id } : {}),
       customer_id: input.customerId,
       business_name: input.businessName,
       logo_url: input.logoUrl ?? null,
@@ -747,6 +805,7 @@ async function upsertHostedSubscription(
     status: HostedSubscriptionStatus;
     lifecycleStatus: HostedPageLifecycleStatus;
     currentPeriodEnd?: string | null;
+    pastDueSince?: string | null;
     cancelAtPeriodEnd: boolean;
     provisioningStatus: HostedSubscriptionProvisioningStatus;
     now: Date;
@@ -767,8 +826,8 @@ async function upsertHostedSubscription(
         lifecycle_status: input.lifecycleStatus,
         current_period_end: input.currentPeriodEnd ?? null,
         cancel_at_period_end: input.cancelAtPeriodEnd,
-        past_due_since: null,
-        grace_ends_at: null,
+        past_due_since: input.pastDueSince ?? null,
+        grace_ends_at: input.pastDueSince ? new Date(Date.parse(input.pastDueSince) + hostedSubscriptionGracePeriodDays * 86_400_000).toISOString() : null,
         provisioning_status: input.provisioningStatus,
         provisioning_error: null,
         updated_at: input.now.toISOString()
@@ -792,6 +851,8 @@ async function upsertHostedSubscription(
       status: input.status,
       lifecycle_status: input.lifecycleStatus,
       current_period_end: input.currentPeriodEnd ?? null,
+      past_due_since: input.pastDueSince ?? null,
+      grace_ends_at: input.pastDueSince ? new Date(Date.parse(input.pastDueSince) + hostedSubscriptionGracePeriodDays * 86_400_000).toISOString() : null,
       cancel_at_period_end: input.cancelAtPeriodEnd,
       provisioning_status: input.provisioningStatus,
       updated_at: input.now.toISOString()
@@ -852,7 +913,10 @@ function normalizeExistingHostedSubscription(row: unknown): ExistingHostedSubscr
     hosted_page_id: hostedPageId,
     permanent_code: permanentCode,
     hosted_page_url: hostedPageUrl,
-    updated_at: readString(value.updated_at)
+    updated_at: readString(value.updated_at),
+    lifecycle_status: readString(value.lifecycle_status),
+    past_due_since: readString(value.past_due_since),
+    current_period_end: readString(value.current_period_end)
   };
 }
 
@@ -1026,13 +1090,6 @@ function resolvePublicAssetUrl(value: string | undefined, siteUrl: string) {
   }
 }
 
-function snapshotPredatesProvisioning(publishedAt: string, subscriptionUpdatedAt: string | undefined) {
-  if (!subscriptionUpdatedAt) return false;
-  const publishedTime = Date.parse(publishedAt);
-  const subscriptionTime = Date.parse(subscriptionUpdatedAt);
-  return Number.isFinite(publishedTime) && Number.isFinite(subscriptionTime) && publishedTime < subscriptionTime;
-}
-
 export function buildProvisioningSnapshotVersion(now: Date, checkoutSessionId: string, itemIndex: number, isReconciliation = false) {
   const sessionSuffix = checkoutSessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-24) || "checkout";
   const prefix = isReconciliation ? "reconciled" : "provisioned";
@@ -1056,6 +1113,8 @@ function resolveHostedPageUrl(existingUrl: string | null | undefined, siteUrl: s
 
 function readSubscriptionStatus(value: unknown): HostedSubscriptionStatus {
   const status = readSubscriptionObject(value)?.status;
+  if (status === "paused") return "unpaid";
+  if (status === "incomplete_expired") return "canceled";
   return status === "active" ||
     status === "past_due" ||
     status === "canceled" ||
@@ -1067,6 +1126,8 @@ function readSubscriptionStatus(value: unknown): HostedSubscriptionStatus {
 }
 
 function readCurrentPeriodEnd(value: unknown) {
-  const epochSeconds = readSubscriptionObject(value)?.current_period_end;
+  const subscription = readSubscriptionObject(value);
+  const periods = subscription?.items?.data?.map((item) => item.current_period_end).filter((period): period is number => typeof period === "number" && Number.isFinite(period)) ?? [];
+  const epochSeconds = subscription?.current_period_end ?? (periods.length ? Math.min(...periods) : null);
   return typeof epochSeconds === "number" && Number.isFinite(epochSeconds) ? new Date(epochSeconds * 1000).toISOString() : null;
 }

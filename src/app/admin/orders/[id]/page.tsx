@@ -84,6 +84,8 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
                 alreadyRefunded={order.payment_status === "refunded"}
                 hasSubscription={order.line_items_json.some((item) => item.destinationMode === "HOSTED")}
                 refundId={order.stripe_refund_id}
+                refundStatus={order.refund_status}
+                refundFailureReason={order.refund_failure_reason}
               />
             ) : null}
             {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} /> : null}
@@ -286,6 +288,9 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
 
 function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
   if (order.payment_status === "refunded") return "Refunded";
+  if (order.payment_status === "refund_pending") return "Refund pending";
+  if (order.payment_status === "refund_failed") return "Refund needs review";
+  if (order.payment_status === "partially_refunded") return "Partially refunded";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
   return order.status.replaceAll("_", " ");
@@ -297,7 +302,9 @@ function buildAttentionItems(
 ) {
   const items = new Set<string>();
   if (!canAdvanceOrderFulfillment(order)) {
-    items.add("Payment is not confirmed. Production and fulfillment actions are locked for this order.");
+    items.add(order.payment_status?.includes("refund")
+      ? "This order has a refund. Production and fulfillment actions are locked."
+      : "Payment is not confirmed. Production and fulfillment actions are locked for this order.");
   }
 
   for (const summary of summaries) {

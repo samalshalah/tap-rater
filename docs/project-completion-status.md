@@ -6,16 +6,30 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
+The September 5 ecommerce audit supersedes the historical percentages below: approximately **88% implemented / 72% launch-ready** at audit baseline. **Commerce correction Phase 1 is complete in test mode**: migration, deployment, refund subscriptions, and a deployed payment/refund/replay drill passed. Five correction phases remain. No new overall readiness percentage has been calculated, and live launch is not approved. See `docs/ecommerce-phase-1.md` and `artifacts/ecommerce-readiness-2026-09-05/audit.md`. These are not the earlier six UI/UX phases.
+
 - Configuration readiness: 88%
 - Blocked configuration checks: 0
 - Manual confirmations: 3
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
-- Automated verification: 100 test files and 573 tests passing in the current release candidate
+- Deployed Phase 1 release: `206d8d6f-14a3-492e-ac9c-c0140deba84f`; 701 tests passing across 111 files, plus 5 explicitly run isolated-database integration tests.
+- Active application database verified from a new deployed checkout: Neon `milestone7-qa` (`br-restless-shape-at38e1nu`), not the separately named `production` branch. Recovery checkpoint retained; branch protection and restore acceptance remain open.
+
+## Commerce Corrections
+
+| Phase | Status | Completion evidence still required |
+| --- | --- | --- |
+| 1. Payment reliability | Complete in test mode | Live equivalents belong to Phase 6 |
+| 2. Account, invoice, email recovery | Open | Durable retries and failure-recovery proof |
+| 3. Store operating controls | Open | Pricing authority, inventory policy, fulfillment acceptance |
+| 4. Security and recovery | Open | Token isolation, branch protection, backup/restore coverage |
+| 5. Owner acceptance | Open | Accounts, portals, inbox, operations, restore drill |
+| 6. Real-money launch | Open | Tax/policy decision, live configuration, controlled real purchases and reconciliation |
 
 ## Phase Progress
 
-These are engineering estimates based on implemented behavior and verification evidence. Tax/legal approval and live payment proof remain separate launch gates.
+The following historical estimates predate the ecommerce failure-path audit and must not be used as current launch-readiness scores. Tax/legal approval and live payment proof remain separate launch gates.
 
 | Phase | Complete | Remaining work |
 | --- | ---: | --- |
@@ -143,7 +157,7 @@ Detailed procedure: `docs/recovery-runbook.md`.
 
 ## Autonomous Work Queue
 
-No unattended engineering work remains in this phase. The remaining recovery exercise requires the owner to observe provider-level rollback and restore actions.
+The ecommerce audit reopened engineering work. Phase 1 release verification is now complete in test mode; Phase 2 account/invoice/email recovery, Phase 3 pricing and operating controls, and Phase 4 token isolation and deployment/recovery work remain. Owner acceptance and the live launch are Phases 5 and 6. Keep the owner-at-computer queue above until each item has direct completion evidence.
 
 ## Safety Rules
 

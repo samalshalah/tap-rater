@@ -969,12 +969,26 @@ create table if not exists product_variants (
   stock_status text not null check (stock_status in ('instock', 'outofstock'))
 );
 
+create table if not exists stripe_processing_locks (
+  resource_key text primary key,
+  owner_token uuid not null,
+  expires_at timestamptz not null,
+  attempts integer not null default 0,
+  last_error text,
+  updated_at timestamptz not null default now()
+);
+alter table stripe_processing_locks enable row level security;
+
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
   stripe_checkout_session_id text not null unique,
   stripe_payment_intent_id text,
   stripe_refund_id text,
   refunded_at timestamptz,
+  refund_status text,
+  refunded_amount_cents integer not null default 0,
+  refund_pending_amount_cents integer not null default 0,
+  refund_failure_reason text,
   status text not null default 'pending_payment' check (status in ('pending_payment', 'paid', 'failed', 'canceled')),
   payment_status text,
   email text,
@@ -1001,6 +1015,8 @@ create table if not exists orders (
 );
 
 create index if not exists orders_status_idx on orders(status);
+create index if not exists orders_payment_intent_idx on orders(stripe_payment_intent_id)
+  where stripe_payment_intent_id is not null;
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists orders_fulfillment_queue_idx on orders(status, production_status, shipping_status, created_at desc);
 

@@ -65,7 +65,7 @@ export function OrderFulfillmentForm({ order }: { order: OrderRecord }) {
       <AdminCard title="Fulfillment operations" description="Update production and shipping state. Marking an order shipped with tracking sends the customer shipping notification once.">
       <div className="space-y-5">
       {!canOperate ? (
-        <AdminAlert tone="warning">Payment must be confirmed before production or shipping status can advance. Internal notes can still be saved.</AdminAlert>
+        <AdminAlert tone="warning">{order.payment_status?.includes("refund") ? "This order has a refund. Production and shipping are locked." : "Payment must be confirmed before production or shipping status can advance."} Internal notes can still be saved.</AdminAlert>
       ) : null}
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block text-sm font-semibold text-ink">

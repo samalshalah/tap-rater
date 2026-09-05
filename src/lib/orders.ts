@@ -79,6 +79,10 @@ export type OrderRecord = {
   stripe_payment_intent_id?: string | null;
   stripe_refund_id?: string | null;
   refunded_at?: string | null;
+  refund_status?: string | null;
+  refunded_amount_cents?: number;
+  refund_pending_amount_cents?: number;
+  refund_failure_reason?: string | null;
   status: "pending_payment" | "paid" | "failed" | "canceled";
   payment_status?: string | null;
   email?: string | null;
@@ -109,6 +113,7 @@ export type PaidOrderSaveResult =
       ok: true;
       order: OrderRecord;
       wasAlreadyPaid: boolean;
+      paymentReversed?: boolean;
     }
   | {
       ok: false;
@@ -770,8 +775,23 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     return { ok: false, error: "Missing Stripe Checkout Session ID." };
   }
 
-  const existingOrder = await getOrderByStripeCheckoutSessionId(client, order.stripe_checkout_session_id);
+  if (session.payment_status !== "paid") return { ok: false, error: "Checkout payment is not confirmed." };
+  const lookup = await client.from("orders").select("*").eq("stripe_checkout_session_id", order.stripe_checkout_session_id).maybeSingle();
+  if (lookup.error) return { ok: false, error: lookup.error.message };
+  const existingOrder = lookup.data ? normalizeOrderRecord(lookup.data) : null;
+  if (existingOrder && (existingOrder.stripe_refund_id || existingOrder.refund_status || existingOrder.payment_status?.includes("refund"))) {
+    return { ok: true, order: existingOrder, wasAlreadyPaid: true, paymentReversed: true };
+  }
   const wasAlreadyPaid = existingOrder?.status === "paid" || existingOrder?.payment_status === "paid";
+  if (existingOrder && wasAlreadyPaid) {
+    if (!existingOrder.stripe_payment_intent_id && order.stripe_payment_intent_id) {
+      const repaired = await client.from("orders").update({ stripe_payment_intent_id: order.stripe_payment_intent_id })
+        .eq("stripe_checkout_session_id", order.stripe_checkout_session_id).eq("stripe_payment_intent_id", null).select("id").maybeSingle();
+      if (repaired.error || !repaired.data) return { ok: false, error: repaired.error?.message ?? "Payment reference changed. Retry the event." };
+      existingOrder.stripe_payment_intent_id = order.stripe_payment_intent_id;
+    }
+    return { ok: true, order: existingOrder, wasAlreadyPaid: true };
+  }
   const shouldPreserveExistingLineItems = Boolean(wasAlreadyPaid && existingOrder?.line_items_json.length);
   const mergedLineItems = shouldPreserveExistingLineItems
     ? existingOrder?.line_items_json ?? []
@@ -809,14 +829,17 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     payload.shipping_mode = order.shipping_mode ?? existingOrder.shipping_mode ?? null;
   }
 
-  const { data: savedOrder, error } = await client
-    .from("orders")
-    .upsert(payload, { onConflict: "stripe_checkout_session_id" })
-    .select("*")
-    .maybeSingle();
+  // Compare-and-set prevents a concurrent refund/payment transition being lost.
+  const query = existingOrder
+    ? client.from("orders").update(payload)
+      .eq("stripe_checkout_session_id", order.stripe_checkout_session_id)
+      .eq("status", existingOrder.status).eq("payment_status", existingOrder.payment_status)
+      .eq("stripe_refund_id", existingOrder.stripe_refund_id ?? null)
+    : client.from("orders").insert(payload);
+  const { data: savedOrder, error } = await query.select("*").maybeSingle();
 
-  return error
-    ? { ok: false, error: error.message }
+  return error || !savedOrder
+    ? { ok: false, error: error?.message ?? "Order changed during payment processing. Retry the event." }
     : { ok: true, order: savedOrder ? normalizeOrderRecord(savedOrder) : mergedOrder, wasAlreadyPaid };
 }
 
@@ -1151,6 +1174,10 @@ function normalizeOrderRecord(value: unknown): OrderRecord {
     stripe_payment_intent_id: readString(row.stripe_payment_intent_id) ?? null,
     stripe_refund_id: readString(row.stripe_refund_id) ?? null,
     refunded_at: readString(row.refunded_at) ?? null,
+    refund_status: readString(row.refund_status) ?? null,
+    refunded_amount_cents: readNumber(row.refunded_amount_cents) ?? 0,
+    refund_pending_amount_cents: readNumber(row.refund_pending_amount_cents) ?? 0,
+    refund_failure_reason: readString(row.refund_failure_reason) ?? null,
     status: readOrderStatus(row.status) ?? "pending_payment",
     payment_status: readString(row.payment_status) ?? null,
     email: readString(row.email) ?? null,

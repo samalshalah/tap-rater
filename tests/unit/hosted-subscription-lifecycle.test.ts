@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 import {
   hostedSubscriptionGracePeriodDays,
   processHostedSubscriptionLifecycleEvent
@@ -19,7 +20,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { id: "sub_test_123", status: "active", current_period_end: 1_800_000_000 },
         now: new Date("2026-08-24T00:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active", current_period_end: 1_800_000_000 }) }
     );
 
     expect(result).toMatchObject({ ok: true, processed: true, code, lifecycleStatus: "ACTIVE" });
@@ -43,7 +44,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { id: "sub_test_123", status: "active", cancel_at_period_end: true, current_period_end: 1_800_000_000 },
         now: new Date("2026-08-24T00:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active", cancel_at_period_end: true, current_period_end: 1_800_000_000 }) }
     );
 
     expect(client.table("hosted_subscriptions")[0]).toMatchObject({
@@ -66,7 +67,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { parent: { subscription_details: { subscription: "sub_test_123" } } },
         now
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "past_due" }) }
     );
 
     expect(hostedSubscriptionGracePeriodDays).toBe(7);
@@ -94,7 +95,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { parent: { subscription_details: { subscription: "sub_test_123" } } },
         now: new Date("2026-08-25T12:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active" }) }
     );
 
     expect(client.table("hosted_subscriptions")[0]).toMatchObject({
@@ -116,7 +117,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { id: "sub_test_123", status: "canceled", current_period_end: 1_800_000_000 },
         now: new Date("2026-08-24T00:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "canceled", current_period_end: 1_800_000_000 }) }
     );
 
     expect(client.table("hosted_subscriptions")[0]).toMatchObject({
@@ -137,7 +138,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { subscription: "sub_test_123" },
         now: new Date("2026-08-24T12:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "past_due" }) }
     );
     const second = await processHostedSubscriptionLifecycleEvent(
       {
@@ -146,7 +147,7 @@ describe("hosted subscription lifecycle processing", () => {
         object: { subscription: "sub_test_123" },
         now: new Date("2026-08-25T12:00:00.000Z")
       },
-      { client, storage }
+      { client, storage, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active" }) }
     );
 
     expect(first).toMatchObject({ ok: true, processed: true });
@@ -160,6 +161,91 @@ describe("hosted subscription lifecycle processing", () => {
     await assignPermanentHostedPageCode(storage, { physicalProductRef: "original-product", code });
 
     await expect(assignPermanentHostedPageCode(storage, { physicalProductRef: "another-product", code })).rejects.toThrow("already assigned");
+  });
+
+  it("retries the same event after a database failure without recording success early", async () => {
+    const runtime = await createSeededRuntime();
+    runtime.client.failures.push({ table: "hosted_subscriptions", action: "select", message: "temporary outage" });
+    const input = { eventId: "evt_retry", eventType: "invoice.paid" as const, object: { subscription: "sub_test_123" } };
+    const deps = { ...runtime, retrieveSubscription: vi.fn(async () => ({ id: "sub_test_123", status: "active" })) };
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: false });
+    expect(runtime.client.table("stripe_events")).toHaveLength(0);
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: true, processed: true });
+    expect(deps.retrieveSubscription).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries a snapshot publication failure even after database updates succeed", async () => {
+    const runtime = await createSeededRuntime();
+    vi.spyOn(runtime.storage, "putText").mockRejectedValueOnce(new Error("R2 unavailable"));
+    const input = { eventId: "evt_r2_retry", eventType: "invoice.payment_failed" as const, object: { subscription: "sub_test_123" } };
+    const deps = { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "past_due" }) };
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: false });
+    expect(runtime.client.table("stripe_events")).toHaveLength(0);
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: true, processed: true });
+  });
+
+  it("keeps events before managed subscription provisioning retryable", async () => {
+    const runtime = await createSeededRuntime();
+    const rows = runtime.client.table("hosted_subscriptions").splice(0);
+    const input = { eventId: "evt_early", eventType: "invoice.paid" as const, object: { subscription: "sub_test_123" } };
+    const deps = { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active", metadata: { tap_rater: "hosted_multilink" } }) };
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: false });
+    expect(runtime.client.table("stripe_events")).toHaveLength(0);
+    runtime.client.table("hosted_subscriptions").push(...rows);
+    expect(await processHostedSubscriptionLifecycleEvent(input, deps)).toMatchObject({ ok: true, processed: true });
+  });
+
+  it("ignores unrelated subscriptions without claiming a processed receipt", async () => {
+    const runtime = await createSeededRuntime();
+    const result = await processHostedSubscriptionLifecycleEvent({ eventId: "evt_other", eventType: "invoice.paid", object: { subscription: "sub_other" } },
+      { ...runtime, retrieveSubscription: async () => ({ id: "sub_other", status: "active" }), isManagedSubscription: async () => false });
+    expect(result).toMatchObject({ ok: true, processed: false, reason: "not_hosted_subscription" });
+    expect(runtime.client.table("stripe_events")).toHaveLength(0);
+  });
+
+  it("uses current Stripe state instead of reviving a cancelled subscription from an old paid invoice", async () => {
+    const runtime = await createSeededRuntime();
+    const result = await processHostedSubscriptionLifecycleEvent({ eventId: "evt_old_paid", eventType: "invoice.paid", object: { subscription: "sub_test_123" } },
+      { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "canceled" }) });
+    expect(result).toMatchObject({ lifecycleStatus: "EXPIRED" });
+    expect(runtime.client.table("hosted_subscriptions")[0].status).toBe("canceled");
+  });
+
+  it("preserves current scheduled cancellation and reads item-level paid-through dates", async () => {
+    const runtime = await createSeededRuntime();
+    await processHostedSubscriptionLifecycleEvent({ eventId: "evt_paid_cancel", eventType: "invoice.paid", object: { subscription: "sub_test_123" } },
+      { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active", cancel_at_period_end: true, items: { data: [{ current_period_end: 1_800_000_000 }] } }) });
+    expect(runtime.client.table("hosted_subscriptions")[0]).toMatchObject({ lifecycle_status: "CANCELLED_AT_PERIOD_END", cancel_at_period_end: true, current_period_end: "2027-01-15T08:00:00.000Z" });
+  });
+
+  it("does not extend the grace period on repeated failure notifications", async () => {
+    const runtime = await createSeededRuntime({ status: "past_due", past_due_since: "2026-08-24T12:00:00.000Z" });
+    await processHostedSubscriptionLifecycleEvent({ eventId: "evt_still_past_due", eventType: "invoice.payment_failed", object: { subscription: "sub_test_123" }, now: new Date("2026-08-29T12:00:00Z") },
+      { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "past_due" }) });
+    expect(runtime.client.table("hosted_subscriptions")[0]).toMatchObject({ past_due_since: "2026-08-24T12:00:00.000Z", grace_ends_at: "2026-08-31T12:00:00.000Z" });
+  });
+
+  it("does not trust legacy prematurely recorded event IDs", async () => {
+    const runtime = await createSeededRuntime();
+    runtime.client.table("stripe_events").push({ id: "evt_legacy" });
+    expect(await processHostedSubscriptionLifecycleEvent({ eventId: "evt_legacy", eventType: "invoice.paid", object: { subscription: "sub_test_123" } },
+      { ...runtime, retrieveSubscription: async () => ({ id: "sub_test_123", status: "active" }) })).toMatchObject({ ok: true, processed: true });
+  });
+
+  it("serializes different events for the same subscription", async () => {
+    const runtime = await createSeededRuntime();
+    let release!: () => void;
+    let started!: () => void;
+    const entered = new Promise<void>(resolve => { started = resolve; });
+    const held = new Promise<void>(resolve => { release = resolve; });
+    const deps = { ...runtime, retrieveSubscription: vi.fn(async () => { started(); await held; return { id: "sub_test_123", status: "active" }; }) };
+    const input = { eventId: "evt_concurrent_a", eventType: "invoice.paid" as const, object: { subscription: "sub_test_123" } };
+    const first = processHostedSubscriptionLifecycleEvent(input, deps);
+    await entered;
+    expect(await processHostedSubscriptionLifecycleEvent({ ...input, eventId: "evt_concurrent_b" }, deps)).toMatchObject({ ok: false });
+    release();
+    expect(await first).toMatchObject({ ok: true });
+    expect(await processHostedSubscriptionLifecycleEvent({ ...input, eventId: "evt_concurrent_b" }, deps)).toMatchObject({ ok: true });
   });
 });
 
@@ -205,11 +291,9 @@ class MemoryHostedStorage implements HostedPageTextStorage {
   }
 }
 
-class MemoryDbClient implements OrdersDbClient {
-  private readonly rows: Record<string, Record<string, any>[]>;
-
+class MemoryDbClient extends PaymentMemoryDb implements OrdersDbClient {
   constructor(overrides: Record<string, unknown> = {}) {
-    this.rows = {
+    super({
       hosted_subscriptions: [
         {
           id: "hosted-subscription-1",
@@ -243,87 +327,6 @@ class MemoryDbClient implements OrdersDbClient {
         }
       ],
       stripe_events: []
-    };
-  }
-
-  table(name: string) {
-    return this.rows[name] ?? [];
-  }
-
-  from(table: string) {
-    return new MemoryQueryBuilder(this.rows, table);
-  }
-}
-
-class MemoryQueryBuilder {
-  private filters: Array<{ column: string; value: unknown }> = [];
-  private action: "select" | "insert" | "upsert" | "update" = "select";
-  private values: Record<string, any> = {};
-  private selected = false;
-
-  constructor(
-    private readonly rows: Record<string, Record<string, any>[]>,
-    private readonly table: string
-  ) {}
-
-  select(_columns = "*") {
-    this.selected = true;
-    return this;
-  }
-
-  eq(column: string, value: unknown) {
-    this.filters.push({ column, value });
-    return this;
-  }
-
-  insert(values: Record<string, any>) {
-    this.action = "insert";
-    this.values = values;
-    return this;
-  }
-
-  update(values: Record<string, any>) {
-    this.action = "update";
-    this.values = values;
-    return this;
-  }
-
-  order() {
-    return this;
-  }
-
-  limit() {
-    return this;
-  }
-
-  async maybeSingle() {
-    const result = await this.execute();
-    return { data: result.data?.[0] ?? null, error: result.error };
-  }
-
-  then<TResult1 = any, TResult2 = never>(
-    onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
-  ) {
-    return this.execute().then(onfulfilled, onrejected);
-  }
-
-  private async execute() {
-    const tableRows = (this.rows[this.table] ??= []);
-
-    if (this.action === "insert") {
-      const row = { id: `${this.table}-${tableRows.length + 1}`, ...this.values };
-      tableRows.push(row);
-      return { data: this.selected ? [row] : null, error: null };
-    }
-
-    if (this.action === "update") {
-      const matches = tableRows.filter((row) => this.filters.every((filter) => row[filter.column] === filter.value));
-      matches.forEach((row) => Object.assign(row, this.values));
-      return { data: this.selected ? matches : null, error: null };
-    }
-
-    const matches = tableRows.filter((row) => this.filters.every((filter) => row[filter.column] === filter.value));
-    return { data: matches, error: null };
+    });
   }
 }

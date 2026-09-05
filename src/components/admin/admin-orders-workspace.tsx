@@ -489,7 +489,7 @@ function OrderInlineEditor({
   return (
     <div className="space-y-4">
       {!canOperate ? (
-        <AdminAlert tone="warning">Payment must be confirmed before production or shipping status can advance. Internal notes can still be saved.</AdminAlert>
+        <AdminAlert tone="warning">{order.paymentStatus?.includes("refund") ? "This order has a refund. Production and shipping are locked." : "Payment must be confirmed before production or shipping status can advance."} Internal notes can still be saved.</AdminAlert>
       ) : null}
       <AdminCard title="Order items" className="p-4">
         <div className="mt-3 grid gap-3 md:grid-cols-2">

@@ -10,6 +10,8 @@ type OrderRefundFormProps = {
   alreadyRefunded: boolean;
   hasSubscription: boolean;
   refundId?: string | null;
+  refundStatus?: string | null;
+  refundFailureReason?: string | null;
 };
 
 export function OrderRefundForm({
@@ -17,19 +19,22 @@ export function OrderRefundForm({
   alreadyRefunded,
   hasSubscription,
   refundId,
+  refundStatus,
+  refundFailureReason,
 }: OrderRefundFormProps) {
   const router = useRouter();
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  if (alreadyRefunded) {
+  if (alreadyRefunded || refundId || refundStatus) {
     return (
       <AdminCard title="Payment actions">
         <div className="flex flex-wrap items-center gap-3">
-          <AdminBadge tone="warning">Refunded</AdminBadge>
+          <AdminBadge tone="warning">{alreadyRefunded ? "Refunded" : refundStatus === "partially_refunded" ? "Partially refunded" : refundStatus === "failed" || refundStatus === "canceled" ? "Refund needs review" : "Refund pending"}</AdminBadge>
           {refundId ? <span className="font-mono text-xs text-muted">{refundId}</span> : null}
         </div>
+        {refundFailureReason ? <AdminAlert tone="danger" className="mt-3">{refundFailureReason}</AdminAlert> : null}
       </AdminCard>
     );
   }

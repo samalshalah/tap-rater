@@ -5,6 +5,8 @@ import { processHostedSubscriptionLifecycleEvent } from "@/lib/hosted-subscripti
 import { provisionHostedSubscriptionFromCheckout, provisionPaidCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { readRequestTextWithLimit, RequestBodyTooLargeError } from "@/lib/http-request";
 import { sendPaidOrderEmails } from "@/lib/order-emails";
+import { processStripeRefundEvent } from "@/lib/order-refunds";
+import { withStripePaymentLock } from "@/lib/stripe-processing";
 import { markCheckoutOrderPaymentFailure, savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
 
 const maxWebhookBodyBytes = 1024 * 1024;
@@ -39,6 +41,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (event.type === "refund.created" || event.type === "refund.updated" || event.type === "refund.failed" || event.type === "charge.refunded") {
+      const object = event.data.object;
+      const paymentIntentId = typeof object.payment_intent === "string" ? object.payment_intent : object.payment_intent?.id;
+      if (paymentIntentId) {
+        const result = await processStripeRefundEvent({
+          paymentIntentId,
+          ...(event.type === "charge.refunded" ? {} : { refundId: object.id }),
+        });
+        if (!result.ok) return NextResponse.json({ error: "Refund status could not be synchronized." }, { status: 500 });
+      }
+      return NextResponse.json({ received: true });
+    }
     if (event.type === "checkout.session.async_payment_failed" || event.type === "checkout.session.expired") {
       const session = event.data.object;
       const result = await markCheckoutOrderPaymentFailure(
@@ -63,64 +77,76 @@ export async function POST(request: Request) {
 
       if ("payment_status" in session && session.payment_status === "paid") {
         const enrichedSession = await enrichCheckoutSessionForBilling(session);
-        const result = await savePaidOrderFromCheckoutSession(enrichedSession);
-        if (!result.ok) {
-          return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
-        }
+        const paymentIntentId = typeof enrichedSession.payment_intent === "string" ? enrichedSession.payment_intent : enrichedSession.payment_intent?.id;
+        const processing = await withStripePaymentLock(`payment:${paymentIntentId ?? session.id}`, async (assertActive) => {
+          const response = await (async () => {
+            await assertActive();
+            const result = await savePaidOrderFromCheckoutSession(enrichedSession);
+            if (!result.ok) {
+              return NextResponse.json({ error: "Paid order could not be saved." }, { status: 500 });
+            }
+            if (result.paymentReversed) return NextResponse.json({ received: true });
 
-        const provisioning = await provisionHostedSubscriptionFromCheckout({
-          session: enrichedSession,
-          order: result.order,
-          eventId: event.id,
-          eventType: event.type,
-          siteUrl: new URL(request.url).origin
-        });
-        if (!provisioning.ok) {
-          console.warn("[stripe-webhook] hosted_subscription_provisioning_failed", {
-            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-            error: provisioning.error
-          });
-          return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
-        }
-
-        const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
-        if (!invoiceResult.ok) {
-          console.warn("[stripe-webhook] billing_invoice_not_saved", {
-            stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-            error: invoiceResult.error
-          });
-        }
-
-        if (!provisioning.provisioned && !result.wasAlreadyPaid) {
-          const accountProvisioning = await provisionPaidCustomerAccountFromOrder({
-            order: result.order,
-            siteUrl: new URL(request.url).origin
-          });
-          if (!accountProvisioning.ok) {
-            console.warn("[stripe-webhook] paid_account_provisioning_failed", {
-              stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-              error: accountProvisioning.error
+            await assertActive();
+            const provisioning = await provisionHostedSubscriptionFromCheckout({
+              session: enrichedSession,
+              order: result.order,
+              eventId: event.id,
+              eventType: event.type,
+              siteUrl: new URL(request.url).origin
             });
-          }
-        }
-
-        if (!result.wasAlreadyPaid) {
-          try {
-            const emailResult = await sendPaidOrderEmails(result.order);
-            if (!emailResult.customer.sent || !emailResult.admin.sent) {
-              console.warn("[stripe-webhook] paid_order_email_not_sent", {
+            if (!provisioning.ok) {
+              console.warn("[stripe-webhook] hosted_subscription_provisioning_failed", {
                 stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-                customerReason: emailResult.customer.sent ? undefined : emailResult.customer.reason,
-                adminReason: emailResult.admin.sent ? undefined : emailResult.admin.reason
+                error: provisioning.error
+              });
+              return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
+            }
+
+            const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
+            if (!invoiceResult.ok) {
+              console.warn("[stripe-webhook] billing_invoice_not_saved", {
+                stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+                error: invoiceResult.error
               });
             }
-          } catch (error) {
-            console.warn("[stripe-webhook] paid_order_email_failed", {
-              stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
-              errorName: error instanceof Error ? error.name : "UnknownError"
-            });
-          }
-        }
+
+            if (!provisioning.provisioned && !result.wasAlreadyPaid) {
+              const accountProvisioning = await provisionPaidCustomerAccountFromOrder({
+                order: result.order,
+                siteUrl: new URL(request.url).origin
+              });
+              if (!accountProvisioning.ok) {
+                console.warn("[stripe-webhook] paid_account_provisioning_failed", {
+                  stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+                  error: accountProvisioning.error
+                });
+              }
+            }
+
+            if (!result.wasAlreadyPaid) {
+              await assertActive();
+              try {
+                const emailResult = await sendPaidOrderEmails(result.order);
+                if (!emailResult.customer.sent || !emailResult.admin.sent) {
+                  console.warn("[stripe-webhook] paid_order_email_not_sent", {
+                    stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+                    customerReason: emailResult.customer.sent ? undefined : emailResult.customer.reason,
+                    adminReason: emailResult.admin.sent ? undefined : emailResult.admin.reason
+                  });
+                }
+              } catch (error) {
+                console.warn("[stripe-webhook] paid_order_email_failed", {
+                  stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
+                  errorName: error instanceof Error ? error.name : "UnknownError"
+                });
+              }
+            }
+            return NextResponse.json({ received: true });
+          })();
+          return { ok: response.ok, response };
+        });
+        return "response" in processing ? processing.response : NextResponse.json({ error: processing.error }, { status: 503 });
       }
     }
 
@@ -169,7 +195,7 @@ export async function POST(request: Request) {
 }
 
 async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLike): Promise<StripeCheckoutSessionLike> {
-  const paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
+  let paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
   const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
   const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
   const stripe = getStripeClient() as any;
@@ -177,13 +203,23 @@ async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLik
   let receiptUrl: string | undefined;
   let invoice:
     | {
-        id?: string | null;
-        hosted_invoice_url?: string | null;
-        invoice_pdf?: string | null;
-        number?: string | null;
-      }
+      id?: string | null;
+      hosted_invoice_url?: string | null;
+      invoice_pdf?: string | null;
+      number?: string | null;
+    }
     | undefined;
   let subscription: StripeCheckoutSessionLike["subscription"] | undefined;
+
+  if (!paymentIntentId && subscriptionId && invoiceId) {
+    const payments = await stripe.invoicePayments.list({ invoice: invoiceId, status: "paid", limit: 100 });
+    const ids = [...new Set(payments.data.map((payment: { payment?: { payment_intent?: string | { id?: string } } }) => {
+      const intent = payment.payment?.payment_intent;
+      return typeof intent === "string" ? intent : intent?.id;
+    }).filter(Boolean))];
+    if (ids.length !== 1 || payments.has_more) throw new Error("Subscription checkout payment reference is not yet unambiguous. Retry the event.");
+    paymentIntentId = ids[0] as string;
+  }
 
   if (paymentIntentId && stripe.paymentIntents?.retrieve) {
     try {
@@ -242,12 +278,13 @@ async function enrichCheckoutSessionForBilling(session: StripeCheckoutSessionLik
     }
   }
 
-  if (!paymentMethodDetails && !receiptUrl && !invoice && !subscription) {
+  if (!paymentMethodDetails && !receiptUrl && !invoice && !subscription && !paymentIntentId) {
     return session;
   }
 
   return {
     ...session,
+    ...(paymentIntentId ? { payment_intent: paymentIntentId } : {}),
     ...(invoice ? { invoice } : {}),
     ...(subscription ? { subscription } : {}),
     customer_details: {
