@@ -1,8 +1,17 @@
 import { Resend } from "resend";
+import {
+  createEmailDeliveryIdentity,
+  finishEmailDeliveryAttempt,
+  startEmailDeliveryAttempt,
+  type EmailDeliveryTracking
+} from "@/lib/email-deliveries";
 
 type EmailClient = {
   emails: {
-    send: (input: { from: string; to: string | string[]; subject: string; html: string; replyTo?: string | string[] }) => Promise<unknown>;
+    send: (
+      input: { from: string; to: string | string[]; subject: string; html: string; replyTo?: string | string[] },
+      options?: { idempotencyKey?: string }
+    ) => Promise<unknown>;
   };
 };
 
@@ -22,6 +31,7 @@ export type SendEmailInput = {
   from?: string;
   replyTo?: string | string[];
   resendClient?: EmailClient;
+  delivery?: EmailDeliveryTracking;
 };
 
 type EmailHtmlInput = {
@@ -77,19 +87,44 @@ export function buildEmailHtml(input: EmailHtmlInput) {
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
+  const identity = createEmailDeliveryIdentity(input.delivery);
+  await startEmailDeliveryAttempt({
+    identity,
+    recipient: input.to,
+    subject: input.subject,
+    tracking: input.delivery
+  });
+
   if (!hasResendApiKey()) {
+    await finishEmailDeliveryAttempt({ id: identity.id, sent: false, failureReason: "missing_api_key" });
     return { sent: false, reason: "missing_api_key" };
   }
 
   const client = input.resendClient ?? new Resend(process.env.RESEND_API_KEY);
-  const result = await client.emails.send({
-    from: input.from ?? getDefaultFromEmail(),
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    ...(input.replyTo ? { replyTo: input.replyTo } : {})
-  });
+  let result: unknown;
+  try {
+    result = await client.emails.send(
+      {
+        from: input.from ?? getDefaultFromEmail(),
+        to: input.to,
+        subject: input.subject,
+        html: input.html,
+        ...(input.replyTo ? { replyTo: input.replyTo } : {})
+      },
+      { idempotencyKey: identity.idempotencyKey }
+    );
+  } catch {
+    await finishEmailDeliveryAttempt({ id: identity.id, sent: false, failureReason: "email_send_exception" });
+    return { sent: false, reason: "email_send_exception" };
+  }
   const error = readResendError(result);
+
+  await finishEmailDeliveryAttempt({
+    id: identity.id,
+    sent: !error,
+    providerMessageId: readResendMessageId(result),
+    failureReason: error ?? undefined
+  });
 
   return error ? { sent: false, reason: error } : { sent: true };
 }
@@ -105,6 +140,7 @@ export async function sendCustomerLoginLinkEmail(input: { to: string; loginUrl: 
         url: input.loginUrl
       }
     }),
+    delivery: { messageType: "customer_login_link", audience: "customer" },
     replyTo: getCustomerReplyToEmail(),
     resendClient: input.resendClient
   });
@@ -125,6 +161,7 @@ export async function sendQuoteRequestNotificationEmail(
         Notes: input.notes ?? ""
       }
     }),
+    delivery: { messageType: "quote_request_admin", audience: "admin" },
     resendClient: input.resendClient
   });
 }
@@ -139,6 +176,7 @@ export async function sendQuoteRequestConfirmationEmail(input: { to: string; bus
         "We will review the details and follow up with next steps."
       ]
     }),
+    delivery: { messageType: "quote_request_confirmation", audience: "customer" },
     replyTo: getCustomerReplyToEmail(),
     resendClient: input.resendClient
   });
@@ -158,6 +196,7 @@ export async function sendFeedbackAlertEmail(
         Message: input.message
       }
     }),
+    delivery: { messageType: "feedback_alert", audience: "admin" },
     resendClient: input.resendClient
   });
 }
@@ -178,6 +217,7 @@ export async function sendLinkChangeRequestEmail(
         Notes: input.notes ?? ""
       }
     }),
+    delivery: { messageType: "link_change_request_admin", audience: "admin" },
     resendClient: input.resendClient
   });
 }
@@ -195,8 +235,17 @@ export async function sendScheduledReportEmail(
       },
       cta: input.reportUrl ? { label: "Open report", url: input.reportUrl } : undefined
     }),
+    delivery: { messageType: "scheduled_report", audience: "customer" },
     resendClient: input.resendClient
   });
+}
+
+function readResendMessageId(result: unknown) {
+  if (!result || typeof result !== "object") return undefined;
+  const data = (result as { data?: unknown }).data;
+  if (!data || typeof data !== "object") return undefined;
+  const id = (data as { id?: unknown }).id;
+  return typeof id === "string" && id.trim() ? id.trim() : undefined;
 }
 
 function readResendError(result: unknown) {

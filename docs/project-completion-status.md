@@ -6,12 +6,12 @@ This is the current completion ledger. `docs/launch-checklist.md` remains the de
 
 ## Current State
 
-- Configuration readiness: 91%
+- Configuration readiness: 88%
 - Blocked configuration checks: 0
-- Manual confirmations: 2
+- Manual confirmations: 3
 - Stripe runtime: test mode
 - Production application: `tap-rater-app-git` on `taprater.com`
-- Automated verification: 83 test files and 487 tests passing in the current release candidate
+- Automated verification: 87 test files and 509 tests passing in the current release candidate
 
 ## Phase Progress
 
@@ -23,7 +23,7 @@ These are engineering estimates based on implemented behavior and verification e
 | Checkout, orders, and Stripe test payments | 94% | Live-mode cutover and four controlled real purchases with the owner present |
 | Customer accounts, billing, and Multi-Link | 94% | Owner activation of the Stripe-backed QA account and both Billing Portal checks |
 | Admin operations and fulfillment | 90% | End-to-end fulfillment, refund, inventory, and support drills |
-| Transactional email operations | 82% | Delivery visibility, retry controls, and launch mailbox verification |
+| Transactional email operations | 94% | Owner configuration of the signed Resend webhook and controlled launch-mailbox verification |
 | Security, accessibility, performance, and recovery | 86% | Final audit plus backup, restore, and rollback exercises |
 | Tax and legal readiness | 55% | Written accountant/legal operating decision |
 | Live launch validation | 65% | Live credentials, live webhook proof, four real transactions, and reconciliation |
@@ -38,6 +38,9 @@ These are engineering estimates based on implemented behavior and verification e
 - Pending or disabled customers cannot use signed account sessions, saved Stripe details, or protected account APIs.
 - Admin can disable and reactivate eligible customer accounts from the customer directory.
 - Admin can securely resend a pending customer's activation email with token rotation, cooldown protection, and failure rollback.
+- Admin can inspect provider acceptance and delivery outcomes for transactional email, filter failures, and retry regenerable order or shipping messages.
+- Transactional email sends use idempotency keys; order and shipping keys are stable hashes that do not expose source identifiers.
+- Email delivery storage contains metadata only and deliberately excludes HTML bodies, passwords, activation tokens, and payment data.
 - Product quantity, shipping, tax, production, fulfillment, refund, catalog, CMS, customer, and hosted-page backend surfaces are deployed.
 
 ## Owner At Computer Queue
@@ -64,7 +67,17 @@ Completion evidence: Stripe no longer requests phone verification for payment or
 
 Completion evidence: the account is active and both subscription billing profiles open successfully without exposing another customer's data.
 
-### 3. Tax and legal decision
+### 3. Configure and verify the Resend delivery webhook
+
+1. Open Resend Dashboard and create a webhook for `https://taprater.com/api/webhooks/resend`.
+2. Select `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.failed`, `email.bounced`, `email.complained`, and `email.suppressed`.
+3. Copy the webhook signing secret into the Cloudflare Worker secret named `RESEND_WEBHOOK_SECRET`.
+4. Send one controlled test only to a mailbox owned by Tap Rater.
+5. Open `/admin/settings/emails` and confirm the attempt changes from Accepted to Delivered.
+
+Completion evidence: the launch-readiness check is Ready and the controlled message has a Delivered event in Tap Rater Admin.
+
+### 4. Tax and legal decision
 
 Confirm with an accountant or qualified adviser:
 
@@ -75,7 +88,7 @@ Confirm with an accountant or qualified adviser:
 
 Completion evidence: a written operating decision identifies jurisdictions, taxable items, filing owner, and whether manual tax or Stripe Tax is authorized.
 
-### 4. Live Stripe launch and real purchases
+### 5. Live Stripe launch and real purchases
 
 Perform only while the owner is present and after the tax decision:
 
@@ -89,9 +102,8 @@ Completion evidence: all four live cases reconcile between Stripe, Tap Rater Adm
 
 ## Autonomous Work Queue
 
-1. Transactional email delivery visibility and retry-safe operations.
-2. Production operations QA for fulfillment, refunds, inventory, and customer support.
-3. Security, accessibility, SEO, performance, backup, and rollback verification.
+1. Production operations QA for fulfillment, refunds, inventory, and customer support.
+2. Security, accessibility, SEO, performance, backup, and rollback verification.
 
 ## Safety Rules
 

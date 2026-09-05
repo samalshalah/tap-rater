@@ -1,4 +1,5 @@
 import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import {
   defaultEmailTemplates,
   getEmailTemplate,
@@ -42,7 +43,18 @@ export async function sendPaidOrderEmails(
           to: customerEmail,
           subject: customerTemplate.subject,
           html: buildCustomerPaidOrderEmailHtml(order, customerTemplate),
-          replyTo: getCustomerReplyToEmail(env)
+          replyTo: getCustomerReplyToEmail(env),
+          delivery: {
+            messageType: "paid_order_customer",
+            audience: "customer",
+            entityType: "order",
+            entityId: order.id ?? order.stripe_checkout_session_id,
+            retryable: Boolean(order.id),
+            idempotencyKey: createEmailIdempotencyKey(
+              "paid_order_customer",
+              order.id ?? order.stripe_checkout_session_id
+            )
+          }
         })
       : { sent: false as const, reason: "missing_customer_email" as const };
 
@@ -51,7 +63,18 @@ export async function sendPaidOrderEmails(
       ? await sendPaidOrderEmailSafely(sendEmailFn, {
           to: adminEmail,
           subject: adminTemplate.subject,
-          html: buildAdminPaidOrderEmailHtml(order, adminTemplate)
+          html: buildAdminPaidOrderEmailHtml(order, adminTemplate),
+          delivery: {
+            messageType: "paid_order_admin",
+            audience: "admin",
+            entityType: "order",
+            entityId: order.id ?? order.stripe_checkout_session_id,
+            retryable: Boolean(order.id),
+            idempotencyKey: createEmailIdempotencyKey(
+              "paid_order_admin",
+              order.id ?? order.stripe_checkout_session_id
+            )
+          }
         })
       : { sent: false as const, reason: "missing_notification_email" as const };
 

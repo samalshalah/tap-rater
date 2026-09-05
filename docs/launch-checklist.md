@@ -16,6 +16,8 @@ Stripe checkout is available for test mode only. Live payments, live paid orders
 - [ ] `DATABASE_URL` or `NEON_DATABASE_URL` points to the production Neon/Postgres database, or Supabase server credentials are set.
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`, when used, is set server-side only.
 - [ ] `RESEND_API_KEY` is set for customer/account emails and request notifications.
+- [ ] `RESEND_FROM_EMAIL` uses a sender identity verified by Resend.
+- [ ] `RESEND_WEBHOOK_SECRET` is set from the Resend webhook signing secret.
 - [ ] `ORDER_NOTIFICATION_EMAIL` is set to the internal Tap Rater notification inbox.
 - [ ] `NEXT_PUBLIC_SITE_URL` is set to `https://taprater.com`.
 - [ ] `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set only after Google restrictions are configured.
@@ -45,6 +47,7 @@ Stripe checkout is available for test mode only. Live payments, live paid orders
   - [ ] `contact_requests`
   - [ ] `setup_requests`
   - [ ] `change_link_requests`
+  - [ ] `email_deliveries`
 - [ ] Confirm product metadata columns exist: `product_type`, `service_mode`, `checkout_mode`, `requires_account`, `requires_subscription`, `requires_landing_page`, `supported_destinations`, `activation_type`, `included_service_label`, `customization_options`, `allows_logo_upload`, `allows_custom_design`, `design_mode`.
 - [ ] Confirm `buy_now` products can use Stripe test checkout and quote/subscription/contact-sales products do not enter one-time checkout.
 - [ ] Confirm demo rows such as `TR-DEMO-GOOGLE` are not used as real customer devices.
@@ -162,12 +165,17 @@ Official references:
 ## Resend Email QA
 
 - [ ] Domain or sender identity is verified in Resend.
+- [ ] Resend webhook points to `https://taprater.com/api/webhooks/resend`.
+- [ ] Resend webhook sends `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.failed`, `email.bounced`, `email.complained`, and `email.suppressed`.
+- [ ] A controlled test changes from Accepted to Delivered in `/admin/settings/emails`.
+- [ ] Failed order and shipping notifications can be retried once from the admin delivery log without a duplicate concurrent send.
 - [ ] Contact form notification sends to `ORDER_NOTIFICATION_EMAIL`.
 - [ ] Setup request notification sends to `ORDER_NOTIFICATION_EMAIL`.
 - [ ] Link change notification sends to `ORDER_NOTIFICATION_EMAIL`.
 - [ ] Customer login email sends when Resend is configured.
 - [ ] Email templates do not include secrets or activation code hashes.
 - [ ] Failed email send returns a friendly user-facing message.
+- [ ] Delivery storage contains metadata only, with no HTML bodies, passwords, activation tokens, or card data.
 
 ## Storefront QA
 

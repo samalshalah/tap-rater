@@ -52,6 +52,7 @@ Required Worker variables and secrets:
 | `CUSTOMER_SESSION_SECRET` | Secret | Signed customer session and customer links |
 | `RESEND_API_KEY` | Secret | Email sending through Resend |
 | `RESEND_FROM_EMAIL` | Secret | Verified sender address |
+| `RESEND_WEBHOOK_SECRET` | Secret | Signature verification for Resend delivery events |
 | `ORDER_NOTIFICATION_EMAIL` | Secret | Order/request notification recipient |
 | `STRIPE_MODE` | Variable | `test` or `live`; defaults to `test` if missing |
 | `STRIPE_SECRET_KEY` | Secret | Stripe Checkout |

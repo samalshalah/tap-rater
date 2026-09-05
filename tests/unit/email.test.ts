@@ -60,12 +60,15 @@ describe("email utility", () => {
     });
 
     expect(result).toEqual({ sent: true });
-    expect(send).toHaveBeenCalledWith({
-      from: "Tap Rater <hello@mail.taprater.com>",
-      to: "owner@example.com",
-      subject: "Tap Rater test",
-      html: "<p>Hello</p>"
-    });
+    expect(send).toHaveBeenCalledWith(
+      {
+        from: "Tap Rater <hello@mail.taprater.com>",
+        to: "owner@example.com",
+        subject: "Tap Rater test",
+        html: "<p>Hello</p>"
+      },
+      { idempotencyKey: expect.stringMatching(/^taprater\/[0-9a-f-]{36}$/) }
+    );
   });
 
   it("passes replyTo through to Resend-compatible clients", async () => {
@@ -81,7 +84,24 @@ describe("email utility", () => {
     });
 
     expect(result).toEqual({ sent: true });
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({ replyTo: "support@taprater.com" }));
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({ replyTo: "support@taprater.com" }),
+      expect.objectContaining({ idempotencyKey: expect.any(String) })
+    );
+  });
+
+  it("returns a recorded failure result when the provider throws", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const send = vi.fn().mockRejectedValue(new Error("network timeout"));
+
+    const result = await sendEmail({
+      to: "owner@example.com",
+      subject: "Tap Rater test",
+      html: "<p>Hello</p>",
+      resendClient: { emails: { send } }
+    });
+
+    expect(result).toEqual({ sent: false, reason: "email_send_exception" });
   });
 
   it("builds supported email types", async () => {

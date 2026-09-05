@@ -30,6 +30,7 @@ export function buildCustomerActivationEmailHtml(input: { activationUrl: string 
 export async function sendCustomerActivationEmail(input: {
   to: string;
   activationToken: string;
+  customerId?: string;
   sendEmailFn?: SendEmailFn;
 }): Promise<EmailResult> {
   try {
@@ -40,7 +41,14 @@ export async function sendCustomerActivationEmail(input: {
       to: input.to,
       subject: "Activate your Tap Rater account",
       replyTo: getCustomerReplyToEmail(),
-      html: buildCustomerActivationEmailHtml({ activationUrl })
+      html: buildCustomerActivationEmailHtml({ activationUrl }),
+      delivery: {
+        messageType: "customer_activation",
+        audience: "customer",
+        entityType: "customer",
+        entityId: input.customerId,
+        retryable: false
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };
@@ -77,7 +85,14 @@ export async function sendHostedSetupEmail(input: HostedSetupEmailInput): Promis
         businessName: input.businessName,
         hostedPageUrl: input.hostedPageUrl,
         activationUrl
-      })
+      }),
+      delivery: {
+        messageType: "hosted_setup_activation",
+        audience: "customer",
+        entityType: "hosted_page",
+        entityId: input.hostedPageUrl,
+        retryable: false
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };
@@ -109,7 +124,14 @@ export async function sendHostedAccountReadyEmail(input: {
           label: "Open My Account",
           url: createCustomerAccountUrl()
         }
-      })
+      }),
+      delivery: {
+        messageType: "hosted_account_ready",
+        audience: "customer",
+        entityType: "hosted_page",
+        entityId: input.hostedPageUrl,
+        retryable: false
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };
@@ -149,7 +171,14 @@ export async function sendCustomerAccountSetupEmail(input: {
           label: "Activate My Account",
           url: activationUrl
         }
-      })
+      }),
+      delivery: {
+        messageType: "customer_order_activation",
+        audience: "customer",
+        entityType: "order_reference",
+        entityId: input.orderReference,
+        retryable: false
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };
@@ -183,7 +212,14 @@ export async function sendPaidCustomerAccountSetupEmail(input: {
           label: "Activate My Account",
           url: activationUrl
         }
-      })
+      }),
+      delivery: {
+        messageType: "paid_customer_activation",
+        audience: "customer",
+        entityType: "order_reference",
+        entityId: input.orderReference,
+        retryable: false
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };

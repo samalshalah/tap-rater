@@ -1,4 +1,5 @@
 import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { defaultEmailTemplates, getEmailTemplate, renderEmailTemplateHtml, type EmailTemplateSettings } from "@/lib/email-templates";
 import { formatOrderReference } from "@/lib/order-reference";
 import type { OrderRecord } from "@/lib/orders";
@@ -23,7 +24,21 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
       to,
       subject: template.subject,
       replyTo: getCustomerReplyToEmail(),
-      html: buildShippingNotificationEmailHtml(input.order, template)
+      html: buildShippingNotificationEmailHtml(input.order, template),
+      delivery: {
+        messageType: "shipping_tracking_customer",
+        audience: "customer",
+        entityType: "order",
+        entityId: input.order.id ?? input.order.stripe_checkout_session_id,
+        retryable: Boolean(input.order.id),
+        idempotencyKey: createEmailIdempotencyKey(
+          "shipping_tracking_customer",
+          input.order.id ?? input.order.stripe_checkout_session_id,
+          input.order.shipping_status,
+          input.order.tracking_number,
+          input.order.shipped_at
+        )
+      }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };

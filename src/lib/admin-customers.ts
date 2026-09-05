@@ -148,7 +148,11 @@ export async function resendAdminCustomerActivationWithClient(
   const sendCustomerActivationEmailFn = dependencies.sendCustomerActivationEmailFn ?? sendCustomerActivationEmail;
   let emailResult;
   try {
-    emailResult = await sendCustomerActivationEmailFn({ to: email, activationToken: activation.token });
+    emailResult = await sendCustomerActivationEmailFn({
+      to: email,
+      activationToken: activation.token,
+      customerId: id
+    });
   } catch {
     emailResult = { sent: false as const, reason: "email_send_exception" };
   }

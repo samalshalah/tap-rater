@@ -32,7 +32,18 @@ describe("launch readiness", () => {
     const checks = getLaunchReadinessChecks(configuredEnvironment);
 
     expect(checks.find((check) => check.id === "stripe")?.status).toBe("warning");
+    expect(checks.find((check) => check.id === "resend-webhook")?.status).toBe("warning");
     expect(checks.find((check) => check.id === "tax-legal")?.status).toBe("warning");
-    expect(calculateLaunchReadinessPercent(checks)).toBe(91);
+    expect(calculateLaunchReadinessPercent(checks)).toBe(88);
+  });
+
+  it("marks verified Resend delivery events ready when the signing secret exists", () => {
+    const checks = getLaunchReadinessChecks({
+      ...configuredEnvironment,
+      RESEND_WEBHOOK_SECRET: "whsec_resend_example"
+    });
+
+    expect(checks.find((check) => check.id === "resend-webhook")?.status).toBe("ready");
+    expect(calculateLaunchReadinessPercent(checks)).toBe(92);
   });
 });

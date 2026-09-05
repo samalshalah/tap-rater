@@ -91,6 +91,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 ```env
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=
+RESEND_WEBHOOK_SECRET=
 ORDER_NOTIFICATION_EMAIL=
 ADMIN_NOTIFICATION_EMAIL=
 ```
@@ -410,6 +411,7 @@ npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
 npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 npx wrangler secret put RESEND_API_KEY
 npx wrangler secret put RESEND_FROM_EMAIL
+npx wrangler secret put RESEND_WEBHOOK_SECRET
 npx wrangler secret put ORDER_NOTIFICATION_EMAIL
 npx wrangler secret put ADMIN_NOTIFICATION_EMAIL
 ```

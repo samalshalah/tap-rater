@@ -17,6 +17,7 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
   const adminConfigured = Boolean(env.ADMIN_EMAIL && env.ADMIN_PASSWORD && env.ADMIN_SESSION_SECRET);
   const customerAuthConfigured = Boolean(env.CUSTOMER_SESSION_SECRET || env.ADMIN_SESSION_SECRET);
   const resendConfigured = hasResendApiKey(env) && Boolean(env.RESEND_FROM_EMAIL);
+  const resendWebhookConfigured = Boolean(env.RESEND_WEBHOOK_SECRET);
   const hostedPagesConfigured = env.TAP_RATER_ENABLE_PRODUCTION_HOSTED_PAGES === "true";
   const billingPortalConfigured = env.STRIPE_BILLING_PORTAL_CONFIGURED === "true";
   const stripeCustomerEmailsConfigured = env.STRIPE_CUSTOMER_EMAILS_CONFIGURED === "true";
@@ -45,6 +46,14 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
       label: "Transactional email",
       detail: resendConfigured ? "Resend API key and sender are configured." : "RESEND_API_KEY or RESEND_FROM_EMAIL is missing.",
       status: resendConfigured ? "ready" : "blocked"
+    },
+    {
+      id: "resend-webhook",
+      label: "Email delivery webhook",
+      detail: resendWebhookConfigured
+        ? "Resend delivery events are signature-verified and recorded."
+        : "RESEND_WEBHOOK_SECRET is missing; provider acceptance is tracked, but inbox delivery events are not yet available.",
+      status: resendWebhookConfigured ? "ready" : "warning"
     },
     {
       id: "admin-auth",

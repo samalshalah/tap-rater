@@ -4,7 +4,7 @@ import {
   buildCustomerPaidOrderEmailHtml,
   sendPaidOrderEmails
 } from "@/lib/order-emails";
-import { buildShippingNotificationEmailHtml } from "@/lib/shipping-emails";
+import { buildShippingNotificationEmailHtml, sendShippingNotificationEmail } from "@/lib/shipping-emails";
 import {
   buildCustomerActivationEmailHtml,
   buildHostedSetupEmailHtml,
@@ -158,11 +158,27 @@ describe("paid order emails", () => {
     expect(sendEmailFn.mock.calls[0][0]).toMatchObject({
       to: "buyer@example.com",
       subject: "Your Tap Rater order is confirmed",
-      replyTo: "support@taprater.com"
+      replyTo: "support@taprater.com",
+      delivery: {
+        messageType: "paid_order_customer",
+        audience: "customer",
+        entityType: "order",
+        entityId: "order-123",
+        retryable: true,
+        idempotencyKey: expect.stringMatching(/^taprater\/paid_order_customer\/[0-9a-f]{64}$/)
+      }
     });
     expect(sendEmailFn.mock.calls[1][0]).toMatchObject({
       to: "orders@example.com",
-      subject: "New paid Tap Rater order"
+      subject: "New paid Tap Rater order",
+      delivery: {
+        messageType: "paid_order_admin",
+        audience: "admin",
+        entityType: "order",
+        entityId: "order-123",
+        retryable: true,
+        idempotencyKey: expect.stringMatching(/^taprater\/paid_order_admin\/[0-9a-f]{64}$/)
+      }
     });
     expect(sendEmailFn.mock.calls[1][0]).not.toHaveProperty("replyTo");
   });
@@ -310,5 +326,31 @@ describe("paid order emails", () => {
     expect(html).not.toContain("Internal packing note");
     expect(html).not.toContain("Admin-only note");
     expect(html).not.toMatch(/production_status|shipping_status|line_items_json|service_mode|basic_redirect|hosted_landing_page|localhost|workers\\.dev/i);
+  });
+
+  it("tracks shipping email attempts with a stable hashed idempotency key", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+    const order = {
+      ...paidOrder,
+      shipping_status: "shipped" as const,
+      shipping_carrier: "USPS",
+      tracking_number: "TRACK123",
+      tracking_url: "https://tools.usps.com/go/TrackConfirmAction?tLabels=TRACK123",
+      shipped_at: "2026-09-05T12:00:00.000Z"
+    };
+
+    await sendShippingNotificationEmail({ order, sendEmailFn });
+    await sendShippingNotificationEmail({ order, sendEmailFn });
+
+    const firstDelivery = sendEmailFn.mock.calls[0][0].delivery;
+    const secondDelivery = sendEmailFn.mock.calls[1][0].delivery;
+    expect(firstDelivery).toMatchObject({
+      messageType: "shipping_tracking_customer",
+      entityId: "order-123",
+      retryable: true,
+      idempotencyKey: expect.stringMatching(/^taprater\/shipping_tracking_customer\/[0-9a-f]{64}$/)
+    });
+    expect(secondDelivery?.idempotencyKey).toBe(firstDelivery?.idempotencyKey);
+    expect(firstDelivery?.idempotencyKey).not.toContain("TRACK123");
   });
 });

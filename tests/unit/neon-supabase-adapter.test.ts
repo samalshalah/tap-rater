@@ -163,6 +163,35 @@ describe("Neon Supabase adapter", () => {
     expect(query.mock.calls[0][0]).toContain("::jsonb");
   });
 
+  it("allows email delivery metadata inserts and guarded status updates", async () => {
+    const query = vi.fn().mockResolvedValue([]);
+    const client = createNeonSupabaseAdapter(query);
+
+    await client.from("email_deliveries").insert({
+      id: "11111111-1111-4111-8111-111111111111",
+      message_type: "paid_order_customer",
+      audience: "customer",
+      recipient: "buyer@example.com",
+      subject: "Order confirmed",
+      status: "sending",
+      idempotency_key: "taprater/order/order-1/customer",
+      entity_type: "order",
+      entity_id: "order-1",
+      retryable: true,
+      attempt_number: 1
+    });
+    await client
+      .from("email_deliveries")
+      .update({ status: "accepted", provider_message_id: "resend-1" })
+      .eq("id", "11111111-1111-4111-8111-111111111111")
+      .eq("status", "sending");
+
+    expect(query.mock.calls[0][0]).toContain("insert into email_deliveries");
+    expect(query.mock.calls[0][0]).not.toContain("html");
+    expect(query.mock.calls[1][0]).toContain("update email_deliveries set");
+    expect(query.mock.calls[1][0]).toContain("email_deliveries.status = $4");
+  });
+
   it("builds one filtered delete query for product slugs", async () => {
     const query = vi.fn().mockResolvedValue([{ slug: "google-review-stand" }]);
     const client = createNeonSupabaseAdapter(query);

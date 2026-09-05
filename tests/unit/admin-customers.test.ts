@@ -118,7 +118,8 @@ describe("admin customer summaries", () => {
     expect(JSON.stringify(db.rows[0])).not.toContain("raw-activation-token");
     expect(sendCustomerActivationEmailFn).toHaveBeenCalledWith({
       to: "owner@example.com",
-      activationToken: "raw-activation-token"
+      activationToken: "raw-activation-token",
+      customerId: "customer-1"
     });
   });
 

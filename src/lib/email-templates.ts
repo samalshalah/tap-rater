@@ -180,7 +180,13 @@ export async function sendEmailTemplateTest(input: {
   return sendEmailFn({
     to: input.to,
     subject: `[Test] ${input.template.subject}`,
-    html: buildEmailTemplatePreviewHtml(input.template)
+    html: buildEmailTemplatePreviewHtml(input.template),
+    delivery: {
+      messageType: "template_test",
+      audience: "admin",
+      entityType: "email_template",
+      entityId: input.template.key
+    }
   });
 }
 

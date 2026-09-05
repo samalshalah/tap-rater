@@ -50,6 +50,7 @@ Cloudflare Worker:
 ```text
 RESEND_API_KEY
 RESEND_FROM_EMAIL
+RESEND_WEBHOOK_SECRET
 ORDER_NOTIFICATION_EMAIL
 ADMIN_NOTIFICATION_EMAIL
 ```
@@ -62,6 +63,32 @@ RESEND_FROM_EMAIL
 ORDER_NOTIFICATION_EMAIL
 ADMIN_NOTIFICATION_EMAIL
 ```
+
+## Delivery Webhook
+
+Create a Resend webhook for:
+
+```text
+https://taprater.com/api/webhooks/resend
+```
+
+Subscribe it to:
+
+```text
+email.sent
+email.delivered
+email.delivery_delayed
+email.failed
+email.bounced
+email.complained
+email.suppressed
+```
+
+Store its signing secret in the Cloudflare Worker as `RESEND_WEBHOOK_SECRET`. The route verifies the untouched request body and Svix signature headers before changing delivery state.
+
+The admin page at `/admin/settings/emails` distinguishes provider acceptance from confirmed delivery. It stores delivery metadata only. Email HTML, passwords, activation tokens, and payment data are not stored in the ledger.
+
+Failed order-confirmation and shipping messages can be regenerated from the current order record and retried by an authenticated administrator. Secure activation and login-link messages are deliberately not replayed from the delivery log; use their token-rotation workflows instead.
 
 ## Supported Email Types
 
@@ -94,3 +121,4 @@ Send test emails only to an address controlled by Tap Rater.
 - Use a verified sending domain before production mail.
 - Keep `RESEND_API_KEY` server-side only.
 - Avoid sending sensitive customer data in email bodies unless necessary.
+- Do not treat provider acceptance as proof that a message reached the recipient inbox.

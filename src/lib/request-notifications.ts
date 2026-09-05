@@ -35,7 +35,8 @@ export async function sendRequestNotification(
       subject: template.subject || payload.subject,
       html: renderEmailTemplateHtml(template, {
         rows: payload.rows
-      })
+      }),
+      delivery: { messageType: "support_request_admin", audience: "admin" }
     });
   } catch {
     return { sent: false, reason: "email_send_exception" };
