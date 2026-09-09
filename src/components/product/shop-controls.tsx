@@ -20,6 +20,7 @@ export function ShopControls({ query }: { query: ShopQuery }) {
     <form action="/shop" method="get" role="search" aria-label="Shop products" onSubmit={submit} aria-busy={pending} className="grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_200px]">
       {query.type ? <input type="hidden" name="type" value={query.type} /> : null}
       {query.use ? <input type="hidden" name="use" value={query.use} /> : null}
+      {query.design ? <input type="hidden" name="design" value={query.design} /> : null}
       <div className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
         <label htmlFor="shop-search">Search stands</label>
         <span className="flex min-w-0 overflow-hidden rounded-md border border-line bg-white focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">

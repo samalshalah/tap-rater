@@ -15,6 +15,7 @@ import { formatPrice } from "@/lib/products";
 import { generateProductSeo } from "@/lib/product-seo";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminExternalButton, AdminInput, AdminLinkButton, AdminSelect, AdminSoftPanel, AdminTextarea } from "./admin-ui";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
+import { ProductPhysicalDetailsEditor } from "./product-physical-details-editor";
 
 type ProductEditorProps = {
   product: MigratedProduct;
@@ -97,6 +98,8 @@ export function ProductEditor({
   const [searchTermsText, setSearchTermsText] = useState((product.searchKeywords ?? []).join("\n"));
   const [sizeOptions, setSizeOptions] = useState<ProductSizeOption[]>(() => product.sizeOptions ?? []);
   const [colorOptions, setColorOptions] = useState<ProductColorOption[]>(() => product.colorOptions ?? []);
+  const [specifications, setSpecifications] = useState(() => product.specifications ?? []);
+  const [includedItems, setIncludedItems] = useState(() => product.includedItems ?? []);
 
   const visibleOptions = useMemo(
     () => optionStates.filter((option) => normalOptionCodes.includes(option.optionCode)),
@@ -373,8 +376,8 @@ export function ProductEditor({
           colorOptions,
           keyFeatures: product.keyFeatures ?? [],
           howItWorks: product.howItWorks ?? [],
-          specifications: product.specifications ?? [],
-          includedItems: product.includedItems ?? [],
+          specifications: specifications.map((item) => ({ ...item, label: item.label.trim(), value: item.value.trim() })),
+          includedItems: includedItems.map((item) => ({ ...item, label: item.label.trim() })),
           productFaqs: product.productFaqs ?? [],
           isActive: finalIsActive
         })
@@ -654,8 +657,8 @@ export function ProductEditor({
         <EditorCard title="Product Details" description="Structured product content used by the storefront and JSON-LD.">
           <StructuredPreview title="Key Features" rows={(product.keyFeatures ?? []).map((item) => [item.title, item.body])} />
           <StructuredPreview title="How It Works" rows={(product.howItWorks ?? []).map((item) => [String(item.step), `${item.title}: ${item.body}`])} />
-          <StructuredPreview title="Specifications" rows={(product.specifications ?? []).map((item) => [item.label, item.value])} />
-          <StructuredPreview title="What's Included" rows={(product.includedItems ?? []).map((item) => [item.appliesTo === "branded" ? "Branded" : "All", item.label])} />
+          <ProductPhysicalDetailsEditor specifications={specifications} includedItems={includedItems}
+            onSpecificationsChange={setSpecifications} onIncludedItemsChange={setIncludedItems} />
           <StructuredPreview title="Product FAQ" rows={(product.productFaqs ?? []).map((item) => [item.question, item.answer])} />
         </EditorCard>
 

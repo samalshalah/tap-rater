@@ -49,7 +49,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   }), query);
   const { visibleCount, nextPage } = getShopResultWindow(filteredProducts.length, query.page);
   const visibleProducts = filteredProducts.slice(0, visibleCount);
-  const hasFilters = Boolean(selectedType || selectedUse || query.q);
+  const hasFilters = Boolean(selectedType || selectedUse || query.design || query.q);
 
   return (
     <main className="tr-public-shell text-ink">
@@ -60,7 +60,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
         >
           <div className="mb-6 max-w-3xl sm:mb-8">
             <p className="tr-eyebrow">Tap Rater shop</p>
-            <h1 className="tr-page-title mt-4">Shop NFC and QR stands.</h1>
+            <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
           </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
@@ -72,7 +72,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       Filters
                     </span>
                     <span className="px-4 text-brand">
-                      {selectedType || selectedUse ? "Active" : "Type and use"}
+                      {selectedType || selectedUse || query.design ? "Active" : "Type and use"}
                     </span>
                   </summary>
                   <div className="border-t border-line p-4">
@@ -110,6 +110,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               {hasFilters ? (
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
+                    {query.design ? (
+                      <Link href={buildShopHref({ ...query, design: undefined, page: undefined })} prefetch={false} scroll={false}
+                        aria-label="Remove Branded + QR filter" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-brand">
+                        Branded + QR <X size={14} aria-hidden="true" />
+                      </Link>
+                    ) : null}
                     {selectedType ? (
                       <Link
                         href={buildShopHref({ ...query, type: undefined, page: undefined })}
@@ -151,6 +157,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       key={product.slug}
                       product={product}
                       density="catalog"
+                      design={query.design}
                     />
                   ))
                 ) : (
@@ -257,7 +264,7 @@ function FilterPanelContent({
             {filteredProductCount} of {products.length} products
           </p>
         </div>
-        {selectedType || selectedUse ? (
+        {selectedType || selectedUse || query.design ? (
           <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className="text-sm font-semibold text-brand">
             Clear all
           </Link>
@@ -277,6 +284,7 @@ function FilterPanelContent({
               active={selectedType?.slug === standType.slug}
               count={count}
               href={buildShopHref({
+                design: query.design,
                 q: query.q,
                 sort: query.sort,
                 type:
@@ -304,6 +312,7 @@ function FilterPanelContent({
               ).length
             }
             href={buildShopHref({
+              design: query.design,
               q: query.q,
               sort: query.sort,
               type: selectedType?.slug,

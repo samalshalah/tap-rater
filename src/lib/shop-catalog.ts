@@ -6,6 +6,8 @@ import { SHOP_PAGE_SIZE, type ShopQuery } from "@/lib/shop-query";
 export function searchAndSortShopProducts(products: MigratedProduct[], query: ShopQuery) {
   const terms = query.q?.toLocaleLowerCase("en-US").split(/\s+/).filter(Boolean) ?? [];
   const matches = products.filter((product) => {
+    if (query.design === "branded" && (product.checkoutMode !== "buy_now" ||
+      !getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct"))) return false;
     const text = [
       product.title, product.shortDescription, product.sku,
       getCategoryBySlug(product.categorySlug)?.title,
@@ -21,8 +23,8 @@ export function searchAndSortShopProducts(products: MigratedProduct[], query: Sh
   if (query.sort === "price-asc" || query.sort === "price-desc") {
     const direction = query.sort === "price-asc" ? 1 : -1;
     return matches.sort((a, b) => {
-      const aPrice = getSortablePrice(a);
-      const bPrice = getSortablePrice(b);
+      const aPrice = getSortablePrice(a, query.design);
+      const bPrice = getSortablePrice(b, query.design);
       // Products without a displayed purchase price follow priced products in either direction.
       if (aPrice === null) return bPrice === null ? 0 : 1;
       if (bPrice === null) return -1;
@@ -32,7 +34,8 @@ export function searchAndSortShopProducts(products: MigratedProduct[], query: Sh
   return matches;
 }
 
-function getSortablePrice(product: MigratedProduct) {
+function getSortablePrice(product: MigratedProduct, design?: ShopQuery["design"]) {
+  if (design === "branded") return getProductPurchaseOptions(product).find((option) => option.id === "branded_qr_direct")?.priceCents ?? null;
   return product.checkoutMode === "buy_now" && getProductPurchaseOptions(product).length
     ? getLowestPurchasePriceCents(product)
     : null;

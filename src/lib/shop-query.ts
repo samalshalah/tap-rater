@@ -7,7 +7,7 @@ export const SHOP_SORT_OPTIONS = [
 ] as const;
 
 export type ShopSort = (typeof SHOP_SORT_OPTIONS)[number]["value"];
-export type ShopQuery = { type?: string; use?: string; q?: string; sort?: ShopSort; page?: number };
+export type ShopQuery = { type?: string; use?: string; design?: "branded"; q?: string; sort?: ShopSort; page?: number };
 export type ShopSearchParams = Partial<Record<keyof ShopQuery, string | string[]>>;
 
 export function normalizeShopQuery(params: ShopSearchParams = {}): ShopQuery {
@@ -18,16 +18,18 @@ export function normalizeShopQuery(params: ShopSearchParams = {}): ShopQuery {
   return {
     type: first(params.type),
     use: first(params.use),
+    design: first(params.design) === "branded" ? "branded" : undefined,
     q: first(params.q)?.trim().replace(/\s+/g, " ").slice(0, 120) || undefined,
     sort: SHOP_SORT_OPTIONS.find((option) => option.value === sort)?.value ?? "featured",
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
   };
 }
 
-export function buildShopHref({ type, use, q, sort, page }: ShopQuery) {
+export function buildShopHref({ type, use, design, q, sort, page }: ShopQuery) {
   const params = new URLSearchParams();
   if (type) params.set("type", type);
   if (use) params.set("use", use);
+  if (design === "branded") params.set("design", design);
   if (q) params.set("q", q);
   if (sort && sort !== "featured") params.set("sort", sort);
   if (page && page > 1) params.set("page", String(page));

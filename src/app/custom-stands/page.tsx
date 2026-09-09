@@ -21,9 +21,9 @@ export default async function CustomStandsPage() {
     <main className="tr-public-shell text-ink">
       <PageHero
         eyebrow={customBranding.eyebrow || "Custom Branding"}
-        title={customBranding.headline}
+        title="Branded + QR stands"
         body={customBranding.body}
-        cta={{ href: customBranding.cta.href, label: "Shop supported custom options" }}
+        cta={{ href: "/shop?design=branded", label: "Shop Branded + QR stands" }}
         image={customBranding.image}
       />
       <SectionShell tone="soft">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getBusinessUsePageCopy } from "@/lib/business-use-content";
 import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
@@ -53,6 +54,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
     return businessUse.productSlugs.includes(product.slug) || product.businessUseSlugs?.includes(businessUse.slug);
   });
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
+  const copy = getBusinessUsePageCopy(businessUse);
   const hasSingleProduct = assignedProducts.length === 1;
   const productGridClassName =
     hasSingleProduct
@@ -67,9 +69,9 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         title={businessUse.title}
         body={
           <>
-            <p>{businessUse.shortDescription || businessUse.description}</p>
-            {businessUse.longContent ? (
-              <div className="tr-body-sm mt-5 whitespace-pre-line">{businessUse.longContent}</div>
+            <p>{copy.intro}</p>
+            {copy.body ? (
+              <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div>
             ) : null}
           </>
         }
@@ -85,7 +87,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
           <SectionHeader
             eyebrow={`${assignedProducts.length} stands`}
             title="Recommended stands"
-            body="Each product uses Standard Direct setup with one customer destination URL."
+            body="Choose a stand for your customer action. Standard is NFC-only; Branded adds your logo, business name, and printed QR."
             cta={{ href: "/shop", label: "Shop all stands" }}
           />
         <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>

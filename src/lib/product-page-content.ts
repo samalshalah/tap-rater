@@ -114,7 +114,7 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
     },
     {
       title: "Simple customer prompt",
-      body: "A clear physical prompt helps staff invite customers to share their experience at the right moment."
+      body: getCustomerPromptCopy(product)
     }
   ];
 }
@@ -135,7 +135,7 @@ export function getProductPageUseCases(_product: MigratedProduct): ProductPageCo
     },
     {
       title: "Local services",
-      body: "Give technicians, reception teams, and service counters a consistent review prompt."
+      body: "Give technicians, reception teams, and service counters a consistent customer prompt."
     }
   ];
 }
@@ -145,7 +145,7 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     {
       label: "Stand",
       bestFor: "Counters, reception, checkout, pickup",
-      fit: "Most visible review prompt",
+      fit: "Visible countertop prompt",
       active: product.format === "stand"
     },
     {
@@ -254,6 +254,9 @@ function getProductConnectionCopy(product: MigratedProduct): string {
 }
 
 function correctKnownProductDetailCopy(product: MigratedProduct, value: string): string {
+  if (value === "A clear physical prompt helps staff invite customers to share their experience at the right moment.") {
+    return getCustomerPromptCopy(product);
+  }
   const knownConnectionClaims = [
     "Customers can tap with NFC or scan the printed QR code.",
     "NFC and QR both open the same Google review link you provide.",
@@ -263,6 +266,11 @@ function correctKnownProductDetailCopy(product: MigratedProduct, value: string):
     "Tap Rater programs the NFC and prepares the QR code before shipping."
   ];
   return knownConnectionClaims.includes(value) ? getProductConnectionCopy(product) : correctKnownPurchaseCopy(value);
+}
+
+function getCustomerPromptCopy(product: MigratedProduct): string {
+  const destination = getProductDestinationCopy(product);
+  return `Give customers a direct way to open your ${destination.highlightTarget} when they need it.`;
 }
 
 type ProductDestinationCopy = {

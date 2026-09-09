@@ -7,6 +7,27 @@ const google = migratedProducts.find((product) => product.slug === "google-revie
 const yelp = migratedProducts.find((product) => product.slug === "yelp-review-stand")!;
 
 describe("shop discovery", () => {
+  it("filters Branded + QR by active sellable options and an attached production template", () => {
+    const standardOnly = { ...google, slug: "standard-only", purchaseOptions: google.purchaseOptions!.filter(item => item.optionCode === "standard_direct") };
+    const missingTemplate = { ...google, slug: "missing-template", assetSet: {} };
+    const quote = { ...google, slug: "quote", checkoutMode: "request_quote" as const };
+    expect(searchAndSortShopProducts([standardOnly, missingTemplate, quote, google], { design: "branded" }).map(item => item.slug)).toEqual([google.slug]);
+  });
+
+  it("sorts branded results by the branded price, not the Standard price", () => {
+    const first = { ...google, slug: "first", purchaseOptions: google.purchaseOptions!.map(item => ({ ...item, priceCents: item.optionCode === "standard_direct" ? 1000 : 8000 })) };
+    const second = { ...google, slug: "second", purchaseOptions: google.purchaseOptions!.map(item => ({ ...item, priceCents: item.optionCode === "standard_direct" ? 5000 : 6000 })) };
+    expect(searchAndSortShopProducts([first, second], { design: "branded", sort: "price-asc" }).map(item => item.slug)).toEqual(["second", "first"]);
+  });
+
+  it("preserves the branded filter through search, sorting and pagination, and rejects unknown designs", () => {
+    const query = normalizeShopQuery({ design: ["branded"], q: "Google", sort: "price-desc", page: "2" });
+    const url = new URL(buildShopHref(query), "https://taprater.com");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ design: "branded", q: "Google", sort: "price-desc", page: "2" });
+    expect(normalizeShopQuery({ design: "a4" }).design).toBeUndefined();
+    expect(buildShopHref({ ...query, design: undefined })).not.toContain("design=");
+  });
+
   it("matches all search words across catalog fields without depending on case or word order", () => {
     const products = [google, { ...yelp, searchKeywords: ["restaurant feedback"] }];
     const query = normalizeShopQuery({ q: "  FEEDBACK   Yelp  " });

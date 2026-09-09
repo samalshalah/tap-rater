@@ -7,10 +7,10 @@ import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 
-export function ProductCard({ product, density = "default" }: { product: MigratedProduct; density?: "default" | "compact" | "catalog" }) {
+export function ProductCard({ product, density = "default", design }: { product: MigratedProduct; density?: "default" | "compact" | "catalog"; design?: "branded" }) {
   const image = getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
-  const purchaseLabel = getPurchaseLabel(product);
+  const purchaseLabel = getPurchaseLabel(product, design);
   const destination = getReviewDestination(product);
   const isCompact = density === "compact";
   const isCatalog = density === "catalog";
@@ -46,10 +46,15 @@ export function ProductCard({ product, density = "default" }: { product: Migrate
   );
 }
 
-function getPurchaseLabel(product: MigratedProduct) {
+function getPurchaseLabel(product: MigratedProduct, design?: "branded") {
   const options = getProductPurchaseOptions(product);
   if (options.length === 0) {
     return "Unavailable";
+  }
+
+  if (design === "branded") {
+    const option = options.find((item) => item.id === "branded_qr_direct");
+    return option ? `Branded + QR: ${formatCompactPrice(option.priceCents)}` : "Branded unavailable";
   }
 
   if (product.checkoutMode === "request_quote") {

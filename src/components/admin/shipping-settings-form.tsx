@@ -94,10 +94,10 @@ export function ShippingSettingsForm({ settings }: ShippingSettingsFormProps) {
       <AdminCard title="Fulfillment notes">
         <div className="grid gap-4 md:grid-cols-2">
           <TextArea
-            label="Handling time"
+            label="Preparation time (Standard and Branded)"
             value={form.handlingTimeText}
             onChange={(value) => setForm((current) => ({ ...current, handlingTimeText: value }))}
-            placeholder="Example: Usually ships after production review."
+            placeholder="Owner-approved preparation estimates"
           />
           <TextArea
             label="Supported regions"
@@ -106,16 +106,16 @@ export function ShippingSettingsForm({ settings }: ShippingSettingsFormProps) {
             placeholder="United States"
           />
           <TextArea
-            label="Default carrier notes"
+            label="Carrier and transit estimates"
             value={form.defaultCarrierNotes}
             onChange={(value) => setForm((current) => ({ ...current, defaultCarrierNotes: value }))}
-            placeholder="USPS, UPS, or carrier selected during fulfillment."
+            placeholder="Owner-approved carrier and transit information"
           />
           <TextArea
-            label="Customer-facing shipping note"
+            label="Shipping costs note"
             value={form.customerFacingShippingNote}
             onChange={(value) => setForm((current) => ({ ...current, customerFacingShippingNote: value }))}
-            placeholder="Shown internally for now and ready for customer surfaces."
+            placeholder="Shipping costs shown on the Shipping page"
           />
         </div>
       </AdminCard>
