@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
+import { StandPreview } from "@/components/account/stand-preview";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
 import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
@@ -13,6 +14,24 @@ const stand: CustomerPortalStand = {
 };
 
 describe("customer stand history", () => {
+  it("offers the branded stand preview separately from Multi-Link editing", () => {
+    const html = renderToStaticMarkup(createElement(CustomerStandsManager, {
+      stands: [{ ...stand, kind: "multilink", proofStatus: "approved", proofPreviewUrl: "/api/account/orders/qa/artwork/0" }],
+      hostedPages: { [stand.id]: { code: "PAGE1" } as HostedPageEditorRecord }
+    }));
+    expect(html).toContain("View stand preview");
+    expect(html).toContain("Manage links");
+  });
+
+  it("shows a saved preview or an explicit unavailable state, never an empty image source", () => {
+    const html = renderToStaticMarkup(createElement(StandPreview, { title: "Google Review Stand", url: "/api/account/orders/qa/artwork/0" }));
+    expect(html).toContain('src="/api/account/orders/qa/artwork/0"');
+    expect(html).toContain('alt="Google Review Stand preview"');
+    const missing = renderToStaticMarkup(createElement(StandPreview, { title: "Google Review Stand" }));
+    expect(missing).toContain("No saved stand preview is available");
+    expect(missing).not.toContain("<img");
+  });
+
   it.each(["expired", "unpaid", "refunded"])("offers billing instead of setup for an unprovisioned %s stand", (paymentStatus) => {
     const html = renderToStaticMarkup(createElement(CustomerStandsManager, {
       stands: [{ ...stand, kind: "multilink", paymentStatus }]

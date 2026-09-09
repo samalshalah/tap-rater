@@ -83,6 +83,43 @@ describe("customer paid stand quantity", () => {
 });
 
 describe("customer portal repository", () => {
+  async function previewPortal({ generated = true, approved = true, paid = true, hosted = false, skippedItem = false } = {}) {
+    const item = {
+      productId: "google-review-stand", optionId: "branded_qr_direct", title: "Google Review Stand", sku: "GRS-BR",
+      quantity: 1, unitAmountCents: 4900, lineSubtotalCents: 4900, proofApproved: approved,
+      destinationMode: hosted ? "HOSTED" : "DIRECT",
+      setup: {
+        frontTemplateUrl: "/uploads/template.png",
+        proofPreviewData: { previewImageUrl: "blob:expired-checkout-preview" },
+        productionArtwork: generated ? { status: "generated", url: "/api/admin/orders/order-1/artwork/0", format: "svg", contentType: "image/svg+xml" } : undefined
+      }
+    };
+    const db = createCustomerPortalDb({
+      customers: [{ id: "customer-1", email: "owner@example.com" }],
+      businesses: [], devices: [], tap_events: [], hosted_subscriptions: [], billing_invoices: [],
+      orders: [{ id: "order-1", email: "owner@example.com", stripe_checkout_session_id: "cs_paid",
+        status: paid ? "paid" : "pending_payment", payment_status: paid ? "paid" : "unpaid",
+        line_items_json: skippedItem ? [{}, item] : [item] }]
+    });
+    return getCustomerPortalFromClient(db.client, "owner@example.com");
+  }
+
+  it.each([false, true])("uses an owner-authorized saved-artwork URL, including Multi-Link=%s", async hosted => {
+    const portal = await previewPortal({ hosted });
+    expect(portal.stands[0].proofPreviewUrl).toBe("/api/account/orders/order-1/artwork/0");
+    expect(portal.stands[0].kind).toBe(hosted ? "multilink" : "branded");
+  });
+
+  it.each([{ generated: false }, { approved: false }, { paid: false }])("does not present a template or expired checkout image as final branded artwork: %j", async state => {
+    const portal = await previewPortal(state);
+    expect(portal.stands[0].proofPreviewUrl).toBeUndefined();
+  });
+
+  it("preserves the original order line index when malformed items are skipped", async () => {
+    const portal = await previewPortal({ skippedItem: true });
+    expect(portal.stands[0]).toMatchObject({ id: "order-1-2", lineItemIndex: 1, proofPreviewUrl: "/api/account/orders/order-1/artwork/1" });
+  });
+
   it("loads businesses, devices, destinations, and tap counts for a customer email", async () => {
     const db = createCustomerPortalDb({
       customers: [{ id: "customer-1", email: "owner@example.com", name: "Owner" }],

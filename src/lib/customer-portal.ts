@@ -475,7 +475,8 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
   const subscriptionByUrl = new Map(subscriptions.map((subscription) => [subscription.hostedPageUrl, subscription]));
 
   return orders.flatMap((order) =>
-    order.items.map((item, index) => {
+    order.items.map((item) => {
+      const index = Number(item.id) - 1;
       const rawItem = item.lineItem;
       const summary = getOrderLineItemProductionSummary(rawItem);
       const hostedPageCode = readString(rawItem.setup?.hostedPageCode) ?? readString(rawItem.setup?.permanentPageCode);
@@ -484,6 +485,13 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
       const kind = summary.fulfillmentKind === "hosted" ? "multilink" : summary.fulfillmentKind;
       const proofStatus = !summary.proofRequired ? "not_needed" : summary.proofConfirmed ? "approved" : "needs_review";
       const destinationUrl = kind === "multilink" ? hostedPageUrl ?? subscription?.hostedPageUrl : summary.destinationUrl ?? summary.qrTargetUrl ?? summary.nfcTargetUrl;
+      // Stored artwork URLs belong to the admin. Customer previews use an ownership-checked route.
+      const proofPreviewUrl = rawItem.optionId === "branded_qr_direct"
+        ? summary.productionArtwork?.status === "generated" && rawItem.proofApproved === true
+          && order.status === "paid" && order.paymentStatus === "paid"
+          ? `/api/account/orders/${order.id}/artwork/${index}`
+          : undefined
+        : readProofPreviewString(rawItem.setup, "previewImageUrl") ?? summary.frontTemplateUrl;
 
       return {
         id: `${order.id}-${index + 1}`,
@@ -497,7 +505,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         businessName: summary.businessName,
         destinationUrl,
         logoUrl: summary.logoMediaUrl,
-        proofPreviewUrl: readProofPreviewString(rawItem.setup, "previewImageUrl") ?? summary.productionArtwork?.url ?? summary.frontTemplateUrl,
+        proofPreviewUrl,
         proofTemplateUrl: summary.frontTemplateUrl,
         qrTargetUrl: summary.qrTargetUrl,
         nfcTargetUrl: summary.nfcTargetUrl,

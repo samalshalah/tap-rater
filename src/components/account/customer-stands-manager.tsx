@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import { useId, useState } from "react";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
+import { StandPreview } from "@/components/account/stand-preview";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
 import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
@@ -17,6 +18,7 @@ export function CustomerStandsManager({
   hostedPages?: Record<string, HostedPageEditorRecord>;
 }) {
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
+  const [showStandPreview, setShowStandPreview] = useState(false);
 
   if (!stands.length) {
     return <EmptyState message="No stands are linked to this account yet." />;
@@ -26,15 +28,16 @@ export function CustomerStandsManager({
     <>
       <section className="grid gap-3">
         {stands.map((stand) => (
-          <StandCard key={stand.id} stand={stand} hasHostedPage={Boolean(hostedPages[stand.id])} onOpen={() => setSelectedStand(stand)} />
+          <StandCard key={stand.id} stand={stand} hasHostedPage={Boolean(hostedPages[stand.id])}
+            onOpen={(preview = false) => { setShowStandPreview(preview); setSelectedStand(stand); }} />
         ))}
       </section>
-      {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} onClose={() => setSelectedStand(null)} /> : null}
+      {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} showStandPreview={showStandPreview} onClose={() => setSelectedStand(null)} /> : null}
     </>
   );
 }
 
-function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStand; hasHostedPage: boolean; onOpen: () => void }) {
+function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStand; hasHostedPage: boolean; onOpen: (preview?: boolean) => void }) {
   const isMultiLink = stand.kind === "multilink";
   const historyOnly = isMultiLink && !hasHostedPage && !stand.hostedPageCode && !stand.hostedPageUrl && !stand.multiLinkSetupPending;
 
@@ -58,10 +61,13 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          {isMultiLink && stand.proofStatus === "approved" && stand.proofPreviewUrl ? (
+            <button type="button" onClick={() => onOpen(true)} className="tr-button-ghost">View stand preview</button>
+          ) : null}
           {historyOnly ? (
             <Link href="/account/orders#invoices" className="tr-button-ghost">View billing</Link>
           ) : (
-            <button type="button" onClick={onOpen} className="tr-button-primary">
+            <button type="button" onClick={() => onOpen()} className="tr-button-primary">
               {isMultiLink && hasHostedPage ? "Manage links" : "View stand"}
             </button>
           )}
@@ -74,13 +80,15 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
 function StandDetailModal({
   stand,
   hostedPage,
+  showStandPreview,
   onClose
 }: {
   stand: CustomerPortalStand;
   hostedPage?: HostedPageEditorRecord;
+  showStandPreview: boolean;
   onClose: () => void;
 }) {
-  const isMultiLink = stand.kind === "multilink";
+  const isMultiLink = stand.kind === "multilink" && !showStandPreview;
   const headingId = useId();
 
   return (
@@ -107,15 +115,7 @@ function StandDetailModal({
           </div>
         ) : (
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <div className="rounded-md border border-line bg-soft p-4">
-            {stand.proofPreviewUrl ? (
-              <img src={stand.proofPreviewUrl} alt={`${stand.title} preview`} className="mx-auto max-h-[560px] w-full object-contain" />
-            ) : (
-              <div className="grid min-h-[360px] place-items-center rounded-md border border-dashed border-line bg-white p-6 text-center text-sm text-muted">
-                Stand preview will appear here when available.
-              </div>
-            )}
-          </div>
+          <StandPreview key={stand.id} url={stand.proofPreviewUrl} title={stand.title} />
           <aside className="grid content-start gap-3 text-sm">
             <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />

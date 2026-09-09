@@ -41,3 +41,28 @@ keys are not accepted by the logo endpoint.
 The final design remains SVG at the stored print dimensions, with embedded artwork
 and outlined business text. The original source logo is not resized or converted
 by the download endpoint. These controls do not send email attachments.
+
+## Customer stand preview
+
+My Stands > View stand now loads saved branded artwork through
+`/api/account/orders/:id/artwork/:lineItemIndex`, not the admin-only URL stored in
+the artwork reference. The lookup is scoped by both order ID and the signed-in
+customer's email. Anonymous requests return 401; missing and other-owner orders
+both return 404 before reading media storage. Paid, unreversed payment and current
+proof approval are required, matching the existing admin artwork policy.
+
+The response is an inline, private, no-store SVG with a restrictive sandbox CSP.
+The public product-media route still cannot serve production artwork. Previewing
+never regenerates the design or changes payment, approval, or fulfillment state.
+The original order-line index is preserved if malformed legacy lines are omitted
+from the customer display.
+
+Branded Multi-Link stands also have a separate View stand preview action beside
+Manage links when saved artwork is available. Missing artwork is not replaced with
+an unbranded template or an expired checkout blob URL. Failed image loads show an
+unavailable message and Retry preview rather than a broken image.
+
+Regression verification: 40 added tests for customer authorization, ownership,
+private headers, payment/approval guards, key scoping, customer URL mapping, and
+preview actions. Full suite: 1,117 passed; nine pre-existing opt-in database tests
+skipped. TypeScript: zero diagnostics.

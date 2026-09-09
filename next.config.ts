@@ -81,6 +81,10 @@ const nextConfig: NextConfig = {
       {
         source: "/api/admin/orders/:id/artwork/:lineItemIndex",
         headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox allow-downloads" }]
+      },
+      {
+        source: "/api/account/orders/:id/artwork/:lineItemIndex",
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox" }]
       }
     ];
   }

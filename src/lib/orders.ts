@@ -1041,6 +1041,23 @@ export async function getAdminOrderById(orderId: string): Promise<{ configured: 
   }
 }
 
+export async function getCustomerOrderById(orderId: string, email: string): Promise<{ configured: boolean; order: OrderRecord | null }> {
+  if (!hasSupabaseAdminConfig()) return { configured: false, order: null };
+  const order = await getCustomerOrderByIdWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, email);
+  return { configured: true, order };
+}
+
+export async function getCustomerOrderByIdWithClient(client: OrdersDbClient, orderId: string, email: string): Promise<OrderRecord | null> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+  const { data, error } = await client.from("orders").select("*")
+    .eq("id", orderId).eq("email", normalizedEmail).maybeSingle();
+  if (error) throw new Error("Customer order storage is unavailable.");
+  if (!data) return null;
+  const order = normalizeOrderRecord(data);
+  return order.id === orderId && order.email?.trim().toLowerCase() === normalizedEmail ? order : null;
+}
+
 export async function markAdminOrderRefunded(
   orderId: string,
   refundId: string,
