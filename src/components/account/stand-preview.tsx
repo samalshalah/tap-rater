@@ -10,7 +10,7 @@ export function StandPreview({ url, title }: { url?: string; title: string }) {
   return (
     <div className="grid min-w-0 place-items-center rounded-md border border-line bg-soft p-4">
       {url && !failed ? (
-        <img key={attempt} src={url} alt={`${title} preview`} onError={() => setFailed(true)}
+        <img key={attempt} src={url} alt={`${title} preview`} width={1278} height={1949} onError={() => setFailed(true)}
           className="mx-auto max-h-[560px] w-full object-contain" />
       ) : (
         <div role="status" className="grid min-h-[280px] content-center justify-items-center gap-3 p-4 text-center text-sm text-muted">

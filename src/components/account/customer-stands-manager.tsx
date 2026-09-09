@@ -116,7 +116,7 @@ function StandDetailModal({
         ) : (
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
           <StandPreview key={stand.id} url={stand.proofPreviewUrl} title={stand.title} />
-          <aside className="grid content-start gap-3 text-sm">
+          <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 text-sm">
             <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />
             <DetailLine label="Business" value={stand.businessName ?? "-"} />
