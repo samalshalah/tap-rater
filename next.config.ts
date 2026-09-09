@@ -77,6 +77,10 @@ const nextConfig: NextConfig = {
       {
         source: "/account/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }]
+      },
+      {
+        source: "/api/admin/orders/:id/artwork/:lineItemIndex",
+        headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox allow-downloads" }]
       }
     ];
   }

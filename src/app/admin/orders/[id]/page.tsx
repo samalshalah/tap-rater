@@ -2,6 +2,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
 import { OrderProductionActions } from "@/components/admin/order-production-actions";
+import { OrderDesignFiles } from "@/components/admin/order-design-files";
 import { OrderRefundForm } from "@/components/admin/order-refund-form";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -9,6 +10,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { canAdvanceOrderFulfillment, canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
 import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
+import { getAdminOrderDesignAssetUrl, getOrderLogoStorageKey } from "@/lib/order-design-assets";
 
 type AdminOrderDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -60,7 +62,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             <InfoCard title="Line items">
               <div className="space-y-4">
                 {order.line_items_json.map((item, index) => (
-                  <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
+                  <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
                 ))}
               </div>
             </InfoCard>
@@ -150,8 +152,10 @@ function AddressBlock({ address }: { address?: Record<string, unknown> | null })
   );
 }
 
-function LineItemDetail({ item, artworkUrl }: { item: OrderLineItem; artworkUrl?: string }) {
+function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
   const summary = getOrderLineItemProductionSummary(item);
+  const originalLogo = getOrderLogoStorageKey(item);
+  const printLogo = getOrderLogoStorageKey(item, false);
 
   return (
     <AdminSoftPanel>
@@ -174,14 +178,14 @@ function LineItemDetail({ item, artworkUrl }: { item: OrderLineItem; artworkUrl?
         <Field label="Business name" value={summary.businessName} />
         <Field label="Design assistance" value={readSetupBoolean(item.setup, "designAssistanceRequested") ? "Requested" : null} />
         <Field label="Design notes" value={readSetupString(item.setup, "designNotes")} />
-        <Field label="Logo" value={summary.logoReference ?? summary.logoMediaUrl} link={Boolean(summary.logoMediaUrl)} />
+        <Field label="Logo" value={readSetupString(item.setup, "logoFileName") ?? (originalLogo ? "Uploaded" : "Not attached")} />
         {summary.printedQrLabel !== "No printed QR (NFC only)" ? <Field label="QR production value" value={summary.generatedQrValue} link /> : null}
         <Field label="Front template" value={summary.frontTemplateUrl} link />
         <Field label="Artwork confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
         <Field label="Artwork approved at" value={readSetupString(item.setup, "proofApprovedAt")} />
         <Field label="Approval snapshot hash" value={summary.productionArtwork?.approvalSnapshotHash} />
         <Field label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : null} />
-        <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? artworkUrl : summary.productionArtwork?.error} link={summary.productionArtwork?.status === "generated"} />
+        <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? "Ready to download" : summary.productionArtwork?.error} />
         <Field
           label="Artwork dimensions"
           value={
@@ -191,6 +195,13 @@ function LineItemDetail({ item, artworkUrl }: { item: OrderLineItem; artworkUrl?
           }
         />
       </div>
+      <OrderDesignFiles
+        artworkUrl={summary.productionArtwork?.status === "generated" ? artworkUrl : undefined}
+        originalLogoUrl={originalLogo ? getAdminOrderDesignAssetUrl(order, index, "original-logo") : undefined}
+        printLogoUrl={printLogo && printLogo !== originalLogo ? getAdminOrderDesignAssetUrl(order, index, "print-logo") : undefined}
+        textUrl={getAdminOrderDesignAssetUrl(order, index, "text")}
+        businessName={summary.businessName}
+      />
       <LineItemVisuals item={item} downloadUrl={artworkUrl} />
       {summary.warnings.length ? (
         <AdminAlert tone="warning" className="mt-4">
@@ -226,7 +237,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
         <PreviewAsset title="Artwork template" src={previewTemplate} alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
-        <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
+        <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} alt={`${item.title} production artwork`} />
       ) : item.optionId === "branded_qr_direct" ? (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
           Final artwork is generated after confirmed payment. Check production warnings if the file is unavailable.
@@ -236,15 +247,15 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
   );
 }
 
-function PreviewAsset({ title, src, alt, downloadUrl }: { title: string; src: string; alt: string; downloadUrl?: string }) {
+function PreviewAsset({ title, src, alt }: { title: string; src: string; alt: string }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
       <div className="grid min-h-40 place-items-center overflow-hidden rounded-md bg-soft">
         <img src={src} alt={alt} className="max-h-52 max-w-full object-contain" />
       </div>
-      <a href={downloadUrl ?? src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
-        {downloadUrl ? "Download production artwork" : "Open asset"}
+      <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
+        Open preview
       </a>
     </div>
   );

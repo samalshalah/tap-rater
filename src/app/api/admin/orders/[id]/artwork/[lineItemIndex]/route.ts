@@ -41,7 +41,7 @@ export async function GET(request: Request, context: RouteContext) {
       "Content-Type": "image/svg+xml",
       "Content-Disposition": `${disposition}; filename="order-${id}-line-${index + 1}.svg"`,
       "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox"
+      "Content-Security-Policy": "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox allow-downloads"
     } });
   } catch {
     return NextResponse.json({ error: "Order artwork could not be loaded." }, { status: 503, headers });

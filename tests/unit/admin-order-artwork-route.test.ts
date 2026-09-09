@@ -55,6 +55,7 @@ describe("authenticated order artwork", () => {
     expect(response.headers.get("Content-Type")).toBe("image/svg+xml");
     expect(response.headers.get("Cache-Control")).toBe("private, no-store");
     expect(response.headers.get("Content-Security-Policy")).toContain("sandbox");
+    expect(response.headers.get("Content-Security-Policy")).toContain("allow-downloads");
     expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(response.headers.get("Location")).toBeNull();
   });
