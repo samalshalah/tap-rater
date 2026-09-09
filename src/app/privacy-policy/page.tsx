@@ -17,6 +17,12 @@ const sections = [
     ]
   },
   {
+    title: "Address suggestions",
+    body: [
+      "When you type a shipping street address, the typed address text is sent to Google Maps Platform to suggest matching U.S. addresses. Selecting a suggestion fills the shipping fields; you can review and edit them before placing an order. You can also enter an address manually."
+    ]
+  },
+  {
     title: "Payments",
     body: [
       "Payments are processed by Stripe. Tap Rater does not store full card numbers in the website database. Stripe may collect and process payment information according to its own services and policies."
@@ -81,6 +87,9 @@ function PolicyPage({
             </article>
           ))}
           <div className="tr-card p-5">
+            <p className="tr-body-sm mb-3">
+              Address suggestions use Google Maps Platform and are subject to the <a href="https://policies.google.com/privacy" className="font-semibold text-brand hover:text-brand-dark">Google Privacy Policy</a>.
+            </p>
             <p className="tr-body-sm">
               Need help? <Link href="/support" className="font-semibold text-brand hover:text-brand-dark">Contact Tap Rater support</Link>.
             </p>

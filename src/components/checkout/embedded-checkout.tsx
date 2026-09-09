@@ -7,6 +7,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type InvalidEvent } from "react";
 import { useCart } from "@/components/cart/cart-provider";
+import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
@@ -82,6 +83,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
   const [session, setSession] = useState<EmbeddedCheckoutSession | null>(null);
   const [error, setError] = useState("");
   const [isStartingPayment, setIsStartingPayment] = useState(false);
+  const [isFillingAddress, setIsFillingAddress] = useState(false);
   const [step, setStep] = useState<"details" | "payment">(sessionId ? "payment" : "details");
   const checkoutAttemptId = useRef("");
   const publishableKey = stripePublicConfig.ok ? stripePublicConfig.publishableKey : "";
@@ -192,6 +194,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
 
   async function startPayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isFillingAddress || isStartingPayment) return;
     setIsStartingPayment(true);
     setError("");
 
@@ -300,7 +303,13 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
               </div>
 
               <div className="grid gap-3">
-                <CheckoutInput label="Address" value={shipping.line1} autoComplete="shipping address-line1" onChange={(value) => setShipping((current) => ({ ...current, line1: value }))} required />
+                <AddressAutocomplete
+                  value={shipping.line1}
+                  onChange={(value) => setShipping((current) => ({ ...current, line1: value }))}
+                  onSelect={(address) => setShipping((current) => ({ ...current, ...address, line2: address.line2 || current.line2 }))}
+                  onBusyChange={setIsFillingAddress}
+                  onInvalid={revealFirstInvalidControl}
+                />
                 <CheckoutInput label="Apartment, suite, unit" value={shipping.line2} autoComplete="shipping address-line2" onChange={(value) => setShipping((current) => ({ ...current, line2: value }))} />
                 <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_180px_128px]">
                   <CheckoutInput label="City" value={shipping.city} autoComplete="shipping address-level2" onChange={(value) => setShipping((current) => ({ ...current, city: value }))} required />
@@ -329,7 +338,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
 
               {error ? <p className="tr-status-warning" role="alert">{error}</p> : null}
 
-              <button type="submit" disabled={isStartingPayment || rows.length === 0} className="tr-button-primary min-h-12 w-full">
+              <button type="submit" disabled={isStartingPayment || isFillingAddress || rows.length === 0} className="tr-button-primary min-h-12 w-full">
                 {isStartingPayment ? "Preparing payment..." : "Continue to payment"}
               </button>
             </form>

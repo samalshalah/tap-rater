@@ -9,6 +9,7 @@ type RateLimitBindingName = "PUBLIC_EVENT_RATE_LIMITER" | "PUBLIC_FORM_RATE_LIMI
 
 export type PublicRateLimitScope =
   | "checkout"
+  | "checkout-address"
   | "change-link"
   | "contact"
   | "hosted-click"

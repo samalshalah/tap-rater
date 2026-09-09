@@ -36,6 +36,9 @@ export default function TermsPage() {
             </article>
           ))}
           <div className="tr-card p-5">
+            <p className="tr-body-sm mb-3">
+              Address suggestions are provided by Google Maps Platform under the <a href="https://maps.google.com/help/terms_maps/" className="font-semibold text-brand hover:text-brand-dark">Google Maps Terms of Service</a>. Suggestions do not verify delivery eligibility. Review your shipping address before placing an order.
+            </p>
             <p className="tr-body-sm">
               Questions before ordering? <Link href="/support" className="font-semibold text-brand hover:text-brand-dark">Contact support</Link>.
             </p>
