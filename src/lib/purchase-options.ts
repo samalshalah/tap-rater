@@ -25,7 +25,7 @@ export const standardDirectOption: PurchaseOption = {
   id: "standard_direct",
   label: "Standard Direct Stand",
   priceCents: 3900,
-  summary: "Ready-made stand with NFC tap connected directly to one destination link.",
+  summary: "Standard is NFC-only, with no printed QR. NFC taps open one destination link.",
   requiresDestinationUrl: true,
   hasQr: false,
   requiresBusinessName: false,
@@ -42,7 +42,7 @@ export const brandedQrDirectOption: PurchaseOption = {
   id: "branded_qr_direct",
   label: "Branded + QR Direct Stand",
   priceCents: 4900,
-  summary: "Add your logo, business name, and QR code before checkout. Tap Rater reviews artwork after the order.",
+  summary: "Add your logo, business name, and a QR code generated from your destination. Approve the artwork preview before payment. Final print artwork is generated after payment.",
   requiresDestinationUrl: true,
   hasQr: true,
   requiresBusinessName: true,
@@ -130,9 +130,9 @@ export function getProductPurchaseOptions(
           label: option.title,
           priceCents: option.priceCents,
           monthlyPriceCents: option.monthlyPriceCents,
-          summary: option.description,
+          summary: correctKnownPurchaseCopy(option.description),
           requiresDestinationUrl: option.requiresDestinationUrl,
-          hasQr: option.hasQr,
+          hasQr: option.optionCode === "standard_direct" ? false : option.hasQr,
           requiresBusinessName: option.requiresBusinessName,
           requiresLogo: option.requiresLogo,
           requiresDesignStep: option.requiresDesignStep,
@@ -154,6 +154,27 @@ export function getProductPurchaseOptions(
 
 export function getPurchaseOption(optionId: string): PurchaseOption | undefined {
   return [standardDirectOption, brandedQrDirectOption, hostedMultiLinkOption].find((option) => option.id === optionId);
+}
+
+// Match only published claims we own; leave other merchant-authored copy intact.
+const knownPurchaseClaims = new Map<string, string>([
+  ["Ready-made stand with NFC tap connected directly to one destination link.", standardDirectOption.summary],
+  ["Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide.", "Ready-made Google Review Stand with NFC programmed to your Google review link. Standard is NFC-only, with no printed QR."],
+  ["Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.", "Countertop Google Review Stand with NFC. Standard is NFC-only, with no printed QR. Branded adds a destination-generated QR, logo, and business name."],
+  ["The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide.", "Standard uses NFC only, with no printed QR. Branded adds a QR code generated from the same Google review link."],
+  ["Choose Standard for the ready-made Tap Rater Google design, or Branded to add your logo and business name for Tap Rater artwork review after the order.", "Choose Standard for the ready-made Tap Rater Google design, or Branded to add your logo and business name. Approve the Branded artwork preview before payment. Final print artwork is generated after payment."],
+  ["Add your logo, business name, and QR code before checkout. Tap Rater reviews artwork after the order.", brandedQrDirectOption.summary],
+  ["Tap Rater reviews artwork before production.", "Approve the artwork preview before payment. Final print artwork is generated after payment."],
+  ["Branded direct stand with NFC, QR, business name, logo collection, and artwork review.", brandedQrDirectOption.summary],
+  ["Branded direct stand with NFC, printed QR, business name, logo collection, and front proof.", brandedQrDirectOption.summary]
+]);
+
+export function correctKnownPurchaseCopy(value: string): string {
+  let corrected = value;
+  for (const [claim, replacement] of knownPurchaseClaims) {
+    corrected = corrected.replaceAll(claim, replacement);
+  }
+  return corrected;
 }
 
 export function getLowestPurchasePriceCents(

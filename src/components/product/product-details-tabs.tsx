@@ -1,6 +1,8 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { formatPrice } from "@/lib/products";
+import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 
 type Highlight = {
   title: string;
@@ -28,6 +30,7 @@ type ProductDetailsTabsProps = {
   includedItems: IncludedItem[];
   standardPrice: string;
   brandedPrice: string;
+  supportsMultiLink?: boolean;
 };
 
 type TabId = "details" | "specifications" | "compare" | "how";
@@ -39,7 +42,7 @@ const allTabs: Array<{ id: TabId; label: string }> = [
   { id: "how", label: "How it works" }
 ];
 
-export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems, standardPrice, brandedPrice }: ProductDetailsTabsProps) {
+export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems, standardPrice, brandedPrice, supportsMultiLink = false }: ProductDetailsTabsProps) {
   const [selectedTab, setActiveTab] = useState<TabId>("details");
   const tabs = allTabs.filter((tab) => tab.id !== "specifications" || specifications.length > 0 || includedItems.length > 0);
   const activeTab = tabs.some((tab) => tab.id === selectedTab) ? selectedTab : tabs[0].id;
@@ -167,15 +170,20 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
               <div className="tr-card mt-4 overflow-hidden p-0">
                 <ComparisonRow label="" standard="Standard" branded="Branded" header />
                 <ComparisonRow label="NFC Tap" standard="Yes" branded="Yes" />
-                <ComparisonRow label="Printed QR" standard="Yes" branded="Yes" />
+                <ComparisonRow label="Printed QR" standard="No" branded="Yes" />
                 <ComparisonRow label="Direct destination" standard="Yes" branded="Yes" />
                 <ComparisonRow label="Ready-made design" standard="Yes" branded="No" />
                 <ComparisonRow label="Your logo" standard="No" branded="Yes" />
                 <ComparisonRow label="Business name" standard="No" branded="Yes" />
                 <ComparisonRow label="Artwork review" standard="No" branded="Yes" />
-                <ComparisonRow label="Monthly subscription" standard="None" branded="None" />
-                <ComparisonRow label="Price" standard={standardPrice} branded={brandedPrice} />
+                <ComparisonRow label="Monthly subscription" standard="None with Direct" branded="None with Direct" />
+                <ComparisonRow label="Stand price" standard={standardPrice} branded={brandedPrice} />
               </div>
+              {supportsMultiLink ? (
+                <p className="mt-4 text-sm leading-6 text-muted">
+                  Direct is included in the stand price. Optional hosted Multi-Link adds {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page to either design and supports up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
+                </p>
+              ) : null}
             </div>
           ) : null}
 

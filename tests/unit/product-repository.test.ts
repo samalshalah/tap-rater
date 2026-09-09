@@ -237,7 +237,7 @@ describe("product repository", () => {
     });
   });
 
-  it("sanitizes stale backend Standard Direct options before exposing storefront products", async () => {
+  it("corrects stale backend Standard QR flags without replacing custom copy or commercial fields", async () => {
     const products = await getStorefrontProductsFromClient(mockProductsClient(
       [
         {
@@ -274,18 +274,18 @@ describe("product repository", () => {
         {
           product_slug: "database-only-google-review-stand",
           option_code: "standard_direct",
-          title: "Standard Direct",
-          description: "Ready-made NFC-only stand with one direct destination. No printed QR.",
+          title: "Reception Standard",
+          description: "Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide. Reception edition.",
           price_cents: 4200,
           requires_destination_url: true,
-          has_qr: false,
+          has_qr: true,
           requires_logo: false,
           requires_business_name: false,
           requires_design_step: false,
           requires_front_proof: false,
           requires_subscription: false,
           account_required: false,
-          footer_label: "NFC only",
+          footer_label: "Reception edition",
           is_active: true,
           sort_order: 1
         }
@@ -295,17 +295,18 @@ describe("product repository", () => {
     expect(products[0].purchaseOptions).toEqual([
       expect.objectContaining({
         optionCode: "standard_direct",
-        title: "Standard Direct",
-        description: "Ready-made stand with NFC tap connected directly to one destination link.",
+        title: "Reception Standard",
+        description: "Ready-made Google Review Stand with NFC programmed to your Google review link. Standard is NFC-only, with no printed QR. Reception edition.",
         priceCents: 4200,
         hasQr: false,
-        footerLabel: "NFC direct",
+        footerLabel: "Reception edition",
         isActive: true
       })
     ]);
+    expect(products[0]).toMatchObject({ sku: "DB-GOOGLE-1", basePriceCents: 3900, stockStatus: "instock" });
   });
 
-  it("removes stale direct product copy from database-backed storefront rows", () => {
+  it("preserves accurate NFC-only copy while correcting retired fee wording", () => {
     const product = normalizeStorefrontProductRow({
       slug: "yelp-review-stand",
       title: "Yelp Review Stand",
@@ -333,10 +334,22 @@ describe("product repository", () => {
       is_active: true
     });
 
-    expect(product?.shortDescription).toContain("NFC taps directly");
-    expect(product?.description).toContain("No subscription, account, hosted page, or activation is required.");
+    expect(product?.shortDescription).toBe("Countertop NFC-only stand.");
+    expect(product?.description).toBe("Standard Direct is NFC only. No printed QR.");
     expect(product?.seoDescription).toContain("One-time physical product purchase");
-    expect(`${product?.shortDescription} ${product?.description} ${product?.seoDescription}`).not.toMatch(/NFC only|No printed QR|monthly fee/i);
+    expect(product?.seoDescription).not.toMatch(/monthly fee/i);
+  });
+
+  it("corrects known Google copy without replacing a merchant's surrounding description", () => {
+    const row = {
+      slug: "google-review-stand",
+      short_description: "Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
+      description: "Reception edition. The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide. Includes desk instructions."
+    };
+    const product = normalizeStorefrontProductRow(row)!;
+    expect(product.shortDescription).toContain("Standard is NFC-only, with no printed QR.");
+    expect(product.description).toBe("Reception edition. Standard uses NFC only, with no printed QR. Branded adds a QR code generated from the same Google review link. Includes desk instructions.");
+    expect(normalizeStorefrontProductRow(row, { sanitizePublicCopy: false })?.description).toBe(row.description);
   });
 
   it("hides QA and hosted products from the public storefront", async () => {

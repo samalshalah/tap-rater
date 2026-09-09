@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { canAdvanceOrderFulfillment, canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
-import { getAdminOrderById, getOrderLineItemProductionSummary, getOrderProductionBlockers, type OrderLineItem, type OrderRecord } from "@/lib/orders";
+import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 
 type AdminOrderDetailPageProps = {
@@ -31,20 +31,20 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
       <section className="tr-admin-section">
         <AdminLinkButton href="/admin/orders" className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Back to orders</AdminLinkButton>
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="tr-eyebrow">Order detail</p>
-            <h1 className="tr-admin-title mt-2">{order.customer_name ?? "Customer order"}</h1>
-            <p className="mt-2 font-mono text-xs text-muted">{order.stripe_checkout_session_id}</p>
+            <h1 className="tr-admin-title mt-2 break-words">{order.customer_name ?? "Customer order"}</h1>
+            <p className="mt-2 break-all font-mono text-xs text-muted">{order.stripe_checkout_session_id}</p>
           </div>
-          <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">
+          <div className="tr-admin-card shrink-0 px-4 py-3 text-sm font-semibold text-ink">
             {formatPrice(order.total_cents)}
           </div>
         </div>
 
         {attentionItems.length ? <OrderAttentionCard items={attentionItems} /> : null}
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_420px]">
-          <div className="space-y-6">
+        <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0 space-y-6">
             <InfoCard title="Customer">
               <Field label="Name" value={order.customer_name} />
               <Field label="Email" value={order.email} />
@@ -60,13 +60,13 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             <InfoCard title="Line items">
               <div className="space-y-4">
                 {order.line_items_json.map((item, index) => (
-                  <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} />
+                  <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
                 ))}
               </div>
             </InfoCard>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <InfoCard title="Status">
               <Field label="Payment" value={formatPaymentStatus(order)} />
               <Field label="Payment status" value={order.payment_status} />
@@ -150,15 +150,15 @@ function AddressBlock({ address }: { address?: Record<string, unknown> | null })
   );
 }
 
-function LineItemDetail({ item }: { item: OrderLineItem }) {
+function LineItemDetail({ item, artworkUrl }: { item: OrderLineItem; artworkUrl?: string }) {
   const summary = getOrderLineItemProductionSummary(item);
 
   return (
     <AdminSoftPanel>
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="font-black text-ink">{item.quantity} x {item.title}</p>
-          <p className="mt-1 font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
+        <div className="min-w-0">
+          <p className="break-words font-black text-ink">{item.quantity} x {item.title}</p>
+          <p className="mt-1 break-all font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <AdminBadge tone="neutral">{summary.optionLabel}</AdminBadge>
             <AdminBadge tone="neutral">{summary.nfcBehavior}</AdminBadge>
@@ -169,19 +169,19 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Field label="Destination URL" value={summary.destinationUrl} link />
-        <Field label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link />
+        {summary.printedQrLabel !== "No printed QR (NFC only)" ? <Field label="QR target" value={summary.qrTargetUrl ?? summary.generatedQrValue} link /> : null}
         <Field label="NFC target" value={summary.nfcTargetUrl ?? summary.destinationUrl} link />
         <Field label="Business name" value={summary.businessName} />
         <Field label="Design assistance" value={readSetupBoolean(item.setup, "designAssistanceRequested") ? "Requested" : null} />
         <Field label="Design notes" value={readSetupString(item.setup, "designNotes")} />
         <Field label="Logo" value={summary.logoReference ?? summary.logoMediaUrl} link={Boolean(summary.logoMediaUrl)} />
-        <Field label="QR production value" value={summary.generatedQrValue} link />
+        {summary.printedQrLabel !== "No printed QR (NFC only)" ? <Field label="QR production value" value={summary.generatedQrValue} link /> : null}
         <Field label="Front template" value={summary.frontTemplateUrl} link />
         <Field label="Artwork confirmed" value={summary.proofConfirmed ? "Yes" : "No"} />
         <Field label="Artwork approved at" value={readSetupString(item.setup, "proofApprovedAt")} />
         <Field label="Approval snapshot hash" value={summary.productionArtwork?.approvalSnapshotHash} />
         <Field label="Template/version" value={summary.productionArtwork ? `${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}` : null} />
-        <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? summary.productionArtwork.url : summary.productionArtwork?.error} link={summary.productionArtwork?.status === "generated"} />
+        <Field label="Production artwork" value={summary.productionArtwork?.status === "generated" ? artworkUrl : summary.productionArtwork?.error} link={summary.productionArtwork?.status === "generated"} />
         <Field
           label="Artwork dimensions"
           value={
@@ -191,7 +191,7 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
           }
         />
       </div>
-      <LineItemVisuals item={item} />
+      <LineItemVisuals item={item} downloadUrl={artworkUrl} />
       {summary.warnings.length ? (
         <AdminAlert tone="warning" className="mt-4">
           <p className="font-black text-ink">Production warnings</p>
@@ -206,12 +206,12 @@ function LineItemDetail({ item }: { item: OrderLineItem }) {
   );
 }
 
-function LineItemVisuals({ item }: { item: OrderLineItem }) {
+function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadUrl?: string }) {
   const summary = getOrderLineItemProductionSummary(item);
   const previewData = readSetupRecord(item.setup, "proofPreviewData");
   const previewLogo = summary.logoMediaUrl ?? readRecordString(previewData, "logoMediaUrl");
   const previewTemplate = summary.frontTemplateUrl ?? readRecordString(previewData, "frontTemplateUrl");
-  const artworkUrl = summary.productionArtwork?.status === "generated" ? summary.productionArtwork.url : undefined;
+  const artworkUrl = summary.productionArtwork?.status === "generated" ? downloadUrl : undefined;
 
   if (!previewLogo && !previewTemplate && !artworkUrl) {
     return null;
@@ -226,25 +226,25 @@ function LineItemVisuals({ item }: { item: OrderLineItem }) {
         <PreviewAsset title="Artwork template" src={previewTemplate} alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
-        <PreviewAsset title="Production artwork" src={artworkUrl} alt={`${item.title} production artwork`} />
-      ) : (
+        <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
+      ) : item.optionId === "branded_qr_direct" ? (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
-          Production artwork is not generated yet. Use the artwork operations panel after confirming the artwork data.
+          Final artwork is generated after confirmed payment. Check production warnings if the file is unavailable.
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function PreviewAsset({ title, src, alt }: { title: string; src: string; alt: string }) {
+function PreviewAsset({ title, src, alt, downloadUrl }: { title: string; src: string; alt: string; downloadUrl?: string }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
       <div className="grid min-h-40 place-items-center overflow-hidden rounded-md bg-soft">
         <img src={src} alt={alt} className="max-h-52 max-w-full object-contain" />
       </div>
-      <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
-        Open asset
+      <a href={downloadUrl ?? src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
+        {downloadUrl ? "Download production artwork" : "Open asset"}
       </a>
     </div>
   );

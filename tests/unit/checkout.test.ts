@@ -152,7 +152,7 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("maps Standard Direct QR and NFC targets to the customer destination URL", () => {
+  it("maps Standard Direct NFC to the destination and removes printed QR targets", () => {
     const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
 
     expect(result.ok).toBe(true);
@@ -168,11 +168,11 @@ describe("Stripe checkout helpers", () => {
     });
     expect(result.rows[0].setup).toMatchObject({
       destinationUrl: "https://g.page/example/review",
-      generatedQrValue: "https://g.page/example/review",
-      qrTargetUrl: "https://g.page/example/review",
+      generatedQrValue: undefined,
+      qrTargetUrl: undefined,
       nfcTargetUrl: "https://g.page/example/review",
-      hasQr: true,
-      nfcOnly: false
+      hasQr: false,
+      nfcOnly: true
     });
     expect(result.rows[0]).toMatchObject({
       sku: "TR-GOOGLE-REV-ST-STD-REG-WHT",
@@ -226,8 +226,8 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: true });
     expect(result.ok ? result.rows[0].setup : {}).toMatchObject({
       destinationUrl: "https://g.page/example/review",
-      generatedQrValue: "https://g.page/example/review",
-      qrTargetUrl: "https://g.page/example/review",
+      generatedQrValue: undefined,
+      qrTargetUrl: undefined,
       nfcTargetUrl: "https://g.page/example/review"
     });
   });
@@ -280,6 +280,10 @@ describe("Stripe checkout helpers", () => {
             destinationUrl: "https://g.page/example/review",
             businessName: "Nova Implant",
             logoFileName: "fake-local-logo.png",
+            proofReceiptId: "12345678-1234-4234-8234-123456789012",
+            rendererVersion: "2026-09-09.1",
+            baseTemplateContentHash: "a".repeat(64),
+            logoContentHash: "b".repeat(64),
             logoMediaUrl: "/api/media/product/products/customer-setup-google-review-stand/center_asset/logo.png",
             logoStorageKey: "products/customer-setup-google-review-stand/center_asset/logo.png",
             generatedQrValue: "https://g.page/example/review",
@@ -296,6 +300,9 @@ describe("Stripe checkout helpers", () => {
             },
             proofApproved: true,
             proofApprovalSnapshot: {
+              rendererVersion: "2026-09-09.1",
+              baseTemplateContentHash: "a".repeat(64),
+              logoContentHash: "b".repeat(64),
               productSlug: "google-review-stand",
               optionCode: "branded_qr_direct",
               destinationUrl: "https://g.page/example/review",
@@ -371,7 +378,7 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
-  it("accepts branded checkout with stale proof as pending proof review", () => {
+  it("rejects branded checkout with stale proof before payment", () => {
     const products = productsWithBrandedGoogleTemplate();
 
     const result = validateCheckoutCart(
@@ -412,12 +419,7 @@ describe("Stripe checkout helpers", () => {
       products
     );
 
-    expect(result).toMatchObject({ ok: true });
-    expect(result.ok ? result.rows[0] : {}).toMatchObject({
-      proofApproved: false,
-      productionStatus: "pending_branded_proof_review",
-      manualProductionRequired: true
-    });
+    expect(result).toMatchObject({ ok: false });
   });
 
   it("rejects branded checkout without an approved production artwork front template", () => {
@@ -829,7 +831,7 @@ describe("Stripe checkout helpers", () => {
           currency: "usd",
           product_data: {
             name: "Google Review Stand",
-            description: "Standard - Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
+            description: `Standard - ${migratedProducts.find((product) => product.slug === "google-review-stand")!.shortDescription}`,
             metadata: {
               product_id: "google-review-stand",
               option_id: "standard_direct",
@@ -1006,6 +1008,11 @@ describe("Stripe checkout helpers", () => {
     const brandedSetup = {
       productSlug: "rate-your-experience-stand",
       optionCode: "branded_qr_direct" as const,
+      proofReceiptId: "12345678-1234-4234-8234-123456789012",
+      hostedReservationId: "12345678-1234-4234-8234-123456789013",
+      rendererVersion: "2026-09-09.1",
+      baseTemplateContentHash: "a".repeat(64),
+      logoContentHash: "b".repeat(64),
       businessName: "Bingo Tires",
       logoMediaUrl: "/api/media/product/customer/logo.png",
       logoStorageKey: "products/customer/logo.png",
@@ -1015,6 +1022,9 @@ describe("Stripe checkout helpers", () => {
       frontTemplateUrl: rateExperienceProduct.assetSet.brandedFrontTemplateUrl,
       proofApproved: true,
       proofApprovalSnapshot: {
+        rendererVersion: "2026-09-09.1",
+        baseTemplateContentHash: "a".repeat(64),
+        logoContentHash: "b".repeat(64),
         productSlug: "rate-your-experience-stand",
         optionCode: "branded_qr_direct",
         businessName: "Bingo Tires",

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
+import { ModalDialog } from "@/components/ui/modal-dialog";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
 import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 import { formatOrderReference } from "@/lib/order-reference";
@@ -18,14 +19,14 @@ export function CustomerStandsManager({
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
 
   if (!stands.length) {
-    return <EmptyState message="No purchased stands are linked to this account yet." />;
+    return <EmptyState message="No stands are linked to this account yet." />;
   }
 
   return (
     <>
       <section className="grid gap-3">
         {stands.map((stand) => (
-          <StandCard key={stand.id} stand={stand} onOpen={() => setSelectedStand(stand)} />
+          <StandCard key={stand.id} stand={stand} hasHostedPage={Boolean(hostedPages[stand.id])} onOpen={() => setSelectedStand(stand)} />
         ))}
       </section>
       {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} onClose={() => setSelectedStand(null)} /> : null}
@@ -33,8 +34,9 @@ export function CustomerStandsManager({
   );
 }
 
-function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () => void }) {
+function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStand; hasHostedPage: boolean; onOpen: () => void }) {
   const isMultiLink = stand.kind === "multilink";
+  const historyOnly = isMultiLink && !hasHostedPage && !stand.hostedPageCode && !stand.hostedPageUrl && !stand.multiLinkSetupPending;
 
   return (
     <article className="rounded-md border border-line bg-white p-4">
@@ -44,10 +46,11 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
             <h3 className="text-base font-medium text-ink">{stand.title}</h3>
             {stand.quantity > 1 ? <span className="rounded-full bg-soft px-2 py-1 text-xs text-muted">Qty {stand.quantity}</span> : null}
             <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-brand">{formatKind(stand.kind)}</span>
+            <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>
           </div>
-          <Link href={`/account/orders#order-${encodeURIComponent(formatOrderReference(stand.orderReference))}`} className="mt-2 inline-flex text-sm text-brand hover:underline">
+          <p className="mt-2 max-w-full break-all text-sm text-muted">
             Order {formatOrderReference(stand.orderReference)}
-          </Link>
+          </p>
           {isMultiLink && stand.hostedPageUrl ? (
             <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-brand">
               {stand.hostedPageUrl}
@@ -55,9 +58,13 @@ function StandCard({ stand, onOpen }: { stand: CustomerPortalStand; onOpen: () =
           ) : null}
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
-          <button type="button" onClick={onOpen} className="tr-button-primary">
-            {isMultiLink ? "Set up landing page" : "View stand"}
-          </button>
+          {historyOnly ? (
+            <Link href="/account/orders#invoices" className="tr-button-ghost">View billing</Link>
+          ) : (
+            <button type="button" onClick={onOpen} className="tr-button-primary">
+              {isMultiLink && hasHostedPage ? "Manage links" : "View stand"}
+            </button>
+          )}
         </div>
       </div>
     </article>
@@ -74,16 +81,17 @@ function StandDetailModal({
   onClose: () => void;
 }) {
   const isMultiLink = stand.kind === "multilink";
+  const headingId = useId();
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-2" role="dialog" aria-modal="true" aria-labelledby="stand-detail-title">
-      <div className={`flex max-h-[calc(100vh-0.5rem)] w-full flex-col rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-[92rem] overflow-hidden" : "max-w-4xl overflow-y-auto"}`}>
+    <ModalDialog labelledBy={headingId} onClose={onClose} className="px-3 py-2">
+      <div className={`flex max-h-[calc(100dvh-1rem)] w-full min-w-0 flex-col rounded-lg bg-white shadow-2xl ${isMultiLink ? "max-w-[92rem] overflow-hidden" : "max-w-4xl overflow-y-auto"}`}>
         <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-2">
-          <div>
-            <p className="tr-eyebrow">{isMultiLink ? "Multi-Link stand setup" : "Purchased stand"}</p>
-            <h2 id="stand-detail-title" className="mt-1 text-base font-medium text-ink">{stand.title}</h2>
+          <div className="min-w-0">
+            <p className="tr-eyebrow">{isMultiLink && hostedPage ? "Multi-Link page" : "Stand details"}</p>
+            <h2 id={headingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-base font-medium text-ink focus:outline-none">{stand.title}</h2>
           </div>
-          <button type="button" onClick={onClose} className="tr-icon-button" aria-label="Close stand details">
+          <button type="button" onClick={onClose} className="tr-icon-button shrink-0" aria-label="Close stand details">
             <X size={18} />
           </button>
         </div>
@@ -92,7 +100,9 @@ function StandDetailModal({
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} />
             ) : (
-              <EmptyState message="This Multi-Link landing page is being prepared. The account is connected, but the editable page record is not available yet." />
+              <EmptyState message={stand.multiLinkSetupPending
+                ? "Payment is confirmed. Your Multi-Link page is being prepared."
+                : "The page editor is unavailable. Contact support if you need help accessing this page."} />
             )}
           </div>
         ) : (
@@ -107,6 +117,7 @@ function StandDetailModal({
             )}
           </div>
           <aside className="grid content-start gap-3 text-sm">
+            <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />
             <DetailLine label="Business" value={stand.businessName ?? "-"} />
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
@@ -117,7 +128,7 @@ function StandDetailModal({
         </div>
         )}
       </div>
-    </div>
+    </ModalDialog>
   );
 }
 
@@ -151,4 +162,10 @@ function formatKind(kind: CustomerPortalStand["kind"]) {
   if (kind === "branded") return "Branded Direct";
   if (kind === "custom") return "Custom";
   return "Standard Direct";
+}
+
+function formatPaymentStatus(status?: string) {
+  if (status === "manual_unpaid") return "Payment pending review";
+  if (!status || status === "unpaid" || status === "pending_payment") return "Payment pending";
+  return status.replaceAll("_", " ");
 }

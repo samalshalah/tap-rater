@@ -15,6 +15,7 @@ export type PublicRateLimitScope =
   | "hosted-submit"
   | "manual-checkout"
   | "setup"
+  | "setup-proof"
   | "setup-logo";
 
 export async function checkPublicRateLimit(

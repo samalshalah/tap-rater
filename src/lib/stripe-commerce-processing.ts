@@ -7,7 +7,7 @@ import { provisionHostedSubscriptionFromCheckout, provisionPaidCustomerAccountFr
 import { sendPaidOrderEmails } from "@/lib/order-emails";
 import { processStripeRefundEvent } from "@/lib/order-refunds";
 import { withStripePaymentLock } from "@/lib/stripe-processing";
-import { markCheckoutOrderPaymentFailure, savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
+import { ensurePaidOrderProductionArtwork, markCheckoutOrderPaymentFailure, savePaidOrderFromCheckoutSession, type StripeCheckoutSessionLike } from "@/lib/orders";
 
 export async function processStripeCommerceEvent(event: Stripe.Event, siteUrl: string) {
   try {
@@ -76,7 +76,12 @@ export async function processStripeCommerceEvent(event: Stripe.Event, siteUrl: s
               return NextResponse.json({ error: "Hosted subscription could not be provisioned." }, { status: 500 });
             }
 
-            const invoiceResult = await recordBillingInvoiceFromCheckoutSession(result.order, enrichedSession);
+            const artwork = await ensurePaidOrderProductionArtwork(session.id, { assertActive });
+            if (!artwork.ok) {
+              return NextResponse.json({ error: "Production artwork could not be completed. Retry payment recovery." }, { status: 500 });
+            }
+            const paidOrder = artwork.order;
+            const invoiceResult = await recordBillingInvoiceFromCheckoutSession(paidOrder, enrichedSession);
             if (!invoiceResult.ok) {
               console.warn("[stripe-webhook] billing_invoice_not_saved", {
                 stripeCheckoutSessionId: result.order.stripe_checkout_session_id,
@@ -85,9 +90,11 @@ export async function processStripeCommerceEvent(event: Stripe.Event, siteUrl: s
               return NextResponse.json({ error: "Billing invoice recovery failed." }, { status: 500 });
             }
 
+            if (artwork.paymentReversed) return NextResponse.json({ received: true });
+
             if (!provisioning.provisioned) {
               const accountProvisioning = await provisionPaidCustomerAccountFromOrder({
-                order: result.order,
+                order: paidOrder,
                 siteUrl: siteUrl
               });
               if (!accountProvisioning.ok) {
@@ -102,7 +109,7 @@ export async function processStripeCommerceEvent(event: Stripe.Event, siteUrl: s
             {
               await assertActive();
               try {
-                const emailResult = await sendPaidOrderEmails(result.order);
+                const emailResult = await sendPaidOrderEmails(paidOrder);
                 if (!emailResult.customer.sent || !emailResult.admin.sent) {
                   console.warn("[stripe-webhook] paid_order_email_not_sent", {
                     stripeCheckoutSessionId: result.order.stripe_checkout_session_id,

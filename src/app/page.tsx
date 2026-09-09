@@ -15,6 +15,8 @@ import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
+import { getCategoryHref } from "@/lib/category-routes";
+import { defaultSocialImage } from "@/lib/social-metadata";
 
 export const metadata: Metadata = {
   title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More",
@@ -25,7 +27,8 @@ export const metadata: Metadata = {
     title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More | Tap Rater",
     description:
       "Custom tabletop NFC and QR stands for local businesses. Choose a stand, add your link, and Tap Rater prepares it for your counter.",
-    url: "/"
+    url: "/",
+    images: [defaultSocialImage]
   }
 };
 
@@ -260,10 +263,6 @@ function mergeFeaturedUses<T extends { slug: string; bannerImageUrl?: string; im
   }
 
   return Array.from(merged.values());
-}
-
-function getCategoryHref(slug: string) {
-  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }
 
 function MarketingCopy({

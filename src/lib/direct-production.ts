@@ -5,6 +5,9 @@ export type DirectProductionTargets = {
 };
 
 export type ProofApprovalSnapshot = {
+  rendererVersion?: string;
+  baseTemplateContentHash?: string;
+  logoContentHash?: string;
   productSlug?: string;
   optionCode?: string;
   destinationUrl?: string;
@@ -55,6 +58,9 @@ export function buildDirectProductionTargets(destinationUrl: string | undefined 
 
 export function buildProofApprovalSnapshot(input: ProofApprovalSnapshot): ProofApprovalSnapshot {
   return {
+    rendererVersion: normalizeOptional(input.rendererVersion),
+    baseTemplateContentHash: normalizeOptional(input.baseTemplateContentHash),
+    logoContentHash: normalizeOptional(input.logoContentHash),
     productSlug: normalizeOptional(input.productSlug),
     optionCode: normalizeOptional(input.optionCode),
     destinationUrl: normalizeOptional(input.destinationUrl),
@@ -90,6 +96,9 @@ function normalizeOptional(value: string | undefined | null) {
 
 function stableSnapshotString(snapshot: ProofApprovalSnapshot) {
   return JSON.stringify({
+    rendererVersion: snapshot.rendererVersion ?? "",
+    baseTemplateContentHash: snapshot.baseTemplateContentHash ?? "",
+    logoContentHash: snapshot.logoContentHash ?? "",
     productSlug: snapshot.productSlug ?? "",
     optionCode: snapshot.optionCode ?? "",
     destinationUrl: snapshot.destinationUrl ?? "",

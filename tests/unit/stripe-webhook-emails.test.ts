@@ -63,6 +63,7 @@ describe("Stripe webhook paid order emails", () => {
           line_items_json: [],
         },
       }),
+      ensurePaidOrderProductionArtwork: vi.fn().mockResolvedValue({ ok: true, order: { stripe_checkout_session_id: "cs_test_email", line_items_json: [] } }),
     }));
     vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
       provisionHostedSubscriptionFromCheckout: vi
@@ -129,6 +130,7 @@ describe("Stripe webhook paid order emails", () => {
           line_items_json: [],
         },
       }),
+      ensurePaidOrderProductionArtwork: vi.fn().mockResolvedValue({ ok: true, order: { stripe_checkout_session_id: "cs_test_duplicate", line_items_json: [] } }),
     }));
     vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
       provisionHostedSubscriptionFromCheckout: vi
@@ -188,6 +190,7 @@ describe("Stripe webhook paid order emails", () => {
         wasAlreadyPaid: false,
         order,
       }),
+      ensurePaidOrderProductionArtwork: vi.fn().mockResolvedValue({ ok: true, order }),
     }));
     vi.doMock("@/lib/hosted-subscription-provisioning", () => ({
       provisionHostedSubscriptionFromCheckout: vi.fn().mockResolvedValue({ ok: true, provisioned: false }),

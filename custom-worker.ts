@@ -1,4 +1,5 @@
 import { getCanonicalRedirectUrl } from "./src/lib/canonical-request";
+import { getLegacyPublicAssetUrl } from "./src/lib/legacy-public-assets";
 import { runMediaBackupBatch } from "./src/lib/media-recovery";
 
 // @ts-expect-error The OpenNext Worker is generated after the application build.
@@ -15,6 +16,15 @@ export default {
       return new Response(null, {
         status: 308,
         headers: { Location: redirectUrl.toString() }
+      });
+    }
+
+    // OpenNext does not re-enter Cloudflare's static asset lookup after a Next rewrite.
+    const assetUrl = getLegacyPublicAssetUrl(request);
+    if (assetUrl && env.ASSETS) {
+      return env.ASSETS.fetch(assetUrl.toString(), {
+        method: request.method,
+        headers: Object.fromEntries(request.headers)
       });
     }
 

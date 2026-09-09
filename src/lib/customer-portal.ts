@@ -1,5 +1,6 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import { getOrderLineItemProductionSummary, type OrderLineItem } from "@/lib/orders";
+import { getOrderLineItemProductionSummary, type OrderLineItem, type OrderRecord } from "@/lib/orders";
+import { isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
 
 export type CustomerPortalDbClient = {
   from: (table: string) => any;
@@ -43,6 +44,8 @@ export type CustomerPortalOrder = {
   paymentReference?: string;
   invoiceNumber?: string;
   invoiceUrl?: string;
+  invoicePdfUrl?: string;
+  hostedInvoiceUrl?: string;
   receiptUrl?: string;
   productionStatus: string;
   shippingStatus: string;
@@ -70,6 +73,7 @@ export type CustomerPortalStand = {
   orderId: string;
   lineItemIndex: number;
   orderReference: string;
+  paymentStatus?: string;
   title: string;
   quantity: number;
   kind: "standard" | "branded" | "multilink" | "custom";
@@ -82,6 +86,7 @@ export type CustomerPortalStand = {
   nfcTargetUrl?: string;
   hostedPageUrl?: string;
   hostedPageCode?: string;
+  multiLinkSetupPending: boolean;
   proofStatus: "not_needed" | "needs_review" | "approved";
   productionStatus: string;
   shippingStatus: string;
@@ -108,6 +113,8 @@ export type CustomerPortalInvoice = {
   paymentStatus?: string;
   paymentMethodLabel: string;
   invoiceUrl?: string;
+  invoicePdfUrl?: string;
+  hostedInvoiceUrl?: string;
   receiptUrl?: string;
   subtotalCents: number;
   taxCents: number;
@@ -132,6 +139,17 @@ export type CustomerPortalData = {
 
 export function isCustomerPortalConfigured() {
   return hasSupabaseAdminConfig();
+}
+
+export function countPaidStandQuantity(orders: Pick<CustomerPortalOrder, "status" | "paymentStatus" | "itemCount">[]) {
+  return orders.reduce((total, order) => isOrderPaymentConfirmed(order.status as OrderRecord["status"], order.paymentStatus)
+    ? total + order.itemCount
+    : total, 0);
+}
+
+export function countMultiLinkPages(subscriptions: Pick<CustomerPortalSubscription, "permanentCode">[]) {
+  // Provisioned page identities survive order refunds and subscription renewals.
+  return new Set(subscriptions.map((subscription) => subscription.permanentCode.trim()).filter(Boolean)).size;
 }
 
 export async function getCustomerPortal(email: string): Promise<CustomerPortalData> {
@@ -273,6 +291,8 @@ function normalizeOrder(row: unknown): CustomerPortalOrder | null {
     paymentReference: readString(value.stripe_payment_intent_id),
     invoiceNumber: readOrderValue(value, ["invoice_number", "invoiceNumber"]),
     invoiceUrl: readOrderUrl(value, ["invoice_pdf_url", "invoicePdfUrl", "hosted_invoice_url", "invoice_url"]),
+    invoicePdfUrl: readOrderUrl(value, ["invoice_pdf_url", "invoicePdfUrl"]),
+    hostedInvoiceUrl: readOrderUrl(value, ["hosted_invoice_url", "invoice_url"]),
     receiptUrl: readOrderUrl(value, ["receipt_url", "receiptUrl"]),
     productionStatus: readString(value.production_status) ?? "not_started",
     shippingStatus: readString(value.shipping_status) ?? "not_shipped",
@@ -335,6 +355,8 @@ function normalizeInvoice(row: unknown): CustomerPortalInvoice | null {
     paymentStatus: readString(value.payment_status),
     paymentMethodLabel: readString(value.payment_method_label) ?? "Stripe payment",
     invoiceUrl: readOrderUrl(value, ["invoice_pdf_url", "hosted_invoice_url"]),
+    invoicePdfUrl: readOrderUrl(value, ["invoice_pdf_url"]),
+    hostedInvoiceUrl: readOrderUrl(value, ["hosted_invoice_url"]),
     receiptUrl: readString(value.receipt_url),
     subtotalCents: readNumber(value.subtotal_cents) ?? 0,
     taxCents: readNumber(value.tax_cents) ?? 0,
@@ -358,6 +380,8 @@ function deriveInvoicesFromOrders(orders: CustomerPortalOrder[]): CustomerPortal
       paymentStatus: order.paymentStatus,
       paymentMethodLabel: order.paymentMethodLabel,
       invoiceUrl: order.invoiceUrl,
+      invoicePdfUrl: order.invoicePdfUrl,
+      hostedInvoiceUrl: order.hostedInvoiceUrl,
       receiptUrl: order.receiptUrl,
       subtotalCents: order.subtotalCents,
       taxCents: 0,
@@ -466,6 +490,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         orderId: order.id,
         lineItemIndex: index,
         orderReference: order.reference,
+        paymentStatus: order.paymentStatus ?? order.status,
         title: item.title,
         quantity: item.quantity,
         kind,
@@ -478,6 +503,9 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         nfcTargetUrl: summary.nfcTargetUrl,
         hostedPageUrl: hostedPageUrl ?? subscription?.hostedPageUrl,
         hostedPageCode: hostedPageCode ?? subscription?.permanentCode,
+        multiLinkSetupPending: kind === "multilink"
+          && !hostedPageCode && !hostedPageUrl && !subscription
+          && isOrderPaymentConfirmed(order.status as OrderRecord["status"], order.paymentStatus),
         proofStatus,
         productionStatus: order.productionStatus,
         shippingStatus: order.shippingStatus,

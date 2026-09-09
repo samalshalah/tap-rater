@@ -31,7 +31,7 @@ export const headerNavigationSchema = z.object({
 });
 
 export const footerContentSchema = z.object({
-  intro: z.string().trim().max(500).default("Custom NFC and QR tabletop stands for local businesses."),
+  intro: z.string().trim().max(500).default("NFC tabletop stands for local businesses. Standard is NFC-only; Branded adds printed QR, your logo, and business name."),
   columns: z
     .array(
       z.object({
@@ -210,7 +210,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
 };
 
 export const defaultFooterContent: FooterContent = {
-  intro: "Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.",
+  intro: "NFC tabletop stands for reviews, menus, booking, social media, feedback, and custom business links. Standard is NFC-only; Branded adds printed QR, your logo, and business name.",
   columns: [
     {
       label: "Shop",
@@ -260,7 +260,7 @@ export const defaultFaqContent: FaqContent = {
   items: [
     {
       question: "What can a Tap Rater stand open?",
-      answer: "A Standard Direct stand opens one customer-provided destination URL by NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.",
+      answer: "A Standard Direct stand opens one customer-provided destination URL by NFC tap, with no printed QR. That can be a review page, menu, booking page, survey, social profile, website, or custom URL. Branded adds a QR code generated from your destination, your logo, and business name.",
       area: "global",
       order: 10,
       enabled: true
@@ -274,7 +274,7 @@ export const defaultFaqContent: FaqContent = {
     },
     {
       question: "Can I add my logo or business name?",
-      answer: "Products that support Branded setup let you add approved business details, upload a logo where supported, preview the proof, and approve it before adding to cart.",
+      answer: "Branded stands include your logo, business name, and a QR code generated from your destination. Approve the artwork preview before payment. Final print artwork is generated after payment.",
       area: "global",
       order: 30,
       enabled: true
@@ -292,12 +292,12 @@ export const defaultFaqContent: FaqContent = {
 export const defaultHomepageContent: HomepageThemeContent = {
   hero: {
     enabled: true,
-    eyebrow: "NFC + QR Business Stands",
+    eyebrow: "NFC Business Stands",
     headline: "Turn Every Tap Into Action.",
-    body: "Tap Rater stands help customers review, book, follow, view menus, and visit your links with one tap or scan.",
+    body: "Tap Rater stands help customers review, book, follow, view menus, and visit your links with one NFC tap. Standard is NFC-only; Branded adds printed QR, your logo, and business name.",
     primaryCta: { label: "Shop Stands", href: "/shop" },
     secondaryCta: { label: "See How It Works", href: "/how-it-works" },
-    proofPoints: ["NFC + QR Ready", "No App Needed", "Works Instantly"],
+    proofPoints: ["NFC Ready", "No App Needed", "Works Instantly"],
     image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater review stand" }
   },
   actions: {
@@ -368,10 +368,10 @@ export const defaultHomepageContent: HomepageThemeContent = {
     enabled: true,
     eyebrow: "Custom Branding",
     headline: "Make It Yours.",
-    body: "Add your business name, logo where supported, and destination. Preview your stand before ordering.",
+    body: "Add your business name, logo, and destination-generated QR with Branded. Approve the artwork preview before payment. Final print artwork is generated after payment.",
     cta: { label: "Shop Branded Stands", href: "/custom-stands" },
     image: { src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "Finished River Cafe branded Tap Rater stand demo with logo and QR code" },
-    bullets: ["Your logo", "Your business", "Your destination", "Preview before ordering"]
+    bullets: ["Your logo", "Your business", "Your destination", "Approve preview before payment"]
   },
   finalCta: {
     enabled: true,
@@ -389,12 +389,15 @@ export async function getHeaderNavigationContent() {
 
 export async function getFooterContent() {
   const content = await readContent("navigation.footer", "section", footerContentSchema, defaultFooterContent) as FooterContent;
-  return sanitizePublicWebsiteCopy(content);
+  return { ...content, intro: correctKnownWebsiteClaim("navigation.footer.intro", content.intro) };
 }
 
 export async function getFaqContent() {
   const content = await readContent("faqs.global", "section", faqContentSchema, defaultFaqContent) as FaqContent;
-  return sanitizePublicWebsiteCopy(content);
+  return { ...content, items: content.items.map((item) => ({
+    ...item,
+    answer: correctKnownWebsiteClaim("faqs.global.answer", item.answer)
+  })) };
 }
 
 export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
@@ -409,7 +412,21 @@ export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
     getFaqContent()
   ]);
 
-  return sanitizePublicWebsiteCopy({ hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs });
+  return {
+    hero: {
+      ...hero,
+      eyebrow: correctKnownWebsiteClaim("homepage.hero.eyebrow", hero.eyebrow),
+      body: correctKnownWebsiteClaim("homepage.hero.body", hero.body),
+      proofPoints: hero.proofPoints.map((point) => correctKnownWebsiteClaim("homepage.hero.proofPoints", point))
+    },
+    actions, featuredUses, multilink, howItWorks,
+    customBranding: {
+      ...customBranding,
+      body: correctKnownWebsiteClaim("homepage.custom_branding.body", customBranding.body),
+      bullets: customBranding.bullets.map((bullet) => correctKnownWebsiteClaim("homepage.custom_branding.bullets", bullet))
+    },
+    finalCta, faqs
+  };
 }
 
 export async function saveWebsiteContentRecord(key: string, type: "homepage" | "section" | "page" | "seo", payload: unknown) {
@@ -464,33 +481,33 @@ export function orderedEnabledFaqs(content: FaqContent, area?: FaqContent["items
     .sort((first, second) => first.order - second.order || first.question.localeCompare(second.question));
 }
 
-function sanitizePublicWebsiteCopy<T>(value: T): T {
-  if (typeof value === "string") {
-    return value
-      .replace(/custom printed/gi, "custom")
-      .replace(/printed QR/gi, "QR")
-      .replace(/\bprinted\b/gi, "")
-      .replace(/\bprinting\b/gi, "ordering")
-      .replace(/\bprints and ships\b/gi, "prepares and ships")
-      .replace(/\bWe Print & Ship\b/g, "We Prepare & Ship")
-      .replace(/\bproduction and fulfillment\b/gi, "fulfillment")
-      .replace(/\bproduction purposes\b/gi, "order review")
-      .replace(/\bproduction-incompatible\b/gi, "order-incompatible")
-      .replace(/\bproduction\b/gi, "order prep")
-      .replace(/\s{2,}/g, " ")
-      .replace(/\s+\./g, ".")
-      .trim() as T;
-  }
+// Exact field/value corrections for previously published defaults, not a prose sanitizer.
+const knownWebsiteClaims: Record<string, ReadonlyMap<string, string>> = {
+  "navigation.footer.intro": new Map([
+    ["Custom NFC and QR tabletop stands for local businesses.", defaultFooterContent.intro],
+    ["Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.", defaultFooterContent.intro],
+    ["Custom printed NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and custom business links.", defaultFooterContent.intro],
+    ["Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and business links.", defaultFooterContent.intro]
+  ].map(([from, to]) => [from.toLowerCase(), to])),
+  "faqs.global.answer": new Map([
+    ["A Standard Direct stand opens one customer-provided destination URL by QR code and NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.", defaultFaqContent.items[0].answer],
+    ["A Standard Direct stand opens one customer-provided destination URL by NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.", defaultFaqContent.items[0].answer],
+    ["No. Standard Direct sends QR and NFC directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.", defaultFaqContent.items[1].answer],
+    ["Products that support Branded setup let you add approved business details, upload a logo where supported, preview the proof, and approve it before adding to cart.", defaultFaqContent.items[2].answer]
+  ].map(([from, to]) => [from.toLowerCase(), to])),
+  "homepage.hero.eyebrow": new Map([["nfc + qr business stands", defaultHomepageContent.hero.eyebrow]]),
+  "homepage.hero.body": new Map([
+    ["Tap Rater stands help customers review, book, follow, view menus, and visit your links with one tap or scan.".toLowerCase(), defaultHomepageContent.hero.body]
+  ]),
+  "homepage.hero.proofPoints": new Map([["nfc + qr ready", "NFC Ready"]]),
+  "homepage.custom_branding.body": new Map([
+    ["Add your business name, logo where supported, and destination. Preview your stand before ordering.", defaultHomepageContent.customBranding.body],
+    ["Add your business name, logo where supported, and destination. Preview your stand before ordering so you know what will be printed.", defaultHomepageContent.customBranding.body],
+    ["Add your business name, logo where supported, and destination. Preview your stand before ordering so you know what will be.", defaultHomepageContent.customBranding.body]
+  ].map(([from, to]) => [from.toLowerCase(), to])),
+  "homepage.custom_branding.bullets": new Map([["preview before ordering", "Approve preview before payment"]])
+};
 
-  if (Array.isArray(value)) {
-    return value.map((item) => sanitizePublicWebsiteCopy(item)) as T;
-  }
-
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, sanitizePublicWebsiteCopy(item)])
-    ) as T;
-  }
-
-  return value;
+function correctKnownWebsiteClaim(field: string, value: string): string {
+  return knownWebsiteClaims[field]?.get(value.toLowerCase()) ?? value;
 }

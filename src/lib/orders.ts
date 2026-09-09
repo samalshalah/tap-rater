@@ -1,12 +1,16 @@
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { CheckoutCartRow, ManualProductionWarningCode } from "@/lib/checkout";
-import { buildDirectProductionTargets, buildProofApprovalSnapshot } from "@/lib/direct-production";
+import { buildDirectProductionTargets, buildProofApprovalSnapshot, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
+import { createHash } from "node:crypto";
+import { getProductMediaObject, isSafeProductMediaKey } from "@/lib/admin-media-storage";
+import { withStripeResourceLock, type StripeProcessingGuard } from "@/lib/stripe-processing";
 import { createManualOrderReference } from "@/lib/order-reference";
 import { purchaseOptionIdToCustomizationLevel, type CustomizationLevel, type DestinationMode } from "@/lib/product-model";
 import { sendShippingNotificationEmail, type ShippingEmailInput } from "@/lib/shipping-emails";
 import {
   buildCurrentApprovalSnapshot,
   generateProductionArtworkForOrderLineItem,
+  getProductionArtworkTemplate,
   readProductionArtworkReference,
   type ProductionArtworkAssetResolver,
   type ProductionArtworkReference,
@@ -49,7 +53,7 @@ export type OrderLineItemProductionSummary = {
   fulfillmentKind: OrderLineItemFulfillmentKind;
   optionLabel: string;
   nfcBehavior: "DIRECT NFC" | "HOSTED NFC";
-  printedQrLabel: "DIRECT QR" | "HOSTED QR";
+  printedQrLabel: "DIRECT QR" | "HOSTED QR" | "No printed QR (NFC only)";
   destinationUrl?: string;
   destinationType?: string;
   platformSlug?: string;
@@ -209,7 +213,7 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       quantity: row.quantity,
       unitAmountCents: row.unitAmountCents,
       lineSubtotalCents: row.lineSubtotalCents,
-      setup: row.setup,
+      setup: Object.fromEntries(Object.entries(row.setup ?? {}).filter(([key]) => key !== "productionArtwork")),
       logoRequired: row.logoRequired,
       logoStatus: row.logoStatus,
       logoReference: row.logoReference ?? null,
@@ -219,23 +223,6 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       manualProductionRequired: row.manualProductionRequired,
       productionWarningCodes: row.productionWarningCodes
     })
-  );
-}
-
-export async function mapCheckoutRowsToProductionReadyOrderLineItems(
-  rows: CheckoutCartRow[],
-  orderReference: string,
-  storage?: ProductionArtworkStorage,
-  assetResolver?: ProductionArtworkAssetResolver
-): Promise<OrderLineItem[]> {
-  const items = mapCheckoutRowsToOrderLineItems(rows);
-
-  return Promise.all(
-    items.map((item, index) =>
-      item.optionId === "branded_qr_direct" && item.proofApproved === true
-        ? generateProductionArtworkForOrderLineItem({ orderReference, lineItemIndex: index, item, assetResolver }, storage)
-        : item
-    )
   );
 }
 
@@ -263,22 +250,23 @@ export function applyOrderLineItemFulfillmentInference(item: OrderLineItem): Ord
     const hostedPageCode = readSetupString(setup, "hostedPageCode") ?? readSetupString(setup, "permanentPageCode");
     const qrTargetUrl = readSetupString(setup, "qrTargetUrl") ?? readSetupString(setup, "generatedQrValue");
     const nfcTargetUrl = readSetupString(setup, "nfcTargetUrl");
-    const isProvisioned = Boolean(hostedPageCode && qrTargetUrl && nfcTargetUrl);
+    const hasPrintedQr = item.optionId !== "standard_direct";
+    const isProvisioned = Boolean(hostedPageCode && nfcTargetUrl && (!hasPrintedQr || qrTargetUrl));
 
     return {
       ...item,
       destinationMode: "HOSTED",
-      customizationLevel: item.customizationLevel ?? "BRANDED",
-      logoRequired: true,
-      logoStatus: item.logoReference ? item.logoStatus ?? "uploaded" : item.logoStatus ?? "manual_collection_required",
+      customizationLevel: item.customizationLevel ?? (hasPrintedQr ? "BRANDED" : "STANDARD"),
+      logoRequired: hasPrintedQr,
+      logoStatus: !hasPrintedQr ? "not_required" : item.logoReference ? item.logoStatus ?? "uploaded" : item.logoStatus ?? "manual_collection_required",
       logoReference: item.logoReference ?? null,
-      proofRequired: true,
-      proofApproved: item.proofApproved === true,
+      proofRequired: hasPrintedQr,
+      proofApproved: hasPrintedQr && item.proofApproved === true,
       productionStatus: isProvisioned ? item.productionStatus ?? "ready_for_direct_fulfillment" : item.productionStatus ?? "pending_manual_design_and_proof",
-      manualProductionRequired: !isProvisioned,
+      manualProductionRequired: !isProvisioned || (item.optionId === "branded_qr_direct" && readProductionArtworkReference(item)?.status === "generation_failed"),
       productionWarningCodes: isProvisioned
         ? normalizeProductionWarningCodes(item.productionWarningCodes)
-        : normalizeProductionWarningCodes(item.productionWarningCodes, ["pending_manual_proof", "do_not_print_until_manual_review"])
+        : normalizeProductionWarningCodes(item.productionWarningCodes, hasPrintedQr ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [])
     };
   }
 
@@ -380,19 +368,16 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   const productionArtwork = readProductionArtworkReference(item);
 
   if (fulfillmentKind === "standard") {
-    const warnings = destinationUrl && qrTargetUrl && nfcTargetUrl ? [] : ["Missing direct destination URL"];
+    const warnings = destinationUrl && nfcTargetUrl ? [] : ["Missing direct destination URL"];
     return {
       fulfillmentKind,
       optionLabel: "Standard Direct",
       nfcBehavior: "DIRECT NFC",
-      printedQrLabel: "DIRECT QR",
+      printedQrLabel: "No printed QR (NFC only)",
       destinationUrl,
       destinationType,
       platformSlug,
-      generatedQrValue,
-      qrTargetUrl,
       nfcTargetUrl,
-      productionArtwork,
       proofRequired: false,
       proofConfirmed: false,
       statusLabel: warnings.length ? "Needs setup review" : "Ready for direct fulfillment",
@@ -402,8 +387,9 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   }
 
   if (fulfillmentKind === "hosted") {
+    const hasPrintedQr = item.optionId !== "standard_direct";
     const hostedWarnings: string[] = [];
-    if (!qrTargetUrl) hostedWarnings.push("Missing hosted QR target URL");
+    if (hasPrintedQr && !qrTargetUrl) hostedWarnings.push("Missing hosted QR target URL");
     if (!nfcTargetUrl) hostedWarnings.push("Missing hosted NFC target URL");
     if (!readSetupString(item.setup, "hostedPageCode") && !readSetupString(item.setup, "permanentPageCode")) hostedWarnings.push("Missing permanent hosted page code");
     if (item.optionId === "branded_qr_direct") {
@@ -418,20 +404,20 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
       fulfillmentKind,
       optionLabel: "Hosted Multi-Link",
       nfcBehavior: "HOSTED NFC",
-      printedQrLabel: "HOSTED QR",
+      printedQrLabel: hasPrintedQr ? "HOSTED QR" : "No printed QR (NFC only)",
       destinationUrl,
       destinationType,
       platformSlug,
       businessName,
       logoMediaUrl,
       logoReference: logoReference ?? undefined,
-      generatedQrValue,
-      qrTargetUrl,
+      generatedQrValue: hasPrintedQr ? generatedQrValue : undefined,
+      qrTargetUrl: hasPrintedQr ? qrTargetUrl : undefined,
       nfcTargetUrl,
       frontTemplateUrl,
-      productionArtwork,
-      proofRequired: true,
-      proofConfirmed: item.proofApproved === true,
+      productionArtwork: hasPrintedQr ? productionArtwork : undefined,
+      proofRequired: hasPrintedQr,
+      proofConfirmed: hasPrintedQr && item.proofApproved === true,
       statusLabel: hostedWarnings.length === 0 ? "Ready for hosted production" : "Hosted setup pending",
       statusTone: hostedWarnings.length === 0 ? "ready" : "warning",
       warnings: hostedWarnings
@@ -617,8 +603,8 @@ export async function createPendingOrderForCheckoutWithClient(
     };
   }
 ) {
-  const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(input.rows, input.stripeCheckoutSessionId);
-  const { error } = await client.from("orders").upsert(
+  const lineItems = mapCheckoutRowsToOrderLineItems(input.rows);
+  const { error } = await insertPendingOrderOnce(client,
     {
       stripe_checkout_session_id: input.stripeCheckoutSessionId,
       status: "pending_payment",
@@ -657,8 +643,7 @@ export async function createPendingOrderForCheckoutWithClient(
       shipping_amount_cents: input.shippingAmountCents ?? 0,
       shipping_mode: input.shippingMode ?? "manual",
       updated_at: new Date().toISOString()
-    },
-    { onConflict: "stripe_checkout_session_id" }
+    }
   );
 
   return error ? { ok: false, error: error.message } : { ok: true };
@@ -689,7 +674,7 @@ export async function createManualPendingOrderForCheckout({
     return { ok: false as const, error: "Database persistence is not configured. Checkout is disabled until order persistence is ready." };
   }
 
-  const lineItems = await mapCheckoutRowsToProductionReadyOrderLineItems(rows, orderReference);
+  const lineItems = mapCheckoutRowsToOrderLineItems(rows);
   const productionStatus = inferOrderProductionStatus(lineItems);
   const now = new Date().toISOString();
   const order: OrderRecord = {
@@ -721,19 +706,22 @@ export async function createManualPendingOrderForCheckout({
     admin_fulfillment_notes: "",
     updated_at: now
   };
-  const { data, error } = await (getSupabaseAdmin() as OrdersDbClient)
-    .from("orders")
-    .upsert(
-      order,
-      { onConflict: "stripe_checkout_session_id" }
-    )
-    .select("id, stripe_checkout_session_id")
-    .maybeSingle();
-
-  const savedOrder = { ...order, id: data?.id ? String(data.id) : undefined };
+  const { data, error } = await insertPendingOrderOnce(getSupabaseAdmin() as OrdersDbClient, order);
+  const savedOrder = data ? normalizeOrderRecord(data) : order;
   return error
     ? { ok: false as const, error: error.message }
     : { ok: true as const, orderReference, orderId: savedOrder.id, order: savedOrder };
+}
+
+// An existing checkout owns its original setup and payment state, even on stale retries.
+async function insertPendingOrderOnce(client: OrdersDbClient, payload: Record<string, unknown>) {
+  const read = () => client.from("orders").select("*").eq("stripe_checkout_session_id", payload.stripe_checkout_session_id).maybeSingle();
+  const existing = await read();
+  if (existing.error || existing.data) return existing;
+  const inserted = await client.from("orders").insert(payload).select("*").maybeSingle();
+  if (!inserted.error && inserted.data) return inserted;
+  const concurrent = await read();
+  return concurrent.data && !concurrent.error ? concurrent : { data: null, error: inserted.error ?? concurrent.error ?? { message: "Pending order could not be saved." } };
 }
 
 export async function savePaidOrderFromCheckoutSession(session: StripeCheckoutSessionLike): Promise<PaidOrderSaveResult> {
@@ -800,14 +788,16 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
   const wasAlreadyPaid = existingOrder?.status === "paid" || existingOrder?.payment_status === "paid";
   if (existingOrder && wasAlreadyPaid) {
     if (!existingOrder.stripe_payment_intent_id && order.stripe_payment_intent_id) {
-      const repaired = await client.from("orders").update({ stripe_payment_intent_id: order.stripe_payment_intent_id })
-        .eq("stripe_checkout_session_id", order.stripe_checkout_session_id).eq("stripe_payment_intent_id", null).select("id").maybeSingle();
+      const repaired = await matchOrderField(
+        guardedOrderUpdate(client, existingOrder, { stripe_payment_intent_id: order.stripe_payment_intent_id }),
+        "stripe_payment_intent_id", null
+      ).select("id").maybeSingle();
       if (repaired.error || !repaired.data) return { ok: false, error: repaired.error?.message ?? "Payment reference changed. Retry the event." };
       existingOrder.stripe_payment_intent_id = order.stripe_payment_intent_id;
     }
     return { ok: true, order: existingOrder, wasAlreadyPaid: true };
   }
-  const shouldPreserveExistingLineItems = Boolean(wasAlreadyPaid && existingOrder?.line_items_json.length);
+  const shouldPreserveExistingLineItems = Boolean(existingOrder?.line_items_json.length);
   const mergedLineItems = shouldPreserveExistingLineItems
     ? existingOrder?.line_items_json ?? []
     : order.line_items_json.length > 0
@@ -846,16 +836,165 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
 
   // Compare-and-set prevents a concurrent refund/payment transition being lost.
   const query = existingOrder
-    ? client.from("orders").update(payload)
-      .eq("stripe_checkout_session_id", order.stripe_checkout_session_id)
-      .eq("status", existingOrder.status).eq("payment_status", existingOrder.payment_status)
-      .eq("stripe_refund_id", existingOrder.stripe_refund_id ?? null)
+    ? guardedOrderUpdate(client, existingOrder, payload)
     : client.from("orders").insert(payload);
   const { data: savedOrder, error } = await query.select("*").maybeSingle();
 
   return error || !savedOrder
     ? { ok: false, error: error?.message ?? "Order changed during payment processing. Retry the event." }
     : { ok: true, order: savedOrder ? normalizeOrderRecord(savedOrder) : mergedOrder, wasAlreadyPaid };
+}
+
+type PaidArtworkOptions = {
+  storage?: ProductionArtworkStorage;
+  assetResolver?: ProductionArtworkAssetResolver;
+  artworkExists?: (key: string) => Promise<boolean>;
+  assertActive?: StripeProcessingGuard;
+};
+
+export function getAdminOrderArtworkUrl(order: Pick<OrderRecord, "id">, lineItemIndex: number) {
+  return order.id && Number.isSafeInteger(lineItemIndex) && lineItemIndex >= 0
+    ? `/api/admin/orders/${encodeURIComponent(order.id)}/artwork/${lineItemIndex}`
+    : undefined;
+}
+
+export function getOrderArtworkStorageKey(order: OrderRecord, lineItemIndex: number) {
+  const item = order.line_items_json[lineItemIndex];
+  const reference = item && readProductionArtworkReference(item);
+  const key = reference?.status === "generated" ? reference.storageKey : undefined;
+  if (!key || !isSafeProductMediaKey(key)) return undefined;
+  const parts = key.split("/");
+  const orderReferences = [order.stripe_checkout_session_id, order.id].filter((value): value is string => Boolean(value)).map(artworkKeySegment);
+  return parts.length === 5 && parts[1] === artworkKeySegment(item.productId) && parts[2] === "production_artwork" &&
+    orderReferences.includes(parts[3]) && new RegExp(`^line-${lineItemIndex + 1}-[a-f0-9]{16,64}\\.svg$`).test(parts[4])
+    ? key : undefined;
+}
+
+function artworkKeySegment(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 90) || "item";
+}
+
+function artworkSnapshotHash(value: unknown): string {
+  const sort = (entry: unknown): unknown => Array.isArray(entry) ? entry.map(sort) : entry && typeof entry === "object"
+    ? Object.fromEntries(Object.entries(entry).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => [key, sort(item)])) : entry;
+  return createHash("sha256").update(JSON.stringify(sort(value))).digest("hex");
+}
+
+function hasCurrentArtworkApproval(item: OrderLineItem) {
+  try {
+    return item.proofApproved === true && item.setup?.designAssistanceRequested !== true &&
+      isProofApprovalSnapshotCurrent(buildCurrentApprovalSnapshot(item), item.setup?.proofApprovalSnapshot);
+  } catch {
+    return false;
+  }
+}
+
+function hasProvisionedArtworkTargets(item: OrderLineItem) {
+  if (getOrderLineItemFulfillmentKind(item) !== "hosted") return true;
+  const target = readSetupString(item.setup, "qrTargetUrl");
+  return Boolean(readSetupString(item.setup, "hostedPageCode") && target &&
+    target === readSetupString(item.setup, "generatedQrValue") && target === readSetupString(item.setup, "nfcTargetUrl"));
+}
+
+function withoutProductionArtwork(item: OrderLineItem): OrderLineItem {
+  return { ...item, setup: Object.fromEntries(Object.entries(item.setup ?? {}).filter(([key]) => key !== "productionArtwork")) };
+}
+
+async function canReuseOrderArtwork(order: OrderRecord, index: number, options: PaidArtworkOptions) {
+  const item = order.line_items_json[index];
+  const reference = readProductionArtworkReference(item);
+  const template = getProductionArtworkTemplate(item);
+  const key = getOrderArtworkStorageKey(order, index);
+  const approved = buildCurrentApprovalSnapshot(item);
+  if (!reference || !template || !key || !hasCurrentArtworkApproval(item) ||
+    reference.approvalSnapshotHash !== artworkSnapshotHash(item.setup?.proofApprovalSnapshot) ||
+    !key.endsWith(`-${reference.approvalSnapshotHash.slice(0, 16)}.svg`) ||
+    reference.templateId !== template.id || reference.templateVersion !== template.version ||
+    reference.widthPx !== template.widthPx || reference.heightPx !== template.heightPx || reference.dpi !== template.dpi ||
+    reference.widthIn !== template.widthIn || reference.heightIn !== template.heightIn ||
+    (approved.baseTemplateContentHash && reference.baseTemplateContentHash !== approved.baseTemplateContentHash) ||
+    (approved.logoContentHash && reference.logoContentHash !== approved.logoContentHash) ||
+    !reference.baseTemplateContentHash || !reference.logoContentHash) return false;
+  return options.artworkExists ? options.artworkExists(key) : Boolean(await getProductMediaObject(key));
+}
+
+function matchOrderField(query: any, field: string, value: unknown) {
+  // PostgREST needs IS NULL; the local/Neon adapters translate eq(null) themselves.
+  return value == null && typeof query.is === "function" ? query.is(field, null) : query.eq(field, value ?? null);
+}
+
+function guardedOrderUpdate(client: OrdersDbClient, order: OrderRecord, payload: Record<string, unknown>) {
+  const previousTime = Date.parse(order.updated_at ?? "");
+  const updatedAt = new Date(Math.max(Date.now(), Number.isFinite(previousTime) ? previousTime + 1 : 0)).toISOString();
+  let query = client.from("orders").update({ ...payload, updated_at: updatedAt }).eq("stripe_checkout_session_id", order.stripe_checkout_session_id);
+  for (const field of ["updated_at", "status", "payment_status", "stripe_refund_id", "refund_status", "shipping_status", "shipped_at"] as const) {
+    query = matchOrderField(query, field, order[field]);
+  }
+  return query;
+}
+
+export async function ensurePaidOrderProductionArtwork(stripeCheckoutSessionId: string, options: Pick<PaidArtworkOptions, "assertActive"> = {}) {
+  if (!hasSupabaseAdminConfig()) return { ok: false as const, error: "Database persistence is not configured." };
+  return ensurePaidOrderProductionArtworkWithClient(getSupabaseAdmin(), stripeCheckoutSessionId, options);
+}
+
+// The caller holds the payment lease. Reload after provisioning and persist each line
+// independently so a failed later line cannot discard successful artwork references.
+export async function ensurePaidOrderProductionArtworkWithClient(
+  client: OrdersDbClient,
+  stripeCheckoutSessionId: string,
+  options: PaidArtworkOptions = {}
+): Promise<{ ok: true; order: OrderRecord; paymentReversed?: boolean } | { ok: false; error: string }> {
+  try {
+    await options.assertActive?.();
+    const lookup = await client.from("orders").select("*").eq("stripe_checkout_session_id", stripeCheckoutSessionId).maybeSingle();
+    if (lookup.error || !lookup.data) return { ok: false, error: lookup.error?.message ?? "Paid order was not found." };
+    let order = normalizeOrderRecord(lookup.data);
+    const waitingForArtwork = order.line_items_json.some((item) => item.optionId === "branded_qr_direct" && readProductionArtworkReference(item)?.status !== "generated");
+    if (order.stripe_refund_id || order.refund_status || order.payment_status?.includes("refund")) return { ok: true, order, paymentReversed: true };
+    if (order.status !== "paid" || order.payment_status !== "paid") return { ok: false, error: "Artwork requires confirmed payment." };
+    if (!canRunOrderProductionActions(order)) return { ok: true, order };
+    for (let index = 0; index < order.line_items_json.length; index++) {
+      const item = order.line_items_json[index];
+      if (item.optionId !== "branded_qr_direct") continue;
+      await options.assertActive?.();
+      const url = getAdminOrderArtworkUrl(order, index);
+      if (!url) return { ok: false, error: "Artwork requires a persisted order identifier." };
+      if (!hasCurrentArtworkApproval(item)) return { ok: false, error: `Line ${index + 1} requires approval of the current artwork.` };
+      if (!hasProvisionedArtworkTargets(item)) {
+        return { ok: false, error: "Hosted artwork requires the approved permanent QR and NFC destination." };
+      }
+      const reusable = await canReuseOrderArtwork(order, index, options);
+      const generated = reusable ? item : await generateProductionArtworkForOrderLineItem({
+        orderReference: order.stripe_checkout_session_id, lineItemIndex: index, item: withoutProductionArtwork(item), assetResolver: options.assetResolver
+      }, options.storage);
+      const reference = readProductionArtworkReference(generated);
+      const lineItems = order.line_items_json.slice();
+      lineItems[index] = applyOrderLineItemFulfillmentInference({ ...generated, setup: {
+        ...generated.setup, ...(reference ? { productionArtwork: { ...reference, url: reference.status === "generated" ? url : undefined } } : {})
+      } });
+      const generatedKey = getOrderArtworkStorageKey({ ...order, line_items_json: lineItems }, index);
+      const failed = reference?.status !== "generated" || !generatedKey;
+      if (!reusable || reference?.url !== url) {
+        await options.assertActive?.();
+        const payload = { line_items_json: lineItems, ...(failed ? { production_status: "blocked" } : {}), updated_at: new Date().toISOString() };
+        const saved = await guardedOrderUpdate(client, order, payload).select("*").maybeSingle();
+        if (saved.error || !saved.data) return { ok: false, error: saved.error?.message ?? "Order changed during artwork generation. Retry the event." };
+        order = normalizeOrderRecord(saved.data);
+      }
+      if (failed) return { ok: false, error: reference?.error ?? `Line ${index + 1} production artwork could not be generated.` };
+    }
+    await options.assertActive?.();
+    if (waitingForArtwork && ["blocked", "not_started"].includes(order.production_status) &&
+      order.shipping_status !== "blocked" && getOrderProductionBlockers(order).length === 0) {
+      const saved = await guardedOrderUpdate(client, order, { production_status: "ready_for_production" }).select("*").maybeSingle();
+      if (saved.error || !saved.data) return { ok: false, error: saved.error?.message ?? "Order changed during artwork recovery. Retry the event." };
+      order = normalizeOrderRecord(saved.data);
+    }
+    return { ok: true, order };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Production artwork could not be completed." };
+  }
 }
 
 export async function getAdminOrders(): Promise<{ configured: boolean; orders: OrderRecord[] }> {
@@ -1011,8 +1150,8 @@ export async function updateOrderFulfillmentWithClient(
     payload.shipped_at = existingOrder.shipped_at ?? now;
   }
 
-  const { error } = await client.from("orders").update(payload).eq("id", orderId);
-  if (error) return { ok: false, error: error.message };
+  const { data, error } = await guardedOrderUpdate(client, existingOrder, payload).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: error?.message ?? "Order changed during fulfillment. Retry the action.", status: 409 };
 
   if (!shouldSendShippingEmail) {
     return { ok: true };
@@ -1054,7 +1193,11 @@ export async function applyAdminOrderProductionAction(orderId: string, input: Ad
     return { ok: false, error: "Database persistence is not configured.", status: 503 };
   }
 
-  return applyAdminOrderProductionActionWithClient(getSupabaseAdmin() as OrdersDbClient, orderId, input);
+  const client = getSupabaseAdmin() as OrdersDbClient;
+  const order = await getOrderByIdForFulfillment(client, orderId);
+  if (!order) return { ok: false, error: "Order was not found.", status: 404 };
+  return withStripeResourceLock(client, `payment:${order.stripe_payment_intent_id ?? order.stripe_checkout_session_id}`, (assertActive) =>
+    applyAdminOrderProductionActionWithClient(client, orderId, input, { assertActive }));
 }
 
 export async function applyAdminOrderProductionActionWithClient(
@@ -1064,13 +1207,15 @@ export async function applyAdminOrderProductionActionWithClient(
   options: {
     storage?: ProductionArtworkStorage;
     assetResolver?: ProductionArtworkAssetResolver;
+    artworkExists?: (key: string) => Promise<boolean>;
+    assertActive?: StripeProcessingGuard;
   } = {}
 ): Promise<AdminOrderProductionActionResult> {
   const existingOrder = await getOrderByIdForFulfillment(client, orderId);
   if (!existingOrder) {
     return { ok: false, error: "Order was not found.", status: 404 };
   }
-  if (!canAdvanceOrderFulfillment(existingOrder)) {
+  if (existingOrder.status !== "paid" || existingOrder.payment_status !== "paid" || existingOrder.stripe_refund_id || existingOrder.refund_status) {
     return {
       ok: false,
       error: "Production actions are unavailable until payment is confirmed.",
@@ -1094,7 +1239,13 @@ export async function applyAdminOrderProductionActionWithClient(
   if (input.action === "request_customer_changes") {
     productionStatus = "blocked";
     shippingStatus = "blocked";
+    lineItems = lineItems.map((item) => item.optionId === "branded_qr_direct"
+      ? { ...item, proofApproved: false, setup: { ...item.setup, proofApproved: false, proofApprovalSnapshot: undefined, proofApprovedAt: undefined } }
+      : item);
   } else {
+    if (lineItems.some((item) => item.optionId === "branded_qr_direct" && !hasProvisionedArtworkTargets(item))) {
+      return { ok: false, error: "Hosted artwork requires the provisioned permanent QR and NFC destination.", status: 409 };
+    }
     if (input.action === "approve_proof_manually") {
       lineItems = lineItems.map((item) => {
         const summary = getOrderLineItemProductionSummary(item);
@@ -1116,19 +1267,24 @@ export async function applyAdminOrderProductionActionWithClient(
     }
 
     lineItems = await Promise.all(
-      lineItems.map((item, index) =>
-        (item.optionId === "branded_qr_direct" || getOrderLineItemProductionSummary(item).fulfillmentKind === "branded")
-          ? generateProductionArtworkForOrderLineItem(
+      lineItems.map(async (item, index) => {
+        if (item.optionId !== "branded_qr_direct") return item;
+        await options.assertActive?.();
+        const reusable = await canReuseOrderArtwork({ ...existingOrder, line_items_json: lineItems }, index, options);
+        const generated = reusable ? item : await generateProductionArtworkForOrderLineItem(
               {
                 orderReference: existingOrder.stripe_checkout_session_id || existingOrder.id || orderId,
                 lineItemIndex: index,
-                item,
+                item: withoutProductionArtwork(item),
                 assetResolver: options.assetResolver
               },
               options.storage
-            )
-          : item
-      )
+            );
+        const reference = readProductionArtworkReference(generated);
+        return { ...generated, setup: { ...generated.setup, ...(reference ? { productionArtwork: {
+          ...reference, url: reference.status === "generated" ? getAdminOrderArtworkUrl(existingOrder, index) : undefined
+        } } : {}) } };
+      })
     );
     lineItems = lineItems.map(applyOrderLineItemFulfillmentInference);
     productionStatus = inferOrderProductionStatus(lineItems);
@@ -1143,18 +1299,22 @@ export async function applyAdminOrderProductionActionWithClient(
     updated_at: now
   };
 
-  const { error } = await client
-    .from("orders")
-    .update({
+  await options.assertActive?.();
+  const { data, error } = await guardedOrderUpdate(client, existingOrder, {
       line_items_json: updatedOrder.line_items_json,
       production_status: updatedOrder.production_status,
       shipping_status: updatedOrder.shipping_status,
       internal_notes: updatedOrder.internal_notes,
       updated_at: now
-    })
-    .eq("id", orderId);
+    }).select("*").maybeSingle();
 
-  return error ? { ok: false, error: error.message } : { ok: true, order: updatedOrder };
+  if (error || !data) return { ok: false, error: error?.message ?? "Order changed during artwork processing. Retry the action." };
+  const savedOrder = normalizeOrderRecord(data);
+  if (input.action !== "request_customer_changes" && savedOrder.line_items_json.some((item) =>
+    item.optionId === "branded_qr_direct" && readProductionArtworkReference(item)?.status !== "generated")) {
+    return { ok: false, error: "Production artwork could not be completed. Retry the action after resolving the artwork error.", status: 503 };
+  }
+  return { ok: true, order: savedOrder };
 }
 
 function parseOrderLineItems(value: string | null | undefined): OrderLineItem[] {

@@ -1,5 +1,6 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+import { legacyPublicAssetRewrites } from "./src/lib/legacy-public-assets";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -49,6 +50,9 @@ const nextConfig: NextConfig = {
         pathname: "/wp-content/uploads/**"
       }
     ]
+  },
+  async rewrites() {
+    return legacyPublicAssetRewrites;
   },
   async redirects() {
     return [

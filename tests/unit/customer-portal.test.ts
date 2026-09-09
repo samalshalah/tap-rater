@@ -1,5 +1,86 @@
 import { describe, expect, it, vi } from "vitest";
-import { getCustomerPortalFromClient, type CustomerPortalDbClient } from "@/lib/customer-portal";
+import { countMultiLinkPages, countPaidStandQuantity, getCustomerPortalFromClient, type CustomerPortalDbClient } from "@/lib/customer-portal";
+
+describe("customer Multi-Link pages", () => {
+  it("counts unique provisioned pages, not renewed subscriptions or empty codes", () => {
+    expect(countMultiLinkPages([
+      { permanentCode: "PAGE1" }, { permanentCode: "PAGE2" },
+      { permanentCode: "PAGE1" }, { permanentCode: " PAGE1 " }, { permanentCode: "" }
+    ])).toBe(2);
+    expect(countMultiLinkPages([])).toBe(0);
+  });
+
+  it.each([
+    ["pending_payment", "unpaid"], ["pending_payment", "manual_unpaid"],
+    ["pending_payment", "expired"], ["failed", "failed"],
+    ["canceled", "paid"], ["failed", "paid"],
+    ["paid", "refunded"], ["paid", "partially_refunded"]
+  ])("retains %s/%s history without promising page setup", async (status, payment_status) => {
+    const portal = await multiLinkPortal({ status, payment_status });
+    expect(portal.orders).toHaveLength(1);
+    expect(portal.stands).toHaveLength(1);
+    expect(portal.stands[0]).toMatchObject({ kind: "multilink", multiLinkSetupPending: false });
+    expect(countMultiLinkPages(portal.subscriptions)).toBe(0);
+  });
+
+  it.each([
+    { status: "paid", payment_status: "paid" },
+    { status: "paid" },
+    { status: "pending_payment", payment_status: "paid" }
+  ])("shows pending setup only after confirmed payment: %j", async (payment) => {
+    const portal = await multiLinkPortal(payment);
+    expect(portal.stands[0].multiLinkSetupPending).toBe(true);
+    expect(countMultiLinkPages(portal.subscriptions)).toBe(0);
+  });
+
+  it("keeps a provisioned subscription page after the initial order is refunded", async () => {
+    const portal = await multiLinkPortal({ status: "canceled", payment_status: "refunded" }, true);
+    expect(portal.stands[0]).toMatchObject({ hostedPageCode: "PAGE1", multiLinkSetupPending: false });
+    expect(countMultiLinkPages(portal.subscriptions)).toBe(1);
+    expect(countPaidStandQuantity(portal.orders)).toBe(0);
+  });
+});
+
+async function multiLinkPortal(payment: { status: string; payment_status?: string }, provisioned = false) {
+  const db = createCustomerPortalDb({
+    customers: [{ id: "customer-1", email: "owner@example.com" }],
+    businesses: [], devices: [], tap_events: [], billing_invoices: [],
+    orders: [{
+      id: "order-1", stripe_checkout_session_id: "cs_test_multilink", email: "owner@example.com", ...payment,
+      line_items_json: [{
+        productId: "google-review-stand", optionId: "standard_direct", title: "Google Review Stand",
+        quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900, destinationMode: "HOSTED",
+        setup: { serviceMode: "HOSTED", ...(provisioned ? { hostedPageCode: "PAGE1", hostedPageUrl: "https://taprater.com/p/PAGE1" } : {}) }
+      }]
+    }],
+    hosted_subscriptions: provisioned ? [{
+      id: "subscription-1", customer_id: "customer-1", permanent_code: "PAGE1",
+      hosted_page_url: "https://taprater.com/p/PAGE1", status: "active", lifecycle_status: "ACTIVE"
+    }] : []
+  });
+  return getCustomerPortalFromClient(db.client, "owner@example.com");
+}
+
+describe("customer paid stand quantity", () => {
+  it("counts quantities from confirmed payments, including legacy paid records", () => {
+    expect(countPaidStandQuantity([
+      { status: "paid", paymentStatus: "paid", itemCount: 3 },
+      { status: "paid", itemCount: 2 }
+    ])).toBe(5);
+  });
+
+  it.each(["unpaid", "manual_unpaid", "expired", "failed", "refunded", "partially_refunded"])("does not count %s orders as paid stands", (paymentStatus) => {
+    expect(countPaidStandQuantity([{ status: paymentStatus.includes("refund") ? "paid" : "pending_payment", paymentStatus, itemCount: 7 }])).toBe(0);
+  });
+
+  it.each(["canceled", "failed"])("excludes %s orders even when old payment metadata is paid", (status) => {
+    expect(countPaidStandQuantity([{ status, paymentStatus: "paid", itemCount: 2 }])).toBe(0);
+  });
+
+  it("returns zero for an empty account", () => {
+    expect(countPaidStandQuantity([])).toBe(0);
+  });
+});
 
 describe("customer portal repository", () => {
   it("loads businesses, devices, destinations, and tap counts for a customer email", async () => {
@@ -82,6 +163,7 @@ describe("customer portal repository", () => {
           invoice_number: "TR-INV-1001",
           payment_method_label: "Visa ending 4242",
           invoice_pdf_url: "https://pay.example/invoice.pdf",
+          hosted_invoice_url: "https://pay.example/invoice",
           receipt_url: "https://pay.example/receipt",
           total_cents: 4900,
           amount_paid_cents: 4900,
@@ -113,6 +195,8 @@ describe("customer portal repository", () => {
     expect(portal.invoices[0]).toMatchObject({
       invoiceNumber: "TR-INV-1001",
       invoiceUrl: "https://pay.example/invoice.pdf",
+      invoicePdfUrl: "https://pay.example/invoice.pdf",
+      hostedInvoiceUrl: "https://pay.example/invoice",
       receiptUrl: "https://pay.example/receipt",
       paymentMethodLabel: "Visa ending 4242",
       totalCents: 4900,
@@ -120,6 +204,7 @@ describe("customer portal repository", () => {
     });
     expect(portal.stands[0]).toMatchObject({
       title: "Google Review Stand",
+      paymentStatus: "manual_unpaid",
       lineItemIndex: 0,
       kind: "branded",
       proofStatus: "needs_review",

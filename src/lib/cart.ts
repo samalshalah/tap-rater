@@ -34,6 +34,11 @@ export type CartItem = {
   quantity: number;
   productSnapshot?: CartProductSnapshot;
   setup?: {
+    proofReceiptId?: string;
+    hostedReservationId?: string;
+    rendererVersion?: string;
+    baseTemplateContentHash?: string;
+    logoContentHash?: string;
     productSlug?: string;
     optionCode?: PurchaseOptionId;
     baseSku?: string;
@@ -135,7 +140,7 @@ export function normalizeCartItems(value: unknown): CartItem[] {
     if (option.id === "hosted_multilink" && !isHostedPurchaseOptionEnabled()) {
       continue;
     }
-    const setup = normalizeSetup(entry?.setup);
+    const setup = normalizeSetup({ ...entry?.setup, optionCode: option.id });
     const key = getCartItemKey({ productId, optionId: option.id, setup });
     const existing = normalized.get(key);
     const snapshot = productSnapshot ?? (product ? productToSnapshot(product) : undefined);
@@ -286,7 +291,11 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.ctaText ?? "",
     setup.fontSizePercent === undefined ? "" : String(setup.fontSizePercent),
     setup.logoSizePercent === undefined ? "" : String(setup.logoSizePercent),
-    setup.showBusinessNameOnProof === false ? "hide_business_name" : ""
+    setup.showBusinessNameOnProof === false ? "hide_business_name" : "",
+    setup.rendererVersion ?? "",
+    setup.baseTemplateContentHash ?? "",
+    setup.logoContentHash ?? "",
+    setup.hostedReservationId ?? ""
   ].join("|");
 }
 
@@ -305,6 +314,11 @@ function isCartOptionAccepted(option: PurchaseOption, productOptions: PurchaseOp
 function normalizeSetup(value: unknown): CartItem["setup"] {
   const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   return {
+    proofReceiptId: readString(row.proofReceiptId),
+    hostedReservationId: readString(row.hostedReservationId),
+    rendererVersion: readString(row.rendererVersion),
+    baseTemplateContentHash: readString(row.baseTemplateContentHash),
+    logoContentHash: readString(row.logoContentHash),
     productSlug: readString(row.productSlug),
     optionCode: readPurchaseOptionId(row.optionCode),
     baseSku: readString(row.baseSku),
@@ -337,8 +351,8 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     logoFitMode: readString(row.logoFitMode),
     logoOffsetXPercent: readInteger(row.logoOffsetXPercent),
     logoOffsetYPercent: readInteger(row.logoOffsetYPercent),
-    generatedQrValue: readString(row.generatedQrValue),
-    qrTargetUrl: readString(row.qrTargetUrl),
+    generatedQrValue: row.optionCode === "standard_direct" ? undefined : readString(row.generatedQrValue),
+    qrTargetUrl: row.optionCode === "standard_direct" ? undefined : readString(row.qrTargetUrl),
     nfcTargetUrl: readString(row.nfcTargetUrl),
     frontTemplateUrl: readString(row.frontTemplateUrl),
     centerAssetUrl: readString(row.centerAssetUrl),
@@ -349,8 +363,8 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     proofApprovalSnapshot: readRecord(row.proofApprovalSnapshot),
     proofApprovedAt: readString(row.proofApprovedAt),
     proofPreviewData: readRecord(row.proofPreviewData),
-    hasQr: typeof row.hasQr === "boolean" ? row.hasQr : undefined,
-    nfcOnly: typeof row.nfcOnly === "boolean" ? row.nfcOnly : undefined,
+    hasQr: row.optionCode === "standard_direct" ? false : typeof row.hasQr === "boolean" ? row.hasQr : undefined,
+    nfcOnly: row.optionCode === "standard_direct" ? true : typeof row.nfcOnly === "boolean" ? row.nfcOnly : undefined,
     priceCents: typeof row.priceCents === "number" && Number.isInteger(row.priceCents) ? row.priceCents : undefined,
     designNotes: readString(row.designNotes),
     proofApproved: row.proofApproved === true,

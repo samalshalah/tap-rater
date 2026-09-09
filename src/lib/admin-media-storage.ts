@@ -262,7 +262,7 @@ function fileNameSegment(value: string) {
   return cleaned.slice(0, 120) || "product-image";
 }
 
-function readImageDimensions(bytes: ArrayBuffer, contentType: string) {
+export function readImageDimensions(bytes: ArrayBuffer, contentType: string) {
   if (contentType === "image/png") {
     return readPngDimensions(bytes);
   }

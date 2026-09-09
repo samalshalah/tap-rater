@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
-import { getCustomerPortal, type CustomerPortalData, type CustomerPortalStand } from "@/lib/customer-portal";
+import { countMultiLinkPages, countPaidStandQuantity, getCustomerPortal, type CustomerPortalData } from "@/lib/customer-portal";
 import { formatOrderReference } from "@/lib/order-reference";
 
 export default async function AccountPage() {
@@ -24,9 +24,9 @@ export default async function AccountPage() {
         </section>
 
         <section className="grid gap-3 md:grid-cols-3">
-          <SummaryCard label="Purchased stands" value={String(portal.stands.reduce((total, stand) => total + stand.quantity, 0))} />
+          <SummaryCard label="Paid stands" value={String(countPaidStandQuantity(portal.orders))} />
           <SummaryCard label="Orders" value={String(portal.orders.length)} />
-          <SummaryCard label="Multi-Link pages" value={String(portal.stands.filter((stand) => stand.kind === "multilink").length)} />
+          <SummaryCard label="Multi-Link pages" value={String(countMultiLinkPages(portal.subscriptions))} />
         </section>
 
         <section className="tr-card p-5">
@@ -46,8 +46,8 @@ export default async function AccountPage() {
           <section className="tr-card p-5">
             <p className="tr-eyebrow">Latest order</p>
             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-lg font-medium text-ink">{formatOrderReference(latestOrder.reference)}</h2>
+              <div className="min-w-0">
+                <h2 className="break-all text-lg font-medium text-ink">{formatOrderReference(latestOrder.reference)}</h2>
                 <p className="mt-1 text-sm text-muted">
                   {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"}
                 </p>
@@ -63,8 +63,8 @@ export default async function AccountPage() {
 
 function buildDashboardActions(portal: CustomerPortalData) {
   const actions = [];
-  const multiLinkStand = portal.stands.find((stand) => stand.kind === "multilink" && !stand.hostedPageUrl);
-  const editableMultiLinkStand = portal.stands.find((stand) => stand.kind === "multilink" && stand.hostedPageUrl);
+  const multiLinkStand = portal.stands.find((stand) => stand.multiLinkSetupPending);
+  const editableMultiLinkStand = portal.stands.find((stand) => stand.kind === "multilink" && stand.hostedPageCode);
   const paymentOrder = portal.orders.find((order) => order.paymentStatus === "manual_unpaid");
 
   if (multiLinkStand) {

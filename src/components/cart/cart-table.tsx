@@ -16,6 +16,7 @@ import {
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents, formatTaxRate } from "@/lib/tax-rules";
 import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals";
+import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import type { TaxSettingsInput } from "@/lib/validators";
 
 export function CartTable({
@@ -159,8 +160,16 @@ export function CartTable({
               <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-md border border-line bg-soft">
                 {rowImage.src ? (
                   <img
-                    src={rowImage.src}
+                    src={optimizedUploadSrc(rowImage.src, 160)}
                     alt={rowImage.alt}
+                    width={96}
+                    height={96}
+                    decoding="async"
+                    onError={(event) => {
+                      if (event.currentTarget.getAttribute("src") !== rowImage.src) {
+                        event.currentTarget.src = rowImage.src;
+                      }
+                    }}
                     className="h-full w-full object-contain p-2"
                   />
                 ) : (

@@ -21,7 +21,7 @@ export type BrandedCompositionGeometry = {
 
 export const brandedStandComposition: BrandedCompositionGeometry = {
   templateId: "taprater-branded-stand-front",
-  templateVersion: "2026-08-31.1",
+  templateVersion: "2026-09-09.1",
   widthPx: 1278,
   heightPx: 1949,
   dpi: 300,

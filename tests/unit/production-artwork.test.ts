@@ -100,7 +100,7 @@ describe("production artwork", () => {
 
     expect(template).toMatchObject({
       id: "taprater-branded-stand-front",
-      version: "2026-08-31.1",
+      version: "2026-09-09.1",
       format: "svg",
       widthPx: 1278,
       heightPx: 1949,
@@ -139,7 +139,7 @@ describe("production artwork", () => {
       dpi: 300,
       widthIn: 4.26,
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-31.1",
+      templateVersion: "2026-09-09.1",
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
     });
@@ -156,7 +156,7 @@ describe("production artwork", () => {
       productId: "google-review-stand",
       optionId: "branded_qr_direct",
       templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-31.1",
+      templateVersion: "2026-09-09.1",
       approvalSnapshotHash: artwork?.approvalSnapshotHash,
       baseTemplateContentHash: "base-template-hash",
       logoContentHash: "logo-hash"
@@ -169,6 +169,10 @@ describe("production artwork", () => {
     expect(stored?.value).not.toContain("Review us on Google</text>");
     expect(stored?.value).not.toContain('href="/api/media/product');
     expect(stored?.value).toContain("<svg x=");
+    expect(stored?.value).toContain('width="4.26in" height="6.4967in"');
+    expect(stored?.value).toContain('<path data-business-name="Nova Implant"');
+    expect(stored?.value).not.toContain("<text");
+    expect(artwork?.url).toBeUndefined();
   });
 
   it("omits the separate business name text when the approved proof hides it", async () => {

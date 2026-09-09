@@ -22,6 +22,7 @@ import { getDefaultTaxSettings, type TaxSettingsInput } from "@/lib/tax-settings
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
+import { brandedStandComposition } from "@/lib/branded-composition";
 
 export const STRIPE_CHECKOUT_TIMEOUT_MS = 12_000;
 
@@ -142,6 +143,17 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     }
 
     const setup = normalizeCheckoutSetup(item.setup);
+    setup.productSlug = product.slug;
+    setup.optionCode = option.id;
+    setup.hasQr = option.id !== "standard_direct" && option.hasQr;
+    setup.nfcOnly = !setup.hasQr;
+    if (!setup.hasQr) {
+      setup.generatedQrValue = undefined;
+      setup.qrTargetUrl = undefined;
+    }
+    if (option.id === "branded_qr_direct") {
+      setup.frontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl;
+    }
     const hasMultiLinkAddon =
       setup.serviceAddon === hostedMultiLinkServiceAddon.code && productSupportsMultiLink(product) && isHostedPurchaseOptionEnabled();
 
@@ -190,17 +202,20 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
           colorCode: selectedColor?.code,
           colorLabel: selectedColor?.label,
           destinationUrl: directTargets.destinationUrl,
-          generatedQrValue: directTargets.qrTargetUrl,
-          qrTargetUrl: directTargets.qrTargetUrl,
+          generatedQrValue: setup.hasQr ? directTargets.qrTargetUrl : undefined,
+          qrTargetUrl: setup.hasQr ? directTargets.qrTargetUrl : undefined,
           nfcTargetUrl: directTargets.nfcTargetUrl,
-          hasQr: true,
-          nfcOnly: false
+          hasQr: setup.hasQr,
+          nfcOnly: setup.nfcOnly
         }
       : setup;
     const manualDesignFlow = option.id === "branded_qr_direct" && rowSetup.designAssistanceRequested === true;
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? isApprovedProofCurrent(option, rowSetup) : rowSetup.proofApproved === true;
+    if (option.id === "branded_qr_direct" && (!proofApproved || !rowSetup.proofReceiptId || rowSetup.rendererVersion !== brandedStandComposition.templateVersion || !rowSetup.baseTemplateContentHash || !rowSetup.logoContentHash || (hasMultiLinkAddon && (!rowSetup.hostedReservationId || item.quantity !== 1)))) {
+      return { ok: false, reason: "empty_cart", message: "Preview and approve your Branded stand again before payment." };
+    }
     const manualProductionRequired = option.id === "branded_qr_direct" ? manualDesignFlow || !proofApproved : false;
     const productionStatus =
       manualDesignFlow
@@ -425,6 +440,11 @@ function createStripeIntegrationIdentifier() {
 
 function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem["setup"]> {
   return {
+    proofReceiptId: setup?.proofReceiptId,
+    hostedReservationId: setup?.hostedReservationId,
+    rendererVersion: setup?.rendererVersion,
+    baseTemplateContentHash: setup?.baseTemplateContentHash,
+    logoContentHash: setup?.logoContentHash,
     productSlug: setup?.productSlug?.trim(),
     optionCode: setup?.optionCode,
     baseSku: setup?.baseSku?.trim(),
@@ -568,6 +588,9 @@ function isApprovedProofCurrent(option: PurchaseOption, setup: NonNullable<CartI
   }
 
   return setup.proofApproved === true && isProofApprovalSnapshotCurrent({
+    rendererVersion: setup.rendererVersion,
+    baseTemplateContentHash: setup.baseTemplateContentHash,
+    logoContentHash: setup.logoContentHash,
     productSlug: setup.productSlug,
     optionCode: setup.optionCode,
     destinationUrl: setup.destinationUrl,

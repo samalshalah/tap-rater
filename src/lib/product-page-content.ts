@@ -1,4 +1,7 @@
 import type { MigratedProduct } from "@/data/migrated-products";
+import { formatPrice } from "@/lib/products";
+import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
+import { correctKnownPurchaseCopy, getProductPurchaseOptions } from "@/lib/purchase-options";
 
 export type ProductPageContentItem = {
   title: string;
@@ -63,14 +66,21 @@ export function getProductActivationCopy(product: MigratedProduct): ProductActiv
 
 export function getProductPageHighlights(product: MigratedProduct): ProductPageContentItem[] {
   if (product.keyFeatures?.length) {
-    return product.keyFeatures;
+    return product.keyFeatures.map((feature) => {
+      const body = correctKnownProductDetailCopy(product, feature.body);
+      return {
+        ...feature,
+        title: body !== feature.body && ["Tap + Scan", "Tap or scan ready"].includes(feature.title) ? "NFC tap" : feature.title,
+        body
+      };
+    });
   }
 
   if (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
     return [
       {
-        title: "Tap or scan ready",
-        body: "Customers tap NFC or scan the printed QR code to open your hosted Tap Rater page."
+        title: "NFC tap",
+        body: "NFC opens your hosted Tap Rater page. Printed QR is included with Branded stands."
       },
       {
         title: "Multiple customer links",
@@ -91,8 +101,8 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
 
   return [
     {
-      title: "Tap or scan ready",
-      body: `Customers tap and open your ${destination.highlightTarget} without searching.`
+      title: "NFC tap",
+      body: getProductConnectionCopy(product)
     },
     {
       title: "Connects to one destination URL",
@@ -141,7 +151,7 @@ export function getProductComparisonRows(product: MigratedProduct): ProductCompa
     {
       label: "Branded",
       bestFor: "Business name, uploaded logo, and QR code",
-      fit: "Front proof preview before cart",
+      fit: "Approve artwork preview before payment",
       active: product.allowsLogoUpload
     },
     {
@@ -165,7 +175,7 @@ export function getReviewDestination(product: MigratedProduct): string {
 
 export function getProductHowItWorks(product: MigratedProduct): Array<ProductPageContentItem & { step: number }> {
   if (product.howItWorks?.length) {
-    return product.howItWorks;
+    return product.howItWorks.map((step) => ({ ...step, body: correctKnownProductDetailCopy(product, step.body) }));
   }
 
   if (product.productKind === "hosted_multilink" || product.requiresLandingPage || product.serviceMode === "hosted_landing_page") {
@@ -186,26 +196,73 @@ export function getProductHowItWorks(product: MigratedProduct): Array<ProductPag
 }
 
 export function getProductSpecifications(product: MigratedProduct) {
-  return product.specifications ?? [];
+  return (product.specifications ?? []).map((specification) =>
+    ["Connectivity", "Connection", "Technology"].includes(specification.label) && ["NFC + QR", "NFC and QR", "NFC & QR"].includes(specification.value)
+      ? { ...specification, value: "Standard: NFC only, no printed QR. Branded: NFC and printed QR." }
+      : specification);
 }
 
 export function getProductIncludedItems(product: MigratedProduct) {
-  return product.includedItems ?? [];
+  return (product.includedItems ?? []).map((item) =>
+    ["Printed QR", "Printed QR code", "QR code"].includes(item.label)
+      ? { ...item, appliesTo: "branded" as const }
+      : item);
 }
 
 export function getProductFaqs(product: MigratedProduct) {
-  return product.productFaqs?.length
+  const subscriptionQuestion = "Does this require a subscription?";
+  const subscriptionAnswer = getProductSubscriptionAnswer(product);
+  const faqs = product.productFaqs?.length
     ? product.productFaqs
     : [
         {
           question: `How does ${product.title} work?`,
-          answer: "Customers tap or scan the stand. It opens the direct destination link configured for your business."
+          answer: getProductConnectionCopy(product)
         },
         {
-          question: "Does this require a subscription?",
-          answer: "No. Direct stands are one-time physical product purchases."
+          question: subscriptionQuestion,
+          answer: subscriptionAnswer
         }
       ];
+
+  const hasSubscriptionQuestion = faqs.some((faq) => faq.question.trim().toLowerCase() === subscriptionQuestion.toLowerCase());
+  const resolvedFaqs = faqs.map((faq) => faq.question.trim().toLowerCase() === subscriptionQuestion.toLowerCase()
+    ? { ...faq, answer: subscriptionAnswer }
+    : { ...faq, answer: correctKnownProductDetailCopy(product, faq.answer) });
+
+  return !hasSubscriptionQuestion && (productSupportsMultiLink(product) || product.requiresSubscription)
+    ? [...resolvedFaqs, { question: subscriptionQuestion, answer: subscriptionAnswer }]
+    : resolvedFaqs;
+}
+
+export function getProductSubscriptionAnswer(product: MigratedProduct): string {
+  const monthlyPrice = formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents);
+  if (product.requiresSubscription || product.productKind === "hosted_multilink") {
+    return `Hosted Multi-Link requires a ${monthlyPrice}/month subscription per page, separate from the physical stand price. Your page supports up to ${hostedMultiLinkServiceAddon.maxLinks} links and is managed through your Tap Rater account.`;
+  }
+
+  const directAnswer = "Direct stands are a one-time purchase with no monthly subscription.";
+  return productSupportsMultiLink(product)
+    ? `${directAnswer} Adding hosted Multi-Link costs ${monthlyPrice}/month per page, in addition to the physical stand price. It requires a Tap Rater account and supports up to ${hostedMultiLinkServiceAddon.maxLinks} editable links.`
+    : directAnswer;
+}
+
+function getProductConnectionCopy(product: MigratedProduct): string {
+  const destination = getProductDestinationCopy(product);
+  const brandedAvailable = getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct");
+  return `Customers tap NFC to open your ${destination.highlightTarget} without searching. Standard is NFC-only, with no printed QR.${brandedAvailable ? " Branded adds a QR code generated from the same destination." : ""}`;
+}
+
+function correctKnownProductDetailCopy(product: MigratedProduct, value: string): string {
+  const knownConnectionClaims = [
+    "Customers can tap with NFC or scan the printed QR code.",
+    "NFC and QR both open the same Google review link you provide.",
+    "Customers tap the stand with an NFC-enabled phone or scan the QR code. Both open the Google review link you provide.",
+    "Customers tap or scan the stand. It opens the direct destination link configured for your business.",
+    "Customers use their phone NFC or camera.",
+    "Tap Rater programs the NFC and prepares the QR code before shipping."
+  ];
+  return knownConnectionClaims.includes(value) ? getProductConnectionCopy(product) : correctKnownPurchaseCopy(value);
 }
 
 type ProductDestinationCopy = {

@@ -19,6 +19,8 @@ import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { resolveProductSeo } from "@/lib/product-seo";
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
+import { defaultSocialImage } from "@/lib/social-metadata";
+import { productSupportsMultiLink } from "@/lib/service-addons";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -53,7 +55,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
       title: seo.title,
       description: seo.description,
       url: `/product/${product.slug}`,
-      images: product.images.map((image) => ({ url: absoluteUrl(image.src), alt: image.alt }))
+      images: product.images.length
+        ? product.images.map((image) => ({ url: absoluteUrl(image.src), alt: image.alt }))
+        : [defaultSocialImage]
     }
   };
 }
@@ -107,6 +111,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           includedItems={includedItems}
           standardPrice={standardPrice}
           brandedPrice={brandedPrice}
+          supportsMultiLink={productSupportsMultiLink(product)}
         />
       </SectionShell>
 

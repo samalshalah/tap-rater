@@ -116,12 +116,15 @@ describe("Google Product Model V2", () => {
     expect(getConfiguredUnitPriceCents(googleProduct, standardDirectOption, { sizeCode: "a4", colorCode: "white" })).toBeNull();
   });
 
-  it("uses backend product FAQs as the FAQ schema source", () => {
+  it("uses backend FAQ questions while correcting the known universal QR claim", () => {
     expect(googleProduct).toBeDefined();
     if (!googleProduct) return;
 
     const faqs = getProductFaqs(googleProduct);
-    expect(faqs).toEqual(googleProduct.productFaqs);
+    expect(faqs).toHaveLength(googleProduct.productFaqs!.length);
+    expect(faqs[0].answer).toContain("Standard is NFC-only, with no printed QR.");
+    expect(faqs[0].answer).toContain("Branded adds a QR code generated from the same destination.");
+    expect(googleProduct.productFaqs![0].answer).toContain("scan the QR code");
     expect(faqs[0]).toMatchObject({ question: "How does the Google Review Stand work?" });
   });
 });

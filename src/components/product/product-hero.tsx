@@ -19,6 +19,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(options[0]?.priceCents ?? product.basePriceCents);
+  const [selectedMonthlyPriceCents, setSelectedMonthlyPriceCents] = useState(0);
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
   const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(selectedPriceCents).replace(".00", "");
   const pricePrefix = selectedPriceCents === null ? "From " : "";
@@ -46,7 +47,10 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
           <p className="tr-eyebrow">{category?.title ?? "Tap Rater stand"}</p>
           <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
           <p className="tr-body mt-3 max-w-2xl text-base">{product.shortDescription}</p>
-          <p className="mt-3 text-xl font-semibold text-ink">{pricePrefix}{displayPrice}</p>
+          <p className="mt-3 text-xl font-semibold text-ink">
+            {pricePrefix}{displayPrice}
+            {selectedMonthlyPriceCents > 0 ? ` + ${formatPrice(selectedMonthlyPriceCents)}/month` : ""}
+          </p>
         </div>
 
         <ProductSetupChooser
@@ -54,6 +58,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
           selectedOptionId={effectiveSelectedOptionId}
           onSelectedOptionChange={setSelectedOptionId}
           onSelectedPriceChange={setSelectedPriceCents}
+          onSelectedMonthlyPriceChange={setSelectedMonthlyPriceCents}
         />
       </div>
     </div>

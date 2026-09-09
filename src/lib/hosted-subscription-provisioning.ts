@@ -25,6 +25,7 @@ import { hostedSubscriptionGracePeriodDays, mapSubscriptionLifecycle } from "@/l
 import { decryptCommerceData, encryptCommerceData } from "@/lib/commerce-encryption";
 import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
+import { getPaidBrandedHostedReservation } from "@/lib/branded-proof";
 
 export type HostedSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "trialing" | "unknown";
 export type HostedSubscriptionProvisioningStatus = "ready_for_customer_setup" | "provisioning_failed";
@@ -146,7 +147,7 @@ export async function provisionHostedSubscriptionFromCheckout(
     const receiptId = `checkout:${input.session.id}:provision:v2`;
     if (await hasStripeReceipt(client, receiptId)) {
       await assertActive();
-      await repairHostedOrderTargets(client, checkoutSessionId, publicSiteUrl);
+      await repairHostedOrderTargets(client, checkoutSessionId, publicSiteUrl, storage);
       return { ok: true, provisioned: false, reason: "duplicate_event" };
     }
     const subscriptionSource = resolved.retrieveSubscription
@@ -184,6 +185,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       await assertActive();
       const hostedItem = input.order.line_items_json[hostedItemIndex];
       const setup = readSetup(hostedItem);
+      const proofReservation = await getPaidBrandedHostedReservation(hostedItem, checkoutSessionId, storage);
       const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
       const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
       const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
@@ -191,7 +193,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       const existingMatch = await findHostedSubscriptionForProvisioning(client, {
         customerId: customer.customerId,
         checkoutSessionId: lineSessionId,
-        allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage
+        allowExpiredCustomerPageReuse: shouldReuseExistingCustomerPage && !proofReservation
       });
       if (!existingMatch.ok) return existingMatch;
       const existingHostedSubscription = existingMatch.match?.subscription ?? null;
@@ -200,7 +202,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       const itemPaidThrough = paidThrough ?? retained?.current_period_end ?? null;
       const pastDueSince = itemLifecycleStatus === "PAST_DUE" ? retained?.past_due_since ?? now.toISOString() : null;
       const lineSubscriptionId = stripeSubscriptionId;
-      const physicalProductRef = buildPhysicalProductRef(input.order, checkoutSessionId, hostedItemIndex);
+      const physicalProductRef = proofReservation?.physicalProductRef ?? buildPhysicalProductRef(input.order, checkoutSessionId, hostedItemIndex);
       const business = existingMatch.match?.reason === "expired_customer_page"
         ? await updateBusiness(client, {
           businessId: existingHostedSubscription!.business_id,
@@ -225,10 +227,12 @@ export async function provisionHostedSubscriptionFromCheckout(
         : await assignPermanentHostedPageCode(storage, {
           physicalProductRef,
           assignedBy: `stripe:${input.session.id}`,
+          code: proofReservation?.code,
           now,
           generateCode: dependencies?.generateCode
         });
-      const hostedPageUrl = resolveHostedPageUrl(existingHostedSubscription?.hosted_page_url, publicSiteUrl, assignment.code);
+      const hostedPageUrl = proofReservation?.url ?? resolveHostedPageUrl(existingHostedSubscription?.hosted_page_url, publicSiteUrl, assignment.code);
+      if (proofReservation && assignment.code !== proofReservation.code) throw new Error("Provisioned page differs from the approved stand QR.");
       lineItems = attachHostedTargets(lineItems, hostedItemIndex, assignment.code, hostedPageUrl, {
         stripeSubscriptionId: lineSubscriptionId,
         subscriptionStatus
@@ -362,7 +366,7 @@ export async function provisionHostedSubscriptionFromCheckout(
   });
 }
 
-async function repairHostedOrderTargets(client: OrdersDbClient, checkoutSessionId: string, siteUrl: string) {
+async function repairHostedOrderTargets(client: OrdersDbClient, checkoutSessionId: string, siteUrl: string, storage: HostedPageTextStorage) {
   const lookup = await client.from("orders").select("*").eq("stripe_checkout_session_id", checkoutSessionId).maybeSingle();
   if (lookup.error || !lookup.data) throw new Error(lookup.error?.message ?? "Provisioned order is missing.");
   if (lookup.data.payment_status?.includes("refund") || lookup.data.stripe_refund_id) return;
@@ -374,7 +378,9 @@ async function repairHostedOrderTargets(client: OrdersDbClient, checkoutSessionI
     const subscription = await client.from("hosted_subscriptions").select("*").eq("stripe_checkout_session_id", lineSessionId).maybeSingle();
     if (subscription.error || !subscription.data) throw new Error(subscription.error?.message ?? "Provisioned subscription is missing.");
     const row = subscription.data;
-    const url = resolveHostedPageUrl(row.hosted_page_url, siteUrl, row.permanent_code);
+    const reservation = await getPaidBrandedHostedReservation(lineItems[index], checkoutSessionId, storage);
+    if (reservation && reservation.code !== row.permanent_code) throw new Error("Provisioned page does not match the approved artwork destination.");
+    const url = reservation?.url ?? resolveHostedPageUrl(row.hosted_page_url, siteUrl, row.permanent_code);
     if (url !== row.hosted_page_url) {
       const update = await client.from("hosted_subscriptions").update({ hosted_page_url: url }).eq("id", row.id);
       if (update.error) throw new Error(update.error.message);
@@ -985,13 +991,13 @@ function attachHostedTargets(
         permanentPageCode: code,
         hostedPageCode: code,
         hostedPageUrl,
-        generatedQrValue: hostedPageUrl,
-        qrTargetUrl: hostedPageUrl,
+        generatedQrValue: item.optionId === "standard_direct" ? undefined : hostedPageUrl,
+        qrTargetUrl: item.optionId === "standard_direct" ? undefined : hostedPageUrl,
         nfcTargetUrl: hostedPageUrl,
         stripeSubscriptionId: subscription.stripeSubscriptionId,
         subscriptionStatus: subscription.subscriptionStatus,
-        hasQr: true,
-        nfcOnly: false
+        hasQr: item.optionId !== "standard_direct",
+        nfcOnly: item.optionId === "standard_direct"
       }
     };
   });

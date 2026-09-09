@@ -203,7 +203,10 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
 
     try {
       if (!checkoutAttemptId.current) {
-        checkoutAttemptId.current = createCheckoutAttemptId();
+        const reservations = items.flatMap((item) => item.setup?.hostedReservationId ? [item.setup.hostedReservationId] : []).sort();
+        const attemptKey = reservations.length ? `taprater:branded-checkout-attempt:${reservations.join(":")}` : undefined;
+        checkoutAttemptId.current = (attemptKey ? window.sessionStorage.getItem(attemptKey) : null) || createCheckoutAttemptId();
+        if (attemptKey) window.sessionStorage.setItem(attemptKey, checkoutAttemptId.current);
       }
 
       const response = await fetch("/api/checkout", {
@@ -318,7 +321,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
                   <span className="block font-medium">{hasHostedMultiLink ? "Account included for Multi-Link" : "Create an account for order access"}</span>
                   <span className="mt-1 block text-xs leading-5 text-muted">
                     {hasHostedMultiLink
-                      ? "After payment, the customer receives an activation email to set a password and manage the Multi-Link page."
+                      ? "After payment, sign in to manage your Multi-Link page. New customers receive an activation email; existing customers keep their password."
                       : "Optional. The customer can track orders and access billing after payment."}
                   </span>
                 </span>

@@ -33,7 +33,7 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
       id: "stripe",
       label: "Stripe checkout",
       detail: stripe.ok ? `${stripe.mode === "live" ? "Live" : "Test"} keys match the configured mode.` : stripe.error,
-      status: stripe.ok ? (stripe.mode === "live" ? "ready" : "warning") : "blocked"
+      status: stripe.ok ? "ready" : "blocked"
     },
     {
       id: "stripe-webhook",
@@ -51,8 +51,8 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
       id: "resend-webhook",
       label: "Email delivery webhook",
       detail: resendWebhookConfigured
-        ? "Resend delivery events are signature-verified and recorded."
-        : "RESEND_WEBHOOK_SECRET is missing; provider acceptance is tracked, but inbox delivery events are not yet available.",
+        ? "Resend delivery webhook signing secret is configured; actual event delivery is not checked here."
+        : "RESEND_WEBHOOK_SECRET is missing; signed delivery-event tracking is not configured.",
       status: resendWebhookConfigured ? "ready" : "warning"
     },
     {
@@ -83,7 +83,7 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
       id: "billing-portal",
       label: "Stripe Billing Portal",
       detail: billingPortalConfigured
-        ? "Customers can update payment methods, review invoices, and cancel subscriptions."
+        ? "Billing Portal Dashboard configuration is recorded as confirmed; customer access is not tested here."
         : "Dashboard configuration must be confirmed in Stripe.",
       status: billingPortalConfigured ? "ready" : "warning"
     },
@@ -91,15 +91,9 @@ export function getLaunchReadinessChecks(env: NodeJS.ProcessEnv = process.env): 
       id: "stripe-customer-emails",
       label: "Stripe customer emails",
       detail: stripeCustomerEmailsConfigured
-        ? "Payment receipts, refund confirmations, and subscription recovery emails are enabled."
+        ? "Stripe customer email settings are recorded as confirmed; receipt and recovery delivery are not tested here."
         : "Receipt and subscription recovery emails must be confirmed in Stripe.",
       status: stripeCustomerEmailsConfigured ? "ready" : "warning"
-    },
-    {
-      id: "tax-legal",
-      label: "Tax and legal approval",
-      detail: "Virginia jurisdiction and taxable items still require accountant approval.",
-      status: "warning"
     }
   ];
 }
@@ -108,4 +102,15 @@ export function calculateLaunchReadinessPercent(checks: LaunchReadinessCheck[]) 
   if (!checks.length) return 0;
   const points = checks.reduce((total, check) => total + (check.status === "ready" ? 1 : check.status === "warning" ? 0.5 : 0), 0);
   return Math.round((points / checks.length) * 100);
+}
+
+export function getStripeModeSummary(env: NodeJS.ProcessEnv = process.env) {
+  const stripe = validateStripeRuntimeConfig(env);
+  if (!stripe.ok) {
+    return { label: "Configuration error", detail: stripe.error, status: "blocked" } as const;
+  }
+
+  return stripe.mode === "test"
+    ? { label: "TEST", detail: "Test keys are configured. No real-money payment proof is established by these checks.", status: "ready" } as const
+    : { label: "LIVE", detail: "Live keys are configured. This does not establish owner authorization, a successful payment, webhook delivery or payout settlement.", status: "warning" } as const;
 }

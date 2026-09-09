@@ -9,7 +9,7 @@ import { formatPrice } from "@/lib/products";
 export const dynamic = "force-dynamic";
 
 const benefits = [
-  "QR + NFC point to one permanent Tap Rater URL",
+  "NFC opens one permanent Tap Rater URL; Branded also includes printed QR",
   "Up to 10 editable links",
   "Change links anytime",
   "Customer account included",
@@ -33,7 +33,7 @@ export default async function MultiLinkPage() {
       <PageHero
         eyebrow="Multi-Link service"
         title="One stand. Up to 10 links. Update them anytime."
-        body={`Add Multi-Link to a compatible Tap Rater stand for ${monthlyPrice}/month. QR and NFC point to one permanent Tap Rater URL that opens an editable mobile-friendly page.`}
+        body={`Add Multi-Link to a compatible Tap Rater stand for ${monthlyPrice}/month. NFC opens your editable hosted page. Standard remains NFC-only, with no printed QR. Branded adds a QR code pointing to the same page.`}
         image={{
           src: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
           alt: "Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page",

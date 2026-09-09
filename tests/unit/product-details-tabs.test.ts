@@ -62,6 +62,20 @@ describe("product information navigation", () => {
     expect(html.match(/role="tabpanel"/g)).toHaveLength(3);
   });
 
+  it("qualifies the no-subscription comparison and discloses optional hosting separately", () => {
+    const html = renderToStaticMarkup(createElement(ProductDetailsTabs, { ...props, supportsMultiLink: true }));
+
+    expect(html).toContain("None with Direct");
+    expect(html).toContain("Stand price");
+    expect(html).toContain("$9.99/month per page to either design");
+    expect(html).toContain("10 editable links");
+  });
+
+  it("does not offer hosting in the comparison for an incompatible product", () => {
+    const html = renderToStaticMarkup(createElement(ProductDetailsTabs, props));
+    expect(html).not.toContain("Optional hosted Multi-Link adds");
+  });
+
   it.each([
     { specifications: props.specifications, includedItems: [] },
     { specifications: [], includedItems: props.includedItems }

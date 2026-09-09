@@ -1,9 +1,50 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
-import { getProductPurchaseOptions, hasBrandedDirectProductionTemplate, isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
+import { correctKnownPurchaseCopy, getProductPurchaseOptions, hasBrandedDirectProductionTemplate, isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 describe("purchase option readiness", () => {
+  it("keeps Standard NFC-only with stale backend flags, preserving prices and active options", () => {
+    const product = structuredClone(migratedProducts.find((item) => item.slug === "google-review-stand")!);
+    const standard = product.purchaseOptions![0];
+    standard.hasQr = true;
+    standard.priceCents = 5700;
+    standard.title = "Reception stand";
+    standard.description = "Made for our reception desk.";
+    const before = structuredClone(product);
+
+    expect(getProductPurchaseOptions(product)[0]).toMatchObject({
+      id: "standard_direct", hasQr: false, priceCents: 5700,
+      label: "Reception stand", summary: "Made for our reception desk."
+    });
+    expect(getProductPurchaseOptions(product)[1]).toMatchObject({
+      id: "branded_qr_direct", hasQr: true, requiresLogo: true,
+      requiresBusinessName: true, requiresFinalProof: true
+    });
+    expect(product).toEqual(before);
+    standard.isActive = false;
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["branded_qr_direct"]);
+    product.purchaseOptions = [];
+    expect(getProductPurchaseOptions(product)).toEqual([]);
+  });
+
+  it("does not add QR to Standard when Multi-Link is compatible", () => {
+    const product = migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!;
+    expect(productSupportsMultiLink(product)).toBe(true);
+    expect(getProductPurchaseOptions(product).find((option) => option.id === "standard_direct")?.hasQr).toBe(false);
+    expect(getProductPurchaseOptions({ ...product, purchaseOptions: undefined })[0].hasQr).toBe(false);
+  });
+
+  it("corrects known claims idempotently without removing adjacent custom copy", () => {
+    const copy = "Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide. Includes our reception instructions.";
+    const corrected = correctKnownPurchaseCopy(copy);
+    expect(corrected).toContain("Standard is NFC-only, with no printed QR.");
+    expect(corrected).toContain("Includes our reception instructions.");
+    expect(correctKnownPurchaseCopy(corrected)).toBe(corrected);
+    const custom = "Branded printed QR artwork: keep  two spaces and production notes.";
+    expect(correctKnownPurchaseCopy(custom)).toBe(custom);
+  });
+
   afterEach(() => {
     delete process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING;
   });

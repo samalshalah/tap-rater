@@ -4,7 +4,7 @@ import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnaps
 import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
-import { getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
+import { correctKnownPurchaseCopy, getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
 type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
@@ -379,7 +379,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
   const basePriceCents = readNumber(productRow.base_price_cents) ?? readNumber(productRow.basePriceCents) ?? staticProduct?.basePriceCents ?? 3900;
   const stockStatus = readStockStatus(productRow.stock_status) ?? readStockStatus(productRow.stockStatus) ?? staticProduct?.stockStatus ?? "instock";
   const shortDescription =
-    readString(productRow.short_description) ?? readString(productRow.shortDescription) ?? staticProduct?.shortDescription ?? `${title} NFC and QR stand.`;
+    readString(productRow.short_description) ?? readString(productRow.shortDescription) ?? staticProduct?.shortDescription ?? `${title} NFC stand.`;
   const description = readString(productRow.description) ?? staticProduct?.description ?? shortDescription;
   const productType =
     readProductType(productRow.product_type) ?? readProductType(productRow.productType) ?? staticProduct?.productType ?? "physical_redirect";
@@ -545,8 +545,8 @@ function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProd
   const cleanDescription = `${product.title} connects NFC taps directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
   return {
     ...product,
-    shortDescription: sanitizeRetiredPublicCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription),
-    description: sanitizeRetiredPublicCopy(containsLegacyDirectCopy(product.description) ? cleanDescription : product.description),
+    shortDescription: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription)),
+    description: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.description) ? cleanDescription : product.description)),
     seoDescription: product.seoDescription ? sanitizeRetiredPublicCopy(product.seoDescription) : product.seoDescription,
     requiresAccount: false,
     requiresSubscription: false,
@@ -567,14 +567,13 @@ function sanitizeRetiredPublicCopy(value: string) {
 }
 
 function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): ProductPurchaseOptionSnapshot {
-  if (option.optionCode !== "standard_direct" || option.hasQr) {
-    return option;
+  if (option.optionCode !== "standard_direct") {
+    return { ...option, description: correctKnownPurchaseCopy(option.description) };
   }
 
   return {
     ...option,
-    title: "Standard Direct",
-    description: "Ready-made stand with NFC tap connected directly to one destination link.",
+    description: correctKnownPurchaseCopy(option.description),
     requiresDestinationUrl: true,
     hasQr: false,
     requiresLogo: false,
@@ -583,12 +582,14 @@ function sanitizePublicStorefrontOption(option: ProductPurchaseOptionSnapshot): 
     requiresFrontProof: false,
     requiresSubscription: false,
     accountRequired: false,
-    footerLabel: "NFC direct"
+    footerLabel: !option.footerLabel || ["NFC only", "QR + NFC", "QR + NFC direct", "QR and NFC direct"].includes(option.footerLabel)
+      ? "NFC direct"
+      : option.footerLabel
   };
 }
 
 function containsLegacyDirectCopy(value: string | undefined) {
-  return Boolean(value && /(nfc[\s-]*only|no\s+(printed\s+)?qr|choose\s+nfc\s+only|mvp\s+media|mvp\s+catalog)/i.test(value));
+  return Boolean(value && /(mvp\s+media|mvp\s+catalog)/i.test(value));
 }
 
 function isHostedProduct(product: MigratedProduct) {

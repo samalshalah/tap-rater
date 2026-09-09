@@ -14,6 +14,10 @@ export async function GET(_request: Request, context: RouteContext) {
   const key = keyParts.join("/");
 
   try {
+    const decodedKey = decodeURIComponent(key);
+    if (decodedKey.split(/[\\/]/).some((part) => part.toLowerCase() === "production_artwork")) {
+      return NextResponse.json({ error: "Product media was not found." }, { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    }
     const object = await getProductMediaObject(key);
     if (!object) {
       return NextResponse.json({ error: "Product media was not found." }, { status: 404 });

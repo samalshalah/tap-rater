@@ -1,8 +1,11 @@
-import { getProductMediaBucket, getProductMediaObject, getProductMediaUrl } from "@/lib/admin-media-storage";
+import { getProductMediaBucket, getProductMediaObject, readImageDimensions } from "@/lib/admin-media-storage";
 import { brandedStandComposition, regionToPixels } from "@/lib/branded-composition";
-import { createQrSvg } from "@/lib/qr-code";
+import { getPrintLogoRegion, renderPrintArtwork } from "@/lib/print-artwork-renderer";
 import { isProofApprovalSnapshotCurrent, type ProofApprovalSnapshot } from "@/lib/direct-production";
 import type { OrderLineItem } from "@/lib/orders";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 export type ArtworkRegion = {
   x: number;
@@ -53,6 +56,7 @@ export type ProductionArtworkStorage = {
 };
 
 export type EmbeddedProductionAsset = {
+  dimensions?: { width: number; height: number };
   dataUri: string;
   contentType: SupportedProductionAssetContentType;
   contentHash: string;
@@ -130,7 +134,15 @@ export async function generateProductionArtworkForOrderLineItem(
     }
 
     const approvalSnapshotHash = await sha256Hex(stableJson(proofApprovalSnapshot));
+    const existing = readProductionArtworkReference(input.item);
+    if (existing?.status === "generated" && existing.storageKey && existing.approvalSnapshotHash === approvalSnapshotHash && existing.templateVersion === template.version) {
+      return input.item;
+    }
     const composed = await composeProductionArtworkDocument(input.item, template, approvalSnapshotHash, generatedAt, input.assetResolver);
+    if (proofApprovalSnapshot.baseTemplateContentHash && proofApprovalSnapshot.baseTemplateContentHash !== composed.assetHashes.baseTemplateContentHash ||
+        proofApprovalSnapshot.logoContentHash && proofApprovalSnapshot.logoContentHash !== composed.assetHashes.logoContentHash) {
+      throw new Error("Approved artwork assets have changed. A new customer proof is required.");
+    }
     const storageKey = buildProductionArtworkStorageKey(input.orderReference, input.lineItemIndex, input.item.productId, approvalSnapshotHash);
 
     await storage.put(storageKey, composed.svg, {
@@ -150,7 +162,6 @@ export async function generateProductionArtworkForOrderLineItem(
     const reference: ProductionArtworkReference = {
       status: "generated",
       storageKey,
-      url: getProductMediaUrl(storageKey),
       format: "svg",
       contentType: "image/svg+xml",
       widthPx: template.widthPx,
@@ -244,18 +255,22 @@ export async function composeProductionArtworkDocument(
     assetResolver(template.templateUrl),
     assetResolver(logoHref)
   ]);
+  if (baseTemplateAsset.dimensions && (baseTemplateAsset.dimensions.width < template.widthPx || baseTemplateAsset.dimensions.height < template.heightPx)) {
+    throw new Error("The stand template is below print resolution. Please contact Tap Rater.");
+  }
+  if (logoAsset.dimensions) {
+    const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent, logoOffsetYPercent });
+    const ratio = logoFitMode === "fill" ? Math.max(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height) : Math.min(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height);
+    if (ratio > 1.01) throw new Error("The logo is too small for 300 DPI printing at this size. Upload a higher-resolution logo or reduce its size.");
+  }
 
-  const qrSvg = await createQrSvg(qrTargetUrl);
-  const qrBody = extractSvgBody(qrSvg);
-  const qrViewBox = extractViewBox(qrSvg) ?? "0 0 512 512";
-  const nameFontSize = Math.round(fitSingleLineFontSize(businessName, template.businessNameRegion.width, 68, 26) * fontSizePercent / 100);
-  const logoRegion = offsetRegion(scaleRegion(template.logoRegion, logoSizePercent), template.logoRegion, logoOffsetXPercent, logoOffsetYPercent);
-  const logoPreserveAspectRatio = logoFitMode === "fill" ? "xMidYMid slice" : "xMidYMid meet";
-
-  const svg = [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${template.widthPx}" height="${template.heightPx}" viewBox="0 0 ${template.widthPx} ${template.heightPx}" role="img" aria-label="${escapeXml(item.title)} production artwork">`,
-    `<title>${escapeXml(item.title)} production artwork</title>`,
-    `<metadata>${escapeXml(stableJson({
+  const svg = await renderPrintArtwork({
+    template,
+    design: { businessName, qrTargetUrl, fontSizePercent, logoSizePercent, logoFitMode, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: showBusinessNameOnProof },
+    templateDataUri: baseTemplateAsset.dataUri,
+    logoDataUri: logoAsset.dataUri,
+    title: `${item.title} production artwork`,
+    metadata: {
       productId: item.productId,
       optionId: item.optionId,
       templateId: template.id,
@@ -265,16 +280,8 @@ export async function composeProductionArtworkDocument(
       qrTargetUrl,
       baseTemplateContentHash: baseTemplateAsset.contentHash,
       logoContentHash: logoAsset.contentHash
-    }))}</metadata>`,
-    `<rect width="${template.widthPx}" height="${template.heightPx}" fill="#ffffff"/>`,
-    `<image href="${escapeXml(baseTemplateAsset.dataUri)}" x="0" y="0" width="${template.widthPx}" height="${template.heightPx}" preserveAspectRatio="xMidYMid meet"/>`,
-    `<image href="${escapeXml(logoAsset.dataUri)}" x="${logoRegion.x}" y="${logoRegion.y}" width="${logoRegion.width}" height="${logoRegion.height}" preserveAspectRatio="${logoPreserveAspectRatio}"/>`,
-    showBusinessNameOnProof
-      ? `<text x="${template.businessNameRegion.x + template.businessNameRegion.width / 2}" y="${template.businessNameRegion.y + template.businessNameRegion.height / 2}" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" font-weight="800" letter-spacing="0" fill="#111827" textLength="${Math.round(template.businessNameRegion.width * 0.96)}" lengthAdjust="spacingAndGlyphs">${escapeXml(businessName)}</text>`
-      : "",
-    `<svg x="${template.qrRegion.x}" y="${template.qrRegion.y}" width="${template.qrRegion.width}" height="${template.qrRegion.height}" viewBox="${escapeXml(qrViewBox)}">${qrBody}</svg>`,
-    `</svg>`
-  ].join("");
+    }
+  });
 
   return {
     svg,
@@ -289,6 +296,9 @@ export function buildCurrentApprovalSnapshot(item: OrderLineItem): ProofApproval
   return {
     productSlug: readSetupString(item.setup, "productSlug") ?? item.productId,
     optionCode: readSetupString(item.setup, "optionCode") ?? item.optionId,
+    rendererVersion: readSetupString(item.setup, "rendererVersion"),
+    baseTemplateContentHash: readSetupString(item.setup, "baseTemplateContentHash"),
+    logoContentHash: readSetupString(item.setup, "logoContentHash"),
     destinationUrl: readSetupString(item.setup, "destinationUrl") ?? readProofPreviewString(item.setup, "destinationUrl"),
     businessName: readSetupString(item.setup, "businessName") ?? readProofPreviewString(item.setup, "businessName"),
     logoStorageKey: readSetupString(item.setup, "logoStorageKey") ?? readProofPreviewString(item.setup, "logoStorageKey"),
@@ -346,7 +356,12 @@ async function defaultProductionArtworkAssetResolver(url: string): Promise<Embed
     return embedExistingDataUri(url);
   }
 
-  const productMediaKey = readProductMediaKeyFromUrl(url);
+  const siteUrl = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com");
+  const parsed = new URL(url, siteUrl);
+  const mediaBase = process.env.PRODUCT_MEDIA_PUBLIC_BASE_URL?.replace(/\/+$/, "");
+  const trustedMediaUrl = mediaBase && url.startsWith(`${mediaBase}/products/`);
+  if (!trustedMediaUrl && parsed.origin !== siteUrl.origin) throw new Error("Production assets must belong to Tap Rater.");
+  const productMediaKey = trustedMediaUrl ? decodeURIComponent(url.slice(mediaBase.length + 1)) : readProductMediaKeyFromUrl(url);
   if (productMediaKey) {
     const object = await getProductMediaObject(productMediaKey);
     if (!object) throw new Error(`Production asset could not be found: ${url}`);
@@ -355,8 +370,20 @@ async function defaultProductionArtworkAssetResolver(url: string): Promise<Embed
     return embedAssetBytes(bytes, object.httpMetadata?.contentType, url);
   }
 
-  const response = await fetch(toAbsoluteAssetUrl(url));
+  if (!parsed.pathname.startsWith("/uploads/products/") || parsed.pathname.includes("..") || parsed.pathname.includes("%") || parsed.pathname.includes("\\")) {
+    throw new Error("Production template path is not allowed.");
+  }
+  if (process.env.NODE_ENV !== "production") {
+    const buffer = await readFile(join(process.cwd(), "public", parsed.pathname));
+    return embedAssetBytes(Uint8Array.from(buffer).buffer, undefined, parsed.pathname);
+  }
+  let assets: CloudflareEnv["ASSETS"];
+  try {
+    assets = (await getCloudflareContext({ async: true })).env.ASSETS;
+  } catch { /* Static fetch is also supported outside Workers. */ }
+  const response = assets ? await assets.fetch(parsed.toString()) : await fetch(parsed, { redirect: "error", signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Production asset could not be fetched: ${url}`);
+  if (Number(response.headers.get("content-length")) > 10 * 1024 * 1024) throw new Error("Production asset is too large.");
   return embedAssetBytes(await response.arrayBuffer(), response.headers.get("content-type") ?? undefined, url);
 }
 
@@ -375,11 +402,15 @@ async function embedExistingDataUri(url: string): Promise<EmbeddedProductionAsse
 }
 
 async function embedAssetBytes(bytes: ArrayBuffer, contentType: string | undefined, sourceUrl: string): Promise<EmbeddedProductionAsset> {
+  if (bytes.byteLength > 10 * 1024 * 1024) throw new Error("Production asset is too large.");
   const normalizedContentType = normalizeProductionAssetContentType(contentType ?? inferContentTypeFromUrl(sourceUrl), sourceUrl);
   const safeBytes = normalizedContentType === "image/svg+xml" ? encodeUtf8(sanitizeSvgAsset(decodeUtf8(bytes), sourceUrl)) : bytes;
+  const dimensions = normalizedContentType === "image/svg+xml" ? undefined : readImageDimensions(safeBytes, normalizedContentType);
+  if (normalizedContentType !== "image/svg+xml" && !dimensions) throw new Error("Production image dimensions could not be verified.");
 
   return {
     contentType: normalizedContentType,
+    dimensions: dimensions ?? undefined,
     contentHash: await sha256HexFromBytes(safeBytes),
     dataUri: `data:${normalizedContentType};base64,${bytesToBase64(safeBytes)}`
   };
@@ -398,11 +429,6 @@ function readProductMediaKeyFromUrl(url: string) {
   }
 }
 
-function toAbsoluteAssetUrl(url: string) {
-  if (/^https?:\/\//i.test(url)) return url;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com";
-  return new URL(url, siteUrl).toString();
-}
 
 function normalizeProductionAssetContentType(value: string | undefined, sourceUrl: string): SupportedProductionAssetContentType {
   const contentType = value?.split(";")[0]?.trim().toLowerCase() || inferContentTypeFromUrl(sourceUrl);
@@ -423,7 +449,7 @@ function inferContentTypeFromUrl(url: string) {
 function sanitizeSvgAsset(svg: string, sourceUrl: string) {
   const lower = svg.toLowerCase();
   if (!lower.includes("<svg")) throw new Error(`SVG production asset is invalid: ${sourceUrl}`);
-  if (/<script[\s>]/i.test(svg) || /<foreignobject[\s>]/i.test(svg) || /\son[a-z]+\s*=/i.test(svg) || /javascript:/i.test(svg)) {
+  if (/<script[\s>]/i.test(svg) || /<foreignobject[\s>]/i.test(svg) || /\son[a-z]+\s*=/i.test(svg) || /javascript:/i.test(svg) || /<!DOCTYPE|<!ENTITY|@import|url\s*\(/i.test(svg) || /(?:href|src)\s*=\s*["'](?!#|data:image\/)/i.test(svg)) {
     throw new Error(`SVG production asset contains unsafe content: ${sourceUrl}`);
   }
   return svg;
@@ -505,40 +531,6 @@ function readProofPreviewBoolean(setup: OrderLineItem["setup"], key: string) {
   return typeof value === "boolean" ? value : undefined;
 }
 
-function extractSvgBody(svg: string) {
-  return svg.replace(/^.*?<svg[^>]*>/s, "").replace(/<\/svg>\s*$/s, "");
-}
-
-function extractViewBox(svg: string) {
-  return svg.match(/viewBox="([^"]+)"/)?.[1];
-}
-
-function fitSingleLineFontSize(text: string, maxWidthPx: number, maxFontPx: number, minFontPx: number) {
-  const estimatedWidthAtMax = text.length * maxFontPx * 0.62;
-  if (estimatedWidthAtMax <= maxWidthPx * 0.96) return maxFontPx;
-  return Math.max(minFontPx, Math.floor((maxWidthPx * 0.96) / Math.max(1, text.length * 0.62)));
-}
-
-function scaleRegion(region: ArtworkRegion, percent: number): ArtworkRegion {
-  const clampedPercent = Math.min(160, Math.max(75, percent));
-  const width = Math.round(region.width * clampedPercent / 100);
-  const height = Math.round(region.height * clampedPercent / 100);
-
-  return {
-    x: Math.round(region.x + (region.width - width) / 2),
-    y: Math.round(region.y + (region.height - height) / 2),
-    width,
-    height
-  };
-}
-
-function offsetRegion(region: ArtworkRegion, originalRegion: ArtworkRegion, offsetXPercent: number, offsetYPercent: number): ArtworkRegion {
-  return {
-    ...region,
-    x: Math.round(region.x + originalRegion.width * offsetXPercent / 100),
-    y: Math.round(region.y + originalRegion.height * offsetYPercent / 100)
-  };
-}
 
 function mergeWarningCodes(current: OrderLineItem["productionWarningCodes"], additions: OrderLineItem["productionWarningCodes"]) {
   return Array.from(new Set([...(current ?? []), ...(additions ?? [])]));

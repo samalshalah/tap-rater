@@ -42,8 +42,8 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
       <section className="tr-card p-6 sm:p-7">
         <div className="grid gap-3 text-sm text-muted">
           {reference ? (
-            <p className="rounded-md bg-gray-50 p-3">
-              Order number: <span className="font-medium text-ink">{formatOrderReference(reference)}</span>
+            <p className="min-w-0 rounded-md bg-gray-50 p-3">
+              Order number: <span className="break-all font-medium text-ink">{formatOrderReference(reference)}</span>
               {order?.totalCents ? <span> · Total: {formatPrice(order.totalCents)}</span> : null}
             </p>
           ) : null}
@@ -53,7 +53,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
               : "Your invoice and receipt will appear in your account after Stripe sends the payment confirmation webhook."}
           </p>
           {accountRequested ? (
-            <p>Check your email for the activation link to set your Tap Rater account password.</p>
+            <p>Already have a Tap Rater account? Sign in with your existing password. New customers will receive an activation email after payment is confirmed.</p>
           ) : null}
           <p>Need help with this order? Contact support and include your order number.</p>
         </div>

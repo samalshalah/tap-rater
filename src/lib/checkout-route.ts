@@ -21,6 +21,7 @@ import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSet
 import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import { getTaxSettings, type TaxSettingsInput } from "@/lib/tax-settings";
 import { checkoutRequestSchema, type CheckoutCustomerInput, type CheckoutShippingAddressInput } from "@/lib/validators";
+import { bindBrandedHostedCheckout, verifyBrandedCheckoutProofs } from "@/lib/branded-proof";
 
 type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
 
@@ -33,6 +34,8 @@ type StripeCheckoutSessionResult = {
 type PendingOrderResult = Awaited<ReturnType<typeof createPendingOrderForCheckout>>;
 
 export type CheckoutRouteDependencies = {
+  verifyBrandedProofs?: typeof verifyBrandedCheckoutProofs;
+  bindBrandedCheckout?: typeof bindBrandedHostedCheckout;
   createPendingOrder: (input: {
     stripeCheckoutSessionId: string;
     rows: CheckoutCartRow[];
@@ -124,6 +127,12 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     return NextResponse.json({ error: cart.message, reason: cart.reason }, { status: 400 });
   }
 
+  try {
+    await (dependencies.verifyBrandedProofs ?? verifyBrandedCheckoutProofs)(cart.rows, parsed.data.checkoutAttemptId);
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Artwork approval could not be verified." }, { status: 400 });
+  }
+
   logCheckout(dependencies.logger, "info", requestId, "cart_validated", {
     itemCount: cart.rows.length,
     totalCents: cart.totalCents
@@ -183,6 +192,7 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     }
 
     logCheckout(dependencies.logger, "info", requestId, "pending_order_create_start");
+    await (dependencies.bindBrandedCheckout ?? bindBrandedHostedCheckout)(cart.rows, session.id);
     const pendingOrder = await withTimeout(
       dependencies.createPendingOrder({
         stripeCheckoutSessionId: session.id,

@@ -6,10 +6,14 @@ import {
   getProductActivationCopy,
   getProductComparisonRows,
   getProductDestinationCopy,
+  getProductFaqs,
+  getProductHowItWorks,
+  getProductIncludedItems,
   getProductPageHighlights,
   getProductPageUseCases,
   getReviewDestination,
-  getProductServiceBadges
+  getProductServiceBadges,
+  getProductSpecifications
 } from "@/lib/product-page-content";
 
 describe("product page content", () => {
@@ -28,13 +32,52 @@ describe("product page content", () => {
     });
 
     expect(getProductPageHighlights(product).map((highlight) => highlight.title)).toEqual([
-      "Tap + Scan",
+      "NFC tap",
       "Direct to Google",
       "No App Required",
       "No Subscription",
       "Ready to Use",
       "Standard or Branded"
     ]);
+    expect(getProductPageHighlights(product)[0].body).toContain("Standard is NFC-only, with no printed QR.");
+    expect(product.keyFeatures?.[0].body).toBe("Customers can tap with NFC or scan the printed QR code.");
+  });
+
+  it("qualifies fallback connections for Standard and Branded, including Multi-Link-compatible products", () => {
+    const product = productFixture({ supportsMultiLink: true, assetSet: { brandedFrontTemplateUrl: "/branded.png" } });
+    const answer = getProductFaqs(product)[0].answer;
+    expect(answer).toContain("Standard is NFC-only, with no printed QR.");
+    expect(answer).toContain("Branded adds a QR code generated from the same destination.");
+    expect(getProductPageHighlights(product)[0].body).toBe(answer);
+    expect(getProductFaqs({ ...product, assetSet: {} })[0].answer).not.toContain("Branded adds");
+  });
+
+  it("corrects known saved details while retaining custom FAQs, steps, and feature bodies", () => {
+    const product = productFixture({
+      assetSet: { brandedFrontTemplateUrl: "/branded.png" },
+      productFaqs: [
+        { question: "How does this work?", answer: "Customers tap the stand with an NFC-enabled phone or scan the QR code. Both open the Google review link you provide." },
+        { question: "Can I use printed instructions?", answer: "Yes. Keep the printed instructions beside your Branded QR." }
+      ],
+      howItWorks: [{ step: 1, title: "Our production notes", body: "Our custom production notes remain unchanged." }],
+      keyFeatures: [{ title: "Tap + Scan", body: "Our custom Branded printed QR connects to the front desk." }]
+    });
+    expect(getProductFaqs(product)[0].answer).toContain("Standard is NFC-only");
+    expect(getProductFaqs(product)[1]).toEqual(product.productFaqs![1]);
+    expect(getProductHowItWorks(product)).toEqual(product.howItWorks);
+    expect(getProductPageHighlights(product)).toEqual(product.keyFeatures);
+  });
+
+  it("qualifies known QR specifications and included items without changing custom details", () => {
+    const product = productFixture({
+      specifications: [{ label: "Connectivity", value: "NFC + QR" }, { label: "Finish", value: "Our printed finish" }],
+      includedItems: [{ label: "Printed QR code", appliesTo: "all" }, { label: "Printed setup instructions", appliesTo: "all" }]
+    });
+    expect(getProductSpecifications(product)[0].value).toBe("Standard: NFC only, no printed QR. Branded: NFC and printed QR.");
+    expect(getProductSpecifications(product)[1]).toEqual(product.specifications![1]);
+    expect(getProductIncludedItems(product)[0]).toEqual({ label: "Printed QR code", appliesTo: "branded" });
+    expect(getProductIncludedItems(product)[1]).toEqual(product.includedItems![1]);
+    expect(product.includedItems![0].appliesTo).toBe("all");
   });
 
   it("returns business use cases for local customer touchpoints", () => {
@@ -159,6 +202,55 @@ describe("product page content", () => {
 
     expect(getReviewDestination(product)).toBe("hosted multi-link page");
     expect(getProductPageHighlights(product)[0].body).toContain("hosted Tap Rater page");
+  });
+
+  it("explains the paid add-on without implying that Direct needs a subscription", () => {
+    const faqs = getProductFaqs(productFixture({ supportsMultiLink: true }));
+    const answer = faqs.find((faq) => faq.question === "Does this require a subscription?")?.answer;
+
+    expect(answer).toContain("Direct stands are a one-time purchase with no monthly subscription.");
+    expect(answer).toContain("$9.99/month per page");
+    expect(answer).toContain("in addition to the physical stand price");
+    expect(answer).toContain("10 editable links");
+    expect(answer).toContain("Tap Rater account");
+  });
+
+  it("corrects the known stale subscription FAQ while preserving unrelated custom FAQs", () => {
+    const customFaq = { question: "Where can I place it?", answer: "At reception." };
+    const product = productFixture({
+      supportsMultiLink: true,
+      productFaqs: [customFaq, { question: "Does this require a subscription?", answer: "No." }]
+    });
+    const faqs = getProductFaqs(product);
+
+    expect(faqs).toHaveLength(2);
+    expect(faqs[0]).toEqual(customFaq);
+    expect(faqs[1].answer).toContain("$9.99/month");
+    expect(product.productFaqs?.[1].answer).toBe("No.");
+  });
+
+  it("adds a subscription explanation when a compatible product only has custom questions", () => {
+    const faqs = getProductFaqs(productFixture({
+      supportsMultiLink: true,
+      productFaqs: [{ question: "Where can I place it?", answer: "At reception." }]
+    }));
+
+    expect(faqs).toHaveLength(2);
+    expect(faqs[1].answer).toContain("$9.99/month");
+  });
+
+  it("does not advertise Multi-Link for an incompatible Direct product", () => {
+    const faqs = getProductFaqs(productFixture({ supportsMultiLink: false }));
+    expect(faqs.find((faq) => faq.question === "Does this require a subscription?")?.answer)
+      .toBe("Direct stands are a one-time purchase with no monthly subscription.");
+  });
+
+  it("never describes a subscription-required hosted product as subscription-free", () => {
+    const faqs = getProductFaqs(productFixture({ productKind: "hosted_multilink", requiresSubscription: true }));
+    const answer = faqs.find((faq) => faq.question === "Does this require a subscription?")?.answer;
+
+    expect(answer).toContain("requires a $9.99/month subscription per page");
+    expect(answer).not.toContain("no monthly subscription");
   });
 });
 

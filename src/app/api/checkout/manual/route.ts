@@ -38,6 +38,9 @@ export async function POST(request: Request) {
   if (!cart.ok) {
     return NextResponse.json({ error: cart.message, reason: cart.reason }, { status: 400 });
   }
+  if (cart.rows.some((row) => row.optionId === "branded_qr_direct")) {
+    return NextResponse.json({ error: "Branded stands require the approved-artwork Stripe checkout." }, { status: 409 });
+  }
 
   const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
   const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);

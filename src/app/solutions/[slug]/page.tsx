@@ -7,6 +7,7 @@ import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/s
 import { getPublicBusinessUseBySlug, getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
+import { defaultSocialImage } from "@/lib/social-metadata";
 
 type BusinessUsePageProps = {
   params: Promise<{ slug: string }>;
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: BusinessUsePageProps): Promis
     return { title: "Business Use Not Found" };
   }
 
+  const socialImage = businessUse.bannerImageUrl || businessUse.imageUrl;
   return {
     title: withoutSiteTitleSuffix(businessUse.seoTitle || `${businessUse.title} NFC Stands`),
     description: businessUse.seoDescription || businessUse.shortDescription || businessUse.description,
@@ -26,7 +28,10 @@ export async function generateMetadata({ params }: BusinessUsePageProps): Promis
     openGraph: {
       title: businessUse.seoTitle || businessUse.title,
       description: businessUse.seoDescription || businessUse.shortDescription || businessUse.description,
-      url: `/solutions/${businessUse.slug}`
+      url: `/solutions/${businessUse.slug}`,
+      images: socialImage
+        ? [{ url: socialImage, alt: businessUse.title }]
+        : [defaultSocialImage]
     }
   };
 }

@@ -260,19 +260,19 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "reviews",
     title: "Review Stands",
     eyebrow: "Reviews",
-    description: "NFC and QR tabletop stands that open Google, Yelp, Facebook, TripAdvisor, or other review destinations.",
+    description: "NFC tabletop stands that open Google, Yelp, Facebook, TripAdvisor, or other review destinations.",
     seoTitle: "NFC Review Stands | Tap Rater",
     seoDescription: "Shop NFC review stands for Google, Yelp, Facebook, TripAdvisor, and other review destinations.",
-    buyerIntent: "For businesses that want customers to tap or scan and open a public review destination.",
+    buyerIntent: "For businesses that want customers to tap and open a public review destination.",
     aliases: ["review-stands", "review-plates", "google-review-products", "review-platform-products", "google-review-stands", "review-platform-stands", "google-review-plates"],
     seoCopy:
-      "Review stands focus on one clear customer action: tap or scan to open the review destination."
+      "Review stands focus on one clear customer action: tap to open the review destination."
   },
   {
     slug: "social-media",
     title: "Social Media Stands",
     eyebrow: "Social",
-    description: "NFC and QR tabletop stands that open social profiles or a social media link.",
+    description: "NFC tabletop stands that open social profiles or a social media link.",
     seoTitle: "NFC Social Media Stands | Tap Rater",
     seoDescription: "Shop NFC social media stands that open social profiles or a social media link.",
     buyerIntent: "For businesses that want customers to follow or visit social profiles after an in-person interaction.",
@@ -284,7 +284,7 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "appointments",
     title: "Appointment & Reservation Stands",
     eyebrow: "Booking",
-    description: "NFC and QR tabletop stands that open booking pages, reservation forms, calendars, or scheduling URLs.",
+    description: "NFC tabletop stands that open booking pages, reservation forms, calendars, or scheduling URLs.",
     seoTitle: "Appointment and Reservation NFC Stands | Tap Rater",
     seoDescription: "Shop NFC appointment and reservation stands that open booking pages, forms, calendars, or scheduling URLs.",
     buyerIntent: "For salons, clinics, consultants, service businesses, and teams that want customers to book the next visit.",
@@ -296,7 +296,7 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "menu",
     title: "Menu & Info Stands",
     eyebrow: "Menu",
-    description: "NFC and QR tabletop stands that open a restaurant menu, cafe menu, service list, or information page.",
+    description: "NFC tabletop stands that open a restaurant menu, cafe menu, service list, or information page.",
     seoTitle: "NFC Menu and Info Stands | Tap Rater",
     seoDescription: "Shop NFC menu and information stands that open a restaurant menu, cafe menu, service list, or information page.",
     buyerIntent: "For restaurants, cafes, counters, tables, and service businesses that need customers to open a menu.",
@@ -308,10 +308,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "feedback",
     title: "Feedback Stands",
     eyebrow: "Feedback",
-    description: "NFC and QR tabletop stands that open customer feedback or experience forms.",
+    description: "NFC tabletop stands that open customer feedback or experience forms.",
     seoTitle: "NFC Feedback Stands | Tap Rater",
     seoDescription: "Shop NFC feedback stands that open customer feedback or experience forms.",
-    buyerIntent: "For businesses that want customers to tap or scan and share experience feedback.",
+    buyerIntent: "For businesses that want customers to tap and share experience feedback.",
     aliases: ["experience-feedback-products", "feedback-referral-products", "feedback-referral-stands", "feedback-stands"],
     seoCopy:
       "Feedback products open customer feedback or experience forms without review-gating language."
@@ -320,9 +320,9 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "website-links",
     title: "Multi-Link Stand",
     eyebrow: "Multi-Link",
-    description: "NFC and QR tabletop stands with an optional hosted Multi-Link page for reviews, social profiles, websites, booking, menus, and more.",
+    description: "NFC tabletop stands with an optional hosted Multi-Link page for reviews, social profiles, websites, booking, menus, and more.",
     seoTitle: "Multi-Link Stand | Tap Rater",
-    seoDescription: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 10 customer links.",
+    seoDescription: "Shop NFC stands that can add a hosted Multi-Link page with up to 10 customer links.",
     buyerIntent: "For businesses that want one stand to open multiple important customer links.",
     aliases: ["website-link-stands", "link-stands", "website-links"],
     seoCopy:
@@ -332,9 +332,9 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "custom-stands",
     title: "Custom Stands",
     eyebrow: "Custom",
-    description: "Custom NFC and QR tabletop stands for one direct destination link.",
+    description: "Custom NFC tabletop stands for one direct destination link.",
     seoTitle: "Custom NFC Stands | Tap Rater",
-    seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, custom headline, and one destination link.",
+    seoDescription: "Create a custom NFC tabletop stand with your logo, business name, custom headline, and one destination link.",
     buyerIntent: "For businesses that want a branded stand with custom wording or a custom center graphic.",
     aliases: ["custom-nfc-stands", "custom-qr-stands"],
     seoCopy:
@@ -501,7 +501,7 @@ function phaseOneProduct(input: PhaseOneProductInput): MigratedProduct {
     basePriceCents: input.basePriceCents,
     stockStatus: "instock",
     shortDescription: input.shortDescription,
-    description: `${input.description} Available as a Standard Direct stand or a Branded + QR Direct stand.`,
+    description: `${input.description} Standard is NFC-only, with no printed QR. Branded options add your logo, business name, and a destination-generated QR. Approve the Branded artwork preview before payment; final print artwork is generated after payment.`,
     productType: "physical_redirect",
     serviceMode: "basic_redirect",
     checkoutMode: "buy_now",
@@ -623,9 +623,9 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: standPriceCents,
     stockStatus: "instock",
     shortDescription:
-      "Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
+      "Countertop Google Review Stand with NFC. Standard is NFC-only, with no printed QR. Branded adds a destination-generated QR, logo, and business name.",
     description:
-      "Make it easy for customers to leave a Google review at your counter, reception desk, checkout area, or service desk. The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide. Choose Standard for the ready-made Tap Rater Google design, or Branded to add your logo and business name for Tap Rater artwork review after the order.",
+      "Make it easy for customers to leave a Google review at your counter, reception desk, checkout area, or service desk. Standard uses NFC only, with no printed QR. Branded adds a QR code generated from the same Google review link, your logo, and business name. Approve the Branded artwork preview before payment. Final print artwork is generated after payment.",
     productType: "physical_redirect",
     serviceMode: "basic_redirect",
     checkoutMode: "buy_now",
@@ -655,10 +655,10 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
         productSlug: "google-review-stand",
         optionCode: "standard_direct",
         title: "Standard",
-        description: "Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide.",
+        description: "Ready-made Google Review Stand with NFC programmed to your Google review link. Standard is NFC-only, with no printed QR.",
         priceCents: 3900,
         requiresDestinationUrl: true,
-        hasQr: true,
+        hasQr: false,
         requiresLogo: false,
         requiresBusinessName: false,
         requiresDesignStep: false,
@@ -675,7 +675,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
         optionCode: "branded_qr_direct",
         title: "Branded",
         description:
-          "Custom Google Review Stand with your logo and business name, plus QR and NFC programmed to the same Google review link. Tap Rater reviews artwork before production.",
+          "Branded Google Review Stand with your logo, business name, and a QR code generated from the destination used by NFC. Approve the artwork preview before payment. Final print artwork is generated after payment.",
         priceCents: 4900,
         requiresDestinationUrl: true,
         hasQr: true,
@@ -697,9 +697,9 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     ],
     variants: [],
     isActive: true,
-    seoTitle: "Google Review Stand with NFC & QR",
+    seoTitle: "Google Review Stand | NFC Standard or Branded + QR",
     seoDescription:
-      "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
+      "Google Review Stand for counters and reception desks. Standard uses NFC only, with no printed QR. Branded adds QR, your logo, and business name."
   },
   phaseOneProduct({
     slug: "google-review-plate",
@@ -709,12 +709,12 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for counters, desks, tables, and reception areas.",
     description:
-      "Google Review Plate is a flat NFC prompt for counters, desks, tables, and reception areas. It opens your Google review link through free basic activation, connects to one destination URL, and is tap or scan ready.",
+      "Google Review Plate is a flat NFC prompt for counters, desks, tables, and reception areas. It opens your Google review link through free basic activation, connects to one destination URL, and is tap ready.",
     supportedDestinations: ["google"],
     displayText: "Review us on Google",
     image: googlePlateImage,
     seoTitle: "Google Review Plate | NFC Review Plate for Counters and Tables",
-    seoDescription: "Buy a Google Review Plate for counters, desks, tables, and reception areas. Opens your Google review link with one tap or scan.",
+    seoDescription: "Buy a Google Review Plate for counters, desks, tables, and reception areas. Opens your Google review link with one tap.",
     searchKeywords: ["google review plate", "nfc review plate", "review us on google plate"]
   }),
   phaseOneProduct({
@@ -730,7 +730,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     displayText: "Review us on Yelp",
     image: yelpStandImage,
     seoTitle: "Yelp Review Stand | NFC Yelp Review Product",
-    seoDescription: "Buy a Yelp Review Stand that opens your Yelp review or business profile destination with one tap or scan.",
+    seoDescription: "Buy a Yelp Review Stand that opens your Yelp review or business profile destination with one tap.",
     searchKeywords: ["yelp review stand", "yelp nfc stand", "review us on yelp stand"]
   }),
   phaseOneProduct({
@@ -741,7 +741,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that helps customers open your Yelp destination.",
     description:
-      "Yelp Review Plate is a low-profile NFC prompt that helps customers open your Yelp destination from a counter, table, desk, or reception area. It connects to one destination URL and is tap or scan ready.",
+      "Yelp Review Plate is a low-profile NFC prompt that helps customers open your Yelp destination from a counter, table, desk, or reception area. It connects to one destination URL and is tap ready.",
     supportedDestinations: ["yelp"],
     displayText: "Review us on Yelp",
     image: yelpPlateImage,
@@ -757,7 +757,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens your Facebook review, recommendation, or business profile destination.",
     description:
-      "Facebook Review Stand is a tabletop NFC display that opens your Facebook review, recommendation, or business profile destination. It uses free basic activation, connects to one destination URL, and is tap or scan ready.",
+      "Facebook Review Stand is a tabletop NFC display that opens your Facebook review, recommendation, or business profile destination. It uses free basic activation, connects to one destination URL, and is tap ready.",
     supportedDestinations: ["facebook"],
     displayText: "Review us on Facebook",
     image: facebookStandImage,
@@ -805,7 +805,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for hospitality, restaurants, tourism, and visitor-facing businesses.",
     description:
-      "TripAdvisor Review Plate is a flat NFC product for hospitality, restaurants, tourism, and visitor-facing businesses. It opens your TripAdvisor destination with one tap or scan.",
+      "TripAdvisor Review Plate is a flat NFC product for hospitality, restaurants, tourism, and visitor-facing businesses. It opens your TripAdvisor destination with one tap.",
     supportedDestinations: ["tripadvisor"],
     displayText: "Review us on TripAdvisor",
     image: tripadvisorPlateImage,
@@ -823,14 +823,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["restaurant-food", "ecommerce-online-brand", "retail-local-business"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Uber Eats review destination.",
+    shortDescription: "Countertop NFC stand that opens your Uber Eats review destination.",
     description:
-      "Uber Eats Review Stand is a tabletop NFC and QR display for restaurants, cafes, ghost kitchens, and delivery-focused counters. It connects directly to one Uber Eats review destination URL and is tap or scan ready.",
+      "Uber Eats Review Stand is a tabletop NFC display for restaurants, cafes, ghost kitchens, and delivery-focused counters. It connects directly to one Uber Eats review destination URL and is tap ready.",
     supportedDestinations: ["ubereats"],
     displayText: "Review us on Uber Eats",
     image: ubereatsReviewStandImage,
-    seoTitle: "Uber Eats Review Stand | NFC and QR Restaurant Review Stand",
-    seoDescription: "Buy an Uber Eats Review Stand that opens your Uber Eats review destination with one tap or scan.",
+    seoTitle: "Uber Eats Review Stand | NFC Restaurant Review Stand",
+    seoDescription: "Buy an Uber Eats Review Stand that opens your Uber Eats review destination with one tap.",
     searchKeywords: ["uber eats review stand", "ubereats nfc stand", "review us on uber eats stand"]
   }),
   phaseOneProduct({
@@ -843,14 +843,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "real-estate", "legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Angi review destination.",
+    shortDescription: "Countertop NFC stand that opens your Angi review destination.",
     description:
-      "Angi Review Stand is a tabletop NFC and QR display for home service businesses and local contractors. It connects directly to one Angi review destination URL and is tap or scan ready.",
+      "Angi Review Stand is a tabletop NFC display for home service businesses and local contractors. It connects directly to one Angi review destination URL and is tap ready.",
     supportedDestinations: ["angi"],
     displayText: "Review us on Angi",
     image: angiReviewStandImage,
-    seoTitle: "Angi Review Stand | NFC and QR Home Services Review Stand",
-    seoDescription: "Buy an Angi Review Stand that opens your Angi review destination with one tap or scan.",
+    seoTitle: "Angi Review Stand | NFC Home Services Review Stand",
+    seoDescription: "Buy an Angi Review Stand that opens your Angi review destination with one tap.",
     searchKeywords: ["angi review stand", "angi nfc stand", "review us on angi stand"]
   }),
   phaseOneProduct({
@@ -863,14 +863,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your DealerRater review destination.",
+    shortDescription: "Countertop NFC stand that opens your DealerRater review destination.",
     description:
-      "DealerRater Review Stand is a tabletop NFC and QR display for dealerships and automotive service counters. It connects directly to one DealerRater review destination URL and is tap or scan ready.",
+      "DealerRater Review Stand is a tabletop NFC display for dealerships and automotive service counters. It connects directly to one DealerRater review destination URL and is tap ready.",
     supportedDestinations: ["dealerrater"],
     displayText: "Review us on DealerRater",
     image: dealerraterReviewStandImage,
-    seoTitle: "DealerRater Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy a DealerRater Review Stand that opens your DealerRater review destination with one tap or scan.",
+    seoTitle: "DealerRater Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy a DealerRater Review Stand that opens your DealerRater review destination with one tap.",
     searchKeywords: ["dealerrater review stand", "dealerrater nfc stand", "review us on dealerrater stand"]
   }),
   phaseOneProduct({
@@ -883,14 +883,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Autotrader review destination.",
+    shortDescription: "Countertop NFC stand that opens your Autotrader review destination.",
     description:
-      "Autotrader Review Stand is a tabletop NFC and QR display for dealerships and automotive sales counters. It connects directly to one Autotrader review destination URL and is tap or scan ready.",
+      "Autotrader Review Stand is a tabletop NFC display for dealerships and automotive sales counters. It connects directly to one Autotrader review destination URL and is tap ready.",
     supportedDestinations: ["autotrader"],
     displayText: "Review us on Autotrader",
     image: autotraderReviewStandImage,
-    seoTitle: "Autotrader Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy an Autotrader Review Stand that opens your Autotrader review destination with one tap or scan.",
+    seoTitle: "Autotrader Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy an Autotrader Review Stand that opens your Autotrader review destination with one tap.",
     searchKeywords: ["autotrader review stand", "autotrader nfc stand", "review us on autotrader stand"]
   }),
   phaseOneProduct({
@@ -903,14 +903,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your CARFAX review destination.",
+    shortDescription: "Countertop NFC stand that opens your CARFAX review destination.",
     description:
-      "CARFAX Review Stand is a tabletop NFC and QR display for dealerships and automotive service counters. It connects directly to one CARFAX review destination URL and is tap or scan ready.",
+      "CARFAX Review Stand is a tabletop NFC display for dealerships and automotive service counters. It connects directly to one CARFAX review destination URL and is tap ready.",
     supportedDestinations: ["carfax"],
     displayText: "Review us on CARFAX",
     image: carfaxReviewStandImage,
-    seoTitle: "CARFAX Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy a CARFAX Review Stand that opens your CARFAX review destination with one tap or scan.",
+    seoTitle: "CARFAX Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy a CARFAX Review Stand that opens your CARFAX review destination with one tap.",
     searchKeywords: ["carfax review stand", "carfax nfc stand", "review us on carfax stand"]
   }),
   phaseOneProduct({
@@ -923,14 +923,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Edmunds review destination.",
+    shortDescription: "Countertop NFC stand that opens your Edmunds review destination.",
     description:
-      "Edmunds Review Stand is a tabletop NFC and QR display for dealerships and automotive sales teams. It connects directly to one Edmunds review destination URL and is tap or scan ready.",
+      "Edmunds Review Stand is a tabletop NFC display for dealerships and automotive sales teams. It connects directly to one Edmunds review destination URL and is tap ready.",
     supportedDestinations: ["edmunds"],
     displayText: "Review us on Edmunds",
     image: edmundsReviewStandImage,
-    seoTitle: "Edmunds Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy an Edmunds Review Stand that opens your Edmunds review destination with one tap or scan.",
+    seoTitle: "Edmunds Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy an Edmunds Review Stand that opens your Edmunds review destination with one tap.",
     searchKeywords: ["edmunds review stand", "edmunds nfc stand", "review us on edmunds stand"]
   }),
   phaseOneProduct({
@@ -943,14 +943,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Cars.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Cars.com review destination.",
     description:
-      "Cars.com Review Stand is a tabletop NFC and QR display for dealerships and automotive retail counters. It connects directly to one Cars.com review destination URL and is tap or scan ready.",
+      "Cars.com Review Stand is a tabletop NFC display for dealerships and automotive retail counters. It connects directly to one Cars.com review destination URL and is tap ready.",
     supportedDestinations: ["cars"],
     displayText: "Review us on Cars.com",
     image: carsReviewStandImage,
-    seoTitle: "Cars.com Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy a Cars.com Review Stand that opens your Cars.com review destination with one tap or scan.",
+    seoTitle: "Cars.com Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy a Cars.com Review Stand that opens your Cars.com review destination with one tap.",
     searchKeywords: ["cars.com review stand", "cars nfc stand", "review us on cars.com stand"]
   }),
   phaseOneProduct({
@@ -963,14 +963,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your CarGurus review destination.",
+    shortDescription: "Countertop NFC stand that opens your CarGurus review destination.",
     description:
-      "CarGurus Review Stand is a tabletop NFC and QR display for dealerships and automotive sales counters. It connects directly to one CarGurus review destination URL and is tap or scan ready.",
+      "CarGurus Review Stand is a tabletop NFC display for dealerships and automotive sales counters. It connects directly to one CarGurus review destination URL and is tap ready.",
     supportedDestinations: ["cargurus"],
     displayText: "Review us on CarGurus",
     image: cargurusReviewStandImage,
-    seoTitle: "CarGurus Review Stand | NFC and QR Automotive Review Stand",
-    seoDescription: "Buy a CarGurus Review Stand that opens your CarGurus review destination with one tap or scan.",
+    seoTitle: "CarGurus Review Stand | NFC Automotive Review Stand",
+    seoDescription: "Buy a CarGurus Review Stand that opens your CarGurus review destination with one tap.",
     searchKeywords: ["cargurus review stand", "cargurus nfc stand", "review us on cargurus stand"]
   }),
   phaseOneProduct({
@@ -983,14 +983,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive", "home-services"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your RepairPal review destination.",
+    shortDescription: "Countertop NFC stand that opens your RepairPal review destination.",
     description:
-      "RepairPal Review Stand is a tabletop NFC and QR display for automotive repair and service counters. It connects directly to one RepairPal review destination URL and is tap or scan ready.",
+      "RepairPal Review Stand is a tabletop NFC display for automotive repair and service counters. It connects directly to one RepairPal review destination URL and is tap ready.",
     supportedDestinations: ["repairpal"],
     displayText: "Review us on RepairPal",
     image: repairpalReviewStandImage,
-    seoTitle: "RepairPal Review Stand | NFC and QR Auto Repair Review Stand",
-    seoDescription: "Buy a RepairPal Review Stand that opens your RepairPal review destination with one tap or scan.",
+    seoTitle: "RepairPal Review Stand | NFC Auto Repair Review Stand",
+    seoDescription: "Buy a RepairPal Review Stand that opens your RepairPal review destination with one tap.",
     searchKeywords: ["repairpal review stand", "repairpal nfc stand", "review us on repairpal stand"]
   }),
   phaseOneProduct({
@@ -1003,14 +1003,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["automotive", "home-services"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your SureCritic review destination.",
+    shortDescription: "Countertop NFC stand that opens your SureCritic review destination.",
     description:
-      "SureCritic Review Stand is a tabletop NFC and QR display for automotive, service, and local business review collection. It connects directly to one SureCritic review destination URL and is tap or scan ready.",
+      "SureCritic Review Stand is a tabletop NFC display for automotive, service, and local business review collection. It connects directly to one SureCritic review destination URL and is tap ready.",
     supportedDestinations: ["surecritic"],
     displayText: "Review us on SureCritic",
     image: surecriticReviewStandImage,
-    seoTitle: "SureCritic Review Stand | NFC and QR Review Stand",
-    seoDescription: "Buy a SureCritic Review Stand that opens your SureCritic review destination with one tap or scan.",
+    seoTitle: "SureCritic Review Stand | NFC Review Stand",
+    seoDescription: "Buy a SureCritic Review Stand that opens your SureCritic review destination with one tap.",
     searchKeywords: ["surecritic review stand", "surecritic nfc stand", "review us on surecritic stand"]
   }),
   phaseOneProduct({
@@ -1023,14 +1023,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["retail-local-business", "home-services", "legal", "automotive"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Better Business Bureau review destination.",
+    shortDescription: "Countertop NFC stand that opens your Better Business Bureau review destination.",
     description:
-      "BBB Review Stand is a tabletop NFC and QR display for local businesses, service providers, and professional offices. It connects directly to one Better Business Bureau review destination URL and is tap or scan ready.",
+      "BBB Review Stand is a tabletop NFC display for local businesses, service providers, and professional offices. It connects directly to one Better Business Bureau review destination URL and is tap ready.",
     supportedDestinations: ["bbb"],
     displayText: "Review us on Better Business Bureau",
     image: bbbReviewStandImage,
-    seoTitle: "BBB Review Stand | NFC and QR Local Business Review Stand",
-    seoDescription: "Buy a BBB Review Stand that opens your Better Business Bureau review destination with one tap or scan.",
+    seoTitle: "BBB Review Stand | NFC Local Business Review Stand",
+    seoDescription: "Buy a BBB Review Stand that opens your Better Business Bureau review destination with one tap.",
     searchKeywords: ["bbb review stand", "better business bureau nfc stand", "review us on bbb stand"]
   }),
   phaseOneProduct({
@@ -1043,14 +1043,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "retail-local-business", "real-estate", "restaurant-food"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Nextdoor review destination.",
+    shortDescription: "Countertop NFC stand that opens your Nextdoor review destination.",
     description:
-      "Nextdoor Review Stand is a tabletop NFC and QR display for neighborhood-facing businesses, local services, real estate teams, and restaurants. It connects directly to one Nextdoor review destination URL and is tap or scan ready.",
+      "Nextdoor Review Stand is a tabletop NFC display for neighborhood-facing businesses, local services, real estate teams, and restaurants. It connects directly to one Nextdoor review destination URL and is tap ready.",
     supportedDestinations: ["nextdoor"],
     displayText: "Review us on Nextdoor",
     image: nextdoorReviewStandImage,
-    seoTitle: "Nextdoor Review Stand | NFC and QR Local Business Review Stand",
-    seoDescription: "Buy a Nextdoor Review Stand that opens your Nextdoor review destination with one tap or scan.",
+    seoTitle: "Nextdoor Review Stand | NFC Local Business Review Stand",
+    seoDescription: "Buy a Nextdoor Review Stand that opens your Nextdoor review destination with one tap.",
     searchKeywords: ["nextdoor review stand", "nextdoor nfc stand", "review us on nextdoor stand"]
   }),
   phaseOneProduct({
@@ -1063,14 +1063,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your HomeAdvisor review destination.",
+    shortDescription: "Countertop NFC stand that opens your HomeAdvisor review destination.",
     description:
-      "HomeAdvisor Review Stand is a tabletop NFC and QR display for contractors, installers, repair teams, and home service businesses. It connects directly to one HomeAdvisor review destination URL and is tap or scan ready.",
+      "HomeAdvisor Review Stand is a tabletop NFC display for contractors, installers, repair teams, and home service businesses. It connects directly to one HomeAdvisor review destination URL and is tap ready.",
     supportedDestinations: ["homeadvisor"],
     displayText: "Review us on HomeAdvisor",
     image: homeadvisorReviewStandImage,
-    seoTitle: "HomeAdvisor Review Stand | NFC and QR Home Services Review Stand",
-    seoDescription: "Buy a HomeAdvisor Review Stand that opens your HomeAdvisor review destination with one tap or scan.",
+    seoTitle: "HomeAdvisor Review Stand | NFC Home Services Review Stand",
+    seoDescription: "Buy a HomeAdvisor Review Stand that opens your HomeAdvisor review destination with one tap.",
     searchKeywords: ["homeadvisor review stand", "homeadvisor nfc stand", "review us on homeadvisor stand"]
   }),
   phaseOneProduct({
@@ -1083,14 +1083,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "retail-local-business"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Thumbtack review destination.",
+    shortDescription: "Countertop NFC stand that opens your Thumbtack review destination.",
     description:
-      "Thumbtack Review Stand is a tabletop NFC and QR display for local service providers, contractors, and appointment-based businesses. It connects directly to one Thumbtack review destination URL and is tap or scan ready.",
+      "Thumbtack Review Stand is a tabletop NFC display for local service providers, contractors, and appointment-based businesses. It connects directly to one Thumbtack review destination URL and is tap ready.",
     supportedDestinations: ["thumbtack"],
     displayText: "Review us on Thumbtack",
     image: thumbtackReviewStandImage,
-    seoTitle: "Thumbtack Review Stand | NFC and QR Service Business Review Stand",
-    seoDescription: "Buy a Thumbtack Review Stand that opens your Thumbtack review destination with one tap or scan.",
+    seoTitle: "Thumbtack Review Stand | NFC Service Business Review Stand",
+    seoDescription: "Buy a Thumbtack Review Stand that opens your Thumbtack review destination with one tap.",
     searchKeywords: ["thumbtack review stand", "thumbtack nfc stand", "review us on thumbtack stand"]
   }),
   phaseOneProduct({
@@ -1103,14 +1103,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Houzz review destination.",
+    shortDescription: "Countertop NFC stand that opens your Houzz review destination.",
     description:
-      "Houzz Review Stand is a tabletop NFC and QR display for design, renovation, remodeling, and home improvement businesses. It connects directly to one Houzz review destination URL and is tap or scan ready.",
+      "Houzz Review Stand is a tabletop NFC display for design, renovation, remodeling, and home improvement businesses. It connects directly to one Houzz review destination URL and is tap ready.",
     supportedDestinations: ["houzz"],
     displayText: "Review us on Houzz",
     image: houzzReviewStandImage,
-    seoTitle: "Houzz Review Stand | NFC and QR Home Improvement Review Stand",
-    seoDescription: "Buy a Houzz Review Stand that opens your Houzz review destination with one tap or scan.",
+    seoTitle: "Houzz Review Stand | NFC Home Improvement Review Stand",
+    seoDescription: "Buy a Houzz Review Stand that opens your Houzz review destination with one tap.",
     searchKeywords: ["houzz review stand", "houzz nfc stand", "review us on houzz stand"]
   }),
   phaseOneProduct({
@@ -1123,14 +1123,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Porch review destination.",
+    shortDescription: "Countertop NFC stand that opens your Porch review destination.",
     description:
-      "Porch Review Stand is a tabletop NFC and QR display for contractors, home service teams, and local improvement businesses. It connects directly to one Porch review destination URL and is tap or scan ready.",
+      "Porch Review Stand is a tabletop NFC display for contractors, home service teams, and local improvement businesses. It connects directly to one Porch review destination URL and is tap ready.",
     supportedDestinations: ["porch"],
     displayText: "Review us on Porch",
     image: porchReviewStandImage,
-    seoTitle: "Porch Review Stand | NFC and QR Home Services Review Stand",
-    seoDescription: "Buy a Porch Review Stand that opens your Porch review destination with one tap or scan.",
+    seoTitle: "Porch Review Stand | NFC Home Services Review Stand",
+    seoDescription: "Buy a Porch Review Stand that opens your Porch review destination with one tap.",
     searchKeywords: ["porch review stand", "porch nfc stand", "review us on porch stand"]
   }),
   phaseOneProduct({
@@ -1143,14 +1143,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["hotel-travel", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Airbnb review destination.",
+    shortDescription: "Countertop NFC stand that opens your Airbnb review destination.",
     description:
-      "Airbnb Review Stand is a tabletop NFC and QR display for short-term rentals, hosts, and guest checkout points. It connects directly to one Airbnb review destination URL and is tap or scan ready.",
+      "Airbnb Review Stand is a tabletop NFC display for short-term rentals, hosts, and guest checkout points. It connects directly to one Airbnb review destination URL and is tap ready.",
     supportedDestinations: ["airbnb"],
     displayText: "Review us on Airbnb",
     image: airbnbReviewStandImage,
-    seoTitle: "Airbnb Review Stand | NFC and QR Hospitality Review Stand",
-    seoDescription: "Buy an Airbnb Review Stand that opens your Airbnb review destination with one tap or scan.",
+    seoTitle: "Airbnb Review Stand | NFC Hospitality Review Stand",
+    seoDescription: "Buy an Airbnb Review Stand that opens your Airbnb review destination with one tap.",
     searchKeywords: ["airbnb review stand", "airbnb nfc stand", "review us on airbnb stand"]
   }),
   phaseOneProduct({
@@ -1163,14 +1163,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["hotel-travel"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Agoda review destination.",
+    shortDescription: "Countertop NFC stand that opens your Agoda review destination.",
     description:
-      "Agoda Review Stand is a tabletop NFC and QR display for hotels, guest stays, and travel hospitality counters. It connects directly to one Agoda review destination URL and is tap or scan ready.",
+      "Agoda Review Stand is a tabletop NFC display for hotels, guest stays, and travel hospitality counters. It connects directly to one Agoda review destination URL and is tap ready.",
     supportedDestinations: ["agoda"],
     displayText: "Review us on Agoda",
     image: agodaReviewStandImage,
-    seoTitle: "Agoda Review Stand | NFC and QR Hotel Review Stand",
-    seoDescription: "Buy an Agoda Review Stand that opens your Agoda review destination with one tap or scan.",
+    seoTitle: "Agoda Review Stand | NFC Hotel Review Stand",
+    seoDescription: "Buy an Agoda Review Stand that opens your Agoda review destination with one tap.",
     searchKeywords: ["agoda review stand", "agoda nfc stand", "review us on agoda stand"]
   }),
   phaseOneProduct({
@@ -1183,14 +1183,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["hotel-travel", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Vrbo review destination.",
+    shortDescription: "Countertop NFC stand that opens your Vrbo review destination.",
     description:
-      "Vrbo Review Stand is a tabletop NFC and QR display for vacation rentals, hosts, and guest checkout points. It connects directly to one Vrbo review destination URL and is tap or scan ready.",
+      "Vrbo Review Stand is a tabletop NFC display for vacation rentals, hosts, and guest checkout points. It connects directly to one Vrbo review destination URL and is tap ready.",
     supportedDestinations: ["vrbo"],
     displayText: "Review us on Vrbo",
     image: vrboReviewStandImage,
-    seoTitle: "Vrbo Review Stand | NFC and QR Vacation Rental Review Stand",
-    seoDescription: "Buy a Vrbo Review Stand that opens your Vrbo review destination with one tap or scan.",
+    seoTitle: "Vrbo Review Stand | NFC Vacation Rental Review Stand",
+    seoDescription: "Buy a Vrbo Review Stand that opens your Vrbo review destination with one tap.",
     searchKeywords: ["vrbo review stand", "vrbo nfc stand", "review us on vrbo stand"]
   }),
   phaseOneProduct({
@@ -1203,14 +1203,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["hotel-travel"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Hotels.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Hotels.com review destination.",
     description:
-      "Hotels.com Review Stand is a tabletop NFC and QR display for hotels, hospitality desks, and guest checkout counters. It connects directly to one Hotels.com review destination URL and is tap or scan ready.",
+      "Hotels.com Review Stand is a tabletop NFC display for hotels, hospitality desks, and guest checkout counters. It connects directly to one Hotels.com review destination URL and is tap ready.",
     supportedDestinations: ["hotels"],
     displayText: "Review us on Hotels.com",
     image: hotelsReviewStandImage,
-    seoTitle: "Hotels.com Review Stand | NFC and QR Hotel Review Stand",
-    seoDescription: "Buy a Hotels.com Review Stand that opens your Hotels.com review destination with one tap or scan.",
+    seoTitle: "Hotels.com Review Stand | NFC Hotel Review Stand",
+    seoDescription: "Buy a Hotels.com Review Stand that opens your Hotels.com review destination with one tap.",
     searchKeywords: ["hotels.com review stand", "hotels nfc stand", "review us on hotels.com stand"]
   }),
   phaseOneProduct({
@@ -1223,14 +1223,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Healthgrades review destination.",
+    shortDescription: "Countertop NFC stand that opens your Healthgrades review destination.",
     description:
-      "Healthgrades Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one Healthgrades review destination URL and is tap or scan ready.",
+      "Healthgrades Review Stand is a tabletop NFC display for healthcare, dental, and patient-facing reception counters. It connects directly to one Healthgrades review destination URL and is tap ready.",
     supportedDestinations: ["healthgrades"],
     displayText: "Review us on Healthgrades",
     image: healthgradesReviewStandImage,
-    seoTitle: "Healthgrades Review Stand | NFC and QR Healthcare Review Stand",
-    seoDescription: "Buy a Healthgrades Review Stand that opens your Healthgrades review destination with one tap or scan.",
+    seoTitle: "Healthgrades Review Stand | NFC Healthcare Review Stand",
+    seoDescription: "Buy a Healthgrades Review Stand that opens your Healthgrades review destination with one tap.",
     searchKeywords: ["healthgrades review stand", "healthgrades nfc stand", "review us on healthgrades stand"]
   }),
   phaseOneProduct({
@@ -1243,14 +1243,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Vitals review destination.",
+    shortDescription: "Countertop NFC stand that opens your Vitals review destination.",
     description:
-      "Vitals Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one Vitals review destination URL and is tap or scan ready.",
+      "Vitals Review Stand is a tabletop NFC display for healthcare, dental, and patient-facing reception counters. It connects directly to one Vitals review destination URL and is tap ready.",
     supportedDestinations: ["vitals"],
     displayText: "Review us on Vitals",
     image: vitalsReviewStandImage,
-    seoTitle: "Vitals Review Stand | NFC and QR Healthcare Review Stand",
-    seoDescription: "Buy a Vitals Review Stand that opens your Vitals review destination with one tap or scan.",
+    seoTitle: "Vitals Review Stand | NFC Healthcare Review Stand",
+    seoDescription: "Buy a Vitals Review Stand that opens your Vitals review destination with one tap.",
     searchKeywords: ["vitals review stand", "vitals nfc stand", "review us on vitals stand"]
   }),
   phaseOneProduct({
@@ -1263,14 +1263,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Zocdoc review destination.",
+    shortDescription: "Countertop NFC stand that opens your Zocdoc review destination.",
     description:
-      "Zocdoc Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one Zocdoc review destination URL and is tap or scan ready.",
+      "Zocdoc Review Stand is a tabletop NFC display for healthcare, dental, and patient-facing reception counters. It connects directly to one Zocdoc review destination URL and is tap ready.",
     supportedDestinations: ["zocdoc"],
     displayText: "Review us on Zocdoc",
     image: zocdocReviewStandImage,
-    seoTitle: "Zocdoc Review Stand | NFC and QR Healthcare Review Stand",
-    seoDescription: "Buy a Zocdoc Review Stand that opens your Zocdoc review destination with one tap or scan.",
+    seoTitle: "Zocdoc Review Stand | NFC Healthcare Review Stand",
+    seoDescription: "Buy a Zocdoc Review Stand that opens your Zocdoc review destination with one tap.",
     searchKeywords: ["zocdoc review stand", "zocdoc nfc stand", "review us on zocdoc stand"]
   }),
   phaseOneProduct({
@@ -1283,14 +1283,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your RateMDs review destination.",
+    shortDescription: "Countertop NFC stand that opens your RateMDs review destination.",
     description:
-      "RateMDs Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one RateMDs review destination URL and is tap or scan ready.",
+      "RateMDs Review Stand is a tabletop NFC display for healthcare, dental, and patient-facing reception counters. It connects directly to one RateMDs review destination URL and is tap ready.",
     supportedDestinations: ["ratemds"],
     displayText: "Review us on RateMDs",
     image: ratemdsReviewStandImage,
-    seoTitle: "RateMDs Review Stand | NFC and QR Healthcare Review Stand",
-    seoDescription: "Buy a RateMDs Review Stand that opens your RateMDs review destination with one tap or scan.",
+    seoTitle: "RateMDs Review Stand | NFC Healthcare Review Stand",
+    seoDescription: "Buy a RateMDs Review Stand that opens your RateMDs review destination with one tap.",
     searchKeywords: ["ratemds review stand", "ratemds nfc stand", "review us on ratemds stand"]
   }),
   phaseOneProduct({
@@ -1303,14 +1303,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your CareDash review destination.",
+    shortDescription: "Countertop NFC stand that opens your CareDash review destination.",
     description:
-      "CareDash Review Stand is a tabletop NFC and QR display for healthcare, dental, and patient-facing reception counters. It connects directly to one CareDash review destination URL and is tap or scan ready.",
+      "CareDash Review Stand is a tabletop NFC display for healthcare, dental, and patient-facing reception counters. It connects directly to one CareDash review destination URL and is tap ready.",
     supportedDestinations: ["caredash"],
     displayText: "Review us on CareDash",
     image: caredashReviewStandImage,
-    seoTitle: "CareDash Review Stand | NFC and QR Healthcare Review Stand",
-    seoDescription: "Buy a CareDash Review Stand that opens your CareDash review destination with one tap or scan.",
+    seoTitle: "CareDash Review Stand | NFC Healthcare Review Stand",
+    seoDescription: "Buy a CareDash Review Stand that opens your CareDash review destination with one tap.",
     searchKeywords: ["caredash review stand", "caredash nfc stand", "review us on caredash stand"]
   }),
   phaseOneProduct({
@@ -1323,14 +1323,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["healthcare-dental"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Opencare review destination.",
+    shortDescription: "Countertop NFC stand that opens your Opencare review destination.",
     description:
-      "Opencare Review Stand is a tabletop NFC and QR display for dental, healthcare, and patient-facing reception counters. It connects directly to one Opencare review destination URL and is tap or scan ready.",
+      "Opencare Review Stand is a tabletop NFC display for dental, healthcare, and patient-facing reception counters. It connects directly to one Opencare review destination URL and is tap ready.",
     supportedDestinations: ["opencare"],
     displayText: "Review us on Opencare",
     image: opencareReviewStandImage,
-    seoTitle: "Opencare Review Stand | NFC and QR Dental Review Stand",
-    seoDescription: "Buy an Opencare Review Stand that opens your Opencare review destination with one tap or scan.",
+    seoTitle: "Opencare Review Stand | NFC Dental Review Stand",
+    seoDescription: "Buy an Opencare Review Stand that opens your Opencare review destination with one tap.",
     searchKeywords: ["opencare review stand", "opencare nfc stand", "review us on opencare stand"]
   }),
   phaseOneProduct({
@@ -1343,14 +1343,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Avvo review destination.",
+    shortDescription: "Countertop NFC stand that opens your Avvo review destination.",
     description:
-      "Avvo Review Stand is a tabletop NFC and QR display for law firms, legal offices, and consultation desks. It connects directly to one Avvo review destination URL and is tap or scan ready.",
+      "Avvo Review Stand is a tabletop NFC display for law firms, legal offices, and consultation desks. It connects directly to one Avvo review destination URL and is tap ready.",
     supportedDestinations: ["avvo"],
     displayText: "Review us on Avvo",
     image: avvoReviewStandImage,
-    seoTitle: "Avvo Review Stand | NFC and QR Legal Review Stand",
-    seoDescription: "Buy an Avvo Review Stand that opens your Avvo review destination with one tap or scan.",
+    seoTitle: "Avvo Review Stand | NFC Legal Review Stand",
+    seoDescription: "Buy an Avvo Review Stand that opens your Avvo review destination with one tap.",
     searchKeywords: ["avvo review stand", "avvo nfc stand", "review us on avvo stand"]
   }),
   phaseOneProduct({
@@ -1363,14 +1363,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["home-services", "retail-local-business"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Taskrabbit review destination.",
+    shortDescription: "Countertop NFC stand that opens your Taskrabbit review destination.",
     description:
-      "Taskrabbit Review Stand is a tabletop NFC and QR display for service pros, local teams, and customer-facing appointment counters. It connects directly to one Taskrabbit review destination URL and is tap or scan ready.",
+      "Taskrabbit Review Stand is a tabletop NFC display for service pros, local teams, and customer-facing appointment counters. It connects directly to one Taskrabbit review destination URL and is tap ready.",
     supportedDestinations: ["taskrabbit"],
     displayText: "Review us on Taskrabbit",
     image: taskrabbitReviewStandImage,
-    seoTitle: "Taskrabbit Review Stand | NFC and QR Service Review Stand",
-    seoDescription: "Buy a Taskrabbit Review Stand that opens your Taskrabbit review destination with one tap or scan.",
+    seoTitle: "Taskrabbit Review Stand | NFC Service Review Stand",
+    seoDescription: "Buy a Taskrabbit Review Stand that opens your Taskrabbit review destination with one tap.",
     searchKeywords: ["taskrabbit review stand", "taskrabbit nfc stand", "review us on taskrabbit stand"]
   }),
   phaseOneProduct({
@@ -1383,14 +1383,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Martindale review destination.",
+    shortDescription: "Countertop NFC stand that opens your Martindale review destination.",
     description:
-      "Martindale Review Stand is a tabletop NFC and QR display for law firms and legal reception areas. It connects directly to one Martindale review destination URL and is tap or scan ready.",
+      "Martindale Review Stand is a tabletop NFC display for law firms and legal reception areas. It connects directly to one Martindale review destination URL and is tap ready.",
     supportedDestinations: ["martindale"],
     displayText: "Review us on Martindale",
     image: martindaleReviewStandImage,
-    seoTitle: "Martindale Review Stand | NFC and QR Legal Review Stand",
-    seoDescription: "Buy a Martindale Review Stand that opens your Martindale review destination with one tap or scan.",
+    seoTitle: "Martindale Review Stand | NFC Legal Review Stand",
+    seoDescription: "Buy a Martindale Review Stand that opens your Martindale review destination with one tap.",
     searchKeywords: ["martindale review stand", "martindale nfc stand", "review us on martindale stand"]
   }),
   phaseOneProduct({
@@ -1403,14 +1403,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Justia review destination.",
+    shortDescription: "Countertop NFC stand that opens your Justia review destination.",
     description:
-      "Justia Review Stand is a tabletop NFC and QR display for attorneys, law firms, and client-facing legal offices. It connects directly to one Justia review destination URL and is tap or scan ready.",
+      "Justia Review Stand is a tabletop NFC display for attorneys, law firms, and client-facing legal offices. It connects directly to one Justia review destination URL and is tap ready.",
     supportedDestinations: ["justia"],
     displayText: "Review us on Justia",
     image: justiaReviewStandImage,
-    seoTitle: "Justia Review Stand | NFC and QR Legal Review Stand",
-    seoDescription: "Buy a Justia Review Stand that opens your Justia review destination with one tap or scan.",
+    seoTitle: "Justia Review Stand | NFC Legal Review Stand",
+    seoDescription: "Buy a Justia Review Stand that opens your Justia review destination with one tap.",
     searchKeywords: ["justia review stand", "justia nfc stand", "review us on justia stand"]
   }),
   phaseOneProduct({
@@ -1423,14 +1423,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your FindLaw review destination.",
+    shortDescription: "Countertop NFC stand that opens your FindLaw review destination.",
     description:
-      "FindLaw Review Stand is a tabletop NFC and QR display for law firm reception desks and consultation areas. It connects directly to one FindLaw review destination URL and is tap or scan ready.",
+      "FindLaw Review Stand is a tabletop NFC display for law firm reception desks and consultation areas. It connects directly to one FindLaw review destination URL and is tap ready.",
     supportedDestinations: ["findlaw"],
     displayText: "Review us on FindLaw",
     image: findlawReviewStandImage,
-    seoTitle: "FindLaw Review Stand | NFC and QR Legal Review Stand",
-    seoDescription: "Buy a FindLaw Review Stand that opens your FindLaw review destination with one tap or scan.",
+    seoTitle: "FindLaw Review Stand | NFC Legal Review Stand",
+    seoDescription: "Buy a FindLaw Review Stand that opens your FindLaw review destination with one tap.",
     searchKeywords: ["findlaw review stand", "findlaw nfc stand", "review us on findlaw stand"]
   }),
   phaseOneProduct({
@@ -1443,14 +1443,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Lawyers.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Lawyers.com review destination.",
     description:
-      "Lawyers.com Review Stand is a tabletop NFC and QR display for legal offices, attorney reception desks, and client consultation rooms. It connects directly to one Lawyers.com review destination URL and is tap or scan ready.",
+      "Lawyers.com Review Stand is a tabletop NFC display for legal offices, attorney reception desks, and client consultation rooms. It connects directly to one Lawyers.com review destination URL and is tap ready.",
     supportedDestinations: ["lawyers"],
     displayText: "Review us on Lawyers.com",
     image: lawyersReviewStandImage,
-    seoTitle: "Lawyers.com Review Stand | NFC and QR Legal Review Stand",
-    seoDescription: "Buy a Lawyers.com Review Stand that opens your Lawyers.com review destination with one tap or scan.",
+    seoTitle: "Lawyers.com Review Stand | NFC Legal Review Stand",
+    seoDescription: "Buy a Lawyers.com Review Stand that opens your Lawyers.com review destination with one tap.",
     searchKeywords: ["lawyers.com review stand", "lawyers nfc stand", "review us on lawyers.com stand"]
   }),
   phaseOneProduct({
@@ -1463,14 +1463,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Zillow review destination.",
+    shortDescription: "Countertop NFC stand that opens your Zillow review destination.",
     description:
-      "Zillow Review Stand is a tabletop NFC and QR display for real estate teams, brokerages, and open-house desks. It connects directly to one Zillow review destination URL and is tap or scan ready.",
+      "Zillow Review Stand is a tabletop NFC display for real estate teams, brokerages, and open-house desks. It connects directly to one Zillow review destination URL and is tap ready.",
     supportedDestinations: ["zillow"],
     displayText: "Review us on Zillow",
     image: zillowReviewStandImage,
-    seoTitle: "Zillow Review Stand | NFC and QR Real Estate Review Stand",
-    seoDescription: "Buy a Zillow Review Stand that opens your Zillow review destination with one tap or scan.",
+    seoTitle: "Zillow Review Stand | NFC Real Estate Review Stand",
+    seoDescription: "Buy a Zillow Review Stand that opens your Zillow review destination with one tap.",
     searchKeywords: ["zillow review stand", "zillow nfc stand", "review us on zillow stand"]
   }),
   phaseOneProduct({
@@ -1483,14 +1483,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Realtor.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Realtor.com review destination.",
     description:
-      "Realtor.com Review Stand is a tabletop NFC and QR display for agents, brokerages, and real estate offices. It connects directly to one Realtor.com review destination URL and is tap or scan ready.",
+      "Realtor.com Review Stand is a tabletop NFC display for agents, brokerages, and real estate offices. It connects directly to one Realtor.com review destination URL and is tap ready.",
     supportedDestinations: ["realtor"],
     displayText: "Review us on Realtor.com",
     image: realtorReviewStandImage,
-    seoTitle: "Realtor.com Review Stand | NFC and QR Real Estate Review Stand",
-    seoDescription: "Buy a Realtor.com Review Stand that opens your Realtor.com review destination with one tap or scan.",
+    seoTitle: "Realtor.com Review Stand | NFC Real Estate Review Stand",
+    seoDescription: "Buy a Realtor.com Review Stand that opens your Realtor.com review destination with one tap.",
     searchKeywords: ["realtor.com review stand", "realtor nfc stand", "review us on realtor.com stand"]
   }),
   phaseOneProduct({
@@ -1503,14 +1503,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Homes.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Homes.com review destination.",
     description:
-      "Homes.com Review Stand is a tabletop NFC and QR display for real estate offices, agents, and housing professionals. It connects directly to one Homes.com review destination URL and is tap or scan ready.",
+      "Homes.com Review Stand is a tabletop NFC display for real estate offices, agents, and housing professionals. It connects directly to one Homes.com review destination URL and is tap ready.",
     supportedDestinations: ["homes"],
     displayText: "Review us on Homes.com",
     image: homesReviewStandImage,
-    seoTitle: "Homes.com Review Stand | NFC and QR Real Estate Review Stand",
-    seoDescription: "Buy a Homes.com Review Stand that opens your Homes.com review destination with one tap or scan.",
+    seoTitle: "Homes.com Review Stand | NFC Real Estate Review Stand",
+    seoDescription: "Buy a Homes.com Review Stand that opens your Homes.com review destination with one tap.",
     searchKeywords: ["homes.com review stand", "homes nfc stand", "review us on homes.com stand"]
   }),
   phaseOneProduct({
@@ -1523,14 +1523,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["beauty-salon-wellness"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Fresha review destination.",
+    shortDescription: "Countertop NFC stand that opens your Fresha review destination.",
     description:
-      "Fresha Review Stand is a tabletop NFC and QR display for salons, spas, barbers, and wellness businesses. It connects directly to one Fresha review destination URL and is tap or scan ready.",
+      "Fresha Review Stand is a tabletop NFC display for salons, spas, barbers, and wellness businesses. It connects directly to one Fresha review destination URL and is tap ready.",
     supportedDestinations: ["fresha"],
     displayText: "Review us on Fresha",
     image: freshaReviewStandImage,
-    seoTitle: "Fresha Review Stand | NFC and QR Salon Review Stand",
-    seoDescription: "Buy a Fresha Review Stand that opens your Fresha review destination with one tap or scan.",
+    seoTitle: "Fresha Review Stand | NFC Salon Review Stand",
+    seoDescription: "Buy a Fresha Review Stand that opens your Fresha review destination with one tap.",
     searchKeywords: ["fresha review stand", "fresha nfc stand", "review us on fresha stand"]
   }),
   phaseOneProduct({
@@ -1543,14 +1543,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["beauty-salon-wellness"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Booksy review destination.",
+    shortDescription: "Countertop NFC stand that opens your Booksy review destination.",
     description:
-      "Booksy Review Stand is a tabletop NFC and QR display for salons, barbers, beauty studios, and wellness desks. It connects directly to one Booksy review destination URL and is tap or scan ready.",
+      "Booksy Review Stand is a tabletop NFC display for salons, barbers, beauty studios, and wellness desks. It connects directly to one Booksy review destination URL and is tap ready.",
     supportedDestinations: ["booksy"],
     displayText: "Review us on Booksy",
     image: booksyReviewStandImage,
-    seoTitle: "Booksy Review Stand | NFC and QR Salon Review Stand",
-    seoDescription: "Buy a Booksy Review Stand that opens your Booksy review destination with one tap or scan.",
+    seoTitle: "Booksy Review Stand | NFC Salon Review Stand",
+    seoDescription: "Buy a Booksy Review Stand that opens your Booksy review destination with one tap.",
     searchKeywords: ["booksy review stand", "booksy nfc stand", "review us on booksy stand"]
   }),
   phaseOneProduct({
@@ -1563,14 +1563,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["beauty-salon-wellness"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your StyleSeat review destination.",
+    shortDescription: "Countertop NFC stand that opens your StyleSeat review destination.",
     description:
-      "StyleSeat Review Stand is a tabletop NFC and QR display for beauty pros, salons, barbers, and wellness appointment desks. It connects directly to one StyleSeat review destination URL and is tap or scan ready.",
+      "StyleSeat Review Stand is a tabletop NFC display for beauty pros, salons, barbers, and wellness appointment desks. It connects directly to one StyleSeat review destination URL and is tap ready.",
     supportedDestinations: ["styleseat"],
     displayText: "Review us on StyleSeat",
     image: styleseatReviewStandImage,
-    seoTitle: "StyleSeat Review Stand | NFC and QR Salon Review Stand",
-    seoDescription: "Buy a StyleSeat Review Stand that opens your StyleSeat review destination with one tap or scan.",
+    seoTitle: "StyleSeat Review Stand | NFC Salon Review Stand",
+    seoDescription: "Buy a StyleSeat Review Stand that opens your StyleSeat review destination with one tap.",
     searchKeywords: ["styleseat review stand", "styleseat nfc stand", "review us on styleseat stand"]
   }),
   phaseOneProduct({
@@ -1583,14 +1583,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["beauty-salon-wellness"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Vagaro review destination.",
+    shortDescription: "Countertop NFC stand that opens your Vagaro review destination.",
     description:
-      "Vagaro Review Stand is a tabletop NFC and QR display for salons, spas, fitness studios, and wellness businesses. It connects directly to one Vagaro review destination URL and is tap or scan ready.",
+      "Vagaro Review Stand is a tabletop NFC display for salons, spas, fitness studios, and wellness businesses. It connects directly to one Vagaro review destination URL and is tap ready.",
     supportedDestinations: ["vagaro"],
     displayText: "Review us on Vagaro",
     image: vagaroReviewStandImage,
-    seoTitle: "Vagaro Review Stand | NFC and QR Wellness Review Stand",
-    seoDescription: "Buy a Vagaro Review Stand that opens your Vagaro review destination with one tap or scan.",
+    seoTitle: "Vagaro Review Stand | NFC Wellness Review Stand",
+    seoDescription: "Buy a Vagaro Review Stand that opens your Vagaro review destination with one tap.",
     searchKeywords: ["vagaro review stand", "vagaro nfc stand", "review us on vagaro stand"]
   }),
   phaseOneProduct({
@@ -1603,14 +1603,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Apartments.com review destination.",
+    shortDescription: "Countertop NFC stand that opens your Apartments.com review destination.",
     description:
-      "Apartments.com Review Stand is a tabletop NFC and QR display for leasing offices, property managers, and apartment communities. It connects directly to one Apartments.com review destination URL and is tap or scan ready.",
+      "Apartments.com Review Stand is a tabletop NFC display for leasing offices, property managers, and apartment communities. It connects directly to one Apartments.com review destination URL and is tap ready.",
     supportedDestinations: ["apartments"],
     displayText: "Review us on Apartments.com",
     image: apartmentsReviewStandImage,
-    seoTitle: "Apartments.com Review Stand | NFC and QR Property Review Stand",
-    seoDescription: "Buy an Apartments.com Review Stand that opens your Apartments.com review destination with one tap or scan.",
+    seoTitle: "Apartments.com Review Stand | NFC Property Review Stand",
+    seoDescription: "Buy an Apartments.com Review Stand that opens your Apartments.com review destination with one tap.",
     searchKeywords: ["apartments.com review stand", "apartments nfc stand", "review us on apartments.com stand"]
   }),
   phaseOneProduct({
@@ -1623,14 +1623,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "review",
     businessUseSlugs: ["real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Trulia review destination.",
+    shortDescription: "Countertop NFC stand that opens your Trulia review destination.",
     description:
-      "Trulia Review Stand is a tabletop NFC and QR display for real estate professionals, leasing teams, and property offices. It connects directly to one Trulia review destination URL and is tap or scan ready.",
+      "Trulia Review Stand is a tabletop NFC display for real estate professionals, leasing teams, and property offices. It connects directly to one Trulia review destination URL and is tap ready.",
     supportedDestinations: ["trulia"],
     displayText: "Review us on Trulia",
     image: truliaReviewStandImage,
-    seoTitle: "Trulia Review Stand | NFC and QR Real Estate Review Stand",
-    seoDescription: "Buy a Trulia Review Stand that opens your Trulia review destination with one tap or scan.",
+    seoTitle: "Trulia Review Stand | NFC Real Estate Review Stand",
+    seoDescription: "Buy a Trulia Review Stand that opens your Trulia review destination with one tap.",
     searchKeywords: ["trulia review stand", "trulia nfc stand", "review us on trulia stand"]
   }),
   phaseOneProduct({
@@ -1659,7 +1659,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate for customer experience feedback and follow-up flows.",
     description:
-      "Rate Your Experience Plate is a low-profile NFC product for customer experience feedback and follow-up flows. It opens one Tap Rater destination URL and is tap or scan ready.",
+      "Rate Your Experience Plate is a low-profile NFC product for customer experience feedback and follow-up flows. It opens one Tap Rater destination URL and is tap ready.",
     supportedDestinations: ["feedback", "custom"],
     displayText: "Rate Your Experience",
     image: experiencePlateImage,
@@ -1711,15 +1711,15 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     businessUseSlugs: ["restaurant-food", "retail-local-business"],
     sortOrder: 50,
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens a menu, online ordering page, or service list.",
+    shortDescription: "Countertop NFC stand that opens a menu, online ordering page, or service list.",
     description:
-      "Menu and Order Stand is a tabletop NFC and QR display for restaurants, cafes, food trucks, and service counters. It connects directly to one menu, ordering, or service-list URL and is tap or scan ready.",
+      "Menu and Order Stand is a tabletop NFC display for restaurants, cafes, food trucks, and service counters. It connects directly to one menu, ordering, or service-list URL and is tap ready.",
     supportedDestinations: ["menu", "custom-menu-url", "website", "custom"],
     displayText: "Menu and Order",
     supportsMultiLink: true,
     image: menuAndOrderStandImage,
-    seoTitle: "Menu and Order Stand | NFC and QR Menu Stand",
-    seoDescription: "Buy a Menu and Order Stand that opens a menu, online ordering page, or service list with one tap or scan.",
+    seoTitle: "Menu and Order Stand | NFC Menu Stand",
+    seoDescription: "Buy a Menu and Order Stand that opens a menu, online ordering page, or service list with one tap.",
     searchKeywords: ["menu and order stand", "nfc menu stand", "qr menu stand", "online ordering stand"]
   }),
   phaseOneProduct({
@@ -1732,14 +1732,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     businessUseSlugs: ["healthcare-dental"],
     sortOrder: 60,
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens patient resources, forms, instructions, or a healthcare information page.",
+    shortDescription: "Countertop NFC stand that opens patient resources, forms, instructions, or a healthcare information page.",
     description:
-      "Patient Resources Stand is a tabletop NFC and QR display for clinics, dental offices, and patient-facing reception desks. It connects directly to one patient resources URL, form page, instructions page, or hosted information page.",
+      "Patient Resources Stand is a tabletop NFC display for clinics, dental offices, and patient-facing reception desks. It connects directly to one patient resources URL, form page, instructions page, or hosted information page.",
     supportedDestinations: ["website", "feedback", "custom-url", "custom"],
     displayText: "Patient Resources",
     supportsMultiLink: true,
     image: patientResourcesStandImage,
-    seoTitle: "Patient Resources Stand | NFC and QR Healthcare Information Stand",
+    seoTitle: "Patient Resources Stand | NFC Healthcare Information Stand",
     seoDescription: "Buy a Patient Resources Stand that opens forms, instructions, patient resources, or a healthcare information page.",
     searchKeywords: ["patient resources stand", "healthcare nfc stand", "patient forms qr stand", "dental office information stand"]
   }),
@@ -1753,14 +1753,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     businessUseSlugs: ["retail-local-business", "home-services", "healthcare-dental", "legal", "real-estate"],
     sortOrder: 30,
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens business information, instructions, or a custom information page.",
+    shortDescription: "Countertop NFC stand that opens business information, instructions, or a custom information page.",
     description:
-      "Check Our Information Stand is a tabletop NFC and QR display for sending customers to business information, instructions, documents, or a custom information page. It connects directly to one approved destination URL.",
+      "Check Our Information Stand is a tabletop NFC display for sending customers to business information, instructions, documents, or a custom information page. It connects directly to one approved destination URL.",
     supportedDestinations: ["website", "custom-url", "custom"],
     displayText: "Check Our Information",
     supportsMultiLink: true,
     image: checkOurInformationStandImage,
-    seoTitle: "Check Our Information Stand | NFC and QR Information Stand",
+    seoTitle: "Check Our Information Stand | NFC Information Stand",
     seoDescription: "Buy a Check Our Information Stand that opens business information, instructions, documents, or a custom information page.",
     searchKeywords: ["check our information stand", "information nfc stand", "business info qr stand", "custom information stand"]
   }),
@@ -1774,14 +1774,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     businessUseSlugs: ["home-services", "beauty-salon-wellness", "healthcare-dental", "legal", "retail-local-business"],
     sortOrder: 70,
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens a services page, booking page, or service menu.",
+    shortDescription: "Countertop NFC stand that opens a services page, booking page, or service menu.",
     description:
-      "Explore Our Services Stand is a tabletop NFC and QR display for service businesses that want customers to view services, packages, booking pages, or a service menu. It connects directly to one approved destination URL.",
+      "Explore Our Services Stand is a tabletop NFC display for service businesses that want customers to view services, packages, booking pages, or a service menu. It connects directly to one approved destination URL.",
     supportedDestinations: ["website", "booking", "menu", "custom-url", "custom"],
     displayText: "Explore Our Services",
     supportsMultiLink: true,
     image: exploreOurServicesStandImage,
-    seoTitle: "Explore Our Services Stand | NFC and QR Services Stand",
+    seoTitle: "Explore Our Services Stand | NFC Services Stand",
     seoDescription: "Buy an Explore Our Services Stand that opens a services page, booking page, package page, or service menu.",
     searchKeywords: ["explore our services stand", "services nfc stand", "service menu qr stand", "booking services stand"]
   }),
@@ -1795,14 +1795,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services", "legal"],
     sortOrder: 40,
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens a contact page, social link, message link, or custom connection page.",
+    shortDescription: "Countertop NFC stand that opens a contact page, social link, message link, or custom connection page.",
     description:
-      "Connect With Us Stand is a tabletop NFC and QR display for sending customers to a contact page, social profile, message link, or custom connection page. It connects directly to one approved destination URL.",
+      "Connect With Us Stand is a tabletop NFC display for sending customers to a contact page, social profile, message link, or custom connection page. It connects directly to one approved destination URL.",
     supportedDestinations: ["website", "facebook", "instagram", "whatsapp", "telegram", "custom-url", "custom"],
     displayText: "Connect With Us",
     supportsMultiLink: true,
     image: connectWithUsStandImage,
-    seoTitle: "Connect With Us Stand | NFC and QR Contact Stand",
+    seoTitle: "Connect With Us Stand | NFC Contact Stand",
     seoDescription: "Buy a Connect With Us Stand that opens a contact page, social profile, message link, or custom connection page.",
     searchKeywords: ["connect with us stand", "contact nfc stand", "social qr stand", "message link stand"]
   }),
@@ -1816,14 +1816,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["restaurant-food", "retail-local-business", "automotive", "real-estate", "beauty-salon-wellness"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Facebook page or profile.",
+    shortDescription: "Countertop NFC stand that opens your Facebook page or profile.",
     description:
-      "Facebook Follow Stand is a tabletop NFC and QR display for sending customers directly to your Facebook page or profile. It connects directly to one Facebook destination URL and is tap or scan ready.",
+      "Facebook Follow Stand is a tabletop NFC display for sending customers directly to your Facebook page or profile. It connects directly to one Facebook destination URL and is tap ready.",
     supportedDestinations: ["facebook"],
     displayText: "Follow us on Facebook",
     image: facebookFollowStandImage,
-    seoTitle: "Facebook Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a Facebook Follow Stand that opens your Facebook page or profile with one tap or scan.",
+    seoTitle: "Facebook Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a Facebook Follow Stand that opens your Facebook page or profile with one tap.",
     searchKeywords: ["facebook follow stand", "facebook nfc stand", "follow us on facebook stand"]
   }),
   phaseOneProduct({
@@ -1836,14 +1836,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Instagram profile.",
+    shortDescription: "Countertop NFC stand that opens your Instagram profile.",
     description:
-      "Instagram Follow Stand is a tabletop NFC and QR display for sending customers directly to your Instagram profile. It connects directly to one Instagram destination URL and is tap or scan ready.",
+      "Instagram Follow Stand is a tabletop NFC display for sending customers directly to your Instagram profile. It connects directly to one Instagram destination URL and is tap ready.",
     supportedDestinations: ["instagram"],
     displayText: "Follow us on Instagram",
     image: instagramFollowStandImage,
-    seoTitle: "Instagram Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy an Instagram Follow Stand that opens your Instagram profile with one tap or scan.",
+    seoTitle: "Instagram Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy an Instagram Follow Stand that opens your Instagram profile with one tap.",
     searchKeywords: ["instagram follow stand", "instagram nfc stand", "follow us on instagram stand"]
   }),
   phaseOneProduct({
@@ -1856,14 +1856,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your TikTok profile.",
+    shortDescription: "Countertop NFC stand that opens your TikTok profile.",
     description:
-      "TikTok Follow Stand is a tabletop NFC and QR display for sending customers directly to your TikTok profile. It connects directly to one TikTok destination URL and is tap or scan ready.",
+      "TikTok Follow Stand is a tabletop NFC display for sending customers directly to your TikTok profile. It connects directly to one TikTok destination URL and is tap ready.",
     supportedDestinations: ["tiktok"],
     displayText: "Follow us on TikTok",
     image: tiktokFollowStandImage,
-    seoTitle: "TikTok Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a TikTok Follow Stand that opens your TikTok profile with one tap or scan.",
+    seoTitle: "TikTok Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a TikTok Follow Stand that opens your TikTok profile with one tap.",
     searchKeywords: ["tiktok follow stand", "tiktok nfc stand", "follow us on tiktok stand"]
   }),
   phaseOneProduct({
@@ -1876,14 +1876,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "automotive", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your YouTube channel.",
+    shortDescription: "Countertop NFC stand that opens your YouTube channel.",
     description:
-      "YouTube Follow Stand is a tabletop NFC and QR display for sending customers directly to your YouTube channel. It connects directly to one YouTube destination URL and is tap or scan ready.",
+      "YouTube Follow Stand is a tabletop NFC display for sending customers directly to your YouTube channel. It connects directly to one YouTube destination URL and is tap ready.",
     supportedDestinations: ["youtube"],
     displayText: "Follow us on YouTube",
     image: youtubeFollowStandImage,
-    seoTitle: "YouTube Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a YouTube Follow Stand that opens your YouTube channel with one tap or scan.",
+    seoTitle: "YouTube Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a YouTube Follow Stand that opens your YouTube channel with one tap.",
     searchKeywords: ["youtube follow stand", "youtube nfc stand", "follow us on youtube stand"]
   }),
   phaseOneProduct({
@@ -1896,14 +1896,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["legal", "real-estate", "automotive", "retail-local-business", "ecommerce-online-brand"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your LinkedIn page or profile.",
+    shortDescription: "Countertop NFC stand that opens your LinkedIn page or profile.",
     description:
-      "LinkedIn Follow Stand is a tabletop NFC and QR display for sending customers directly to your LinkedIn page or profile. It connects directly to one LinkedIn destination URL and is tap or scan ready.",
+      "LinkedIn Follow Stand is a tabletop NFC display for sending customers directly to your LinkedIn page or profile. It connects directly to one LinkedIn destination URL and is tap ready.",
     supportedDestinations: ["linkedin"],
     displayText: "Follow us on LinkedIn",
     image: linkedinFollowStandImage,
-    seoTitle: "LinkedIn Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a LinkedIn Follow Stand that opens your LinkedIn page or profile with one tap or scan.",
+    seoTitle: "LinkedIn Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a LinkedIn Follow Stand that opens your LinkedIn page or profile with one tap.",
     searchKeywords: ["linkedin follow stand", "linkedin nfc stand", "follow us on linkedin stand"]
   }),
   phaseOneProduct({
@@ -1916,14 +1916,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "automotive", "legal"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your X profile.",
+    shortDescription: "Countertop NFC stand that opens your X profile.",
     description:
-      "X Follow Stand is a tabletop NFC and QR display for sending customers directly to your X profile. It connects directly to one X destination URL and is tap or scan ready.",
+      "X Follow Stand is a tabletop NFC display for sending customers directly to your X profile. It connects directly to one X destination URL and is tap ready.",
     supportedDestinations: ["x"],
     displayText: "Follow us on X",
     image: xFollowStandImage,
-    seoTitle: "X Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy an X Follow Stand that opens your X profile with one tap or scan.",
+    seoTitle: "X Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy an X Follow Stand that opens your X profile with one tap.",
     searchKeywords: ["x follow stand", "x nfc stand", "follow us on x stand"]
   }),
   phaseOneProduct({
@@ -1936,14 +1936,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["restaurant-food", "retail-local-business", "beauty-salon-wellness", "ecommerce-online-brand"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Snapchat profile.",
+    shortDescription: "Countertop NFC stand that opens your Snapchat profile.",
     description:
-      "Snapchat Follow Stand is a tabletop NFC and QR display for sending customers directly to your Snapchat profile. It connects directly to one Snapchat destination URL and is tap or scan ready.",
+      "Snapchat Follow Stand is a tabletop NFC display for sending customers directly to your Snapchat profile. It connects directly to one Snapchat destination URL and is tap ready.",
     supportedDestinations: ["snapchat"],
     displayText: "Follow us on Snapchat",
     image: snapchatFollowStandImage,
-    seoTitle: "Snapchat Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a Snapchat Follow Stand that opens your Snapchat profile with one tap or scan.",
+    seoTitle: "Snapchat Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a Snapchat Follow Stand that opens your Snapchat profile with one tap.",
     searchKeywords: ["snapchat follow stand", "snapchat nfc stand", "follow us on snapchat stand"]
   }),
   phaseOneProduct({
@@ -1956,14 +1956,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["retail-local-business", "ecommerce-online-brand", "beauty-salon-wellness", "real-estate"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Pinterest profile.",
+    shortDescription: "Countertop NFC stand that opens your Pinterest profile.",
     description:
-      "Pinterest Follow Stand is a tabletop NFC and QR display for sending customers directly to your Pinterest profile. It connects directly to one Pinterest destination URL and is tap or scan ready.",
+      "Pinterest Follow Stand is a tabletop NFC display for sending customers directly to your Pinterest profile. It connects directly to one Pinterest destination URL and is tap ready.",
     supportedDestinations: ["pinterest"],
     displayText: "Follow us on Pinterest",
     image: pinterestFollowStandImage,
-    seoTitle: "Pinterest Follow Stand | NFC and QR Social Media Stand",
-    seoDescription: "Buy a Pinterest Follow Stand that opens your Pinterest profile with one tap or scan.",
+    seoTitle: "Pinterest Follow Stand | NFC Social Media Stand",
+    seoDescription: "Buy a Pinterest Follow Stand that opens your Pinterest profile with one tap.",
     searchKeywords: ["pinterest follow stand", "pinterest nfc stand", "follow us on pinterest stand"]
   }),
   phaseOneProduct({
@@ -1976,14 +1976,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your WhatsApp message destination.",
+    shortDescription: "Countertop NFC stand that opens your WhatsApp message destination.",
     description:
-      "WhatsApp Message Stand is a tabletop NFC and QR display for sending customers directly to a WhatsApp message destination. It connects directly to one WhatsApp URL and is tap or scan ready.",
+      "WhatsApp Message Stand is a tabletop NFC display for sending customers directly to a WhatsApp message destination. It connects directly to one WhatsApp URL and is tap ready.",
     supportedDestinations: ["whatsapp"],
     displayText: "Message us on WhatsApp",
     image: whatsappMessageStandImage,
-    seoTitle: "WhatsApp Message Stand | NFC and QR Messaging Stand",
-    seoDescription: "Buy a WhatsApp Message Stand that opens your WhatsApp message destination with one tap or scan.",
+    seoTitle: "WhatsApp Message Stand | NFC Messaging Stand",
+    seoDescription: "Buy a WhatsApp Message Stand that opens your WhatsApp message destination with one tap.",
     searchKeywords: ["whatsapp message stand", "whatsapp nfc stand", "message us on whatsapp stand"]
   }),
   phaseOneProduct({
@@ -1996,14 +1996,14 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     destinationType: "social",
     businessUseSlugs: ["retail-local-business", "restaurant-food", "beauty-salon-wellness", "home-services"],
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens your Telegram message destination.",
+    shortDescription: "Countertop NFC stand that opens your Telegram message destination.",
     description:
-      "Telegram Message Stand is a tabletop NFC and QR display for sending customers directly to a Telegram message destination. It connects directly to one Telegram URL and is tap or scan ready.",
+      "Telegram Message Stand is a tabletop NFC display for sending customers directly to a Telegram message destination. It connects directly to one Telegram URL and is tap ready.",
     supportedDestinations: ["telegram"],
     displayText: "Message us on Telegram",
     image: telegramMessageStandImage,
-    seoTitle: "Telegram Message Stand | NFC and QR Messaging Stand",
-    seoDescription: "Buy a Telegram Message Stand that opens your Telegram message destination with one tap or scan.",
+    seoTitle: "Telegram Message Stand | NFC Messaging Stand",
+    seoDescription: "Buy a Telegram Message Stand that opens your Telegram message destination with one tap.",
     searchKeywords: ["telegram message stand", "telegram nfc stand", "message us on telegram stand"]
   }),
   phaseOneProduct({
@@ -2014,7 +2014,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a booking page, appointment form, calendar, or scheduling URL.",
     description:
-      "Book Your Next Visit Stand is a tabletop NFC display that opens a booking page, appointment form, calendar, or scheduling URL. It connects to one destination URL and is tap or scan ready.",
+      "Book Your Next Visit Stand is a tabletop NFC display that opens a booking page, appointment form, calendar, or scheduling URL. It connects to one destination URL and is tap ready.",
     supportedDestinations: ["booking", "website", "custom"],
     displayText: "Book Your Next Visit",
     image: bookingStandImage,
@@ -2030,7 +2030,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that opens a booking page, appointment form, calendar, or scheduling URL.",
     description:
-      "Book Your Next Visit Plate is a flat NFC prompt that opens a booking page, appointment form, calendar, or scheduling URL. It connects to one destination URL and is tap or scan ready.",
+      "Book Your Next Visit Plate is a flat NFC prompt that opens a booking page, appointment form, calendar, or scheduling URL. It connects to one destination URL and is tap ready.",
     supportedDestinations: ["booking", "website", "custom"],
     displayText: "Book Your Next Visit",
     image: bookingPlateImage,
@@ -2046,12 +2046,12 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: standPriceCents,
     shortDescription: "Countertop NFC stand that opens a restaurant, cafe, or service menu.",
     description:
-      "View Our Menu Stand is a tabletop NFC display that opens a restaurant, cafe, or service menu. It connects to one menu destination URL and is tap or scan ready.",
+      "View Our Menu Stand is a tabletop NFC display that opens a restaurant, cafe, or service menu. It connects to one menu destination URL and is tap ready.",
     supportedDestinations: ["menu", "website", "custom"],
     displayText: "View Our Menu",
     image: menuStandImage,
     seoTitle: "View Our Menu Stand | NFC Menu Stand",
-    seoDescription: "Countertop NFC stand that opens a restaurant, cafe, or service menu with one tap or scan.",
+    seoDescription: "Countertop NFC stand that opens a restaurant, cafe, or service menu with one tap.",
     searchKeywords: ["view our menu stand", "nfc menu stand", "restaurant menu nfc stand"]
   }),
   phaseOneProduct({
@@ -2062,7 +2062,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     basePriceCents: platePriceCents,
     shortDescription: "Low-profile NFC plate that opens a restaurant, cafe, or service menu.",
     description:
-      "View Our Menu Plate is a flat NFC product that opens a restaurant, cafe, or service menu. It connects to one menu destination URL and is tap or scan ready.",
+      "View Our Menu Plate is a flat NFC product that opens a restaurant, cafe, or service menu. It connects to one menu destination URL and is tap ready.",
     supportedDestinations: ["menu", "website", "custom"],
     displayText: "View Our Menu",
     image: menuPlateImage,
@@ -2078,9 +2078,9 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     standTypeSlug: "website-link-stands",
     destinationType: "website",
     basePriceCents: standPriceCents,
-    shortDescription: "Countertop NFC and QR stand that opens one website, link hub, information page, or custom URL.",
+    shortDescription: "Countertop NFC stand that opens one website, link hub, information page, or custom URL.",
     description:
-      "Visit Our Website Stand is a tabletop NFC and QR display for sending customers directly to one website, link hub, information page, or custom URL.",
+      "Visit Our Website Stand is a tabletop NFC display for sending customers directly to one website, link hub, information page, or custom URL.",
     supportedDestinations: ["website", "custom"],
     displayText: "Visit Our Website",
     supportsMultiLink: true,
@@ -2090,8 +2090,8 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
       brandedAngledImageUrl: "/uploads/products/visit-website-stand-branded-angled.png",
       brandedFrontTemplateUrl: "/uploads/products/visit-website-stand-branded-front-template.png"
     },
-    seoTitle: "Visit Our Website Stand | NFC and QR Website Link Stand",
-    seoDescription: "Buy a website link NFC and QR stand that opens one direct website, link hub, information page, or custom URL.",
+    seoTitle: "Visit Our Website Stand | NFC Website Link Stand",
+    seoDescription: "Buy a website link NFC stand that opens one direct website, link hub, information page, or custom URL.",
     searchKeywords: ["website nfc stand", "website qr stand", "visit our website stand", "link stand"]
   }),
   {
@@ -2101,9 +2101,9 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     categorySlug: "custom-stands",
     basePriceCents: 4900,
     stockStatus: "instock",
-    shortDescription: "Custom tabletop NFC and QR stand with your logo, business name, center content, and destination.",
+    shortDescription: "Custom tabletop NFC stand with your logo, business name, center content, and destination.",
     description:
-      "Custom Stand is a controlled custom tabletop NFC and QR stand. Add your business name, logo, and center text or image while keeping the approved physical template.",
+      "Custom Stand is a controlled custom tabletop NFC stand. Add your business name, logo, and center text or image while keeping the approved physical template.",
     productType: "physical_managed",
     serviceMode: "managed_redirect",
     checkoutMode: "buy_now",
@@ -2128,8 +2128,8 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
       stockStatus: "instock"
     })),
     isActive: true,
-    seoTitle: "Custom Stand | Custom NFC and QR Tabletop Stand",
-    seoDescription: "Create a custom NFC and QR tabletop stand with your logo, business name, center content, and direct or Multi-Link destination.",
+    seoTitle: "Custom Stand | Custom NFC Tabletop Stand",
+    seoDescription: "Create a custom NFC tabletop stand with your logo, business name, center content, and direct or Multi-Link destination.",
     searchKeywords: ["custom nfc stand", "custom qr stand", "custom review stand"]
   }
 ];

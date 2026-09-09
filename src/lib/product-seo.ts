@@ -46,8 +46,12 @@ export function generateProductSeo(product: MigratedProduct): Pick<ProductSeo, "
 
 export function resolveProductSeo(product: MigratedProduct): ProductSeo {
   const generated = generateProductSeo(product);
-  const customTitle = normalizeCustomSeo(product.seoTitle);
-  const customDescription = normalizeCustomSeo(product.seoDescription);
+  const customTitle = normalizeCustomSeo(product.seoTitle === "Google Review Stand with NFC & QR"
+    ? "Google Review Stand | NFC Standard or Branded + QR"
+    : product.seoTitle);
+  const customDescription = normalizeCustomSeo(product.seoDescription === "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
+    ? "Google Review Stand for counters and reception desks. Standard uses NFC only, with no printed QR. Branded adds QR, your logo, and business name."
+    : product.seoDescription);
   const description = customDescription ? sanitizeRetiredPublicCopy(customDescription) : generated.generatedDescription;
 
   return {
@@ -72,7 +76,7 @@ function buildDescription({
 }) {
   const options = getProductPurchaseOptions(product);
   const supportsBranded = options.some((option) => option.id === "branded_qr_direct");
-  const optionCopy = supportsBranded ? "Choose Standard Direct NFC or Branded + QR for your business." : "Order a ready-made direct stand.";
+  const optionCopy = supportsBranded ? "Choose NFC-only Standard or Branded + QR with your logo and name." : "Order an NFC-only Standard stand with no printed QR.";
   const actionCopy = getDescriptionAction({ product, platform, useCase });
 
   if ((product.destinationType ?? "").includes("booking")) {

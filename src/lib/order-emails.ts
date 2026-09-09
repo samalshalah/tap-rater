@@ -11,6 +11,7 @@ import {
 import { formatOrderReference } from "@/lib/order-reference";
 import {
   getOrderLineItemProductionSummary,
+  getAdminOrderArtworkUrl,
   type OrderLineItem,
   type OrderRecord
 } from "@/lib/orders";
@@ -129,18 +130,32 @@ export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defa
     },
     body: [
       "Fulfillment details:",
-      ...order.line_items_json.flatMap(formatAdminLineItem)
+      ...order.line_items_json.flatMap((item, index) => formatAdminLineItem(item, getAdminOrderArtworkUrl(order, index)))
     ]
   });
 }
 
 function formatCustomerLineItem(item: OrderLineItem) {
   const summary = getOrderLineItemProductionSummary(item);
+  if (summary.fulfillmentKind === "hosted") {
+    // Checkout metadata can precede permanent page provisioning; account access stays valid.
+    const lines = [
+      `${item.quantity} x ${item.title} - ${summary.optionLabel} - ${formatMoney(item.lineSubtotalCents, "usd")}`,
+      item.optionId === "standard_direct" ? "Connection: NFC opens your Multi-Link page (no printed QR)" : "Connection: QR and NFC open your Multi-Link page",
+      "Manage your Multi-Link page: https://taprater.com/account/stands"
+    ];
+    if (summary.businessName) lines.push(`Business name: ${summary.businessName}`);
+    if (item.optionId === "branded_qr_direct") {
+      lines.push(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"}`);
+      lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
+    }
+    return lines;
+  }
   const lines = [
     `${item.quantity} x ${item.title} - ${summary.optionLabel} - ${formatMoney(item.lineSubtotalCents, "usd")}`,
     `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
-    `Connection: QR and NFC open the destination link directly`,
-    `QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`,
+    summary.fulfillmentKind === "standard" ? "Connection: NFC opens the destination link directly (no printed QR)" : "Connection: QR and NFC open the destination link directly",
+    ...(summary.fulfillmentKind === "standard" ? [] : [`QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`]),
     `NFC target: ${summary.nfcTargetUrl ?? summary.destinationUrl ?? "Not provided"}`
   ];
 
@@ -154,7 +169,7 @@ function formatCustomerLineItem(item: OrderLineItem) {
   return lines;
 }
 
-function formatAdminLineItem(item: OrderLineItem) {
+function formatAdminLineItem(item: OrderLineItem, artworkUrl?: string) {
   const summary = getOrderLineItemProductionSummary(item);
   const lines = [
     `${item.quantity} x ${item.title}`,
@@ -164,7 +179,7 @@ function formatAdminLineItem(item: OrderLineItem) {
     `Line subtotal: ${formatMoney(item.lineSubtotalCents, "usd")}`,
     `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
     `Connection: ${summary.nfcBehavior}; ${summary.printedQrLabel}`,
-    `QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`,
+    ...(item.optionId === "standard_direct" || summary.fulfillmentKind === "standard" ? [] : [`QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`]),
     `NFC target: ${summary.nfcTargetUrl ?? summary.destinationUrl ?? "Not provided"}`,
     `Production readiness: ${summary.statusLabel}`
   ];
@@ -178,7 +193,7 @@ function formatAdminLineItem(item: OrderLineItem) {
     lines.push(`Production artwork status: ${summary.productionArtwork.status}`);
     lines.push(`Production template: ${summary.productionArtwork.templateId} / ${summary.productionArtwork.templateVersion}`);
     lines.push(`Production artwork dimensions: ${summary.productionArtwork.widthPx}x${summary.productionArtwork.heightPx}px @ ${summary.productionArtwork.dpi} DPI`);
-    if (summary.productionArtwork.url) lines.push(`Production artwork: ${summary.productionArtwork.url}`);
+    if (summary.productionArtwork.status === "generated" && artworkUrl) lines.push(`Production artwork (admin sign-in required): ${artworkUrl}`);
     if (summary.productionArtwork.error) lines.push(`Production artwork error: ${summary.productionArtwork.error}`);
   }
   lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);

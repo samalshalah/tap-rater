@@ -2,12 +2,13 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, ImageUp, Minus, Plus, Search, Trash2, UploadCloud, X } from "lucide-react";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { CheckCircle2, ImageUp, Minus, Plus, RotateCcw, Search, Trash2, UploadCloud, X } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { maxCartItemQuantity } from "@/lib/cart";
+import { ModalDialog } from "@/components/ui/modal-dialog";
+import { maxCartItemQuantity, type CartItem } from "@/lib/cart";
+import { BrandedProofPreview, type ReadyBrandedProof } from "@/components/product/branded-proof-preview";
 import type { MigratedProduct } from "@/data/migrated-products";
-import { brandedStandComposition, type BrandedCompositionRegion } from "@/lib/branded-composition";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
@@ -51,6 +52,7 @@ type ProductSetupChooserProps = {
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
+  onSelectedMonthlyPriceChange?: (priceCents: number) => void;
 };
 
 type UploadedLogo = {
@@ -67,7 +69,7 @@ type UploadedLogo = {
 type LogoBackgroundMode = "auto_crop" | "original";
 type LogoFitMode = "contain" | "fill";
 
-export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
@@ -92,9 +94,15 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const [logoOffsetXPercent, setLogoOffsetXPercent] = useState(0);
   const [logoOffsetYPercent, setLogoOffsetYPercent] = useState(0);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [readyProof, setReadyProof] = useState<ReadyBrandedProof | null>(null);
+  const [approvedProofId, setApprovedProofId] = useState("");
+  const [hostedReservation, setHostedReservation] = useState<{ id: string; url: string } | null>(null);
+  const [isReservingDestination, setIsReservingDestination] = useState(false);
   const [error, setError] = useState("");
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const builderContentRef = useRef<HTMLDivElement>(null);
+  const builderHeadingRef = useRef<HTMLHeadingElement>(null);
+  const builderHeadingId = useId();
   const cart = useCart();
   const router = useRouter();
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
@@ -118,40 +126,32 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     : product.sku;
   const isGoogleReviewProduct = isGoogleReviewStand(product);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
-  const proofFrontTemplateUrl = product.assetSet?.standardFrontTemplateUrl ?? product.assetSet?.brandedFrontTemplateUrl ?? "";
+  const proofFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
   const selectedLogoMediaUrl = logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl;
   const selectedLogoStorageKey = logoBackgroundMode === "original" ? logo?.originalStorageKey ?? logo?.storageKey : logo?.storageKey;
   const setupOptions = options;
   const generatedQrValue = destinationUrl.trim();
-  const proofQrValue = selectedLinkExperience === "multilink" ? "https://taprater.com/p/your-page" : generatedQrValue;
+  const proofQrValue = selectedLinkExperience === "multilink" ? hostedReservation?.url ?? "" : generatedQrValue;
   const directTargets = buildDirectProductionTargets(destinationUrl);
   const quantityEnabled = selectedLinkExperience === "direct";
   const selectedQuantity = quantityEnabled ? quantity : 1;
-  useEffect(() => {
-    if (!isBuilderOpen) return;
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isBuilderOpen]);
-
+  const proofSetup: NonNullable<CartItem["setup"]> = {
+    productSlug: product.slug, optionCode: "branded_qr_direct",
+    serviceAddon: selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.code : undefined,
+    hostedReservationId: selectedLinkExperience === "multilink" ? hostedReservation?.id : undefined,
+    destinationUrl: selectedLinkExperience === "direct" ? destinationUrl.trim() : undefined,
+    businessName: businessName.trim(), logoStorageKey: selectedLogoStorageKey, logoMediaUrl: selectedLogoMediaUrl,
+    generatedQrValue: proofQrValue, qrTargetUrl: proofQrValue, frontTemplateUrl: proofFrontTemplateUrl,
+    fontSizePercent: proofFontSizePercent, logoSizePercent: proofLogoSizePercent,
+    showBusinessNameOnProof, logoBackgroundMode, logoFitMode, logoOffsetXPercent, logoOffsetYPercent
+  };
+  const proofIsReady = Boolean(readyProof && readyProof.draftKey === JSON.stringify(proofSetup) && !isUploadingLogo);
+  const proofIsApproved = proofIsReady && approvedProofId === readyProof?.proofReceiptId;
   useEffect(() => {
     if (!isBuilderOpen || !builderContentRef.current) return;
     builderContentRef.current.scrollTop = 0;
+    builderHeadingRef.current?.focus({ preventScroll: true });
   }, [isBuilderOpen, step]);
-
-  useEffect(() => {
-    if (!isBuilderOpen) return;
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") closeBuilder();
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBuilderOpen]);
 
   useEffect(() => {
     if (!selectedSize || selectedSize.code === selectedSizeCode) return;
@@ -161,6 +161,10 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   useEffect(() => {
     onSelectedPriceChange?.(configuredUnitPriceCents);
   }, [configuredUnitPriceCents, onSelectedPriceChange]);
+
+  useEffect(() => {
+    onSelectedMonthlyPriceChange?.(selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.monthlyPriceCents : 0);
+  }, [selectedLinkExperience, onSelectedMonthlyPriceChange]);
 
   useEffect(() => {
     if (!isGoogleReviewProduct || step !== "destination") return;
@@ -263,7 +267,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     setError("");
   }
 
-  function continueFromDestination() {
+  async function continueFromDestination() {
     setError("");
 
     if (configuredUnitPriceCents === null) {
@@ -281,6 +285,22 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       return;
     }
 
+    if (selectedOption.id === "branded_qr_direct") {
+      try {
+        if (selectedLinkExperience === "multilink" && !hostedReservation) {
+          setIsReservingDestination(true);
+          const response = await fetch("/api/setup/proof", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reserve", item: { productId: product.slug, optionId: "branded_qr_direct", quantity: 1, setup: { serviceAddon: hostedMultiLinkServiceAddon.code } } }) });
+          const result = await response.json();
+          if (!response.ok || !result.reservation?.url) throw new Error(result.error || "The Multi-Link destination could not be reserved.");
+          setHostedReservation(result.reservation);
+          return;
+        }
+        await createQrSvg(proofQrValue);
+      } catch (error) {
+        setError(error instanceof Error ? error.message : QR_CODE_ERROR_MESSAGE);
+        return;
+      } finally { setIsReservingDestination(false); }
+    }
     setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
@@ -409,6 +429,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
     }
 
     if (selectedOption.id === "branded_qr_direct") {
+      if (!proofIsApproved || !readyProof) {
+        setError("Preview and approve your artwork before payment.");
+        setStep("confirmation");
+        return;
+      }
       if (!businessName.trim()) {
         setError("Enter the business name that should appear on the stand.");
         setStep("design");
@@ -450,7 +475,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         sizeLabel: selectedSize?.label,
         colorCode: selectedColor?.code,
         colorLabel: selectedColor?.label,
-        destinationUrl: directTargets?.destinationUrl,
+        destinationUrl: selectedLinkExperience === "direct" ? directTargets?.destinationUrl : undefined,
         destinationType: product.destinationType,
         serviceMode: selectedLinkExperience === "multilink" ? "HOSTED" : "DIRECT",
         serviceAddon: selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.code : undefined,
@@ -471,19 +496,27 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
         logoOffsetXPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetXPercent : undefined,
         logoOffsetYPercent: selectedOption.id === "branded_qr_direct" ? logoOffsetYPercent : undefined,
         showBusinessNameOnProof: selectedOption.id === "branded_qr_direct" ? showBusinessNameOnProof : undefined,
-        generatedQrValue: selectedLinkExperience === "multilink" ? proofQrValue : directTargets?.qrTargetUrl,
-        qrTargetUrl: directTargets?.qrTargetUrl,
+        generatedQrValue: selectedOption.hasQr ? proofQrValue : undefined,
+        qrTargetUrl: selectedOption.hasQr ? proofQrValue : undefined,
         nfcTargetUrl: directTargets?.nfcTargetUrl,
         frontTemplateUrl: selectedOption.hasQr ? proofFrontTemplateUrl || undefined : product.assetSet?.standardFrontTemplateUrl || undefined,
         fontSizePercent: selectedOption.id === "branded_qr_direct" ? proofFontSizePercent : undefined,
         logoSizePercent: selectedOption.id === "branded_qr_direct" ? proofLogoSizePercent : undefined,
-        hasQr: true,
-        nfcOnly: false,
+        hasQr: selectedOption.hasQr,
+        nfcOnly: !selectedOption.hasQr,
         priceCents: configuredUnitPriceCents,
-        proofApproved: selectedOption.id === "branded_qr_direct" ? false : true
+        proofApproved: selectedOption.id === "branded_qr_direct" ? proofIsApproved : true,
+        ...(selectedOption.id === "branded_qr_direct" && readyProof ? {
+          ...readyProof.snapshot,
+          optionCode: selectedOption.id,
+          proofApprovalSnapshot: readyProof.snapshot,
+          proofApprovedAt: new Date().toISOString(),
+          proofReceiptId: readyProof.proofReceiptId,
+          hostedReservationId: selectedLinkExperience === "multilink" ? hostedReservation?.id : undefined
+        } : {})
       }
     });
-    router.push("/cart");
+    router.push(selectedOption.id === "branded_qr_direct" ? "/checkout" : "/cart");
   }
 
   const modalTitle =
@@ -503,11 +536,11 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const setupButtonLabel = selectedQuantity > 1 ? `Set Up My ${selectedQuantity} Stands - ${selectedStandTotalPrice}` : `Set Up My Stand - ${selectedStandTotalPrice}`;
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["Business", "Links", "Logo", "Confirm"]
+      ? ["Destination", "Links", "Logo", "Preview"]
       : selectedLinkExperience === "multilink"
         ? ["Business", "Links", "Confirm"]
         : selectedOption.id === "branded_qr_direct"
-          ? ["Destination", "Logo", "Confirm"]
+          ? ["Destination", "Logo", "Preview"]
         : ["Destination", "Confirm"];
   const stepGridClassName =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
@@ -677,7 +710,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <span className="min-w-0">
                     <span className="block text-base font-black leading-5 text-ink">Add Multi-Link hosted page</span>
                     <span className="mt-1 block text-sm font-semibold leading-5 text-ink md:whitespace-nowrap">
-                      Optional add-on. QR + NFC open an editable Tap Rater page with up to 10 links.
+                      Optional add-on. {selectedOption.hasQr ? "QR + NFC open" : "NFC opens"} an editable Tap Rater page with up to 10 links.
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-black text-ink">+{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo</span>
@@ -742,7 +775,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             : `${setupButtonLabel}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
         </button>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
-          <span>QR + NFC</span>
+          <span>{selectedOption.hasQr ? "QR + NFC" : "NFC only · No printed QR"}</span>
           {selectedLinkExperience === "multilink" ? (
             <>
               <span>Hosted Multi-Link</span>
@@ -760,12 +793,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       </section>
 
       {isBuilderOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/45 px-3 py-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={modalTitle}>
+        <ModalDialog labelledBy={builderHeadingId} onClose={closeBuilder} className="px-3 py-4 backdrop:backdrop-blur-sm">
           <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden bg-white" style={{ borderRadius: "var(--tr-radius-card)", boxShadow: "var(--tr-shadow-elevated)" }}>
             <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
               <div className="min-w-0">
                 <p className="tr-eyebrow">{product.title}</p>
-                <h2 className="mt-1 break-words text-xl font-semibold text-ink sm:text-2xl">{modalTitle}</h2>
+                <h2 ref={builderHeadingRef} id={builderHeadingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-xl font-semibold text-ink focus:outline-none sm:text-2xl">{modalTitle}</h2>
               </div>
               <button type="button" className="tr-icon-button shrink-0" onClick={closeBuilder} aria-label="Close builder">
                 <X size={18} />
@@ -824,7 +857,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                       </label>
 
                       <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
-                        No one-link destination is needed now. The QR and NFC will point to your hosted Multi-Link page.
+                        {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page. Standard does not include a printed QR."}
                       </p>
                     </>
                   ) : (
@@ -918,6 +951,12 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                       ) : null}
                     </>
                   )}
+                  {selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
+                    <div className="flex min-w-0 items-center gap-4 border-t border-line pt-3">
+                      <div className="h-28 w-28 shrink-0"><QrPreview value={proofQrValue} variant="template" /></div>
+                      <div className="min-w-0"><p className="text-sm font-semibold text-ink">QR destination</p><a href={proofQrValue} target="_blank" rel="noopener noreferrer" className="text-sm text-brand [overflow-wrap:anywhere]">{proofQrValue}</a></div>
+                    </div>
+                  ) : null}
                   <BuilderSummary
                     className="sm:order-first"
                     image={selectedImage}
@@ -943,7 +982,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   <div>
                     <p className="text-sm font-semibold text-ink">Logo + business name</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Upload the logo and enter the business name. Tap Rater will review the artwork after the order before production.
+                      Add your logo and business name for the stand.
                     </p>
                   </div>
 
@@ -980,27 +1019,6 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                       />
                     </label>
                   </div>
-                  {logo ? (
-                    <ProofControls
-                      logo={logo}
-                      logoBackgroundMode={logoBackgroundMode}
-                      logoFitMode={logoFitMode}
-                      logoOffsetXPercent={logoOffsetXPercent}
-                      logoOffsetYPercent={logoOffsetYPercent}
-                      proofFontSizePercent={proofFontSizePercent}
-                      proofLogoSizePercent={proofLogoSizePercent}
-                      onLogoBackgroundModeChange={setLogoBackgroundMode}
-                      onLogoFitModeChange={setLogoFitMode}
-                      onLogoOffsetXPercentChange={setLogoOffsetXPercent}
-                      onLogoOffsetYPercentChange={setLogoOffsetYPercent}
-                      onProofFontSizePercentChange={setProofFontSizePercent}
-                      onProofLogoSizePercentChange={setProofLogoSizePercent}
-                      showBusinessNameOnProof={showBusinessNameOnProof}
-                      onShowBusinessNameOnProofChange={setShowBusinessNameOnProof}
-                      isUploadingLogo={isUploadingLogo}
-                      onUploadLogo={(file) => uploadLogo(file)}
-                    />
-                  ) : null}
                   <div className="rounded-lg border border-line bg-soft p-3 text-sm leading-6 text-muted">
                     Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file before ordering.
                     <a className="ml-2 font-semibold text-brand hover:text-ink" href="/contact-us">Contact Us</a>
@@ -1036,7 +1054,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     {selectedLinkExperience === "multilink" ? (
                       <>
                         <p className="font-semibold text-ink">Multi-Link confirmation</p>
-                        <p>The QR and NFC will open your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them after account activation."}</p>
+                        <p>{selectedOption.hasQr ? "QR and NFC will open" : "NFC will open"} your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them from your account after payment."}</p>
                       </>
                     ) : (
                       <>
@@ -1051,17 +1069,28 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-ink">Confirm setup</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">Review the branded stand details before adding it to your cart.</p>
+                    <p className="text-sm font-semibold text-ink">Approve your stand</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
-                  <div className="rounded-lg border border-line bg-white p-4 text-sm leading-6 text-muted">
-                    <p className="text-base font-semibold text-ink">{product.title}</p>
-                    <p>{selectedOption.label} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)}</p>
-                    <p>Business: <span className="text-ink">{businessName}</span></p>
-                    <p>Logo: <span className="text-ink">{logo?.filename ?? "Uploaded"}</span></p>
-                    <p>{selectedLinkExperience === "multilink" ? "QR and NFC will open the hosted Multi-Link page." : "QR and NFC will open the destination link."}</p>
-                    <p className="mt-2">Tap Rater will review the artwork after your order before production.</p>
+                  <div className="grid min-w-0 gap-5 md:grid-cols-2">
+                    <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
+                    {logo ? <ProofControls
+                      logo={logo} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}
+                      logoOffsetXPercent={logoOffsetXPercent} logoOffsetYPercent={logoOffsetYPercent}
+                      proofFontSizePercent={proofFontSizePercent} proofLogoSizePercent={proofLogoSizePercent}
+                      onLogoBackgroundModeChange={setLogoBackgroundMode} onLogoFitModeChange={setLogoFitMode}
+                      onLogoOffsetXPercentChange={setLogoOffsetXPercent} onLogoOffsetYPercentChange={setLogoOffsetYPercent}
+                      onProofFontSizePercentChange={setProofFontSizePercent} onProofLogoSizePercentChange={setProofLogoSizePercent}
+                      showBusinessNameOnProof={showBusinessNameOnProof} onShowBusinessNameOnProofChange={setShowBusinessNameOnProof}
+                      isUploadingLogo={isUploadingLogo} onUploadLogo={(file) => uploadLogo(file)}
+                    /> : null}
                   </div>
+                  <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
+                  <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
+                    <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
+                      checked={proofIsApproved} onChange={(event) => setApprovedProofId(event.target.checked ? readyProof?.proofReceiptId ?? "" : "")} />
+                    I approve this artwork, business name, and QR destination for printing.
+                  </label>
                 </div>
               ) : null}
             </div>
@@ -1080,8 +1109,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   {step === "destination" ? "Cancel" : "Back"}
                 </button>
                 {step === "destination" ? (
-                  <button type="button" className="tr-button-primary" onClick={continueFromDestination}>
-                    {selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                  <button type="button" className="tr-button-primary" disabled={isReservingDestination} onClick={continueFromDestination}>
+                    {isReservingDestination ? "Reserving destination..." : selectedLinkExperience === "multilink" && selectedOption.hasQr && !hostedReservation ? "Generate page QR" : selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
                   </button>
                 ) : null}
                 {step === "links" ? (
@@ -1096,7 +1125,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
-                    Continue to confirmation
+                    Preview stand
                   </button>
                 ) : null}
                 {step === "review" && selectedOption.id !== "branded_qr_direct" ? (
@@ -1105,14 +1134,14 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                   </button>
                 ) : null}
                 {step === "confirmation" ? (
-                  <button type="button" className="tr-button-primary" onClick={addConfiguredItemToCart}>
-                    Add to cart
+                  <button type="button" className="tr-button-primary" disabled={!proofIsApproved} onClick={addConfiguredItemToCart}>
+                    Continue to checkout
                   </button>
                 ) : null}
               </div>
             </div>
           </div>
-        </div>
+        </ModalDialog>
       ) : null}
     </>
   );
@@ -1135,7 +1164,7 @@ function BuilderSummary({
   unitPriceCents: number | null;
   option: PurchaseOption;
 }) {
-  const serviceLabel = linkExperience === "multilink" ? "Hosted Multi-Link" : "QR and NFC direct";
+  const serviceLabel = linkExperience === "multilink" ? "Hosted Multi-Link" : option.hasQr ? "QR and NFC direct" : "NFC direct · No printed QR";
   const itemPrice = unitPriceCents ?? option.priceCents;
 
   return (
@@ -1202,7 +1231,7 @@ function MultiLinkSetupStep({
         <div>
           <p className="text-sm font-semibold text-ink">Multi-Link page links</p>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Add the first links now to preview the customer page, or skip and finish them after account activation.
+            Add the first links now to preview the customer page, or skip and finish them from your account after payment.
           </p>
         </div>
 
@@ -1386,8 +1415,8 @@ function ProofControls({
   showBusinessNameOnProof: boolean;
 }) {
   return (
-    <div className="grid gap-4 rounded-lg border border-line bg-white p-3 lg:sticky lg:top-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-line bg-soft p-3">
+    <div className="grid content-start gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
         <div>
           <p className="text-sm font-black text-ink">Logo</p>
           <p className="mt-1 text-xs leading-5 text-muted">Recommended: transparent PNG, 1200 px wide or larger.</p>
@@ -1445,7 +1474,7 @@ function ProofControls({
       <div className="grid gap-4">
         {showBusinessNameOnProof ? (
           <ProofRangeControl
-            label="Font size"
+            label="Business name size"
             value={proofFontSizePercent}
             min={75}
             max={135}
@@ -1459,19 +1488,31 @@ function ProofControls({
           max={160}
           onChange={onProofLogoSizePercentChange}
         />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold text-ink">Logo position</p>
+          <button
+            type="button"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-line text-ink hover:bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            aria-label="Reset logo to centered position"
+            title="Reset logo to centered position"
+            onClick={() => { onLogoOffsetXPercentChange(0); onLogoOffsetYPercentChange(0); }}
+          >
+            <RotateCcw size={16} aria-hidden="true" />
+          </button>
+        </div>
         <ProofRangeControl
           label="Logo left / right"
           value={logoOffsetXPercent}
-          min={-40}
-          max={40}
+          min={-20}
+          max={20}
           unit=""
           onChange={onLogoOffsetXPercentChange}
         />
         <ProofRangeControl
           label="Logo up / down"
           value={logoOffsetYPercent}
-          min={-40}
-          max={40}
+          min={-20}
+          max={20}
           unit=""
           onChange={onLogoOffsetYPercentChange}
         />
@@ -1683,219 +1724,6 @@ function isLogoContentPixel(red: number, green: number, blue: number, alpha: num
   return !(red >= 245 && green >= 245 && blue >= 245);
 }
 
-function ProofPreview({
-  businessName,
-  designAssistanceRequested = false,
-  fontSizePercent,
-  logoFitMode,
-  logoMediaUrl,
-  logoOffsetXPercent,
-  logoOffsetYPercent,
-  logoSizePercent,
-  product,
-  qrValue,
-  showBusinessNameOnProof,
-  templateUrl
-}: {
-  businessName: string;
-  designAssistanceRequested?: boolean;
-  fontSizePercent: number;
-  logoFitMode: LogoFitMode;
-  logoMediaUrl: string | undefined;
-  logoOffsetXPercent: number;
-  logoOffsetYPercent: number;
-  logoSizePercent: number;
-  product: ProductSetupChooserProduct;
-  qrValue: string;
-  showBusinessNameOnProof: boolean;
-  templateUrl: string;
-}) {
-  return (
-    <div className="tr-card p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <p className="text-sm font-semibold text-ink">Stand artwork preview</p>
-      </div>
-      <div className="mt-3 grid justify-items-center">
-        {templateUrl ? (
-          <TemplateProofPreview
-            businessName={businessName}
-            designAssistanceRequested={designAssistanceRequested}
-            fontSizePercent={fontSizePercent}
-            logoFitMode={logoFitMode}
-            logoMediaUrl={logoMediaUrl}
-            logoOffsetXPercent={logoOffsetXPercent}
-            logoOffsetYPercent={logoOffsetYPercent}
-            logoSizePercent={logoSizePercent}
-            qrValue={qrValue}
-            showBusinessNameOnProof={showBusinessNameOnProof}
-            templateUrl={templateUrl}
-          />
-        ) : (
-          <CleanProofPreview
-            businessName={businessName}
-            designAssistanceRequested={designAssistanceRequested}
-            fontSizePercent={fontSizePercent}
-            logoFitMode={logoFitMode}
-            logoMediaUrl={logoMediaUrl}
-            logoOffsetXPercent={logoOffsetXPercent}
-            logoOffsetYPercent={logoOffsetYPercent}
-            logoSizePercent={logoSizePercent}
-            product={product}
-            qrValue={qrValue}
-            showBusinessNameOnProof={showBusinessNameOnProof}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TemplateProofPreview({
-  businessName,
-  designAssistanceRequested,
-  fontSizePercent,
-  logoFitMode,
-  logoMediaUrl,
-  logoOffsetXPercent,
-  logoOffsetYPercent,
-  logoSizePercent,
-  qrValue,
-  showBusinessNameOnProof,
-  templateUrl
-}: {
-  businessName: string;
-  designAssistanceRequested: boolean;
-  fontSizePercent: number;
-  logoFitMode: LogoFitMode;
-  logoMediaUrl: string | undefined;
-  logoOffsetXPercent: number;
-  logoOffsetYPercent: number;
-  logoSizePercent: number;
-  qrValue: string;
-  showBusinessNameOnProof: boolean;
-  templateUrl: string;
-}) {
-  return (
-    <div className="relative mx-auto aspect-[1278/1949] w-full max-w-[320px] rounded-lg border border-line bg-white">
-      <img src={templateUrl} alt="Branded front template" className="absolute inset-0 h-full w-full object-contain" />
-      <div className="absolute grid place-items-center p-[2%]" style={regionStyle(brandedStandComposition.logoRegion)}>
-        {logoMediaUrl ? (
-          <img
-            src={logoMediaUrl}
-            alt="Uploaded business logo"
-            style={logoImageStyle({ fitMode: logoFitMode, logoSizePercent, offsetXPercent: logoOffsetXPercent, offsetYPercent: logoOffsetYPercent })}
-          />
-        ) : (
-          <span className="rounded-lg border border-dashed border-line bg-white/90 px-3 py-1 text-center text-[9px] font-black uppercase leading-tight text-muted">
-            {designAssistanceRequested ? "Tap Rater design help" : "Logo zone"}
-          </span>
-        )}
-      </div>
-      {showBusinessNameOnProof ? (
-        <p
-          className="absolute text-center font-black leading-tight text-ink"
-          style={{
-            ...regionStyle(brandedStandComposition.businessNameRegion),
-            fontSize: `${17 * fontSizePercent / 100}px`,
-            overflow: "visible",
-            whiteSpace: "nowrap"
-          }}
-        >
-          {businessName || "Business name"}
-        </p>
-      ) : null}
-      <div className="absolute" style={regionStyle(brandedStandComposition.qrRegion)}>
-        <QrPreview value={qrValue} variant="template" />
-      </div>
-    </div>
-  );
-}
-
-function CleanProofPreview({
-  businessName,
-  designAssistanceRequested,
-  fontSizePercent,
-  logoFitMode,
-  logoMediaUrl,
-  logoOffsetXPercent,
-  logoOffsetYPercent,
-  logoSizePercent,
-  product,
-  qrValue,
-  showBusinessNameOnProof
-}: {
-  businessName: string;
-  designAssistanceRequested: boolean;
-  fontSizePercent: number;
-  logoFitMode: LogoFitMode;
-  logoMediaUrl: string | undefined;
-  logoOffsetXPercent: number;
-  logoOffsetYPercent: number;
-  logoSizePercent: number;
-  product: ProductSetupChooserProduct;
-  qrValue: string;
-  showBusinessNameOnProof: boolean;
-}) {
-  return (
-    <div className="mx-auto grid aspect-[0.68] w-full max-w-[390px] justify-items-center rounded-lg border border-line bg-white p-5 text-center">
-      <div className="grid min-h-16 w-full place-items-center rounded-lg border border-dashed border-line bg-soft p-2">
-        {logoMediaUrl ? (
-          <img
-            src={logoMediaUrl}
-            alt="Uploaded business logo"
-            style={logoImageStyle({ fitMode: logoFitMode, logoSizePercent, offsetXPercent: logoOffsetXPercent, offsetYPercent: logoOffsetYPercent })}
-          />
-        ) : (
-          <span className="text-xs font-black uppercase text-muted">{designAssistanceRequested ? "Tap Rater design help" : "Logo zone"}</span>
-        )}
-      </div>
-      {showBusinessNameOnProof ? (
-        <p className="mt-3 max-w-full break-words font-black uppercase text-ink" style={{ fontSize: `${0.875 * fontSizePercent / 100}rem` }}>
-          {businessName || "Business name"}
-        </p>
-      ) : null}
-      <div className="mt-5 grid justify-items-center gap-2">
-        <p className="text-5xl font-black text-brand">{platformMark(product)}</p>
-      </div>
-      <div className="mt-5 grid w-full grid-cols-2 items-end gap-5">
-        <div className="grid justify-items-center gap-1">
-          <div className="text-4xl font-black">⌁</div>
-          <p className="text-[10px] font-black uppercase leading-tight text-ink">Contactless<br />tapping</p>
-        </div>
-        <div className="grid justify-items-center gap-1">
-          <QrPreview value={qrValue} />
-          <p className="text-[10px] font-black uppercase text-ink">Scan</p>
-        </div>
-      </div>
-      <p className="mt-auto border-t border-ink px-8 pt-2 text-xs font-black uppercase text-ink">Tap Rater</p>
-    </div>
-  );
-}
-
-function logoImageStyle({
-  fitMode,
-  logoSizePercent,
-  offsetXPercent,
-  offsetYPercent
-}: {
-  fitMode: LogoFitMode;
-  logoSizePercent: number;
-  offsetXPercent: number;
-  offsetYPercent: number;
-}): CSSProperties {
-  const scale = Math.max(0.4, Math.min(1.8, logoSizePercent / 100));
-  const dimension = `${Math.round(100 * scale)}%`;
-
-  return {
-    display: "block",
-    height: fitMode === "fill" ? dimension : "auto",
-    maxHeight: fitMode === "contain" ? dimension : "none",
-    maxWidth: fitMode === "contain" ? dimension : "none",
-    objectFit: fitMode === "fill" ? "cover" : "contain",
-    transform: `translate(${offsetXPercent}%, ${offsetYPercent}%)`,
-    width: fitMode === "fill" ? dimension : "auto"
-  };
-}
 
 function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "template" }) {
   const [qrSvg, setQrSvg] = useState("");
@@ -1968,22 +1796,13 @@ function isGoogleReviewStand(product: ProductSetupChooserProduct) {
   return searchableText.includes("google") && searchableText.includes("review");
 }
 
-function regionStyle(region: BrandedCompositionRegion) {
-  return {
-    left: `${region.xPercent}%`,
-    top: `${region.yPercent}%`,
-    width: `${region.widthPercent}%`,
-    height: `${region.heightPercent}%`
-  };
-}
-
 function getOptionSummary(option: PurchaseOption) {
   if (option.id === "hosted_multilink") {
     return "Hosted page with up to 10 links";
   }
 
   if (option.id === "branded_qr_direct") {
-    return "Artwork reviewed after order";
+    return "Preview and approve before payment";
   }
 
   return "Direct to your destination link";

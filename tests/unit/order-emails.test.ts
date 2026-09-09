@@ -100,14 +100,66 @@ const paidOrder: OrderRecord = {
 };
 
 describe("paid order emails", () => {
+  it.each(["standard_direct", "branded_qr_direct"])("keeps %s Multi-Link confirmation usable before page URLs reach the order snapshot", (optionId) => {
+    const order: OrderRecord = {
+      ...paidOrder,
+      line_items_json: [{
+        ...paidOrder.line_items_json[0], optionId, proofApproved: true,
+        setup: {
+          serviceMode: "HOSTED", serviceAddon: "hosted_multilink",
+          businessName: "Hosted Test Business", qrTargetUrl: "https://taprater.com/p/your-page",
+          logoMediaUrl: "/api/media/product/products/customer-logo.png"
+        }
+      }]
+    };
+    const html = buildCustomerPaidOrderEmailHtml(order);
+
+    expect(html).toContain("Hosted Multi-Link");
+    expect(html).toContain(optionId === "standard_direct" ? "Connection: NFC opens your Multi-Link page (no printed QR)" : "Connection: QR and NFC open your Multi-Link page");
+    expect(html).toContain("https://taprater.com/account/stands");
+    expect(html).toContain("Business name: Hosted Test Business");
+    expect(html).not.toContain("/p/your-page");
+    expect(html).not.toContain("Destination URL: Not provided");
+    expect(html).not.toContain("NFC target: Not provided");
+    expect(html).not.toContain("open the destination link directly");
+    if (optionId === "branded_qr_direct") {
+      expect(html).toContain("Logo: Uploaded");
+      expect(html).toContain("Artwork confirmed: Yes");
+    }
+  });
+
+  it("keeps direct targets and hosted account access distinct in a mixed order", () => {
+    const order: OrderRecord = {
+      ...paidOrder,
+      line_items_json: [paidOrder.line_items_json[0], {
+        ...paidOrder.line_items_json[1],
+        setup: {
+          ...paidOrder.line_items_json[1].setup,
+          serviceAddon: "hosted_multilink", hostedPageCode: "273EW5RQ7B4F",
+          hostedPageUrl: "https://taprater.com/p/273EW5RQ7B4F",
+          qrTargetUrl: "https://taprater.com/p/273EW5RQ7B4F",
+          nfcTargetUrl: "https://taprater.com/p/273EW5RQ7B4F"
+        }
+      }]
+    };
+    const html = buildCustomerPaidOrderEmailHtml(order);
+    expect(html).toContain("Destination URL: https://g.page/example/review");
+    expect(html).not.toContain("QR target: https://g.page/example/review");
+    expect(html).toContain("NFC target: https://g.page/example/review");
+    expect(html).toContain("Manage your Multi-Link page: https://taprater.com/account/stands");
+    expect(html).toContain("Business name: QA Menu Business");
+    expect(html).toContain("Logo: Uploaded");
+    expect(html).not.toContain("Destination URL: https://example.com/menu");
+  });
+
   it("renders customer email with Standard Direct line details", () => {
     const html = buildCustomerPaidOrderEmailHtml(paidOrder);
 
     expect(html).toContain("Your Tap Rater order is confirmed");
     expect(html).toContain("Google Review Stand - Standard Direct");
     expect(html).toContain("Destination URL: https://g.page/example/review");
-    expect(html).toContain("Connection: QR and NFC open the destination link directly");
-    expect(html).toContain("QR target: https://g.page/example/review");
+    expect(html).toContain("Connection: NFC opens the destination link directly (no printed QR)");
+    expect(html).not.toContain("QR target: https://g.page/example/review");
     expect(html).toContain("NFC target: https://g.page/example/review");
     expect(html).toContain("Total:</strong> $88.00");
     expect(html).toContain("https://taprater.com/support");
@@ -141,7 +193,10 @@ describe("paid order emails", () => {
     expect(html).toContain("Front template: /api/media/product/products/view-menu/front-template.png");
     expect(html).toContain("Production artwork status: generated");
     expect(html).toContain("Production template: taprater-branded-stand-front / 2026-08-27.3");
-    expect(html).toContain("Production artwork: /api/media/product/products/view-menu-stand/production_artwork/order-123/line-2-hash.svg");
+    expect(html).toContain("Production artwork (admin sign-in required): /api/admin/orders/order-123/artwork/1");
+    expect(html).not.toContain("/api/media/product/products/view-menu-stand/production_artwork/");
+    expect(html).toContain("DIRECT NFC; No printed QR (NFC only)");
+    expect(html).not.toContain("QR target: https://g.page/example/review");
     expect(html).toContain("Production readiness: Ready for production review");
   });
 

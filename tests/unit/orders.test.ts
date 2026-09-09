@@ -6,7 +6,6 @@ import {
   getOrderLineItemFulfillmentKind,
   getOrderLineItemProductionSummary,
   mapCheckoutRowsToOrderLineItems,
-  mapCheckoutRowsToProductionReadyOrderLineItems,
   mapCheckoutSessionToOrderInput,
   markCheckoutOrderPaymentFailureWithClient,
   savePaidOrderFromCheckoutSessionWithClient,
@@ -15,7 +14,6 @@ import {
 } from "@/lib/orders";
 import { orderFulfillmentUpdateSchema } from "@/lib/validators";
 import { PaymentMemoryDb } from "../helpers/payment-memory-db";
-import type { EmbeddedProductionAsset, ProductionArtworkAssetResolver } from "@/lib/production-artwork";
 
 const generatedProductionArtwork = {
   status: "generated",
@@ -36,24 +34,6 @@ const generatedProductionArtwork = {
   generatedAt: "2026-08-23T14:00:00.000Z"
 };
 
-const embeddedAssets: Record<string, EmbeddedProductionAsset> = {
-  "/api/media/product/products/google-review/front-template.png": {
-    dataUri: "data:image/svg+xml;base64,PHN2Zy8+",
-    contentType: "image/svg+xml",
-    contentHash: "base-template-hash"
-  },
-  "/api/media/product/products/customer-setup/logo.png": {
-    dataUri: "data:image/png;base64,iVBORw0KGgo=",
-    contentType: "image/png",
-    contentHash: "logo-hash"
-  },
-  "/api/media/product/products/google-review/center/google.svg": {
-    dataUri: "data:image/svg+xml;base64,PHN2Zy8+",
-    contentType: "image/svg+xml",
-    contentHash: "center-hash"
-  }
-};
-
 describe("order references", () => {
   it("keeps branded Tap Rater order numbers clean", () => {
     expect(formatOrderReference("tr-260901-ab12cd")).toBe("TR-260901-AB12CD");
@@ -66,12 +46,6 @@ describe("order references", () => {
     expect(formatted).not.toContain("manual_");
   });
 });
-
-const memoryAssetResolver: ProductionArtworkAssetResolver = async (url) => {
-  const asset = embeddedAssets[url];
-  if (!asset) throw new Error(`Missing test asset: ${url}`);
-  return asset;
-};
 
 describe("orders repository", () => {
   it("marks only pending checkout orders as expired", async () => {
@@ -156,83 +130,6 @@ describe("orders repository", () => {
     });
   });
 
-  it("generates production artwork while preparing pending order line items", async () => {
-    const writes = new Map<string, string>();
-    const items = await mapCheckoutRowsToProductionReadyOrderLineItems(
-      [
-        {
-          productId: "google-review-stand",
-          optionId: "branded_qr_direct",
-          optionLabel: "Branded + QR Direct Stand",
-          destinationMode: "DIRECT",
-          customizationLevel: "BRANDED",
-          title: "Google Review Stand",
-          sku: "TR-GOOGLE-STAND",
-          quantity: 1,
-          unitAmountCents: 4900,
-          lineSubtotalCents: 4900,
-          shortDescription: "Google review stand",
-          setup: {
-            productSlug: "google-review-stand",
-            optionCode: "branded_qr_direct",
-            destinationUrl: "https://g.page/example/review",
-            businessName: "Nova Implant",
-            logoStorageKey: "products/customer-setup/logo.png",
-            logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
-            generatedQrValue: "https://g.page/example/review",
-            qrTargetUrl: "https://g.page/example/review",
-            nfcTargetUrl: "https://g.page/example/review",
-            frontTemplateUrl: "/api/media/product/products/google-review/front-template.png",
-            proofApproved: true,
-            proofApprovalSnapshot: {
-              productSlug: "google-review-stand",
-              optionCode: "branded_qr_direct",
-              destinationUrl: "https://g.page/example/review",
-              businessName: "Nova Implant",
-              logoStorageKey: "products/customer-setup/logo.png",
-              logoMediaUrl: "/api/media/product/products/customer-setup/logo.png",
-              generatedQrValue: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
-            },
-            proofPreviewData: {
-              businessName: "Nova Implant",
-              qrValue: "https://g.page/example/review",
-              frontTemplateUrl: "/api/media/product/products/google-review/front-template.png"
-            }
-          },
-          logoRequired: true,
-          logoStatus: "uploaded",
-          logoReference: "products/customer-setup/logo.png",
-          proofRequired: true,
-          proofApproved: true,
-          productionStatus: "ready_for_direct_fulfillment",
-          manualProductionRequired: false,
-          productionWarningCodes: []
-        }
-      ],
-      "cs_test_order",
-      {
-        async put(key, value) {
-          writes.set(key, value);
-        }
-      },
-      memoryAssetResolver
-    );
-
-    expect(items[0]).toMatchObject({
-      productionStatus: "ready_for_direct_fulfillment",
-      manualProductionRequired: false,
-      productionWarningCodes: []
-    });
-    expect(items[0].setup?.productionArtwork).toMatchObject({
-      status: "generated",
-      templateId: "taprater-branded-stand-front",
-      templateVersion: "2026-08-31.1",
-      baseTemplateContentHash: "base-template-hash",
-      logoContentHash: "logo-hash"
-    });
-    expect(writes.size).toBe(1);
-  });
 
   it("infers manual logo and proof requirements for legacy branded orders with weak booleans", () => {
     const item = applyOrderLineItemFulfillmentInference({
@@ -354,7 +251,6 @@ describe("orders repository", () => {
         serviceAddon: "hosted_multilink",
         businessName: "Norah Boutique",
         hostedPageCode: "ABC123ABC123",
-        qrTargetUrl: "https://taprater.com/p/ABC123ABC123",
         nfcTargetUrl: "https://taprater.com/p/ABC123ABC123"
       }
     });
@@ -362,9 +258,11 @@ describe("orders repository", () => {
     expect(getOrderLineItemFulfillmentKind(item)).toBe("hosted");
     expect(item).toMatchObject({
       destinationMode: "HOSTED",
-      logoRequired: true,
-      proofRequired: true
+      logoRequired: false,
+      proofRequired: false,
+      manualProductionRequired: false
     });
+    expect(getOrderLineItemProductionSummary(item)).toMatchObject({ printedQrLabel: "No printed QR (NFC only)", warnings: [], proofRequired: false });
   });
 
   it("summarizes Standard Direct fulfillment without QR or proof warnings", () => {
@@ -388,7 +286,7 @@ describe("orders repository", () => {
       fulfillmentKind: "standard",
       optionLabel: "Standard Direct",
       nfcBehavior: "DIRECT NFC",
-      printedQrLabel: "DIRECT QR",
+      printedQrLabel: "No printed QR (NFC only)",
       destinationUrl: "https://g.page/example/review",
       statusLabel: "Ready for direct fulfillment",
       statusTone: "ready",
@@ -1155,52 +1053,5 @@ function fulfillmentOrder(overrides: Record<string, unknown> = {}) {
 }
 
 function createOrdersMemoryClient(rows: Record<string, any>[]): OrdersDbClient {
-  return {
-    from(table: string) {
-      expect(table).toBe("orders");
-      return new OrdersMemoryQuery(rows);
-    }
-  } as unknown as OrdersDbClient;
-}
-
-class OrdersMemoryQuery {
-  private filters: Array<{ column: string; value: unknown }> = [];
-  private updatePayload: Record<string, unknown> | null = null;
-
-  constructor(private readonly rows: Record<string, any>[]) {}
-
-  select() {
-    return this;
-  }
-
-  eq(column: string, value: unknown) {
-    this.filters.push({ column, value });
-    return this;
-  }
-
-  update(payload: Record<string, unknown>) {
-    this.updatePayload = payload;
-    return this;
-  }
-
-  async maybeSingle() {
-    const row = this.rows.find((candidate) => this.filters.every((filter) => candidate[filter.column] === filter.value));
-    return { data: row ?? null, error: null };
-  }
-
-  then<TResult1 = any, TResult2 = never>(
-    onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | null,
-    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
-  ) {
-    return this.execute().then(onfulfilled, onrejected);
-  }
-
-  private async execute() {
-    if (this.updatePayload) {
-      this.rows
-        .filter((candidate) => this.filters.every((filter) => candidate[filter.column] === filter.value))
-        .forEach((candidate) => Object.assign(candidate, this.updatePayload));
-    }
-    return { data: null, error: null };
-  }
+  return new PaymentMemoryDb({ orders: rows });
 }

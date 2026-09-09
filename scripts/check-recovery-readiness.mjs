@@ -13,6 +13,8 @@ assert(appConfigs[0].compatibility_date >= "2026-09-05", "Application compatibil
 
 for (const [index, config] of appConfigs.entries()) {
   const label = appConfigPaths[index];
+  assert(config.limits?.cpu_ms === 30000, `${label} must preserve the tested 30-second CPU limit.`);
+  assert(config.limits?.subrequests === 1000, `${label} must preserve the tested 1,000-subrequest limit.`);
   assert(config.observability?.enabled === true, `${label} must enable observability.`);
   assert(hasRoute(config, "taprater.com/*"), `${label} must route taprater.com.`);
   assert(hasRoute(config, "www.taprater.com/*"), `${label} must route www.taprater.com.`);

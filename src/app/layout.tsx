@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteShell } from "@/components/layout/site-shell";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
+import { defaultSocialImage } from "@/lib/social-metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -27,7 +28,11 @@ export const metadata: Metadata = {
     description:
       "Custom NFC and QR tabletop stands that help customers open your important link with one tap or scan.",
     siteName: "Tap Rater",
-    type: "website"
+    type: "website",
+    images: [defaultSocialImage]
+  },
+  twitter: {
+    card: "summary_large_image"
   }
 };
 

@@ -4,17 +4,19 @@ import { AdminAlert, AdminCard, AdminSummaryCard } from "@/components/admin/admi
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 import { getAdminProducts } from "@/lib/admin-products";
+import { canRunOrderProductionActions, isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
 import { getAdminOrders, getOrderLineItemProductionSummary } from "@/lib/orders";
 
 export default async function AdminPage() {
   await requireAdmin();
   const [{ configured, orders }, products] = await Promise.all([getAdminOrders(), getAdminProducts()]);
-  const paidOrders = orders.filter((order) => order.status === "paid");
-  const productionOrders = orders.filter(orderNeedsProductionAttention);
-  const artworkFailures = orders.filter((order) =>
+  const paidOrders = orders.filter((order) => isOrderPaymentConfirmed(order.status, order.payment_status));
+  const productionEligible = paidOrders.filter(canRunOrderProductionActions);
+  const productionOrders = productionEligible.filter(orderNeedsProductionAttention);
+  const artworkFailures = productionEligible.filter((order) =>
     order.line_items_json.some((item) => getOrderLineItemProductionSummary(item).productionArtwork?.status === "generation_failed")
   );
-  const readyToShip = orders.filter((order) => order.production_status === "completed" && order.shipping_status === "ready_to_ship");
+  const readyToShip = productionEligible.filter((order) => order.production_status === "completed" && order.shipping_status === "ready_to_ship");
   const activeProducts = products.filter((product) => product.isActive);
 
   return (

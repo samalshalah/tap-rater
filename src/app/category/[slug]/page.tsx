@@ -1,13 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { catalogCategories, type CatalogCategorySlug } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
-import { getCategoryBySlug } from "@/lib/products";
+import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
+import { getCategoryHref } from "@/lib/category-routes";
+import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -33,7 +35,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     openGraph: {
       title: standType?.seoTitle || category.seoTitle,
       description: standType?.seoDescription || category.seoDescription,
-      url: getCategoryHref(category.slug)
+      url: getCategoryHref(category.slug),
+      images: [{
+        url: standType?.bannerImageUrl || standType?.imageUrl || getCategoryVisual(category).src,
+        alt: standType?.title || category.title
+      }]
     }
   };
 }
@@ -48,6 +54,10 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   if (!category) {
     notFound();
+  }
+
+  if (slug === "website-links") {
+    permanentRedirect(getCategoryHref(category.slug));
   }
 
   const [products, publicStandTypes] = await Promise.all([
@@ -79,6 +89,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <>
             <p>{description}</p>
             {activeStandType.longContent ? <div className="tr-body-sm mt-5 whitespace-pre-line">{activeStandType.longContent}</div> : null}
+            {products.some(productSupportsMultiLink) ? (
+              <p className="tr-body-sm mt-4">
+                Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
+              </p>
+            ) : null}
           </>
         }
         image={{
@@ -109,10 +124,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </SectionShell>
     </main>
   );
-}
-
-function getCategoryHref(slug: CatalogCategorySlug) {
-  return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }
 
 function categoryToStandTypeSlug(slug: CatalogCategorySlug) {

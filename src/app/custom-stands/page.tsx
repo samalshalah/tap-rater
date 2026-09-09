@@ -13,8 +13,8 @@ export default async function CustomStandsPage() {
   const bulletDescriptions = [
     "Upload the logo file where a supported branded template is available.",
     "Add the business name exactly as it should appear on the stand.",
-    "Choose the destination URL the QR and NFC setup should use.",
-    "Confirm the setup details before Tap Rater prepares the stand."
+    "Choose your destination. Branded QR is generated from the destination used by NFC.",
+    "Approve the artwork preview before payment. Final print artwork is generated after payment."
   ];
 
   return (
@@ -31,13 +31,13 @@ export default async function CustomStandsPage() {
           <SectionHeader
             eyebrow="Branded setup"
             title="A clear branded setup before production."
-            body="Custom stands follow the same product setup path: provide the business details, upload the artwork, confirm the setup, then Tap Rater prepares the stand."
+            body="Branded stands include your logo, business name, and a QR code generated from your destination. Approve the artwork preview before payment. Final print artwork is generated after payment."
           />
         <div className="mt-8 grid gap-5 md:grid-cols-4">
           {customBranding.bullets.map((item, index) => (
             <article key={item} className="tr-card p-6">
               <h2 className="tr-card-title">{item}</h2>
-              <p className="mt-3 text-sm leading-6 text-muted">{bulletDescriptions[index] ?? "Tap Rater reviews the provided details before production."}</p>
+              <p className="mt-3 text-sm leading-6 text-muted">{bulletDescriptions[index] ?? "Approve the artwork preview before payment. Final print artwork is generated after payment."}</p>
             </article>
           ))}
         </div>

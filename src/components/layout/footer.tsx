@@ -29,7 +29,7 @@ function normalizeFooterLink(link: FooterContent["columns"][number]["links"][num
 }
 
 const defaultFooterContent: FooterContent = {
-  intro: "Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and business links.",
+  intro: "NFC tabletop stands for reviews, menus, booking, social media, feedback, and business links. Standard is NFC-only; Branded adds printed QR, your logo, and business name.",
   columns: [
     {
       label: "Shop",

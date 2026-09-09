@@ -33,7 +33,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("Google Review Stand | NFC Review Stand from $39");
     expect(seo.generatedDescription).toBe(
-      "Get more Google reviews with a Tap Rater NFC review stand. Choose Standard Direct NFC or Branded + QR for your business. Starts at $39."
+      "Get more Google reviews with a Tap Rater NFC review stand. Choose NFC-only Standard or Branded + QR with your logo and name. Starts at $39."
     );
     expect(seo.generatedTitle.length).toBeLessThanOrEqual(64);
     expect(seo.generatedDescription.length).toBeLessThanOrEqual(158);
@@ -75,7 +75,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("View Menu Stand | NFC Menu Stand from $39");
     expect(seo.generatedDescription).toBe(
-      "Let customers open your menu with one tap. Order a ready-made direct stand. Starts at $39."
+      "Let customers open your menu with one tap. Order an NFC-only Standard stand with no printed QR. Starts at $39."
     );
     expect(seo.generatedDescription.length).toBeLessThanOrEqual(158);
   });
@@ -104,6 +104,23 @@ describe("product SEO generation", () => {
 
     expect(seo.description).not.toMatch(/monthly fee/i);
     expect(seo.description).toContain("One-time physical product purchase");
+  });
+
+  it("corrects only known Google SEO overrides and keeps accurate custom Branded copy", () => {
+    const corrected = resolveProductSeo(productFixture({
+      seoTitle: "Google Review Stand with NFC & QR",
+      seoDescription: "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
+    }));
+    expect(corrected.title).toBe("Google Review Stand | NFC Standard or Branded + QR");
+    expect(corrected.description).toContain("Standard uses NFC only, with no printed QR.");
+    expect(corrected.description).toContain("Branded adds QR, your logo, and business name.");
+    expect(corrected.description.length).toBeLessThanOrEqual(158);
+    const custom = resolveProductSeo(productFixture({
+      seoTitle: "Branded NFC and QR for reception",
+      seoDescription: "Our Branded NFC and QR stand includes custom production instructions."
+    }));
+    expect(custom.title).toBe("Branded NFC and QR for reception");
+    expect(custom.description).toBe("Our Branded NFC and QR stand includes custom production instructions.");
   });
 
   it("generates special hosted multi-link metadata separately from direct stands", () => {

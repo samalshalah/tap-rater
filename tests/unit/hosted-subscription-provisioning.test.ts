@@ -11,6 +11,7 @@ import {
 } from "@/lib/hosted-subscription-provisioning";
 import { publishHostedPageSnapshot, readCurrentHostedPageSnapshot, type HostedPagePutOptions, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import type { OrderRecord, OrdersDbClient } from "@/lib/orders";
+import { reserveBrandedHostedDestination } from "@/lib/branded-proof";
 
 describe("hosted subscription provisioning", () => {
   beforeEach(() => vi.stubEnv("COMMERCE_RECOVERY_SECRET", "a".repeat(64)));
@@ -199,6 +200,34 @@ describe("hosted subscription provisioning", () => {
     expect(sendHostedSetupEmailFn).toHaveBeenCalledTimes(1);
     expect(client.table("hosted_subscriptions")[0].hosted_page_url).toBe("https://taprater.com/p/ABCDEFGHJKM2");
     expect(client.table("orders")[0].line_items_json[0].setup.hostedPageUrl).toBe("https://taprater.com/p/ABCDEFGHJKM2");
+  });
+
+  it("retains the exact approved Branded destination on initial provisioning and replay", async () => {
+    const storage = new MemoryHostedStorage([]);
+    const reservation = await reserveBrandedHostedDestination("hosted-multilink-stand", storage, "http://localhost:3000");
+    await storage.putText(`hosted-pages/checkout-proofs/bindings/${reservation.id}.json`, JSON.stringify({ sessionId: "cs_test_hosted" }));
+    const order = createHostedOrder({ setup: {
+      businessName: "Owner Example",
+      serviceAddon: "hosted_multilink",
+      hostedReservationId: reservation.id,
+      generatedQrValue: reservation.url
+    } });
+    order.line_items_json[0].optionId = "branded_qr_direct";
+    const client = new PaymentMemoryDb({ orders: [structuredClone(order)] });
+    const input = {
+      eventId: "evt_reserved_destination",
+      session: { id: "cs_test_hosted", payment_status: "paid", customer_details: { email: "owner@example.com" }, subscription: { id: "sub_reserved", status: "active" }, metadata: { checkout_intent: "hosted_subscription" } },
+      order,
+      siteUrl: "https://taprater.com"
+    };
+    const deps = { client, storage, sendHostedSetupEmailFn: vi.fn().mockResolvedValue({ sent: true }) };
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: true, provisioned: true, hostedPageUrl: reservation.url });
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: true, reason: "duplicate_event" });
+    expect(client.table("orders")[0].line_items_json[0].setup.generatedQrValue).toBe(reservation.url);
+    expect(client.table("hosted_subscriptions")[0].hosted_page_url).toBe(reservation.url);
+    expect(storage.assignedCodes).toEqual([reservation.code]);
+    client.table("hosted_subscriptions")[0].permanent_code = "BBBBBBBBBBB2";
+    expect(await provisionHostedSubscriptionFromCheckout(input, deps)).toMatchObject({ ok: false, error: "Provisioned page does not match the approved artwork destination." });
   });
 
   it("does not allocate permanent resources for an unpaid hosted checkout session", async () => {
