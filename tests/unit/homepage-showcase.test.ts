@@ -56,6 +56,12 @@ describe("homepage shopping flow", () => {
     expect(selectFeaturedHomepageProducts(products, ["missing", "inactive", "disabled", google.slug, google.slug]).map((product) => product.slug)).toEqual([google.slug]);
   });
 
+  it("features the owner's five selected stands in the requested order", () => {
+    const slugs = ["google-review-stand", "yelp-review-stand", "facebook-review-stand", "rate-your-experience-stand", "follow-us-social-media-stand"];
+    expect(defaultHomepageShowcase.featuredProductSlugs).toEqual(slugs);
+    expect(selectFeaturedHomepageProducts(migratedProducts, defaultHomepageShowcase.featuredProductSlugs).map((product) => product.slug)).toEqual(slugs);
+  });
+
   it("fills the default category, product and business rows with five cards", () => {
     expect(defaultHomepageContent.actions.items).toHaveLength(5);
     expect(defaultHomepageShowcase.scenes).toHaveLength(5);

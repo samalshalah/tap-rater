@@ -40,7 +40,7 @@ export const cafeHeroImage = "/uploads/marketing/homepage-cafe-review-illustrati
 export const defaultHomepageShowcase: HomepageShowcaseContent = {
   featuredEnabled: true,
   featuredHeadline: "Featured stands",
-  featuredProductSlugs: ["google-review-stand", "follow-us-social-media-stand", "menu-and-order-stand", "connect-with-us-stand", "rate-your-experience-stand"],
+  featuredProductSlugs: ["google-review-stand", "yelp-review-stand", "facebook-review-stand", "rate-your-experience-stand", "follow-us-social-media-stand"],
   heroCaption: "AI-edited product illustration",
   comparisonProductSlug: "google-review-stand",
   comparisonStandard: { src: googleStandardImage, alt: "Standard Google Review stand, NFC only", caption: "Standard design" },
