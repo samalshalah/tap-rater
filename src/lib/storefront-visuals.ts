@@ -6,6 +6,15 @@ export type StorefrontVisual = {
   alt: string;
 };
 
+const businessUseImagePositions: Record<string, string> = {
+  "/uploads/use-cases/restaurants-cafes.webp": "right center",
+  "/uploads/use-cases/hotels-hospitality.webp": "85% center"
+};
+
+export function getBusinessUseImagePosition(src: string) {
+  return businessUseImagePositions[src];
+}
+
 export type BusinessUseCase = {
   title: string;
   description: string;

@@ -22,9 +22,23 @@ beforeEach(() => {
 });
 
 describe("public website capability copy", () => {
+  it("does not keep replacing merchant choices after the redesigned homepage is saved", async () => {
+    storage.configured = true;
+    const hero = { ...structuredClone(defaultHomepageContent.hero), headline: "Turn Every Tap Into Action.", image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Merchant selected stand" } };
+    storage.records.set("homepage.hero", hero);
+    storage.records.set("homepage.showcase", structuredClone(defaultHomepageContent.showcase));
+    storage.records.set("faqs.global", { items: defaultFaqContent.items.slice(0, 4) });
+    const content = await getHomepageThemeContent();
+    expect(content.hero.headline).toBe(hero.headline);
+    expect(content.hero.image).toEqual(hero.image);
+    expect(content.faqs.items).toHaveLength(4);
+  });
+
   it("uses accurate fallback copy without requesting a database client", async () => {
     const content = await getHomepageThemeContent();
-    expect(content.hero.body).toContain("Standard is NFC-only; Branded adds printed QR");
+    expect(content.hero.headline).toBe("Tap Rater NFC Business Stands.");
+    expect(content.showcase.comparisonStandard.alt).toContain("NFC only");
+    expect(content.faqs.items[0].answer).toContain("Standard Direct stand");
     expect(content.customBranding.body).toContain("Approve the artwork preview before payment.");
     expect(content.customBranding.body).toContain("Final print artwork is generated after payment.");
     expect((await getFooterContent()).intro).toContain("Standard is NFC-only");

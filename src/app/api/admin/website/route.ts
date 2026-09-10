@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdminApi } from "@/lib/admin-auth";
+import { homepageShowcaseSchema } from "@/lib/homepage-showcase";
 import {
   faqContentSchema,
   footerContentSchema,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/website-content";
 
 const payloadSchema = {
+  showcase: homepageShowcaseSchema.optional(),
   header: headerNavigationSchema,
   footer: footerContentSchema,
   hero: homepageHeroSchema,
@@ -57,6 +59,9 @@ export async function POST(request: Request) {
       saveWebsiteContentRecord("homepage.final_cta", "homepage", parsed.finalCta.data),
       saveWebsiteContentRecord("faqs.global", "section", parsed.faqs.data)
     ]);
+    if (parsed.showcase.data) {
+      await saveWebsiteContentRecord("homepage.showcase", "homepage", parsed.showcase.data);
+    }
 
     ["/", "/shop", "/solutions", "/faqs"].forEach((path) => revalidatePath(path));
     return NextResponse.json({ ok: true });

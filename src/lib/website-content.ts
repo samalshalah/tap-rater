@@ -4,6 +4,7 @@ import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
+import { cafeHeroImage, defaultHomepageShowcase, googleStandardImage, homepageShowcaseSchema, type HomepageShowcaseContent } from "@/lib/homepage-showcase";
 
 const urlSchema = z
   .string()
@@ -179,6 +180,7 @@ export type HomepageHowItWorksContent = {
 export type HomepageFinalCtaContent = { enabled: boolean; eyebrow: string; headline: string; primaryCta: WebsiteCta; secondaryCta?: WebsiteCta };
 
 export type HomepageThemeContent = {
+  showcase: HomepageShowcaseContent;
   hero: HomepageHeroContent;
   actions: HomepageActionsContent;
   featuredUses: HomepageFeaturedUsesContent;
@@ -288,69 +290,93 @@ export const defaultFaqContent: FaqContent = {
       area: "global",
       order: 40,
       enabled: true
+    },
+    {
+      question: "Will it work with my customer's phone?",
+      answer: "NFC tapping requires a compatible phone with NFC available. Hold the phone's NFC area near the stand and open the link notification. Antenna position and settings vary by phone. Branded stands also include a printed QR code. The destination may require its own app or sign-in.",
+      area: "global", order: 50, enabled: true
+    },
+    {
+      question: "How much is shipping?",
+      answer: "Standard shipping is $12 for orders under $55 and free for orders of $55 or more. Shipping and applicable tax are shown before payment. Preparation and delivery estimates are not yet confirmed; contact us before ordering for a deadline.",
+      area: "global", order: 60, enabled: true
+    },
+    {
+      question: "How is my stand set up?",
+      answer: "Add the destination URL when you order. Tap Rater prepares the stand for that link. Direct stands do not need a Tap Rater account or activation. Optional Multi-Link includes account setup so you can manage your hosted page after payment.",
+      area: "global", order: 70, enabled: true
     }
   ]
 };
 
 export const defaultHomepageContent: HomepageThemeContent = {
+  showcase: defaultHomepageShowcase,
   hero: {
     enabled: true,
     eyebrow: "NFC Business Stands",
-    headline: "Turn Every Tap Into Action.",
-    body: "Tap Rater stands help customers review, book, follow, view menus, and visit your links with one NFC tap. Standard is NFC-only; Branded adds printed QR, your logo, and business name.",
+    headline: "Tap Rater NFC Business Stands.",
+    body: "Put reviews, menus, bookings, and social follows one tap away. A small stand for the moments your customers are ready to connect.",
     primaryCta: { label: "Shop Stands", href: "/shop" },
-    secondaryCta: { label: "See How It Works", href: "/how-it-works" },
-    proofPoints: ["NFC Ready", "No App Needed", "Works Instantly"],
-    image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater review stand" }
+    secondaryCta: { label: "Customize Yours", href: "/custom-stands" },
+    proofPoints: ["Direct stands: no subscription", "Branded: preview before payment"],
+    image: { src: cafeHeroImage, alt: "Illustrative cafe scene with a Tap Rater Google Review stand and a phone showing a review form" }
   },
   actions: {
     enabled: true,
     eyebrow: "Shop by action",
-    headline: "Start with the customer action.",
+    headline: "What would you like customers to do?",
     items: [
       {
-        title: "Get Reviews",
-        description: "Send happy customers straight to the review page that matters.",
+        title: "Leave a review",
+        description: "Open your review page.",
         href: "/category/reviews",
-        image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater review stand" },
+        image: { src: googleStandardImage, alt: "Google Review stand" },
         order: 10,
         enabled: true
       },
       {
-        title: "Book Appointments",
-        description: "Open booking, reservations, scheduling, or next-visit links.",
-        href: "/category/appointments",
-        image: { src: "/uploads/products/book-next-visit-stand.png", alt: "Book Next Visit Tap Rater stand" },
+        title: "View a menu",
+        description: "Share your menu or ordering link.",
+        href: "/category/menu",
+        image: { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png", alt: "Menu and Order stand" },
         order: 20,
         enabled: true
       },
       {
-        title: "Collect Feedback",
-        description: "Make private feedback easy while the experience is fresh.",
-        href: "/category/feedback",
-        image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Rate Your Experience stand" },
+        title: "Book an appointment",
+        description: "Connect to your booking page.",
+        href: "/product/connect-with-us-stand",
+        image: { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-standard-angled.png", alt: "Connect With Us stand for a booking link" },
         order: 30,
         enabled: true
       },
       {
-        title: "View a Menu",
-        description: "Put menus, ordering, and information one tap away.",
-        href: "/category/menu",
-        image: { src: "/uploads/products/view-menu-stand.png", alt: "View Our Menu Tap Rater stand" },
+        title: "Follow on social",
+        description: "Make your social profile easy to find.",
+        href: "/category/social-media",
+        image: { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png", alt: "Follow Us on Social Media stand" },
         order: 40,
+        enabled: true
+      },
+      {
+        title: "Share feedback",
+        description: "Hear about the customer experience.",
+        href: "/product/rate-your-experience-stand",
+        image: { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png", alt: "Rate Your Experience stand" },
+        order: 50,
         enabled: true
       }
     ]
   },
   featuredUses: {
     enabled: true,
-    eyebrow: "Shop by use",
-    headline: "Solutions for every business.",
-    businessUseSlugs: ["auto-dealerships", "restaurants-cafes", "healthcare-dental", "beauty-wellness", "hotels-hospitality"]
+    eyebrow: "In your business",
+    headline: "At the moments that matter.",
+    businessUseSlugs: defaultHomepageShowcase.scenes.map((scene) => scene.slug)
   },
   multilink: {
     enabled: true,
-    eyebrow: "Multi-Link",
+    eyebrow: "Optional Multi-Link",
     headline: `One stand. Up to ${hostedMultiLinkServiceAddon.maxLinks} links.`,
     body: `Add an editable hosted page to a compatible stand for ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, plus the physical stand price. Standard is NFC-only; Branded adds printed QR.`,
     cta: { label: "Explore Multi-Link", href: "/multi-link" },
@@ -359,18 +385,18 @@ export const defaultHomepageContent: HomepageThemeContent = {
   },
   howItWorks: {
     enabled: true,
-    eyebrow: "How it works",
-    headline: "Choose it. Link it. Put it to work.",
+    eyebrow: "The customer experience",
+    headline: "One tap opens your link.",
     steps: [
-      { title: "Choose Your Stand", description: "Pick the action, use case, or product style that fits your counter.", icon: "shop", order: 10 },
-      { title: "Add Your Link / Branding", description: "Enter the destination and add approved branded details where supported.", icon: "link", order: 20 },
-      { title: "We Prepare & Ship", description: "Your configured stand is prepared for fulfillment.", icon: "truck", order: 30 }
+      { title: "Hold your phone near the stand", description: "Bring an NFC-compatible phone close to the contactless area.", icon: "shop", order: 10 },
+      { title: "Open the notification", description: "Tap the link notification on your phone to open the destination.", icon: "link", order: 20 },
+      { title: "Choose your next action", description: "Read the menu, book, follow, or write a review. Nothing is submitted automatically.", icon: "truck", order: 30 }
     ]
   },
   customBranding: {
     enabled: true,
     eyebrow: "Custom Branding",
-    headline: "Make It Yours.",
+    headline: "Standard or Branded?",
     body: "Add your business name, logo, and destination-generated QR with Branded. Approve the artwork preview before payment. Final print artwork is generated after payment.",
     cta: { label: "Shop Branded Stands", href: "/custom-stands" },
     image: { src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "Finished River Cafe branded Tap Rater stand demo with logo and QR code" },
@@ -379,9 +405,9 @@ export const defaultHomepageContent: HomepageThemeContent = {
   finalCta: {
     enabled: true,
     eyebrow: "Ready when you are",
-    headline: "Ready to Put Tap Rater to Work?",
-    primaryCta: { label: "Shop All Stands", href: "/shop" },
-    secondaryCta: { label: "Shop by Use", href: "/solutions" }
+    headline: "Find the stand for your business.",
+    primaryCta: { label: "Shop Stands", href: "/shop" },
+    secondaryCta: { label: "Custom or bulk orders? Let's talk", href: "/contact-us" }
   },
   faqs: defaultFaqContent
 };
@@ -404,7 +430,7 @@ export async function getFaqContent() {
 }
 
 export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
-  const [hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs] = await Promise.all([
+  const [hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs, storedShowcase] = await Promise.all([
     readContent("homepage.hero", "homepage", homepageHeroSchema, defaultHomepageContent.hero) as Promise<HomepageHeroContent>,
     readContent("homepage.actions", "homepage", homepageActionsSchema, defaultHomepageContent.actions) as Promise<HomepageActionsContent>,
     readContent("homepage.featured_uses", "homepage", homepageFeaturedUsesSchema, defaultHomepageContent.featuredUses) as Promise<HomepageFeaturedUsesContent>,
@@ -412,23 +438,50 @@ export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
     readContent("homepage.how_it_works", "homepage", homepageHowItWorksSchema, defaultHomepageContent.howItWorks) as Promise<HomepageHowItWorksContent>,
     readContent("homepage.custom_branding", "homepage", homepageMarketingBlockSchema, defaultHomepageContent.customBranding) as Promise<HomepageMarketingBlockContent>,
     readContent("homepage.final_cta", "homepage", homepageFinalCtaSchema, defaultHomepageContent.finalCta) as Promise<HomepageFinalCtaContent>,
-    getFaqContent()
+    getFaqContent(),
+    readContent("homepage.showcase", "homepage", homepageShowcaseSchema.nullable(), null) as Promise<HomepageShowcaseContent | null>
   ]);
 
+  // Refresh only the old built-in content until the merchant saves the new editor.
+  const initialLayout = storedShowcase === null;
+  const legacyQuestions = defaultFaqContent.items.slice(0, 4).map((item) => item.question);
+  const homepageFaqs = initialLayout && faqs.items.length === 4 && faqs.items.every((item) => legacyQuestions.includes(item.question))
+    ? { items: [...faqs.items, ...defaultFaqContent.items.slice(4)] } : faqs;
+
   return {
+    showcase: storedShowcase ?? defaultHomepageShowcase,
     hero: {
       ...hero,
+      headline: initialLayout && hero.headline === "Turn Every Tap Into Action." ? defaultHomepageContent.hero.headline : hero.headline,
+      image: initialLayout && ["/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", "/uploads/products/rate-your-experience-stand.png"].includes(hero.image.src) ? defaultHomepageContent.hero.image : hero.image,
+      secondaryCta: initialLayout && hero.secondaryCta?.label === "See How It Works" && hero.secondaryCta.href === "/how-it-works" ? defaultHomepageContent.hero.secondaryCta : hero.secondaryCta,
       eyebrow: correctKnownWebsiteClaim("homepage.hero.eyebrow", hero.eyebrow),
       body: correctKnownWebsiteClaim("homepage.hero.body", hero.body),
-      proofPoints: hero.proofPoints.map((point) => correctKnownWebsiteClaim("homepage.hero.proofPoints", point))
+      proofPoints: initialLayout && ["NFC Ready|No App Needed|Works Instantly", "NFC + QR Ready|No App Needed|Works Instantly"].includes(hero.proofPoints.join("|"))
+        ? defaultHomepageContent.hero.proofPoints : hero.proofPoints.map((point) => correctKnownWebsiteClaim("homepage.hero.proofPoints", point))
     },
-    actions, featuredUses, multilink, howItWorks,
+    actions: initialLayout && actions.headline === "Start with the customer action." && actions.items.length === 4 && actions.items.every((item) => ["Get Reviews", "Book Appointments", "Collect Feedback", "View a Menu"].includes(item.title) && item.enabled)
+      ? { ...defaultHomepageContent.actions, enabled: actions.enabled } : actions,
+    featuredUses: {
+      ...featuredUses,
+      eyebrow: initialLayout && featuredUses.eyebrow === "Shop by use" ? defaultHomepageContent.featuredUses.eyebrow : featuredUses.eyebrow,
+      headline: initialLayout && featuredUses.headline === "Solutions for every business." ? defaultHomepageContent.featuredUses.headline : featuredUses.headline
+    },
+    multilink: { ...multilink, eyebrow: initialLayout && multilink.eyebrow === "Multi-Link" ? defaultHomepageContent.multilink.eyebrow : multilink.eyebrow },
+    howItWorks: initialLayout && howItWorks.headline === "Choose it. Link it. Put it to work." && ["Choose Your Stand|Add Your Link / Branding|We Prepare & Ship", "Choose Your Stand|Add Your Link / Branding|We Print & Ship"].includes(howItWorks.steps.map((step) => step.title).join("|"))
+      ? { ...defaultHomepageContent.howItWorks, enabled: howItWorks.enabled } : howItWorks,
     customBranding: {
       ...customBranding,
+      headline: initialLayout && customBranding.headline === "Make It Yours." ? defaultHomepageContent.customBranding.headline : customBranding.headline,
       body: correctKnownWebsiteClaim("homepage.custom_branding.body", customBranding.body),
       bullets: customBranding.bullets.map((bullet) => correctKnownWebsiteClaim("homepage.custom_branding.bullets", bullet))
     },
-    finalCta, faqs
+    finalCta: {
+      ...finalCta,
+      headline: initialLayout && finalCta.headline === "Ready to Put Tap Rater to Work?" ? defaultHomepageContent.finalCta.headline : finalCta.headline,
+      primaryCta: initialLayout && finalCta.primaryCta.label === "Shop All Stands" && finalCta.primaryCta.href === "/shop" ? defaultHomepageContent.finalCta.primaryCta : finalCta.primaryCta,
+      secondaryCta: initialLayout && finalCta.secondaryCta?.label === "Shop by Use" && finalCta.secondaryCta.href === "/solutions" ? defaultHomepageContent.finalCta.secondaryCta : finalCta.secondaryCta
+    }, faqs: homepageFaqs
   };
 }
 

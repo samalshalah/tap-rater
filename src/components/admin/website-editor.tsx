@@ -2,7 +2,6 @@
 
 import { type FormEvent, useState } from "react";
 import type {
-  FaqContent,
   FooterContent,
   HeaderNavigationContent,
   HomepageThemeContent
@@ -22,13 +21,13 @@ export function WebsiteEditor({ businessUses, header, footer, homepage }: Websit
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const payload = buildPayload(form, header, footer, homepage.faqs);
+    const payload = buildPayload(form, header, footer, homepage);
     const response = await fetch("/api/admin/website", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const body = await response.json().catch(() => ({}));
+    const body = await response.json().catch(() => ({})) as { error?: string };
     setStatus(response.ok ? "Website content saved. Public pages update immediately after route revalidation." : body.error ?? "Website save failed.");
   }
 
@@ -48,6 +47,33 @@ export function WebsiteEditor({ businessUses, header, footer, homepage }: Websit
         <Input name="hero-image-src" label="Hero image URL" defaultValue={homepage.hero.image.src} />
         <Input name="hero-image-alt" label="Hero image alt text" defaultValue={homepage.hero.image.alt} required={false} />
         <Input name="hero-proof-points" label="Proof points, separated by commas" defaultValue={homepage.hero.proofPoints.join(", ")} required={false} />
+      </EditorCard>
+
+      <EditorCard title="Homepage Products and Media" description="Featured inventory and the new homepage media. Leave the video URL blank until actual NFC footage is ready. Use captions to identify illustrations or templates.">
+        <Checkbox name="showcase-featured-enabled" label="Show featured stands" defaultChecked={homepage.showcase.featuredEnabled} />
+        <Input name="showcase-featured-headline" label="Featured heading" defaultValue={homepage.showcase.featuredHeadline} />
+        <Input name="showcase-featured-slugs" label="Featured product slugs, up to five, separated by commas" defaultValue={homepage.showcase.featuredProductSlugs.join(", ")} required={false} />
+        <Input name="showcase-hero-caption" label="Hero image caption" defaultValue={homepage.showcase.heroCaption} required={false} />
+        <Input name="showcase-comparison-product" label="Comparison product slug (prices come from this product)" defaultValue={homepage.showcase.comparisonProductSlug} />
+        <div className="grid gap-5 md:grid-cols-2">
+          <ShowcaseImageFields prefix="comparison-standard" label="Standard comparison" image={homepage.showcase.comparisonStandard} />
+          <ShowcaseImageFields prefix="comparison-branded" label="Branded comparison" image={homepage.showcase.comparisonBranded} />
+        </div>
+        <Input name="showcase-video" label="Real tap video URL (MP4 or WebM)" defaultValue={homepage.showcase.tapVideoUrl} required={false} />
+        <Input name="showcase-poster" label="Video poster image URL" defaultValue={homepage.showcase.tapPosterUrl} required={false} />
+        <Input name="showcase-captions" label="Video captions URL (WebVTT)" defaultValue={homepage.showcase.tapCaptionsUrl} required={false} />
+        <label className="tr-field-label">Video transcript<textarea name="showcase-transcript" className="tr-textarea" defaultValue={homepage.showcase.tapTranscript} /></label>
+        <Checkbox name="showcase-quality-enabled" label="Show product details" defaultChecked={homepage.showcase.qualityEnabled} />
+        <Input name="showcase-quality-headline" label="Product details heading" defaultValue={homepage.showcase.qualityHeadline} />
+        <ShowcaseImageFields prefix="quality" label="Product details" image={homepage.showcase.qualityImage} />
+        {Array.from({ length: 5 }, (_, index) => homepage.showcase.scenes[index] ?? { slug: "", title: "", body: "", productSlug: "", image: { src: "", alt: "", caption: "" } }).map((scene, index) => <fieldset key={index} className="grid gap-4 border-t border-line pt-5">
+          <legend className="font-semibold">Business scene {index + 1}</legend>
+          <Select name={`scene-${index}-slug`} label="Business use" defaultValue={scene.slug} options={businessUses.filter((item) => item.isActive).map((item) => ({ label: item.title, value: item.slug }))} placeholder="None" />
+          <Input name={`scene-${index}-title`} label="Title" defaultValue={scene.title} required={false} />
+          <Input name={`scene-${index}-body`} label="Description" defaultValue={scene.body} required={false} />
+          <Input name={`scene-${index}-product`} label="Fallback product slug" defaultValue={scene.productSlug} required={false} />
+          <ShowcaseImageFields prefix={`scene-${index}`} label="Optional scene override" image={scene.image} />
+        </fieldset>)}
       </EditorCard>
 
       <EditorCard title="Shop by Action" description="Controlled action cards shown on the homepage.">
@@ -73,23 +99,16 @@ export function WebsiteEditor({ businessUses, header, footer, homepage }: Websit
         <Checkbox name="featured-uses-enabled" label="Show featured use cases" defaultChecked={homepage.featuredUses.enabled} />
         <Input name="featured-uses-eyebrow" label="Section eyebrow" defaultValue={homepage.featuredUses.eyebrow} />
         <Input name="featured-uses-headline" label="Section headline" defaultValue={homepage.featuredUses.headline} />
-        <div className="grid gap-4 md:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <Select
-              key={`featured-use-${index}`}
-              name={`featured-use-${index}`}
-              label={`Featured use ${index + 1}`}
-              defaultValue={homepage.featuredUses.businessUseSlugs[index] ?? ""}
-              options={businessUses.filter((businessUse) => businessUse.isActive).map((businessUse) => ({ label: businessUse.title, value: businessUse.slug }))}
-              placeholder="None"
-            />
-          ))}
-        </div>
       </EditorCard>
 
       <MarketingCard prefix="multilink" title="Multi-Link" content={homepage.multilink} />
       <HowItWorksCard content={homepage.howItWorks} />
-      <MarketingCard prefix="custom-branding" title="Custom Branding" content={homepage.customBranding} />
+      <EditorCard title="Standard or Branded Comparison" description="Comparison images, product selection, and live prices are configured above.">
+        <Checkbox name="custom-branding-enabled" label="Show comparison" defaultChecked={homepage.customBranding.enabled} />
+        <Input name="custom-branding-eyebrow" label="Eyebrow" defaultValue={homepage.customBranding.eyebrow} required={false} />
+        <Input name="custom-branding-headline" label="Heading" defaultValue={homepage.customBranding.headline} />
+        <Textarea name="custom-branding-body" label="Preview approval explanation" defaultValue={homepage.customBranding.body} />
+      </EditorCard>
 
       <EditorCard title="Final CTA" description="Bottom homepage call to action.">
         <Checkbox name="final-cta-enabled" label="Show final CTA" defaultChecked={homepage.finalCta.enabled} />
@@ -174,9 +193,21 @@ function MarketingCard({ prefix, title, content }: { prefix: string; title: stri
   );
 }
 
+function ShowcaseImageFields({ prefix, label, image }: { prefix: string; label: string; image: HomepageThemeContent["showcase"]["qualityImage"] }) {
+  return <div className="grid gap-3 min-w-0">
+    <Input name={`${prefix}-src`} label={`${label} image URL`} defaultValue={image.src} required={false} />
+    <Input name={`${prefix}-alt`} label={`${label} image description`} defaultValue={image.alt} required={false} />
+    <Input name={`${prefix}-caption`} label={`${label} image caption`} defaultValue={image.caption} required={false} />
+  </div>;
+}
+
+function showcaseImage(form: FormData, prefix: string) {
+  return { src: text(form, `${prefix}-src`), alt: text(form, `${prefix}-alt`), caption: text(form, `${prefix}-caption`) };
+}
+
 function HowItWorksCard({ content }: { content: WebsiteEditorProps["homepage"]["howItWorks"] }) {
   return (
-    <EditorCard title="How It Works" description="Simple approved three-step explanation.">
+    <EditorCard title="How It Works" description="The customer's NFC tap sequence. Add real video in Homepage Products and Media above.">
       <Checkbox name="how-enabled" label="Show How It Works" defaultChecked={content.enabled} />
       <Input name="how-eyebrow" label="Eyebrow" defaultValue={content.eyebrow} />
       <Input name="how-headline" label="Headline" defaultValue={content.headline} />
@@ -290,7 +321,8 @@ function optionalCta(label: string, href: string) {
   return label && href ? { label, href } : undefined;
 }
 
-function buildPayload(form: FormData, header: HeaderNavigationContent, footer: FooterContent, faqs: FaqContent) {
+export function buildPayload(form: FormData, header: HeaderNavigationContent, footer: FooterContent, homepage: HomepageThemeContent) {
+  const faqs = homepage.faqs;
   const actions = Array.from({ length: Math.min(6, 6) }).flatMap((_, index) => {
     const title = text(form, `action-${index}-title`);
     const href = text(form, `action-${index}-href`);
@@ -307,6 +339,26 @@ function buildPayload(form: FormData, header: HeaderNavigationContent, footer: F
   });
 
   return {
+    showcase: {
+      featuredEnabled: enabled(form, "showcase-featured-enabled"),
+      featuredHeadline: text(form, "showcase-featured-headline"),
+      featuredProductSlugs: splitList(text(form, "showcase-featured-slugs")),
+      heroCaption: text(form, "showcase-hero-caption"),
+      comparisonProductSlug: text(form, "showcase-comparison-product"),
+      comparisonStandard: showcaseImage(form, "comparison-standard"),
+      comparisonBranded: showcaseImage(form, "comparison-branded"),
+      tapVideoUrl: text(form, "showcase-video"),
+      tapPosterUrl: text(form, "showcase-poster"),
+      tapCaptionsUrl: text(form, "showcase-captions"),
+      tapTranscript: text(form, "showcase-transcript"),
+      qualityEnabled: enabled(form, "showcase-quality-enabled"),
+      qualityHeadline: text(form, "showcase-quality-headline"),
+      qualityImage: showcaseImage(form, "quality"),
+      scenes: Array.from({ length: 5 }).flatMap((_, index) => {
+        const slug = text(form, `scene-${index}-slug`);
+        return slug ? [{ slug, title: text(form, `scene-${index}-title`), body: text(form, `scene-${index}-body`), productSlug: text(form, `scene-${index}-product`), image: showcaseImage(form, `scene-${index}`) }] : [];
+      })
+    },
     hero: {
       enabled: enabled(form, "hero-enabled"),
       eyebrow: text(form, "hero-eyebrow"),
@@ -327,7 +379,7 @@ function buildPayload(form: FormData, header: HeaderNavigationContent, footer: F
       enabled: enabled(form, "featured-uses-enabled"),
       eyebrow: text(form, "featured-uses-eyebrow"),
       headline: text(form, "featured-uses-headline"),
-      businessUseSlugs: Array.from({ length: 6 }).map((_, index) => text(form, `featured-use-${index}`)).filter(Boolean)
+      businessUseSlugs: Array.from({ length: 5 }).map((_, index) => text(form, `scene-${index}-slug`)).filter(Boolean)
     },
     multilink: marketingPayload(form, "multilink"),
     howItWorks: {
@@ -341,7 +393,13 @@ function buildPayload(form: FormData, header: HeaderNavigationContent, footer: F
         order: num(form, `how-${index}-order`)
       }))
     },
-    customBranding: marketingPayload(form, "custom-branding"),
+    customBranding: {
+      ...homepage.customBranding,
+      enabled: enabled(form, "custom-branding-enabled"),
+      eyebrow: text(form, "custom-branding-eyebrow"),
+      headline: text(form, "custom-branding-headline"),
+      body: text(form, "custom-branding-body")
+    },
     finalCta: {
       enabled: enabled(form, "final-cta-enabled"),
       eyebrow: text(form, "final-cta-eyebrow"),

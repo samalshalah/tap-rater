@@ -61,8 +61,8 @@ describe("content phase 3 presentation standard", () => {
     expect(lockedStandTypes.find(item => item.slug === "website-link-stands")?.imageUrl).toBe(multiLinkDemoImage.src);
     expect(multiLinkDemoImage.alt).toContain("Illustrative");
     expect(multiLinkDemoImage.alt).toContain("Bingo Tires");
-    const homepage = readFileSync("src/app/page.tsx", "utf8");
-    expect(homepage).toContain("content.image.src === multiLinkDemoImage.src ? <figcaption");
+    const homepage = readFileSync("src/components/storefront/homepage-layout.tsx", "utf8");
+    expect(homepage).toContain("content.multilink.image.src === multiLinkDemoImage.src ? <figcaption");
     const manifest = JSON.parse(readFileSync("public/uploads-optimized/manifest.json", "utf8"));
     expect(manifest.sources["marketing/multi-link-bingo-tires-demo.png"]).toMatch(/^[a-f0-9]{64}$/);
   });

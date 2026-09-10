@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { VisualCard } from "@/components/storefront/visual-card";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-import type { StorefrontVisual } from "@/lib/storefront-visuals";
+import { getBusinessUseImagePosition, type StorefrontVisual } from "@/lib/storefront-visuals";
 
 type HomepageBrowseCardProps = {
   href: string;
@@ -25,6 +25,7 @@ export function HomepageBrowseCard(props: HomepageBrowseCardProps) {
             unoptimized
             sizes="64px"
             className={props.variant === "type" ? "object-contain mix-blend-multiply" : "object-cover"}
+            style={props.variant === "use-case" ? { objectPosition: getBusinessUseImagePosition(props.image.src) } : undefined}
           />
         </div>
         <span className="min-w-0 flex-1 text-base font-semibold [overflow-wrap:anywhere]">{props.title}</span>

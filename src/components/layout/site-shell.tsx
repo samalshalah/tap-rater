@@ -14,7 +14,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="tr-public-shell min-h-screen">
       <Header />
-      <main>{children}</main>
+      <main className={pathname === "/" ? "tr-homepage" : undefined}>{children}</main>
       <Footer />
     </div>
   );

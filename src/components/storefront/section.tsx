@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
+import { getBusinessUseImagePosition } from "@/lib/storefront-visuals";
 
 type SectionTone = "white" | "soft";
 type SectionSpacing = "hero" | "default" | "compact";
@@ -130,6 +131,7 @@ export function PageHero({
               priority={image.priority}
               fetchPriority={image.priority ? "high" : undefined}
               unoptimized
+              style={imageFit === "cover" ? { objectPosition: getBusinessUseImagePosition(image.src) } : undefined}
               className={cx(
                 imageFit === "cover" ? "object-cover" : "object-contain p-7 sm:p-10",
                 imageFit === "contain" && "mix-blend-multiply"

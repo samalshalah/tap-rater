@@ -11,6 +11,7 @@ const contentSecurityPolicy = [
   "frame-ancestors 'none'",
   "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com",
   "img-src 'self' data: blob: https:",
+  "media-src 'self' https:",
   "object-src 'none'",
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",

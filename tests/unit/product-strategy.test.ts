@@ -23,7 +23,7 @@ describe("Tap Rater product strategy", () => {
     const homepage = readFileSync("src/app/page.tsx", "utf8");
     const websiteContent = readFileSync("src/lib/website-content.ts", "utf8");
 
-    expect(homepage).toContain("NFC & QR Stands for Reviews, Menus, Booking, Social Media and More");
+    expect(homepage).toContain("Tap Rater NFC Business Stands | Reviews, Menus & More");
     expect(homepage).toContain("getHomepageThemeContent");
     expect(websiteContent).toContain("Shop Stands");
     expect(websiteContent).toContain("does not require a Tap Rater account, hosted redirect, activation, or subscription");
