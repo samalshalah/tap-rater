@@ -5,6 +5,7 @@ import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/s
 import { getStorefrontProducts, staticStorefrontProducts } from "@/lib/product-repository";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
+import { multiLinkDemoImage } from "@/lib/marketing-images";
 
 export const dynamic = "force-dynamic";
 
@@ -32,11 +33,10 @@ export default async function MultiLinkPage() {
     <main className="tr-public-shell text-ink">
       <PageHero
         eyebrow="Multi-Link service"
-        title="One stand. Up to 10 links. Update them anytime."
+        title="Multi-Link"
         body={`Add Multi-Link to a compatible Tap Rater stand for ${monthlyPrice}/month. NFC opens your editable hosted page. Standard remains NFC-only, with no printed QR. Branded adds a QR code pointing to the same page.`}
         image={{
-          src: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
-          alt: "Rate Your Experience Tap Rater stand on a table beside a phone showing a Multi-Link landing page",
+          ...multiLinkDemoImage,
           priority: true
         }}
       />
@@ -75,7 +75,7 @@ export default async function MultiLinkPage() {
             title="Shop stands that can add Multi-Link."
             body="Multi-Link is offered only on products whose physical message can reasonably open multiple customer links."
           />
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="tr-product-grid mt-8">
             {compatibleProducts.map((product) => (
               <ProductCard key={product.slug} product={product} />
             ))}

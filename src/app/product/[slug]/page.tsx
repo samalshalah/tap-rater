@@ -130,7 +130,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               title="Related Tap Rater stands"
               cta={{ href: "/shop", label: "View all stands" }}
             />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="tr-product-grid mt-8">
               {relatedProducts.slice(0, 5).map((relatedProduct) => (
                 <ProductCard key={relatedProduct.slug} product={relatedProduct} />
               ))}

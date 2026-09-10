@@ -156,7 +156,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                     <ProductCard
                       key={product.slug}
                       product={product}
-                      density="catalog"
                       design={query.design}
                     />
                   ))
@@ -231,10 +230,6 @@ function getStandTypeProductCount(slug: string, products: ProductForFilter[]) {
 }
 
 function getPublicStandTypeLabel(standType: StandTypeForFilter) {
-  if (standType.slug === "website-link-stands") {
-    return "Website & Multi-Link Stands";
-  }
-
   return standType.title;
 }
 

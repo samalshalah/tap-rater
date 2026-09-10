@@ -152,7 +152,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "website-link-stands",
     title: "Multi-Link Stand",
     description: "Compatible stands that can add a hosted Multi-Link page with up to 10 customer links.",
-    imageUrl: "/uploads/marketing/multi-link-hero-rate-your-experience.png",
+    imageUrl: "/uploads/marketing/multi-link-bingo-tires-demo.png",
     sortOrder: 60,
     isActive: true
   },

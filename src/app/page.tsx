@@ -17,6 +17,7 @@ import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import { getHomepageThemeContent, orderedEnabledFaqs, type HomepageHowItWorksContent } from "@/lib/website-content";
 import { getCategoryHref } from "@/lib/category-routes";
 import { defaultSocialImage } from "@/lib/social-metadata";
+import { multiLinkDemoImage } from "@/lib/marketing-images";
 
 export const metadata: Metadata = {
   title: "NFC & QR Stands for Reviews, Menus, Booking, Social Media and More",
@@ -106,7 +107,7 @@ export default async function HomePage() {
           <div className="tr-container">
             <SectionHeader eyebrow="Tap Rater stands" title="Shop stands" cta={{ href: "/shop", label: "View all stands" }} />
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3" data-home-mobile-products>
-              {mobileProducts.map((product) => <ProductCard key={product.slug} product={product} density="catalog" />)}
+              {mobileProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
             </div>
           </div>
         </SectionShell>
@@ -298,30 +299,14 @@ function MarketingCopy({
   );
 }
 
-function MarketingVisual({ content }: { content: { image: { src: string; alt: string }; bullets: string[] } }) {
+function MarketingVisual({ content }: { content: { image: { src: string; alt: string } } }) {
   return (
-    <div className="relative h-[240px] overflow-hidden sm:h-[360px] lg:tr-premium-surface lg:h-auto lg:min-h-[680px]">
-      <div className="absolute inset-0 lg:inset-y-8 lg:left-[-12%] lg:right-auto lg:w-[66%]">
-        <Image src={optimizedUploadSrc(content.image.src, 1200)} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 34vw, 58vw" />
+    <figure className="min-w-0">
+      <div className="relative aspect-[3/2]">
+        <Image src={optimizedUploadSrc(content.image.src, 1200)} alt={content.image.alt} fill unoptimized className="object-contain object-center mix-blend-multiply" sizes="(min-width: 1024px) 50vw, 100vw" />
       </div>
-      <div className="absolute right-10 top-16 hidden w-[48%] max-w-[320px] rounded-[var(--tr-radius-feature)] bg-white p-5 shadow-[var(--tr-shadow-elevated)] ring-1 ring-black/[0.04] lg:block">
-        <div className="rounded-[var(--tr-radius-card)] bg-soft p-5">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand text-sm font-semibold text-white">TR</div>
-          <p className="mt-4 text-center text-base font-semibold text-ink">Tap Rater Page</p>
-          <p className="mt-1 text-center text-xs font-semibold text-muted">Tap or scan for important links</p>
-          <div className="mt-5 grid gap-3">
-            {content.bullets.slice(0, 6).map((button) => (
-              <span key={button} className="rounded-[var(--tr-radius-control)] border border-line bg-white px-4 py-3 text-sm font-semibold text-ink shadow-sm">
-                {button}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <p className="absolute bottom-8 left-8 hidden max-w-[270px] text-sm font-semibold leading-6 text-muted lg:block">
-        One physical stand opens one editable branded page.
-      </p>
-    </div>
+      {content.image.src === multiLinkDemoImage.src ? <figcaption className="mt-2 text-center text-xs text-muted">{multiLinkDemoImage.caption}</figcaption> : null}
+    </figure>
   );
 }
 

@@ -158,6 +158,7 @@ export function getPurchaseOption(optionId: string): PurchaseOption | undefined 
 
 // Match only published claims we own; leave other merchant-authored copy intact.
 const knownPurchaseClaims = new Map<string, string>([
+  ["Countertop NFC and QR stand that opens your Yelp review destination.", "Countertop NFC stand that opens your Yelp review or business profile destination. Standard is NFC-only; Branded adds a printed QR code."],
   ["Ready-made stand with NFC tap connected directly to one destination link.", standardDirectOption.summary],
   ["Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide.", "Ready-made Google Review Stand with NFC programmed to your Google review link. Standard is NFC-only, with no printed QR."],
   ["Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.", "Countertop Google Review Stand with NFC. Standard is NFC-only, with no printed QR. Branded adds a destination-generated QR, logo, and business name."],

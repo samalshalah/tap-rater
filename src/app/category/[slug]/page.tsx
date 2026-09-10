@@ -10,6 +10,8 @@ import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 import { getCategoryHref } from "@/lib/category-routes";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
+import { multiLinkDemoImage } from "@/lib/marketing-images";
+import { getBusinessUsePageCopy } from "@/lib/business-use-content";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
@@ -70,25 +72,22 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
   const visual = getCategoryVisual(category);
   const heroImage = activeStandType.bannerImageUrl || activeStandType.imageUrl || visual.src;
-  const hasSingleProduct = products.length === 1;
-  const productGridClassName =
-    hasSingleProduct
-      ? "mt-8 grid max-w-[520px] gap-5 md:max-w-[600px]"
-      : "mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
   const title = activeStandType.title || category.title;
   const description = activeStandType.shortDescription || activeStandType.description || category.description;
+  const copy = getBusinessUsePageCopy({ description, longContent: activeStandType.longContent });
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
 
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
+        spacing="compact"
         backLink={{ href: "/shop", label: "Shop all stands" }}
         eyebrow={category.eyebrow}
         title={title}
         body={
           <>
-            <p>{description}</p>
-            {activeStandType.longContent ? <div className="tr-body-sm mt-5 whitespace-pre-line">{activeStandType.longContent}</div> : null}
+            <p>{copy.intro}</p>
+            {copy.body ? <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div> : null}
             {products.some(productSupportsMultiLink) ? (
               <p className="tr-body-sm mt-4">
                 Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
@@ -98,11 +97,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         }
         image={{
           src: heroImage,
-          alt: activeStandType.title || visual.alt
+          alt: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.alt : activeStandType.title || visual.alt,
+          caption: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.caption : undefined
         }}
       />
 
-      <SectionShell tone="soft" spacing={hasSingleProduct ? "compact" : "default"}>
+      <SectionShell tone="soft" spacing="compact">
         <div className="tr-container">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -111,11 +111,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
         </div>
-        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
+        <div className="tr-product-grid mt-6">
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (
-            <div className="tr-panel-muted p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <div className="col-span-full py-6 text-sm font-semibold text-muted">
               Products are being prepared.
             </div>
           )}

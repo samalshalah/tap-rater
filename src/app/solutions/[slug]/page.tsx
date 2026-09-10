@@ -55,15 +55,11 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   });
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
   const copy = getBusinessUsePageCopy(businessUse);
-  const hasSingleProduct = assignedProducts.length === 1;
-  const productGridClassName =
-    hasSingleProduct
-      ? "mt-8 grid max-w-[520px] gap-5 md:max-w-[600px]"
-      : "mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
+        spacing="compact"
         backLink={{ href: "/solutions", label: "All business uses" }}
         eyebrow="Shop by use"
         title={businessUse.title}
@@ -82,7 +78,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         }}
       />
 
-      <SectionShell tone="soft" spacing={hasSingleProduct ? "compact" : "default"}>
+      <SectionShell tone="soft" spacing="compact">
         <div className="tr-container">
           <SectionHeader
             eyebrow={`${assignedProducts.length} stands`}
@@ -90,11 +86,11 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             body="Choose a stand for your customer action. Standard is NFC-only; Branded adds your logo, business name, and printed QR."
             cta={{ href: "/shop", label: "Shop all stands" }}
           />
-        <div className={hasSingleProduct ? `${productGridClassName} [&_>_a>div:first-child]:h-72 [&_>_a>div:first-child]:sm:h-80` : productGridClassName}>
+        <div className="tr-product-grid mt-6">
           {assignedProducts.length > 0 ? (
             assignedProducts.map((product) => <ProductCard key={product.slug} product={product} />)
           ) : (
-            <div className="tr-card p-6 text-sm font-semibold text-muted sm:col-span-2 lg:col-span-3 xl:col-span-4">
+            <div className="col-span-full py-6 text-sm font-semibold text-muted">
               Product recommendations are being prepared.
             </div>
           )}

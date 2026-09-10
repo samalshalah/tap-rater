@@ -1,4 +1,5 @@
 import type { CatalogCategory, CatalogCategorySlug, MigratedProduct } from "@/data/migrated-products";
+import { multiLinkDemoImage } from "@/lib/marketing-images";
 
 export type StorefrontVisual = {
   src: string;
@@ -147,7 +148,7 @@ export const customerActionCards: CustomerActionCard[] = [
     title: "Multi-Link Stand",
     description: "Add a hosted page for reviews, social profiles, websites, booking, menus, and more.",
     href: "/category/website-link-stands",
-    image: { src: "/uploads/marketing/multi-link-hero-rate-your-experience.png", alt: "Multi-Link Tap Rater stand" }
+    image: multiLinkDemoImage
   }
 ];
 

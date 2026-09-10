@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { z } from "zod";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { multiLinkDemoImage } from "@/lib/marketing-images";
 
 const urlSchema = z
   .string()
@@ -351,7 +352,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     headline: "One stand. Up to 10 links. Update them anytime.",
     body: "Add Multi-Link to a compatible Tap Rater stand for an editable hosted page with reviews, appointments, menus, social media, your website, contact details, and more.",
     cta: { label: "Explore Multi-Link", href: "/multi-link" },
-    image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Multi-Link Tap Rater stand" },
+    image: multiLinkDemoImage,
     bullets: ["Reviews", "Appointments", "Menu", "Social Media", "Website", "Contact"]
   },
   howItWorks: {

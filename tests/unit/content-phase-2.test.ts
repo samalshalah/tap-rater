@@ -82,10 +82,10 @@ describe("content phase 2", () => {
 
   it("shows branded option pricing without changing regular catalog prices", () => {
     const product = migratedProducts.find(item => item.slug === "google-review-stand")!;
-    const branded = renderToStaticMarkup(createElement(ProductCard, { product, density: "catalog", design: "branded" }));
+    const branded = renderToStaticMarkup(createElement(ProductCard, { product, design: "branded" }));
     expect(branded).toContain("Branded + QR: $49");
     expect(branded).not.toContain("From $39");
-    expect(renderToStaticMarkup(createElement(ProductCard, { product, density: "catalog" }))).toContain("From $39");
+    expect(renderToStaticMarkup(createElement(ProductCard, { product }))).toContain("From $39");
   });
 });
 

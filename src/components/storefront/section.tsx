@@ -80,6 +80,7 @@ export function PageHero({
   cta,
   eyebrow,
   image,
+  spacing = "hero",
   title
 }: {
   backLink?: { href: string; label: string };
@@ -87,8 +88,10 @@ export function PageHero({
   className?: string;
   cta?: { href: string; label: string };
   eyebrow?: string;
+  spacing?: SectionSpacing;
   image?: {
     alt: string;
+    caption?: string;
     fit?: "contain" | "cover";
     priority?: boolean;
     src: string;
@@ -98,7 +101,7 @@ export function PageHero({
   const imageFit = image?.fit ?? "contain";
 
   return (
-    <SectionShell spacing="hero" className={className}>
+    <SectionShell spacing={spacing} className={className}>
       <div className={cx("tr-container tr-page-hero", !image && "tr-page-hero-text-only")}>
         <div className="tr-page-hero-copy">
           {backLink ? (
@@ -118,6 +121,7 @@ export function PageHero({
           ) : null}
         </div>
         {image ? (
+          <figure className="w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end">
           <div className="tr-page-hero-media relative aspect-[4/3]">
             <Image
               src={optimizedUploadSrc(image.src, 1200)}
@@ -132,6 +136,8 @@ export function PageHero({
               )}
             />
           </div>
+          {image.caption ? <figcaption className="mt-2 text-center text-xs text-muted">{image.caption}</figcaption> : null}
+          </figure>
         ) : null}
       </div>
     </SectionShell>
