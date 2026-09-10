@@ -15,7 +15,7 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
 
   return (
     <Link
-      href={`/product/${product.slug}`}
+      href={`/product/${product.slug}${design === "branded" ? "?design=branded" : ""}`}
       prefetch={false}
       className="tr-product-card tr-hover-card group flex h-full min-w-0 flex-col overflow-hidden rounded-lg p-2.5 sm:p-3.5"
     >

@@ -2,6 +2,8 @@ import { unstable_noStore as noStore } from "next/cache";
 import { z } from "zod";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
+import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
+import { formatPrice } from "@/lib/products";
 
 const urlSchema = z
   .string()
@@ -349,8 +351,8 @@ export const defaultHomepageContent: HomepageThemeContent = {
   multilink: {
     enabled: true,
     eyebrow: "Multi-Link",
-    headline: "One stand. Up to 10 links. Update them anytime.",
-    body: "Add Multi-Link to a compatible Tap Rater stand for an editable hosted page with reviews, appointments, menus, social media, your website, contact details, and more.",
+    headline: `One stand. Up to ${hostedMultiLinkServiceAddon.maxLinks} links.`,
+    body: `Add an editable hosted page to a compatible stand for ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, plus the physical stand price. Standard is NFC-only; Branded adds printed QR.`,
     cta: { label: "Explore Multi-Link", href: "/multi-link" },
     image: multiLinkDemoImage,
     bullets: ["Reviews", "Appointments", "Menu", "Social Media", "Website", "Contact"]

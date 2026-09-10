@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { migratedProducts } from "@/data/migrated-products";
 import { getCanonicalProductSlug, legacyProductSlugAliases } from "@/lib/product-slug-aliases";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ProductCard } from "@/components/product/product-card";
 
 describe("product slug aliases", () => {
   it.each([
@@ -44,7 +47,9 @@ describe("product slug aliases", () => {
   it("keeps storefront product cards linked to the product slug supplied by the product source", () => {
     const source = readFileSync(join(process.cwd(), "src/components/product/product-card.tsx"), "utf8");
 
-    expect(source).toContain("href={`/product/${product.slug}`}");
+    const product = { ...migratedProducts[0], slug: "merchant-supplied-stand" };
+    expect(renderToStaticMarkup(createElement(ProductCard, { product }))).toContain('href="/product/merchant-supplied-stand"');
+    expect(renderToStaticMarkup(createElement(ProductCard, { product, design: "branded" }))).toContain('href="/product/merchant-supplied-stand?design=branded"');
     for (const legacySlug of Object.keys(legacyProductSlugAliases)) {
       expect(source).not.toContain(`/product/${legacySlug}`);
     }

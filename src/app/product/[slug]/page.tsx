@@ -28,6 +28,7 @@ export const revalidate = 0;
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ design?: string | string[] }>;
 };
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
@@ -62,8 +63,9 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   };
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
+export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
+  const initialOptionId = (await searchParams)?.design === "branded" ? "branded_qr_direct" : undefined;
 
   if (slug === "multi-link-stand") {
     permanentRedirect("/multi-link");
@@ -72,7 +74,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const canonicalSlug = getCanonicalProductSlug(slug);
 
   if (canonicalSlug !== slug) {
-    permanentRedirect(`/product/${canonicalSlug}`);
+    permanentRedirect(`/product/${canonicalSlug}${initialOptionId ? "?design=branded" : ""}`);
   }
 
   const product = await getStorefrontProductBySlug(canonicalSlug);
@@ -100,7 +102,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
-        <ProductHero product={product} category={category} destination={destination} fromPrice={fromPrice} />
+        <ProductHero key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} />
       </SectionShell>
 
       <SectionShell tone="soft" spacing="compact">

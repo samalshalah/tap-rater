@@ -7,18 +7,21 @@ import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 import { formatPrice } from "@/lib/products";
+import { getCategoryHref } from "@/lib/category-routes";
 
 type ProductHeroProps = {
   product: MigratedProduct;
   category?: CatalogCategory;
   destination: string;
   fromPrice: string;
+  initialOptionId?: PurchaseOptionId;
 };
 
-export function ProductHero({ product, category, fromPrice }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice, initialOptionId }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
-  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
-  const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(options[0]?.priceCents ?? product.basePriceCents);
+  const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
+  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
+  const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(initialOption?.priceCents ?? product.basePriceCents);
   const [selectedMonthlyPriceCents, setSelectedMonthlyPriceCents] = useState(0);
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
   const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(selectedPriceCents).replace(".00", "");
@@ -36,7 +39,7 @@ export function ProductHero({ product, category, fromPrice }: ProductHeroProps) 
           {category ? (
             <>
               <span className="text-muted">/</span>
-              <Link href={`/category/${category.slug}`} className="text-muted hover:text-brand">
+              <Link href={getCategoryHref(category.slug)} className="text-muted hover:text-brand">
                 {category.title}
               </Link>
             </>

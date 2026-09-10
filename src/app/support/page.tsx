@@ -16,7 +16,7 @@ const supportLinks = [
   ["Privacy", "How Tap Rater handles order details, uploaded logos, destination links, and support requests.", "/privacy-policy"],
   ["Terms", "Customer responsibilities for links, uploaded logos, artwork, and product use.", "/terms"],
   ["Refunds", "Refund, cancellation, damaged item, and replacement guidance for stands.", "/refund-policy"],
-  ["Shipping", "Order readiness, shipping estimates, and order issue support.", "/shipping"]
+  ["Shipping", "Preparation, shipping costs, and order issue support.", "/shipping"]
 ];
 
 export default function SupportPage() {

@@ -15,7 +15,7 @@ describe("product detail route", () => {
 
   it("permanently redirects legacy product slugs through the canonical slug helper", () => {
     expect(source).toContain("getCanonicalProductSlug");
-    expect(source).toContain("permanentRedirect(`/product/${canonicalSlug}`)");
+    expect(source).toContain('permanentRedirect(`/product/${canonicalSlug}${initialOptionId ? "?design=branded" : ""}`)');
     expect(source).toContain('slug === "multi-link-stand"');
     expect(source).toContain('permanentRedirect("/multi-link")');
     expect(source).not.toContain('"book-your-next-visit-stand": "book-appointment-stand"');
