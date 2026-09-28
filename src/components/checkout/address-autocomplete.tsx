@@ -118,7 +118,7 @@ export function AddressAutocomplete({ value, onChange, onSelect, onBusyChange, o
             setOpen(true);
             setStatus("idle");
           }}
-          className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white pl-3 pr-10 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15 sm:text-sm"
+          className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white pl-3 pr-10 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
         />
         {status === "searching" || status === "selecting" ? <LoaderCircle size={18} aria-hidden="true" className="pointer-events-none absolute right-3 top-3 animate-spin text-muted" /> : null}
       </div>

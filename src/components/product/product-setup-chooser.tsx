@@ -746,7 +746,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               max={maxCartItemQuantity}
               inputMode="numeric"
               aria-label="Quantity"
-              className="h-11 w-16 border-x border-line text-center text-sm font-black text-ink outline-none disabled:bg-soft disabled:text-muted"
+              className="h-11 w-16 border-x border-line text-center text-base font-black text-ink outline-none disabled:bg-soft disabled:text-muted"
               disabled={!quantityEnabled}
               value={selectedQuantity}
               onChange={(event) => updateQuantityFromInput(event.target.value)}

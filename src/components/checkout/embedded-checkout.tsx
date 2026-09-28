@@ -545,7 +545,7 @@ function CheckoutInput({
         autoComplete={autoComplete}
         required={required}
         onInvalid={revealFirstInvalidControl}
-        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
       />
     </label>
   );
@@ -561,7 +561,7 @@ function CheckoutStateSelect({ onChange, value }: { onChange: (value: string) =>
         onInvalid={revealFirstInvalidControl}
         autoComplete="shipping address-level1"
         required
-        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-sm font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
+        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
       >
         <option value="">Select state</option>
         {US_STATE_OPTIONS.map((option) => (
