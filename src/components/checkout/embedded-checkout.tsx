@@ -8,6 +8,7 @@ import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type InvalidEvent } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
+import { resolveShippingRecipientName } from "@/components/checkout/shipping-recipient";
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
@@ -296,7 +297,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
                 <CheckoutInput label="Email" type="email" value={customer.email} autoComplete="email" onChange={(value) => setCustomer((current) => ({ ...current, email: value }))} required />
                 <CheckoutInput label="Customer name" value={customer.name} autoComplete="name" onChange={(value) => {
                   setCustomer((current) => ({ ...current, name: value }));
-                  setShipping((current) => ({ ...current, name: current.name || value }));
+                  setShipping((current) => ({ ...current, name: resolveShippingRecipientName(current.name, customer.name, value) }));
                 }} required />
                 <CheckoutInput label="Phone" type="tel" value={customer.phone} autoComplete="tel" onChange={(value) => setCustomer((current) => ({ ...current, phone: value }))} />
                 <CheckoutInput label="Ship to name" value={shipping.name} autoComplete="shipping name" onChange={(value) => setShipping((current) => ({ ...current, name: value }))} required />
