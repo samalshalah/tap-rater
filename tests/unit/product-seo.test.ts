@@ -95,6 +95,20 @@ describe("product SEO generation", () => {
     expect(seo.isDescriptionCustom).toBe(true);
   });
 
+  it("preserves complete admin metadata rather than cutting words with literal ellipses", () => {
+    const title = "Patient Resources Stand for Healthcare Reception and Patient Information";
+    const description = "Connect patients with the information your practice provides. Share appointment preparation, practice information, and patient resources from a reception counter with one NFC tap.";
+    const seo = resolveProductSeo(productFixture({ seoTitle: title, seoDescription: description }));
+    expect(seo.title).toBe(title);
+    expect(seo.description).toBe(description);
+  });
+
+  it("keeps generated metadata on whole phrase boundaries", () => {
+    const seo = generateProductSeo(productFixture({ title: "Patient Resources for Healthcare Reception and Patient Information Stand" }));
+    expect(seo.generatedTitle).not.toMatch(/\.\.\.$/);
+    expect(seo.generatedDescription).not.toMatch(/\.\.\.$/);
+  });
+
   it("normalizes retired public fee copy from custom backend SEO descriptions", () => {
     const seo = resolveProductSeo(
       productFixture({

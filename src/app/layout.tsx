@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { CartProvider } from "@/components/cart/cart-provider";
 import { SiteShell } from "@/components/layout/site-shell";
+import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
+import { CartAnalyticsEvents } from "@/components/analytics/ecommerce-events";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
   metadataBase: new URL(getPublicSiteUrl()),
   title: {
     default: "Tap Rater | NFC and QR Stands for Local Businesses",
@@ -45,9 +48,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <CartProvider>
-          <SiteShell>{children}</SiteShell>
-        </CartProvider>
+        <AnalyticsProvider>
+          <CartProvider>
+            <CartAnalyticsEvents />
+            <SiteShell>{children}</SiteShell>
+          </CartProvider>
+        </AnalyticsProvider>
       </body>
     </html>
   );

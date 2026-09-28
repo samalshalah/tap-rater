@@ -183,6 +183,11 @@ export function getDefaultProductSize(product: Pick<MigratedProduct, "sizeOption
   return product.sizeOptions?.find((size) => size.isDefault && size.isActive) ?? product.sizeOptions?.find((size) => size.isActive);
 }
 
+export function getDefaultPurchasableProductSize(product: Pick<MigratedProduct, "sizeOptions">) {
+  const sizes = product.sizeOptions?.filter((size) => size.isActive && size.priceAdjustmentCents !== null) ?? [];
+  return sizes.find((size) => size.isDefault) ?? sizes[0] ?? getDefaultProductSize(product);
+}
+
 export function getDefaultProductColor(product: Pick<MigratedProduct, "colorOptions">) {
   return product.colorOptions?.find((color) => color.isDefault && color.isActive) ?? product.colorOptions?.find((color) => color.isActive);
 }

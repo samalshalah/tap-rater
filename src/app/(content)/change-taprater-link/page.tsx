@@ -4,6 +4,7 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Change TapRater Link",
+  robots: { index: false, follow: true },
   description: "Request a Tap Rater NFC link update for a Google review link, Facebook review link, Yelp link, survey, or feedback page.",
   alternates: {
     canonical: "/change-taprater-link"

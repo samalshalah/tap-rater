@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { CheckoutSuccessEffects } from "@/components/checkout/checkout-success-effects";
+import { PurchaseAnalyticsEvent } from "@/components/analytics/ecommerce-events";
+import { verifiedPurchase } from "@/lib/analytics-purchase";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { formatOrderReference } from "@/lib/order-reference";
@@ -30,6 +32,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
   return (
     <main className="tr-public-shell text-ink">
       <CheckoutSuccessEffects sessionId={sessionId} />
+      {!isManualOrder ? <PurchaseAnalyticsEvent purchase={order?.purchase ?? null} pending={/^cs_live_[A-Za-z0-9]+$/.test(sessionId) && (!order || order.pending)} /> : null}
       <PageHero
         eyebrow="Order received"
         title="Your order was received"
@@ -81,13 +84,15 @@ async function loadCheckoutSuccessOrder(sessionId: string) {
   try {
     const { data } = await getSupabaseAdmin()
       .from("orders")
-      .select("stripe_checkout_session_id,total_cents,customer_details_json")
+      .select("id,stripe_checkout_session_id,total_cents,customer_details_json,status,payment_status,currency,line_items_json,shipping_amount_cents,refund_status,stripe_refund_id")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle();
     const row = data && typeof data === "object" ? data as Record<string, unknown> : null;
     if (!row) return null;
     const details = row.customer_details_json && typeof row.customer_details_json === "object" ? row.customer_details_json as Record<string, unknown> : {};
     return {
+      purchase: verifiedPurchase(row),
+      pending: row.status === "pending_payment",
       reference: readString(row.stripe_checkout_session_id),
       totalCents: typeof row.total_cents === "number" ? row.total_cents : 0,
       accountRequested: details.create_account === true,

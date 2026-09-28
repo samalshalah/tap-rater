@@ -1,17 +1,17 @@
 import { existsSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { catalogCategories, migratedProducts } from "@/data/migrated-products";
-import { getCategoryHref } from "@/lib/category-routes";
+import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import sitemap from "@/app/sitemap";
 import { metadata as rootMetadata } from "@/app/layout";
 import { metadata as homeMetadata } from "@/app/page";
 import CategoryPage, { generateMetadata as categoryMetadata } from "@/app/category/[slug]/page";
 import { generateMetadata as solutionMetadata } from "@/app/solutions/[slug]/page";
-import { generateMetadata as productMetadata } from "@/app/product/[slug]/page";
+import ProductPage, { generateMetadata as productMetadata } from "@/app/product/[slug]/page";
 
 const mocks = vi.hoisted(() => ({
-  products: vi.fn(), product: vi.fn(), businessUses: vi.fn(), businessUse: vi.fn(), standType: vi.fn()
+  products: vi.fn(), product: vi.fn(), businessUses: vi.fn(), businessUse: vi.fn(), standType: vi.fn(), standTypes: vi.fn()
 }));
 vi.mock("@/components/layout/site-shell", () => ({ SiteShell: () => null }));
 vi.mock("@/lib/product-repository", () => ({
@@ -23,7 +23,7 @@ vi.mock("@/lib/product-repository", () => ({
 vi.mock("@/lib/admin-business-uses", () => ({
   getPublicBusinessUses: mocks.businessUses, getPublicBusinessUseBySlug: mocks.businessUse
 }));
-vi.mock("@/lib/admin-stand-types", () => ({ getPublicStandTypeBySlug: mocks.standType, getPublicStandTypes: vi.fn() }));
+vi.mock("@/lib/admin-stand-types", () => ({ getPublicStandTypeBySlug: mocks.standType, getPublicStandTypes: mocks.standTypes }));
 vi.mock("next/navigation", () => ({
   permanentRedirect: (path: string) => { throw new Error(`REDIRECT:${path}`); },
   notFound: () => { throw new Error("NOT_FOUND"); },
@@ -41,15 +41,23 @@ beforeEach(() => {
   mocks.businessUses.mockResolvedValue([{ slug: "restaurants" }]);
   mocks.businessUse.mockResolvedValue({ slug: "restaurants", title: "Restaurants", description: "Restaurant stands" });
   mocks.standType.mockResolvedValue(undefined);
+  mocks.standTypes.mockResolvedValue(catalogCategories.map((category) => ({ slug: categoryToStandTypeSlug(category.slug) })));
 });
 
 describe("canonical public category URLs", () => {
+  it.each(["standard", "branded"])("preserves the %s variant when redirecting an old product slug", async (design) => {
+    await expect(ProductPage({ ...params("follow-us-stand"), searchParams: Promise.resolve({ design }) }))
+      .rejects.toThrow(`REDIRECT:/product/follow-us-social-media-stand?design=${design}`);
+    expect(mocks.product).not.toHaveBeenCalled();
+  });
+
   it.each(catalogCategories)("keeps $slug lookup consistent with the public URL", (category) => {
     const path = getCategoryHref(category.slug);
-    expect(path).toBe(category.slug === "website-links" ? "/category/website-link-stands" : `/category/${category.slug}`);
+    expect(path).toBe(category.slug === "custom-stands" ? "/custom-stands" : category.slug === "website-links" ? "/category/website-link-stands" : `/category/${category.slug}`);
   });
 
   it("publishes the canonical Multi-Link category once and keeps products and business uses", async () => {
+    mocks.products.mockResolvedValue([googleStand, migratedProducts.find((product) => product.slug === "connect-with-us-stand")!]);
     const entries = await sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
     expect(paths.filter((path) => path === "/category/website-link-stands")).toHaveLength(1);
@@ -58,6 +66,42 @@ describe("canonical public category URLs", () => {
     expect(paths).toContain("/solutions/restaurants");
     expect(paths).toContain("/multi-link");
     expect(entries.every((entry) => entry.lastModified === undefined)).toBe(true);
+  });
+
+  it("excludes empty and disabled categories and consolidates custom stands", async () => {
+    mocks.standTypes.mockResolvedValue([{ slug: "social-media-stands" }]);
+    const paths = (await sitemap()).map((entry) => new URL(entry.url).pathname);
+    expect(paths.filter((path) => path.startsWith("/category/"))).toEqual([]);
+    expect(paths.filter((path) => path === "/custom-stands")).toHaveLength(1);
+    expect(paths).not.toContain("/category/custom-stands");
+    expect(paths).not.toContain("/setup-new-taprater");
+    expect(paths).not.toContain("/change-taprater-link");
+    expect(paths).toContain("/review-links-generator");
+  });
+
+  it("includes the populated secondary appointment and feedback collections", async () => {
+    mocks.products.mockResolvedValue([
+      migratedProducts.find((product) => product.slug === "connect-with-us-stand")!,
+      { ...migratedProducts.find((product) => product.slug === "rate-your-experience-stand")!, categorySlug: "reviews" }
+    ]);
+    const paths = (await sitemap()).map((entry) => new URL(entry.url).pathname);
+    expect(paths).toContain("/category/appointments");
+    expect(paths).toContain("/category/feedback");
+  });
+
+  it("does not index an empty collection, but allows a populated enabled collection", async () => {
+    mocks.standType.mockResolvedValue({ title: "Reviews" });
+    mocks.products.mockResolvedValue([]);
+    expect((await categoryMetadata(params("reviews"))).robots).toEqual({ index: false, follow: true });
+    mocks.products.mockResolvedValue([googleStand]);
+    expect((await categoryMetadata(params("reviews"))).robots).toBeUndefined();
+    mocks.standType.mockResolvedValue(undefined);
+    expect((await categoryMetadata(params("reviews"))).robots).toEqual({ index: false, follow: true });
+  });
+
+  it("redirects the duplicate custom collection to the customization page", async () => {
+    await expect(CategoryPage(params("custom-stands"))).rejects.toThrow("REDIRECT:/custom-stands");
+    expect(mocks.products).not.toHaveBeenCalled();
   });
 
   it.each(["website-links", "website-link-stands", "link-stands"])("uses the same canonical metadata for %s", async (slug) => {

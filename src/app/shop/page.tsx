@@ -9,6 +9,9 @@ import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getShopResultWindow, searchAndSortShopProducts } from "@/lib/shop-catalog";
 import { buildShopHref, normalizeShopQuery, type ShopQuery, type ShopSearchParams } from "@/lib/shop-query";
+import { productMatchesCategory } from "@/lib/category-products";
+import { catalogCategories } from "@/data/migrated-products";
+import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -38,8 +41,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       ? standTypeToCategorySlug(selectedType.slug)
       : undefined;
     const matchesType = selectedType
-      ? Boolean(selectedCategorySlug) &&
-        product.categorySlug === selectedCategorySlug
+      ? selectedCategorySlug !== undefined &&
+        productMatchesCategory(product, selectedCategorySlug)
       : true;
     const matchesUse = selectedUse
       ? selectedUse.productSlugs.includes(product.slug) ||
@@ -50,6 +53,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { visibleCount, nextPage } = getShopResultWindow(filteredProducts.length, query.page);
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const hasFilters = Boolean(selectedType || selectedUse || query.design || query.q);
+  const collections = catalogCategories.filter((category) => category.slug !== "custom-stands"
+    && standTypes.some((type) => type.slug === categoryToStandTypeSlug(category.slug))
+    && products.some((product) => productMatchesCategory(product, category.slug)));
 
   return (
     <main className="tr-public-shell text-ink">
@@ -61,6 +67,9 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <div className="mb-6 max-w-3xl sm:mb-8">
             <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
+            <nav aria-label="Stand collections" className="mt-4 flex flex-wrap gap-x-5 gap-y-1">
+              {collections.map((category) => <Link key={category.slug} href={getCategoryHref(category.slug)} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">{category.title}</Link>)}
+            </nav>
           </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
@@ -226,7 +235,7 @@ function getStandTypeProductCount(slug: string, products: ProductForFilter[]) {
     return 0;
   }
 
-  return products.filter((product) => product.categorySlug === categorySlug).length;
+  return products.filter((product) => productMatchesCategory(product, categorySlug)).length;
 }
 
 function getPublicStandTypeLabel(standType: StandTypeForFilter) {

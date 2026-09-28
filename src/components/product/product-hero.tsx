@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CatalogCategory, MigratedProduct } from "@/data/migrated-products";
 import { ProductGallery } from "@/components/product/product-gallery";
+import { ProductAnalyticsEvent } from "@/components/analytics/ecommerce-events";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
 import { formatPrice } from "@/lib/products";
 import { getCategoryHref } from "@/lib/category-routes";
+import { getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 
 type ProductHeroProps = {
   product: MigratedProduct;
@@ -21,7 +23,12 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
-  const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(initialOption?.priceCents ?? product.basePriceCents);
+  const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(() => initialOption
+    ? getConfiguredUnitPriceCents(product, initialOption, {
+      sizeCode: getDefaultPurchasableProductSize(product)?.code,
+      colorCode: getDefaultProductColor(product)?.code
+    })
+    : product.basePriceCents);
   const [selectedMonthlyPriceCents, setSelectedMonthlyPriceCents] = useState(0);
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
   const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(selectedPriceCents).replace(".00", "");
@@ -29,6 +36,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
 
   return (
     <div className="tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
+      {effectiveSelectedOptionId && selectedPriceCents !== null ? <ProductAnalyticsEvent item={{ item_id: product.slug, item_variant: effectiveSelectedOptionId, price: selectedPriceCents / 100, quantity: 1 }} /> : null}
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-4 sm:gap-5">

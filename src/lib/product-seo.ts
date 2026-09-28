@@ -56,8 +56,8 @@ export function resolveProductSeo(product: MigratedProduct): ProductSeo {
 
   return {
     ...generated,
-    title: customTitle ? clampSeoText(withoutSiteTitleSuffix(customTitle), MAX_TITLE_LENGTH) : generated.generatedTitle,
-    description: clampSeoText(description, MAX_DESCRIPTION_LENGTH),
+    title: customTitle ? withoutSiteTitleSuffix(customTitle) : generated.generatedTitle,
+    description,
     isTitleCustom: Boolean(customTitle),
     isDescriptionCustom: Boolean(customDescription)
   };
@@ -191,11 +191,14 @@ function formatUseCase(value: string) {
 function clampSeoText(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, " ").trim();
   if (normalized.length <= maxLength) return normalized;
-
-  const targetLength = Math.max(1, maxLength - 3);
-  const clipped = normalized.slice(0, targetLength + 1);
-  const lastSpace = clipped.lastIndexOf(" ");
-  const trimmed = (lastSpace > targetLength * 0.7 ? clipped.slice(0, lastSpace) : normalized.slice(0, targetLength)).trim();
-
-  return `${trimmed.replace(/[.,;:!?-]+$/g, "")}...`;
+  // Prefer a complete title segment or sentence; length is a guideline, not a reason to cut a claim.
+  const boundary = maxLength === MAX_TITLE_LENGTH ? " | " : /(?<=[.!?])\s+(?=[A-Z])/;
+  const parts = normalized.split(boundary);
+  let result = parts[0];
+  for (const part of parts.slice(1)) {
+    const next = `${result}${maxLength === MAX_TITLE_LENGTH ? " | " : " "}${part}`;
+    if (next.length > maxLength) break;
+    result = next;
+  }
+  return result;
 }

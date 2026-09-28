@@ -1,5 +1,6 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
@@ -15,7 +16,8 @@ import {
   getProductSpecifications,
   getReviewDestination
 } from "@/lib/product-page-content";
-import { absoluteUrl, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, faqJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
+import { getCategoryHref } from "@/lib/category-routes";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { resolveProductSeo } from "@/lib/product-seo";
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
@@ -65,7 +67,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
-  const initialOptionId = (await searchParams)?.design === "branded" ? "branded_qr_direct" : undefined;
+  const design = (await searchParams)?.design;
+  const initialOptionId = design === "branded" ? "branded_qr_direct" : design === "standard" ? "standard_direct" : undefined;
 
   if (slug === "multi-link-stand") {
     permanentRedirect("/multi-link");
@@ -74,7 +77,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const canonicalSlug = getCanonicalProductSlug(slug);
 
   if (canonicalSlug !== slug) {
-    permanentRedirect(`/product/${canonicalSlug}${initialOptionId ? "?design=branded" : ""}`);
+    permanentRedirect(`/product/${canonicalSlug}${initialOptionId ? `?design=${design}` : ""}`);
   }
 
   const product = await getStorefrontProductBySlug(canonicalSlug);
@@ -99,6 +102,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   return (
     <main className="tr-public-shell text-ink">
       <JsonLd data={productJsonLd(product)} />
+      <JsonLd data={breadcrumbJsonLd([
+        { name: "Shop", href: "/shop" },
+        ...(category ? [{ name: category.title, href: getCategoryHref(category.slug) }] : []),
+        { name: product.title, href: `/product/${product.slug}` }
+      ])} />
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
@@ -121,6 +129,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <div className="tr-container">
           <SectionHeader align="left" eyebrow="Product questions" title="Answers before you buy." />
           <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
+          {product.slug === "google-review-stand" ? <Link href="/review-links-generator" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">Find your Google review link</Link> : null}
         </div>
       </SectionShell>
 

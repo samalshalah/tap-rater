@@ -2,13 +2,14 @@ import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionShell } from "@/components/storefront/section";
-import { catalogCategories, type CatalogCategorySlug } from "@/data/migrated-products";
+import { catalogCategories } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
-import { getCategoryHref } from "@/lib/category-routes";
+import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
+import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { getBusinessUsePageCopy } from "@/lib/business-use-content";
@@ -28,8 +29,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
     };
   }
 
+  const products = await getStorefrontProductsByCategory(category.slug);
+
   return {
     title: withoutSiteTitleSuffix(standType?.seoTitle || category.seoTitle),
+    robots: !standType || products.length === 0 ? { index: false, follow: true } : undefined,
     description: standType?.seoDescription || category.seoDescription,
     alternates: {
       canonical: getCategoryHref(category.slug)
@@ -58,7 +62,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  if (slug === "website-links") {
+  if (`/category/${slug}` !== getCategoryHref(category.slug)) {
     permanentRedirect(getCategoryHref(category.slug));
   }
 
@@ -79,6 +83,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <main className="tr-public-shell text-ink">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Shop all stands", href: "/shop" }, { name: title, href: getCategoryHref(category.slug) }])} />
       <PageHero
         spacing="compact"
         backLink={{ href: "/shop", label: "Shop all stands" }}
@@ -88,6 +93,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <>
             <p>{copy.intro}</p>
             {copy.body ? <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div> : null}
+            {category.slug === "appointments" ? <p className="tr-body-sm mt-4">Connect a stand to your existing booking or reservation URL. Your booking provider manages appointments; the stand opens that page.</p> : null}
+            {category.slug === "feedback" ? <p className="tr-body-sm mt-4">Connect a stand to your customer feedback form or survey. Customers open the destination you provide and choose whether to leave feedback.</p> : null}
             {products.some(productSupportsMultiLink) ? (
               <p className="tr-body-sm mt-4">
                 Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
@@ -124,18 +131,4 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
       </SectionShell>
     </main>
   );
-}
-
-function categoryToStandTypeSlug(slug: CatalogCategorySlug) {
-  const map: Record<CatalogCategorySlug, string> = {
-    reviews: "review-stands",
-    "social-media": "social-media-stands",
-    appointments: "appointment-reservation-stands",
-    menu: "menu-info-stands",
-    feedback: "feedback-survey-stands",
-    "website-links": "website-link-stands",
-    "custom-stands": "custom-stands"
-  };
-
-  return map[slug];
 }

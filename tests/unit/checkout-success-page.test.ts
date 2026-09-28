@@ -3,14 +3,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutSuccessPage from "@/app/checkout/success/page";
 
-const { maybeSingle, from } = vi.hoisted(() => {
+const { maybeSingle, from, purchaseEvent } = vi.hoisted(() => {
   const maybeSingle = vi.fn();
   const from = vi.fn(() => ({ select: () => ({ eq: () => ({ maybeSingle }) }) }));
-  return { maybeSingle, from };
+  return { maybeSingle, from, purchaseEvent: vi.fn((_props: unknown) => null) };
 });
 
 vi.mock("@/lib/db", () => ({ hasSupabaseAdminConfig: () => true, getSupabaseAdmin: () => ({ from }) }));
 vi.mock("@/components/checkout/checkout-success-effects", () => ({ CheckoutSuccessEffects: () => null }));
+vi.mock("@/components/analytics/ecommerce-events", () => ({ PurchaseAnalyticsEvent: purchaseEvent }));
 
 const reference = `cs_test_${"a".repeat(70)}`;
 
@@ -61,5 +62,21 @@ describe("checkout success account guidance", () => {
     const html = renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: reference }) }));
     expect(html).not.toContain("activation email");
     expect(html).not.toContain("Order number:");
+  });
+
+  it("never marks a test checkout redirect as a purchase", async () => {
+    renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: reference }) }));
+    expect(purchaseEvent.mock.calls[0]?.[0]).toEqual({ purchase: null, pending: false });
+  });
+
+  it("retries pending live confirmation without sending a purchase", async () => {
+    maybeSingle.mockResolvedValue({ data: { stripe_checkout_session_id: "cs_live_example123", status: "pending_payment", payment_status: "unpaid" } });
+    renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: "cs_live_example123" }) }));
+    expect(purchaseEvent.mock.calls[0]?.[0]).toEqual({ purchase: null, pending: true });
+  });
+
+  it("does not mount purchase measurement for a manual order", async () => {
+    renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ manual_order: "manual123" }) }));
+    expect(purchaseEvent).not.toHaveBeenCalled();
   });
 });

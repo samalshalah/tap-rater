@@ -42,9 +42,17 @@ const sections = [
     ]
   },
   {
+    title: "Form security",
+    body: [
+      "Contact, setup, and link-change forms use Cloudflare Turnstile to help prevent automated spam and abuse. Cloudflare processes browser and device signals for this security check; our server sends the verification token and, when available, your IP address to Cloudflare to validate the submission. We do not send the contents of your support message or uploaded artwork to Turnstile."
+    ]
+  },
+  {
     title: "Analytics",
     body: [
-      "Tap Rater may use basic website, device, and order analytics to understand site performance, product interest, and support needs. Analytics should not be used as a guarantee of future reviews, bookings, followers, or sales."
+      "When enabled, optional Google Analytics runs only after you accept analytics. It measures public storefront visits, product selections, cart activity, and confirmed purchases. Rejecting analytics does not prevent shopping or checkout. We do not enable advertising personalization or Google Signals.",
+      "Analytics may use browser identifiers, device information, product identifiers, quantities, prices, and an internal order identifier. We do not intentionally send customer names, email addresses, phone numbers, shipping addresses, uploaded files, destination links, or checkout session identifiers to Google Analytics. Account, admin, and customer-hosted pages are excluded from our analytics events. Google processes analytics data under its own privacy policy.",
+      "Use Analytics preferences in the footer to change your choice. Rejecting analytics stops future collection and clears our Google Analytics cookies on this browser; it does not erase data previously collected. We also respect the Global Privacy Control browser signal by keeping optional analytics off. Your choice is stored for up to 180 days. Essential cart, account, payment, and security storage is separate from optional analytics."
     ]
   },
   {
@@ -87,6 +95,9 @@ function PolicyPage({
             </article>
           ))}
           <div className="tr-card p-5">
+            <p className="tr-body-sm mb-3">
+              Form security uses Cloudflare Turnstile. See the <a href="https://www.cloudflare.com/privacypolicy/" className="font-semibold text-brand hover:text-brand-dark">Cloudflare Privacy Policy</a>.
+            </p>
             <p className="tr-body-sm mb-3">
               Address suggestions use Google Maps Platform and are subject to the <a href="https://policies.google.com/privacy" className="font-semibold text-brand hover:text-brand-dark">Google Privacy Policy</a>.
             </p>

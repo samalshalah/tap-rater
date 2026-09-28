@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { ProductMediaStorageError, uploadProductMedia } from "@/lib/admin-media-storage";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
-import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
+import { checkSupportFormDuplicate, checkSupportFormRateLimit, verifySupportForm } from "@/lib/support-form-security";
 import { saveContactRequest } from "@/lib/request-repository";
 import { sendRequestNotification } from "@/lib/request-notifications";
 import { contactFormSchema } from "@/lib/validators";
 
 export async function POST(request: Request) {
-  const rateLimit = await checkPublicRateLimit(request, "contact", "PUBLIC_FORM_RATE_LIMITER");
-  if (rateLimit.limited) return rateLimitResponse();
+  const rateLimit = await checkSupportFormRateLimit(request);
+  if (rateLimit) return rateLimit;
 
   const payload = await readContactPayload(request);
   const parsed = contactFormSchema.safeParse(payload.fields);
@@ -17,11 +17,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Please check the form fields and try again." }, { status: 400 });
   }
 
+  const security = await verifySupportForm(request, "contact", payload.fields);
+  if (security) return security;
+
   if (!hasSupabaseAdminConfig()) {
     return NextResponse.json({ error: "Request storage is not configured yet." }, { status: 503 });
   }
 
   try {
+    const duplicate = await checkSupportFormDuplicate(request, "contact", parsed.data);
+    if (duplicate) return duplicate;
     let attachmentUrl = "";
     let attachmentFilename = "";
 
@@ -70,7 +75,9 @@ async function readContactPayload(request: Request) {
       fields: {
         name: form?.get("name"),
         email: form?.get("email"),
-        message: form?.get("message")
+        message: form?.get("message"),
+        companyWebsite: form?.get("companyWebsite"),
+        turnstileToken: form?.get("turnstileToken")
       },
       attachment: attachment instanceof File && attachment.size > 0 ? attachment : null
     };

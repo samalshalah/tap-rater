@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AnalyticsPreferencesButton } from "@/components/analytics/analytics-provider";
 
 type FooterContent = {
   intro: string;
@@ -129,6 +130,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line bg-white px-4 py-5 text-center text-xs text-muted">
         Copyright 2026 Tap Rater. All rights reserved.
+        <div><AnalyticsPreferencesButton /></div>
       </div>
     </footer>
   );

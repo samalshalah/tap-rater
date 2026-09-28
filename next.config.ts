@@ -5,15 +5,15 @@ import { legacyPublicAssetRewrites } from "./src/lib/legacy-public-assets";
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
-  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.link.com",
+  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.link.com https://www.googletagmanager.com https://*.google-analytics.com https://www.google.com",
   "font-src 'self' data:",
   "form-action 'self' https://*.stripe.com",
   "frame-ancestors 'none'",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com",
+  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com https://challenges.cloudflare.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://static.cloudflareinsights.com",
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://js.stripe.com https://*.js.stripe.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "worker-src 'self' blob:",
   "upgrade-insecure-requests"

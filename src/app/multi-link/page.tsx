@@ -63,6 +63,9 @@ export default async function MultiLinkPage() {
             <Link href="/shop" className="tr-button-outline">
               Browse All Stands
             </Link>
+            <Link href="/pricing" className="tr-button-outline">
+              Compare Pricing
+            </Link>
           </div>
         </div>
       </SectionShell>

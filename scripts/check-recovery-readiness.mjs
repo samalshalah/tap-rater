@@ -23,6 +23,8 @@ for (const [index, config] of appConfigs.entries()) {
   assert(config.triggers?.crons?.includes("*/15 * * * *"), `${label} is missing resumable daily media backups.`);
   assert(hasBinding(config.r2_buckets, "HOSTED_PAGE_SNAPSHOTS"), `${label} is missing hosted-page snapshot storage.`);
   assert(hasRateLimit(config, "PUBLIC_FORM_RATE_LIMITER", 10), `${label} is missing the public form rate limit.`);
+  assert(hasRateLimit(config, "SUPPORT_FORM_RATE_LIMITER", 3), `${label} is missing the support form rate limit.`);
+  assert(hasRateLimit(config, "SUPPORT_FORM_DUPLICATE_LIMITER", 1), `${label} is missing the support duplicate limit.`);
   assert(hasRateLimit(config, "PUBLIC_CHECKOUT_RATE_LIMITER", 10), `${label} is missing the checkout rate limit.`);
   assert(hasRateLimit(config, "PUBLIC_EVENT_RATE_LIMITER", 120), `${label} is missing the public event rate limit.`);
 }

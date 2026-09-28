@@ -4,6 +4,7 @@ import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnaps
 import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
+import { productMatchesCategory } from "@/lib/category-products";
 import { correctKnownPurchaseCopy, getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
@@ -153,7 +154,7 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
   const products = await getStorefrontProducts();
   const categorySlug = getCategoryBySlug(slug)?.slug ?? slug;
 
-  return products.filter((product) => product.categorySlug === categorySlug && product.isActive).sort(compareStorefrontProducts);
+  return products.filter((product) => productMatchesCategory(product, categorySlug)).sort(compareStorefrontProducts);
 }
 
 export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3): MigratedProduct[] {

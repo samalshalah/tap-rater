@@ -11,7 +11,7 @@ import { BrandedProofPreview, type ReadyBrandedProof } from "@/components/produc
 import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
-import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getProductBaseSku } from "@/lib/product-model";
+import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getDefaultPurchasableProductSize, getProductBaseSku } from "@/lib/product-model";
 import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
 import { buildDirectProductionTargets } from "@/lib/direct-production";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
@@ -112,8 +112,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
   const hostedPurchasingEnabled = isHostedPurchaseOptionEnabled();
   const activeSizes = product.sizeOptions?.filter((size) => size.isActive) ?? [];
   const purchasableSizes = activeSizes.filter((size) => size.priceAdjustmentCents !== null);
-  const defaultPurchasableSize =
-    purchasableSizes.find((size) => size.isDefault) ?? purchasableSizes[0] ?? getDefaultProductSize(product);
+  const defaultPurchasableSize = getDefaultPurchasableProductSize(product);
   const selectedSize =
     purchasableSizes.find((size) => size.code === selectedSizeCode) ?? defaultPurchasableSize;
   const activeColors = product.colorOptions?.filter((color) => color.isActive) ?? [];

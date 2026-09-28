@@ -4,6 +4,7 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 
 export const metadata: Metadata = {
   title: "Setup New TapRater",
+  robots: { index: false, follow: true },
   description: "Send your Google review, Facebook review, Yelp, survey, or custom feedback link to set up a new Tap Rater NFC product.",
   alternates: {
     canonical: "/setup-new-taprater"
