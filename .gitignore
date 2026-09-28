@@ -14,3 +14,7 @@ test-results/
 tmp*
 exports/
 *.tsbuildinfo
+
+# Generated assets and QA output
+public/uploads-optimized/
+artifacts/**/release-*.json
