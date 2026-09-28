@@ -104,8 +104,14 @@ function isPositiveQuantity(quantity: unknown): quantity is number {
   return typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0;
 }
 
-function clampCartQuantity(quantity: number) {
-  return Math.min(maxCartItemQuantity, Math.max(1, quantity));
+export function getCartItemQuantityLimit(item: Pick<CartItem, "optionId" | "setup">) {
+  return item.optionId === "branded_qr_direct" && item.setup?.serviceMode === "HOSTED" && item.setup.serviceAddon === "hosted_multilink"
+    ? 1
+    : maxCartItemQuantity;
+}
+
+function clampCartQuantity(quantity: number, maximum = maxCartItemQuantity) {
+  return Math.min(maximum, Math.max(1, quantity));
 }
 
 export function normalizeCartItems(value: unknown): CartItem[] {
@@ -151,7 +157,7 @@ export function normalizeCartItems(value: unknown): CartItem[] {
     normalized.set(key, {
       productId,
       optionId: option.id,
-      quantity: clampCartQuantity((existing?.quantity ?? 0) + quantity),
+      quantity: clampCartQuantity((existing?.quantity ?? 0) + quantity, getCartItemQuantityLimit({ optionId: option.id, setup })),
       productSnapshot: snapshot,
       setup
     });

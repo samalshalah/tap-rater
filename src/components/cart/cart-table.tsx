@@ -10,7 +10,7 @@ import {
   calculateCartTotalCents,
   getCartItemKey,
   getCartRows,
-  maxCartItemQuantity,
+  getCartItemQuantityLimit,
   type CartRow,
 } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
@@ -245,7 +245,7 @@ export function CartTable({
                     type="button"
                     aria-label={`Increase ${row.product.title} quantity`}
                     className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
-                    disabled={row.item.quantity >= maxCartItemQuantity}
+                    disabled={row.item.quantity >= getCartItemQuantityLimit(row.item)}
                     onClick={() => increaseItem(cartKey)}
                   >
                     <Plus size={16} />

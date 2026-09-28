@@ -14,6 +14,17 @@ beforeEach(() => {
 const render = () => renderToStaticMarkup(createElement(CartTable, { taxSettings: getDefaultTaxSettings() }));
 
 describe("cart thumbnail delivery", () => {
+  it.each(["HOSTED", "DIRECT"])("respects the branded %s quantity limit", (serviceMode) => {
+    cart.mockReturnValue({ items: [{
+      productId: "connect-with-us-stand", optionId: "branded_qr_direct", quantity: 1,
+      setup: { serviceMode, serviceAddon: serviceMode === "HOSTED" ? "hosted_multilink" : undefined }
+    }] });
+    const button = render().match(/<button[^>]*aria-label="Increase Connect With Us Stand quantity"[^>]*>/)?.[0];
+    expect(button).toBeDefined();
+    if (serviceMode === "HOSTED") expect(button).toContain('disabled=""');
+    else expect(button).not.toContain('disabled=""');
+  });
+
   it("renders a 160px variant with stable dimensions and preserves totals and controls", () => {
     const html = render();
     expect(html).toContain('src="/uploads-optimized/products/taprater-stands/google/google-standard-angled-w160.webp"');

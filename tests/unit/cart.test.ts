@@ -34,6 +34,27 @@ describe("cart utilities", () => {
     expect(updated[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 99 });
   });
 
+  it("keeps a branded hosted-page reservation at one when restored, merged, or incremented", () => {
+    const items = normalizeCartItems([{
+      productId: "connect-with-us-stand",
+      optionId: "branded_qr_direct",
+      quantity: 2,
+      setup: { serviceMode: "HOSTED", serviceAddon: "hosted_multilink", hostedReservationId: "qa-reservation" }
+    }]);
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(1);
+    expect(mergeCartItem(items, items[0])[0].quantity).toBe(1);
+    expect(updateCartQuantity(items, getCartItemKey(items[0]), 1)[0].quantity).toBe(1);
+  });
+
+  it("preserves multiple quantities for branded Direct stands", () => {
+    const items = normalizeCartItems([{
+      productId: "connect-with-us-stand", optionId: "branded_qr_direct", quantity: 2,
+      setup: { serviceMode: "DIRECT" }
+    }]);
+    expect(updateCartQuantity(items, getCartItemKey(items[0]), 1)[0].quantity).toBe(3);
+  });
+
   it("removes stale product ids and invalid quantities from stored carts", () => {
     const items = normalizeCartItems([
       { productId: "google-review-stand", quantity: 2 },
