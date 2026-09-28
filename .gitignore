@@ -18,3 +18,6 @@ exports/
 # Generated assets and QA output
 public/uploads-optimized/
 artifacts/**/release-*.json
+artifacts/**/paid-runtime*.json
+artifacts/**/operations-*.json
+artifacts/**/deployed-*.json
