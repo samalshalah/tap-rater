@@ -4,9 +4,9 @@ Date: 2026-09-28
 
 ## Status
 
-Implementation and local verification complete. Application code is NOT pushed or deployed.
-Publishing this work with the pending SEO/analytics changes is readiness phase 2.
-The live forms remain on the old application code until that release.
+Published and verified on production on September 28, 2026, during readiness phase 2.
+The real Turnstile widget, both support rate-limit bindings, successful contact delivery,
+and rejection before persistence are verified. See `readiness-phase-2-release-20260928.md`.
 
 Cloudflare setup completed in the owner's signed-in account:
 
@@ -53,7 +53,7 @@ Evidence:
 
 Local preview: `http://127.0.0.1:3031/contact-us`, using official public dummy keys supplied only in the development process environment. Do not use these keys for deployment.
 
-## Phase 2 release checklist
+## Phase 2 release checklist (completed September 28)
 
 1. Preserve the existing encrypted Turnstile keys when deploying `tap-rater-app-git`.
 2. Build and package the reviewed source, including `SUPPORT_FORM_RATE_LIMITER` (namespace 724004, 3/60 seconds) and `SUPPORT_FORM_DUPLICATE_LIMITER` (namespace 724005, 1/60 seconds).

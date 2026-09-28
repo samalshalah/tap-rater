@@ -26,6 +26,18 @@ export function FormSecurity({ action, attempt, onToken }: {
   const [loaded, setLoaded] = useState(false);
   const [retry, setRetry] = useState(0);
   const [error, setError] = useState("");
+  const [widgetSize, setWidgetSize] = useState<"compact" | "flexible" | null>(null);
+
+  useEffect(() => {
+    const element = container.current;
+    if (!element) return;
+    const measure = () => setWidgetSize(element.clientWidth < 300 ? "compact" : "flexible");
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(element);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -47,14 +59,14 @@ export function FormSecurity({ action, attempt, onToken }: {
   }, [retry]);
 
   useEffect(() => {
-    if (!loaded || !siteKey || !container.current || !window.turnstile) return;
+    if (!loaded || !siteKey || !widgetSize || !container.current || !window.turnstile) return;
     onToken("");
     setError("");
     const api = window.turnstile;
     let id: string;
     try {
       id = api.render(container.current, {
-        sitekey: siteKey, action, theme: "light", size: container.current.clientWidth < 300 ? "compact" : "flexible",
+        sitekey: siteKey, action, theme: "light", size: widgetSize,
         "response-field": false,
         callback: (token: string) => { onToken(token); setError(""); },
         "expired-callback": () => { onToken(""); setError("Security check expired. Please retry."); },
@@ -63,7 +75,7 @@ export function FormSecurity({ action, attempt, onToken }: {
       });
     } catch { setError("Security check unavailable. Please retry."); }
     return () => { if (id) api.remove(id); onToken(""); };
-  }, [action, attempt, loaded, onToken, retry, siteKey]);
+  }, [action, attempt, loaded, onToken, retry, siteKey, widgetSize]);
 
   return <div className="min-w-0" style={{ containerType: "inline-size" }}>
     <div hidden aria-hidden="true">
