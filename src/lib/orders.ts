@@ -787,6 +787,17 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
   }
   const wasAlreadyPaid = existingOrder?.status === "paid" || existingOrder?.payment_status === "paid";
   if (existingOrder && wasAlreadyPaid) {
+    const billingFields = ["invoice_number", "invoice_pdf_url", "hosted_invoice_url", "receipt_url"] as const;
+    const billingUpdates = Object.fromEntries(billingFields.flatMap(key => {
+      const value = order.customer_details_json?.[key];
+      return typeof value === "string" && value && value !== existingOrder.customer_details_json?.[key] ? [[key, value]] : [];
+    }));
+    if (Object.keys(billingUpdates).length) {
+      const details = { ...existingOrder.customer_details_json, ...billingUpdates };
+      const repaired = await guardedOrderUpdate(client, existingOrder, { customer_details_json: details }).select("id").maybeSingle();
+      if (repaired.error || !repaired.data) return { ok: false, error: repaired.error?.message ?? "Invoice details changed. Retry the event." };
+      existingOrder.customer_details_json = details;
+    }
     if (!existingOrder.stripe_payment_intent_id && order.stripe_payment_intent_id) {
       const repaired = await matchOrderField(
         guardedOrderUpdate(client, existingOrder, { stripe_payment_intent_id: order.stripe_payment_intent_id }),

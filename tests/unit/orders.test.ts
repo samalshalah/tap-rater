@@ -929,6 +929,15 @@ describe("orders repository", () => {
     expect(client.table("orders")[0]).toMatchObject({ stripe_payment_intent_id: "pi_repair", production_status: "completed", shipping_status: "shipped" });
   });
 
+  it("recovers a delayed invoice PDF without rewriting paid order progress or customer details", async () => {
+    const client = new PaymentMemoryDb({ orders: [{ id: "order_pdf", stripe_checkout_session_id: "cs_pdf", status: "paid", payment_status: "paid", production_status: "completed", shipping_status: "shipped", customer_details_json: { name: "Original buyer" }, line_items_json: [] }] });
+    const result = await savePaidOrderFromCheckoutSessionWithClient(client, {
+      id: "cs_pdf", payment_status: "paid", invoice: { id: "in_pdf", number: "INV-1", invoice_pdf: "https://pay.stripe.com/invoice/example/pdf" }
+    });
+    expect(result).toMatchObject({ ok: true, wasAlreadyPaid: true, order: { customer_details_json: { invoice_pdf_url: "https://pay.stripe.com/invoice/example/pdf" } } });
+    expect(client.table("orders")[0]).toMatchObject({ production_status: "completed", shipping_status: "shipped", customer_details_json: { name: "Original buyer", invoice_number: "INV-1" } });
+  });
+
   it("reports when a Stripe Checkout Session was already paid to avoid duplicate emails", async () => {
     const upsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
