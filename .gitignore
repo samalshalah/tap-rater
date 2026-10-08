@@ -14,3 +14,12 @@ test-results/
 tmp*
 exports/
 *.tsbuildinfo
+
+# Local QA evidence and release snapshots are retained outside source control.
+# Previously tracked evidence remains tracked.
+/artifacts/
+/archives/
+*.log
+.env.*
+!.env.example
+!.env.*.example

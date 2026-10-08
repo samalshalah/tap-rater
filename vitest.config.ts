@@ -3,7 +3,16 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/tmp/**", "**/.agents/**"]
+    exclude: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.open-next/**",
+      "**/dist/**",
+      "**/tmp*/**",
+      "**/artifacts/**",
+      "**/archives/**",
+      "**/.agents/**"
+    ]
   },
   resolve: {
     alias: {

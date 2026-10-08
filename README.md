@@ -2,7 +2,7 @@
 
 Tap Rater is a Next.js ecommerce storefront for NFC review stands and review plates, plus a platform foundation for permanent device URLs, activation, analytics, and future hosted reputation pages. Phase 1 sells only tabletop stands and flat plates while cards, name tags, badges, bundles, and platform products remain postponed or quote-based.
 
-Stripe checkout is available in test mode only until the business bank account and final live payment setup are explicitly approved.
+Stripe checkout currently runs in test mode. The October 8 test order passed and the owner authorized live activation after verification; the matching live credentials still need secure configuration. See [current release and workspace status](docs/release-readiness-20261008.md).
 
 ## Stack
 
@@ -33,6 +33,8 @@ npm run cf:build
 npm run backend:build
 npm run backend:db-check
 ```
+
+QA evidence belongs in `artifacts/`; temporary runs belong in `tmp/`. Both are excluded from application type checking and test discovery. Keep generated builds and dependency snapshots out of source control. The [workspace cleanup record](docs/release-readiness-20261008.md#workspace-cleanup) documents the recoverable local archive and restore mapping.
 
 Local dev usually runs at:
 

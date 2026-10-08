@@ -38,6 +38,12 @@
   ],
   "exclude": [
     "node_modules",
-    "workers/hosted-pages"
+    "workers/hosted-pages",
+    "artifacts",
+    "archives",
+    "tmp*",
+    ".agents",
+    ".open-next",
+    "apps/backend/dist"
   ]
 }
