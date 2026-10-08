@@ -13,9 +13,9 @@ The October 8, 20:25 UTC Standard Direct Google Review Stand test purchase passe
 - Application customer and admin order emails were delivered at 20:26 UTC. This does not assert that Stripe sent a separate automatic receipt email.
 - No hosted subscription was created. Fulfillment remains not started / not shipped.
 
-The active live webhook destination is configured for all 12 required events at `https://taprater.com/api/webhooks/stripe`. The live secret API key is masked and unavailable to reveal in Stripe Dashboard; no separate live key is available in the deployed Worker secret names. The deployed credentials remain test credentials. Live activation is not yet complete.
+The active live webhook destination is configured for all 12 required events at `https://taprater.com/api/webhooks/stripe`. After Stripe identity verification cleared, the owner explicitly approved creation and configuration of a new live key. The key named `Tap Rater production Cloudflare 2026-10-08`, both live publishable-key aliases, and the existing live endpoint signing secret were saved in Cloudflare encrypted secrets. Secret replacements were staged without traffic, then activated together with `STRIPE_MODE=live`. The deployed admin configuration independently reports LIVE, matching live key modes, webhook configured, and zero blocked checks.
 
-Configure the matching live API key, publishable key (including both configured publishable aliases), and endpoint signing secret together with `STRIPE_MODE=live`. Keep both Wrangler configuration files consistent for later Git deployments. Preserve the currently deployed database (`br-restless-shape-at38e1nu`, milestone7-qa), session signers, and media bindings. Do not switch databases based on their names. Never put credentials in this document or Git.
+Both Wrangler configuration files retain `STRIPE_MODE=live` for later Git deployments. The currently deployed database (`br-restless-shape-at38e1nu`, milestone7-qa), session signers, and media bindings were preserved. Do not switch databases based on their names. Never put credentials in this document or Git.
 
 Live signed-event delivery, real payment, and payout settlement are not established by this test order. Historical owner confirmation of the intended payout account remains outstanding in the launch records.
 

@@ -1,5 +1,5 @@
-// Owner statements recorded in docs/ecommerce-phase-6.md, not automated verification.
-// Historical confirmations do not certify later settings changes or authorize checkout.
+// Owner statements recorded in docs/ecommerce-phase-6.md and docs/release-readiness-20261008.md.
+// Configuration authorization does not certify real payments or payout settlement.
 export const launchOwnerRecord = {
   recordedOn: "2026-09-08",
   displayDate: "September 8, 2026",
@@ -16,7 +16,9 @@ export const launchOwnerRecord = {
     }
   ],
   activation: {
-    label: "On hold",
-    detail: "The owner requires final website and system acceptance before separately authorizing live Stripe activation. Live payment, webhook and payout proof remain separate release evidence."
+    recordedOn: "2026-10-08",
+    displayDate: "October 8, 2026",
+    label: "Owner authorized",
+    detail: "After the successful test order, the owner explicitly authorized live Stripe activation and secure configuration of the live credentials. Real payment, signed live webhook delivery and payout settlement remain separate verification steps."
   }
 } as const;

@@ -2,7 +2,7 @@
 
 Tap Rater is a Next.js ecommerce storefront for NFC review stands and review plates, plus a platform foundation for permanent device URLs, activation, analytics, and future hosted reputation pages. Phase 1 sells only tabletop stands and flat plates while cards, name tags, badges, bundles, and platform products remain postponed or quote-based.
 
-Stripe checkout currently runs in test mode. The October 8 test order passed and the owner authorized live activation after verification; the matching live credentials still need secure configuration. See [current release and workspace status](docs/release-readiness-20261008.md).
+Stripe checkout runs in live mode following the owner's October 8 authorization and successful test order. Matching live credentials are stored in Cloudflare encrypted secrets. See [current release and workspace status](docs/release-readiness-20261008.md) for verification limits.
 
 ## Stack
 
@@ -10,7 +10,7 @@ Stripe checkout currently runs in test mode. The October 8 test order passed and
 - Static `migratedProducts` catalog fallback so local preview and builds work without database credentials.
 - Postgres-backed admin/CMS for homepage content, product records, request inbox data, platform devices, activation, analytics, and ecommerce settings. Supabase and Neon are supported.
 - Resend notifications for customer inquiry forms.
-- Stripe Checkout test mode foundation. Live payment processing is not enabled.
+- Stripe Checkout with matching environment-specific credentials; production uses live mode.
 
 ## Local Setup
 

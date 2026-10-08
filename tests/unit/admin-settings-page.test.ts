@@ -25,15 +25,16 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("admin configuration and launch status", () => {
-  it("separates full configuration coverage from the held live release", async () => {
+  it("separates current configuration from recorded owner authorization", async () => {
     const html = renderToStaticMarkup(await AdminSettingsPage());
     expect(requireAdmin).toHaveBeenCalledOnce();
     expect(html).toContain("Configuration coverage");
     expect(html).toContain("100%");
     expect(html).toContain("not overall project completion or live-launch approval");
     expect(html).toContain(">TEST<");
-    expect(html).toContain(">On hold<");
-    expect(html).toContain("separately authorizing live Stripe activation");
+    expect(html).toContain(">Owner authorized<");
+    expect(html).toContain("explicitly authorized live Stripe activation");
+    expect(html).toMatch(/datetime="2026-10-08"/i);
     expect(html).not.toContain("Environment readiness");
     expect(html).not.toContain("Manual confirmations");
   });
@@ -71,13 +72,14 @@ describe("admin configuration and launch status", () => {
     expect(html).not.toContain("100%");
   });
 
-  it("does not turn LIVE configuration into owner approval", async () => {
+  it("keeps LIVE configuration separate from real payment verification", async () => {
     vi.stubEnv("STRIPE_MODE", "live");
     vi.stubEnv("STRIPE_SECRET_KEY", "sk_live_private");
     vi.stubEnv("STRIPE_PUBLISHABLE_KEY", "pk_live_private");
     const html = renderToStaticMarkup(await AdminSettingsPage());
     expect(html).toContain(">LIVE<");
-    expect(html).toContain(">On hold<");
+    expect(html).toContain(">Owner authorized<");
+    expect(html).toContain("remain separate verification steps");
     expect(html).toContain("does not establish owner authorization");
   });
 

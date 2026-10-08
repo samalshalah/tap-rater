@@ -43,7 +43,7 @@ export default async function AdminSettingsPage() {
             <div>
               <p className="text-sm font-semibold text-ink">Recorded owner direction</p>
               <p className="mt-1 text-sm leading-6 text-muted">{launchOwnerRecord.activation.detail}</p>
-              <p className="mt-1 text-xs text-muted"><time dateTime={launchOwnerRecord.recordedOn}>{launchOwnerRecord.displayDate}</time></p>
+              <p className="mt-1 text-xs text-muted"><time dateTime={launchOwnerRecord.activation.recordedOn}>{launchOwnerRecord.activation.displayDate}</time></p>
             </div>
             <div><AdminBadge tone="warning">{launchOwnerRecord.activation.label}</AdminBadge></div>
           </div>
