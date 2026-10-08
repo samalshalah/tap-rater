@@ -11,6 +11,7 @@ import {
   sendCustomerActivationEmail
 } from "@/lib/hosted-setup-email";
 import type { OrderRecord } from "@/lib/orders";
+import { formatOrderReference } from "@/lib/order-reference";
 
 const paidOrder: OrderRecord = {
   id: "order-123",
@@ -372,7 +373,7 @@ describe("paid order emails", () => {
     });
 
     expect(html).toContain("Your Tap Rater order has a shipping update.");
-    expect(html).toContain("Order number:</strong> cs_test_123");
+    expect(html).toContain(`Order number:</strong> ${formatOrderReference("cs_test_123")}`);
     expect(html).toContain("Status:</strong> Shipped");
     expect(html).toContain("Carrier:</strong> USPS");
     expect(html).toContain("Tracking number:</strong> TRACK123");

@@ -12,7 +12,7 @@ import { resolveShippingRecipientName } from "@/components/checkout/shipping-rec
 import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
-import { formatTaxRate, getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
+import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import type { StripePublicConfig } from "@/lib/stripe-public-config";
 import { US_STATE_OPTIONS } from "@/lib/us-states";
 import type { TaxSettingsInput } from "@/lib/validators";
@@ -279,7 +279,7 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
             shippingAmountCents={shippingRule.amountCents}
             standTotalCents={standTotalCents}
             taxAmountCents={taxAmountCents}
-            taxCalculationPending={taxSettings.taxMode === "manual" && !shipping.state.trim()}
+            taxCalculationPending={taxSettings.taxMode === "manual" && taxSettings.manualTaxRateBps > 0 && !shipping.state.trim()}
             taxSettings={taxSettings}
           />
         ) : null}
@@ -435,10 +435,10 @@ function CheckoutSummary({
         {recurringTotalCents > 0 ? <SummaryRow label="Monthly" value={`${formatPrice(recurringTotalCents)}/mo`} /> : null}
         <SummaryRow label="Shipping" value={shippingAmountCents > 0 ? formatPrice(shippingAmountCents) : "Free"} />
         <SummaryRow
-          label={`${taxSettings.taxLabel} (${formatTaxRate(taxSettings)})`}
-          value={taxCalculationPending ? "Calculated after address" : formatPrice(taxAmountCents)}
+          label="Tax"
+          value={taxCalculationPending ? "Enter shipping state" : formatPrice(taxAmountCents)}
         />
-        <SummaryRow label="Total" value={formatPrice(dueTodayCents)} strong />
+        <SummaryRow label={taxCalculationPending ? "Total before tax" : "Total"} value={formatPrice(dueTodayCents)} strong />
       </div>
     </aside>
   );

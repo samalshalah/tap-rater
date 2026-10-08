@@ -14,7 +14,7 @@ import {
   type CartRow,
 } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
-import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents, formatTaxRate } from "@/lib/tax-rules";
+import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
 import { getProductVisual, productImageFallback } from "@/lib/storefront-visuals";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import type { TaxSettingsInput } from "@/lib/validators";
@@ -336,8 +336,8 @@ export function CartTable({
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted">{taxSettings.taxLabel} ({formatTaxRate(taxSettings)})</span>
-            <span className="text-right font-medium text-ink">Calculated after address</span>
+            <span className="text-muted">Tax</span>
+            <span className="text-right font-medium text-ink">{taxSettings.taxMode === "manual" && taxSettings.manualTaxRateBps > 0 ? "Enter shipping state" : formatPrice(0)}</span>
           </div>
           <div className="flex items-center justify-between gap-4 text-lg">
             <span className="font-medium text-ink">Estimated total</span>

@@ -8,6 +8,7 @@ import { createAdminOrderActionPayload, type AdminOrderAction, type AdminOrderAc
 import { formatOrderItemSummary, getPrimaryOrderAction } from "@/lib/admin-list-display";
 import { createOrderFulfillmentPayload } from "@/lib/order-fulfillment-payload";
 import { canAdvanceOrderFulfillment } from "@/lib/order-fulfillment-rules";
+import { formatOrderReference } from "@/lib/order-reference";
 import type { OrderFulfillmentUpdateInput } from "@/lib/validators";
 import { AdminAlert, AdminBadge, AdminButton, AdminCard, AdminInput, AdminLinkButton, AdminResponsiveTable, AdminSelect, AdminSummaryCard, AdminTextarea } from "./admin-ui";
 
@@ -85,6 +86,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
     return orderRows.filter((order) => {
       const matchesSearch = !search || [
         order.checkoutSessionId,
+        formatOrderReference(order.checkoutSessionId || order.id),
         order.customerName,
         order.email,
         order.paymentStatus,
@@ -413,6 +415,7 @@ function OrderRow({
         <td className="px-4 py-4 align-top">
           <p className="max-w-[240px] truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
           <p className="mt-1 text-xs font-semibold text-muted">{itemSummary.count}</p>
+          <p className="mt-1 font-mono text-xs text-muted">{formatOrderReference(order.checkoutSessionId || order.id)}</p>
         </td>
         <td className="px-4 py-4 align-top">
           <p className="max-w-[220px] truncate font-semibold text-ink" title={order.customerName}>{order.customerName}</p>
@@ -623,6 +626,7 @@ function OrderMobileCard({
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
           <p className="mt-1 text-sm font-semibold text-muted">{itemSummary.count}</p>
+          <p className="mt-1 font-mono text-xs text-muted">{formatOrderReference(order.checkoutSessionId || order.id)}</p>
           <p className="mt-2 truncate text-sm text-ink" title={order.customerName}>{order.customerName}</p>
         </div>
         <p className="shrink-0 font-semibold text-ink">{order.total}</p>

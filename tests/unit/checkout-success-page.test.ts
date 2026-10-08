@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CheckoutSuccessPage from "@/app/checkout/success/page";
+import { formatOrderReference } from "@/lib/order-reference";
 
 const { maybeSingle, from, purchaseEvent } = vi.hoisted(() => {
   const maybeSingle = vi.fn();
@@ -50,10 +51,13 @@ describe("checkout success account guidance", () => {
     expect(html).not.toContain("activation email");
   });
 
-  it("keeps long order references wrappable and preserves their value", async () => {
+  it("shows a ten-character order number while looking up the original payment reference", async () => {
     const html = renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: reference }) }));
     expect(html).toContain("break-all font-medium");
-    expect(html).toContain(reference);
+    expect(html).toContain(formatOrderReference(reference));
+    expect(formatOrderReference(reference)).toMatch(/^[A-Z0-9]{10}$/);
+    expect(html).not.toContain(reference);
+    expect(html).not.toContain("webhook");
     expect(html).toContain("$63.33");
   });
 

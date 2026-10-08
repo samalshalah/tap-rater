@@ -35,14 +35,15 @@ const generatedProductionArtwork = {
 };
 
 describe("order references", () => {
-  it("keeps branded Tap Rater order numbers clean", () => {
-    expect(formatOrderReference("tr-260901-ab12cd")).toBe("TR-260901-AB12CD");
+  it("normalizes legacy branded numbers to the same ten-character reference", () => {
+    expect(formatOrderReference("tr-260901-ab12cd")).toBe(formatOrderReference("TR-260901-AB12CD"));
+    expect(formatOrderReference("TR-260901-AB12CD")).toMatch(/^[A-Z0-9]{10}$/);
   });
 
   it("formats legacy manual references as short customer order numbers", () => {
     const formatted = formatOrderReference("manual_0ed962ff-f896-429a-85e2-f90695fb6752");
 
-    expect(formatted).toMatch(/^TR-[A-Z0-9]{6}$/);
+    expect(formatted).toMatch(/^[A-Z0-9]{10}$/);
     expect(formatted).not.toContain("manual_");
   });
 });

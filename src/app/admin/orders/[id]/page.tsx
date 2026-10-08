@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { canAdvanceOrderFulfillment, canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
 import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
+import { formatOrderReference } from "@/lib/order-reference";
 import { getAdminOrderDesignAssetUrl, getOrderLogoStorageKey } from "@/lib/order-design-assets";
 
 type AdminOrderDetailPageProps = {
@@ -36,7 +37,11 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
           <div className="min-w-0 flex-1">
             <p className="tr-eyebrow">Order detail</p>
             <h1 className="tr-admin-title mt-2 break-words">{order.customer_name ?? "Customer order"}</h1>
-            <p className="mt-2 break-all font-mono text-xs text-muted">{order.stripe_checkout_session_id}</p>
+            <p className="mt-2 font-mono text-sm text-muted">Order {formatOrderReference(order.stripe_checkout_session_id || order.id)}</p>
+            <details className="mt-2 text-xs text-muted">
+              <summary className="cursor-pointer">Payment reference</summary>
+              <p className="mt-2 break-all font-mono text-xs text-muted">{order.stripe_checkout_session_id}</p>
+            </details>
           </div>
           <div className="tr-admin-card shrink-0 px-4 py-3 text-sm font-semibold text-ink">
             {formatPrice(order.total_cents)}

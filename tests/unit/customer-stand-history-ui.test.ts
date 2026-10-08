@@ -68,7 +68,8 @@ describe("customer stand history", () => {
     const html = renderToStaticMarkup(createElement(CustomerStandsManager, { stands: [{ ...stand, paymentStatus }] }));
     expect(html).toContain(label);
     expect(html).toContain("Google Review Stand");
-    expect(html).toContain(`Order ${stand.orderReference}`);
+    expect(html).toMatch(/Order [A-Z0-9]{10}</);
+    expect(html).not.toContain(stand.orderReference);
     expect(html).not.toContain("#order-");
     expect(html).toContain("break-all");
   });

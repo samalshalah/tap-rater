@@ -53,7 +53,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
           <p>
             {hasInvoice
               ? "Your invoice and receipt are available in your account billing area."
-              : "Your invoice and receipt will appear in your account after Stripe sends the payment confirmation webhook."}
+              : "Your invoice and receipt will appear in your account once your payment is confirmed."}
           </p>
           {accountRequested ? (
             <p>Already have a Tap Rater account? Sign in with your existing password. New customers will receive an activation email after payment is confirmed.</p>

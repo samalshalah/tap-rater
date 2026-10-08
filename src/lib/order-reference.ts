@@ -1,13 +1,13 @@
 export function formatOrderReference(reference: string | null | undefined) {
   const value = reference?.trim();
-  if (!value) return "TR-ORDER";
-  if (/^TR-\d{6}-[A-Z0-9]{6}$/i.test(value)) return value.toUpperCase();
+  if (!value) return "Pending";
+  if (/^[A-Z0-9]{10}$/i.test(value)) return value.toUpperCase();
 
-  if (value.startsWith("manual_")) {
-    return `TR-${shortHash(value)}`;
-  }
-
-  return value;
+  // A stable display reference shared by customer pages, email and admin search.
+  // Keep the full original ID for database lookups, payment reconciliation and
+  // authorization; this shortened reference is never a database or access key.
+  const normalized = /^TR-\d{6}-[A-Z0-9]{6}$/i.test(value) ? value.toUpperCase() : value;
+  return shortHash(normalized);
 }
 
 export function createManualOrderReference(now = new Date()) {
@@ -29,11 +29,10 @@ function createOrderRandomPart() {
 }
 
 function shortHash(value: string) {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
+  let hash = 0xcbf29ce484222325n;
+  for (const byte of new TextEncoder().encode(value)) {
+    hash ^= BigInt(byte);
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n);
   }
-
-  return (hash >>> 0).toString(36).toUpperCase().padStart(6, "0").slice(0, 6);
+  return (hash % (36n ** 10n)).toString(36).toUpperCase().padStart(10, "0");
 }
