@@ -11,7 +11,7 @@ describe("Multi-Link order email test", () => {
     expect(html).toContain("Do not fulfill this sample order.");
     expect(html).toContain("Hosted Multi-Link");
     expect(html).toContain("Connection: QR and NFC open your Multi-Link page");
-    expect(html).toContain("Manage your Multi-Link page: https://taprater.com/account/stands");
+    expect(html).toContain('href="https://taprater.com/account/stands"');
     expect(html).toContain("Logo: Uploaded");
     expect(html).toContain("Artwork confirmed: Yes");
     expect(html).toContain("$73.93");

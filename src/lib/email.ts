@@ -9,7 +9,7 @@ import {
 type EmailClient = {
   emails: {
     send: (
-      input: { from: string; to: string | string[]; subject: string; html: string; replyTo?: string | string[] },
+      input: { from: string; to: string | string[]; subject: string; html: string; replyTo?: string | string[]; attachments?: EmailAttachment[] },
       options?: { idempotencyKey?: string }
     ) => Promise<unknown>;
   };
@@ -24,10 +24,13 @@ export type EmailResult =
       reason: string;
     };
 
+export type EmailAttachment = { filename: string; path: string; contentType: string };
+
 export type SendEmailInput = {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
   from?: string;
   replyTo?: string | string[];
   resendClient?: EmailClient;
@@ -109,6 +112,7 @@ export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
         to: input.to,
         subject: input.subject,
         html: input.html,
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}),
         ...(input.replyTo ? { replyTo: input.replyTo } : {})
       },
       { idempotencyKey: identity.idempotencyKey }

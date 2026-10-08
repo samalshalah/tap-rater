@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 import { z } from "zod";
 import { buildEmailHtml, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { renderCustomerOrderEmail } from "@/lib/customer-order-email-layout";
 import {
   defaultEmailTemplates,
   emailTemplateKeys,
@@ -161,6 +162,17 @@ export function renderEmailTemplateHtml(
 }
 
 export function buildEmailTemplatePreviewHtml(template: EmailTemplateSettings) {
+  if (template.key === "customer-order-confirmation") {
+    return renderCustomerOrderEmail({
+      stripe_checkout_session_id: "cs_test_email_preview", status: "paid", payment_status: "paid",
+      subtotal_cents: 3900, total_cents: 5334, shipping_amount_cents: 1200, currency: "usd",
+      production_status: "not_started", shipping_status: "not_shipped", internal_notes: "", admin_fulfillment_notes: "",
+      customer_details_json: { tax_summary: { amount_cents: 234 } },
+      line_items_json: [{ productId: "google-review-stand", title: "Google Review Stand", sku: "GRS",
+        optionId: "standard_direct", quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900,
+        setup: { destinationUrl: "https://example.com/review" } }]
+    }, template, {}, false);
+  }
   return renderEmailTemplateHtml(template, {
     rows: getSampleRowsForTemplate(template.key),
     body: getSampleBodyForTemplate(template.key)

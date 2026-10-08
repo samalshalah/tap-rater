@@ -12,7 +12,7 @@ import {
   type EmailTemplateKey,
   type EmailTemplateSettings
 } from "@/lib/email-templates";
-import { buildAdminPaidOrderEmailHtml, buildCustomerPaidOrderEmailHtml } from "@/lib/order-emails";
+import { buildAdminPaidOrderEmailHtml, buildCustomerPaidOrderEmailHtml, getOrderInvoiceAttachment } from "@/lib/order-emails";
 import { getAdminOrderById, type OrderRecord } from "@/lib/orders";
 import { buildShippingNotificationEmailHtml } from "@/lib/shipping-emails";
 
@@ -129,6 +129,10 @@ async function buildOrderRetryInput(
     if (!sameRecipient(order.email, delivery.recipient)) {
       return { ok: false, error: "The order customer email no longer matches this delivery.", status: 409 };
     }
+    const attachment = getOrderInvoiceAttachment(order);
+    if (order.stripe_checkout_session_id?.startsWith("cs_") && !attachment) {
+      return { ok: false, error: "Invoice PDF is not available yet.", status: 409 };
+    }
     const template = await getTemplateSafely("customer-order-confirmation", getTemplateFn);
     return {
       ok: true,
@@ -137,6 +141,7 @@ async function buildOrderRetryInput(
         subject: template.subject,
         replyTo: getCustomerReplyToEmail(),
         html: buildCustomerPaidOrderEmailHtml(order, template),
+        ...(attachment ? { attachments: [attachment] } : {}),
         delivery: tracking
       }
     };

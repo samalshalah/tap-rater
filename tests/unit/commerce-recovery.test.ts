@@ -11,6 +11,7 @@ const now = new Date("2026-09-05T18:00:00Z");
 const event = { id: "evt_phase2", type: "checkout.session.completed", livemode: false,
   data: { object: { id: "cs_test_phase2", payment_status: "paid" } } } as unknown as Stripe.Event;
 const message = { to: "qa@example.com", subject: "Order receipt", html: "<p>Original receipt</p>",
+  attachments: [{ filename: "invoice.pdf", path: "https://pay.stripe.com/invoice/example/pdf", contentType: "application/pdf" }],
   delivery: { messageType: "paid_order_customer", audience: "customer" as const, entityId: "order-test", idempotencyKey: "phase2/order-test" } };
 
 beforeEach(() => { vi.stubEnv("COMMERCE_RECOVERY_SECRET", "a".repeat(64)); vi.stubEnv("STRIPE_MODE", "test"); });
@@ -72,6 +73,7 @@ describe("commerce email outbox", () => {
     expect(payload).not.toContain(message.to);
     expect(await sendCommerceEmail({ ...message, html: "Changed template" }, { client, send, now })).toEqual({ sent: true });
     expect(send.mock.calls[1][0]).toEqual(send.mock.calls[0][0]);
+    expect(send.mock.calls[1][0].attachments).toEqual(message.attachments);
     expect(await sendCommerceEmail(message, { client, send, now: new Date("2026-09-10") })).toEqual({ sent: true });
     expect(send).toHaveBeenCalledTimes(2);
     expect(client.table("commerce_email_outbox")[0]).toMatchObject({ status: "accepted", payload: null });

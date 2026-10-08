@@ -11,6 +11,13 @@ import {
 } from "@/lib/email";
 
 describe("email utility", () => {
+  it("passes PDF attachments through to the provider", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    const send = vi.fn().mockResolvedValue({ data: { id: "email-pdf" }, error: null });
+    const attachments = [{ filename: "invoice.pdf", path: "https://pay.stripe.com/invoice/example/pdf", contentType: "application/pdf" }];
+    await sendEmail({ to: "buyer@example.com", subject: "Order", html: "<p>Paid</p>", attachments, resendClient: { emails: { send } } });
+    expect(send.mock.calls[0][0].attachments).toEqual(attachments);
+  });
   it("sends recovery links with expiry and a support reply address", async () => {
     process.env.RESEND_API_KEY = "re_test";
     const send = vi.fn().mockResolvedValue({ data: { id: "email-1" }, error: null });

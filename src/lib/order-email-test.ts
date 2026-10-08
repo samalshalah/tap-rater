@@ -12,7 +12,8 @@ const multiLinkTestOrder: OrderRecord = {
   payment_status: "paid",
   email: "qa@example.com",
   customer_name: "Multi-Link Email QA - Do Not Fulfill",
-  subtotal_cents: 5899,
+  subtotal_cents: 4900,
+  customer_details_json: { tax_summary: { amount_cents: 294 } },
   total_cents: 7393,
   currency: "usd",
   shipping_amount_cents: 1200,
@@ -46,8 +47,8 @@ const multiLinkTestOrder: OrderRecord = {
 };
 
 export function buildMultiLinkOrderEmailTestHtml(template: EmailTemplateSettings) {
-  return "<p><strong>TEST EMAIL ONLY. No purchase was made. Do not fulfill this sample order.</strong></p>"
-    + buildCustomerPaidOrderEmailHtml(multiLinkTestOrder, template);
+  return buildCustomerPaidOrderEmailHtml(multiLinkTestOrder, template)
+    .replace('<div style="display:none;', '<p style="padding:16px;text-align:center;"><strong>TEST EMAIL ONLY. No purchase was made. Do not fulfill this sample order.</strong></p><div style="display:none;');
 }
 
 export async function sendMultiLinkOrderEmailTest(input: {

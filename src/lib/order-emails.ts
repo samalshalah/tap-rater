@@ -9,6 +9,7 @@ import {
   type EmailTemplateSettings
 } from "@/lib/email-templates";
 import { formatOrderReference } from "@/lib/order-reference";
+import { renderCustomerOrderEmail, safeEmailUrl } from "@/lib/customer-order-email-layout";
 import {
   getOrderLineItemProductionSummary,
   getAdminOrderArtworkUrl,
@@ -38,13 +39,17 @@ export async function sendPaidOrderEmails(
   const adminEmail = env.ORDER_NOTIFICATION_EMAIL?.trim();
   const customerTemplate = await resolveEmailTemplate("customer-order-confirmation", getTemplateFn);
   const adminTemplate = await resolveEmailTemplate("admin-new-order", getTemplateFn);
+  const invoiceAttachment = getOrderInvoiceAttachment(order);
 
   const customer =
     customerEmail
-      ? await sendPaidOrderEmailSafely(sendEmailFn, {
+      ? order.stripe_checkout_session_id.startsWith("cs_") && !invoiceAttachment
+        ? { sent: false as const, reason: "invoice_pdf_not_ready" }
+        : await sendPaidOrderEmailSafely(sendEmailFn, {
           to: customerEmail,
           subject: customerTemplate.subject,
           html: buildCustomerPaidOrderEmailHtml(order, customerTemplate),
+          ...(invoiceAttachment ? { attachments: [invoiceAttachment] } : {}),
           replyTo: getCustomerReplyToEmail(env),
           delivery: {
             messageType: "paid_order_customer",
@@ -84,25 +89,13 @@ export async function sendPaidOrderEmails(
 }
 
 export function buildCustomerPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["customer-order-confirmation"]) {
-  const billingLinks = getBillingLinks(order);
-  return renderEmailTemplateHtml(template, {
-    rows: {
-      "Order number": getOrderReference(order),
-      Status: "Paid",
-      Total: formatMoney(order.total_cents, order.currency),
-      Shipping: formatShippingSummary(order)
-    },
-    body: [
-      "Order summary:",
-      ...order.line_items_json.flatMap(formatCustomerLineItem),
-      "What happens next: Tap Rater will review the order details before shipping.",
-      ...billingLinks,
-      "Support: https://taprater.com/support",
-      "Shipping: https://taprater.com/shipping",
-      "Refund Policy: https://taprater.com/refund-policy",
-      "Terms: https://taprater.com/terms"
-    ]
-  });
+  return renderCustomerOrderEmail(order, template, getBillingDetails(order), Boolean(getOrderInvoiceAttachment(order)));
+}
+
+export function getOrderInvoiceAttachment(order: OrderRecord) {
+  const path = safeEmailUrl(getBillingDetails(order).invoicePdfUrl);
+  if (!path || !["pay.stripe.com", "invoice.stripe.com", "files.stripe.com"].includes(new URL(path).hostname)) return undefined;
+  return { filename: `Tap-Rater-Invoice-${getOrderReference(order)}.pdf`, path, contentType: "application/pdf" };
 }
 
 export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defaultEmailTemplates["admin-new-order"]) {
@@ -133,40 +126,6 @@ export function buildAdminPaidOrderEmailHtml(order: OrderRecord, template = defa
       ...order.line_items_json.flatMap((item, index) => formatAdminLineItem(item, getAdminOrderArtworkUrl(order, index)))
     ]
   });
-}
-
-function formatCustomerLineItem(item: OrderLineItem) {
-  const summary = getOrderLineItemProductionSummary(item);
-  if (summary.fulfillmentKind === "hosted") {
-    // Checkout metadata can precede permanent page provisioning; account access stays valid.
-    const lines = [
-      `${item.quantity} x ${item.title} - ${summary.optionLabel} - ${formatMoney(item.lineSubtotalCents, "usd")}`,
-      item.optionId === "standard_direct" ? "Connection: NFC opens your Multi-Link page (no printed QR)" : "Connection: QR and NFC open your Multi-Link page",
-      "Manage your Multi-Link page: https://taprater.com/account/stands"
-    ];
-    if (summary.businessName) lines.push(`Business name: ${summary.businessName}`);
-    if (item.optionId === "branded_qr_direct") {
-      lines.push(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"}`);
-      lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
-    }
-    return lines;
-  }
-  const lines = [
-    `${item.quantity} x ${item.title} - ${summary.optionLabel} - ${formatMoney(item.lineSubtotalCents, "usd")}`,
-    `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
-    summary.fulfillmentKind === "standard" ? "Connection: NFC opens the destination link directly (no printed QR)" : "Connection: QR and NFC open the destination link directly",
-    ...(summary.fulfillmentKind === "standard" ? [] : [`QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`]),
-    `NFC target: ${summary.nfcTargetUrl ?? summary.destinationUrl ?? "Not provided"}`
-  ];
-
-  if (summary.fulfillmentKind === "branded" || summary.fulfillmentKind === "custom") {
-    lines.push(`Business name: ${summary.businessName ?? "Not provided"}`);
-    lines.push(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"}`);
-    lines.push(`QR: ${summary.qrTargetUrl ?? summary.generatedQrValue ? "Generated" : "Not generated"}`);
-    lines.push(`Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`);
-  }
-
-  return lines;
 }
 
 function formatAdminLineItem(item: OrderLineItem, artworkUrl?: string) {
@@ -206,15 +165,6 @@ function getOrderReference(order: OrderRecord) {
   return formatOrderReference(order.stripe_checkout_session_id || order.id);
 }
 
-function getBillingLinks(order: OrderRecord) {
-  const details = getBillingDetails(order);
-  const lines: string[] = [];
-  if (details.invoicePdfUrl) lines.push(`Invoice PDF: ${details.invoicePdfUrl}`);
-  else if (details.hostedInvoiceUrl) lines.push(`Invoice: ${details.hostedInvoiceUrl}`);
-  if (details.receiptUrl) lines.push(`Receipt: ${details.receiptUrl}`);
-  return lines;
-}
-
 function getBillingDetails(order: OrderRecord) {
   const details = order.customer_details_json && typeof order.customer_details_json === "object" ? order.customer_details_json : {};
   return {
@@ -239,11 +189,6 @@ async function resolveEmailTemplate(key: EmailTemplateKey, getTemplateFn: (key: 
   } catch {
     return defaultEmailTemplates[key];
   }
-}
-
-function formatShippingSummary(order: OrderRecord) {
-  const amount = order.shipping_amount_cents ? `, ${formatMoney(order.shipping_amount_cents, order.currency)}` : "";
-  return `${order.shipping_mode ?? "manual"}${amount}`;
 }
 
 function formatMoney(cents: number, currency: string) {

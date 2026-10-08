@@ -21,6 +21,7 @@ const paidOrder: OrderRecord = {
   payment_status: "paid",
   email: "buyer@example.com",
   customer_name: "Buyer Name",
+  customer_details_json: { invoice_pdf_url: "https://pay.stripe.com/invoice/example/pdf", invoice_number: "INV-123" },
   subtotal_cents: 8800,
   total_cents: 8800,
   currency: "usd",
@@ -101,6 +102,30 @@ const paidOrder: OrderRecord = {
 };
 
 describe("paid order emails", () => {
+  it("waits for a trusted Stripe invoice PDF instead of sending an incomplete confirmation", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+    for (const invoice_pdf_url of [undefined, "https://attacker.example/invoice.pdf", "https://pay.stripe.com.attacker.example/file", "http://pay.stripe.com/file"]) {
+      const result = await sendPaidOrderEmails({ ...paidOrder, customer_details_json: { invoice_pdf_url } }, { sendEmailFn, env: {} });
+      expect(result.customer).toEqual({ sent: false, reason: "invoice_pdf_not_ready" });
+    }
+    expect(sendEmailFn).not.toHaveBeenCalled();
+  });
+
+  it("escapes customer details and blocks executable destination links", () => {
+    const html = buildCustomerPaidOrderEmailHtml({ ...paidOrder, line_items_json: [{ ...paidOrder.line_items_json[0], title: '<img src=x onerror="alert(1)">', setup: { destinationUrl: "javascript:alert(1)" } }] });
+    expect(html).toContain("&lt;img");
+    expect(html).not.toContain('href="javascript:');
+    expect(html).not.toContain('<img src=x');
+    expect(html).not.toContain(paidOrder.stripe_checkout_session_id);
+    expect(html).toContain("Your invoice PDF is attached.");
+  });
+
+  it("keeps recurring service charges separate from tax", () => {
+    const html = buildCustomerPaidOrderEmailHtml({ ...paidOrder, subtotal_cents: 3900, total_cents: 6333, shipping_amount_cents: 1200, customer_details_json: { tax_summary: { amount_cents: 234 } } });
+    expect(html).toContain("$2.34");
+    expect(html).toContain("$9.99/month");
+    expect(html).toContain("$63.33");
+  });
   it.each(["standard_direct", "branded_qr_direct"])("keeps %s Multi-Link confirmation usable before page URLs reach the order snapshot", (optionId) => {
     const order: OrderRecord = {
       ...paidOrder,
@@ -144,10 +169,10 @@ describe("paid order emails", () => {
       }]
     };
     const html = buildCustomerPaidOrderEmailHtml(order);
-    expect(html).toContain("Destination URL: https://g.page/example/review");
+    expect(html).toContain('href="https://g.page/example/review"');
     expect(html).not.toContain("QR target: https://g.page/example/review");
-    expect(html).toContain("NFC target: https://g.page/example/review");
-    expect(html).toContain("Manage your Multi-Link page: https://taprater.com/account/stands");
+    expect(html).not.toContain("NFC target:");
+    expect(html).toContain('href="https://taprater.com/account/stands"');
     expect(html).toContain("Business name: QA Menu Business");
     expect(html).toContain("Logo: Uploaded");
     expect(html).not.toContain("Destination URL: https://example.com/menu");
@@ -158,11 +183,12 @@ describe("paid order emails", () => {
 
     expect(html).toContain("Your Tap Rater order is confirmed");
     expect(html).toContain("Google Review Stand - Standard Direct");
-    expect(html).toContain("Destination URL: https://g.page/example/review");
+    expect(html).toContain('href="https://g.page/example/review"');
     expect(html).toContain("Connection: NFC opens the destination link directly (no printed QR)");
     expect(html).not.toContain("QR target: https://g.page/example/review");
-    expect(html).toContain("NFC target: https://g.page/example/review");
-    expect(html).toContain("Total:</strong> $88.00");
+    expect(html).not.toContain("NFC target:");
+    expect(html).toContain("Total paid");
+    expect(html).toContain("$88.00");
     expect(html).toContain("https://taprater.com/support");
   });
 
@@ -171,11 +197,10 @@ describe("paid order emails", () => {
 
     expect(html).toContain("View Menu Stand - Branded + QR Direct");
     expect(html).toContain("Connection: QR and NFC open the destination link directly");
-    expect(html).toContain("QR target: https://example.com/menu");
-    expect(html).toContain("NFC target: https://example.com/menu");
+    expect(html).toContain('href="https://example.com/menu"');
+    expect(html).not.toContain("NFC target:");
     expect(html).toContain("Business name: QA Menu Business");
     expect(html).toContain("Logo: Uploaded");
-    expect(html).toContain("QR: Generated");
     expect(html).toContain("Artwork confirmed: Yes");
     expect(html).toContain("https://taprater.com/shipping");
     expect(html).toContain("https://taprater.com/refund-policy");
@@ -215,6 +240,7 @@ describe("paid order emails", () => {
       to: "buyer@example.com",
       subject: "Your Tap Rater order is confirmed",
       replyTo: "support@taprater.com",
+      attachments: [{ filename: `Tap-Rater-Invoice-${formatOrderReference(paidOrder.stripe_checkout_session_id)}.pdf`, path: "https://pay.stripe.com/invoice/example/pdf", contentType: "application/pdf" }],
       delivery: {
         messageType: "paid_order_customer",
         audience: "customer",

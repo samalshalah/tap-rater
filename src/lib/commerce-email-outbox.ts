@@ -34,7 +34,8 @@ export async function sendCommerceEmail(input: SendEmailInput, options: Options 
       const firstKnownAttempt = prior.data?.[0]?.created_at ?? options.sourceCreatedAt;
       const historical = firstKnownAttempt && now.getTime() - Date.parse(firstKnownAttempt) >= 23 * 60 * 60 * 1000;
       const payload = { to: input.to, subject: input.subject, html: input.html,
-        from: input.from ?? getDefaultFromEmail(), ...(input.replyTo ? { replyTo: input.replyTo } : {}), delivery: input.delivery };
+        from: input.from ?? getDefaultFromEmail(), ...(input.replyTo ? { replyTo: input.replyTo } : {}),
+        ...(input.attachments?.length ? { attachments: input.attachments } : {}), delivery: input.delivery };
       row = { id, status: historical ? "needs_review" : "pending", payload: encryptCommerceData(payload, id), entity_id: input.delivery?.entityId ?? null,
         first_attempt_at: null, updated_at: now.toISOString() };
       const created = await client.from("commerce_email_outbox").insert(row);

@@ -136,6 +136,7 @@ function orderRecord(): OrderRecord {
     payment_status: "paid",
     email: "buyer@example.com",
     customer_name: "Test Buyer",
+    customer_details_json: { invoice_pdf_url: "https://pay.stripe.com/invoice/example/pdf" },
     subtotal_cents: 3900,
     total_cents: 5334,
     currency: "usd",
