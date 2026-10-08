@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
@@ -191,10 +191,11 @@ export function Header() {
     <header ref={headerRef} className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
       <div className="tr-container-wide">
         <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
+          {pathname.startsWith("/product/") ? <Link href="/shop" className="flex min-h-11 items-center gap-2 font-semibold text-ink md:hidden"><ArrowLeft size={22} aria-hidden="true" />Back to shop</Link> : null}
           <Link
             href="/"
             prefetch={false}
-            className="inline-flex items-center"
+            className={pathname.startsWith("/product/") ? "hidden items-center md:inline-flex" : "inline-flex items-center"}
             onClick={() => setIsMenuOpen(false)}
           >
             <Image

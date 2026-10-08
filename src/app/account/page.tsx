@@ -3,6 +3,7 @@ import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { countMultiLinkPages, countPaidStandQuantity, getCustomerPortal, type CustomerPortalData } from "@/lib/customer-portal";
 import { formatOrderReference } from "@/lib/order-reference";
+import { MobileAccountOverview } from "@/components/account/mobile-account-overview";
 
 export default async function AccountPage() {
   const session = await requireCustomer();
@@ -12,9 +13,10 @@ export default async function AccountPage() {
   const latestOrder = portal.orders[0];
 
   return (
-    <AccountShell>
+    <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Customer account storage is not configured yet." /> : null}
-      <div className="grid gap-5">
+      <MobileAccountOverview portal={portal} />
+      <div className="tr-account-desktop grid gap-5">
         <section className="tr-card p-5">
           <p className="tr-eyebrow">Overview</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>

@@ -16,6 +16,7 @@ import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { type HomepageThemeContent, orderedEnabledFaqs } from "@/lib/website-content";
 import styles from "./homepage-layout.module.css";
+import { MobileHome } from "./mobile-home";
 
 const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 
@@ -34,6 +35,7 @@ export function HomepageLayout({ content, products, businessUses = [] }: { conte
   const actions = content.actions.items.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
 
   return <div className={styles.home}>
+    {content.hero.enabled ? <MobileHome product={comparisonProduct ?? featured[0]} /> : null}
     {content.hero.enabled ? <section className={styles.hero} aria-labelledby="home-title" data-home-section="hero">
       <div className={styles.heroMedia}>
         <Image src={optimizedUploadSrc(content.hero.image.src, 1200)} alt={content.hero.image.alt} fill unoptimized fetchPriority="high" loading="eager" sizes="100vw" className={styles.heroImage} />

@@ -7,15 +7,15 @@ const links = [
   { href: "/account/orders", label: "Orders & Billing" }
 ];
 
-export function AccountShell({ children }: { children: ReactNode }) {
+export function AccountShell({ children, overview = false }: { children: ReactNode; overview?: boolean }) {
   return (
     <main className="tr-account-shell min-h-screen bg-soft">
       <section className="tr-container tr-section-compact">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div data-overview={overview} className="tr-account-heading mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">Tap Rater account</p>
-            <h1 className="tr-page-title mt-2">Account dashboard</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Review what needs attention and manage purchased stands from one place.</p>
+            <h1 className="tr-page-title mt-2">Your account</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">Your stands and orders, all in one place.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
             {links.map((link) => (

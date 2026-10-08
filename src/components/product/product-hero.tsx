@@ -35,12 +35,12 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
   const pricePrefix = selectedPriceCents === null ? "From " : "";
 
   return (
-    <div className="tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
+    <div className="tr-product-hero tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
       {effectiveSelectedOptionId && selectedPriceCents !== null ? <ProductAnalyticsEvent item={{ item_id: product.slug, item_variant: effectiveSelectedOptionId, price: selectedPriceCents / 100, quantity: 1 }} /> : null}
       <ProductGallery product={product} selectedOptionId={effectiveSelectedOptionId} />
 
       <div className="grid gap-4 sm:gap-5">
-        <div className="flex flex-wrap items-center gap-2 text-[13px] font-medium">
+        <div className="hidden flex-wrap items-center gap-2 text-[13px] font-medium md:flex">
           <Link href="/shop" className="text-muted hover:text-brand">
             Shop
           </Link>
@@ -55,10 +55,10 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
         </div>
 
         <div>
-          <p className="tr-eyebrow">{category?.title ?? "Tap Rater stand"}</p>
+          <p className="tr-eyebrow hidden md:block">{category?.title ?? "Tap Rater stand"}</p>
           <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
-          <p className="tr-body mt-3 max-w-2xl text-base">{product.shortDescription}</p>
-          <p className="mt-3 text-xl font-semibold text-ink">
+          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base"><span className="md:hidden">Choose your design, then connect your business link.</span><span className="hidden md:inline">{product.shortDescription}</span></p>
+          <p className="mt-3 hidden text-xl font-semibold text-ink md:block">
             {pricePrefix}{displayPrice}
             {selectedMonthlyPriceCents > 0 ? ` + ${formatPrice(selectedMonthlyPriceCents)}/month` : ""}
           </p>

@@ -39,7 +39,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
 
   return (
     <div className="grid content-center gap-3 lg:sticky lg:top-24">
-      <div className="tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
+      <div className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
         <Image
           src={optimizedUploadSrc(image.src, 1200)}
           alt={image.alt}
@@ -50,7 +50,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
           className="object-contain p-4 mix-blend-multiply sm:p-6"
         />
       </div>
-      <p className="min-h-5 text-center text-xs text-muted">{image.caption ?? ""}</p>
+      <p className="tr-product-gallery-caption min-h-5 text-center text-xs text-muted">{image.caption ?? ""}</p>
       {galleryImages.length > 1 ? (
         <div className="mx-auto w-full max-w-[292px] overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
           <div className="flex w-max min-w-full justify-center gap-2 p-1">

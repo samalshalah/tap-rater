@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckoutElementsProvider, PaymentElement, useCheckoutElements } from "@stripe/react-stripe-js/checkout";
 import { loadStripe } from "@stripe/stripe-js";
-import { AlertCircle, ArrowLeft, LockKeyhole } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent, type InvalidEvent } from "react";
+import { AlertCircle, ArrowLeft, ChevronDown, LockKeyhole } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type InvalidEvent } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
 import { resolveShippingRecipientName } from "@/components/checkout/shipping-recipient";
@@ -268,6 +268,10 @@ export function EmbeddedCheckoutClient({ stripePublicConfig, taxSettings }: { st
           Back to cart
         </Link>
       </header>
+      <ol className="flex gap-3 text-sm" aria-label="Checkout progress">
+        <li aria-current={step === "details" ? "step" : undefined} className="flex-1 rounded-lg bg-panel px-3 py-3 font-semibold text-brand">1. Contact &amp; shipping</li>
+        <li aria-current={step === "payment" ? "step" : undefined} className={`flex-1 rounded-lg px-3 py-3 font-semibold ${step === "payment" ? "bg-panel text-brand" : "bg-soft text-muted"}`}>2. Payment</li>
+      </ol>
 
       <div className={step === "payment" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)] lg:items-start"}>
         {step === "details" ? (
@@ -405,9 +409,17 @@ function CheckoutSummary({
   taxCalculationPending: boolean;
   taxSettings: TaxSettingsInput;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const summaryId = useId();
   return (
     <aside className="tr-card p-4 sm:p-5 lg:sticky lg:top-24">
-      <p className="tr-eyebrow">Order summary</p>
+      {compact ? <button type="button" aria-expanded={expanded} aria-controls={summaryId} onClick={() => setExpanded(value => !value)} className="flex min-h-11 w-full items-center justify-between gap-3 text-left md:hidden">
+        <span><span className="block text-sm font-semibold">Order summary</span><span className="text-xs text-muted">{taxCalculationPending ? "Before tax" : "Total today"}</span></span>
+        <span className="flex items-center gap-2 font-semibold">{formatPrice(dueTodayCents)}<ChevronDown size={18} aria-hidden="true" className={expanded ? "rotate-180" : ""} /></span>
+      </button> : null}
+      {compact && recurringTotalCents > 0 ? <p className="mt-2 text-sm text-muted md:hidden">Then {formatPrice(recurringTotalCents)}/month for Multi-Link</p> : null}
+      <p className={`tr-eyebrow ${compact ? "hidden md:block" : ""}`}>Order summary</p>
+      <div id={summaryId} className="tr-checkout-breakdown" data-collapsible={compact} data-expanded={expanded}>
       <div className={`mt-3 grid gap-3 ${compact ? "max-h-[360px] overflow-auto pr-1" : ""}`}>
         {rows.length > 0 ? (
           rows.map((row) => (
@@ -439,6 +451,7 @@ function CheckoutSummary({
           value={taxCalculationPending ? "Enter shipping state" : formatPrice(taxAmountCents)}
         />
         <SummaryRow label={taxCalculationPending ? "Total before tax" : "Total"} value={formatPrice(dueTodayCents)} strong />
+      </div>
       </div>
     </aside>
   );

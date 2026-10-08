@@ -157,3 +157,7 @@
   .hero .ctas :global(.tr-button-primary) { padding-inline: 14px; font-size: 13px; }
   .hero .textLink { font-size: 13px; gap: 5px; }
 }
+@media (max-width: 767px) {
+  .hero { display: none; }
+  .hero + .section { padding-top: 24px; }
+}

@@ -570,8 +570,8 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               key={option.id}
               className={
                 selectedOptionId === option.id
-                  ? "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                  : "grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
+                  ? "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
+                  : "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
               }
             >
               <input
@@ -763,6 +763,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
           </div>
         </div>
 
+        <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
         <button
           type="button"
           className="tr-button-primary w-full"
@@ -773,6 +774,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
             ? "Multi-Link Checkout Coming Soon"
             : `${setupButtonLabel}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
         </button>
+        </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
           <span>{selectedOption.hasQr ? "QR + NFC" : "NFC only · No printed QR"}</span>
           {selectedLinkExperience === "multilink" ? (
