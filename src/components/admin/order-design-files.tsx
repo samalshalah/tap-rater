@@ -16,7 +16,7 @@ export function OrderDesignFiles({ artworkUrl, originalLogoUrl, printLogoUrl, te
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const files = [
-    { url: artworkUrl, label: "Download design (SVG)", filename: "stand-design.svg" },
+    { url: artworkUrl, label: "Download print-ready artwork (SVG)", filename: "stand-design.svg" },
     { url: originalLogoUrl, label: "Download original logo", filename: "original-logo.png" },
     { url: printLogoUrl, label: "Download print logo", filename: "print-logo.png" },
     { url: textUrl, label: "Download design text", filename: "design-text.txt" }
@@ -25,6 +25,7 @@ export function OrderDesignFiles({ artworkUrl, originalLogoUrl, printLogoUrl, te
   return (
     <div className="mt-5 border-t border-line pt-4">
       <h3 className="text-sm font-bold text-ink">Client design files</h3>
+      {artworkUrl ? <p className="mt-2 text-sm text-muted">The print-ready SVG includes the complete design, customer logo, text, and QR code. Logo downloads contain only the logo.</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
         {files.map((file) => (
           <a key={file.url} href={file.url} download={file.filename} aria-disabled={Boolean(pending)}

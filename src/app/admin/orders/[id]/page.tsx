@@ -242,7 +242,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
         <PreviewAsset title="Artwork template" src={previewTemplate} alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
-        <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} alt={`${item.title} production artwork`} />
+        <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
       ) : item.optionId === "branded_qr_direct" ? (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
           Final artwork is generated after confirmed payment. Check production warnings if the file is unavailable.
@@ -252,15 +252,20 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
   );
 }
 
-function PreviewAsset({ title, src, alt }: { title: string; src: string; alt: string }) {
+function PreviewAsset({ title, src, alt, downloadUrl }: { title: string; src: string; alt: string; downloadUrl?: string }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
       <div className="grid min-h-40 place-items-center overflow-hidden rounded-md bg-soft">
         <img src={src} alt={alt} className="max-h-52 max-w-full object-contain" />
       </div>
+      {downloadUrl ? (
+        <a href={downloadUrl} download className="tr-button-primary mt-3 min-h-11 w-full px-3 py-2 text-center text-sm">
+          Download print-ready SVG
+        </a>
+      ) : null}
       <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
-        Open preview
+        {downloadUrl ? "View preview (opens in a new tab)" : "Open preview"}
       </a>
     </div>
   );
