@@ -1,3 +1,5 @@
+import { getOffersSettings } from "@/lib/offer-settings";
+import { getShippingSettings } from "@/lib/shipping-settings";
 import { Suspense } from "react";
 import { EmbeddedCheckoutClient } from "@/components/checkout/embedded-checkout";
 import { validateStripePublicConfig } from "@/lib/stripe-public-config";
@@ -13,12 +15,13 @@ export const metadata = {
 export default async function CheckoutPage() {
   const stripePublicConfig = validateStripePublicConfig();
   const taxSettings = await getTaxSettings();
+  const [offers, shippingSettings] = await Promise.all([getOffersSettings(), getShippingSettings()]);
 
   return (
     <main className="bg-soft text-ink">
       <section className="tr-container tr-section">
         <Suspense fallback={<div className="tr-card p-8 text-sm font-semibold text-muted">Loading checkout...</div>}>
-          <EmbeddedCheckoutClient stripePublicConfig={stripePublicConfig} taxSettings={taxSettings} />
+          <EmbeddedCheckoutClient offers={offers} shippingSettings={shippingSettings} stripePublicConfig={stripePublicConfig} taxSettings={taxSettings} />
         </Suspense>
       </section>
     </main>

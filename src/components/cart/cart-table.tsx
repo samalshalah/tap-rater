@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
+import type { ShippingSettingsInput } from "@/lib/validators";
+import { OfferSummary } from "@/components/cart/offer-summary";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -20,11 +23,13 @@ import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import type { TaxSettingsInput } from "@/lib/validators";
 
 export function CartTable({
+  offers, shippingSettings,
   manualCheckoutEnabled = false,
   stripeMode = "test",
   stripeCheckoutEnabled = true,
   taxSettings,
 }: {
+  offers: OffersSettings; shippingSettings: ShippingSettingsInput;
   manualCheckoutEnabled?: boolean;
   stripeMode?: "test" | "live";
   stripeCheckoutEnabled?: boolean;
@@ -42,9 +47,10 @@ export function CartTable({
   const checkoutAvailable = usesStripeCheckout || usesManualCheckout;
 
   const rows = getCartRows(items);
-  const standTotal = calculateCartTotalCents(items);
+  const promotion = quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers);
+  const standTotal = promotion.subtotalCents;
   const recurringTotal = calculateRecurringTotalCents(rows);
-  const shippingRule = resolveCheckoutShippingRule(standTotal);
+  const shippingRule = resolveCheckoutShippingRule(standTotal, offerShippingSettings(shippingSettings, offers));
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,
     getCheckoutTaxableAmountCents({
@@ -274,6 +280,7 @@ export function CartTable({
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>
+          <OfferSummary quote={promotion} offers={offers} />
           <h2 className="mt-2 text-xl font-medium leading-snug text-ink">{usesManualCheckout ? "Order review" : "Checkout"}</h2>
         </div>
         {usesManualCheckout && !signedInCustomer ? (
@@ -305,7 +312,7 @@ export function CartTable({
         ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted">Stands</span>
+            <span className="text-muted">Stands after savings</span>
             <span className="font-medium text-ink">{formatPrice(standTotal)}</span>
           </div>
           {recurringTotal > 0 ? (

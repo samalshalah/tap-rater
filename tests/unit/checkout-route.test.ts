@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import { handleCheckoutPost, type CheckoutRouteDependencies } from "@/lib/checkout-route";
+import { defaultOffers } from "@/lib/offers";
 
 const configuredStandardPayload = {
   checkoutAttemptId: "checkout-attempt-unit-001",
@@ -80,6 +81,31 @@ function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) 
 }
 
 describe("checkout route reliability", () => {
+  it("persists exactly the same discounted total that Stripe receives", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies({ getOffersSettings: async () => defaultOffers });
+    const payload = structuredClone(configuredStandardPayload);
+    payload.items[0].quantity = 2;
+    const response = await handleCheckoutPost(createCheckoutRequest(payload), dependencies);
+    expect(response.status).toBe(200);
+    const stripe = vi.mocked(dependencies.createStripeSession).mock.calls[0][0];
+    const order = vi.mocked(dependencies.createPendingOrder).mock.calls[0][0];
+    expect(stripe.cart.totalCents).toBe(7215);
+    expect(order.subtotalCents).toBe(7215);
+    expect(order.shippingAmountCents).toBe(0);
+    expect(order.totalCents).toBe(7648);
+    expect(order.rows[0].discountCents).toBe(585);
+    expect(order.rows[0].quantity).toBe(2);
+  });
+  it("requires review instead of charging when the displayed offer total is stale", async () => {
+    process.env.STRIPE_SECRET_KEY = "sk_test_unit";
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
+    const dependencies = createDependencies({ getOffersSettings: async () => defaultOffers });
+    const response = await handleCheckoutPost(createCheckoutRequest({ ...configuredStandardPayload, quotedTotalCents: 1 }), dependencies);
+    expect(response.status).toBe(409);
+    expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+  });
   afterEach(() => {
     delete process.env.STRIPE_MODE;
     delete process.env.STRIPE_SECRET_KEY;

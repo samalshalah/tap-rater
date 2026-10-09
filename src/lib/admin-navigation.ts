@@ -24,6 +24,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Commerce",
     items: [
+      { label: "Offers", href: "/admin/offers", description: "Automatic savings and free shipping" },
       {
         label: "Orders",
         href: "/admin/orders",

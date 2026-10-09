@@ -36,6 +36,9 @@ export type OrderLineItem = {
   quantity: number;
   unitAmountCents: number;
   lineSubtotalCents: number;
+  discountCents?: number;
+  offerId?: string;
+  offerLabel?: string;
   setup?: Record<string, unknown>;
   logoRequired?: boolean;
   logoStatus?: "not_required" | "uploaded" | "manual_collection_required";
@@ -213,6 +216,9 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       quantity: row.quantity,
       unitAmountCents: row.unitAmountCents,
       lineSubtotalCents: row.lineSubtotalCents,
+      discountCents: row.discountCents,
+      offerId: row.offerId,
+      offerLabel: row.offerLabel,
       setup: Object.fromEntries(Object.entries(row.setup ?? {}).filter(([key]) => key !== "productionArtwork")),
       logoRequired: row.logoRequired,
       logoStatus: row.logoStatus,

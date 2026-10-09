@@ -1,3 +1,5 @@
+import { getOffersSettings } from "@/lib/offer-settings";
+import { getShippingSettings } from "@/lib/shipping-settings";
 import { CartTable } from "@/components/cart/cart-table";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getStripeModeSafe } from "@/lib/checkout";
@@ -11,6 +13,7 @@ export default async function CartPage() {
   const stripeCheckoutEnabled = validateStripePublicConfig().ok;
   const manualCheckoutEnabled = process.env.TAP_RATER_ENABLE_MANUAL_CHECKOUT === "true";
   const taxSettings = await getTaxSettings();
+  const [offers, shippingSettings] = await Promise.all([getOffersSettings(), getShippingSettings()]);
 
   return (
     <main className="tr-public-shell text-ink">
@@ -21,7 +24,7 @@ export default async function CartPage() {
       />
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <CartTable
+          <CartTable offers={offers} shippingSettings={shippingSettings}
             manualCheckoutEnabled={manualCheckoutEnabled}
             stripeMode={stripeMode}
             stripeCheckoutEnabled={stripeCheckoutEnabled}

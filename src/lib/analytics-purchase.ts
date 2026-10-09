@@ -17,8 +17,8 @@ export function verifiedPurchase(input: unknown): PurchaseData | null {
     if (typeof item.productId !== "string" || !/^[a-z0-9-]{1,100}$/.test(item.productId) ||
       !["standard_direct", "branded_qr_direct", "hosted_multilink"].includes(String(item.optionId)) ||
       !Number.isInteger(item.quantity) || Number(item.quantity) < 1 || Number(item.quantity) > 99 || !cents(item.unitAmountCents) ||
-      item.lineSubtotalCents !== item.unitAmountCents * Number(item.quantity)) return null;
-    items.push({ item_id: item.productId, item_variant: String(item.optionId), price: item.unitAmountCents / 100, quantity: Number(item.quantity) });
+      (!cents(item.discountCents ?? 0) || Number(item.discountCents ?? 0) > item.unitAmountCents * Number(item.quantity) || item.lineSubtotalCents !== item.unitAmountCents * Number(item.quantity) - Number(item.discountCents ?? 0))) return null;
+    items.push({ item_id: item.productId, item_variant: String(item.optionId), price: Number(item.lineSubtotalCents) / Number(item.quantity) / 100, quantity: Number(item.quantity) });
     const setup = object(item.setup);
     if (setup.serviceMode === "HOSTED" && cents(setup.monthlyPriceCents) && setup.monthlyPriceCents > 0) {
       items.push({ item_id: "multi-link-monthly", item_variant: "subscription", price: setup.monthlyPriceCents / 100, quantity: Number(item.quantity) });

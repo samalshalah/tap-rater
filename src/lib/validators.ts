@@ -496,6 +496,7 @@ export type AdminConfigInput = z.infer<typeof adminConfigSchema>;
 
 export const shippingSettingsSchema = z.object({
   shippingMode: z.enum(["manual", "free", "flat"]).default("flat"),
+  freeShippingThresholdCents: z.number().int().min(1).nullable().optional(),
   flatShippingAmountCents: z.number().int().min(0).max(100000).default(1200),
   allowedCountryCodes: z
     .array(z.string().trim().regex(/^[A-Z]{2}$/))
@@ -509,7 +510,7 @@ export const shippingSettingsSchema = z.object({
     .string()
     .trim()
     .max(1000)
-    .default("Shipping is $12 under $55 and free at $55 or more.")
+    .default("Shipping is $12 under $60 and free at $60 or more.")
 });
 
 export const taxSettingsSchema = z.object({
@@ -660,6 +661,7 @@ export const checkoutShippingAddressSchema = z.object({
 });
 
 export const checkoutRequestSchema = checkoutCartSchema.extend({
+  quotedTotalCents: z.number().int().nonnegative().optional(),
   checkoutAttemptId: z.string().trim().regex(/^[A-Za-z0-9_-]{16,80}$/),
   customer: checkoutCustomerSchema,
   shippingAddress: checkoutShippingAddressSchema

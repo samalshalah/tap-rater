@@ -67,6 +67,9 @@ export type CheckoutCartRow = {
   quantity: number;
   unitAmountCents: number;
   lineSubtotalCents: number;
+  discountCents?: number;
+  offerId?: string;
+  offerLabel?: string;
   monthlyAmountCents?: number;
   shortDescription: string;
   setup: NonNullable<CartItem["setup"]>;
@@ -272,24 +275,30 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
   const productLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = rows.flatMap((row) => {
     const productData = {
       name: row.title,
-      description: `${row.optionLabel} - ${row.shortDescription}`,
+      description: `${row.optionLabel} - ${row.shortDescription}${row.offerLabel ? ` — ${row.offerLabel} applied` : ""}`,
       metadata: {
         product_id: row.productId,
         option_id: row.optionId,
         sku: row.sku
       }
     };
+    const lowUnit = Math.floor(row.lineSubtotalCents / row.quantity);
+    const remainder = row.lineSubtotalCents % row.quantity;
     const physicalLine: Stripe.Checkout.SessionCreateParams.LineItem = {
       quantity: row.quantity,
       price_data: {
         currency: "usd",
         product_data: productData,
-        unit_amount: row.unitAmountCents
+        unit_amount: lowUnit
       }
     };
 
+    const physicalLines = remainder === 0 ? [physicalLine] : [
+      ...(row.quantity > remainder ? [{ ...physicalLine, quantity: row.quantity - remainder }] : []),
+      { ...physicalLine, quantity: remainder, price_data: { ...physicalLine.price_data!, unit_amount: lowUnit + 1 } },
+    ];
     if (row.destinationMode !== "HOSTED") {
-      return [physicalLine];
+      return physicalLines;
     }
 
     const hostedLine: Stripe.Checkout.SessionCreateParams.LineItem = {
@@ -311,7 +320,7 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
       }
     };
 
-    return [physicalLine, hostedLine];
+    return [...physicalLines, hostedLine];
   });
 
   const adjustmentLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];

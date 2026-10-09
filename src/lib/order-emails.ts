@@ -140,6 +140,7 @@ function formatAdminLineItem(item: OrderLineItem, artworkUrl?: string) {
     `Option: ${summary.optionLabel}`,
     `Unit price: ${formatMoney(item.unitAmountCents, "usd")}`,
     `Line subtotal: ${formatMoney(item.lineSubtotalCents, "usd")}`,
+    ...(item.discountCents ? [`${item.offerLabel || "Offer"}: saved ${formatMoney(item.discountCents, "usd")}`] : []),
     `Destination URL: ${summary.destinationUrl ?? "Not provided"}`,
     `Connection: ${summary.nfcBehavior}; ${summary.printedQrLabel}`,
     ...(item.optionId === "standard_direct" || summary.fulfillmentKind === "standard" ? [] : [`QR target: ${summary.qrTargetUrl ?? summary.generatedQrValue ?? "Not provided"}`]),

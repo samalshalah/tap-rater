@@ -1,3 +1,5 @@
+import { getOffersSettings } from "@/lib/offer-settings";
+import { defaultOffers, offerShippingSettings, quoteOffers, type OffersSettings } from "@/lib/offers";
 import { linkAnalyticsCheckout } from "@/lib/storefront-analytics-server";
 import { NextResponse } from "next/server";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -87,6 +89,7 @@ export type CheckoutRouteDependencies = {
   }) => Promise<string | null>;
   getShippingSettings: () => Promise<ShippingSettingsInput>;
   getTaxSettings: () => Promise<TaxSettingsInput>;
+  getOffersSettings?: () => Promise<OffersSettings>;
   getSiteUrl: (requestOrigin?: string | null) => string;
   hasOrderPersistence: () => boolean;
   logger: CheckoutRouteLogger;
@@ -170,7 +173,11 @@ export async function handleCheckoutPost(
       { status: 503 },
     );
   }
-  const shippingSettings = await dependencies.getShippingSettings();
+  let offers: OffersSettings;
+  try { offers = await (dependencies.getOffersSettings ?? (() => Promise.resolve({ ...defaultOffers, enabled: false })))(); }
+  catch { return NextResponse.json({ error: "Offers could not be verified. Please retry." }, { status: 503 }); }
+  const shippingSettings = offerShippingSettings(await dependencies.getShippingSettings(), offers, parsed.data.shippingAddress.country);
+  if (!shippingSettings.allowedCountryCodes.includes(parsed.data.shippingAddress.country)) return NextResponse.json({ error: "Shipping is not available to this country." }, { status: 400 });
   const taxSettings = await dependencies.getTaxSettings();
   logCheckout(dependencies.logger, "info", requestId, "products_loaded", {
     count: products.length,
@@ -208,6 +215,10 @@ export async function handleCheckoutPost(
     );
   }
 
+  const promotion = quoteOffers(cart.rows.map(row => ({ ...row, recurring: row.destinationMode === "HOSTED" })), offers);
+  cart.rows = cart.rows.map((row, i) => ({ ...row, lineSubtotalCents: row.lineSubtotalCents - promotion.lineDiscounts[i], ...(promotion.lineDiscounts[i] ? { discountCents: promotion.lineDiscounts[i], offerId: promotion.offerId!, offerLabel: promotion.label! } : {}) }));
+  cart.totalCents = promotion.subtotalCents;
+
   logCheckout(dependencies.logger, "info", requestId, "cart_validated", {
     itemCount: cart.rows.length,
     totalCents: cart.totalCents,
@@ -230,6 +241,9 @@ export async function handleCheckoutPost(
       taxSettings,
     }),
   );
+  if (parsed.data.quotedTotalCents !== undefined && parsed.data.quotedTotalCents !== cart.totalCents + cart.recurringTotalCents + shippingAmountCents + taxAmountCents) {
+    return NextResponse.json({ error: "Pricing or offers changed. Refresh checkout to review your updated total before payment." }, { status: 409 });
+  }
   const accountRequired = cart.checkoutMode === "subscription";
   const customer = {
     ...parsed.data.customer,
@@ -427,6 +441,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
     }
   },
   getShippingSettings,
+  getOffersSettings,
   getTaxSettings,
   getSiteUrl: getCheckoutSiteUrl,
   hasOrderPersistence: hasSupabaseAdminConfig,

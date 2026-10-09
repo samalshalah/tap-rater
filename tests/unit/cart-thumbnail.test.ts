@@ -1,3 +1,5 @@
+import { defaultOffers } from "@/lib/offers";
+import { getDefaultShippingSettings } from "@/lib/shipping-settings";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +13,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 beforeEach(() => {
   cart.mockReturnValue({ items: [{ productId: "google-review-stand", quantity: 2 }] });
 });
-const render = () => renderToStaticMarkup(createElement(CartTable, { taxSettings: getDefaultTaxSettings() }));
+const render = () => renderToStaticMarkup(createElement(CartTable, { taxSettings: getDefaultTaxSettings(), offers: { ...defaultOffers, enabled: false }, shippingSettings: getDefaultShippingSettings() }));
 
 describe("cart thumbnail delivery", () => {
   it.each(["HOSTED", "DIRECT"])("respects the branded %s quantity limit", (serviceMode) => {

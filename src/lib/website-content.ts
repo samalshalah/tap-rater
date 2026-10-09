@@ -298,7 +298,7 @@ export const defaultFaqContent: FaqContent = {
     },
     {
       question: "How much is shipping?",
-      answer: "Standard shipping is $12 for orders under $55 and free for orders of $55 or more. Shipping and applicable tax are shown before payment. Preparation and delivery estimates are not yet confirmed; contact us before ordering for a deadline.",
+      answer: "Current shipping rates and free-shipping eligibility are shown in your cart and at checkout. Shipping and applicable tax are shown before payment. Preparation and delivery estimates are not yet confirmed; contact us before ordering for a deadline.",
       area: "global", order: 60, enabled: true
     },
     {

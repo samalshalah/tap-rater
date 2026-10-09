@@ -17,7 +17,7 @@ export function getDefaultShippingSettings(): ShippingSettingsInput {
     handlingTimeText: "",
     supportedRegionsText: "United States",
     defaultCarrierNotes: "",
-    customerFacingShippingNote: "Shipping is $12 under $55 and free at $55 or more."
+    customerFacingShippingNote: "Shipping is $12 under $60 and free at $60 or more."
   };
 }
 

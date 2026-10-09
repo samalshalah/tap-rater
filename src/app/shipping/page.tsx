@@ -1,3 +1,5 @@
+import { getOffersSettings } from "@/lib/offer-settings";
+import { formatPrice } from "@/lib/products";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PageHero, SectionShell } from "@/components/storefront/section";
@@ -11,11 +13,12 @@ export const metadata: Metadata = {
 
 export default async function ShippingPage() {
   const settings = await getShippingSettings();
+  const offers = await getOffersSettings();
   const sections = [
     ["Prepared after checkout", "Tap Rater stands are prepared after checkout based on the selected stand and approved destination link."],
     ["Standard preparation", "Standard stands are prepared after payment and destination setup are complete."],
     ["Branded preparation", "Branded stands are prepared using the artwork approved at checkout. Final production artwork is generated after confirmed payment."],
-    ["Shipping costs", settings.customerFacingShippingNote],
+    ["Shipping costs", settings.shippingMode === "free" ? "Free shipping on supported orders." : settings.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Standard shipping is ${formatPrice(settings.flatShippingAmountCents)}. ${offers.shipping.enabled ? `Free shipping on merchandise totals of ${formatPrice(offers.shipping.thresholdCents)} or more after discounts in ${offers.shipping.countryCodes.join(", ")}. Tax and recurring fees do not count toward the threshold.` : ""}`],
     ["Supported regions", settings.supportedRegionsText || "United States"],
     ...(settings.handlingTimeText.trim() ? [["Preparation time", settings.handlingTimeText]] : []),
     ["Carrier notes", settings.defaultCarrierNotes || "Carrier details and tracking are added when an order ships."],

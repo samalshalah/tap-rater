@@ -35,6 +35,7 @@ export function renderCustomerOrderEmail(
     return `<tr><td style="padding:20px 0;border-bottom:1px solid #e5e9ed;">
       <div style="font-size:16px;font-weight:700;color:#152333;">${e(item.title)} - ${e(summary.optionLabel)}</div>
       ${detail(`Quantity: ${item.quantity}`)}
+      ${item.discountCents ? detail(`${item.offerLabel || "Offer"}: saved ${money(item.discountCents)}`) : ""}
       ${detail(hosted ? (nfcOnly ? "Connection: NFC opens your Multi-Link page (no printed QR)" : "Connection: QR and NFC open your Multi-Link page") : (nfcOnly ? "Connection: NFC opens the destination link directly (no printed QR)" : "Connection: QR and NFC open the destination link directly"))}
       ${summary.businessName ? detail(`Business name: ${summary.businessName}`) : ""}
       ${!nfcOnly ? detail(`Logo: ${summary.logoReference ? "Uploaded" : "Not provided"} · Artwork confirmed: ${summary.proofConfirmed ? "Yes" : "No"}`) : ""}

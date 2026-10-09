@@ -1,3 +1,5 @@
+import { getOffersSettings } from "@/lib/offer-settings";
+import { quoteOffers, offerShippingSettings } from "@/lib/offers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getStripeModeSafe, validateCheckoutCart } from "@/lib/checkout";
@@ -33,7 +35,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Order details are invalid. Enter a valid email and review the cart." }, { status: 400 });
   }
 
-  const [products, shippingSettings] = await Promise.all([getStorefrontProducts(), getShippingSettings()]);
+  const [products, baseShipping, offers] = await Promise.all([getStorefrontProducts(), getShippingSettings(), getOffersSettings()]);
+  const shippingSettings = offerShippingSettings(baseShipping, offers);
   const cart = validateCheckoutCart(parsed.data.items, products);
   if (!cart.ok) {
     return NextResponse.json({ error: cart.message, reason: cart.reason }, { status: 400 });
@@ -42,6 +45,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Branded stands require the approved-artwork Stripe checkout." }, { status: 409 });
   }
 
+  const promotion = quoteOffers(cart.rows.map(row => ({ ...row, recurring: row.destinationMode === "HOSTED" })), offers);
+  cart.rows = cart.rows.map((row, i) => ({ ...row, lineSubtotalCents: row.lineSubtotalCents - promotion.lineDiscounts[i], ...(promotion.lineDiscounts[i] ? { discountCents: promotion.lineDiscounts[i], offerId: promotion.offerId!, offerLabel: promotion.label! } : {}) }));
+  cart.totalCents = promotion.subtotalCents;
   const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
   const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);
   const result = await createManualPendingOrderForCheckout({

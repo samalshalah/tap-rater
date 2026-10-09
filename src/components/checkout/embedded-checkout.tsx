@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
+import type { ShippingSettingsInput } from "@/lib/validators";
+import { OfferSummary } from "@/components/cart/offer-summary";
 import { useAnalytics } from "@/components/analytics/analytics-provider";
 import {
   checkoutAnalyticsHeaders,
@@ -80,9 +83,11 @@ const emptyShipping: ShippingForm = {
 };
 
 export function EmbeddedCheckoutClient({
+  offers, shippingSettings,
   stripePublicConfig,
   taxSettings,
 }: {
+  offers: OffersSettings; shippingSettings: ShippingSettingsInput;
   stripePublicConfig: StripePublicConfig;
   taxSettings: TaxSettingsInput;
 }) {
@@ -92,9 +97,10 @@ export function EmbeddedCheckoutClient({
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const rows = getCartRows(items);
-  const standTotalCents = calculateCartTotalCents(items);
+  const promotion = quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers);
+  const standTotalCents = promotion.subtotalCents;
   const recurringTotalCents = calculateRecurringTotalCents(rows);
-  const shippingRule = resolveCheckoutShippingRule(standTotalCents);
+  const shippingRule = resolveCheckoutShippingRule(standTotalCents, offerShippingSettings(shippingSettings, offers, shipping.country));
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,
     getCheckoutTaxableAmountCents({
@@ -306,6 +312,7 @@ export function EmbeddedCheckoutClient({
         headers: { "Content-Type": "application/json", ...analyticsHeaders },
         body: JSON.stringify({
           checkoutAttemptId: checkoutAttemptId.current,
+          quotedTotalCents: dueTodayCents,
           items,
           customer: {
             ...customer,
@@ -397,7 +404,7 @@ export function EmbeddedCheckoutClient({
         }
       >
         {step === "details" ? (
-          <CheckoutSummary
+          <CheckoutSummary promotion={promotion} offers={offers}
             compact
             dueTodayCents={dueTodayCents}
             recurringTotalCents={recurringTotalCents}
@@ -590,7 +597,7 @@ export function EmbeddedCheckoutClient({
             <CheckoutError message={error} />
           ) : session && options ? (
             <>
-              <CheckoutSummary
+              <CheckoutSummary promotion={promotion} offers={offers}
                 dueTodayCents={dueTodayCents}
                 recurringTotalCents={recurringTotalCents}
                 rows={rows}
@@ -632,6 +639,7 @@ function createCheckoutAttemptId() {
 }
 
 function CheckoutSummary({
+  promotion, offers,
   compact = false,
   dueTodayCents,
   recurringTotalCents,
@@ -642,6 +650,7 @@ function CheckoutSummary({
   taxCalculationPending,
   taxSettings,
 }: {
+  promotion: OfferQuote; offers: OffersSettings;
   compact?: boolean;
   dueTodayCents: number;
   recurringTotalCents: number;
@@ -738,7 +747,8 @@ function CheckoutSummary({
         </div>
 
         <div className="mt-4 grid gap-2 border-t border-line pt-4 text-sm">
-          <SummaryRow label="Stands" value={formatPrice(standTotalCents)} />
+          <OfferSummary quote={promotion} offers={offers} />
+          <SummaryRow label="Stands after savings" value={formatPrice(standTotalCents)} />
           {recurringTotalCents > 0 ? (
             <SummaryRow
               label="Monthly"
