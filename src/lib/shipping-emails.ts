@@ -49,6 +49,9 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
 
 export function buildShippingNotificationEmailHtml(order: OrderRecord, template = defaultEmailTemplates["shipping-tracking"]) {
   return renderEmailTemplateHtml(template, {
+    title: "Your order is on its way.",
+    eyebrow: "SHIPPED",
+    cta: order.tracking_url ? { label: "Track your shipment", url: order.tracking_url } : { label: "View your order", url: "https://taprater.com/account/orders" },
     rows: {
       "Order number": formatOrderReference(order.stripe_checkout_session_id || order.id),
       Status: "Shipped",
@@ -58,7 +61,7 @@ export function buildShippingNotificationEmailHtml(order: OrderRecord, template 
     },
     body: [
       "Your Tap Rater order has shipped.",
-      ...(order.tracking_url ? [`Tracking: ${order.tracking_url}`] : []),
+
       "Support: https://taprater.com/support"
     ]
   });

@@ -11,6 +11,15 @@ import {
 } from "@/lib/email";
 
 describe("email utility", () => {
+  it("rejects unsafe CTA protocols and escapes branded headings", () => {
+    for (const url of ["javascript:alert(1)", "data:text/html,unsafe", "https://user:pass@example.com"]) {
+      const html = buildEmailHtml({ title: "<img src=x>", cta: { label: "Open", url } });
+      expect(html).toContain("&lt;img src=x&gt;");
+      expect(html).not.toContain('href="' + url);
+      expect(html).not.toContain("<img");
+    }
+  });
+
   it("passes PDF attachments through to the provider", async () => {
     process.env.RESEND_API_KEY = "re_test";
     const send = vi.fn().mockResolvedValue({ data: { id: "email-pdf" }, error: null });

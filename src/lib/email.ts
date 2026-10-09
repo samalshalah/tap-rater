@@ -38,6 +38,9 @@ export type SendEmailInput = {
 };
 
 type EmailHtmlInput = {
+  title?: string;
+  eyebrow?: string;
+  footer?: string;
   intro?: string;
   rows?: Record<string, string | number | null | undefined>;
   body?: string[];
@@ -71,30 +74,45 @@ export function hasResendApiKey(env: Record<string, string | undefined> = proces
   return Boolean(env.RESEND_API_KEY);
 }
 
+// Never turn customer-provided protocols or markup into executable email content.
+function emailWebUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !url.username && !url.password ? url.href : undefined;
+  } catch { return undefined; }
+}
+
 export function buildEmailHtml(input: EmailHtmlInput) {
-  const sections: string[] = [];
-
-  if (input.intro) {
-    sections.push(`<p>${escapeHtml(input.intro)}</p>`);
-  }
-
-  if (input.body?.length) {
-    sections.push(...input.body.map((line) => `<p>${escapeHtml(line)}</p>`));
-  }
-
-  if (input.rows) {
-    sections.push(
-      ...Object.entries(input.rows).map(([label, value]) => {
-        return `<p><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value ?? ""))}</p>`;
-      })
-    );
-  }
-
-  if (input.cta) {
-    sections.push(`<p><a href="${escapeAttribute(input.cta.url)}">${escapeHtml(input.cta.label)}</a></p>`);
-  }
-
-  return sections.join("");
+  const e = escapeHtml;
+  const title = input.title || input.intro || input.cta?.label || "An update from Tap Rater";
+  const link = (label: string, value: string) => {
+    const url = emailWebUrl(value);
+    return url ? '<a href="' + e(url) + '" style="color:#087f7a;text-decoration:underline;overflow-wrap:anywhere;">' + e(label) + '</a>' : e(value);
+  };
+  const paragraphs = (input.body ?? []).filter(Boolean).map(line => {
+    const match = line.match(/^([^:]+): (https:\/\/\S+)$/);
+    const content = match ? link(match[1], match[2]) : e(line);
+    return '<p style="font-size:15px;line-height:24px;color:#596675;margin:0 0 16px;overflow-wrap:anywhere;white-space:pre-line;">' + content + '</p>';
+  }).join("");
+  const rows = Object.entries(input.rows ?? {}).filter(([,v]) => v !== null && v !== undefined && v !== "").map(([label, value]) => {
+    const text = String(value);
+    const content = emailWebUrl(text) ? link(label, text) : e(text);
+    return '<tr><td valign="top" width="36%" style="padding:12px;border-bottom:1px solid #e5e9ed;font-size:13px;color:#596675;">' + e(label) + '</td><td valign="top" style="padding:12px;border-bottom:1px solid #e5e9ed;font-size:14px;color:#152333;overflow-wrap:anywhere;word-break:break-word;white-space:pre-line;">' + content + '</td></tr>';
+  }).join("");
+  const ctaUrl = input.cta && emailWebUrl(input.cta.url);
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + e(title) + '</title></head>' +
+    '<body style="margin:0;padding:0;background:#f3f5f7;font-family:Arial,Helvetica,sans-serif;color:#152333;">' +
+    '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' + e(input.intro || title) + '</div>' +
+    '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f3f5f7;"><tr><td align="center" style="padding:28px 12px;">' +
+    '<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e5e9ed;border-radius:16px;">' +
+    '<tr><td style="padding:28px 28px 22px;border-bottom:3px solid #e5ab35;"><span style="font-size:23px;font-weight:800;letter-spacing:1px;">TAP RATER</span><span style="color:#bd861b;font-size:18px;"> ★★★★★</span></td></tr>' +
+    '<tr><td style="padding:28px;"><div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#087f7a;">' + e(input.eyebrow || "TAP RATER UPDATE") + '</div>' +
+    '<h1 style="font-size:29px;line-height:36px;margin:12px 0 16px;">' + e(title) + '</h1>' +
+    (input.intro && input.intro !== title ? '<p style="font-size:15px;line-height:24px;color:#596675;margin:0 0 22px;">' + e(input.intro) + '</p>' : '') + paragraphs +
+    (rows ? '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="table-layout:fixed;background:#f6f8fa;border-radius:8px;margin:20px 0;">' + rows + '</table>' : '') +
+    (ctaUrl ? '<table role="presentation" cellspacing="0" cellpadding="0" style="margin-top:24px;"><tr><td bgcolor="#087f7a" style="border-radius:8px;"><a href="' + e(ctaUrl) + '" style="display:inline-block;padding:15px 24px;border:1px solid #087f7a;border-radius:8px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">' + e(input.cta!.label) + '</a></td></tr></table>' : '') +
+    '<p style="font-size:14px;line-height:23px;color:#596675;margin:24px 0 0;">Need help? ' + link("Contact support", "https://taprater.com/support") + '</p></td></tr>' +
+    '<tr><td style="padding:22px 28px;border-top:1px solid #e5e9ed;background:#fafbfc;font-size:12px;line-height:20px;color:#6b7580;">' + e(input.footer || "Tap Rater NFC stands help local businesses connect with their customers.") + '<br><br>' + link("Shipping", "https://taprater.com/shipping") + ' &nbsp;·&nbsp; ' + link("Refund policy", "https://taprater.com/refund-policy") + ' &nbsp;·&nbsp; ' + link("Terms", "https://taprater.com/terms") + '</td></tr></table></td></tr></table></body></html>';
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<EmailResult> {
@@ -146,6 +164,8 @@ export async function sendCustomerLoginLinkEmail(input: { to: string; loginUrl: 
     to: input.to,
     subject: "Your Tap Rater account login link",
     html: buildEmailHtml({
+      title: "Sign in to your account",
+      eyebrow: "ACCOUNT ACCESS",
       body: ["Use this secure link to access your Tap Rater account:", "This link expires in 20 minutes."],
       cta: {
         label: "Log in to Tap Rater",
@@ -163,6 +183,8 @@ export async function sendCustomerPasswordResetEmail(input: { to: string; resetU
     to: input.to,
     subject: "Reset your Tap Rater password",
     html: buildEmailHtml({
+      title: "Reset your password",
+      eyebrow: "ACCOUNT SECURITY",
       body: ["A password reset was requested for your Tap Rater account.", "This link expires in 20 minutes and can be used once. If you did not request it, you can ignore this email."],
       cta: { label: "Reset password", url: input.resetUrl }
     }),
@@ -176,7 +198,7 @@ export async function sendCustomerPasswordChangedEmail(to: string) {
   return sendEmail({
     to,
     subject: "Your Tap Rater password was changed",
-    html: buildEmailHtml({ body: ["Your Tap Rater password has been changed. Previous account sessions have been signed out.", "If you did not make this change, contact Tap Rater support immediately by replying to this email."] }),
+    html: buildEmailHtml({ title: "Your password was changed", eyebrow: "ACCOUNT SECURITY", body: ["Your Tap Rater password has been changed. Previous account sessions have been signed out.", "If you did not make this change, contact Tap Rater support immediately by replying to this email."] }),
     delivery: { messageType: "customer_password_changed", audience: "customer", retryable: false },
     replyTo: getCustomerReplyToEmail()
   });

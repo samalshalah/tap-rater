@@ -14,6 +14,8 @@ export type HostedSetupEmailInput = {
 
 export function buildCustomerActivationEmailHtml(input: { activationUrl: string }) {
   return buildEmailHtml({
+    title: "Activate your account",
+    eyebrow: "WELCOME TO TAP RATER",
     body: [
       "A new activation link was requested for your Tap Rater account.",
       "Activate your account and set your password to access your orders, invoices, billing details, and Multi-Link pages.",
@@ -57,6 +59,8 @@ export async function sendCustomerActivationEmail(input: {
 
 export function buildHostedSetupEmailHtml(input: Pick<HostedSetupEmailInput, "businessName" | "hostedPageUrl"> & { activationUrl: string }) {
   return buildEmailHtml({
+    title: "Your Multi-Link page is ready",
+    eyebrow: "WELCOME TO TAP RATER",
     body: [
       `Your Tap Rater Multi-Link page for ${input.businessName} has been created.`,
       "Activate your account and set your password to manage your business name, logo, buttons, links, icons, ordering, and page style.",

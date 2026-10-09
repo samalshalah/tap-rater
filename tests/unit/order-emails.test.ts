@@ -211,11 +211,11 @@ describe("paid order emails", () => {
     const html = buildAdminPaidOrderEmailHtml(paidOrder);
 
     expect(html).toContain("A paid Tap Rater order is ready for fulfillment review.");
-    expect(html).toContain("Stripe session:</strong> cs_test_123");
-    expect(html).toContain("Payment intent:</strong> pi_test_123");
+    expect(html).toMatch(/>Stripe session<\/td><td[^>]*>cs_test_123<\/td>/);
+    expect(html).toMatch(/>Payment intent<\/td><td[^>]*>pi_test_123<\/td>/);
     expect(html).toContain("SKU: VMS");
     expect(html).toContain("Logo reference: products/customer-logo.png");
-    expect(html).toContain("QR value: https://example.com/menu");
+    expect(html).toMatch(new RegExp('href="https://example[.]com/menu"[^>]*>QR value</a>'));
     expect(html).toContain("Front template: /api/media/product/products/view-menu/front-template.png");
     expect(html).toContain("Production artwork status: generated");
     expect(html).toContain("Production template: taprater-branded-stand-front / 2026-08-27.3");
@@ -358,7 +358,7 @@ describe("paid order emails", () => {
     expect(html).toContain("This activation link expires in 7 days.");
     expect(html).toContain("https://app.taprater.com/account/activate?token=signed-token");
     expect(html).toContain("https://taprater.com/support");
-    expect(html).not.toMatch(/analytics|clicks|conversion|device|subscription|localhost|workers\\.dev/i);
+    expect(html.split("</head>")[1]).not.toMatch(/analytics|clicks|conversion|device|subscription|localhost|workers\\.dev/i);
   });
 
   it("sends a generic customer activation email without exposing internal account data", async () => {
@@ -399,10 +399,10 @@ describe("paid order emails", () => {
     });
 
     expect(html).toContain("Your Tap Rater order has a shipping update.");
-    expect(html).toContain(`Order number:</strong> ${formatOrderReference("cs_test_123")}`);
-    expect(html).toContain("Status:</strong> Shipped");
-    expect(html).toContain("Carrier:</strong> USPS");
-    expect(html).toContain("Tracking number:</strong> TRACK123");
+    expect(html).toMatch(new RegExp(`>Order number</td><td[^>]*>${formatOrderReference("cs_test_123")}</td>`));
+    expect(html).toMatch(/>Status<\/td><td[^>]*>Shipped<\/td>/);
+    expect(html).toMatch(/>Carrier<\/td><td[^>]*>USPS<\/td>/);
+    expect(html).toMatch(/>Tracking number<\/td><td[^>]*>TRACK123<\/td>/);
     expect(html).toContain("https://tools.usps.com/go/TrackConfirmAction?tLabels=TRACK123");
     expect(html).toContain("https://taprater.com/support");
     expect(html).not.toContain("Internal packing note");

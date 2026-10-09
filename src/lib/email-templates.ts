@@ -146,16 +146,18 @@ export async function saveEmailTemplate(client: EmailTemplateDbClient, input: Em
 }
 
 export function renderEmailTemplateHtml(
-  template: Pick<EmailTemplateSettings, "introText" | "supportText" | "footerText">,
+  template: Pick<EmailTemplateSettings, "introText" | "supportText" | "footerText"> & { subject?: string },
   input: Parameters<typeof buildEmailHtml>[0]
 ) {
   return buildEmailHtml({
+    title: input.title || template.subject,
+    eyebrow: input.eyebrow,
+    footer: template.footerText,
     intro: template.introText,
     rows: input.rows,
     body: [
       ...(input.body ?? []),
-      ...(template.supportText ? [template.supportText] : []),
-      ...(template.footerText ? [template.footerText] : [])
+      ...(template.supportText ? [template.supportText] : [])
     ],
     cta: input.cta
   });
