@@ -1,5 +1,6 @@
 "use client";
 
+import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { Check, Copy, Download, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { fetchOrderFile, saveOrderFile } from "@/lib/order-file-download";
@@ -17,8 +18,6 @@ export function OrderDesignFiles({ artworkUrl, standardDesignUrl, originalLogoUr
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const files = [
-    { url: standardDesignUrl, label: "Download standard design image", filename: `standard-design.${standardDesignUrl?.split(".").pop() || "png"}` },
-    { url: artworkUrl, label: "Download print-ready artwork (SVG)", filename: "stand-design.svg" },
     { url: originalLogoUrl, label: "Download original logo", filename: "original-logo.png" },
     { url: printLogoUrl, label: "Download print logo", filename: "print-logo.png" },
     { url: textUrl, label: "Download design text", filename: "design-text.txt" }
@@ -27,8 +26,10 @@ export function OrderDesignFiles({ artworkUrl, standardDesignUrl, originalLogoUr
   return (
     <div className="mt-5 border-t border-line pt-4">
       <h3 className="text-sm font-bold text-ink">Client design files</h3>
-      {artworkUrl ? <p className="mt-2 text-sm text-muted">The print-ready SVG includes the complete design, customer logo, text, and QR code. Logo downloads contain only the logo.</p> : null}
+      {artworkUrl ? <p className="mt-2 text-sm text-muted">The 300-DPI PNG includes the complete design, customer logo, text, and QR code. Logo downloads contain only the logo.</p> : null}
       <div className="mt-3 flex flex-wrap gap-2">
+        {artworkUrl ? <PrintArtworkDownload url={artworkUrl} /> : null}
+        {standardDesignUrl ? <PrintArtworkDownload url={standardDesignUrl} standard /> : null}
         {files.map((file) => (
           <a key={file.url} href={file.url} download={file.filename} aria-disabled={Boolean(pending)}
             className={`tr-button-outline min-h-11 gap-2 px-3 py-2 text-sm ${pending ? "opacity-60" : ""}`}

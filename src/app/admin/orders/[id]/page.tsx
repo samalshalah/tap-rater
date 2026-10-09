@@ -1,3 +1,4 @@
+import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
@@ -241,7 +242,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
         <PreviewAsset title="Uploaded logo" src={previewLogo} alt={`${item.title} customer logo`} />
       ) : null}
       {previewTemplate ? (
-        <PreviewAsset title={standardDesignUrl ? "Standard production design" : "Artwork template"} src={previewTemplate} downloadUrl={standardDesignUrl} downloadLabel="Download standard design image" alt={`${item.title} artwork template`} />
+        <PreviewAsset title={standardDesignUrl ? "Standard production design" : "Artwork template"} src={previewTemplate} downloadUrl={standardDesignUrl} standard alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
         <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
@@ -254,7 +255,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
   );
 }
 
-function PreviewAsset({ title, src, alt, downloadUrl, downloadLabel = "Download print-ready SVG" }: { title: string; src: string; alt: string; downloadUrl?: string; downloadLabel?: string }) {
+function PreviewAsset({ title, src, alt, downloadUrl, standard = false }: { title: string; src: string; alt: string; downloadUrl?: string; standard?: boolean }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
@@ -262,9 +263,7 @@ function PreviewAsset({ title, src, alt, downloadUrl, downloadLabel = "Download 
         <img src={src} alt={alt} className="max-h-52 max-w-full object-contain" />
       </div>
       {downloadUrl ? (
-        <a href={downloadUrl} download className="tr-button-primary mt-3 min-h-11 w-full px-3 py-2 text-center text-sm">
-          {downloadLabel}
-        </a>
+        <div className="mt-3"><PrintArtworkDownload url={downloadUrl} standard={standard} /></div>
       ) : null}
       <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
         {downloadUrl ? "View preview (opens in a new tab)" : "Open preview"}
