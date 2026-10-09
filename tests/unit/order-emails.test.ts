@@ -239,7 +239,7 @@ describe("paid order emails", () => {
     expect(sendEmailFn.mock.calls[0][0]).toMatchObject({
       to: "buyer@example.com",
       subject: "Your Tap Rater order is confirmed",
-      replyTo: "support@taprater.com",
+      replyTo: "orders@taprater.com",
       attachments: [{ filename: `Tap-Rater-Invoice-${formatOrderReference(paidOrder.stripe_checkout_session_id)}.pdf`, path: "https://pay.stripe.com/invoice/example/pdf", contentType: "application/pdf" }],
       delivery: {
         messageType: "paid_order_customer",
@@ -262,7 +262,7 @@ describe("paid order emails", () => {
         idempotencyKey: expect.stringMatching(/^taprater\/paid_order_admin\/[0-9a-f]{64}$/)
       }
     });
-    expect(sendEmailFn.mock.calls[1][0]).not.toHaveProperty("replyTo");
+    expect(sendEmailFn.mock.calls[1][0]).toMatchObject({ from: "Tap Rater Orders <orders@taprater.com>", replyTo: "orders@taprater.com" });
   });
 
   it("uses configured email template text for paid order emails", async () => {

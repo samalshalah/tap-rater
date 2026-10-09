@@ -18,7 +18,7 @@ export async function sendRequestNotification(
     sendEmailFn?: typeof sendEmail;
   } = {}
 ): Promise<EmailResult | { sent: false; reason: "missing_notification_email" | "template_disabled" }> {
-  const to = process.env.ORDER_NOTIFICATION_EMAIL;
+  const to = process.env.SUPPORT_NOTIFICATION_EMAIL;
 
   if (!to) {
     return { sent: false, reason: "missing_notification_email" };

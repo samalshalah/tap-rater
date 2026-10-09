@@ -1,4 +1,5 @@
-import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getOrderFromEmail } from "@/lib/email";
+import { getOrderReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { defaultEmailTemplates, getEmailTemplate, renderEmailTemplateHtml, type EmailTemplateSettings } from "@/lib/email-templates";
 import { formatOrderReference } from "@/lib/order-reference";
@@ -23,7 +24,8 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
     return await sendEmailFn({
       to,
       subject: template.subject,
-      replyTo: getCustomerReplyToEmail(),
+      from: getOrderFromEmail(),
+      replyTo: getOrderReplyToEmail(),
       html: buildShippingNotificationEmailHtml(input.order, template),
       delivery: {
         messageType: "shipping_tracking_customer",

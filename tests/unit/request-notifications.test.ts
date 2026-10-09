@@ -3,12 +3,12 @@ import { sendRequestNotification } from "@/lib/request-notifications";
 
 describe("request notifications", () => {
   afterEach(() => {
-    delete process.env.ORDER_NOTIFICATION_EMAIL;
+    delete process.env.SUPPORT_NOTIFICATION_EMAIL;
     vi.restoreAllMocks();
   });
 
   it("uses configured request notification copy", async () => {
-    process.env.ORDER_NOTIFICATION_EMAIL = "orders@example.com";
+    process.env.SUPPORT_NOTIFICATION_EMAIL = "support@example.com";
     const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
 
     const result = await sendRequestNotification(
@@ -36,7 +36,7 @@ describe("request notifications", () => {
 
     expect(result).toEqual({ sent: true });
     expect(sendEmailFn).toHaveBeenCalledWith(expect.objectContaining({
-      to: "orders@example.com",
+      to: "support@example.com",
       subject: "Configured request subject",
       html: expect.stringContaining("Configured request intro")
     }));
@@ -45,7 +45,7 @@ describe("request notifications", () => {
   });
 
   it("does not throw when request notification sending fails", async () => {
-    process.env.ORDER_NOTIFICATION_EMAIL = "orders@example.com";
+    process.env.SUPPORT_NOTIFICATION_EMAIL = "support@example.com";
 
     const result = await sendRequestNotification(
       {

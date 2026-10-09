@@ -1,4 +1,5 @@
-import { getCustomerReplyToEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getOrderFromEmail } from "@/lib/email";
+import { getOrderReplyToEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
 import {
@@ -50,7 +51,8 @@ export async function sendPaidOrderEmails(
           subject: customerTemplate.subject,
           html: buildCustomerPaidOrderEmailHtml(order, customerTemplate),
           ...(invoiceAttachment ? { attachments: [invoiceAttachment] } : {}),
-          replyTo: getCustomerReplyToEmail(env),
+          from: getOrderFromEmail(env),
+          replyTo: getOrderReplyToEmail(env),
           delivery: {
             messageType: "paid_order_customer",
             audience: "customer",
@@ -69,6 +71,8 @@ export async function sendPaidOrderEmails(
     adminEmail
       ? await sendPaidOrderEmailSafely(sendEmailFn, {
           to: adminEmail,
+          from: getOrderFromEmail(env),
+          replyTo: getOrderReplyToEmail(env),
           subject: adminTemplate.subject,
           html: buildAdminPaidOrderEmailHtml(order, adminTemplate),
           delivery: {

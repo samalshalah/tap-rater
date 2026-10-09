@@ -1,3 +1,4 @@
+import { getOrderFromEmail } from "@/lib/email";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import {
   getEmailDeliveryByIdWithClient,
@@ -5,7 +6,7 @@ import {
   type EmailDeliveryDbClient,
   type EmailDeliveryRecord
 } from "@/lib/email-deliveries";
-import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getOrderReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import {
   defaultEmailTemplates,
   getEmailTemplate,
@@ -139,7 +140,8 @@ async function buildOrderRetryInput(
       input: {
         to: delivery.recipient,
         subject: template.subject,
-        replyTo: getCustomerReplyToEmail(),
+        from: getOrderFromEmail(),
+        replyTo: getOrderReplyToEmail(),
         html: buildCustomerPaidOrderEmailHtml(order, template),
         ...(attachment ? { attachments: [attachment] } : {}),
         delivery: tracking
@@ -154,6 +156,8 @@ async function buildOrderRetryInput(
       input: {
         to: delivery.recipient,
         subject: template.subject,
+        from: getOrderFromEmail(),
+        replyTo: getOrderReplyToEmail(),
         html: buildAdminPaidOrderEmailHtml(order, template),
         delivery: tracking
       }
@@ -170,7 +174,8 @@ async function buildOrderRetryInput(
       input: {
         to: delivery.recipient,
         subject: template.subject,
-        replyTo: getCustomerReplyToEmail(),
+        from: getOrderFromEmail(),
+        replyTo: getOrderReplyToEmail(),
         html: buildShippingNotificationEmailHtml(order, template),
         delivery: tracking
       }

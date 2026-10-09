@@ -1,4 +1,5 @@
-import { getCustomerReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { getOrderFromEmail } from "@/lib/email";
+import { getOrderReplyToEmail, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import type { EmailTemplateSettings } from "@/lib/email-templates";
 import { buildCustomerPaidOrderEmailHtml } from "@/lib/order-emails";
 import type { OrderRecord } from "@/lib/orders";
@@ -65,7 +66,8 @@ export async function sendMultiLinkOrderEmailTest(input: {
     to: input.to,
     subject: `[Test Multi-Link] ${input.template.subject}`,
     html: buildMultiLinkOrderEmailTestHtml(input.template),
-    replyTo: getCustomerReplyToEmail(),
+    from: getOrderFromEmail(),
+      replyTo: getOrderReplyToEmail(),
     delivery: {
       messageType: "template_test",
       audience: "admin",

@@ -1,6 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { z } from "zod";
-import { buildEmailHtml, sendEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
+import { buildEmailHtml, sendEmail, getOrderFromEmail, getOrderReplyToEmail, getCustomerReplyToEmail, type EmailResult, type SendEmailInput } from "@/lib/email";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { renderCustomerOrderEmail } from "@/lib/customer-order-email-layout";
 import {
@@ -192,6 +192,9 @@ export async function sendEmailTemplateTest(input: {
   return sendEmailFn({
     to: input.to,
     subject: `[Test] ${input.template.subject}`,
+    ...(input.template.key === "support-request"
+      ? { replyTo: getCustomerReplyToEmail() }
+      : { from: getOrderFromEmail(), replyTo: getOrderReplyToEmail() }),
     html: buildEmailTemplatePreviewHtml(input.template),
     delivery: {
       messageType: "template_test",

@@ -77,7 +77,12 @@
     "STRIPE_MODE": "live",
     "STRIPE_BILLING_PORTAL_CONFIGURED": "true",
     "STRIPE_CUSTOMER_EMAILS_CONFIGURED": "true",
-    "ORDER_NOTIFICATION_EMAIL": "sam.alshalah1@gmail.com",
+    "ORDER_NOTIFICATION_EMAIL": "orders@taprater.com",
+    "SUPPORT_NOTIFICATION_EMAIL": "support@taprater.com",
+    "SUPPORT_FROM_EMAIL": "Tap Rater Support <support@taprater.com>",
+    "CUSTOMER_SUPPORT_EMAIL": "support@taprater.com",
+    "ORDER_FROM_EMAIL": "Tap Rater Orders <orders@taprater.com>",
+    "ORDER_REPLY_TO_EMAIL": "orders@taprater.com",
     "TAP_RATER_ENABLE_PRODUCTION_HOSTED_PAGES": "true",
     "TAP_RATER_ENABLE_HOSTED_PURCHASING": "true"
   }

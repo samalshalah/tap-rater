@@ -52,7 +52,15 @@ type EmailClientInput = {
 };
 
 export function getDefaultFromEmail(env: Record<string, string | undefined> = process.env) {
-  return env.RESEND_FROM_EMAIL || "Tap Rater <notifications@taprater.com>";
+  return env.SUPPORT_FROM_EMAIL || env.RESEND_FROM_EMAIL || "Tap Rater <notifications@taprater.com>";
+}
+
+export function getOrderFromEmail(env: Record<string, string | undefined> = process.env) {
+  return env.ORDER_FROM_EMAIL || "Tap Rater Orders <orders@taprater.com>";
+}
+
+export function getOrderReplyToEmail(env: Record<string, string | undefined> = process.env) {
+  return env.ORDER_REPLY_TO_EMAIL || "orders@taprater.com";
 }
 
 export function getCustomerReplyToEmail(env: Record<string, string | undefined> = process.env) {
