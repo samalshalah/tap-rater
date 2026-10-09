@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AnalyticsControls } from "@/components/admin/analytics-controls";
+import { LiveAnalyticsPanel } from "@/components/admin/live-analytics";
 import { requireAdmin } from "@/lib/admin-auth";
 import { storefrontAnalyticsReport } from "@/lib/storefront-analytics-report";
 import type { ReactNode } from "react";
@@ -85,6 +86,7 @@ export default async function AdminAnalyticsPage({
           aria-label="Analytics reports"
         >
           {[
+            ["live", "Live activity"],
             ["sources", "Traffic sources"],
             ["landings", "Landing pages"],
             ["journey", "Checkout journey"],
@@ -98,6 +100,7 @@ export default async function AdminAnalyticsPage({
             </a>
           ))}
         </nav>
+        <LiveAnalyticsPanel />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Card
             label="Tracked sessions"
