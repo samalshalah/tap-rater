@@ -16,10 +16,10 @@ describe("search indexing boundaries", () => {
     expect(sitemap).not.toContain("lastModified: new Date()");
   });
 
-  it("blocks private and action routes in robots policy", () => {
+  it("blocks private redirect/API routes while letting noindex headers be read", () => {
     const robots = readFileSync("src/app/robots.ts", "utf8");
 
-    for (const route of ["/admin", "/account", "/api", "/cart", "/checkout", "/activate", "/p/", "/l/", "/r/"]) {
+    for (const route of ["/admin", "/api", "/p/", "/l/", "/r/"]) {
       expect(robots).toContain(`\"${route}\"`);
     }
   });

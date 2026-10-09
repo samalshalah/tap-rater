@@ -1,3 +1,4 @@
+import { BuyingGuide } from "@/components/storefront/buying-guide";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
@@ -129,6 +130,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
         </div>
       </SectionShell>
+      <BuyingGuide slug={category.slug} kind="category" />
     </main>
   );
 }

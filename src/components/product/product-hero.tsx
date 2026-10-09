@@ -1,5 +1,6 @@
 "use client";
 
+import { singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CatalogCategory, MigratedProduct } from "@/data/migrated-products";
@@ -13,13 +14,14 @@ import { getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasa
 
 type ProductHeroProps = {
   product: MigratedProduct;
+  offers?: OffersSettings | null;
   category?: CatalogCategory;
   destination: string;
   fromPrice: string;
   initialOptionId?: PurchaseOptionId;
 };
 
-export function ProductHero({ product, category, fromPrice, initialOptionId }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice, initialOptionId, offers }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
@@ -31,7 +33,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
     : product.basePriceCents);
   const [selectedMonthlyPriceCents, setSelectedMonthlyPriceCents] = useState(0);
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
-  const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(selectedPriceCents).replace(".00", "");
+  const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(singleStandPrice(product.slug, effectiveSelectedOptionId ?? "", selectedPriceCents, offers)).replace(".00", "");
   const pricePrefix = selectedPriceCents === null ? "From " : "";
 
   return (
@@ -65,6 +67,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId }: P
         </div>
 
         <ProductSetupChooser
+          offers={offers}
           product={product}
           selectedOptionId={effectiveSelectedOptionId}
           onSelectedOptionChange={setSelectedOptionId}

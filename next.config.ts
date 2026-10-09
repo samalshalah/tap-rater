@@ -57,6 +57,8 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      { source: "/product/tap-rater-business-white-bundle", destination: "/stand-bundles", permanent: true },
+      { source: "/product/tap-rater-business-white-stands-bundle", destination: "/stand-bundles", permanent: true },
       { source: "/faq", destination: "/faqs", permanent: true },
       { source: "/contact", destination: "/contact-us", permanent: true },
       { source: "/shop-by-use", destination: "/solutions", permanent: true },

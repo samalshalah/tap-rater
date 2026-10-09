@@ -1,5 +1,6 @@
 "use client";
 
+import { quoteOffers, singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ImageUp, Minus, Plus, RotateCcw, Search, Trash2, UploadCloud, X } from "lucide-react";
@@ -49,6 +50,7 @@ type MultiLinkDraftButton = Pick<HostedPageEditorButton, "id" | "type" | "label"
 
 type ProductSetupChooserProps = {
   product: ProductSetupChooserProduct;
+  offers?: OffersSettings | null;
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
@@ -69,7 +71,7 @@ type UploadedLogo = {
 type LogoBackgroundMode = "auto_crop" | "original";
 type LogoFitMode = "contain" | "fill";
 
-export function ProductSetupChooser({ product, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, offers, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
@@ -524,14 +526,16 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
       : selectedOption.id === "branded_qr_direct"
         ? "Build your Branded QR stand"
         : "Set up your Standard Direct stand";
+  const standQuote = configuredUnitPriceCents !== null && selectedOptionId && offers
+    ? quoteOffers([{ productId: product.slug, optionId: selectedOptionId, quantity: selectedQuantity, unitAmountCents: configuredUnitPriceCents }], offers) : null;
   const selectedPrice =
     configuredUnitPriceCents === null
         ? "Unavailable"
-        : formatPrice(configuredUnitPriceCents).replace(".00", "");
+        : formatPrice(standQuote ? Math.round(standQuote.subtotalCents / selectedQuantity) : configuredUnitPriceCents).replace(".00", "");
   const selectedStandTotalPrice =
     configuredUnitPriceCents === null
         ? "Unavailable"
-        : formatPrice(configuredUnitPriceCents * selectedQuantity).replace(".00", "");
+        : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity).replace(".00", "");
   const setupButtonLabel = selectedQuantity > 1 ? `Set Up My ${selectedQuantity} Stands - ${selectedStandTotalPrice}` : `Set Up My Stand - ${selectedStandTotalPrice}`;
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
@@ -585,7 +589,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
               <span className="min-w-0">
                 <span className="flex items-start justify-between gap-2">
                   <span className="text-base font-black leading-5 text-ink">{getOptionDisplayLabel(option)}</span>
-                  <span className="shrink-0 text-sm font-black text-ink">{formatPrice(option.priceCents).replace(".00", "")}</span>
+                  <span className="shrink-0 text-sm font-black text-ink">{formatPrice(singleStandPrice(product.slug, option.id, option.priceCents, offers)).replace(".00", "")}</span>
                 </span>
                 <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{getOptionShortSummary(option)}</span>
                 <span className="mt-1 block text-xs leading-5 text-muted">{getOptionSummary(option)}</span>
@@ -964,7 +968,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     option={selectedOption}
                     productTitle={product.title}
                     quantity={selectedQuantity}
-                    unitPriceCents={configuredUnitPriceCents}
+                    unitPriceCents={standQuote ? Math.round(standQuote.subtotalCents / selectedQuantity) : configuredUnitPriceCents}
                     linkExperience={selectedLinkExperience}
                   />
                 </div>
@@ -1046,7 +1050,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                     <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
                     <ReviewLine label="Qty" value={String(selectedQuantity)} />
                     <ReviewLine label="SKU" value={finalSku} />
-                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)} />
+                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)} />
                     {selectedLinkExperience !== "multilink" ? <ReviewLine label="Destination link" value={destinationUrl || "-"} /> : null}
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
                   </div>
@@ -1071,7 +1075,7 @@ export function ProductSetupChooser({ product, selectedOptionId: controlledSelec
                 <div className="grid gap-3">
                   <div>
                     <p className="text-sm font-semibold text-ink">Approve your stand</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(configuredUnitPriceCents * selectedQuantity)}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
                   <div className="grid min-w-0 gap-5 md:grid-cols-2">
                     <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />

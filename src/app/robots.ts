@@ -8,7 +8,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin", "/account", "/api", "/cart", "/checkout", "/activate", "/p/", "/l/", "/r/"]
+      // Public auth/transaction screens must be crawlable to expose their noindex headers.
+      disallow: ["/admin", "/api", "/p/", "/l/", "/r/"]
     },
     sitemap: `${siteUrl}/sitemap.xml`
   };

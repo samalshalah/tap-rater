@@ -1,3 +1,5 @@
+import { singleStandPrice } from "@/lib/offers";
+import { getShippingSettings } from "@/lib/shipping-settings";
 import { getOffersSettings } from "@/lib/offer-settings";
 import { ProductOffers } from "@/components/product/product-offers";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -88,7 +90,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     notFound();
   }
 
-  const offers = await getOffersSettings().catch(() => null);
+  const [offers, shipping] = await Promise.all([getOffersSettings().catch(() => null), getShippingSettings()]);
   const category = getCategoryBySlug(product.categorySlug);
   const relatedProducts = await getRelatedStorefrontProductsForProduct(product);
   const highlights = getProductPageHighlights(product);
@@ -99,12 +101,12 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const purchaseOptions = getProductPurchaseOptions(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
   const productFaqs = getProductFaqs(product);
-  const standardPrice = formatPrice(purchaseOptions.find((option) => option.id === "standard_direct")?.priceCents ?? product.basePriceCents).replace(".00", "");
-  const brandedPrice = formatPrice(purchaseOptions.find((option) => option.id === "branded_qr_direct")?.priceCents ?? product.basePriceCents).replace(".00", "");
+  const standardPrice = formatPrice(singleStandPrice(product.slug, "standard_direct", purchaseOptions.find((option) => option.id === "standard_direct")?.priceCents ?? product.basePriceCents, offers)).replace(".00", "");
+  const brandedPrice = formatPrice(singleStandPrice(product.slug, "branded_qr_direct", purchaseOptions.find((option) => option.id === "branded_qr_direct")?.priceCents ?? product.basePriceCents, offers)).replace(".00", "");
 
   return (
     <main className="tr-public-shell text-ink">
-      <JsonLd data={productJsonLd(product)} />
+      <JsonLd data={productJsonLd(product, { offers, shipping })} />
       <JsonLd data={breadcrumbJsonLd([
         { name: "Shop", href: "/shop" },
         ...(category ? [{ name: category.title, href: getCategoryHref(category.slug) }] : []),
@@ -113,7 +115,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
-        <ProductHero key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} />
+        <ProductHero offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} />
       {product.checkoutMode === "buy_now" && <ProductOffers settings={offers} productId={product.slug} branded={getProductPurchaseOptions(product).some(o => o.id === "branded_qr_direct")} />}
       </SectionShell>
 

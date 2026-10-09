@@ -1,12 +1,12 @@
 import { offerIsActive, type OffersSettings } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 export function ProductOffers({
-  productId,
-  branded,
+  productId = "",
+  branded = true,
   settings,
 }: {
-  productId: string;
-  branded: boolean;
+  productId?: string;
+  branded?: boolean;
   settings: OffersSettings | null;
 }) {
   if (!settings) return null;

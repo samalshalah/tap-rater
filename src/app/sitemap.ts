@@ -17,6 +17,7 @@ const staticRoutes = [
   "/custom-stands",
   "/multi-link",
   "/pricing",
+  "/stand-bundles",
   "/support",
   "/faqs",
   "/contact-us",

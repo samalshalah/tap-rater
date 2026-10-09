@@ -10,7 +10,7 @@ import { optimizedUploadSrc } from "@/lib/optimized-upload";
 export function MobileHome({ product }: { product?: MigratedProduct }) {
   const image = product ? getProductVisual(product) : null;
   return <section className="tr-mobile-home" aria-label="Shop Tap Rater stands">
-    <h1>One tap. More connections.</h1>
+    <p className="tr-mobile-home-title">One tap. More connections.</p>
     <p>Stands for reviews, menus &amp; more.</p>
     {image ? <div className="tr-mobile-home-image"><Image src={optimizedUploadSrc(image.src, 640)} alt={image.alt} fill unoptimized priority sizes="(max-width: 767px) 100vw, 1px" className="object-contain" /></div> : null}
     <Link href="/shop" className="tr-mobile-primary">Shop stands <ArrowRight size={22} aria-hidden="true" /></Link>

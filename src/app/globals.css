@@ -587,7 +587,7 @@ a {
   .tr-public-shell input:not([type=radio]):not([type=checkbox]), .tr-public-shell select, .tr-public-shell textarea { font-size:16px; }
   .tr-public-shell a:focus-visible, .tr-public-shell button:focus-visible { outline:2px solid #0B7A75; outline-offset:3px; }
   .tr-mobile-home { display:block; padding:24px 20px 0; background:white; }
-  .tr-mobile-home h1 { font-size:34px!important; line-height:1.12!important; font-weight:750!important; letter-spacing:-1px; max-width:360px; }
+  .tr-mobile-home .tr-mobile-home-title { color:var(--tr-color-ink)!important; font-size:34px!important; line-height:1.12!important; font-weight:750!important; letter-spacing:-1px; max-width:360px; }
   .tr-mobile-home > p { margin-top:12px; font-size:17px; color:#5F6B76; }
   .tr-mobile-home-image { position:relative; height:240px; margin:14px -20px; background:#F7F8F6; }
   .tr-mobile-primary { display:flex; align-items:center; justify-content:center; gap:12px; min-height:52px; padding:12px 18px; border-radius:12px; background:#0B7A75; color:#fff; font-size:17px; font-weight:650; }

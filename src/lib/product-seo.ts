@@ -56,7 +56,7 @@ export function resolveProductSeo(product: MigratedProduct): ProductSeo {
 
   return {
     ...generated,
-    title: customTitle ? withoutSiteTitleSuffix(customTitle) : generated.generatedTitle,
+    title: customTitle ? conciseProductTitle(customTitle, product.title) : generated.generatedTitle,
     description,
     isTitleCustom: Boolean(customTitle),
     isDescriptionCustom: Boolean(customDescription)
@@ -201,4 +201,11 @@ function clampSeoText(value: string, maxLength: number) {
     result = next;
   }
   return result;
+}
+
+function conciseProductTitle(value: string, productTitle: string) {
+  const title = withoutSiteTitleSuffix(value);
+  // Keep intentional short merchant titles; simplify repetitive imported titles.
+  if (title.length <= 50 || !title.startsWith(`${cleanProductTitle(productTitle)} | NFC`)) return title;
+  return clampSeoText(`${cleanProductTitle(productTitle)} | NFC Stand`, 50);
 }

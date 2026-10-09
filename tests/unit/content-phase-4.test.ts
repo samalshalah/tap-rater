@@ -59,7 +59,7 @@ describe("final content and shopping continuity", () => {
 
   it("passes a Branded query from the server and retains a query-free canonical", async () => {
     const props = { params: Promise.resolve({ slug: product.slug }), searchParams: Promise.resolve({ design: "branded" }) };
-    expect(renderToStaticMarkup(await ProductPage(props))).toContain("Set Up My Stand - $49");
+    expect(renderToStaticMarkup(await ProductPage(props))).toContain("Set Up My Stand - $46");
     expect((await generateMetadata(props)).alternates?.canonical).toBe("/product/google-review-stand");
   });
 

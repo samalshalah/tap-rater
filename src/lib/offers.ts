@@ -191,3 +191,7 @@ export function offerShippingSettings<
         : null,
   };
 }
+
+export function singleStandPrice(productId: string, optionId: string, priceCents: number, settings?: OffersSettings | null, now = Date.now()) {
+  return settings ? quoteOffers([{ productId, optionId, quantity: 1, unitAmountCents: priceCents }], settings, now).subtotalCents : priceCents;
+}

@@ -1,3 +1,4 @@
+import { singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bell, Check, ExternalLink, Smartphone } from "lucide-react";
@@ -20,7 +21,7 @@ import { MobileHome } from "./mobile-home";
 
 const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 
-export function HomepageLayout({ content, products, businessUses = [] }: { content: HomepageThemeContent; products: MigratedProduct[]; businessUses?: BusinessUse[] }) {
+export function HomepageLayout({ content, products, businessUses = [], offers }: { offers?: OffersSettings; content: HomepageThemeContent; products: MigratedProduct[]; businessUses?: BusinessUse[] }) {
   const { showcase } = content;
   const featured = selectFeaturedHomepageProducts(products, showcase.featuredProductSlugs);
   const standardPrices = products.filter((product) => product.isActive).flatMap((product) =>
@@ -35,16 +36,17 @@ export function HomepageLayout({ content, products, businessUses = [] }: { conte
   const actions = content.actions.items.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
 
   return <div className={styles.home}>
+    {content.hero.enabled ? <h1 className="sr-only">{content.hero.headline}</h1> : null}
     {content.hero.enabled ? <MobileHome product={comparisonProduct ?? featured[0]} /> : null}
     {content.hero.enabled ? <section className={styles.hero} aria-labelledby="home-title" data-home-section="hero">
       <div className={styles.heroMedia}>
-        <Image src={optimizedUploadSrc(content.hero.image.src, 1200)} alt={content.hero.image.alt} fill unoptimized fetchPriority="high" loading="eager" sizes="100vw" className={styles.heroImage} />
+        <picture><source media="(min-width: 768px)" srcSet={`${optimizedUploadSrc(content.hero.image.src, 640)} 640w, ${optimizedUploadSrc(content.hero.image.src, 1200)} 1200w`} sizes="100vw" /><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt={content.hero.image.alt} width={1672} height={941} fetchPriority="high" className={styles.heroImage} /></picture>
         {showcase.heroCaption ? <p className={styles.heroCaption}>{showcase.heroCaption}</p> : null}
       </div>
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>{content.hero.eyebrow}</p>
-          <h1 id="home-title">{content.hero.headline}</h1>
+          <p id="home-title" className={styles.heroHeadline}>{content.hero.headline}</p>
           <p className={styles.heroBody}>{content.hero.body}</p>
           {standardPrices.length ? <p className={styles.heroPrice}>From <strong>{compactPrice(Math.min(...standardPrices))}</strong><span>per stand</span></p> : null}
           <div className={styles.ctas}>
@@ -85,7 +87,7 @@ export function HomepageLayout({ content, products, businessUses = [] }: { conte
               {design.image.caption ? <figcaption>{design.image.caption}</figcaption> : null}
             </figure>
             <div className={styles.designCopy}>
-              <div className={styles.designTitle}><h3>{design.name}</h3><strong>{compactPrice(design.option.priceCents)}</strong></div>
+              <div className={styles.designTitle}><h3>{design.name}</h3><strong>{compactPrice(singleStandPrice(comparisonProduct!.slug, design.option.id, design.option.priceCents, offers))}</strong></div>
               <p>{design.detail}</p>
               <ul className={styles.checkList}>{design.points.map((point) => <li key={point}><Check size={16} aria-hidden="true" />{point}</li>)}</ul>
               <Link href={design.href} className={styles.textLink}>{design.cta}<ArrowRight size={17} aria-hidden="true" /></Link>

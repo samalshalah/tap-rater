@@ -1,3 +1,6 @@
+import { singleStandPrice, offerShippingSettings, type OffersSettings } from "@/lib/offers";
+import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
+import type { ShippingSettingsInput } from "@/lib/shipping-settings";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize, getProductBaseSku } from "@/lib/product-model";
 import { resolveProductSeo } from "@/lib/product-seo";
@@ -11,7 +14,7 @@ export function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();
 }
 
-export function productJsonLd(product: MigratedProduct) {
+export function productJsonLd(product: MigratedProduct, context?: { offers?: OffersSettings | null; shipping?: ShippingSettingsInput }) {
   const seo = resolveProductSeo(product);
   const url = absoluteUrl(`/product/${product.slug}`);
   const data: Record<string, unknown> = {
@@ -36,6 +39,13 @@ export function productJsonLd(product: MigratedProduct) {
   const variants = getProductPurchaseOptions(product).flatMap((option) => {
     const price = getConfiguredUnitPriceCents(product, option, selection);
     if (price === null || !Number.isFinite(price) || price < 0 || option.requiresSubscription) return [];
+    const effectivePrice = singleStandPrice(product.slug, option.id, price, context?.offers);
+    const shippingDetails = context?.shipping && context.shipping.shippingMode !== "manual"
+      ? context.shipping.allowedCountryCodes.map((country) => ({
+          "@type": "OfferShippingDetails",
+          shippingDestination: { "@type": "DefinedRegion", addressCountry: country },
+          shippingRate: { "@type": "MonetaryAmount", currency: "USD", value: (resolveCheckoutShippingRule(effectivePrice, context.offers ? offerShippingSettings(context.shipping!, context.offers, country) : { ...context.shipping!, freeShippingThresholdCents: null }).amountCents / 100).toFixed(2) }
+        })) : undefined;
     const branded = option.id === "branded_qr_direct";
     const variantUrl = `${url}?design=${branded ? "branded" : "standard"}`;
     const image = (branded ? product.assetSet?.brandedAngledImageUrl : undefined) ?? getProductVisual(product).src;
@@ -53,7 +63,8 @@ export function productJsonLd(product: MigratedProduct) {
         "@type": "Offer",
         url: variantUrl,
         priceCurrency: "USD",
-        price: (price / 100).toFixed(2),
+        price: (effectivePrice / 100).toFixed(2),
+        ...(shippingDetails?.length ? { shippingDetails } : {}),
         availability: product.isActive && product.stockStatus === "instock" && product.status !== "draft" && product.status !== "archived"
           ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         itemCondition: "https://schema.org/NewCondition"

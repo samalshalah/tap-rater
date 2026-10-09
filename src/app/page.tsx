@@ -1,3 +1,4 @@
+import { getOffersSettings } from "@/lib/offer-settings";
 import type { Metadata } from "next";
 import { HomepageLayout } from "@/components/storefront/homepage-layout";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -19,10 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [content, products, businessUses] = await Promise.all([getHomepageThemeContent(), getStorefrontProducts(), getPublicBusinessUses()]);
+  const [content, products, businessUses, offers] = await Promise.all([getHomepageThemeContent(), getStorefrontProducts(), getPublicBusinessUses(), getOffersSettings()]);
   return <div className="tr-homepage text-ink">
     <JsonLd data={organizationJsonLd()} />
     <JsonLd data={websiteJsonLd()} />
-    <HomepageLayout content={content} products={products} businessUses={businessUses} />
+    <HomepageLayout offers={offers} content={content} products={products} businessUses={businessUses} />
   </div>;
 }

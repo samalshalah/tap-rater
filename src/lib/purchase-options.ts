@@ -171,7 +171,7 @@ const knownPurchaseClaims = new Map<string, string>([
 ]);
 
 export function correctKnownPurchaseCopy(value: string): string {
-  let corrected = value;
+  let corrected = value.replace(/Ready-made (.+?) with QR and NFC programmed to the link you provide\./g, "Ready-made $1 with NFC programmed to your destination link. Standard is NFC-only, with no printed QR.");
   for (const [claim, replacement] of knownPurchaseClaims) {
     corrected = corrected.replaceAll(claim, replacement);
   }

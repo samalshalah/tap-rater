@@ -1,3 +1,5 @@
+import { JsonLd, breadcrumbJsonLd } from "@/lib/seo";
+import { BuyingGuide } from "@/components/storefront/buying-guide";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -58,6 +60,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
 
   return (
     <main className="tr-public-shell text-ink">
+      <JsonLd data={breadcrumbJsonLd([{ name: "Solutions", href: "/solutions" }, { name: businessUse.title, href: `/solutions/${businessUse.slug}` }])} />
       <PageHero
         spacing="compact"
         backLink={{ href: "/solutions", label: "All business uses" }}
@@ -101,6 +104,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
           </Link>
         </div>
       </SectionShell>
+      <BuyingGuide slug={businessUse.slug} kind="solution" />
     </main>
   );
 }
