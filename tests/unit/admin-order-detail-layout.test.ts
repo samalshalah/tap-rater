@@ -29,7 +29,9 @@ describe("admin order detail wrapping", () => {
     const html = renderToStaticMarkup(await AdminOrderDetailPage({ params: Promise.resolve({ id }) }));
     expect(html).toContain(`href="/api/admin/orders/${id}/artwork/0"`);
     expect(html).toContain(`src="/api/admin/orders/${id}/artwork/0?preview=1"`);
-    expect(html).toContain("Download design (SVG)");
+    expect(html).toContain("Download print-ready artwork (SVG)");
+    expect(html).toContain("Download print-ready SVG");
+    expect(html).toContain("View preview (opens in a new tab)");
     expect(html).toContain("Download design text");
     expect(html).not.toContain("public-bucket.example");
     expect(html).not.toContain("/api/media/product/products/google/production_artwork");
