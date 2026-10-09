@@ -5,9 +5,13 @@ export type RateLimitBinding = {
   limit: (input: { key: string }) => Promise<{ success: boolean }>;
 };
 
-type RateLimitBindingName = "PUBLIC_EVENT_RATE_LIMITER" | "PUBLIC_FORM_RATE_LIMITER" | "PUBLIC_CHECKOUT_RATE_LIMITER";
+type RateLimitBindingName =
+  | "PUBLIC_EVENT_RATE_LIMITER"
+  | "PUBLIC_FORM_RATE_LIMITER"
+  | "PUBLIC_CHECKOUT_RATE_LIMITER";
 
 export type PublicRateLimitScope =
+  | "analytics"
   | "checkout"
   | "checkout-address"
   | "change-link"
@@ -22,14 +26,15 @@ export type PublicRateLimitScope =
 export async function checkPublicRateLimit(
   request: Request,
   scope: PublicRateLimitScope,
-  bindingName: RateLimitBindingName
+  bindingName: RateLimitBindingName,
 ) {
   const ip = getTrustedRequestIp(request.headers);
   if (!ip) return { limited: false };
 
   try {
     const context = await getCloudflareContext({ async: true });
-    const env = context.env as CloudflareEnv & Partial<Record<RateLimitBindingName, RateLimitBinding>>;
+    const env = context.env as CloudflareEnv &
+      Partial<Record<RateLimitBindingName, RateLimitBinding>>;
     const binding = env[bindingName];
     if (!binding) return { limited: false };
 
@@ -42,7 +47,7 @@ export async function checkPublicRateLimit(
 export async function checkPublicRateLimitWithBinding(
   request: Request,
   scope: PublicRateLimitScope,
-  binding: RateLimitBinding
+  binding: RateLimitBinding,
 ) {
   const ip = getTrustedRequestIp(request.headers);
   if (!ip) return { limited: false };
@@ -67,6 +72,6 @@ export function getTrustedRequestIp(headers: Headers) {
 export function rateLimitResponse() {
   return Response.json(
     { error: "Too many requests. Please wait a minute and try again." },
-    { status: 429, headers: { "Retry-After": "60" } }
+    { status: 429, headers: { "Retry-After": "60" } },
   );
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { adminNavigationGroups, getAdminNavigationItems, getHiddenAdminNavigationItems } from "@/lib/admin-navigation";
+import {
+  adminNavigationGroups,
+  getAdminNavigationItems,
+  getHiddenAdminNavigationItems,
+} from "@/lib/admin-navigation";
 
 describe("admin navigation", () => {
   it("exposes only intentional operational areas in primary navigation", () => {
@@ -19,8 +23,9 @@ describe("admin navigation", () => {
         "/admin/content",
         "/admin/business-uses",
         "/admin/settings",
-        "/admin/settings/emails"
-      ])
+        "/admin/settings/emails",
+        "/admin/analytics",
+      ]),
     );
 
     expect(hrefs).not.toEqual(
@@ -30,8 +35,7 @@ describe("admin navigation", () => {
         "/admin/discounts",
         "/admin/media",
         "/admin/seo",
-        "/admin/analytics"
-      ])
+      ]),
     );
   });
 
@@ -45,8 +49,7 @@ describe("admin navigation", () => {
         "/admin/discounts",
         "/admin/media",
         "/admin/seo",
-        "/admin/analytics"
-      ])
+      ]),
     );
     expect(hiddenItems.every((item) => item.status === "hidden")).toBe(true);
   });
@@ -55,8 +58,9 @@ describe("admin navigation", () => {
     expect(adminNavigationGroups.map((group) => group.label)).toEqual([
       "Dashboard",
       "Commerce",
+      "Analytics",
       "Operations",
-      "System"
+      "System",
     ]);
   });
 });

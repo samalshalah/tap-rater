@@ -6,16 +6,45 @@ import { runMediaBackupBatch } from "./src/lib/media-recovery";
 import openNextWorker from "./.open-next/worker.js";
 
 export default {
-  async scheduled(_controller: ScheduledController, env: CloudflareEnv) {
-    const state = await runMediaBackupBatch(env.PRODUCT_MEDIA_BUCKET, env.RECOVERY_BACKUPS);
-    console.log(JSON.stringify({ event: "media_backup", completed: Boolean(state.completedAt), objects: state.objects, bytes: state.bytes }));
+  async scheduled(
+    _controller: ScheduledController,
+    env: CloudflareEnv,
+    context: unknown,
+  ) {
+    try {
+      const analytics = await openNextWorker.fetch(
+        new Request("https://taprater.com/api/internal/analytics", {
+          method: "POST",
+          headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+        }),
+        env,
+        context,
+      );
+      console.log(
+        JSON.stringify({ event: "analytics_purchase_retry", ok: analytics.ok }),
+      );
+    } catch {
+      console.warn("Analytics retry unavailable");
+    }
+    const state = await runMediaBackupBatch(
+      env.PRODUCT_MEDIA_BUCKET,
+      env.RECOVERY_BACKUPS,
+    );
+    console.log(
+      JSON.stringify({
+        event: "media_backup",
+        completed: Boolean(state.completedAt),
+        objects: state.objects,
+        bytes: state.bytes,
+      }),
+    );
   },
   fetch(request: Request, env: CloudflareEnv, context: unknown) {
     const redirectUrl = getCanonicalRedirectUrl(request);
     if (redirectUrl) {
       return new Response(null, {
         status: 308,
-        headers: { Location: redirectUrl.toString() }
+        headers: { Location: redirectUrl.toString() },
       });
     }
 
@@ -24,12 +53,12 @@ export default {
     if (assetUrl && env.ASSETS) {
       return env.ASSETS.fetch(assetUrl.toString(), {
         method: request.method,
-        headers: Object.fromEntries(request.headers)
+        headers: Object.fromEntries(request.headers),
       });
     }
 
     return openNextWorker.fetch(request, env, context);
-  }
+  },
 };
 
 // @ts-expect-error These OpenNext exports are generated after the application build.

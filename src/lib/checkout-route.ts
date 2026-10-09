@@ -1,3 +1,4 @@
+import { linkAnalyticsCheckout } from "@/lib/storefront-analytics-server";
 import { NextResponse } from "next/server";
 import type { MigratedProduct } from "@/data/migrated-products";
 import {
@@ -11,17 +12,32 @@ import {
   validateStripeRuntimeConfig,
   withTimeout,
   type CheckoutCartRow,
-  type ValidatedCheckoutCart
+  type ValidatedCheckoutCart,
 } from "@/lib/checkout";
 import { findAuthenticatedStripeCustomerIdForCheckout } from "@/lib/customer-billing";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { createPendingOrderForCheckout } from "@/lib/orders";
 import { getCheckoutProducts } from "@/lib/product-repository";
-import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
-import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
+import {
+  getCheckoutShippingAmountCents,
+  getCheckoutShippingMode,
+  getShippingSettings,
+  type ShippingSettingsInput,
+} from "@/lib/shipping-settings";
+import {
+  getCheckoutTaxableAmountCents,
+  getCheckoutTaxAmountCents,
+} from "@/lib/tax-rules";
 import { getTaxSettings, type TaxSettingsInput } from "@/lib/tax-settings";
-import { checkoutRequestSchema, type CheckoutCustomerInput, type CheckoutShippingAddressInput } from "@/lib/validators";
-import { bindBrandedHostedCheckout, verifyBrandedCheckoutProofs } from "@/lib/branded-proof";
+import {
+  checkoutRequestSchema,
+  type CheckoutCustomerInput,
+  type CheckoutShippingAddressInput,
+} from "@/lib/validators";
+import {
+  bindBrandedHostedCheckout,
+  verifyBrandedCheckoutProofs,
+} from "@/lib/branded-proof";
 
 type CheckoutRouteLogger = Pick<Console, "error" | "info" | "warn">;
 
@@ -31,7 +47,9 @@ type StripeCheckoutSessionResult = {
   url?: string | null;
 };
 
-type PendingOrderResult = Awaited<ReturnType<typeof createPendingOrderForCheckout>>;
+type PendingOrderResult = Awaited<
+  ReturnType<typeof createPendingOrderForCheckout>
+>;
 
 export type CheckoutRouteDependencies = {
   verifyBrandedProofs?: typeof verifyBrandedCheckoutProofs;
@@ -62,7 +80,11 @@ export type CheckoutRouteDependencies = {
     idempotencyKey: string;
   }) => Promise<StripeCheckoutSessionResult>;
   getProducts: () => Promise<MigratedProduct[]>;
-  resolveStripeCustomerId: (input: { request: Request; email: string; stripeMode: "test" | "live" }) => Promise<string | null>;
+  resolveStripeCustomerId: (input: {
+    request: Request;
+    email: string;
+    stripeMode: "test" | "live";
+  }) => Promise<string | null>;
   getShippingSettings: () => Promise<ShippingSettingsInput>;
   getTaxSettings: () => Promise<TaxSettingsInput>;
   getSiteUrl: (requestOrigin?: string | null) => string;
@@ -72,13 +94,21 @@ export type CheckoutRouteDependencies = {
   stripeTimeoutMs: number;
 };
 
-export async function handleCheckoutPost(request: Request, dependencies: CheckoutRouteDependencies = checkoutRouteDependencies) {
+export async function handleCheckoutPost(
+  request: Request,
+  dependencies: CheckoutRouteDependencies = checkoutRouteDependencies,
+) {
   const requestId = dependencies.createRequestId();
-  const parsed = checkoutRequestSchema.safeParse(await request.json().catch(() => null));
+  const parsed = checkoutRequestSchema.safeParse(
+    await request.json().catch(() => null),
+  );
 
   if (!parsed.success) {
     logCheckout(dependencies.logger, "warn", requestId, "invalid_payload");
-    return NextResponse.json({ error: "Customer and shipping details are required before payment." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Customer and shipping details are required before payment." },
+      { status: 400 },
+    );
   }
 
   logCheckout(dependencies.logger, "info", requestId, "parsed_cart", {
@@ -86,28 +116,45 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     items: parsed.data.items.map((item) => ({
       productId: item.productId,
       optionId: item.optionId ?? "standard_direct",
-      quantity: item.quantity
-    }))
+      quantity: item.quantity,
+    })),
   });
   logCheckout(dependencies.logger, "info", requestId, "stripe_key_check", {
     mode: process.env.STRIPE_MODE || "test",
     secretKeyPrefix: getSafeStripeKeyPrefix(process.env.STRIPE_SECRET_KEY),
     publishableKeyPrefix: getSafeStripeKeyPrefix(getStripePublishableKey()),
-    hasWebhookSecret: Boolean(process.env.STRIPE_WEBHOOK_SECRET)
+    hasWebhookSecret: Boolean(process.env.STRIPE_WEBHOOK_SECRET),
   });
 
   const stripeConfig = validateStripeRuntimeConfig();
 
   if (!stripeConfig.ok) {
-    logCheckout(dependencies.logger, "warn", requestId, "stripe_config_invalid", {
-      mode: stripeConfig.mode
-    });
+    logCheckout(
+      dependencies.logger,
+      "warn",
+      requestId,
+      "stripe_config_invalid",
+      {
+        mode: stripeConfig.mode,
+      },
+    );
     return NextResponse.json({ error: stripeConfig.error }, { status: 503 });
   }
 
   if (!dependencies.hasOrderPersistence()) {
-    logCheckout(dependencies.logger, "warn", requestId, "order_persistence_missing");
-    return NextResponse.json({ error: "Database order persistence is required before checkout can be used." }, { status: 503 });
+    logCheckout(
+      dependencies.logger,
+      "warn",
+      requestId,
+      "order_persistence_missing",
+    );
+    return NextResponse.json(
+      {
+        error:
+          "Database order persistence is required before checkout can be used.",
+      },
+      { status: 503 },
+    );
   }
 
   let products: MigratedProduct[];
@@ -115,30 +162,64 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
     products = await dependencies.getProducts();
   } catch {
     logCheckout(dependencies.logger, "warn", requestId, "catalog_unavailable");
-    return NextResponse.json({ error: "Product pricing and availability could not be verified. Please try again." }, { status: 503 });
+    return NextResponse.json(
+      {
+        error:
+          "Product pricing and availability could not be verified. Please try again.",
+      },
+      { status: 503 },
+    );
   }
   const shippingSettings = await dependencies.getShippingSettings();
   const taxSettings = await dependencies.getTaxSettings();
-  logCheckout(dependencies.logger, "info", requestId, "products_loaded", { count: products.length });
+  logCheckout(dependencies.logger, "info", requestId, "products_loaded", {
+    count: products.length,
+  });
   const cart = validateCheckoutCart(parsed.data.items, products);
 
   if (!cart.ok) {
-    logCheckout(dependencies.logger, "warn", requestId, "cart_validation_failed", { reason: cart.reason });
-    return NextResponse.json({ error: cart.message, reason: cart.reason }, { status: 400 });
+    logCheckout(
+      dependencies.logger,
+      "warn",
+      requestId,
+      "cart_validation_failed",
+      { reason: cart.reason },
+    );
+    return NextResponse.json(
+      { error: cart.message, reason: cart.reason },
+      { status: 400 },
+    );
   }
 
   try {
-    await (dependencies.verifyBrandedProofs ?? verifyBrandedCheckoutProofs)(cart.rows, parsed.data.checkoutAttemptId);
+    await (dependencies.verifyBrandedProofs ?? verifyBrandedCheckoutProofs)(
+      cart.rows,
+      parsed.data.checkoutAttemptId,
+    );
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Artwork approval could not be verified." }, { status: 400 });
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Artwork approval could not be verified.",
+      },
+      { status: 400 },
+    );
   }
 
   logCheckout(dependencies.logger, "info", requestId, "cart_validated", {
     itemCount: cart.rows.length,
-    totalCents: cart.totalCents
+    totalCents: cart.totalCents,
   });
-  const shippingAmountCents = getCheckoutShippingAmountCents(shippingSettings, cart.totalCents);
-  const shippingMode = getCheckoutShippingMode(shippingSettings, cart.totalCents);
+  const shippingAmountCents = getCheckoutShippingAmountCents(
+    shippingSettings,
+    cart.totalCents,
+  );
+  const shippingMode = getCheckoutShippingMode(
+    shippingSettings,
+    cart.totalCents,
+  );
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,
     getCheckoutTaxableAmountCents({
@@ -146,22 +227,28 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
       shippingState: parsed.data.shippingAddress.state,
       shippingAmountCents,
       standTotalCents: cart.totalCents,
-      taxSettings
-    })
+      taxSettings,
+    }),
   );
   const accountRequired = cart.checkoutMode === "subscription";
   const customer = {
     ...parsed.data.customer,
-    createAccount: accountRequired || parsed.data.customer.createAccount === true
+    createAccount:
+      accountRequired || parsed.data.customer.createAccount === true,
   };
 
   try {
     const stripeCustomerId = await dependencies.resolveStripeCustomerId({
       request,
       email: customer.email,
-      stripeMode: stripeConfig.mode
+      stripeMode: stripeConfig.mode,
     });
-    logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_start");
+    logCheckout(
+      dependencies.logger,
+      "info",
+      requestId,
+      "stripe_session_create_start",
+    );
     const requestOrigin = new URL(request.url).origin;
     const session = await withTimeout(
       dependencies.createStripeSession({
@@ -173,70 +260,127 @@ export async function handleCheckoutPost(request: Request, dependencies: Checkou
         stripeCustomerId,
         stripeMode: stripeConfig.mode,
         shippingSettings,
-        taxSettings
+        taxSettings,
       }),
       dependencies.stripeTimeoutMs,
-      "Stripe Checkout Session creation"
+      "Stripe Checkout Session creation",
     );
-    logCheckout(dependencies.logger, "info", requestId, "stripe_session_create_success", {
-      sessionIdPrefix: session.id?.slice(0, 8) ?? "missing",
-      hasClientSecret: Boolean(session.client_secret)
-    });
+    logCheckout(
+      dependencies.logger,
+      "info",
+      requestId,
+      "stripe_session_create_success",
+      {
+        sessionIdPrefix: session.id?.slice(0, 8) ?? "missing",
+        hasClientSecret: Boolean(session.client_secret),
+      },
+    );
 
     if (!session.id || !session.client_secret) {
-      logCheckout(dependencies.logger, "error", requestId, "stripe_session_missing_fields", {
-        hasId: Boolean(session.id),
-        hasClientSecret: Boolean(session.client_secret)
-      });
-      return NextResponse.json({ error: "Stripe Checkout Session could not be created." }, { status: 500 });
+      logCheckout(
+        dependencies.logger,
+        "error",
+        requestId,
+        "stripe_session_missing_fields",
+        {
+          hasId: Boolean(session.id),
+          hasClientSecret: Boolean(session.client_secret),
+        },
+      );
+      return NextResponse.json(
+        { error: "Stripe Checkout Session could not be created." },
+        { status: 500 },
+      );
     }
 
-    logCheckout(dependencies.logger, "info", requestId, "pending_order_create_start");
-    await (dependencies.bindBrandedCheckout ?? bindBrandedHostedCheckout)(cart.rows, session.id);
+    logCheckout(
+      dependencies.logger,
+      "info",
+      requestId,
+      "pending_order_create_start",
+    );
+    await (dependencies.bindBrandedCheckout ?? bindBrandedHostedCheckout)(
+      cart.rows,
+      session.id,
+    );
     const pendingOrder = await withTimeout(
       dependencies.createPendingOrder({
         stripeCheckoutSessionId: session.id,
         rows: cart.rows,
         subtotalCents: cart.totalCents,
-        totalCents: cart.totalCents + cart.recurringTotalCents + shippingAmountCents + taxAmountCents,
+        totalCents:
+          cart.totalCents +
+          cart.recurringTotalCents +
+          shippingAmountCents +
+          taxAmountCents,
         currency: cart.currency,
         customer,
         shippingAddress: parsed.data.shippingAddress,
         shippingAmountCents,
         shippingMode,
         taxAmountCents,
-        taxSettings
+        taxSettings,
       }),
       dependencies.orderTimeoutMs,
-      "Pending order creation"
+      "Pending order creation",
     );
 
     if (!pendingOrder.ok) {
-      logCheckout(dependencies.logger, "error", requestId, "pending_order_create_failed", {
-        error: pendingOrder.error
-      });
-      return NextResponse.json({ error: "Order could not be prepared for checkout." }, { status: 500 });
+      logCheckout(
+        dependencies.logger,
+        "error",
+        requestId,
+        "pending_order_create_failed",
+        {
+          error: pendingOrder.error,
+        },
+      );
+      return NextResponse.json(
+        { error: "Order could not be prepared for checkout." },
+        { status: 500 },
+      );
     }
 
-    logCheckout(dependencies.logger, "info", requestId, "pending_order_create_success");
+    logCheckout(
+      dependencies.logger,
+      "info",
+      requestId,
+      "pending_order_create_success",
+    );
+    if (dependencies === checkoutRouteDependencies)
+      await linkAnalyticsCheckout(request, session.id).catch(() =>
+        console.warn("[analytics] checkout association unavailable"),
+      );
     return NextResponse.json({
       checkoutMode: "embedded",
       clientSecret: session.client_secret,
-      sessionId: session.id
+      sessionId: session.id,
     });
   } catch (error) {
     if (isCheckoutTimeoutError(error)) {
       logCheckout(dependencies.logger, "error", requestId, "checkout_timeout", {
         label: error.label,
-        timeoutMs: error.timeoutMs
+        timeoutMs: error.timeoutMs,
       });
-      return NextResponse.json({ error: "Stripe Checkout timed out. Please try again." }, { status: 504 });
+      return NextResponse.json(
+        { error: "Stripe Checkout timed out. Please try again." },
+        { status: 504 },
+      );
     }
 
-    logCheckout(dependencies.logger, "error", requestId, "checkout_unhandled_error", {
-      errorName: error instanceof Error ? error.name : "UnknownError"
-    });
-    return NextResponse.json({ error: "Stripe Checkout could not be started." }, { status: 500 });
+    logCheckout(
+      dependencies.logger,
+      "error",
+      requestId,
+      "checkout_unhandled_error",
+      {
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      },
+    );
+    return NextResponse.json(
+      { error: "Stripe Checkout could not be started." },
+      { status: 500 },
+    );
   }
 }
 
@@ -252,7 +396,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
     stripeCustomerId,
     stripeMode,
     shippingSettings,
-    taxSettings
+    taxSettings,
   }) => {
     const stripe = getStripeClient();
     return stripe.checkout.sessions.create(
@@ -264,15 +408,20 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
         stripeCustomerId,
         stripeMode,
         shippingSettings,
-        taxSettings
+        taxSettings,
       }),
-      { idempotencyKey }
+      { idempotencyKey },
     );
   },
   getProducts: getCheckoutProducts,
   resolveStripeCustomerId: async ({ request, email, stripeMode }) => {
     try {
-      return await findAuthenticatedStripeCustomerIdForCheckout(getSupabaseAdmin(), request, email, stripeMode);
+      return await findAuthenticatedStripeCustomerIdForCheckout(
+        getSupabaseAdmin(),
+        request,
+        email,
+        stripeMode,
+      );
     } catch {
       return null;
     }
@@ -283,7 +432,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
   hasOrderPersistence: hasSupabaseAdminConfig,
   logger: console,
   orderTimeoutMs: STRIPE_CHECKOUT_TIMEOUT_MS,
-  stripeTimeoutMs: STRIPE_CHECKOUT_TIMEOUT_MS
+  stripeTimeoutMs: STRIPE_CHECKOUT_TIMEOUT_MS,
 };
 
 function createCheckoutRequestId() {
@@ -299,12 +448,12 @@ function logCheckout(
   level: keyof CheckoutRouteLogger,
   requestId: string,
   stage: string,
-  details: Record<string, unknown> = {}
+  details: Record<string, unknown> = {},
 ) {
   logger[level]("[checkout]", {
     requestId,
     stage,
-    ...details
+    ...details,
   });
 }
 
