@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { buildOrderDesignText, getAdminOrderDesignAssetUrl, getOrderLogoStorageKey } from "@/lib/order-design-assets";
+import { buildOrderDesignText, getAdminOrderDesignAssetUrl, getOrderLogoStorageKey, getOrderStandardDesignUrl } from "@/lib/order-design-assets";
 import type { OrderLineItem } from "@/lib/orders";
 
 const original = "products/customer-setup-google-review-stand/center_asset/original.png";
@@ -11,6 +11,15 @@ const item: OrderLineItem = { productId: "google-review-stand", optionId: "brand
 
 afterEach(() => vi.unstubAllEnvs());
 describe("order design assets", () => {
+  it("downloads the standard front image saved with the order, not a current product photo", () => {
+    const standard = { ...item, optionId: "standard_direct", setup: { frontTemplateUrl: "/uploads/products/archived-standard.png" } };
+    expect(getOrderStandardDesignUrl(standard)).toBe("/uploads/products/archived-standard.png");
+    expect(getOrderStandardDesignUrl({ ...standard, setup: {} })).toBe("/uploads/products/taprater-stands/google/google-standard-front.png");
+    expect(getOrderStandardDesignUrl(item)).toBeUndefined();
+  });
+  it.each(["https://other.example/design.png", "/api/admin/private.png", "/uploads/products/file.png?other=1", "/uploads/products/file.svg"])("rejects unsupported standard design locations: %s", (frontTemplateUrl) => {
+    expect(getOrderStandardDesignUrl({ ...item, optionId: "standard_direct", setup: { frontTemplateUrl } })).toBeUndefined();
+  });
   it("keeps the original upload distinct from the processed print logo", () => {
     expect(getOrderLogoStorageKey(item)).toBe(original);
     expect(getOrderLogoStorageKey(item, false)).toBe(prepared);

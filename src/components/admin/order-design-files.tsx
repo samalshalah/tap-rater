@@ -4,8 +4,9 @@ import { Check, Copy, Download, LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { fetchOrderFile, saveOrderFile } from "@/lib/order-file-download";
 
-export function OrderDesignFiles({ artworkUrl, originalLogoUrl, printLogoUrl, textUrl, businessName }: {
+export function OrderDesignFiles({ artworkUrl, standardDesignUrl, originalLogoUrl, printLogoUrl, textUrl, businessName }: {
   artworkUrl?: string;
+  standardDesignUrl?: string;
   originalLogoUrl?: string;
   printLogoUrl?: string;
   textUrl?: string;
@@ -16,6 +17,7 @@ export function OrderDesignFiles({ artworkUrl, originalLogoUrl, printLogoUrl, te
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const files = [
+    { url: standardDesignUrl, label: "Download standard design image", filename: `standard-design.${standardDesignUrl?.split(".").pop() || "png"}` },
     { url: artworkUrl, label: "Download print-ready artwork (SVG)", filename: "stand-design.svg" },
     { url: originalLogoUrl, label: "Download original logo", filename: "original-logo.png" },
     { url: printLogoUrl, label: "Download print logo", filename: "print-logo.png" },

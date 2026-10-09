@@ -1,5 +1,20 @@
 import { isSafeProductMediaKey } from "@/lib/admin-media-storage";
 import type { OrderLineItem, OrderRecord } from "@/lib/orders";
+import { getProductBySlug } from "@/lib/products";
+
+// Use the order's selected flat artwork, never the angled storefront photograph.
+export function getOrderStandardDesignUrl(item: OrderLineItem) {
+  if (item.optionId !== "standard_direct") return undefined;
+  const reference = readText(item, "frontTemplateUrl") || getProductBySlug(item.productId)?.assetSet?.standardFrontTemplateUrl;
+  if (!reference) return undefined;
+  try {
+    const site = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com");
+    const url = new URL(reference, site);
+    if (url.origin !== site.origin || url.search || url.hash || /[%\\\\]/.test(url.pathname) || !/\.(png|jpe?g|webp)$/i.test(url.pathname)) return undefined;
+    if (!url.pathname.startsWith("/uploads/products/") && !url.pathname.startsWith("/api/media/product/products/")) return undefined;
+    return url.pathname;
+  } catch { return undefined; }
+}
 
 export type OrderDesignAsset = "original-logo" | "print-logo" | "text";
 

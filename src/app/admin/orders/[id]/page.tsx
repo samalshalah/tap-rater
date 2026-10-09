@@ -11,7 +11,7 @@ import { canAdvanceOrderFulfillment, canRunOrderProductionActions } from "@/lib/
 import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 import { formatOrderReference } from "@/lib/order-reference";
-import { getAdminOrderDesignAssetUrl, getOrderLogoStorageKey } from "@/lib/order-design-assets";
+import { getAdminOrderDesignAssetUrl, getOrderLogoStorageKey, getOrderStandardDesignUrl } from "@/lib/order-design-assets";
 
 type AdminOrderDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -201,6 +201,7 @@ function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineIte
         />
       </div>
       <OrderDesignFiles
+        standardDesignUrl={getOrderStandardDesignUrl(item)}
         artworkUrl={summary.productionArtwork?.status === "generated" ? artworkUrl : undefined}
         originalLogoUrl={originalLogo ? getAdminOrderDesignAssetUrl(order, index, "original-logo") : undefined}
         printLogoUrl={printLogo && printLogo !== originalLogo ? getAdminOrderDesignAssetUrl(order, index, "print-logo") : undefined}
@@ -223,10 +224,11 @@ function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineIte
 }
 
 function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadUrl?: string }) {
+  const standardDesignUrl = getOrderStandardDesignUrl(item);
   const summary = getOrderLineItemProductionSummary(item);
   const previewData = readSetupRecord(item.setup, "proofPreviewData");
   const previewLogo = summary.logoMediaUrl ?? readRecordString(previewData, "logoMediaUrl");
-  const previewTemplate = summary.frontTemplateUrl ?? readRecordString(previewData, "frontTemplateUrl");
+  const previewTemplate = standardDesignUrl ?? summary.frontTemplateUrl ?? readRecordString(previewData, "frontTemplateUrl");
   const artworkUrl = summary.productionArtwork?.status === "generated" ? downloadUrl : undefined;
 
   if (!previewLogo && !previewTemplate && !artworkUrl) {
@@ -239,7 +241,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
         <PreviewAsset title="Uploaded logo" src={previewLogo} alt={`${item.title} customer logo`} />
       ) : null}
       {previewTemplate ? (
-        <PreviewAsset title="Artwork template" src={previewTemplate} alt={`${item.title} artwork template`} />
+        <PreviewAsset title={standardDesignUrl ? "Standard production design" : "Artwork template"} src={previewTemplate} downloadUrl={standardDesignUrl} downloadLabel="Download standard design image" alt={`${item.title} artwork template`} />
       ) : null}
       {artworkUrl ? (
         <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
@@ -252,7 +254,7 @@ function LineItemVisuals({ item, downloadUrl }: { item: OrderLineItem; downloadU
   );
 }
 
-function PreviewAsset({ title, src, alt, downloadUrl }: { title: string; src: string; alt: string; downloadUrl?: string }) {
+function PreviewAsset({ title, src, alt, downloadUrl, downloadLabel = "Download print-ready SVG" }: { title: string; src: string; alt: string; downloadUrl?: string; downloadLabel?: string }) {
   return (
     <div className="rounded-lg border border-line bg-white p-3">
       <p className="mb-2 text-xs font-black uppercase tracking-[0.04em] text-muted">{title}</p>
@@ -261,7 +263,7 @@ function PreviewAsset({ title, src, alt, downloadUrl }: { title: string; src: st
       </div>
       {downloadUrl ? (
         <a href={downloadUrl} download className="tr-button-primary mt-3 min-h-11 w-full px-3 py-2 text-center text-sm">
-          Download print-ready SVG
+          {downloadLabel}
         </a>
       ) : null}
       <a href={src} target="_blank" rel="noreferrer" className="mt-2 block break-all text-xs font-semibold text-brand">
