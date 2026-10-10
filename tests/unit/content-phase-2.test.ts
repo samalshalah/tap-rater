@@ -61,14 +61,16 @@ describe("content phase 2", () => {
     expect(getProductPageHighlights(saved)[0].body).toBe(prompt.body);
   });
 
-  it("labels shipping costs accurately without inventing preparation/transit estimates", async () => {
+  it("shows the owner-approved preparation and transit estimates separately from costs", async () => {
     const html = renderToStaticMarkup(await ShippingPage());
     expect(html).toContain("Shipping costs");
     expect(html).toContain("Standard preparation");
     expect(html).toContain("Branded preparation");
     expect(html).not.toContain("Shipping timelines");
-    expect(html).not.toContain("Preparation time</h2>");
-    expect(html).not.toMatch(/\d+[- ]\d+ business days/);
+    expect(html).toContain("Preparation time</h2>");
+    expect(html).toContain("prepared in 1 business day");
+    expect(html).toContain("3–5 business days after dispatch");
+    expect(html).toContain("4–6 business days including preparation");
   });
 
   it("displays merchant-approved preparation notes, preserving separate lines", async () => {
