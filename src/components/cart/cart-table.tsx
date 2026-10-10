@@ -4,6 +4,7 @@ import Link from "next/link";
 import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
 import type { ShippingSettingsInput } from "@/lib/validators";
 import { OfferSummary } from "@/components/cart/offer-summary";
+import { getCartOfferSuggestion } from "@/lib/cart-offer-suggestion";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -47,7 +48,10 @@ export function CartTable({
   const checkoutAvailable = usesStripeCheckout || usesManualCheckout;
 
   const rows = getCartRows(items);
-  const promotion = quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers);
+  const offerLines = rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" }));
+  const promotion = quoteOffers(offerLines, offers);
+  const suggestion = getCartOfferSuggestion(offerLines, offers);
+  const suggestedRow = suggestion ? rows.find(row => row.item.productId === suggestion.productId && row.option.id === suggestion.optionId) : undefined;
   const standTotal = promotion.subtotalCents;
   const recurringTotal = calculateRecurringTotalCents(rows);
   const shippingRule = resolveCheckoutShippingRule(standTotal, offerShippingSettings(shippingSettings, offers));
@@ -276,6 +280,13 @@ export function CartTable({
             </div>
           );
         })}
+        {suggestion && suggestedRow ? (
+          <aside className="rounded-xl border border-brand/20 bg-brand/5 p-4 text-sm">
+            <p className="font-semibold text-ink">Need another stand?</p>
+            <p className="mt-2">Add one more {suggestedRow.product.title} with the same design and size for {formatPrice(suggestion.additionalCostCents)} more before shipping and tax. Your cart savings increase by {formatPrice(suggestion.extraSavingsCents)}.</p>
+            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4" href={`/product/${suggestion.productId}?design=${suggestion.optionId === "branded_qr_direct" ? "branded" : "standard"}`}>Set up another stand</Link>
+          </aside>
+        ) : null}
       </div>
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>

@@ -1,7 +1,6 @@
 import { singleStandPrice } from "@/lib/offers";
 import { getShippingSettings } from "@/lib/shipping-settings";
 import { getOffersSettings } from "@/lib/offer-settings";
-import { ProductOffers } from "@/components/product/product-offers";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -116,7 +115,6 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
         <ProductHero offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} />
-      {product.checkoutMode === "buy_now" && <ProductOffers settings={offers} productId={product.slug} branded={getProductPurchaseOptions(product).some(o => o.id === "branded_qr_direct")} />}
       </SectionShell>
 
       <SectionShell tone="soft" spacing="compact">

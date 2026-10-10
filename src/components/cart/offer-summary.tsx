@@ -7,6 +7,7 @@ export function OfferSummary({
   quote: OfferQuote;
   offers: OffersSettings;
 }) {
+  if (quote.discountCents <= 0 && !offers.shipping.enabled) return null;
   return (
     <div
       className="rounded-lg bg-brand/5 p-3 text-sm space-y-2"
@@ -22,12 +23,7 @@ export function OfferSummary({
             {formatPrice(quote.subtotalCents)}
           </p>
         </>
-      ) : (
-        <p>
-          The best eligible stand offer is applied automatically. Discounts do
-          not combine.
-        </p>
-      )}
+      ) : null}
       {offers.shipping.enabled && (
         <p>
           {quote.subtotalCents >= offers.shipping.thresholdCents

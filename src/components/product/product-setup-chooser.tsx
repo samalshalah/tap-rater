@@ -517,7 +517,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
         } : {})
       }
     });
-    router.push(selectedOption.id === "branded_qr_direct" ? "/checkout" : "/cart");
+    router.push("/cart");
   }
 
   const modalTitle =
@@ -1140,7 +1140,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
                 ) : null}
                 {step === "confirmation" ? (
                   <button type="button" className="tr-button-primary" disabled={!proofIsApproved} onClick={addConfiguredItemToCart}>
-                    Continue to checkout
+                    Add to cart
                   </button>
                 ) : null}
               </div>
