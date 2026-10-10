@@ -65,6 +65,19 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
         priceCurrency: "USD",
         price: (effectivePrice / 100).toFixed(2),
         ...(shippingDetails?.length ? { shippingDetails } : {}),
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: context?.shipping?.allowedCountryCodes ?? ["US"],
+          merchantReturnLink: absoluteUrl("/refund-policy"),
+          returnPolicyCategory: branded
+            ? "https://schema.org/MerchantReturnNotPermitted"
+            : "https://schema.org/MerchantReturnFiniteReturnWindow",
+          ...(!branded ? {
+            merchantReturnDays: 30,
+            returnMethod: "https://schema.org/ReturnByMail",
+            returnFees: "https://schema.org/ReturnFeesCustomerResponsibility"
+          } : {})
+        },
         availability: product.isActive && product.stockStatus === "instock" && product.status !== "draft" && product.status !== "archived"
           ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
         itemCondition: "https://schema.org/NewCondition"

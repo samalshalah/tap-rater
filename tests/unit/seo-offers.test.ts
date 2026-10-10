@@ -53,6 +53,19 @@ describe("SEO offer accuracy", () => {
       }).hasVariant[0].offers.shippingDetails,
     ).toBeUndefined();
   });
+  it("distinguishes standard returns from custom artwork exclusions", () => {
+    const variants = schema().hasVariant;
+    expect(variants[0].offers.hasMerchantReturnPolicy).toMatchObject({
+      applicableCountry: ["US"],
+      returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+      merchantReturnDays: 30,
+      returnMethod: "https://schema.org/ReturnByMail",
+      returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+    });
+    expect(variants[0].offers.hasMerchantReturnPolicy.returnShippingFeesAmount).toBeUndefined();
+    expect(variants[1].offers.hasMerchantReturnPolicy.returnPolicyCategory).toBe("https://schema.org/MerchantReturnNotPermitted");
+    expect(variants[1].offers.hasMerchantReturnPolicy.merchantReturnDays).toBeUndefined();
+  });
   it("repairs legacy Standard QR promises without erasing merchant copy", () => {
     const edited = {
       ...product,
