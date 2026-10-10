@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getShippingSettings } from "@/lib/shipping-settings";
+import { usDeliveryEstimate } from "@/lib/delivery-estimates";
 
 export const metadata: Metadata = {
   title: "Shipping",
@@ -20,7 +21,8 @@ export default async function ShippingPage() {
     ["Branded preparation", "Branded stands are prepared using the artwork approved at checkout. Final production artwork is generated after confirmed payment."],
     ["Shipping costs", settings.shippingMode === "free" ? "Free shipping on supported orders." : settings.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Standard shipping is ${formatPrice(settings.flatShippingAmountCents)}. ${offers.shipping.enabled ? `Free shipping on merchandise totals of ${formatPrice(offers.shipping.thresholdCents)} or more after discounts in ${offers.shipping.countryCodes.join(", ")}. Tax and recurring fees do not count toward the threshold.` : ""}`],
     ["Supported regions", settings.supportedRegionsText || "United States"],
-    ...(settings.handlingTimeText.trim() ? [["Preparation time", settings.handlingTimeText]] : []),
+    ["Preparation time", settings.handlingTimeText.trim() || usDeliveryEstimate.preparationText],
+    ["US delivery estimate", usDeliveryEstimate.transitText],
     ["Carrier notes", settings.defaultCarrierNotes || "Carrier details and tracking are added when an order ships."],
     ["Shipping address", "Please review your shipping and contact information before checkout. Incorrect addresses can delay delivery or require additional support."],
     ["Order issues", "If you have a shipping, delivery, damaged item, or fulfillment question, contact Tap Rater support with your order email and details."]

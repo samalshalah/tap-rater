@@ -10,6 +10,17 @@ const schema = (
   shipping = getDefaultShippingSettings(),
 ) => productJsonLd(product, { offers, shipping }) as any;
 describe("SEO offer accuracy", () => {
+  it("publishes the approved preparation and transit ranges for both US designs only", () => {
+    const variants = schema(defaultOffers, { ...getDefaultShippingSettings(), allowedCountryCodes: ["US", "CA"] }).hasVariant;
+    for (const variant of variants) {
+      expect(variant.offers.shippingDetails[0].deliveryTime).toMatchObject({
+        "@type": "ShippingDeliveryTime",
+        handlingTime: { minValue: 1, maxValue: 1, unitCode: "DAY" },
+        transitTime: { minValue: 3, maxValue: 5, unitCode: "DAY" },
+      });
+      expect(variant.offers.shippingDetails[1].deliveryTime).toBeUndefined();
+    }
+  });
   it("uses eligible single-unit discounts without advertising bulk discounts", () => {
     expect(schema().hasVariant.map((v: any) => v.offers.price)).toEqual([
       "39.00",

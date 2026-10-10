@@ -7,6 +7,7 @@ import { resolveProductSeo } from "@/lib/product-seo";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
+import { usDeliveryEstimate } from "@/lib/delivery-estimates";
 
 const siteUrl = getPublicSiteUrl();
 
@@ -44,6 +45,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
       ? context.shipping.allowedCountryCodes.map((country) => ({
           "@type": "OfferShippingDetails",
           shippingDestination: { "@type": "DefinedRegion", addressCountry: country },
+          ...(country === "US" ? { deliveryTime: usDeliveryEstimate.structuredData } : {}),
           shippingRate: { "@type": "MonetaryAmount", currency: "USD", value: (resolveCheckoutShippingRule(effectivePrice, context.offers ? offerShippingSettings(context.shipping!, context.offers, country) : { ...context.shipping!, freeShippingThresholdCents: null }).amountCents / 100).toFixed(2) }
         })) : undefined;
     const branded = option.id === "branded_qr_direct";
