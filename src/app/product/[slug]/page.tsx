@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
+import { GoogleReviewGuide } from "@/components/product/google-review-guide";
 import { FaqList } from "@/components/storefront/faq-list";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } from "@/lib/product-repository";
@@ -128,6 +129,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           supportsMultiLink={productSupportsMultiLink(product)}
         />
       </SectionShell>
+
+      {product.slug === "google-review-stand" ? <GoogleReviewGuide /> : null}
 
       <SectionShell spacing="default">
         <div className="tr-container">

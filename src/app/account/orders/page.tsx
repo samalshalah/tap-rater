@@ -1,4 +1,5 @@
 import { CreditCard } from "lucide-react";
+import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerPortal, type CustomerPortalInvoice } from "@/lib/customer-portal";
@@ -45,6 +46,14 @@ export default async function AccountOrdersPage({
         {pendingPayments.length ? (
           <section className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <p>Some payments are waiting for Tap Rater review.</p>
+          </section>
+        ) : null}
+
+        {portal.orders.some((order) => ["shipped", "delivered"].includes(order.shippingStatus)) ? (
+          <section className="tr-card p-5">
+            <h2 className="text-lg font-medium">Received and tried your stand?</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">Tell us what worked well and what could be better. Sharing your experience is optional.</p>
+            <Link href="/account/feedback" className="tr-button-outline mt-4">Share product feedback</Link>
           </section>
         ) : null}
 

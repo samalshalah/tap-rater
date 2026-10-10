@@ -131,6 +131,15 @@ export function BuyingGuide({
           <Link href="/pricing">Compare designs and pricing</Link>
           <Link href="/stand-bundles">Stands for multiple counters</Link>
           <Link href="/multi-link">Explore Multi-Link</Link>
+          {kind === "category" && slug === "reviews" ? <>
+            <Link href="/product/google-review-stand">Google Review Stand</Link>
+            <Link href="/product/yelp-review-stand">Yelp Review Stand</Link>
+            <Link href="/product/facebook-review-stand">Facebook Review Stand</Link>
+          </> : null}
+          {kind === "category" && slug === "social-media" ? <>
+            <Link href="/product/instagram-follow-stand">Instagram Follow Stand</Link>
+            <Link href="/product/follow-us-social-media-stand">One stand for your social profiles</Link>
+          </> : null}
         </nav>
       </div>
     </SectionShell>

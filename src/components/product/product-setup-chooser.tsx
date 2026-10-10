@@ -19,6 +19,7 @@ import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/goog
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
+import { parseReviewLinkDraft, reviewLinkDraftKey } from "@/lib/review-link-draft";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -77,6 +78,13 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
   const [step, setStep] = useState<SetupStep>("choose");
   const [destinationUrl, setDestinationUrl] = useState("");
+  useEffect(() => {
+    if (product.slug !== "google-review-stand") return;
+    try {
+      const saved = parseReviewLinkDraft(sessionStorage.getItem(reviewLinkDraftKey));
+      if (saved) setDestinationUrl((current) => current || saved);
+    } catch { /* Manual entry remains available when storage is blocked. */ }
+  }, [product.slug]);
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
   const [googleAutocompleteStatus, setGoogleAutocompleteStatus] = useState<"idle" | "loading" | "ready" | "fallback">("idle");
   const [googleSearchResults, setGoogleSearchResults] = useState<GoogleBusinessSelection[]>([]);
