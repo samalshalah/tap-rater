@@ -8,7 +8,7 @@ vi.mock("@/lib/commerce-email-outbox", () => ({ sendCommerceEmail: mocks.send })
 vi.mock("@/lib/email-templates", () => ({ getEmailTemplate: async () => ({ supportText: "Reply for help", footerText: "Tap Rater" }) }));
 vi.mock("@/lib/db", () => ({ getSupabaseAdmin: () => ({}) }));
 vi.mock("@/lib/stripe-processing", () => ({ withStripeResourceLock: async (_client: unknown, _key: string, work: (guard: () => Promise<void>) => unknown) => work(async () => {}) }));
-import { signRecoveryToken, verifyRecoveryToken, assertRecoveryUnpaid, enrollCheckoutReminder, startRecoveryPayment, sendReminder } from "@/lib/checkout-reminders";
+import { signRecoveryToken, verifyRecoveryToken, assertRecoveryUnpaid, enrollCheckoutReminder, startRecoveryPayment, sendReminder, runCheckoutReminders } from "@/lib/checkout-reminders";
 import { buildRecoverySessionParams } from "@/lib/checkout-recovery-payment";
 import { unpaidRecoverable, reminderSettingsSchema, defaultReminderSettings } from "@/lib/checkout-reminder-model";
 import { renderCustomerOrderEmail } from "@/lib/customer-order-email-layout";
@@ -95,6 +95,28 @@ describe("checkout recovery safety", () => {
   });
   it("does not send while paused", async () => {
     mocks.query.mockResolvedValue([{ ...state, paused: true }]); await expect(sendReminder(order.id!, { subject: "Hi", message: "Review" }, "key")).rejects.toThrow("paused"); expect(mocks.send).not.toHaveBeenCalled();
+  });
+  it("sends the second reminder only after the first, then completes the sequence", async () => {
+    const ago = (hours: number) => new Date(Date.now() - hours * 3600000).toISOString();
+    mocks.query.mockImplementation(async (query: string) => {
+      if (query.includes("FROM checkout_reminders r")) return [{ order_id: order.id, last_activity_at: ago(25) }];
+      if (query.includes("SELECT message_type,status")) return [{ message_type: "checkout_reminder_1", status: "delivered", created_at: ago(23) }];
+      if (query.includes("SELECT * FROM checkout_reminders")) return [state];
+      return [];
+    });
+    mocks.send.mockResolvedValue({ sent: true });
+    await expect(runCheckoutReminders()).resolves.toEqual({ enabled: true, sent: 1 });
+    expect(mocks.send.mock.calls[0][0].delivery.messageType).toBe("checkout_reminder_2");
+    expect(mocks.query.mock.calls.some(([sql]) => sql.includes("SET completed=true"))).toBe(true);
+  });
+  it("never sends catch-up reminders close together", async () => {
+    mocks.query.mockImplementation(async (query: string) => {
+      if (query.includes("FROM checkout_reminders r")) return [{ order_id: order.id, last_activity_at: new Date(Date.now() - 30 * 3600000).toISOString() }];
+      if (query.includes("SELECT message_type,status")) return [{ message_type: "checkout_reminder_1", status: "delivered", created_at: new Date().toISOString() }];
+      return [];
+    });
+    await expect(runCheckoutReminders()).resolves.toEqual({ enabled: true, sent: 0 });
+    expect(mocks.send).not.toHaveBeenCalled();
   });
   it("requires increasing reminder times", () => { expect(reminderSettingsSchema.safeParse({ ...defaultReminderSettings, secondHours: 1 }).success).toBe(false); });
 });
