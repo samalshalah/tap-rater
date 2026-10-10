@@ -49,6 +49,7 @@ describe("checkout recovery safety", () => {
   it("preserves discounted cents, products, and free shipping", () => {
     const params = buildRecoverySessionParams(order, "signed");
     expect(params.line_items?.reduce((sum, line) => sum + line.quantity! * line.price_data!.unit_amount!, 0)).toBe(9999);
+    expect(buildRecoverySessionParams(order, "signed")).toEqual(params);
     expect(params.mode).toBe("payment"); expect(params.invoice_creation?.enabled).toBe(true); expect(params).not.toHaveProperty("payment_method_types");
     expect(params.metadata?.recovery_original_order_id).toBe(order.id);
   });

@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { OrderRecord } from "@/lib/orders";
 
 export function buildRecoverySessionParams(order: OrderRecord, token: string): Stripe.Checkout.SessionCreateParams {
@@ -29,7 +29,7 @@ export function buildRecoverySessionParams(order: OrderRecord, token: string): S
   }
   return {
     mode: recurring ? "subscription" : "payment", ui_mode: "hosted",
-    integration_identifier: `taprater_recovery_${randomUUID().replaceAll("-", "").slice(0, 8)}`,
+    integration_identifier: `taprater_recovery_${createHash("sha256").update(`${order.id}:${token}`).digest("hex").slice(0, 8)}`,
     customer_email: order.email!, line_items: lines,
     success_url: "https://taprater.com/checkout/success?session_id={CHECKOUT_SESSION_ID}",
     cancel_url: `https://taprater.com/checkout/recover?token=${encodeURIComponent(token)}`,
