@@ -6,6 +6,8 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { formatOrderReference } from "@/lib/order-reference";
 import { formatPrice } from "@/lib/products";
+import { GoogleCustomerReviews } from "@/components/checkout/google-customer-reviews";
+import { customerReviewOrder } from "@/lib/google-customer-reviews";
 
 type CheckoutSuccessPageProps = {
   searchParams?: Promise<{
@@ -71,6 +73,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
             Contact support
           </Link>
         </div>
+        {!isManualOrder ? <GoogleCustomerReviews order={order?.review ?? null} pending={/^cs_live_[A-Za-z0-9]+$/.test(sessionId) && (!order || order.pending)} /> : null}
       </section>
         </div>
       </SectionShell>
@@ -84,13 +87,14 @@ async function loadCheckoutSuccessOrder(sessionId: string) {
   try {
     const { data } = await getSupabaseAdmin()
       .from("orders")
-      .select("id,stripe_checkout_session_id,total_cents,customer_details_json,status,payment_status,currency,line_items_json,shipping_amount_cents,refund_status,stripe_refund_id")
+      .select("id,stripe_checkout_session_id,total_cents,customer_details_json,status,payment_status,currency,line_items_json,shipping_amount_cents,refund_status,stripe_refund_id,email,shipping_address_json")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle();
     const row = data && typeof data === "object" ? data as Record<string, unknown> : null;
     if (!row) return null;
     const details = row.customer_details_json && typeof row.customer_details_json === "object" ? row.customer_details_json as Record<string, unknown> : {};
     return {
+      review: customerReviewOrder(row),
       purchase: verifiedPurchase(row),
       pending: row.status === "pending_payment",
       reference: readString(row.stripe_checkout_session_id),

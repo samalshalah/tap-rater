@@ -57,6 +57,13 @@ const sections = [
     ],
   },
   {
+    title: "Google Customer Reviews",
+    body: [
+      "After a confirmed purchase, we share your order identifier, email address, delivery country, and estimated delivery date with Google to display the Google Customer Reviews survey invitation. Google sends a survey email only if you choose to participate in its invitation. This choice is separate from analytics consent and is not required to complete your purchase.",
+      "Google and other third parties may use cookies, web beacons, or similar technologies to provide this program. You can block or remove cookies through your browser settings, although doing so may prevent the invitation from working. Google processes this information under the Google Privacy Policy at https://policies.google.com/privacy.",
+    ],
+  },
+  {
     title: "Contact us",
     body: [
       "For privacy or support questions, contact Tap Rater through the support page.",
