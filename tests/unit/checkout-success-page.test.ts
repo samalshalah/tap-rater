@@ -11,6 +11,7 @@ const { maybeSingle, from, purchaseEvent } = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/db", () => ({ hasSupabaseAdminConfig: () => true, getSupabaseAdmin: () => ({ from }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/components/checkout/checkout-success-effects", () => ({ CheckoutSuccessEffects: () => null }));
 vi.mock("@/components/analytics/ecommerce-events", () => ({ PurchaseAnalyticsEvent: purchaseEvent }));
 
@@ -69,8 +70,20 @@ describe("checkout success account guidance", () => {
   });
 
   it("never marks a test checkout redirect as a purchase", async () => {
-    renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: reference }) }));
+    const html = renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: reference }) }));
     expect(purchaseEvent.mock.calls[0]?.[0]).toEqual({ purchase: null, pending: false });
+    expect(html).not.toContain("Participation is optional");
+  });
+
+  it("offers the survey with a privacy disclosure only for a verified live paid order", async () => {
+    maybeSingle.mockResolvedValue({ data: {
+      id: "751be0f5-2003-4318-a7fd-45fd46b54d3d", stripe_checkout_session_id: "cs_live_example123",
+      status: "paid", payment_status: "paid", email: "buyer@example.com",
+      shipping_address_json: { address: { country: "US" } },
+    } });
+    const html = renderToStaticMarkup(await CheckoutSuccessPage({ searchParams: Promise.resolve({ session_id: "cs_live_example123" }) }));
+    expect(html).toContain("Participation is optional");
+    expect(html).toContain('href="/privacy-policy"');
   });
 
   it("retries pending live confirmation without sending a purchase", async () => {
