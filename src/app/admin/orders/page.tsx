@@ -91,5 +91,5 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
 function formatPaymentBadge(order: OrderRecord) {
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
-  return "Payment pending";
+  return "Unfinished checkout";
 }

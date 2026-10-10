@@ -1,3 +1,5 @@
+import { enrollCheckoutReminder } from "@/lib/checkout-reminders";
+import { requestIsInternal } from "@/lib/storefront-analytics-server";
 import { getOffersSettings } from "@/lib/offer-settings";
 import { defaultOffers, offerShippingSettings, quoteOffers, type OffersSettings } from "@/lib/offers";
 import { linkAnalyticsCheckout } from "@/lib/storefront-analytics-server";
@@ -365,6 +367,8 @@ export async function handleCheckoutPost(
       await linkAnalyticsCheckout(request, session.id).catch(() =>
         console.warn("[analytics] checkout association unavailable"),
       );
+    if (dependencies === checkoutRouteDependencies)
+      await enrollCheckoutReminder(session.id, parsed.data.reminderConsent, requestIsInternal(request)).catch(() => console.warn("Checkout reminder enrollment unavailable"));
     return NextResponse.json({
       checkoutMode: "embedded",
       clientSecret: session.client_secret,

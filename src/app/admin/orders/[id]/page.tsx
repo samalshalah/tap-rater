@@ -1,3 +1,4 @@
+import { OrderCustomerEmail } from "@/components/admin/order-customer-email";
 import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminBadge, AdminCard, AdminLinkButton, AdminSoftPanel } from "@/components/admin/admin-ui";
@@ -96,6 +97,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
                 refundFailureReason={order.refund_failure_reason}
               />
             ) : null}
+            {typeof order.customer_details_json?.recovery_original_order_id === "string" ? <InfoCard title="Recovered checkout"><a className="text-sm underline" href={`/admin/orders/${order.customer_details_json.recovery_original_order_id}`}>View original order and email history</a></InfoCard> : order.id && order.status !== "paid" && <OrderCustomerEmail orderId={order.id} />}
             {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} /> : null}
             <OrderFulfillmentForm order={order} productionBlockers={getOrderProductionBlockers(order)} />
           </div>
@@ -315,6 +317,7 @@ function formatPaymentStatus(order: { status: string; payment_status?: string | 
   if (order.payment_status === "partially_refunded") return "Partially refunded";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
+  if (order.status === "pending_payment") return "Unfinished checkout — awaiting payment";
   return order.status.replaceAll("_", " ");
 }
 

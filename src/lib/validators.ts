@@ -661,6 +661,7 @@ export const checkoutShippingAddressSchema = z.object({
 });
 
 export const checkoutRequestSchema = checkoutCartSchema.extend({
+  reminderConsent: z.boolean().optional().default(false),
   quotedTotalCents: z.number().int().nonnegative().optional(),
   checkoutAttemptId: z.string().trim().regex(/^[A-Za-z0-9_-]{16,80}$/),
   customer: checkoutCustomerSchema,

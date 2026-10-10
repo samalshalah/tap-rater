@@ -881,6 +881,13 @@ describe("orders repository", () => {
     }).success).toBe(false);
   });
 
+  it("preserves the saved shipping address when recovery returns a billing address", async () => {
+    const shipping = { name: "Shipping recipient", address: { line1: "Saved shipping", city: "Anaheim", country: "US" } };
+    const client = new PaymentMemoryDb({ orders: [{ id: "order_recovered", shipping_status: "not_shipped", stripe_checkout_session_id: "cs_recovered", status: "pending_payment", payment_status: "unpaid", line_items_json: [], shipping_address_json: shipping, customer_details_json: { recovery_original_order_id: "order_original" } }] });
+    expect(await savePaidOrderFromCheckoutSessionWithClient(client, { id: "cs_recovered", payment_status: "paid", customer_details: { email: "buyer@example.com", address: { line1: "Different billing", city: "Elsewhere", country: "US" } } })).toMatchObject({ ok: true });
+    expect(client.table("orders")[0].shipping_address_json).toEqual(shipping);
+  });
+
   it("inserts paid orders once by Stripe checkout session id", async () => {
     const client = new PaymentMemoryDb();
 

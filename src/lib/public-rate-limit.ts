@@ -13,6 +13,8 @@ type RateLimitBindingName =
 export type PublicRateLimitScope =
   | "analytics"
   | "checkout"
+  | "checkout-recovery"
+  | "checkout-activity"
   | "checkout-address"
   | "change-link"
   | "contact"

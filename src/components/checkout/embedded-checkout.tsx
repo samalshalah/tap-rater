@@ -94,6 +94,7 @@ export function EmbeddedCheckoutClient({
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
+  const [reminderConsent, setReminderConsent] = useState(false);
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const rows = getCartRows(items);
@@ -229,6 +230,15 @@ export function EmbeddedCheckoutClient({
     );
   }, [sessionId]);
 
+  useEffect(() => {
+    if (!session?.sessionId || !reminderConsent) return;
+    const touch = () => { if (document.visibilityState === "visible") fetch("/api/checkout/activity", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: session.sessionId }),
+    }).catch(() => {}); };
+    const timer = window.setInterval(touch, 60000);
+    return () => window.clearInterval(timer);
+  }, [session?.sessionId, reminderConsent]);
+
   const options = useMemo(() => {
     if (!session?.clientSecret) return undefined;
 
@@ -311,6 +321,7 @@ export function EmbeddedCheckoutClient({
         method: "POST",
         headers: { "Content-Type": "application/json", ...analyticsHeaders },
         body: JSON.stringify({
+          reminderConsent,
           checkoutAttemptId: checkoutAttemptId.current,
           quotedTotalCents: dueTodayCents,
           items,
@@ -577,6 +588,7 @@ export function EmbeddedCheckoutClient({
                 </p>
               ) : null}
 
+              <label className="flex items-start gap-3 text-sm text-muted"><input type="checkbox" checked={reminderConsent} onChange={event => setReminderConsent(event.target.checked)} className="mt-1" />Email me reminders if I leave this order unfinished. Optional; unsubscribe anytime.</label>
               <button
                 type="submit"
                 disabled={

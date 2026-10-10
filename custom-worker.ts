@@ -26,6 +26,12 @@ export default {
     } catch {
       console.warn("Analytics retry unavailable");
     }
+    try {
+      const reminders = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/checkout-reminders", {
+        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+      }), env, context);
+      console.log(JSON.stringify({ event: "checkout_reminders", ok: reminders.ok }));
+    } catch { console.warn("Checkout reminders unavailable"); }
     const state = await runMediaBackupBatch(
       env.PRODUCT_MEDIA_BUCKET,
       env.RECOVERY_BACKUPS,

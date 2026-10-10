@@ -35,6 +35,7 @@ export type OrderLineItem = {
   sku: string;
   quantity: number;
   unitAmountCents: number;
+  monthlyAmountCents?: number;
   lineSubtotalCents: number;
   discountCents?: number;
   offerId?: string;
@@ -215,6 +216,7 @@ export function mapCheckoutRowsToOrderLineItems(rows: CheckoutCartRow[]): OrderL
       sku: row.sku,
       quantity: row.quantity,
       unitAmountCents: row.unitAmountCents,
+      monthlyAmountCents: row.monthlyAmountCents,
       lineSubtotalCents: row.lineSubtotalCents,
       discountCents: row.discountCents,
       offerId: row.offerId,
@@ -843,7 +845,11 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     payload.shipped_at = existingOrder.shipped_at;
     payload.internal_notes = existingOrder.internal_notes;
     payload.admin_fulfillment_notes = existingOrder.admin_fulfillment_notes;
-    payload.shipping_address_json = order.shipping_address_json ?? existingOrder.shipping_address_json ?? null;
+    // Recovery uses the approved shipping address; Stripe may return a different
+    // (or partial) billing address from its hosted payment page.
+    payload.shipping_address_json = existingOrder.customer_details_json?.recovery_original_order_id
+      ? existingOrder.shipping_address_json
+      : order.shipping_address_json ?? existingOrder.shipping_address_json ?? null;
     payload.customer_details_json = mergeOrderDetails(existingOrder.customer_details_json, order.customer_details_json);
     payload.email = order.email ?? existingOrder.email;
     payload.customer_name = order.customer_name ?? existingOrder.customer_name;

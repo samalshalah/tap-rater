@@ -118,7 +118,7 @@ export async function getPaidBrandedHostedReservation(item: OrderLineItem, sessi
   const id = item.setup?.hostedReservationId;
   if (typeof id !== "string") return undefined;
   const reservation = await readBrandedHostedReservation(id, storage);
-  if (reservation.productSlug !== item.productId || reservation.url !== item.setup?.generatedQrValue || await storage.getText(bindingKey(id)) !== JSON.stringify({ sessionId })) {
+  if (reservation.productSlug !== item.productId || reservation.url !== item.setup?.generatedQrValue || await storage.getText(bindingKey(id)) !== JSON.stringify({ sessionId: typeof item.setup?.recoveryOriginalSession === "string" ? item.setup.recoveryOriginalSession : sessionId })) {
     throw new Error("Paid Multi-Link order does not match its approved destination.");
   }
   return reservation;

@@ -116,6 +116,10 @@ describe("Branded approval and printing", () => {
     await expect(bindBrandedHostedCheckout(cart.rows, "cs_test_other", storage)).rejects.toThrow("different checkout");
     expect((await getPaidBrandedHostedReservation(cart.rows[0], "cs_test_proof", storage))?.url).toBe(proof.snapshot.generatedQrValue);
     await expect(getPaidBrandedHostedReservation(cart.rows[0], "cs_test_other", storage)).rejects.toThrow("does not match");
+    const recovered = { ...cart.rows[0], setup: { ...cart.rows[0].setup, recoveryOriginalSession: "cs_test_proof" } };
+    expect((await getPaidBrandedHostedReservation(recovered, "cs_live_recovered", storage))?.url).toBe(reservation.url);
+    const hostile = checkoutCartSchema.parse({ items: [{ productId: product.slug, optionId: "branded_qr_direct", quantity: 1, setup: { ...hostedSetup, recoveryOriginalSession: "cs_test_proof" } }] });
+    expect(hostile.items[0].setup).not.toHaveProperty("recoveryOriginalSession");
     vi.unstubAllEnvs();
   });
 

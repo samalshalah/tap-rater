@@ -1,3 +1,4 @@
+import { CheckoutReminderSettings } from "@/components/admin/checkout-reminder-settings";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
 import { EmailTemplatesForm } from "@/components/admin/email-templates-form";
@@ -25,6 +26,7 @@ export default async function AdminEmailTemplatesPage() {
             Manage safe email copy for operational notifications. Product, order, setup, shipping, and policy details are still generated from trusted order data.
           </p>
         </div>
+        <CheckoutReminderSettings />
         <div className="mt-8 border-y border-line py-6">
           <h2 className="mb-4 text-lg font-semibold">Payment recovery</h2>
           <CommerceRecoveryList {...recovery} />

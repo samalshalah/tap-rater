@@ -9,7 +9,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "form-action 'self' https://*.stripe.com",
   "frame-ancestors 'none'",
-  "frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com https://challenges.cloudflare.com",
+  "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://*.link.com https://challenges.cloudflare.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' https:",
   "object-src 'none'",
@@ -73,6 +73,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders
       },
+      { source: "/checkout/recover", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store" }] },
       ...privateRoutePatterns.map((source) => ({
         source,
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
