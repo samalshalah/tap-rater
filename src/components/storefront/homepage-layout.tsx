@@ -1,5 +1,5 @@
+import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import { singleStandPrice, type OffersSettings } from "@/lib/offers";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bell, Check, ExternalLink, Smartphone } from "lucide-react";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -83,7 +83,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
             { name: "Branded", option: branded, image: showcase.comparisonBranded, detail: "Your logo, business name, NFC + QR.", points: ["Your logo and business name", "QR generated from your destination", "Approve the preview before payment"], href: `/product/${comparisonProduct.slug}?design=branded`, cta: "Customize Yours" }
           ].map((design) => <article key={design.name} className={styles.design}>
             <figure>
-              <div className={styles.designImage}><Photo src={design.image.src} alt={design.image.alt} /></div>
+              <div className={styles.designImage}><Photo src={design.image.src} alt={design.image.alt} sizes="(max-width: 767px) calc(50vw - 43px), 320px" /></div>
               {design.image.caption ? <figcaption>{design.image.caption}</figcaption> : null}
             </figure>
             <div className={styles.designCopy}>
@@ -178,8 +178,8 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
   </div>;
 }
 
-function Photo({ src, alt, size = 1200 }: { src: string; alt: string; size?: 640 | 1200 }) {
-  return <Image src={optimizedUploadSrc(src, size)} alt={alt} fill unoptimized sizes={size === 640 ? "(min-width: 1024px) 25vw, 50vw" : "(min-width: 1024px) 50vw, 100vw"} className={styles.photo} />;
+function Photo({ src, alt, sizes = "(min-width: 1024px) 50vw, calc(100vw - 40px)" }: { src: string; alt: string; sizes?: string }) {
+  return <ResponsiveUpload src={src} alt={alt} fallbackWidth={1200} sizes={sizes} className={styles.photo} />;
 }
 
 function Heading({ id, eyebrow, title, href, link }: { id: string; eyebrow: string; title: string; href?: string; link?: string }) {

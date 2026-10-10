@@ -1,8 +1,7 @@
-import Image from "next/image";
+import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import Link from "next/link";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getReviewDestination } from "@/lib/product-page-content";
-import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
@@ -20,13 +19,11 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
       className="tr-product-card tr-hover-card group flex h-full min-w-0 flex-col overflow-hidden rounded-lg p-2.5 sm:p-3.5"
     >
       <div className="relative aspect-square w-full shrink-0 bg-white">
-        <Image
-          src={optimizedUploadSrc(image.src, 640)}
+        <ResponsiveUpload
+          src={image.src}
           alt={image.alt}
-          fill
-          unoptimized
           className="object-contain object-center p-1 mix-blend-multiply transition duration-300 group-hover:scale-[1.025]"
-          sizes="(min-width: 1280px) 320px, (min-width: 1024px) 30vw, 44vw"
+          sizes="(min-width: 1280px) 260px, (min-width: 1024px) 30vw, calc(50vw - 48px)"
         />
       </div>
       <div className="flex flex-1 flex-col pt-2 [overflow-wrap:anywhere]">

@@ -1,5 +1,7 @@
 "use client";
 
+import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
+
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -40,13 +42,13 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
   return (
     <div className="grid content-center gap-3 lg:sticky lg:top-24">
       <div className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
-        <Image
-          src={optimizedUploadSrc(image.src, 1200)}
+        <ResponsiveUpload
+          src={image.src}
+          fallbackWidth={1200}
+          sizes="(max-width: 767px) 178px, (max-width: 1023px) 382px, 452px"
           alt={image.alt}
-          fill
-          priority
+          loading="eager"
           fetchPriority="high"
-          unoptimized
           className="object-contain p-4 mix-blend-multiply sm:p-6"
         />
       </div>
