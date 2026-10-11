@@ -22,6 +22,7 @@ const benefits = [
 
 const monthlyPrice = formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "");
 const maxLinks = hostedMultiLinkServiceAddon.maxLinks;
+const pageTitle = "Multi-Link NFC Stands for Business";
 const description = `Shop compatible multi-link NFC stands for reviews, menus, bookings and social profiles. Add up to ${maxLinks} editable links for ${monthlyPrice}/month per page, plus the stand.`;
 const faqs = [
   {
@@ -51,11 +52,11 @@ const faqs = [
 ];
 
 export const metadata: Metadata = {
-  title: "Multi-Link NFC Stands for Business",
+  title: pageTitle,
   description,
   alternates: { canonical: "/multi-link" },
   openGraph: {
-    title: "Multi-Link NFC Stands for Business | Tap Rater",
+    title: `${pageTitle} | Tap Rater`,
     description,
     url: "/multi-link",
     type: "website",
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Multi-Link NFC Stands for Business | Tap Rater",
+    title: `${pageTitle} | Tap Rater`,
     description,
     images: [multiLinkDemoImage.src]
   }
@@ -79,7 +80,7 @@ export default async function MultiLinkPage() {
       <PageHero
         eyebrow="One stand. More ways to connect."
         title="Multi-Link NFC Stands for Business"
-        body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Standard is NFC-only; Branded adds printed QR.`}
+        body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Standard remains NFC-only, with no printed QR. Branded adds a QR code pointing to the same page.`}
         cta={{ href: "#compatible-stands", label: "Shop Compatible Stands" }}
         image={{
           ...multiLinkDemoImage,
