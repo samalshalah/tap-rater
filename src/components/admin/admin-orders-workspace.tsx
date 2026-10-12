@@ -235,18 +235,12 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
                 className="mt-2"
               />
             </label>
-            <div className="flex flex-wrap gap-2">
-              {filterOptions.map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setMobileFilter(value)}
-                  className={mobileFilter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-semibold uppercase text-ink"}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <label className="block text-sm font-semibold text-ink">
+              Order status
+              <AdminSelect value={mobileFilter} onChange={(event) => setMobileFilter(event.target.value as AdminOrdersFilter)} className="mt-2">
+                {filterOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </AdminSelect>
+            </label>
             <AdminButton
               type="button"
               variant="primary"
@@ -269,35 +263,28 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
         <AdminSummaryCard label="Shipped / delivered" value={String(orderRows.filter((order) => order.shippingStatus === "shipped" || order.shippingStatus === "delivered").length)} />
       </div>
 
-      <AdminCard className="hidden lg:block">
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-          <label className="block text-sm font-semibold text-ink">
-            Search orders
+      <AdminCard className="hidden lg:block p-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="w-full max-w-sm">
+            <span className="sr-only">Search orders</span>
             <AdminInput
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Customer, SKU, product"
-              className="mt-2"
+              placeholder="Search orders: customer, SKU, product"
             />
           </label>
-          <div className="flex flex-wrap gap-2">
-            {filterOptions.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilter(value)}
-                className={filter === value ? "rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase text-white" : "rounded-full border border-line bg-white px-4 py-2 text-xs font-semibold uppercase text-ink"}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-          <p className="text-sm font-semibold text-muted">
+          <label className="w-44">
+            <span className="sr-only">Order status</span>
+            <AdminSelect value={filter} onChange={(event) => setFilter(event.target.value as AdminOrdersFilter)}>
+              {filterOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </AdminSelect>
+          </label>
+          <p className="ml-auto text-xs text-muted" aria-live="polite">
             Showing {visibleOrders.length} of {orderRows.length} orders. {selectedIds.length} selected.
           </p>
+        </div>
+
+        {selectedIds.length > 0 ? <div className="mt-3 flex flex-wrap items-center justify-end gap-3 border-t border-line pt-3">
           <div className="flex flex-wrap items-center gap-2">
             <AdminSelect
               value={bulkAction}
@@ -317,7 +304,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
               Apply to selected
             </AdminButton>
           </div>
-        </div>
+        </div> : null}
         {message ? <AdminAlert className="mt-3" tone="success">{message}</AdminAlert> : null}
         {error ? <AdminAlert className="mt-3" tone="danger">{error}</AdminAlert> : null}
       </AdminCard>
