@@ -3,7 +3,7 @@ import { CustomerAccessControl } from "@/components/admin/customer-access-contro
 import {
   AdminAlert,
   AdminBadge,
-  AdminCard,
+  AdminDataTable,
   AdminLinkButton,
   AdminSummaryCard,
 } from "@/components/admin/admin-ui";
@@ -63,25 +63,8 @@ export default async function AdminCustomersPage() {
           </AdminAlert>
         ) : null}
 
-        <AdminCard
-          title="Customer directory"
-          description="Guest orders are grouped by email so support can find every purchaser."
-          className="mt-5 overflow-hidden"
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px] border-collapse text-left text-sm">
-              <thead>
-                <tr className="border-b border-line text-xs uppercase text-muted">
-                  <th className="pb-3 pr-4 font-semibold">Customer</th>
-                  <th className="pb-3 pr-4 font-semibold">Business</th>
-                  <th className="pb-3 pr-4 font-semibold">Account</th>
-                  <th className="pb-3 pr-4 font-semibold">Orders</th>
-                  <th className="pb-3 pr-4 font-semibold">Paid total</th>
-                  <th className="pb-3 font-semibold">Multi-Link</th>
-                  <th className="pb-3 pl-4 font-semibold">Access</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
+        <div className="mt-4">
+          <AdminDataTable caption="Customer directory" headers={["Customer", "Business", "Account", "Orders", "Paid total", "Multi-Link", "Actions"]} minWidth="1040px">
                 {customers.map((customer) => (
                   <tr key={customer.id}>
                     <td className="py-3 pr-4">
@@ -128,7 +111,7 @@ export default async function AdminCustomersPage() {
                         "-"
                       )}
                     </td>
-                    <td className="py-3 pl-4">
+                    <td className="py-3 pl-4"><div className="flex justify-end">
                       {customer.accountStatus === "guest" ? "-" : (
                         <CustomerAccessControl
                           customerId={customer.id}
@@ -136,7 +119,7 @@ export default async function AdminCustomersPage() {
                           canReactivate={customer.canReactivate}
                         />
                       )}
-                    </td>
+                    </div></td>
                   </tr>
                 ))}
                 {customers.length === 0 ? (
@@ -144,10 +127,8 @@ export default async function AdminCustomersPage() {
                     <td className="py-8 text-center text-muted" colSpan={7}>No customer or order records yet.</td>
                   </tr>
                 ) : null}
-              </tbody>
-            </table>
-          </div>
-        </AdminCard>
+          </AdminDataTable>
+        </div>
       </section>
     </AdminShell>
   );

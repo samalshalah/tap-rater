@@ -1,3 +1,4 @@
+import { AdminDataTable } from "@/components/admin/admin-ui";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { OffersForm } from "@/components/admin/offers-form";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -13,12 +14,16 @@ export default async function OffersPage() {
   const usage = await getOfferUsage().catch(() => null);
   return (
     <AdminShell>
-      <section className="tr-admin-section space-y-6">
+      <section className="tr-admin-section space-y-4">
         <h1 className="tr-admin-title">Offers</h1>
         <p>
           Manage automatic discounts, mixed-product bundles, eligibility, dates,
           and free shipping.
         </p>
+        <OffersForm
+          initial={settings}
+          products={products.map((p) => ({ slug: p.slug, title: p.title }))}
+        />
         <details className="rounded-lg border border-line p-3">
           <summary className="cursor-pointer text-sm font-semibold">Offer usage · paid live orders</summary>
           <p className="text-sm text-muted my-2">
@@ -31,23 +36,7 @@ export default async function OffersPage() {
           ) : !usage.length ? (
             <p>No paid orders have used these offers yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr>
-                    {[
-                      "Offer",
-                      "Orders",
-                      "Savings",
-                      "Discounted merchandise",
-                    ].map((h) => (
-                      <th className="p-2" key={h}>
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
+            <AdminDataTable caption="Offer usage" headers={["Offer", "Orders", "Savings", "Discounted merchandise"]}>
                   {usage.map((r) => (
                     <tr key={String(r.label)}>
                       <td className="p-2">{String(r.label)}</td>
@@ -56,15 +45,9 @@ export default async function OffersPage() {
                       <td>{formatPrice(Number(r.merchandise))}</td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
+            </AdminDataTable>
           )}
         </details>
-        <OffersForm
-          initial={settings}
-          products={products.map((p) => ({ slug: p.slug, title: p.title }))}
-        />
       </section>
     </AdminShell>
   );
