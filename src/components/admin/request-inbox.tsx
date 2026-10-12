@@ -3,7 +3,7 @@
 import { Mail, Save, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { AdminRequestType } from "@/lib/admin-requests";
 import type {
   AdminContactRequest,
@@ -14,6 +14,7 @@ import type {
 } from "@/lib/request-repository";
 import {
   AdminAlert,
+  AdminDataTable,
   AdminBadge,
   AdminButton,
   AdminCard,
@@ -140,8 +141,10 @@ function RequestSection({ title, count, children }: { title: string; count: numb
         <h2 className="text-2xl font-black text-ink">{title}</h2>
         <p className="text-sm font-semibold text-muted">{count} shown</p>
       </div>
-      <div className="mt-4 grid gap-4">
-        {count === 0 ? <AdminCard><p className="text-sm text-muted">No matching requests.</p></AdminCard> : children}
+      <div className="mt-4">
+        <AdminDataTable caption={title} headers={["Customer", "Status", "Received", "Actions"]}>
+          {count === 0 ? <tr><td colSpan={4}>No matching requests.</td></tr> : children}
+        </AdminDataTable>
       </div>
     </section>
   );
@@ -154,6 +157,7 @@ type RequestCardRow = Pick<
 
 function RequestCard({ requestType, row, children }: { requestType: AdminRequestType; row: RequestCardRow; children: ReactNode }) {
   const router = useRouter();
+  const [expanded, setExpanded] = useState(false);
   const [status, setStatus] = useState(row.status);
   const [adminNotes, setAdminNotes] = useState(row.adminNotes);
   const [saving, setSaving] = useState(false);
@@ -182,25 +186,18 @@ function RequestCard({ requestType, row, children }: { requestType: AdminRequest
   }
 
   return (
-    <AdminCard>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-black text-ink">{row.name || "Unknown customer"}</h3>
-            <RequestStatusBadge status={status} />
-          </div>
-          <a className="mt-1 inline-flex items-center gap-2 text-sm font-bold text-brand" href={`mailto:${row.email}`}>
-            <Mail size={15} aria-hidden="true" />
-            {row.email}
-          </a>
-        </div>
-        <div className="text-sm text-muted lg:text-right">
-          <p>Received {formatDate(row.createdAt)}</p>
-          {row.resolvedAt ? <p className="mt-1">Resolved {formatDate(row.resolvedAt)}</p> : null}
-          <a className="mt-2 inline-block font-bold text-ink" href={`mailto:${row.email}`}>Follow up</a>
-        </div>
-      </div>
-
+    <Fragment>
+      <tr>
+        <td><span className="block font-semibold">{row.name || "Unknown customer"}</span><a className="text-xs text-brand" href={`mailto:${row.email}`}>{row.email}</a></td>
+        <td><RequestStatusBadge status={status} /></td>
+        <td className="text-xs text-muted">{formatDate(row.createdAt)}</td>
+        <td><div className="flex justify-end gap-2"><AdminButton type="button" aria-expanded={expanded} aria-controls={`request-${requestType}-${row.id}`} onClick={() => setExpanded(!expanded)}>{expanded ? "Close" : "View / edit"}</AdminButton></div></td>
+      </tr>
+      <tr hidden={!expanded} id={`request-${requestType}-${row.id}`}>
+        <td colSpan={4}>
+          <div className="bg-soft p-3">
+            {row.resolvedAt ? <p className="text-xs text-muted">Resolved {formatDate(row.resolvedAt)}</p> : null}
+            <a className="inline-flex items-center gap-2 text-sm text-brand" href={`mailto:${row.email}`}><Mail size={15} aria-hidden="true" />Follow up</a>
       <div className="mt-5 grid gap-3 md:grid-cols-2">{children}</div>
 
       <div className="mt-5 grid gap-4 border-t border-line pt-5 lg:grid-cols-[220px_1fr_auto] lg:items-end">
@@ -230,7 +227,10 @@ function RequestCard({ requestType, row, children }: { requestType: AdminRequest
       </div>
       {message ? <AdminAlert tone="success" className="mt-4">{message}</AdminAlert> : null}
       {error ? <AdminAlert tone="danger" className="mt-4">{error}</AdminAlert> : null}
-    </AdminCard>
+          </div>
+        </td>
+      </tr>
+    </Fragment>
   );
 }
 

@@ -1,4 +1,5 @@
 "use client";
+import { AdminDataTable, AdminButton } from "./admin-ui";
 import { useState } from "react";
 import type { OffersSettings } from "@/lib/offers";
 export function OffersForm({
@@ -74,17 +75,13 @@ export function OffersForm({
         eligible Standard and Branded stands. Subscription/hosted products and
         custom quotes are excluded. Free shipping is controlled separately.
       </p>
-      <div className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-white">
+      <AdminDataTable caption="Automatic offers" headers={["Offer", "Discount / price", "Status", "Schedule / eligibility"]} minWidth="800px">
         {(["second", "bundle3", "bundle5", "upgrade"] as const).map((key) => {
           const title = { second: "Second stand", bundle3: "3+ stand bundle", bundle5: "5+ stand bundle", upgrade: "Branded upgrade" }[key];
           return (
-            <fieldset key={key} className="min-w-0 p-3">
-              <legend className="sr-only">{title}</legend>
-              <div className="grid items-center gap-3 xl:grid-cols-[180px_360px_minmax(0,1fr)]">
-                <label className="flex items-center gap-2 text-sm font-semibold">
-                  <input type="checkbox" checked={value[key].enabled} onChange={(e) => set(key, "enabled", e.target.checked)} />
-                  {title}
-                </label>
+            <tr key={key}>
+                <th scope="row" className="text-left font-semibold">{title}</th>
+                <td>
                 <div className="grid max-w-[360px] grid-cols-2 gap-3">
                   {key === "second" ? number("Lower-priced stand discount (%)", key, "percent", value.second.percent)
                     : key === "upgrade" ? number("Savings per Branded stand ($)", key, "savingCents", value.upgrade.savingCents, 100)
@@ -93,7 +90,9 @@ export function OffersForm({
                       {number("Branded bundle ($)", key, "brandedCents", value[key].brandedCents, 100)}
                     </>}
                 </div>
-                <details className="min-w-0 text-xs" open={Boolean(initial[key].startsAt || initial[key].endsAt)}>
+                </td>
+                <td><label className="flex items-center gap-2 text-xs"><input type="checkbox" aria-label={`Enable ${title}`} checked={value[key].enabled} onChange={(e) => set(key, "enabled", e.target.checked)} />{value[key].enabled ? "Enabled" : "Disabled"}</label></td>
+                <td><details className="min-w-0 text-xs" open={Boolean(initial[key].startsAt || initial[key].endsAt)}>
                   <summary className="min-h-10 cursor-pointer content-center text-brand">
                     Schedule · {value[key].startsAt || value[key].endsAt ? "Dates set" : "No date limits"}
                   </summary>
@@ -107,18 +106,13 @@ export function OffersForm({
                       </label>
                     ))}
                   </div>
-                </details>
-              </div>
-            </fieldset>
+                </details></td>
+            </tr>
           );
         })}
-        <fieldset className="min-w-0 p-3">
-          <legend className="sr-only">Free shipping</legend>
-          <div className="grid items-center gap-3 xl:grid-cols-[180px_360px_minmax(0,1fr)]">
-            <label className="flex items-center gap-2 text-sm font-semibold">
-              <input type="checkbox" checked={value.shipping.enabled} onChange={(e) => set("shipping", "enabled", e.target.checked)} />
-              Free shipping
-            </label>
+        <tr>
+          <th scope="row" className="text-left font-semibold">Free shipping</th>
+          <td>
             <div className="grid max-w-[360px] grid-cols-2 gap-3">
               {number("Threshold after discounts ($)", "shipping", "thresholdCents", value.shipping.thresholdCents, 100)}
               <label className="grid min-w-0 gap-1 text-xs">
@@ -128,10 +122,11 @@ export function OffersForm({
                   onChange={(e) => set("shipping", "countryCodes", e.target.value.toUpperCase().split(",").map((v) => v.trim()))} />
               </label>
             </div>
-            <p className="text-xs text-muted">Based on merchandise after discounts. Tax and recurring fees excluded.</p>
-          </div>
-        </fieldset>
-      </div>
+            </td>
+            <td><label className="flex items-center gap-2 text-xs"><input type="checkbox" aria-label="Enable free shipping" checked={value.shipping.enabled} onChange={(e) => set("shipping", "enabled", e.target.checked)} />{value.shipping.enabled ? "Enabled" : "Disabled"}</label></td>
+            <td><p className="max-w-sm text-xs text-muted">Based on merchandise after discounts. Tax and recurring fees excluded.</p></td>
+        </tr>
+      </AdminDataTable>
       <details className="text-xs text-muted">
         <summary className="min-h-10 cursor-pointer content-center">How bundle pricing and shipping eligibility work</summary>
         <p className="mt-2 max-w-3xl leading-5">Bundle prices are based on $39 Standard / $49 Branded stands. Mixed bundles combine per-design prices; differently priced variants receive the same proportional savings. The tier applies to every eligible stand once the quantity is reached. Shipping eligibility does not enable checkout in unsupported countries. An unconditional Free shipping mode in Shipping settings overrides this threshold.</p>
@@ -165,9 +160,9 @@ export function OffersForm({
         </div>
         </fieldset>
       </details>
-      <button disabled={busy} className="tr-button-primary">
+      <AdminButton disabled={busy} variant="primary" type="submit">
         {busy ? "Saving..." : "Save offers"}
-      </button>
+      </AdminButton>
       {status ? <p role="status">{status}</p> : null}
     </form>
   );

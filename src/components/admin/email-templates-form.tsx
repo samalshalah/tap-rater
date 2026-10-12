@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminDataTable, AdminBadge, AdminButton } from "./admin-ui";
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import {
@@ -111,33 +112,24 @@ export function EmailTemplatesForm({ initialTemplates }: EmailTemplatesFormProps
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-      <aside className="space-y-2">
-        {emailTemplateKeys.map((key) => {
-          const template = templates[key];
-          const isSelected = key === selectedKey;
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => {
-                setSelectedKey(key);
-                setMessage(null);
-                setError(null);
-              }}
-              className={`w-full rounded-md border p-4 text-left text-sm transition ${
-                isSelected ? "border-brand bg-white shadow-sm" : "border-line bg-white/70 hover:border-brand"
-              }`}
-            >
-              <span className="block font-black text-ink">{template.label}</span>
-              <span className="mt-1 block leading-5 text-muted">{template.description}</span>
-              <span className={`mt-3 inline-flex rounded-full px-2 py-1 text-[11px] font-black uppercase ${template.enabled ? "bg-brand/10 text-brand" : "bg-muted/10 text-muted"}`}>
-                {template.enabled ? "Enabled" : "Disabled"}
-              </span>
-            </button>
-          );
-        })}
-      </aside>
+    <div className="space-y-4">
+      <details className="tr-admin-card p-3">
+        <summary className="cursor-pointer text-sm font-semibold">Email templates · Editing {selected.label}</summary>
+        <div className="mt-3">
+          <AdminDataTable caption="Email templates" headers={["Template", "Purpose", "Status", "Actions"]}>
+            {emailTemplateKeys.map((key) => {
+              const template = templates[key];
+              const isSelected = key === selectedKey;
+              return <tr key={key} className={isSelected ? "bg-teal-50/40" : ""}>
+                <td className="font-semibold">{template.label}</td>
+                <td className="text-muted">{template.description}</td>
+                <td><AdminBadge tone={template.enabled ? "success" : "neutral"}>{template.enabled ? "Enabled" : "Disabled"}</AdminBadge></td>
+                <td><div className="flex justify-end"><AdminButton type="button" aria-pressed={isSelected} onClick={() => { setSelectedKey(key); setMessage(null); setError(null); }}>{isSelected ? "Editing" : "Edit"}</AdminButton></div></td>
+              </tr>;
+            })}
+          </AdminDataTable>
+        </div>
+      </details>
 
       <form onSubmit={saveTemplate} className="space-y-6">
         <div className="rounded-md border border-line bg-white p-5 shadow-sm">

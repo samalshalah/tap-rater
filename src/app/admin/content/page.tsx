@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AdminDataTable, AdminLinkButton } from "@/components/admin/admin-ui";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/admin-auth";
 
@@ -13,23 +13,19 @@ export default async function AdminContentPage() {
       <p className="mt-4 max-w-3xl leading-7 text-muted">
         Manage approved public website content inside Tap Rater's controlled visual system.
       </p>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
-        <Link href="/admin/content/homepage" className="tr-admin-card p-5">
-          <h2 className="font-semibold text-ink">Homepage, Navigation & FAQ</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Hero, action cards, sections, header, footer, and FAQ records.</p>
-        </Link>
-        <Link href="/admin/business-uses" className="tr-admin-card p-5">
-          <h2 className="font-semibold text-ink">Use Cases</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Industries, imagery, SEO, ordering, and product relationships.</p>
-        </Link>
-        <Link href="/admin/content/pages" className="tr-admin-card p-5">
-          <h2 className="font-semibold text-ink">Pages</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Draft and publish editable page content.</p>
-        </Link>
-        <Link href="/admin/products" className="tr-admin-card p-5">
-          <h2 className="font-semibold text-ink">Products</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">Edit product data, pricing, stock, and SEO.</p>
-        </Link>
+      <div className="mt-4">
+        <AdminDataTable caption="Website content" headers={["Section", "Contents", "Actions"]}>
+          {[
+            ["Homepage, Navigation & FAQ", "Hero, action cards, sections, header, footer, and FAQ records.", "/admin/content/homepage"],
+            ["Use Cases", "Industries, imagery, SEO, ordering, and product relationships.", "/admin/business-uses"],
+            ["Pages", "Draft and publish editable page content.", "/admin/content/pages"],
+            ["Products", "Edit product data, pricing, stock, and SEO.", "/admin/products"]
+          ].map(([title, description, href]) => <tr key={href}>
+            <td className="font-semibold">{title}</td>
+            <td className="text-muted">{description}</td>
+            <td><div className="flex justify-end"><AdminLinkButton href={href}>Edit</AdminLinkButton></div></td>
+          </tr>)}
+        </AdminDataTable>
       </div>
       </section>
     </AdminShell>

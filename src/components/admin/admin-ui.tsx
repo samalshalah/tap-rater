@@ -226,3 +226,18 @@ export function AdminResponsiveTable({
     </AdminTableShell>
   );
 }
+
+/** Products-style list table; narrow screens scroll inside the panel. */
+export function AdminDataTable({ caption, headers, children, minWidth = "640px" }: {
+  caption: string; headers: string[]; children: ReactNode; minWidth?: string;
+}) {
+  return <AdminTableShell>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse text-left text-sm" style={{ minWidth }}>
+        <caption className="sr-only">{caption}</caption>
+        <thead><tr>{headers.map((header) => <th key={header} scope="col" className={header === "Actions" ? "text-right" : undefined}>{header}</th>)}</tr></thead>
+        <tbody>{children}</tbody>
+      </table>
+    </div>
+  </AdminTableShell>;
+}
