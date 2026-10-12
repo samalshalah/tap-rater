@@ -44,14 +44,14 @@ export function OffersForm({
     amount: number,
     divisor = 1,
   ) => (
-    <label className="grid gap-2 text-sm">
+    <label className="grid min-w-0 gap-1 text-sm">
       {label}
       <input
         required
         type="number"
         min={divisor === 100 ? "0.01" : "1"}
         step={divisor === 100 ? "0.01" : "1"}
-        className="rounded border border-line p-3"
+        className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
         value={amount / divisor}
         onChange={(e) =>
           set(key, field, Math.round(Number(e.target.value) * divisor))
@@ -60,7 +60,7 @@ export function OffersForm({
     </label>
   );
   return (
-    <form onSubmit={save} className="space-y-6">
+    <form onSubmit={save} className="space-y-4">
       <label className="flex gap-3 font-semibold">
         <input
           type="checkbox"
@@ -74,10 +74,11 @@ export function OffersForm({
         eligible Standard and Branded stands. Subscription/hosted products and
         custom quotes are excluded. Free shipping is controlled separately.
       </p>
+      <div className="grid gap-3 xl:grid-cols-2">
       {(["second", "bundle3", "bundle5", "upgrade"] as const).map((key) => (
         <fieldset
           key={key}
-          className="rounded-xl border border-line bg-white p-5 space-y-4"
+          className="min-w-0 rounded-xl border border-line bg-white p-3 space-y-3"
         >
           <legend className="font-semibold px-2">
             {
@@ -113,7 +114,7 @@ export function OffersForm({
               100,
             )
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               {number(
                 "All-Standard bundle price ($)",
                 key,
@@ -130,15 +131,15 @@ export function OffersForm({
               )}
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {(["startsAt", "endsAt"] as const).map((field) => (
-              <label key={field} className="grid gap-2 text-sm">
+              <label key={field} className="grid min-w-0 gap-1 text-sm">
                 {field === "startsAt"
                   ? "Starts (UTC, optional)"
                   : "Ends (UTC, optional)"}
                 <input
                   type="datetime-local"
-                  className="rounded border border-line p-3"
+                  className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
                   value={value[key][field]?.slice(0, 16) || ""}
                   onChange={(e) =>
                     set(
@@ -155,13 +156,14 @@ export function OffersForm({
           </div>
         </fieldset>
       ))}
+      </div>
       <p className="text-sm text-muted">
         Bundle prices are based on $39 Standard / $49 Branded stands. Mixed
         bundles combine per-design prices; differently priced variants receive
         the same proportional savings. The tier applies to every eligible stand
         once the quantity is reached.
       </p>
-      <fieldset className="rounded-xl border border-line bg-white p-5 space-y-4">
+      <fieldset className="min-w-0 rounded-xl border border-line bg-white p-3 space-y-3">
         <legend className="font-semibold px-2">Free shipping</legend>
         <label className="flex gap-2">
           <input
@@ -171,6 +173,7 @@ export function OffersForm({
           />
           Enable threshold-based free shipping
         </label>
+        <div className="grid gap-3 sm:grid-cols-2">
         {number(
           "Merchandise threshold after discounts ($)",
           "shipping",
@@ -178,10 +181,10 @@ export function OffersForm({
           value.shipping.thresholdCents,
           100,
         )}
-        <label className="grid gap-2 text-sm">
+        <label className="grid min-w-0 gap-1 text-sm">
           Eligible country codes (comma-separated)
           <input
-            className="rounded border border-line p-3"
+            className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
             value={value.shipping.countryCodes.join(", ")}
             onChange={(e) =>
               set(
@@ -195,19 +198,22 @@ export function OffersForm({
             }
           />
         </label>
+        </div>
         <p className="text-sm text-muted">
           Tax and recurring fees do not count toward the threshold. This does
           not enable checkout in unsupported countries. An unconditional Free
           shipping mode in Shipping settings overrides this threshold.
         </p>
       </fieldset>
-      <fieldset className="rounded-xl border border-line bg-white p-5">
-        <legend className="font-semibold px-2">Eligible products</legend>
+      <details className="rounded-xl border border-line bg-white p-3">
+        <summary className="cursor-pointer text-sm font-semibold">Eligible products ({products.filter((product) => !value.excludedProducts.includes(product.slug)).length} of {products.length})</summary>
+        <fieldset className="mt-3 min-w-0">
+        <legend className="sr-only">Eligible products</legend>
         <p className="text-sm text-muted mb-3">
           Checked products can receive merchandise discounts. New stand products
           are eligible by default.
         </p>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {products.map((p) => (
             <label className="flex gap-2" key={p.slug}>
               <input
@@ -226,9 +232,10 @@ export function OffersForm({
             </label>
           ))}
         </div>
-      </fieldset>
+        </fieldset>
+      </details>
       <button disabled={busy} className="tr-button-primary">
-        {busy ? "Saving…" : "Save offers"}
+        {busy ? "Savingâ€¦" : "Save offers"}
       </button>
       <p role="status">{status}</p>
     </form>
