@@ -2,10 +2,11 @@ import type { MigratedProduct } from "@/data/migrated-products";
 import type { OffersSettings } from "@/lib/offers";
 import { singleStandPrice } from "@/lib/offers";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
-import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize, getProductBaseSku } from "@/lib/product-model";
+import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 import { isPublicLaunchStorefrontProduct } from "@/lib/product-repository";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
+import { merchantProductId } from "@/lib/merchant-product-id";
 
 function xml(value: string) {
   return value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
@@ -33,8 +34,7 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       if (!image) throw new Error(`Missing merchant image for ${product.slug}`);
       const sku = generateProductVariantSku(product, { ...selection, purchaseOptionId: option.id });
       // Preserve IDs already discovered by Google's ProductGroup crawler.
-      const discoveredId = `${getProductBaseSku(product)}_${sku.toLowerCase()}`;
-      const id = discoveredId.length <= 50 ? discoveredId : sku;
+      const id = merchantProductId(product, option.id);
       if (id.length > 50 || ids.has(id)) throw new Error("Invalid or duplicate merchant product ID");
       ids.add(id);
       const price = singleStandPrice(product.slug, option.id, basePrice, offers);

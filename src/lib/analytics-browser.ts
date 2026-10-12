@@ -1,3 +1,4 @@
+import { trackMetaEcommerce } from "@/lib/meta-pixel";
 import {
   captureAttribution,
   analyticsSessionKey,
@@ -347,7 +348,8 @@ export function trackPageView() {
 }
 
 export function trackEcommerce(name: EcommerceEvent, data: EcommerceData) {
-  if (!analyticsAvailable() || !data.items.length) return false;
+  const metaSent = name === "add_to_cart" ? trackMetaEcommerce(name, data) : false;
+  if (!analyticsAvailable() || !data.items.length) return metaSent;
   for (const item of data.items) recordJourney(name, item.item_id);
   // Copy only the approved schema, never a cart setup or form object.
   command("event", name, {

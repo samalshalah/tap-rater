@@ -53,7 +53,14 @@ const sections = [
     body: [
       "When enabled, optional Google Analytics runs only after you accept analytics. It measures public storefront visits, product selections, cart activity, checkout steps, and confirmed purchases. With your analytics consent, we also keep session-level journey reports in our own database for up to 90 days, using approved campaign labels, public page paths, device categories, and product identifiers. Rejecting analytics does not prevent shopping or checkout. We do not enable advertising personalization or Google Signals.",
       "Analytics may use browser identifiers, device information, product identifiers, quantities, prices, and an internal order identifier. We do not intentionally send customer names, email addresses, phone numbers, shipping addresses, uploaded files, destination links, or checkout session identifiers to Google Analytics. Account, admin, and customer-hosted pages are excluded from our analytics events. For consented, attributable purchases, our server sends the verified purchase to Google even if you close the confirmation page. Google processes analytics data under its own privacy policy.",
-      "Use Analytics preferences in the footer to change your choice. Rejecting analytics stops future collection and clears our Google Analytics cookies on this browser; it does not erase data previously collected. We also respect the Global Privacy Control browser signal by keeping optional analytics off. Your choice is stored for up to 180 days. Essential cart, account, payment, and security storage is separate from optional analytics.",
+      "Use Cookie preferences in the footer to change your choice. Rejecting analytics stops future collection and clears our Google Analytics cookies on this browser; it does not erase data previously collected. We also respect the Global Privacy Control browser signal by keeping optional analytics off. Your choice is stored for up to 180 days. Essential cart, account, payment, and security storage is separate from optional analytics.",
+    ],
+  },
+  {
+    title: "Optional Meta marketing measurement",
+    body: [
+      "If you accept marketing cookies, Meta Pixel receives browsing and shopping events, catalog product identifiers, quantities, prices, and a transaction identifier for confirmed purchases. Meta also receives technical information such as your IP address and browser information and may use cookies to measure ads and personalize advertising on Facebook and Instagram. We do not enable automatic advanced matching or send your form entries, email address, destination links, uploaded artwork, or payment credentials in these events.",
+      "Marketing is off until you choose to accept it. Prior Google Analytics consent does not enable Meta marketing. You may reject optional cookies, accept analytics only, or withdraw consent using Cookie preferences. We honor Global Privacy Control and exclude identified staff/testing browsers. Meta handles information under its privacy policy at https://www.facebook.com/privacy/policy/.",
     ],
   },
   {

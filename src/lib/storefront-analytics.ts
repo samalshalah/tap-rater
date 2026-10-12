@@ -4,6 +4,8 @@ import { getPurchaseOption } from "@/lib/purchase-options";
 import { getConfiguredUnitPriceCents } from "@/lib/product-model";
 
 export type AnalyticsConfig = {
+  metaPixelId?: string | null;
+  metaCatalogIds?: Record<string, string>;
   measurementId: string | null;
   origin: string;
   serverPurchases?: boolean;

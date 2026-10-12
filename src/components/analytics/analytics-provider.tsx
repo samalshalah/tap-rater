@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { marketingConsent, saveMarketingConsent, syncMetaPixel, trackMetaPage } from "@/lib/meta-pixel";
 import { usePathname } from "next/navigation";
 import {
   createContext,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/analytics-browser";
 
 const AnalyticsContext = createContext({
+  metaReady: false,
   ready: false,
   configured: false,
   openPreferences: () => {},
@@ -37,6 +39,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     origin: "https://taprater.com",
   });
   const [choice, setChoice] = useState<ConsentChoice | null>(null);
+  const [marketing, setMarketing] = useState<ConsentChoice | null>(null);
+  const [metaReady, setMetaReady] = useState(false);
+  const lastMetaPage = useRef<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
@@ -52,6 +57,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     let active = true;
     const refresh = () => {
       setChoice(browserConsent());
+      setMarketing(marketingConsent());
       setGpc(
         Boolean(
           (navigator as Navigator & { globalPrivacyControl?: boolean })
@@ -93,12 +99,24 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     if (choice !== "granted" || !publicPage) lastPage.current = null;
   }, [config, choice, pathname, publicPage]);
 
+  useLayoutEffect(() => {
+    setMetaReady(false);
+    syncMetaPixel(config, () => setMetaReady(true));
+    if (marketing !== "granted" || !publicPage) lastMetaPage.current = null;
+  }, [config, marketing, pathname, publicPage]);
+  useEffect(() => {
+    if (metaReady && lastMetaPage.current !== pathname && trackMetaPage()) lastMetaPage.current = pathname;
+  }, [metaReady, pathname]);
+
   useEffect(() => {
     if (ready && lastPage.current !== pathname && trackPageView())
       lastPage.current = pathname;
   }, [pathname, ready]);
 
-  function choose(next: ConsentChoice) {
+  function choose(next: ConsentChoice, advertising: ConsentChoice = "denied") {
+    const marketingSaved = saveMarketingConsent(advertising);
+    setMarketing(marketingSaved ? advertising : "denied");
+    if (!marketingSaved) setMetaReady(false);
     if (!saveBrowserConsent(next)) {
       setStorageError(true);
       setReady(false);
@@ -122,9 +140,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AnalyticsContext.Provider value={{ ready, configured, openPreferences }}>
+    <AnalyticsContext.Provider value={{ ready, metaReady, configured, openPreferences }}>
       {children}
-      {hydrated && (open || (publicPage && configured && choice === null)) ? (
+      {hydrated && (open || (publicPage && ((configured && choice === null) || (config.metaPixelId && marketing === null)))) ? (
         <section
           ref={preferences}
           tabIndex={-1}
@@ -141,8 +159,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
               </h2>
               <p className="mt-1 text-sm text-muted">
                 Essential storage keeps your cart and checkout working. Optional
-                Google Analytics helps us understand visits and purchases. No
-                advertising tracking.{" "}
+                Google Analytics helps us understand visits and purchases. Optional
+                Meta Pixel shares browsing and purchase events with Meta to measure
+                and improve Facebook and Instagram marketing. You can accept analytics alone or both.{" "}
                 <Link href="/privacy-policy" className="underline">
                   Privacy policy
                 </Link>
@@ -169,7 +188,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                 onClick={() => choose("denied")}
                 className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50"
               >
-                Reject analytics
+                Reject optional cookies
               </button>
               {configured && !gpc ? (
                 <button
@@ -180,6 +199,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                   Accept analytics
                 </button>
               ) : null}
+              {config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("granted", "granted")} className="min-h-11 rounded-md bg-brand px-4 text-sm font-semibold text-white">Accept analytics and marketing</button> : null}
+              {open && config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("denied", "granted")} className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold">Accept marketing only</button> : null}
               {open ? (
                 <button
                   type="button"
@@ -205,7 +226,7 @@ export function AnalyticsPreferencesButton() {
       onClick={openPreferences}
       className="mt-2 min-h-11 text-xs underline hover:text-brand"
     >
-      Analytics preferences
+      Cookie preferences
     </button>
   );
 }

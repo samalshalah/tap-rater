@@ -50,6 +50,9 @@ type LinkExperienceId = "direct" | "multilink";
 type MultiLinkDraftButton = Pick<HostedPageEditorButton, "id" | "type" | "label" | "url" | "enabled" | "position">;
 
 type ProductSetupChooserProps = {
+  initialQuantity?: number;
+  fixedSelection?: boolean;
+  onAdded?: (item: CartItem) => void;
   product: ProductSetupChooserProduct;
   offers?: OffersSettings | null;
   selectedOptionId?: PurchaseOptionId;
@@ -72,7 +75,7 @@ type UploadedLogo = {
 type LogoBackgroundMode = "auto_crop" | "original";
 type LogoFitMode = "contain" | "fill";
 
-export function ProductSetupChooser({ product, offers, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, offers, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
@@ -93,7 +96,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
   const [businessName, setBusinessName] = useState("");
   const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => createInitialMultiLinkButtons());
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity);
   const [selectedSizeCode, setSelectedSizeCode] = useState(() => getDefaultProductSize(product)?.code ?? "");
   const [selectedColorCode, setSelectedColorCode] = useState(() => getDefaultProductColor(product)?.code ?? "");
   const [proofFontSizePercent, setProofFontSizePercent] = useState(100);
@@ -118,7 +121,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
   const requestedOptionId = controlledSelectedOptionId ?? uncontrolledSelectedOptionId;
   const selectedOption = options.find((option) => option.id === requestedOptionId) ?? options[0];
   const selectedOptionId = selectedOption?.id;
-  const supportsMultiLink = productSupportsMultiLink(product);
+  const supportsMultiLink = !fixedSelection && productSupportsMultiLink(product);
   const hostedPurchasingEnabled = isHostedPurchaseOptionEnabled();
   const activeSizes = product.sizeOptions?.filter((size) => size.isActive) ?? [];
   const purchasableSizes = activeSizes.filter((size) => size.priceAdjustmentCents !== null);
@@ -138,7 +141,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
   const proofFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
   const selectedLogoMediaUrl = logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl;
   const selectedLogoStorageKey = logoBackgroundMode === "original" ? logo?.originalStorageKey ?? logo?.storageKey : logo?.storageKey;
-  const setupOptions = options;
+  const setupOptions = fixedSelection ? options.filter(option => option.id === selectedOptionId) : options;
   const generatedQrValue = destinationUrl.trim();
   const proofQrValue = selectedLinkExperience === "multilink" ? hostedReservation?.url ?? "" : generatedQrValue;
   const directTargets = buildDirectProductionTargets(destinationUrl);
@@ -463,7 +466,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
 
     }
 
-    cart.addItem({
+    const configuredItem: CartItem = {
       productId: product.slug,
       optionId: selectedOption.id,
       quantity: selectedQuantity,
@@ -524,8 +527,10 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
           hostedReservationId: selectedLinkExperience === "multilink" ? hostedReservation?.id : undefined
         } : {})
       }
-    });
-    router.push("/cart");
+    };
+    cart.addItem(configuredItem);
+    if (onAdded) { setIsBuilderOpen(false); onAdded(configuredItem); }
+    else router.push("/cart");
   }
 
   const modalTitle =
@@ -747,7 +752,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
               type="button"
               aria-label="Decrease quantity"
               className="grid h-11 w-11 place-items-center text-ink transition hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
-              disabled={!quantityEnabled || selectedQuantity <= 1}
+              disabled={fixedSelection || !quantityEnabled || selectedQuantity <= 1}
               onClick={() => setClampedQuantity(selectedQuantity - 1)}
             >
               <Minus size={16} />
@@ -759,7 +764,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
               inputMode="numeric"
               aria-label="Quantity"
               className="h-11 w-16 border-x border-line text-center text-base font-black text-ink outline-none disabled:bg-soft disabled:text-muted"
-              disabled={!quantityEnabled}
+              disabled={fixedSelection || !quantityEnabled}
               value={selectedQuantity}
               onChange={(event) => updateQuantityFromInput(event.target.value)}
             />
@@ -767,7 +772,7 @@ export function ProductSetupChooser({ product, offers, selectedOptionId: control
               type="button"
               aria-label="Increase quantity"
               className="grid h-11 w-11 place-items-center text-ink transition hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
-              disabled={!quantityEnabled || selectedQuantity >= maxCartItemQuantity}
+              disabled={fixedSelection || !quantityEnabled || selectedQuantity >= maxCartItemQuantity}
               onClick={() => setClampedQuantity(selectedQuantity + 1)}
             >
               <Plus size={16} />
