@@ -56,14 +56,14 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-[248px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+    <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-[224px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
       <div className="px-4 py-4">
         <Link href="/admin" className="block">
           <p className="tr-eyebrow">Tap Rater</p>
           <h2 className="mt-1 text-base font-semibold text-ink">Admin</h2>
         </Link>
       </div>
-      <nav className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-5 lg:overflow-visible">
+      <nav className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-3 lg:overflow-visible">
         {adminNavigationGroups.map((group) => (
           <div key={group.label} className="contents lg:block">
             <p className="mb-2 hidden px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted lg:block">{group.label}</p>
@@ -99,7 +99,7 @@ export function AdminSidebar() {
           </div>
         ))}
       </nav>
-      <div className="hidden px-4 py-5 lg:block">
+      <div className="hidden px-4 py-3 lg:block">
         <button className="tr-button-outline w-full min-h-10 px-3 py-2" onClick={logout}>
           Log out
         </button>

@@ -22,6 +22,9 @@ export type AdminOrdersWorkspaceOrder = AdminOrderActionSource & {
   status: "pending_payment" | "paid" | "failed" | "canceled";
   paymentStatus: string;
   createdAt: string;
+  shippedAt?: string | null;
+  hasArtworkFailure?: boolean;
+  hasProductionWarnings?: boolean;
   fulfillmentBadges: Array<{ label: string; tone: "ready" | "warning" | "neutral" }>;
 };
 
@@ -46,6 +49,7 @@ const filterOptions = [
   ["paid", "Paid"],
   ["pending", "Pending"],
   ["production", "Needs production"],
+  ["artwork_failures", "Artwork failures"],
   ["ready_to_ship", "Ready to ship"],
   ["shipped", "Shipped"],
   ["blocked", "Blocked"]
@@ -81,6 +85,10 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
     setMobileFilter(filter);
   }, [filter, query]);
 
+  useEffect(() => {
+    setFilter(isAdminOrdersFilter(initialFilter) ? initialFilter : "all");
+  }, [initialFilter]);
+
   const visibleOrders = useMemo(() => {
     const search = query.trim().toLowerCase();
     return orderRows.filter((order) => {
@@ -96,8 +104,10 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
       if (!matchesSearch) return false;
       if (filter === "paid") return order.status === "paid";
       if (filter === "pending") return order.status === "pending_payment";
-      if (filter === "production") return canOperateOrder(order) && order.productionStatus !== "completed" && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
-      if (filter === "ready_to_ship") return order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship";
+      const productionEligible = canOperateOrder(order) && !order.shippedAt && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
+      if (filter === "production") return productionEligible && (order.productionStatus !== "completed" || order.hasProductionWarnings || order.hasArtworkFailure);
+      if (filter === "artwork_failures") return productionEligible && order.hasArtworkFailure;
+      if (filter === "ready_to_ship") return productionEligible && order.productionStatus === "completed" && order.shippingStatus === "ready_to_ship";
       if (filter === "shipped") return order.shippingStatus === "shipped" || order.shippingStatus === "delivered";
       if (filter === "blocked") return order.productionStatus === "blocked" || order.shippingStatus === "blocked";
       return true;

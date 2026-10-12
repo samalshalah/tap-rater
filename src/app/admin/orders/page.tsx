@@ -51,6 +51,9 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
 
   return {
     id: order.id ?? "",
+    shippedAt: order.shipped_at,
+    hasArtworkFailure: summaries.some((summary) => summary.productionArtwork?.status === "generation_failed"),
+    hasProductionWarnings: hasWarnings,
     checkoutSessionId: order.stripe_checkout_session_id,
     customerName: order.customer_name ?? "Customer",
     email: order.email ?? "",

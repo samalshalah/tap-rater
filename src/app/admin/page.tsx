@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminAlert, AdminCard, AdminSummaryCard } from "@/components/admin/admin-ui";
+import { AdminAlert, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 import { getAdminProducts } from "@/lib/admin-products";
@@ -23,8 +23,8 @@ export default async function AdminPage() {
     <AdminShell>
       <section className="tr-admin-section">
         <p className="tr-eyebrow">Admin</p>
-        <h1 className="tr-admin-title mt-3">Operations dashboard</h1>
-        <p className="mt-4 max-w-3xl leading-7 text-muted">
+        <h1 className="tr-admin-title mt-1">Operations dashboard</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
           Review the orders, production work, fulfillment status, and sellable product readiness that staff need today.
         </p>
         {!configured ? (
@@ -32,25 +32,25 @@ export default async function AdminPage() {
             Order persistence is not configured. Order and production counts will stay empty until database configuration is available.
           </AdminAlert>
         ) : null}
-        <div className="mt-8 grid gap-5 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
           {[
-            ["Needs production", String(productionOrders.length), "Paid orders with production work, artwork issues, or open fulfillment"],
-            ["Artwork failures", String(artworkFailures.length), "Orders blocked by production artwork generation"],
-            ["Ready to ship", String(readyToShip.length), "Produced orders awaiting shipment handling"],
-            ["Active products", String(activeProducts.length), "Sellable products currently visible to customers"]
-          ].map(([label, value, copy]) => (
-            <AdminSummaryCard key={label} label={label} value={value} description={copy} />
+            ["Needs production", String(productionOrders.length), "Open production work", "/admin/orders?filter=production"],
+            ["Artwork failures", String(artworkFailures.length), "Artwork needing attention", "/admin/orders?filter=artwork_failures"],
+            ["Ready to ship", String(readyToShip.length), "Completed and awaiting shipment", "/admin/orders?filter=ready_to_ship"],
+            ["Active products", String(activeProducts.length), "Visible in your storefront", "/admin/products"]
+          ].map(([label, value, copy, href]) => (
+            <AdminSummaryCard key={label} label={label} value={value} description={copy} href={href} />
           ))}
         </div>
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {adminNavigationGroups.flatMap((group) => group.items).map((item) => (
-            <Link key={item.href} href={item.href}>
-              <AdminCard className="h-full transition hover:-translate-y-0.5">
+        <h2 className="mt-6 mb-3 text-ink">Manage your store</h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {adminNavigationGroups.flatMap((group) => group.items).filter((item) => item.href !== "/admin").map((item) => (
+            <Link key={item.href} href={item.href} className="tr-admin-card tr-admin-card-link p-3">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-semibold text-ink">{item.label}</h2>
+                <h3 className="font-semibold text-ink">{item.label}</h3>
+                <span aria-hidden="true" className="text-brand">&rarr;</span>
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted">{item.description}</p>
-              </AdminCard>
+              <p className="mt-1 text-xs leading-5 text-muted">{item.description}</p>
             </Link>
           ))}
         </div>

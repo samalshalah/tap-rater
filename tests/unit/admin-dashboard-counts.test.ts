@@ -11,7 +11,7 @@ vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: ({ children }: { 
 vi.mock("@/components/admin/admin-ui", () => ({
   AdminAlert: () => null,
   AdminCard: () => null,
-  AdminSummaryCard: ({ label, value }: { label: string; value: string }) => createElement("p", null, `${label}: ${value}`)
+  AdminSummaryCard: ({ label, value, href }: { label: string; value: string; href?: string }) => createElement("a", { href }, `${label}: ${value}`)
 }));
 vi.mock("@/lib/orders", () => ({
   getAdminOrders,
@@ -26,6 +26,13 @@ async function counts(orders: unknown[]) {
 }
 
 describe("admin dashboard actionable counts", () => {
+  it("links status cards to their corresponding workspaces", async () => {
+    const html = await counts([]);
+    expect(html).toContain('href="/admin/orders?filter=production"');
+    expect(html).toContain('href="/admin/orders?filter=artwork_failures"');
+    expect(html).toContain('href="/admin/orders?filter=ready_to_ship"');
+    expect(html).toContain('href="/admin/products"');
+  });
   it("excludes unpaid, manual, canceled, failed, and refunded work", async () => {
     const html = await counts([
       paid,

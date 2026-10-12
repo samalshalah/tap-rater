@@ -122,7 +122,7 @@ export function AdminCard({
   className?: string;
 }) {
   return (
-    <section className={cx("tr-admin-card p-4 md:p-5", className)}>
+    <section className={cx("tr-admin-card p-4", className)}>
       {title ? (
         <div className="mb-4">
           <h2 className="tr-admin-card-title text-ink">{title}</h2>
@@ -134,14 +134,18 @@ export function AdminCard({
   );
 }
 
-export function AdminSummaryCard({ label, value, description }: { label: string; value: string; description?: string }) {
+export function AdminSummaryCard({ label, value, description, href }: { label: string; value: string; description?: string; href?: string }) {
   return (
-    <AdminCard className="p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
-      {description ? <p className="mt-2 text-sm leading-6 text-muted">{description}</p> : null}
-    </AdminCard>
+    <SummaryContainer href={href}>
+      <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{label}</p>{href ? <span aria-hidden="true" className="text-brand">&rarr;</span> : null}</div>
+      <p className="mt-1 text-2xl font-semibold text-ink">{value}</p>
+      {description ? <p className="mt-1 text-xs leading-5 text-muted">{description}</p> : null}
+    </SummaryContainer>
   );
+}
+
+function SummaryContainer({ href, children }: { href?: string; children: ReactNode }) {
+  return href ? <Link href={href} className="tr-admin-card tr-admin-card-link p-3">{children}</Link> : <AdminCard>{children}</AdminCard>;
 }
 
 export function AdminSoftPanel({ children, className }: { children: ReactNode; className?: string }) {
