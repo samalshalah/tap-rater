@@ -16,10 +16,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <section className="tr-container-narrow py-16">
+    <section className="tr-container-narrow py-8">
       <p className="tr-eyebrow">Admin</p>
       <h1 className="tr-page-title mt-3">Tap Rater admin login</h1>
-      <div className="tr-card-compact mt-8 p-5">
+      <div className="tr-card-compact mt-4 p-4">
         <LoginForm />
       </div>
     </section>

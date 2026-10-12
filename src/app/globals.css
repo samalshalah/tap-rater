@@ -456,6 +456,8 @@ a {
 
 .tr-admin-section,
 .tr-admin-section[class] {
+  max-width: none;
+  margin-inline: 0;
   padding-top: 1rem;
   padding-bottom: 1.5rem;
 }
@@ -677,3 +679,54 @@ a {
 .tr-admin-card-link { display: block; transition: border-color 150ms, background-color 150ms; }
 .tr-admin-card-link:hover { border-color: var(--tr-color-brand); background: #f8fbfb; }
 .tr-admin-card-link:focus-visible { outline: 2px solid var(--tr-color-brand); outline-offset: 3px; }
+
+/* Compact density for every authenticated admin page. Keep small field gaps,
+   control sizes, preview canvases, and readable text widths unchanged. */
+.tr-admin-section {
+  --admin-section-gap: 1rem;
+  --admin-panel-padding: 1rem;
+}
+
+.tr-admin-section:is(.gap-5, .gap-6, .gap-7, .gap-8),
+.tr-admin-section :is(.gap-5, .gap-6, .gap-7, .gap-8) {
+  gap: var(--admin-section-gap);
+}
+
+.tr-admin-section:is(.space-y-5, .space-y-6, .space-y-7, .space-y-8) > :not([hidden]) ~ :not([hidden]),
+.tr-admin-section :is(.space-y-5, .space-y-6, .space-y-7, .space-y-8) > :not([hidden]) ~ :not([hidden]) {
+  margin-top: calc(var(--admin-section-gap) * (1 - var(--tw-space-y-reverse, 0)));
+  margin-bottom: calc(var(--admin-section-gap) * var(--tw-space-y-reverse, 0));
+}
+
+.tr-admin-section :is(.mt-5, .mt-6, .mt-7, .mt-8) {
+  margin-top: var(--admin-section-gap);
+}
+
+.tr-admin-section :is(.mt-10, .mt-12) {
+  margin-top: 1.5rem;
+}
+
+.tr-admin-section :is(.mb-5, .mb-6, .mb-7, .mb-8) {
+  margin-bottom: var(--admin-section-gap);
+}
+
+.tr-admin-section :is(.pt-5, .pt-6, .pt-8, .pt-10) {
+  padding-top: var(--admin-section-gap);
+}
+
+.tr-admin-section :is(section, article, div, form).border:is(.p-5, .p-6, .p-7, .p-8),
+.tr-admin-section .tr-admin-card:is(.p-5, .p-6, .p-7, .p-8) {
+  padding: var(--admin-panel-padding);
+}
+
+@media (min-width: 640px) {
+  .tr-admin-section :is(section, article, div, form).border.sm\:p-6 {
+    padding: var(--admin-panel-padding);
+  }
+}
+
+@media (min-width: 768px) {
+  .tr-admin-section .tr-admin-card:is(.md\:p-6, .md\:p-7, .md\:p-8) {
+    padding: var(--admin-panel-padding);
+  }
+}

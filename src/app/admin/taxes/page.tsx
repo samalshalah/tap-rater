@@ -9,7 +9,7 @@ export default async function AdminTaxesPage() {
 
   return (
     <AdminShell>
-      <div className="grid gap-6">
+      <section className="tr-admin-section grid gap-4">
         <header>
           <p className="tr-eyebrow">Commerce</p>
           <h1 className="mt-2 text-3xl font-medium text-ink">Taxes</h1>
@@ -18,7 +18,7 @@ export default async function AdminTaxesPage() {
           </p>
         </header>
         <TaxSettingsForm settings={settings} />
-      </div>
+      </section>
     </AdminShell>
   );
 }

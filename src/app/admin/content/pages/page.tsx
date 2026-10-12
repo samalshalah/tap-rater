@@ -7,7 +7,7 @@ export default async function AdminPagesEditorPage() {
 
   return (
     <AdminShell>
-      <section className="tr-admin-section max-w-4xl">
+      <section className="tr-admin-section">
       <p className="tr-eyebrow">Admin</p>
       <h1 className="tr-admin-title mt-3">Page editor</h1>
       <p className="mt-4 leading-7 text-muted">

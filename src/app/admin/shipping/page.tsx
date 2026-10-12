@@ -9,7 +9,7 @@ export default async function AdminShippingPage() {
 
   return (
     <AdminShell>
-      <section className="tr-admin-section max-w-5xl">
+      <section className="tr-admin-section">
         <p className="tr-eyebrow">Commerce</p>
         <div className="mt-3">
           <h1 className="tr-admin-title">Shipping</h1>

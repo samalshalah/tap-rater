@@ -18,7 +18,7 @@ export default async function AdminEmailTemplatesPage() {
 
   return (
     <AdminShell>
-      <section className="tr-admin-section max-w-6xl">
+      <section className="tr-admin-section">
         <p className="tr-eyebrow">Settings</p>
         <div className="mt-3">
           <h1 className="tr-admin-title">Email templates</h1>
