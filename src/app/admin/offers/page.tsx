@@ -19,8 +19,8 @@ export default async function OffersPage() {
           Manage automatic discounts, mixed-product bundles, eligibility, dates,
           and free shipping.
         </p>
-        <section className="rounded-xl border border-line p-5">
-          <h2 className="font-semibold">Offer usage · paid live orders</h2>
+        <details className="rounded-lg border border-line p-3">
+          <summary className="cursor-pointer text-sm font-semibold">Offer usage · paid live orders</summary>
           <p className="text-sm text-muted my-2">
             All-time since activation. Excludes test and refunded orders.
             Merchandise amounts exclude shipping, tax, and subscription fees;
@@ -60,7 +60,7 @@ export default async function OffersPage() {
               </table>
             </div>
           )}
-        </section>
+        </details>
         <OffersForm
           initial={settings}
           products={products.map((p) => ({ slug: p.slug, title: p.title }))}

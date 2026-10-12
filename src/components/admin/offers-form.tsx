@@ -44,7 +44,7 @@ export function OffersForm({
     amount: number,
     divisor = 1,
   ) => (
-    <label className="grid min-w-0 gap-1 text-sm">
+    <label className="grid min-w-0 gap-1 text-xs">
       {label}
       <input
         required
@@ -74,137 +74,68 @@ export function OffersForm({
         eligible Standard and Branded stands. Subscription/hosted products and
         custom quotes are excluded. Free shipping is controlled separately.
       </p>
-      <div className="grid gap-3 xl:grid-cols-2">
-      {(["second", "bundle3", "bundle5", "upgrade"] as const).map((key) => (
-        <fieldset
-          key={key}
-          className="min-w-0 rounded-xl border border-line bg-white p-3 space-y-3"
-        >
-          <legend className="font-semibold px-2">
-            {
-              {
-                second: "Second stand",
-                bundle3: "3+ stand bundle",
-                bundle5: "5+ stand bundle",
-                upgrade: "Branded upgrade",
-              }[key]
-            }
-          </legend>
-          <label className="flex gap-2">
-            <input
-              type="checkbox"
-              checked={value[key].enabled}
-              onChange={(e) => set(key, "enabled", e.target.checked)}
-            />
-            Enabled
-          </label>
-          {key === "second" ? (
-            number(
-              "Discount on one lower-priced stand (%)",
-              key,
-              "percent",
-              value.second.percent,
-            )
-          ) : key === "upgrade" ? (
-            number(
-              "Savings per Branded stand ($)",
-              key,
-              "savingCents",
-              value.upgrade.savingCents,
-              100,
-            )
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {number(
-                "All-Standard bundle price ($)",
-                key,
-                "standardCents",
-                value[key].standardCents,
-                100,
-              )}
-              {number(
-                "All-Branded bundle price ($)",
-                key,
-                "brandedCents",
-                value[key].brandedCents,
-                100,
-              )}
-            </div>
-          )}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(["startsAt", "endsAt"] as const).map((field) => (
-              <label key={field} className="grid min-w-0 gap-1 text-sm">
-                {field === "startsAt"
-                  ? "Starts (UTC, optional)"
-                  : "Ends (UTC, optional)"}
-                <input
-                  type="datetime-local"
-                  className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
-                  value={value[key][field]?.slice(0, 16) || ""}
-                  onChange={(e) =>
-                    set(
-                      key,
-                      field,
-                      e.target.value
-                        ? new Date(e.target.value + "Z").toISOString()
-                        : null,
-                    )
-                  }
-                />
+      <div className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-white">
+        {(["second", "bundle3", "bundle5", "upgrade"] as const).map((key) => {
+          const title = { second: "Second stand", bundle3: "3+ stand bundle", bundle5: "5+ stand bundle", upgrade: "Branded upgrade" }[key];
+          return (
+            <fieldset key={key} className="min-w-0 p-3">
+              <legend className="sr-only">{title}</legend>
+              <div className="grid items-center gap-3 xl:grid-cols-[180px_360px_minmax(0,1fr)]">
+                <label className="flex items-center gap-2 text-sm font-semibold">
+                  <input type="checkbox" checked={value[key].enabled} onChange={(e) => set(key, "enabled", e.target.checked)} />
+                  {title}
+                </label>
+                <div className="grid max-w-[360px] grid-cols-2 gap-3">
+                  {key === "second" ? number("Lower-priced stand discount (%)", key, "percent", value.second.percent)
+                    : key === "upgrade" ? number("Savings per Branded stand ($)", key, "savingCents", value.upgrade.savingCents, 100)
+                    : <>
+                      {number("Standard bundle ($)", key, "standardCents", value[key].standardCents, 100)}
+                      {number("Branded bundle ($)", key, "brandedCents", value[key].brandedCents, 100)}
+                    </>}
+                </div>
+                <details className="min-w-0 text-xs" open={Boolean(initial[key].startsAt || initial[key].endsAt)}>
+                  <summary className="min-h-10 cursor-pointer content-center text-brand">
+                    Schedule · {value[key].startsAt || value[key].endsAt ? "Dates set" : "No date limits"}
+                  </summary>
+                  <div className="mt-2 grid max-w-lg gap-2 sm:grid-cols-2">
+                    {(["startsAt", "endsAt"] as const).map((field) => (
+                      <label key={field} className="grid min-w-0 gap-1">
+                        {field === "startsAt" ? "Starts (UTC, optional)" : "Ends (UTC, optional)"}
+                        <input type="datetime-local" className="min-h-10 min-w-0 w-full rounded border border-line px-2 py-2"
+                          value={value[key][field]?.slice(0, 16) || ""}
+                          onChange={(e) => set(key, field, e.target.value ? new Date(e.target.value + "Z").toISOString() : null)} />
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            </fieldset>
+          );
+        })}
+        <fieldset className="min-w-0 p-3">
+          <legend className="sr-only">Free shipping</legend>
+          <div className="grid items-center gap-3 xl:grid-cols-[180px_360px_minmax(0,1fr)]">
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" checked={value.shipping.enabled} onChange={(e) => set("shipping", "enabled", e.target.checked)} />
+              Free shipping
+            </label>
+            <div className="grid max-w-[360px] grid-cols-2 gap-3">
+              {number("Threshold after discounts ($)", "shipping", "thresholdCents", value.shipping.thresholdCents, 100)}
+              <label className="grid min-w-0 gap-1 text-xs">
+                Country codes
+                <input className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
+                  value={value.shipping.countryCodes.join(", ")}
+                  onChange={(e) => set("shipping", "countryCodes", e.target.value.toUpperCase().split(",").map((v) => v.trim()))} />
               </label>
-            ))}
+            </div>
+            <p className="text-xs text-muted">Based on merchandise after discounts. Tax and recurring fees excluded.</p>
           </div>
         </fieldset>
-      ))}
       </div>
-      <p className="text-sm text-muted">
-        Bundle prices are based on $39 Standard / $49 Branded stands. Mixed
-        bundles combine per-design prices; differently priced variants receive
-        the same proportional savings. The tier applies to every eligible stand
-        once the quantity is reached.
-      </p>
-      <fieldset className="min-w-0 rounded-xl border border-line bg-white p-3 space-y-3">
-        <legend className="font-semibold px-2">Free shipping</legend>
-        <label className="flex gap-2">
-          <input
-            type="checkbox"
-            checked={value.shipping.enabled}
-            onChange={(e) => set("shipping", "enabled", e.target.checked)}
-          />
-          Enable threshold-based free shipping
-        </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-        {number(
-          "Merchandise threshold after discounts ($)",
-          "shipping",
-          "thresholdCents",
-          value.shipping.thresholdCents,
-          100,
-        )}
-        <label className="grid min-w-0 gap-1 text-sm">
-          Eligible country codes (comma-separated)
-          <input
-            className="min-h-10 min-w-0 w-full rounded border border-line px-3 py-2"
-            value={value.shipping.countryCodes.join(", ")}
-            onChange={(e) =>
-              set(
-                "shipping",
-                "countryCodes",
-                e.target.value
-                  .toUpperCase()
-                  .split(",")
-                  .map((v) => v.trim()),
-              )
-            }
-          />
-        </label>
-        </div>
-        <p className="text-sm text-muted">
-          Tax and recurring fees do not count toward the threshold. This does
-          not enable checkout in unsupported countries. An unconditional Free
-          shipping mode in Shipping settings overrides this threshold.
-        </p>
-      </fieldset>
+      <details className="text-xs text-muted">
+        <summary className="min-h-10 cursor-pointer content-center">How bundle pricing and shipping eligibility work</summary>
+        <p className="mt-2 max-w-3xl leading-5">Bundle prices are based on $39 Standard / $49 Branded stands. Mixed bundles combine per-design prices; differently priced variants receive the same proportional savings. The tier applies to every eligible stand once the quantity is reached. Shipping eligibility does not enable checkout in unsupported countries. An unconditional Free shipping mode in Shipping settings overrides this threshold.</p>
+      </details>
       <details className="rounded-xl border border-line bg-white p-3">
         <summary className="cursor-pointer text-sm font-semibold">Eligible products ({products.filter((product) => !value.excludedProducts.includes(product.slug)).length} of {products.length})</summary>
         <fieldset className="mt-3 min-w-0">
@@ -235,9 +166,9 @@ export function OffersForm({
         </fieldset>
       </details>
       <button disabled={busy} className="tr-button-primary">
-        {busy ? "Savingâ€¦" : "Save offers"}
+        {busy ? "Saving..." : "Save offers"}
       </button>
-      <p role="status">{status}</p>
+      {status ? <p role="status">{status}</p> : null}
     </form>
   );
 }
