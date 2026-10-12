@@ -1,6 +1,6 @@
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { OffersSettings } from "@/lib/offers";
-import { singleStandPrice } from "@/lib/offers";
+import { singleStandPrice, offerIsActive } from "@/lib/offers";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 import { isPublicLaunchStorefrontProduct } from "@/lib/product-repository";
@@ -17,7 +17,7 @@ function xml(value: string) {
 const tag = (name: string, value: string) => `<g:${name}>${xml(value)}</g:${name}>`;
 
 /** A complete, public-only snapshot. No customer artwork or order data belongs here. */
-export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSettings) {
+export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSettings, now = Date.now()) {
   const origin = getPublicSiteUrl();
   const absolute = (path: string) => new URL(path, origin).toString();
   const ids = new Set<string>();
@@ -37,7 +37,14 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       const id = merchantProductId(product, option.id);
       if (id.length > 50 || ids.has(id)) throw new Error("Invalid or duplicate merchant product ID");
       ids.add(id);
-      const price = singleStandPrice(product.slug, option.id, basePrice, offers);
+      const price = singleStandPrice(product.slug, option.id, basePrice, offers, now);
+      // Match the existing US/English Merchant Center campaign, in America/New_York.
+      // Stop advertising it if the checkout offer changes, is disabled, or expires.
+      const standardPromotion = option.id === "standard_direct" && offers.enabled &&
+        !offers.excludedProducts.includes(product.slug) && offers.second.percent === 15 &&
+        offerIsActive(offers.second, now) &&
+        now >= Date.parse("2026-10-10T00:00:00-04:00") &&
+        now < Date.parse("2026-11-09T00:00:00-05:00");
       if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid merchant price");
       const fields = [
         tag("id", id),
@@ -52,6 +59,7 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
         tag("brand", "Tap Rater"),
         tag("mpn", sku),
         tag("product_type", "Business Supplies > NFC Countertop Stands"),
+        ...(standardPromotion ? [tag("promotion_id", "SECOND-STANDARD-15-OCT2026")] : []),
         ...(branded ? [tag("return_policy_label", "custom-branded")] : []),
       ];
       // Design customization is not a supported item_group_id variant attribute.
