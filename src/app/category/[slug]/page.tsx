@@ -1,4 +1,4 @@
-import { BuyingGuide } from "@/components/storefront/buying-guide";
+import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ProductCard } from "@/components/product/product-card";
@@ -114,7 +114,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="tr-container">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="tr-eyebrow">{products.length} stands</p>
+            <p className="tr-eyebrow">{products.length} {products.length === 1 ? "stand" : "stands"}</p>
             <h2 className="tr-section-title mt-2">Shop {title.toLowerCase()}</h2>
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
@@ -130,7 +130,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
         </div>
       </SectionShell>
-      <BuyingGuide slug={category.slug} kind="category" />
+      <CategoryBuyingGuide slug={category.slug} products={products} />
     </main>
   );
 }
