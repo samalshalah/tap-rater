@@ -19,7 +19,7 @@ describe("business guide compatibility", () => {
   });
   it("does not copy restaurant content to another business", async () => {
     query.result.mockResolvedValue({ data: null, error: null });
-    const guide = await getBusinessUseGuide("healthcare-dental");
+    const guide = await getBusinessUseGuide("new-business-type");
     expect(guide.placements).toBeUndefined();
     expect(guide.headline).toBe("");
   });

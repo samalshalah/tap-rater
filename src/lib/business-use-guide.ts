@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { MigratedProduct } from "@/data/migrated-products";
+import { industryBusinessGuides } from "@/lib/business-use-industry-guides";
 
 export const businessUseGuideSchema = z.object({
   headline: z.string().trim().max(160).default(""),
@@ -31,7 +32,7 @@ export const businessUseGuideSchema = z.object({
 export type BusinessUseGuide = z.infer<typeof businessUseGuideSchema>;
 
 export function defaultBusinessUseGuide(slug: string): BusinessUseGuide {
-  if (slug !== "restaurant-food") return { headline: "", introduction: "", recommendations: [], faqs: [] };
+  if (slug !== "restaurant-food") return industryBusinessGuides[slug] ?? { headline: "", introduction: "", recommendations: [], faqs: [] };
   return {
     headline: "NFC & QR Stands for Restaurants",
     seoTitle: "NFC & QR Stands for Restaurants, Cafés & Takeaways",

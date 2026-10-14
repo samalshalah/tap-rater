@@ -3,8 +3,27 @@ import { businessUseGuideSchema, defaultBusinessUseGuide, orderBusinessUseProduc
 import { staticStorefrontProducts } from "@/lib/product-repository";
 import { saveBusinessUseContent } from "@/lib/admin-business-uses";
 import { businessUseContentSchema } from "@/lib/validators";
+import { lockedBusinessUses } from "@/lib/catalog-architecture";
 
 describe("business buying guides", () => {
+  it.each(lockedBusinessUses.map((business) => business.slug))("provides a complete validated guide with public products for %s", (slug) => {
+    const guide = defaultBusinessUseGuide(slug);
+    expect(businessUseGuideSchema.safeParse(guide).success).toBe(true);
+    expect(resolveRecommendations(guide, staticStorefrontProducts())).toHaveLength(3);
+    expect(guide.placements).toHaveLength(3);
+    expect(guide.steps).toHaveLength(3);
+    expect(guide.faqs).toHaveLength(5);
+    expect(guide.seoTitle).toBeTruthy();
+    expect(guide.seoDescription).toBeTruthy();
+  });
+  it("gives each industry distinct headings, metadata, and editorial sections", () => {
+    const guides = lockedBusinessUses.map((business) => defaultBusinessUseGuide(business.slug));
+    for (const field of ["headline", "introduction", "seoTitle", "seoDescription", "recommendationsTitle", "placementTitle", "howItWorksTitle", "faqTitle"] as const) {
+      expect(new Set(guides.map((guide) => guide[field])).size).toBe(guides.length);
+    }
+    const bodies = guides.flatMap((guide) => [...(guide.placements ?? []), ...(guide.steps ?? [])].map((item) => item.body));
+    expect(new Set(bodies).size).toBe(bodies.length);
+  });
   it("resolves every restaurant recommendation to a public catalog product", () => {
     const guide = defaultBusinessUseGuide("restaurant-food");
     expect(businessUseGuideSchema.safeParse(guide).success).toBe(true);
