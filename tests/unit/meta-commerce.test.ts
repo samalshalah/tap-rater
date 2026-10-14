@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
-import { parseMetaCheckout, metaCatalog } from "@/lib/meta-checkout";
+import { parseMetaCheckout, metaCatalog, quoteMetaCheckout } from "@/lib/meta-checkout";
 import { buildMerchantFeed } from "@/lib/merchant-feed";
 import { defaultOffers } from "@/lib/offers";
 import { merchantProductId } from "@/lib/merchant-product-id";
@@ -12,6 +12,24 @@ const branded = merchantProductId(product, "branded_qr_direct");
 afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
 
 describe("Meta checkout and catalog matching", () => {
+  it("quotes Meta's three-stand selection together instead of quoting only the active setup", () => {
+    const entries = parseMetaCheckout("TR-YELP-STAND_tr-yelp-stand-std:2,TR-CHECK-INFORMATION-STAND-STD:1", migratedProducts);
+    const quote = quoteMetaCheckout(entries, defaultOffers);
+    expect(entries.map(e => [e.quantity, e.unitAmountCents])).toEqual([[2, 3900], [1, 3900]]);
+    expect(quote.originalCents).toBe(11700);
+    expect(quote.discountCents).toBe(1200);
+    expect(quote.subtotalCents).toBe(10500);
+    expect(quote.lineDiscounts).toEqual([800, 400]);
+  });
+  it("uses configured catalog prices and applies the same mixed-design and disabled-offer rules as checkout", () => {
+    const entries = parseMetaCheckout(`${standard}:2,${branded}:1`, [product]);
+    const quote = quoteMetaCheckout(entries, defaultOffers);
+    expect(quote.originalCents).toBe(12700);
+    expect(quote.subtotalCents).toBe(11400);
+    expect(quoteMetaCheckout(entries, { ...defaultOffers, enabled: false }).subtotalCents).toBe(12700);
+    const changed = entries.map(e => ({ ...e, unitAmountCents: e.unitAmountCents + 100 }));
+    expect(quoteMetaCheckout(changed, { ...defaultOffers, enabled: false }).subtotalCents).toBe(13000);
+  });
   it("preserves mixed design selections and aggregates repeated quantities using exported IDs", () => {
     const result = parseMetaCheckout(`${standard}:2,${branded}:1,${standard}:3`, [product]);
     expect(result.map(({optionId, quantity}) => [optionId, quantity])).toEqual([["standard_direct",5],["branded_qr_direct",1]]);

@@ -3,6 +3,7 @@ import { merchantProductId } from "@/lib/merchant-product-id";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 import { isPublicLaunchStorefrontProduct } from "@/lib/product-repository";
+import { quoteOffers, type OffersSettings } from "@/lib/offers";
 
 export function metaCatalog(products: MigratedProduct[]) {
   return products.filter(isPublicLaunchStorefrontProduct).flatMap(product => {
@@ -10,10 +11,20 @@ export function metaCatalog(products: MigratedProduct[]) {
     return getProductPurchaseOptions(product).flatMap(option => {
       const price = getConfiguredUnitPriceCents(product, option, selection);
       return !option.requiresSubscription && price !== null && Number.isFinite(price) && price > 0
-        ? [{ id: merchantProductId(product, option.id), product, optionId: option.id }]
+        ? [{ id: merchantProductId(product, option.id), product, optionId: option.id, unitAmountCents: price }]
         : [];
     });
   });
+}
+
+/** Quote the entire incoming selection, including offers spanning different designs. */
+export function quoteMetaCheckout(entries: ReturnType<typeof parseMetaCheckout>, offers: OffersSettings, now = Date.now()) {
+  return quoteOffers(entries.map(entry => ({
+    productId: entry.product.slug,
+    optionId: entry.optionId,
+    quantity: entry.quantity,
+    unitAmountCents: entry.unitAmountCents,
+  })), offers, now);
 }
 
 export function parseMetaCheckout(raw: unknown, products: MigratedProduct[]) {

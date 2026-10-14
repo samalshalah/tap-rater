@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCheckoutProducts } from "@/lib/product-repository";
 import { getOffersSettings } from "@/lib/offer-settings";
-import { parseMetaCheckout } from "@/lib/meta-checkout";
+import { parseMetaCheckout, quoteMetaCheckout } from "@/lib/meta-checkout";
 import { MetaCheckout } from "@/components/checkout/meta-checkout";
 
 export const dynamic = "force-dynamic";
@@ -15,5 +15,6 @@ export default async function MetaCheckoutPage({ searchParams }: { searchParams:
   let entries;
   try { entries = parseMetaCheckout(params.products, catalog); }
   catch (error) { return <main className="tr-container py-12"><h1 className="text-2xl">Check your shopping link</h1><p role="alert" className="my-4">{error instanceof Error ? error.message : "Please return to the shop."}</p><Link href="/shop" className="underline">Return to shop</Link></main>; }
-  return <MetaCheckout entries={entries} offers={await getOffersSettings()} hasCoupon={Boolean(params.coupon)} />;
+  const offers = await getOffersSettings();
+  return <MetaCheckout entries={entries} offers={offers} quote={quoteMetaCheckout(entries, offers)} hasCoupon={Boolean(params.coupon)} />;
 }

@@ -542,7 +542,7 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
       : selectedOption.id === "branded_qr_direct"
         ? "Build your Branded QR stand"
         : "Set up your Standard Direct stand";
-  const standQuote = configuredUnitPriceCents !== null && selectedOptionId && offers
+  const standQuote = !fixedSelection && configuredUnitPriceCents !== null && selectedOptionId && offers
     ? quoteOffers([{ productId: product.slug, optionId: selectedOptionId, quantity: selectedQuantity, unitAmountCents: configuredUnitPriceCents }], offers) : null;
   const selectedPrice =
     configuredUnitPriceCents === null
@@ -552,7 +552,8 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
     configuredUnitPriceCents === null
         ? "Unavailable"
         : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity).replace(".00", "");
-  const setupButtonLabel = selectedQuantity > 1 ? `Set Up My ${selectedQuantity} Stands - ${selectedStandTotalPrice}` : `Set Up My Stand - ${selectedStandTotalPrice}`;
+  const setupAction = selectedQuantity > 1 ? `Set Up My ${selectedQuantity} Stands` : "Set Up My Stand";
+  const setupButtonLabel = fixedSelection ? setupAction : `${setupAction} - ${selectedStandTotalPrice}`;
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
       ? ["Destination", "Links", "Logo", "Preview"]
