@@ -19,9 +19,10 @@ type ProductHeroProps = {
   destination: string;
   fromPrice: string;
   initialOptionId?: PurchaseOptionId;
+  introduction?: string;
 };
 
-export function ProductHero({ product, category, fromPrice, initialOptionId, offers }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice, initialOptionId, offers, introduction }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
@@ -59,7 +60,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId, off
         <div>
           <p className="tr-eyebrow hidden md:block">{category?.title ?? "Tap Rater stand"}</p>
           <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
-          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base"><span className="md:hidden">Choose your design, then connect your business link.</span><span className="hidden md:inline">{product.shortDescription}</span></p>
+          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base">{introduction ?? product.shortDescription}</p>
           <p className="mt-3 hidden text-xl font-semibold text-ink md:block">
             {pricePrefix}{displayPrice}
             {selectedMonthlyPriceCents > 0 ? ` + ${formatPrice(selectedMonthlyPriceCents)}/month` : ""}
