@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { AdminBusinessUse } from "@/lib/admin-business-uses";
+import { businessUseGuideSchema, defaultBusinessUseGuide, type BusinessUseGuide } from "@/lib/business-use-guide";
 
 type BusinessUseEditorProps = {
   businessUse: AdminBusinessUse;
@@ -20,13 +21,14 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
     description: businessUse.description,
     shortDescription: businessUse.shortDescription ?? "",
     longContent: businessUse.longContent ?? "",
-    seoTitle: businessUse.seoTitle ?? "",
-    seoDescription: businessUse.seoDescription ?? "",
+    seoTitle: businessUse.seoTitle ?? businessUse.guide?.seoTitle ?? defaultBusinessUseGuide(businessUse.slug).seoTitle ?? "",
+    seoDescription: businessUse.seoDescription ?? businessUse.guide?.seoDescription ?? defaultBusinessUseGuide(businessUse.slug).seoDescription ?? "",
     imageUrl: businessUse.imageUrl ?? "",
     bannerImageUrl: businessUse.bannerImageUrl ?? "",
     sortOrder: businessUse.sortOrder,
     isActive: businessUse.isActive,
-    productSlugs: businessUse.productSlugs
+    productSlugs: businessUse.productSlugs,
+    guide: businessUse.guide ?? defaultBusinessUseGuide(businessUse.slug)
   });
   const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -63,7 +65,21 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
     setStatus(null);
   }
 
+  function updateGuide(guide: BusinessUseGuide) { update("guide", guide); }
+  function moveProduct(index: number, direction: number) {
+    const slugs = [...form.productSlugs];
+    const target = index + direction;
+    if (target < 0 || target >= slugs.length) return;
+    [slugs[index], slugs[target]] = [slugs[target], slugs[index]];
+    update("productSlugs", slugs);
+  }
+
   async function save() {
+    const guideCheck = businessUseGuideSchema.safeParse(form.guide);
+    if (!guideCheck.success) {
+      setStatus({ tone: "error", message: `Check your buying guide: ${guideCheck.error.issues[0].message} (${guideCheck.error.issues[0].path.join(" → ")}). Fill all fields or remove unfinished entries.` });
+      return;
+    }
     setIsSaving(true);
     setStatus(null);
 
@@ -106,10 +122,38 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
           <TextArea label="Long landing page content" value={form.longContent} rows={8} onChange={(value) => update("longContent", value)} />
         </Panel>
 
-        <Panel title="Assigned products">
+        <Panel title="Buying guide">
+          <p className="text-sm text-muted">Featured recommendations appear first, in this order. Choose up to three public products and explain why each fits this business. Blank headline and introduction use the existing page content.</p>
+          <TextInput label="Buying guide headline" value={form.guide.headline} onChange={(headline) => updateGuide({ ...form.guide, headline })} />
+          <TextArea label="Buying guide introduction" rows={3} value={form.guide.introduction} onChange={(introduction) => updateGuide({ ...form.guide, introduction })} />
+          <p className="text-sm text-muted">Use one descriptive H1, a short introduction, and useful industry-specific copy. Aim for roughly 700–900 words on a complete guide, without padding. The storefront supplies the design comparison and product links.</p>
+          <TextInput label="Recommendations heading (H2)" value={form.guide.recommendationsTitle ?? ""} onChange={(recommendationsTitle) => updateGuide({ ...form.guide, recommendationsTitle })} />
+          {form.guide.recommendations.map((item, index) => <fieldset key={index} className="space-y-3 rounded-lg border border-line p-4">
+            <legend className="px-2 font-semibold">Recommendation {index + 1}</legend>
+            <label className="block text-sm font-semibold">Product<select className="mt-2 w-full rounded border border-line p-2" value={item.productSlug} onChange={(event) => updateGuide({ ...form.guide, recommendations: form.guide.recommendations.map((current, i) => i === index ? { ...current, productSlug: event.target.value } : current) })}><option value="">Choose a product</option>{products.map((product) => <option key={product.slug} value={product.slug}>{product.title}</option>)}</select></label>
+            {(["goal", "reason", "placement"] as const).map((field) => <TextArea key={field} label={{ goal: "Customer action", reason: "Why this stand fits", placement: "Where to place it" }[field]} rows={2} value={item[field]} onChange={(value) => updateGuide({ ...form.guide, recommendations: form.guide.recommendations.map((current, i) => i === index ? { ...current, [field]: value } : current) })} />)}
+            <div className="flex flex-wrap gap-4"><button type="button" className="text-sm underline disabled:opacity-40" disabled={index === 0} onClick={() => { const recommendations = [...form.guide.recommendations]; [recommendations[index - 1], recommendations[index]] = [recommendations[index], recommendations[index - 1]]; updateGuide({ ...form.guide, recommendations }); }}>Move up</button><button type="button" className="text-sm text-red-700 underline" onClick={() => updateGuide({ ...form.guide, recommendations: form.guide.recommendations.filter((_, i) => i !== index) })}>Remove recommendation</button></div>
+          </fieldset>)}
+          <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={form.guide.recommendations.length >= 3} onClick={() => updateGuide({ ...form.guide, recommendations: [...form.guide.recommendations, { productSlug: "", goal: "", reason: "", placement: "" }] })}>Add recommendation</button>
+        </Panel>
+        <Panel title="Placement guide">
+          <TextInput label="Placement heading (H2)" value={form.guide.placementTitle ?? ""} onChange={(placementTitle) => updateGuide({ ...form.guide, placementTitle })} />
+          <GuideSectionEditor items={form.guide.placements ?? []} limit={6} label="Placement" onChange={(placements) => updateGuide({ ...form.guide, placements })} />
+        </Panel>
+        <Panel title="How it works">
+          <TextInput label="How it works heading (H2)" value={form.guide.howItWorksTitle ?? ""} onChange={(howItWorksTitle) => updateGuide({ ...form.guide, howItWorksTitle })} />
+          <GuideSectionEditor items={form.guide.steps ?? []} limit={5} label="Step" onChange={(steps) => updateGuide({ ...form.guide, steps })} />
+        </Panel>
+        <Panel title="Business FAQs">
+          <TextInput label="FAQ heading (H2)" value={form.guide.faqTitle ?? ""} onChange={(faqTitle) => updateGuide({ ...form.guide, faqTitle })} />
+          {form.guide.faqs.map((faq, index) => <fieldset key={index} className="space-y-3 rounded-lg border border-line p-4"><legend className="px-2 font-semibold">FAQ {index + 1}</legend><TextInput label="Question" value={faq.question} onChange={(question) => updateGuide({ ...form.guide, faqs: form.guide.faqs.map((item, i) => i === index ? { ...item, question } : item) })} /><TextArea label="Answer" rows={3} value={faq.answer} onChange={(answer) => updateGuide({ ...form.guide, faqs: form.guide.faqs.map((item, i) => i === index ? { ...item, answer } : item) })} /><button type="button" className="text-sm text-red-700 underline" onClick={() => updateGuide({ ...form.guide, faqs: form.guide.faqs.filter((_, i) => i !== index) })}>Remove FAQ</button></fieldset>)}
+          <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={form.guide.faqs.length >= 8} onClick={() => updateGuide({ ...form.guide, faqs: [...form.guide.faqs, { question: "", answer: "" }] })}>Add FAQ</button>
+        </Panel>
+        <Panel title="Additional products">
+          <p className="text-sm text-muted">Shown after the featured recommendations, in the order below. Products also assigned from their product editor follow this list.</p>
           <ProductSelect products={availableProducts} onAdd={addProduct} />
           <div className="grid gap-2">
-            {form.productSlugs.map((slug) => {
+            {form.productSlugs.map((slug, index) => {
               const product = products.find((item) => item.slug === slug);
 
               return (
@@ -118,9 +162,9 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
                     <span className="font-bold text-ink">{product?.title ?? slug}</span>
                     <span className="ml-2 text-xs text-muted">{slug}</span>
                   </span>
-                  <button type="button" className="rounded-md border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-red-300 hover:text-red-700" onClick={() => removeProduct(slug)}>
+                  <div className="flex flex-wrap gap-2"><button type="button" aria-label={`Move ${product?.title ?? slug} up`} disabled={index === 0} className="text-xs underline disabled:opacity-40" onClick={() => moveProduct(index, -1)}>Up</button><button type="button" aria-label={`Move ${product?.title ?? slug} down`} disabled={index === form.productSlugs.length - 1} className="text-xs underline disabled:opacity-40" onClick={() => moveProduct(index, 1)}>Down</button><button type="button" className="rounded-md border border-line px-3 py-1.5 text-xs font-bold text-ink hover:border-red-300 hover:text-red-700" onClick={() => removeProduct(slug)}>
                     Remove
-                  </button>
+                  </button></div>
                 </div>
               );
             })}
@@ -157,6 +201,21 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
       </div>
     </div>
   );
+}
+
+function GuideSectionEditor({ items, limit, label, onChange }: {
+  items: Array<{ title: string; body: string }>; limit: number; label: string;
+  onChange: (items: Array<{ title: string; body: string }>) => void;
+}) {
+  return <div className="space-y-4">
+    {items.map((item, index) => <fieldset key={index} className="space-y-3 rounded-lg border border-line p-4">
+      <legend className="px-2 font-semibold">{label} {index + 1}</legend>
+      <TextInput label="Title (H3)" value={item.title} onChange={(title) => onChange(items.map((current, i) => i === index ? { ...current, title } : current))} />
+      <TextArea label="Description" rows={4} value={item.body} onChange={(body) => onChange(items.map((current, i) => i === index ? { ...current, body } : current))} />
+      <div className="flex gap-4"><button type="button" className="text-sm underline disabled:opacity-40" disabled={index === 0} onClick={() => { const next = [...items]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; onChange(next); }}>Move up</button><button type="button" className="text-sm text-red-700 underline" onClick={() => onChange(items.filter((_, i) => i !== index))}>Remove {label.toLowerCase()}</button></div>
+    </fieldset>)}
+    <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={items.length >= limit} onClick={() => onChange([...items, { title: "", body: "" }])}>Add {label.toLowerCase()}</button>
+  </div>;
 }
 
 function ProductSelect({ onAdd, products }: { products: MigratedProduct[]; onAdd: (slug: string) => void }) {

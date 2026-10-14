@@ -3,6 +3,8 @@ import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { lockedBusinessUses, type BusinessUse } from "@/lib/catalog-architecture";
 import { businessUseColumns } from "@/lib/catalog-architecture-repository";
 import type { BusinessUseContentInput } from "@/lib/validators";
+import type { BusinessUseGuide } from "@/lib/business-use-guide";
+import { getBusinessUseGuide } from "@/lib/business-use-guide-store";
 
 type AdminBusinessUseClient = {
   from: (table: string) => any;
@@ -10,6 +12,7 @@ type AdminBusinessUseClient = {
 
 export type AdminBusinessUse = BusinessUse & {
   productSlugs: string[];
+  guide?: BusinessUseGuide;
 };
 
 export function createBlankBusinessUse(): AdminBusinessUse {
@@ -39,7 +42,8 @@ export async function getAdminBusinessUses(): Promise<AdminBusinessUse[]> {
 
 export async function getAdminBusinessUseBySlug(slug: string): Promise<AdminBusinessUse | undefined> {
   const businessUses = await getAdminBusinessUses();
-  return businessUses.find((businessUse) => businessUse.slug === slug);
+  const businessUse = businessUses.find((businessUse) => businessUse.slug === slug);
+  return businessUse ? { ...businessUse, guide: await getBusinessUseGuide(slug) } : undefined;
 }
 
 export async function getAdminBusinessUsesFromClient(client: AdminBusinessUseClient): Promise<AdminBusinessUse[]> {
@@ -99,6 +103,13 @@ export async function saveBusinessUseContent(client: AdminBusinessUseClient, inp
   }
 
   await replaceBusinessUseProducts(client, input.slug, input.productSlugs);
+  if (input.guide) {
+    const { error: guideError } = await client.from("site_content").upsert({
+      key: `business-guide.${input.slug}`, type: "page", status: "published",
+      payload: input.guide, updated_at: new Date().toISOString()
+    }, { onConflict: "key" });
+    if (guideError) throw new Error(guideError.message);
+  }
 }
 
 async function replaceBusinessUseProducts(client: AdminBusinessUseClient, businessUseSlug: string, productSlugs: string[]) {

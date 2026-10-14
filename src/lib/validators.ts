@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { businessUseGuideSchema } from "@/lib/business-use-guide";
 import { isUsStateCode } from "@/lib/us-states";
 
 const productCustomizationOptions = ["standard_design", "add_logo", "custom_design"] as const;
@@ -329,7 +330,8 @@ export const businessUseContentSchema = z.object({
   bannerImageUrl: z.string().trim().max(2048).optional(),
   sortOrder: z.number().int().min(0).max(100000).default(0),
   isActive: z.boolean().default(false),
-  productSlugs: z.array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/)).max(200).default([])
+  productSlugs: z.array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/)).max(200).default([]),
+  guide: businessUseGuideSchema.optional()
 });
 
 export const standTypeContentSchema = z.object({

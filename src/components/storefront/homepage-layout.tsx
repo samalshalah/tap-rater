@@ -137,7 +137,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
 
     {content.featuredUses.enabled && showcase.scenes.length ? <section className={`${styles.section} ${styles.soft}`} aria-labelledby="home-business" data-home-section="business">
       <div className={styles.container}>
-        <Heading id="home-business" eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} href="/solutions" link="Explore business uses" />
+        <Heading id="home-business" eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} href="/solutions" link="Shop by business" />
         <div className={`${styles.cards} ${styles.businessCards} grid divide-y divide-line lg:grid-cols-2 lg:gap-5 lg:divide-y-0 xl:grid-cols-5`} data-home-business-cards>{showcase.scenes.map((scene) => {
           const product = products.find((item) => item.slug === scene.productSlug && item.isActive);
           const businessUse = businessUses.find((item) => item.slug === scene.slug && item.isActive);

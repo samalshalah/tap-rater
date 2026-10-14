@@ -35,7 +35,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
       order: 15,
       enabled: true,
     },
-    { label: "By Use", href: "/solutions", order: 20, enabled: true },
+    { label: "Shop by Business", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     {
       label: "Multi-Link",
@@ -77,7 +77,9 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
 
   return normalizedItems
     .map((item) =>
-      item.label.toLowerCase() === "shop by type"
+      item.href === "/solutions" && ["by use", "shop by use", "business uses"].includes(item.label.toLowerCase())
+        ? { ...item, label: "Shop by Business" }
+        : item.label.toLowerCase() === "shop by type"
         ? { ...item, href: "/shop#stand-types" }
         : (item.label.toLowerCase() === "multi-link stands" || item.label.toLowerCase() === "website links" || item.label.toLowerCase() === "website & link stands") && item.href === "/category/website-link-stands"
           ? { ...item, label: "Multi-Link Stand" }
