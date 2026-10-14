@@ -334,7 +334,7 @@ export function CartTable({
           ) : null}
           <div className="flex items-center justify-between gap-4">
             <span className="text-muted">Subtotal today</span>
-            <span className="font-medium text-ink">{formatPrice(dueToday)}</span>
+            <span className="font-medium text-ink">{formatPrice(standTotal + recurringTotal)}</span>
           </div>
           {usesManualCheckout ? (
             <div className="flex items-center justify-between gap-4">

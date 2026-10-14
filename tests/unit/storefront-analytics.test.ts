@@ -29,8 +29,12 @@ describe("analytics configuration and consent", () => {
   it.each(["/admin", "/admin/orders/abc", "/account", "/account/orders", "/p/secret", "/l/secret", "/r/secret", "/activate", "/api/orders", "/unknown-user", "/shop?email=private@example.com", "/product/private@example.com"])("excludes %s", (path) => {
     expect(analyticsPage(path)).toBeNull();
   });
-  it("groups category paths and admits public product pages", () => {
-    expect(analyticsPage("/category/reviews")?.path).toBe("/category");
+  it("preserves known category and business landing pages and admits public products", () => {
+    expect(analyticsPage("/category/reviews")?.path).toBe("/category/reviews");
+    expect(analyticsPage("/solutions/restaurant-food")?.path).toBe("/solutions/restaurant-food");
+    expect(analyticsPage("/solutions/healthcare-dental")?.path).toBe("/solutions/healthcare-dental");
+    expect(analyticsPage("/category")?.path).toBe("/category");
+    expect(analyticsPage("/solutions/private-client")?.path).toBe("/solutions");
     expect(analyticsPage("/product/google-review-stand")?.path).toBe("/product/google-review-stand");
   });
   it("preserves known search attribution without search queries or arbitrary private referring URLs", () => {

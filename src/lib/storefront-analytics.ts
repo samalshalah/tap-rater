@@ -1,5 +1,7 @@
 import type { CartItem } from "@/lib/cart";
-import { getProductBySlug } from "@/lib/products";
+import { getCatalogCategories, getProductBySlug } from "@/lib/products";
+import { lockedBusinessUses } from "@/lib/catalog-architecture";
+import { getCategoryHref } from "@/lib/category-routes";
 import { getPurchaseOption } from "@/lib/purchase-options";
 import { getConfiguredUnitPriceCents } from "@/lib/product-model";
 
@@ -94,6 +96,7 @@ export function analyticsReferrer(raw: string) {
 
 // Only public, known-shaped routes are measured. Queries, fragments and arbitrary slugs are never copied.
 const publicPages = new Set([
+  "/category", // Accept legacy grouped attribution from existing sessions.
   "/",
   "/shop",
   "/cart",
@@ -118,7 +121,14 @@ const publicPages = new Set([
   "/change-taprater-link",
 ]);
 
+const landingPages = new Map([
+  ...getCatalogCategories().map((category) => [getCategoryHref(category.slug), `Tap Rater | ${category.title}`] as const),
+  ...lockedBusinessUses.filter((business) => business.isActive).map((business) => [`/solutions/${business.slug}`, `Tap Rater | ${business.title}`] as const),
+]);
+
 export function analyticsPage(pathname: string) {
+  const landingTitle = landingPages.get(pathname);
+  if (landingTitle) return { path: pathname, title: landingTitle };
   if (publicPages.has(pathname))
     return {
       path: pathname,

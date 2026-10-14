@@ -115,7 +115,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
-        <ProductHero offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
+        <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
       <SectionShell tone="soft" spacing="compact">

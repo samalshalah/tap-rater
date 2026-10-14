@@ -11,6 +11,7 @@ import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase
 import { formatPrice } from "@/lib/products";
 import { getCategoryHref } from "@/lib/category-routes";
 import { getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
+import type { ShippingSettingsInput } from "@/lib/validators";
 
 type ProductHeroProps = {
   product: MigratedProduct;
@@ -20,9 +21,10 @@ type ProductHeroProps = {
   fromPrice: string;
   initialOptionId?: PurchaseOptionId;
   introduction?: string;
+  shipping?: ShippingSettingsInput;
 };
 
-export function ProductHero({ product, category, fromPrice, initialOptionId, offers, introduction }: ProductHeroProps) {
+export function ProductHero({ product, category, fromPrice, initialOptionId, offers, introduction, shipping }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
@@ -68,6 +70,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId, off
         </div>
 
         <ProductSetupChooser
+          shipping={shipping}
           offers={offers}
           product={product}
           selectedOptionId={effectiveSelectedOptionId}

@@ -2,6 +2,8 @@
 
 import { quoteOffers, singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Image from "next/image";
+import Link from "next/link";
+import type { ShippingSettingsInput } from "@/lib/validators";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, ImageUp, Minus, Plus, RotateCcw, Search, Trash2, UploadCloud, X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -55,6 +57,7 @@ type ProductSetupChooserProps = {
   onAdded?: (item: CartItem) => void;
   product: ProductSetupChooserProduct;
   offers?: OffersSettings | null;
+  shipping?: ShippingSettingsInput;
   selectedOptionId?: PurchaseOptionId;
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
@@ -75,7 +78,7 @@ type UploadedLogo = {
 type LogoBackgroundMode = "auto_crop" | "original";
 type LogoFitMode = "contain" | "fill";
 
-export function ProductSetupChooser({ product, offers, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
+export function ProductSetupChooser({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
@@ -780,6 +783,11 @@ export function ProductSetupChooser({ product, offers, initialQuantity = 1, fixe
           </div>
         </div>
 
+        {shipping ? <p className="text-sm leading-6 text-muted">
+          {shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
+          {shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}{" "}
+          <Link href="/shipping" className="font-semibold text-brand underline">Delivery estimates</Link>
+        </p> : null}
         <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
         <button
           type="button"

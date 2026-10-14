@@ -5,6 +5,7 @@ vi.mock("@/lib/admin-auth", () => ({
   isValidAdminSession: (value: string) => value === "valid-admin",
 }));
 import { captureAttribution, campaignLabel } from "@/lib/analytics-attribution";
+import { analyticsPage } from "@/lib/storefront-analytics";
 import {
   analyticsEventSchema,
   requestIsInternal,
@@ -48,6 +49,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("attribution and exclusions", () => {
+  it.each(["/category/reviews", "/category/website-link-stands", "/solutions/restaurant-food", "/solutions/healthcare-dental", "/category/new-category"])("accepts browser-generated landing attribution for %s", (url) => {
+    const page = analyticsPage(url)!;
+    expect(analyticsEventSchema.safeParse({
+      id: "4cca14ff-8016-49c8-8c3b-b61a88b3a8e0",
+      sessionId: "4cca14ff-8016-49c8-8c3b-b61a88b3a8e1",
+      name: "page_view", page: page.path, landing: page.path,
+      source: "direct", medium: "none", device: "mobile",
+    }).success).toBe(true);
+  });
   it("retains campaign labels without leaking arbitrary parameters", () => {
     expect(
       captureAttribution(
