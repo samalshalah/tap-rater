@@ -18,9 +18,15 @@ square variants named `<master>-w160.webp`, `-w320`, `-w480`, `-w640`, and `-w12
 The responsive helper expects all five variants. Preserve the original master
 for the full-size image link. Do not replace production templates or proof assets.
 
-Without a configured gallery, custom uses only that product's custom angled
-asset; standard excludes known custom and production-template assets. Products
-without custom artwork show an explicit missing-preview message.
+Without a configured gallery, custom uses that product's own angled image and
+front artwork with five HTML information panels: personalization steps, tap/scan,
+placement, details, and personalization explanation. This produces seven views
+when both source assets exist. The front image is explicitly labeled as flat
+artwork, not a new product photo. Panels preserve the source pixels, derive copy
+from the product's title and use case, and never reuse Google's artwork.
+Standard excludes known custom and production-template assets. Products without
+custom artwork show an explicit missing-preview message. Multi-Link remains
+separate. Slides have unique IDs because multiple panels use the same source.
 
 Verify both design selections, thumbnail selection, mobile overflow, image files,
 and the full-size link before release. The Google set originated from the approved
