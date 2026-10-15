@@ -6,7 +6,8 @@ import type { ProofApprovalSnapshot } from "@/lib/direct-production";
 
 export type ReadyBrandedProof = { proofReceiptId: string; snapshot: ProofApprovalSnapshot; draftKey: string };
 
-export function BrandedProofPreview({ productSlug, setup, onReady }: {
+export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/api/setup/proof" }: {
+  endpoint?: string;
   productSlug: string;
   setup: NonNullable<CartItem["setup"]>;
   onReady: (proof: ReadyBrandedProof | null) => void;
@@ -24,7 +25,7 @@ export function BrandedProofPreview({ productSlug, setup, onReady }: {
     onReady(null);
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch("/api/setup/proof", {
+        const response = await fetch(endpoint, {
           method: "POST", signal: controller.signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ item: { productId: productSlug, optionId: "branded_qr_direct", quantity: 1, setup: JSON.parse(draftKey) } })
@@ -44,7 +45,7 @@ export function BrandedProofPreview({ productSlug, setup, onReady }: {
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [draftKey, productSlug, onReady, retry]);
+  }, [draftKey, productSlug, onReady, retry, endpoint]);
 
   return <div className="grid min-w-0 content-start gap-3">
     <div className="mx-auto grid w-full max-w-[340px] place-items-center border border-line bg-white" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!image && !error}>

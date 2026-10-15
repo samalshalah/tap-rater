@@ -46,12 +46,13 @@ describe("complimentary orders", () => {
   it("requires shipping address and a stored logo for branded orders", async () => {
     expect((await POST(request({ ...input, delivery: "free_shipping" }))).status).toBe(400);
     expect((await POST(request({ ...input, quantity: 0 }))).status).toBe(400);
+    expect((await POST(request({ ...input, design: { logoSizePercent: 999 } }))).status).toBe(400);
     expect((await POST(request({ ...input, optionId: "branded_qr_direct" }))).status).toBe(400);
     mocks.media.mockResolvedValue(null);
     expect((await POST(request({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png" }))).status).toBe(400);
   });
   it("generates production artwork only after an explicit admin approval", async () => {
-    const order = buildComplimentaryOrder(complimentaryOrderSchema.parse({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png" }), migratedProducts);
+    const order = buildComplimentaryOrder(complimentaryOrderSchema.parse({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png", design: { logoSizePercent: 130, fontSizePercent: 90, logoOffsetXPercent: 10, logoOffsetYPercent: -5, logoFitMode: "contain", showBusinessNameOnProof: false } }), migratedProducts);
     order.id = "test-order";
     db.table("orders").push(order);
     expect(getOrderProductionBlockers(order).length).toBeGreaterThan(0);
@@ -62,9 +63,10 @@ describe("complimentary orders", () => {
     });
     expect(result).toMatchObject({ ok: true, order: { payment_status: "complimentary", production_status: "ready_for_production" } });
     expect(put).toHaveBeenCalledOnce();
+    expect(db.table("orders")[0].line_items_json[0].setup).toMatchObject({ logoSizePercent: 130, fontSizePercent: 90, logoOffsetXPercent: 10, logoOffsetYPercent: -5, showBusinessNameOnProof: false });
   });
   it("keeps branded proof unapproved and separate from paid sales while allowing production", () => {
-    const order = buildComplimentaryOrder(complimentaryOrderSchema.parse({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png" }), migratedProducts);
+    const order = buildComplimentaryOrder(complimentaryOrderSchema.parse({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png", design: { logoSizePercent: 130, fontSizePercent: 90, logoOffsetXPercent: 10, logoOffsetYPercent: -5, logoFitMode: "contain", showBusinessNameOnProof: false } }), migratedProducts);
     expect(order.line_items_json[0]).toMatchObject({ proofRequired: true, proofApproved: false, setup: { logoMediaUrl: "/api/media/product/products/test/logo.png", qrTargetUrl: input.destinationUrl } });
     expect(canAdvanceOrderFulfillment(order)).toBe(true);
     expect(isOrderPaymentConfirmed(order.status, order.payment_status)).toBe(false);

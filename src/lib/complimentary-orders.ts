@@ -5,6 +5,15 @@ import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { generateProductVariantSku, getProductBaseSku } from "@/lib/product-model";
 import { checkoutCustomerSchema, checkoutShippingAddressSchema } from "@/lib/validators";
 
+export const complimentaryDesignSchema = z.object({
+  fontSizePercent: z.number().int().min(75).max(160).default(100),
+  logoSizePercent: z.number().int().min(75).max(160).default(100),
+  logoOffsetXPercent: z.number().int().min(-20).max(20).default(0),
+  logoOffsetYPercent: z.number().int().min(-20).max(20).default(0),
+  logoFitMode: z.enum(["contain", "fill"]).default("contain"),
+  showBusinessNameOnProof: z.boolean().default(true)
+});
+
 export const complimentaryOrderSchema = z.object({
   requestId: z.string().uuid(),
   customer: checkoutCustomerSchema,
@@ -14,6 +23,7 @@ export const complimentaryOrderSchema = z.object({
   businessName: z.string().trim().min(1).max(120),
   destinationUrl: z.string().trim().url().max(2048).refine(v => /^https?:\/\//i.test(v), "Use an http or https link."),
   logoStorageKey: z.string().max(500).optional(),
+  design: complimentaryDesignSchema.optional(),
   reason: z.string().trim().min(3).max(1000),
   delivery: z.enum(["free_shipping", "pickup"]),
   shippingAddress: checkoutShippingAddressSchema.optional()
@@ -56,7 +66,7 @@ export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrder
       proofRequired: branded, proofApproved: false, manualProductionRequired: branded,
       productionStatus: branded ? "pending_branded_proof_review" : "ready_for_direct_fulfillment",
       productionWarningCodes: branded ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [],
-      setup: { productSlug: p.slug, optionCode: option.id, businessName: input.businessName, destinationUrl: input.destinationUrl,
+      setup: { ...input.design, productSlug: p.slug, optionCode: option.id, businessName: input.businessName, destinationUrl: input.destinationUrl,
         nfcTargetUrl: input.destinationUrl, qrTargetUrl: branded ? input.destinationUrl : undefined,
         generatedQrValue: branded ? input.destinationUrl : undefined, hasQr: branded, nfcOnly: !branded,
         logoStorageKey: branded ? input.logoStorageKey : undefined,
