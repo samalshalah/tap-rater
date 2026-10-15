@@ -4,14 +4,13 @@ import { AdminAlert, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 import { getAdminProducts } from "@/lib/admin-products";
-import { canRunOrderProductionActions, isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
+import { canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
 import { getAdminOrders, getOrderLineItemProductionSummary } from "@/lib/orders";
 
 export default async function AdminPage() {
   await requireAdmin();
   const [{ configured, orders }, products] = await Promise.all([getAdminOrders(), getAdminProducts()]);
-  const paidOrders = orders.filter((order) => isOrderPaymentConfirmed(order.status, order.payment_status));
-  const productionEligible = paidOrders.filter(canRunOrderProductionActions);
+  const productionEligible = orders.filter(canRunOrderProductionActions);
   const productionOrders = productionEligible.filter(orderNeedsProductionAttention);
   const artworkFailures = productionEligible.filter((order) =>
     order.line_items_json.some((item) => getOrderLineItemProductionSummary(item).productionArtwork?.status === "generation_failed")

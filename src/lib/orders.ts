@@ -975,7 +975,7 @@ export async function ensurePaidOrderProductionArtworkWithClient(
     let order = normalizeOrderRecord(lookup.data);
     const waitingForArtwork = order.line_items_json.some((item) => item.optionId === "branded_qr_direct" && readProductionArtworkReference(item)?.status !== "generated");
     if (order.stripe_refund_id || order.refund_status || order.payment_status?.includes("refund")) return { ok: true, order, paymentReversed: true };
-    if (order.status !== "paid" || order.payment_status !== "paid") return { ok: false, error: "Artwork requires confirmed payment." };
+    if (order.status !== "paid" || !["paid", "complimentary"].includes(order.payment_status ?? "")) return { ok: false, error: "Artwork requires confirmed payment or a complimentary order." };
     if (!canRunOrderProductionActions(order)) return { ok: true, order };
     for (let index = 0; index < order.line_items_json.length; index++) {
       const item = order.line_items_json[index];
@@ -1255,7 +1255,7 @@ export async function applyAdminOrderProductionActionWithClient(
   if (!existingOrder) {
     return { ok: false, error: "Order was not found.", status: 404 };
   }
-  if (existingOrder.status !== "paid" || existingOrder.payment_status !== "paid" || existingOrder.stripe_refund_id || existingOrder.refund_status) {
+  if (existingOrder.status !== "paid" || !["paid", "complimentary"].includes(existingOrder.payment_status ?? "") || existingOrder.stripe_refund_id || existingOrder.refund_status) {
     return {
       ok: false,
       error: "Production actions are unavailable until payment is confirmed.",

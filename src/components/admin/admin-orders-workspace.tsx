@@ -47,6 +47,7 @@ type AdminOrdersWorkspaceProps = {
 const filterOptions = [
   ["all", "All"],
   ["paid", "Paid"],
+  ["complimentary", "Complimentary"],
   ["pending", "Pending"],
   ["production", "Needs production"],
   ["artwork_failures", "Artwork failures"],
@@ -102,7 +103,8 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
       ].some((value) => value.toLowerCase().includes(search));
 
       if (!matchesSearch) return false;
-      if (filter === "paid") return order.status === "paid";
+      if (filter === "paid") return order.status === "paid" && order.paymentStatus !== "complimentary";
+      if (filter === "complimentary") return order.paymentStatus === "complimentary";
       if (filter === "pending") return order.status === "pending_payment";
       const productionEligible = canOperateOrder(order) && !order.shippedAt && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
       if (filter === "production") return productionEligible && (order.productionStatus !== "completed" || order.hasProductionWarnings || order.hasArtworkFailure);
@@ -420,7 +422,7 @@ function OrderRow({
         <td className="px-4 py-4 align-top font-semibold text-ink">
           {order.total}
           <div className="mt-2">
-            <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{formatStatus(order.status)}</StatusPill>
+            <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill>
           </div>
         </td>
         <td className="px-4 py-4 align-top text-muted">{order.createdAt}</td>
@@ -629,7 +631,7 @@ function OrderMobileCard({
         <p className="shrink-0 font-semibold text-ink">{order.total}</p>
       </div>
       <div className="mt-4 grid gap-2 text-sm">
-        <OrderMobileField label="Payment"><StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{formatStatus(order.status)}</StatusPill></OrderMobileField>
+        <OrderMobileField label="Payment"><StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Production"><StatusPill tone={order.productionStatus === "completed" ? "ready" : order.productionStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.productionStatus)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Fulfillment"><StatusPill tone={order.shippingStatus === "shipped" || order.shippingStatus === "delivered" ? "ready" : order.shippingStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.shippingStatus)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Date">{order.createdAt}</OrderMobileField>

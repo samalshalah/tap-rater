@@ -87,7 +87,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               <Field label="Tracking" value={order.tracking_number} />
               <Field label="Tracking URL" value={order.tracking_url} link />
             </InfoCard>
-            {order.id && (order.status === "paid" || order.payment_status === "paid" || order.payment_status === "refunded") ? (
+            {order.id && order.payment_status !== "complimentary" && (order.status === "paid" || order.payment_status === "paid" || order.payment_status === "refunded") ? (
               <OrderRefundForm
                 orderId={order.id}
                 alreadyRefunded={order.payment_status === "refunded"}
@@ -311,6 +311,7 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
 }
 
 function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
+  if (order.payment_status === "complimentary") return "Complimentary — no payment due";
   if (order.payment_status === "refunded") return "Refunded";
   if (order.payment_status === "refund_pending") return "Refund pending";
   if (order.payment_status === "refund_failed") return "Refund needs review";

@@ -23,7 +23,7 @@ export async function GET(request: Request, context: RouteContext) {
     const { configured, order } = await getAdminOrderById(id);
     if (!configured) return NextResponse.json({ error: "Order storage is unavailable." }, { status: 503, headers });
     if (!order) return NextResponse.json({ error: "Order was not found." }, { status: 404, headers });
-    if (order.status !== "paid" || order.payment_status !== "paid" || order.stripe_refund_id || order.refund_status) {
+    if (order.status !== "paid" || !["paid", "complimentary"].includes(order.payment_status ?? "") || order.stripe_refund_id || order.refund_status) {
       return NextResponse.json({ error: "Artwork requires confirmed, unreversed payment." }, { status: 409, headers });
     }
     const item = order.line_items_json[index];

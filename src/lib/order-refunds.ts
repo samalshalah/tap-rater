@@ -130,7 +130,7 @@ export async function refundAdminOrder(orderId: string, dependencies = defaultDe
     try {
       const { order } = await dependencies.getOrder(orderId);
       if (!order || order.stripe_payment_intent_id !== paymentIntentId) return { ok: false, status: 409, error: "Order payment reference changed." };
-      if (order.status !== "paid" && order.payment_status !== "paid" && !order.payment_status?.includes("refund")) {
+      if (order.payment_status === "complimentary" || (order.status !== "paid" && order.payment_status !== "paid" && !order.payment_status?.includes("refund"))) {
         return { ok: false, status: 409, error: "Only paid orders can be refunded." };
       }
       // Check Stripe before creating anything, including retries beyond Stripe's

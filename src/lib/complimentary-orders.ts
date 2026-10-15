@@ -1,0 +1,68 @@
+import { z } from "zod";
+import type { MigratedProduct } from "@/data/migrated-products";
+import type { OrderRecord } from "@/lib/orders";
+import { getProductPurchaseOptions } from "@/lib/purchase-options";
+import { generateProductVariantSku, getProductBaseSku } from "@/lib/product-model";
+import { checkoutCustomerSchema, checkoutShippingAddressSchema } from "@/lib/validators";
+
+export const complimentaryOrderSchema = z.object({
+  requestId: z.string().uuid(),
+  customer: checkoutCustomerSchema,
+  productId: z.string().min(1),
+  optionId: z.enum(["standard_direct", "branded_qr_direct"]),
+  quantity: z.number().int().min(1).max(100),
+  businessName: z.string().trim().min(1).max(120),
+  destinationUrl: z.string().trim().url().max(2048).refine(v => /^https?:\/\//i.test(v), "Use an http or https link."),
+  logoStorageKey: z.string().max(500).optional(),
+  reason: z.string().trim().min(3).max(1000),
+  delivery: z.enum(["free_shipping", "pickup"]),
+  shippingAddress: checkoutShippingAddressSchema.optional()
+}).superRefine((v, ctx) => {
+  if (v.delivery === "free_shipping" && !v.shippingAddress) ctx.addIssue({ code: "custom", path: ["shippingAddress"], message: "Enter a shipping address." });
+  if (v.optionId === "branded_qr_direct" && !v.logoStorageKey) ctx.addIssue({ code: "custom", path: ["logoStorageKey"], message: "Upload a logo for a branded stand." });
+});
+
+export function complimentaryCatalog(products: MigratedProduct[]) {
+  return products.filter(p => p.format === "stand" && p.isActive && p.status !== "draft" && p.status !== "archived" && p.stockStatus === "instock" && p.checkoutMode === "buy_now")
+    .map(p => ({ product: p, options: getProductPurchaseOptions(p).filter(o => !o.requiresSubscription && (o.id === "standard_direct" || (o.id === "branded_qr_direct" && Boolean(p.assetSet?.brandedFrontTemplateUrl)))) }))
+    .filter(p => p.options.length > 0);
+}
+
+export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrderSchema>, products: MigratedProduct[]): OrderRecord {
+  const entry = complimentaryCatalog(products).find(p => p.product.slug === input.productId);
+  const option = entry?.options.find(o => o.id === input.optionId);
+  if (!entry || !option) throw new Error("Choose an available stand and option from the existing catalog.");
+  const p = entry.product;
+  const branded = input.optionId === "branded_qr_direct";
+  const address = input.shippingAddress;
+  return {
+    stripe_checkout_session_id: `comp_${input.requestId}`,
+    // Existing schema uses paid for settled orders; payment_status distinguishes gifts from paid sales.
+    status: "paid", payment_status: "complimentary",
+    email: input.customer.email, customer_name: input.customer.name,
+    subtotal_cents: 0, total_cents: 0, shipping_amount_cents: 0, currency: "usd",
+    shipping_mode: "free", shipping_method: input.delivery === "pickup" ? "Pickup" : "Complimentary shipping",
+    customer_details_json: { name: input.customer.name, email: input.customer.email, phone: input.customer.phone, source: "admin_complimentary", complimentary_reason: input.reason, delivery: input.delivery },
+    shipping_address_json: address && input.delivery === "free_shipping" ? { name: address.name, phone: address.phone, address: { line1: address.line1, line2: address.line2, city: address.city, state: address.state, postal_code: address.postalCode, country: address.country } } : null,
+    production_status: branded ? "not_started" : "ready_for_production", shipping_status: "not_shipped",
+    internal_notes: `Complimentary order — ${input.reason}`, admin_fulfillment_notes: "",
+    updated_at: new Date().toISOString(),
+    line_items_json: [{
+      productId: p.slug, title: p.title, optionId: option.id, optionLabel: option.label,
+      baseSku: getProductBaseSku(p), sku: generateProductVariantSku(p, { purchaseOptionId: option.id }),
+      quantity: input.quantity, unitAmountCents: 0, lineSubtotalCents: 0,
+      destinationMode: "DIRECT", customizationLevel: branded ? "BRANDED" : "STANDARD",
+      logoRequired: branded, logoStatus: branded ? "uploaded" : "not_required", logoReference: branded ? input.logoStorageKey : null,
+      proofRequired: branded, proofApproved: false, manualProductionRequired: branded,
+      productionStatus: branded ? "pending_branded_proof_review" : "ready_for_direct_fulfillment",
+      productionWarningCodes: branded ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [],
+      setup: { productSlug: p.slug, optionCode: option.id, businessName: input.businessName, destinationUrl: input.destinationUrl,
+        nfcTargetUrl: input.destinationUrl, qrTargetUrl: branded ? input.destinationUrl : undefined,
+        generatedQrValue: branded ? input.destinationUrl : undefined, hasQr: branded, nfcOnly: !branded,
+        logoStorageKey: branded ? input.logoStorageKey : undefined,
+        logoMediaUrl: branded ? `/api/media/product/${input.logoStorageKey}` : undefined,
+        frontTemplateUrl: branded ? p.assetSet?.brandedFrontTemplateUrl : p.assetSet?.standardFrontTemplateUrl,
+        source: "admin_complimentary", catalogUnitAmountCents: option.priceCents }
+    }]
+  };
+}

@@ -6,7 +6,7 @@ export type OrderFulfillmentValidation =
   | { ok: false; error: string; status: 409 };
 
 export function canAdvanceOrderFulfillment(order: Pick<OrderRecord, "status" | "payment_status">) {
-  return isOrderPaymentConfirmed(order.status, order.payment_status);
+  return (order.status === "paid" && order.payment_status === "complimentary") || isOrderPaymentConfirmed(order.status, order.payment_status);
 }
 
 export function canRunOrderProductionActions(
@@ -21,6 +21,7 @@ export function canRunOrderProductionActions(
 }
 
 export function isOrderPaymentConfirmed(status: OrderRecord["status"], paymentStatus?: string | null) {
+  if (paymentStatus === "complimentary") return false;
   if (status === "canceled" || status === "failed" || paymentStatus?.includes("refund")) {
     return false;
   }

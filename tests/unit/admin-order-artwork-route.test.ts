@@ -46,6 +46,11 @@ describe("authenticated order artwork", () => {
     expect(mocks.object).not.toHaveBeenCalled();
   });
 
+  it("allows approved complimentary artwork downloads", async () => {
+    mocks.order.mockResolvedValue({ configured: true, order: { ...order(), payment_status: "complimentary" } });
+    expect((await request()).status).toBe(200);
+  });
+
   it("downloads only the stored order-line key with private headers", async () => {
     const response = await request();
     expect(response.status).toBe(200);

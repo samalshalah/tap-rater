@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOrdersWorkspace, type AdminOrdersWorkspaceOrder } from "@/components/admin/admin-orders-workspace";
 import { AdminBadge } from "@/components/admin/admin-ui";
@@ -27,7 +28,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           <div>
             <h1 className="tr-admin-title">Orders</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-              Manage paid orders from checkout through production, tracking, shipment, delivery, and fulfillment notes.
+              Manage paid and complimentary orders from creation through production, tracking, shipment, delivery, and fulfillment notes.
             </p>
           </div>
           <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">
@@ -36,6 +37,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           </div>
         </div>
 
+        <Link href="/admin/orders/new" className="tr-btn-primary my-4 inline-flex">Create complimentary order</Link>
         <AdminOrdersWorkspace configured={configured} orders={workspaceOrders} initialFilter={params?.filter} />
       </section>
     </AdminShell>
@@ -92,6 +94,7 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
 }
 
 function formatPaymentBadge(order: OrderRecord) {
+  if (order.payment_status === "complimentary") return "Complimentary — no payment due";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
   return "Unfinished checkout";
