@@ -15,6 +15,7 @@ export type AnalyticsConfig = {
 };
 export type AnalyticsItem = {
   item_id: string;
+  item_name?: string;
   item_variant: string;
   price: number;
   quantity: number;
@@ -151,6 +152,12 @@ export function analyticsPage(pathname: string) {
   return null;
 }
 
+// Resolve names from our public catalog, never customer customization or snapshot text.
+export function analyticsItemName(itemId: string): string {
+  if (itemId === "multi-link-monthly") return "Multi-Link Monthly Service";
+  return getProductBySlug(itemId)?.title ?? itemId;
+}
+
 export function ecommerceData(items: AnalyticsItem[]): EcommerceData {
   return {
     currency: "USD",
@@ -158,7 +165,7 @@ export function ecommerceData(items: AnalyticsItem[]): EcommerceData {
       Math.round(
         items.reduce((sum, item) => sum + item.price * 100 * item.quantity, 0),
       ) / 100,
-    items,
+    items: items.map((item) => ({ ...item, item_name: analyticsItemName(item.item_id) })),
   };
 }
 
@@ -182,6 +189,7 @@ export function cartAnalyticsItems(cart: CartItem[]): AnalyticsItem[] {
     const result: AnalyticsItem[] = [
       {
         item_id: product.slug,
+        item_name: product.title,
         item_variant: option.id,
         price: price / 100,
         quantity: item.quantity,
@@ -194,6 +202,7 @@ export function cartAnalyticsItems(cart: CartItem[]): AnalyticsItem[] {
     ) {
       result.push({
         item_id: "multi-link-monthly",
+        item_name: analyticsItemName("multi-link-monthly"),
         item_variant: "subscription",
         price: item.setup.monthlyPriceCents! / 100,
         quantity: item.quantity,

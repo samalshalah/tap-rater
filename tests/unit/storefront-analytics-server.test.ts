@@ -118,6 +118,12 @@ describe("attribution and exclusions", () => {
       }).success,
     ).toBe(false);
   });
+  it("links a consented checkout to the Google client and session", async () => {
+    const sessionId = crypto.randomUUID();
+    query.mockResolvedValueOnce([]).mockResolvedValueOnce([{id:sessionId}]).mockResolvedValueOnce([]);
+    await linkAnalyticsCheckout(new Request("https://taprater.com", {headers:{cookie:"taprater_analytics_consent=granted", "x-taprater-analytics":JSON.stringify({sessionId,clientId:"123.456",gaSessionId:"1791576000",entry:{source:"google",medium:"organic",landing:"/shop",device:"mobile"}})}}),"cs_live_example");
+    expect(query.mock.calls[2][1]).toEqual(["cs_live_example",sessionId,false,"123.456","1791576000",true]);
+  });
   it("binds internal checkouts as excluded without forwarding GA identifiers", async () => {
     query.mockResolvedValue([]);
     await linkAnalyticsCheckout(
@@ -160,6 +166,7 @@ describe("server purchases", () => {
     expect(await flushAnalyticsPurchases(env)).toEqual({ sent: 1 });
     const body = JSON.parse(send.mock.calls[0][1].body);
     expect(body.events[0].params.value).toBe(39);
+    expect(body.events[0].params.items[0].item_name).toBeTruthy();
     expect(body.events[0].params.transaction_id).toBe(order.id);
     expect(JSON.stringify(body)).not.toMatch(/private|cs_live/);
     expect(query.mock.calls[2][0]).toContain("sent_at=now()");

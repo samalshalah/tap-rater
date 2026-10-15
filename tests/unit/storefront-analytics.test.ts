@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { analyticsPage, analyticsReferrer, cartAnalyticsItems, consentMaxAge, consentStorageKey, ecommerceData, getAnalyticsConfig, readConsent } from "@/lib/storefront-analytics";
+import { analyticsPage, analyticsReferrer, cartAnalyticsItems, consentMaxAge, consentStorageKey, ecommerceData, getAnalyticsConfig, readConsent, analyticsItemName } from "@/lib/storefront-analytics";
 import { verifiedPurchase } from "@/lib/analytics-purchase";
 
 const order = () => ({
@@ -45,7 +45,7 @@ describe("analytics configuration and consent", () => {
   it("never copies customization, URLs or arbitrary snapshot text into ecommerce events", () => {
     const items = cartAnalyticsItems([{ productId: "google-review-stand", optionId: "standard_direct", quantity: 2,
       setup: { businessName: "Private Business", destinationUrl: "https://private.example.com", priceCents: 1, logoStorageKey: "private/logo" } }]);
-    expect(items).toEqual([{ item_id: "google-review-stand", item_variant: "standard_direct", price: 39, quantity: 2 }]);
+    expect(items).toEqual([{ item_id: "google-review-stand", item_name: analyticsItemName("google-review-stand"), item_variant: "standard_direct", price: 39, quantity: 2 }]);
     expect(ecommerceData(items).value).toBe(78);
   });
 });
@@ -54,7 +54,7 @@ describe("verified purchase payload", () => {
   it("uses persisted amounts, excludes tax/shipping from value and excludes customer details", () => {
     const result = verifiedPurchase(order());
     expect(result).toEqual({ transaction_id: order().id, currency: "USD", value: 39, tax: 2.34, shipping: 12,
-      items: [{ item_id: "google-review-stand", item_variant: "standard_direct", price: 39, quantity: 1 }] });
+      items: [{ item_id: "google-review-stand", item_name: analyticsItemName("google-review-stand"), item_variant: "standard_direct", price: 39, quantity: 1 }] });
     expect(JSON.stringify(result)).not.toMatch(/private|cs_live|logo|businessName/i);
   });
   it.each([
@@ -72,7 +72,7 @@ describe("verified purchase payload", () => {
     Object.assign(source.line_items_json[0].setup, { serviceMode: "HOSTED", monthlyPriceCents: 999 });
     const result = verifiedPurchase(source);
     expect(result?.value).toBe(48.99);
-    expect(result?.items[1]).toEqual({ item_id: "multi-link-monthly", item_variant: "subscription", price: 9.99, quantity: 1 });
+    expect(result?.items[1]).toEqual({ item_id: "multi-link-monthly", item_name: "Multi-Link Monthly Service", item_variant: "subscription", price: 9.99, quantity: 1 });
   });
   it("rejects malformed line quantities and line totals", () => {
     for (const change of [{ quantity: -1 }, { quantity: 1.5 }, { unitAmountCents: -5 }, { lineSubtotalCents: 12 }]) {
@@ -125,6 +125,25 @@ describe("browser analytics consent and dispatch", () => {
     expect(JSON.stringify(commands())).not.toMatch(/private@|#secret/);
     expect(commands().find((args) => args[0] === "config")?.[2]).toMatchObject({ send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false });
     for (const args of commands().filter((args) => args[0] === "consent")) expect(args[2]).toMatchObject({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
+  });
+  it("lets GA classify direct visits without a synthetic campaign", () => {
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null)));
+    grant();
+    client.trackPageView();
+    expect(events()[0][2]).not.toHaveProperty("campaign_source");
+    expect(events()[0][2]).not.toHaveProperty("campaign_medium");
+  });
+  it("keeps sanitized campaign attribution and catalog product names", () => {
+    Object.assign(target.location, { search: "?utm_source=etsy&utm_medium=referral&utm_campaign=shop&email=private@example.com" });
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null)));
+    grant();
+    client.trackEcommerce("view_item", {currency:"USD",value:39,items:[{item_id:"google-review-stand",item_name:"private@example.com",item_variant:"standard_direct",price:39,quantity:1}]});
+    expect(events()[0][2]).toMatchObject({campaign_source:"etsy",campaign_medium:"referral",campaign_name:"shop",items:[{item_name:analyticsItemName("google-review-stand")}]});
+    expect(JSON.stringify(commands())).not.toContain("private@example.com");
   });
   it("blocks private pages even before a navigation effect has run", () => {
     grant();

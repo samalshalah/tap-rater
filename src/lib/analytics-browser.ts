@@ -7,6 +7,7 @@ import {
 } from "@/lib/analytics-attribution";
 import {
   analyticsPage,
+  analyticsItemName,
   analyticsReferrer,
   consentStorageKey,
   readConsent,
@@ -226,7 +227,7 @@ function context() {
   if (!page) return null;
   const attribution = visit()?.attribution;
   return {
-    ...(attribution
+    ...(attribution && !(attribution.source === "direct" && attribution.medium === "none")
       ? {
           campaign_source: attribution.source,
           campaign_medium: attribution.medium,
@@ -359,6 +360,7 @@ export function trackEcommerce(name: EcommerceEvent, data: EcommerceData) {
     value: data.value,
     items: data.items.map(({ item_id, item_variant, price, quantity }) => ({
       item_id,
+      item_name: analyticsItemName(item_id),
       item_variant,
       price,
       quantity,
@@ -390,6 +392,7 @@ export async function trackPurchase(data: PurchaseData) {
       shipping: data.shipping,
       items: data.items.map(({ item_id, item_variant, price, quantity }) => ({
         item_id,
+        item_name: analyticsItemName(item_id),
         item_variant,
         price,
         quantity,
