@@ -7,3 +7,6 @@ Creation sends no email, creates no Stripe session, and does not provision a sub
 The Orders screen has a Complimentary filter. Complimentary orders cannot be refunded and are excluded from the Paid filter and paid-sales analytics. To remain compatible with the existing database status constraint, their operational status is `paid` (settled) with `payment_status=complimentary`, a `comp_` reference, and zero totals. Revenue code must require an actual paid payment status; do not infer payment from operational status alone.
 
 The admin-only creation endpoint checks the request origin, validates the current catalog, verifies the uploaded logo exists, and uses a unique request ID to prevent duplicate orders on retries. No database migration is required.
+
+## Change an existing stand
+Open a complimentary order and select **Change stand / design** under Line items. The editor loads the current setup and supports catalog stands, Google business search, logo replacement and design adjustments. Quantity, client, delivery and zero-charge payment remain unchanged. Saving discards previous proof approval and artwork; branded stands require new approval. Changes are unavailable once production starts, shipping is prepared or tracking is assigned. Stale or concurrent changes are rejected.

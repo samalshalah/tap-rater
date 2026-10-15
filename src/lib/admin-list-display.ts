@@ -54,6 +54,7 @@ type PrimaryOrderAction =
   | { kind: "status"; label: string; tone: "ready" | "warning" };
 
 export function getPrimaryOrderAction(state: OrderWorkflowState): PrimaryOrderAction {
+  if (state.status === "paid" && state.paymentStatus === "complimentary") return { kind: "status", label: "Complimentary", tone: "ready" };
   if (!isOrderPaymentConfirmed(state.status, state.paymentStatus)) {
     return {
       kind: "status" as const,

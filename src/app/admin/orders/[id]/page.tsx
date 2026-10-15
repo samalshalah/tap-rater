@@ -1,3 +1,4 @@
+import { canChangeComplimentaryStand } from "@/lib/complimentary-orders";
 import { OrderCustomerEmail } from "@/components/admin/order-customer-email";
 import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { AdminShell } from "@/components/admin/admin-shell";
@@ -67,6 +68,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             </InfoCard>
 
             <InfoCard title="Line items">
+              {canChangeComplimentaryStand(order) && <AdminLinkButton href={`/admin/orders/${id}/edit`} variant="primary" className="mb-4 min-h-11">Change stand / design</AdminLinkButton>}
               <div className="space-y-4">
                 {order.line_items_json.map((item, index) => (
                   <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />

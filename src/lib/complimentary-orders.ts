@@ -76,3 +76,37 @@ export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrder
     }]
   };
 }
+
+export const changeComplimentaryStandSchema = z.object({
+  expectedUpdatedAt: z.string().min(1),
+  productId: complimentaryOrderSchema.innerType().shape.productId,
+  optionId: complimentaryOrderSchema.innerType().shape.optionId,
+  businessName: complimentaryOrderSchema.innerType().shape.businessName,
+  destinationUrl: complimentaryOrderSchema.innerType().shape.destinationUrl,
+  logoStorageKey: complimentaryOrderSchema.innerType().shape.logoStorageKey,
+  design: complimentaryOrderSchema.innerType().shape.design
+}).superRefine((v, ctx) => {
+  if (v.optionId === "branded_qr_direct" && !v.logoStorageKey) ctx.addIssue({ code: "custom", path: ["logoStorageKey"], message: "Upload a logo for a branded stand." });
+});
+
+export function canChangeComplimentaryStand(order: OrderRecord) {
+  return order.status === "paid" && order.payment_status === "complimentary"
+    && order.total_cents === 0 && Boolean(order.updated_at)
+    && !order.stripe_refund_id && !order.refund_status && !order.shipped_at
+    && ["not_started", "ready_for_production", "blocked"].includes(order.production_status)
+    && ["not_shipped", "blocked"].includes(order.shipping_status)
+    && !order.tracking_number && order.line_items_json.length === 1;
+}
+
+export function buildComplimentaryStandChange(order: OrderRecord, input: z.infer<typeof changeComplimentaryStandSchema>, products: MigratedProduct[]) {
+  const replacement = buildComplimentaryOrder({
+    ...input, requestId: "unused", customer: { name: order.customer_name ?? "Client", email: order.email ?? "", phone: "", createAccount: false },
+    quantity: order.line_items_json[0].quantity, reason: "Stand change", delivery: "pickup"
+  }, products);
+  return {
+    line_items_json: replacement.line_items_json,
+    production_status: replacement.production_status,
+    internal_notes: `${order.internal_notes || ""}\nStand changed from ${order.line_items_json[0].title} to ${replacement.line_items_json[0].title} on ${replacement.updated_at}. Previous artwork approval cleared.`,
+    updated_at: replacement.updated_at
+  };
+}

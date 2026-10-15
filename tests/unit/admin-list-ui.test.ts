@@ -78,3 +78,7 @@ describe("admin list UI display rules", () => {
     });
   });
 });
+
+it("labels settled complimentary orders without requesting payment", () => {
+  expect(getPrimaryOrderAction({ status: "paid", paymentStatus: "complimentary", productionStatus: "ready_for_production", shippingStatus: "not_shipped" })).toEqual({ kind: "status", label: "Complimentary", tone: "ready" });
+});

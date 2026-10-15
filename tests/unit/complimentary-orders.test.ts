@@ -10,6 +10,7 @@ vi.mock("@/lib/admin-auth", () => ({ requireAdminApi: mocks.auth }));
 vi.mock("@/lib/db", () => ({ getSupabaseAdmin: mocks.db, hasSupabaseAdminConfig: () => true }));
 vi.mock("@/lib/product-repository", () => ({ getStorefrontProducts: mocks.products }));
 vi.mock("@/lib/admin-media-storage", () => ({ isSafeProductMediaKey: (key: string) => key.startsWith("products/") && !key.includes(".."), getProductMediaObject: mocks.media }));
+import { PATCH } from "@/app/api/admin/orders/[id]/stand/route";
 import { POST } from "@/app/api/admin/orders/complimentary/route";
 
 const input = { requestId: "11111111-1111-4111-8111-111111111111", customer: { name: "Test Client", email: "client@example.com" }, productId: "google-review-stand", optionId: "standard_direct", quantity: 2, businessName: "Test Business", destinationUrl: "https://example.com/review", reason: "Client gift", delivery: "pickup" };
@@ -71,5 +72,53 @@ describe("complimentary orders", () => {
     expect(canAdvanceOrderFulfillment(order)).toBe(true);
     expect(isOrderPaymentConfirmed(order.status, order.payment_status)).toBe(false);
     expect(canAdvanceOrderFulfillment({ ...order, status: "canceled" })).toBe(false);
+  });
+});
+
+describe("change existing complimentary stand", () => {
+  let db: PaymentMemoryDb;
+  const edit = (body: Record<string, unknown> = {}, origin = "https://taprater.com") => PATCH(new Request("https://taprater.com/api/admin/orders/order-1/stand", { method: "PATCH", headers: { "content-type": "application/json", origin }, body: JSON.stringify({ expectedUpdatedAt: "2026-10-15T12:00:00.000Z", productId: "yelp-review-stand", optionId: "branded_qr_direct", businessName: "Updated business", destinationUrl: "https://example.com/yelp", logoStorageKey: "products/test/logo.png", ...body }) }), { params: Promise.resolve({ id: "order-1" }) });
+  beforeEach(() => {
+    const order = buildComplimentaryOrder(complimentaryOrderSchema.parse(input), migratedProducts);
+    order.id = "order-1"; order.updated_at = "2026-10-15T12:00:00.000Z";
+    order.line_items_json[0].proofApproved = true;
+    order.line_items_json[0].setup!.productionArtwork = { old: true };
+    order.line_items_json[0].setup!.proofApprovalSnapshot = { old: true };
+    db = new PaymentMemoryDb({ orders: [order] });
+    mocks.auth.mockResolvedValue(null); mocks.db.mockReturnValue(db); mocks.products.mockResolvedValue(migratedProducts); mocks.media.mockResolvedValue({});
+  });
+  it("replaces catalog stand, clears artwork and keeps customer, quantity and payment", async () => {
+    const before = structuredClone(db.table("orders")[0]);
+    expect((await edit()).status).toBe(200);
+    const after = db.table("orders")[0];
+    for (const key of ["id", "stripe_checkout_session_id", "customer_details_json", "shipping_address_json", "email", "total_cents", "payment_status", "shipping_method"]) expect(after[key]).toEqual(before[key]);
+    expect(after.line_items_json[0]).toMatchObject({ productId: "yelp-review-stand", quantity: 2, proofApproved: false, setup: { businessName: "Updated business" } });
+    expect(after.line_items_json[0].setup.productionArtwork).toBeUndefined();
+    expect(after.line_items_json[0].setup.proofApprovalSnapshot).toBeUndefined();
+    expect(after.production_status).toBe("not_started");
+  });
+  it("rejects paid, shipped, started, completed, and multiple-item orders", async () => {
+    for (const patch of [{ payment_status: "paid" }, { shipping_status: "shipped" }, { production_status: "in_production" }, { production_status: "completed" }, { line_items_json: [{}, {}] }]) {
+      const before = structuredClone(db.table("orders")[0]);
+      Object.assign(db.table("orders")[0], patch);
+      expect((await edit()).status).toBe(409);
+      db.rows.orders = [before];
+    }
+  });
+  it("rejects stale edits including a concurrent production change", async () => {
+    expect((await edit({ expectedUpdatedAt: "old" })).status).toBe(409);
+    db.beforeQuery = async (_, action) => { if (action === "update") db.table("orders")[0].production_status = "in_production"; };
+    expect((await edit()).status).toBe(409);
+    expect(db.table("orders")[0].line_items_json[0].productId).toBe("google-review-stand");
+  });
+  it("requires admin, origin, catalog option and valid logo", async () => {
+    mocks.auth.mockResolvedValue(new Response(null, { status: 401 }));
+    expect((await edit()).status).toBe(401);
+    mocks.auth.mockResolvedValue(null);
+    expect((await edit({}, "https://other.example")).status).toBe(403);
+    expect((await edit({ productId: "invented" })).status).toBe(400);
+    expect((await edit({ optionId: "hosted_multilink" })).status).toBe(400);
+    mocks.media.mockResolvedValue(null);
+    expect((await edit()).status).toBe(400);
   });
 });
