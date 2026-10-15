@@ -36,7 +36,7 @@ type ProductPageProps = {
   searchParams?: Promise<{ design?: string | string[] }>;
 };
 
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
 
   if (slug === "multi-link-stand") {
@@ -51,6 +51,13 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const seo = resolveProductPageSeo(product);
+  const design = (await searchParams)?.design;
+  const selectedImage = design === "branded" && product.assetSet?.brandedAngledImageUrl
+    ? { src: product.assetSet.brandedAngledImageUrl, alt: `${product.title} Branded + QR layout example` }
+    : product.images.find((image) => image.src);
+  const images = selectedImage
+    ? [{ url: absoluteUrl(selectedImage.src), alt: selectedImage.alt || product.title }]
+    : [defaultSocialImage];
 
   return {
     title: seo.title,
@@ -60,10 +67,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     openGraph: {
       title: seo.title,
       description: seo.description,
-      url: `/product/${product.slug}`,
-      images: product.images.length
-        ? product.images.map((image) => ({ url: absoluteUrl(image.src), alt: image.alt }))
-        : [defaultSocialImage]
+      url: `/product/${product.slug}${design === "branded" || design === "standard" ? `?design=${design}` : ""}`,
+      images
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seo.title,
+      description: seo.description,
+      images
     }
   };
 }

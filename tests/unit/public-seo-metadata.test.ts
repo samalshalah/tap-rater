@@ -158,8 +158,17 @@ describe("social preview image coverage", () => {
   it("preserves product-specific images instead of replacing them with the shared image", async () => {
     const metadata = await productMetadata(params("google-review-stand"));
     const images = metadata.openGraph?.images as Array<{ url: string }>;
-    expect(images).toHaveLength(googleStand.images.length);
+    expect(images).toHaveLength(1);
     expect(new URL(images[0].url).pathname).toBe(googleStand.images[0].src);
+  });
+
+  it("shares the branded stand when the link selects the branded design", async () => {
+    const metadata = await productMetadata({ ...params("google-review-stand"), searchParams: Promise.resolve({ design: "branded" }) });
+    expect(metadata.openGraph).toMatchObject({
+      url: "/product/google-review-stand?design=branded",
+      images: [{ url: expect.stringContaining(googleStand.assetSet!.brandedAngledImageUrl!) }]
+    });
+    expect(metadata.twitter).toMatchObject({ images: metadata.openGraph?.images });
   });
 
   it("provides a fallback for a product without gallery media", async () => {
