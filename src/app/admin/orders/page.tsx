@@ -1,7 +1,7 @@
-import Link from "next/link";
+import { Gift, Plus } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOrdersWorkspace, type AdminOrdersWorkspaceOrder } from "@/components/admin/admin-orders-workspace";
-import { AdminBadge } from "@/components/admin/admin-ui";
+import { AdminBadge, AdminLinkButton } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
   getAdminOrders,
@@ -37,7 +37,13 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           </div>
         </div>
 
-        <Link href="/admin/orders/new" className="tr-btn-primary my-4 inline-flex">Create complimentary order</Link>
+        <div className="my-6 flex flex-col gap-4 rounded-xl border border-brand/30 bg-brand/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Gift className="mt-1 shrink-0 text-brand" size={24} aria-hidden="true" />
+            <div><h2 className="font-semibold text-ink">Give a client a free stand</h2><p className="mt-1 text-sm text-muted">Create a $0 order using your existing stands. No payment required.</p></div>
+          </div>
+          <AdminLinkButton href="/admin/orders/new" variant="primary" className="min-h-12 w-full shrink-0 sm:w-auto"><Plus size={18} aria-hidden="true" />Create complimentary order</AdminLinkButton>
+        </div>
         <AdminOrdersWorkspace configured={configured} orders={workspaceOrders} initialFilter={params?.filter} />
       </section>
     </AdminShell>

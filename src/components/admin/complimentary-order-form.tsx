@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { AdminButton } from "@/components/admin/admin-ui";
 import { useRouter } from "next/navigation";
 
 type Catalog = { slug: string; title: string; options: { id: string; label: string }[] }[];
@@ -60,6 +61,6 @@ export function ComplimentaryOrderForm({ catalog }: { catalog: Catalog }) {
     </fieldset>
     <p className="font-semibold">Client total: $0.00 — Complimentary</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}
-    <button className="tr-btn-primary" disabled={busy || uploading || (optionId === "branded_qr_direct" && !logo)}>{uploading ? "Uploading logo…" : busy ? "Creating order…" : "Create complimentary order"}</button>
+    <AdminButton type="submit" variant="primary" className="min-h-12 w-full sm:w-auto" disabled={busy || uploading || (optionId === "branded_qr_direct" && !logo)}>{uploading ? "Uploading logo…" : busy ? "Creating order…" : "Create complimentary order"}</AdminButton>
   </form>;
 }

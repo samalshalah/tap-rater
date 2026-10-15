@@ -34,7 +34,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <AdminLinkButton href="/admin/orders" className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Back to orders</AdminLinkButton>
+        <div className="flex flex-wrap items-center justify-between gap-3"><AdminLinkButton href="/admin/orders" className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Back to orders</AdminLinkButton><AdminLinkButton href="/admin/orders/new" variant="primary" className="min-h-11">+ Create complimentary order</AdminLinkButton></div>
         <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="min-w-0 flex-1">
             <p className="tr-eyebrow">Order detail</p>
