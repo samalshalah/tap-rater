@@ -1,3 +1,5 @@
+import { getCanonicalProductSlug } from "./product-slug-aliases";
+
 const canonicalHost = "taprater.com";
 const canonicalOrigin = `https://${canonicalHost}`;
 const productionHosts = new Set([canonicalHost, `www.${canonicalHost}`]);
@@ -12,11 +14,15 @@ export function getCanonicalRedirectUrl(request: Request) {
     ? requestUrl.protocol.replace(":", "").toLowerCase()
     : firstHeaderValue(request.headers.get("x-forwarded-proto")) || requestUrl.protocol.replace(":", "").toLowerCase();
 
-  if (!productionHosts.has(host) || (host === canonicalHost && protocol === "https")) {
+  const productMatch = requestUrl.pathname.match(/^\/product\/([^/]+)\/?$/);
+  const canonicalSlug = productMatch ? getCanonicalProductSlug(productMatch[1]) : undefined;
+  const legacyProduct = productMatch && canonicalSlug !== productMatch[1];
+  if (!productionHosts.has(host) || (host === canonicalHost && protocol === "https" && !legacyProduct)) {
     return undefined;
   }
 
-  return new URL(`${requestUrl.pathname}${requestUrl.search}`, canonicalOrigin);
+  const pathname = legacyProduct ? `/product/${canonicalSlug}` : requestUrl.pathname;
+  return new URL(`${pathname}${requestUrl.search}`, canonicalOrigin);
 }
 
 function normalizeHost(value: string | null) {

@@ -27,3 +27,7 @@ describe("canonical host redirect", () => {
     expect(getCanonicalRedirectUrl(request)?.toString()).toBe("https://taprater.com/shop?probe=1");
   });
 });
+
+ it.each(["https://taprater.com/product/google-review-white-stand/", "https://taprater.com/product/google-review-white-stand", "http://www.taprater.com/product/google-review-white-stand/"])("redirects legacy Google stand directly: %s", (url) => {
+   expect(getCanonicalRedirectUrl(new Request(url + "?design=branded"))?.toString()).toBe("https://taprater.com/product/google-review-stand?design=branded");
+ });

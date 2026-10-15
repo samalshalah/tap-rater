@@ -608,8 +608,9 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
                   <span className="text-base font-black leading-5 text-ink">{getOptionDisplayLabel(option)}</span>
                   <span className="shrink-0 text-sm font-black text-ink">{formatPrice(singleStandPrice(product.slug, option.id, option.priceCents, offers)).replace(".00", "")}</span>
                 </span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{getOptionShortSummary(option)}</span>
+                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{product.slug === "google-review-stand" && option.id === "standard_direct" ? "NFC tap only · No printed QR" : product.slug === "google-review-stand" && option.id === "branded_qr_direct" ? "NFC + QR · Your logo + business name" : getOptionShortSummary(option)}</span>
                 <span className="mt-1 block text-xs leading-5 text-muted">{getOptionSummary(option)}</span>
+                {product.slug === "google-review-stand" && option.id !== "hosted_multilink" ? <span className="mt-1 block text-xs leading-5 text-muted">{option.id === "standard_direct" ? "Ready-made design · No subscription" : "Custom design · No subscription"}</span> : null}
               </span>
             </label>
           ))}
