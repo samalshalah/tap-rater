@@ -6,25 +6,23 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { PurchaseOptionId } from "@/lib/purchase-options";
-import { getProductVisual } from "@/lib/storefront-visuals";
+import { getGalleryImages } from "@/lib/product-gallery";
+export { getGalleryImages } from "@/lib/product-gallery";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-
-type GalleryImage = { src: string; alt: string; caption?: string };
 
 export function ProductGallery({ product, selectedOptionId }: { product: MigratedProduct; selectedOptionId?: PurchaseOptionId }) {
   const [activeOptionId, setActiveOptionId] = useState<PurchaseOptionId | undefined>(selectedOptionId);
-  const optionImage = getSelectedGalleryImage(product, activeOptionId);
-  const galleryImages = useMemo(() => getGalleryImages(product), [product]);
-  const [activeImageSrc, setActiveImageSrc] = useState(optionImage.src);
-  const image = galleryImages.find((item) => item.src === activeImageSrc) ?? optionImage;
+  const galleryImages = useMemo(() => getGalleryImages(product, activeOptionId), [product, activeOptionId]);
+  const [activeImageSrc, setActiveImageSrc] = useState(galleryImages[0]?.src);
+  const image = galleryImages.find((item) => item.src === activeImageSrc) ?? galleryImages[0];
 
   useEffect(() => {
     setActiveOptionId(selectedOptionId);
   }, [selectedOptionId]);
 
   useEffect(() => {
-    setActiveImageSrc(optionImage.src);
-  }, [optionImage.src]);
+    setActiveImageSrc(galleryImages[0]?.src);
+  }, [galleryImages]);
 
   useEffect(() => {
     function updateGallery(event: Event) {
@@ -39,20 +37,25 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
     return () => window.removeEventListener("taprater:product-option-change", updateGallery);
   }, [product.slug]);
 
+  if (!image) return <p className="text-center text-sm text-muted">Personalized image preview coming soon. Your design proof is shown during setup.</p>;
+
   return (
     <div className="grid content-center gap-3 lg:sticky lg:top-24">
-      <div className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-[4/3.6] w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
+      <div className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-square w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
         <ResponsiveUpload
           src={image.src}
           fallbackWidth={1200}
-          sizes="(max-width: 767px) 178px, (max-width: 1023px) 382px, 452px"
+          sizes="(max-width: 639px) 292px, (max-width: 767px) 390px, (max-width: 1023px) 430px, 500px"
           alt={image.alt}
           loading="eager"
           fetchPriority="high"
-          className="object-contain p-4 mix-blend-multiply sm:p-6"
+          className="object-contain"
         />
       </div>
+      <p className="text-center text-sm font-semibold">{activeOptionId === "branded_qr_direct" ? "Custom design · Logo + name + QR" : activeOptionId === "hosted_multilink" ? "Multi-Link design" : "Standard design"}</p>
+      {activeOptionId === "branded_qr_direct" && product.slug === "google-review-stand" ? <p className="text-center text-xs text-muted">Red text marks your customization areas. We replace it with your logo, business name and review QR code.</p> : null}
       <p className="tr-product-gallery-caption min-h-5 text-center text-xs text-muted">{image.caption ?? ""}</p>
+      <a href={image.src} target="_blank" rel="noopener noreferrer" className="text-center text-sm text-brand underline">View full-size image</a>
       {galleryImages.length > 1 ? (
         <div className="mx-auto w-full max-w-[292px] overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
           <div className="flex w-max min-w-full justify-center gap-2 p-1">
@@ -75,49 +78,4 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
       ) : null}
     </div>
   );
-}
-
-export function getGalleryImages(product: MigratedProduct): GalleryImage[] {
-  const templates = new Set([
-    product.assetSet?.standardFrontTemplateUrl,
-    product.assetSet?.brandedFrontTemplateUrl,
-    product.assetSet?.multiLinkFrontTemplateUrl
-  ].filter(Boolean));
-  const images: Array<GalleryImage | undefined> = [
-    getProductVisual(product),
-    product.assetSet?.brandedAngledImageUrl
-      ? { src: product.assetSet.brandedAngledImageUrl, alt: `${product.title} Branded + QR layout example`, caption: "Branded + QR layout example" }
-      : undefined,
-    ...product.images.filter(item => !templates.has(item.src))
-      .map((item, index) => ({ ...item, alt: item.alt.trim() || `${product.title} gallery view ${index + 1}` }))
-  ];
-
-  const seen = new Set<string>();
-  return images.filter((item): item is GalleryImage => {
-    if (!item?.src || templates.has(item.src) || seen.has(item.src)) {
-      return false;
-    }
-    seen.add(item.src);
-    return true;
-  });
-}
-
-function getSelectedGalleryImage(product: MigratedProduct, selectedOptionId: PurchaseOptionId | undefined): GalleryImage {
-  if (selectedOptionId === "branded_qr_direct" && product.assetSet?.brandedAngledImageUrl) {
-    return {
-      src: product.assetSet.brandedAngledImageUrl,
-      alt: `${product.title} Branded + QR layout example`,
-      caption: "Branded + QR layout example"
-    };
-  }
-
-  if (selectedOptionId === "hosted_multilink" && (product.assetSet?.multiLinkAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl)) {
-    return {
-      src: product.assetSet.multiLinkAngledImageUrl ?? product.assetSet.brandedAngledImageUrl ?? "",
-      alt: `${product.title} hosted Multi-Link layout example`,
-      caption: "Hosted Multi-Link layout example"
-    };
-  }
-
-  return getProductVisual(product);
 }

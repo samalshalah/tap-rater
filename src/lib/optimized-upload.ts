@@ -8,6 +8,9 @@ export function optimizedUploadSrc(src: string, width: OptimizedUploadWidth) {
   const suffixIndex = src.search(/[?#]/u);
   const pathname = suffixIndex === -1 ? src : src.slice(0, suffixIndex);
   const suffix = suffixIndex === -1 ? "" : src.slice(suffixIndex);
+  if (pathname.startsWith("/product-galleries/") && pathname.endsWith(".webp")) {
+    return `${pathname.slice(0, -5)}-w${width}.webp${suffix}`;
+  }
   const match = pathname.match(localUploadPattern);
   if (!match) return src;
 
@@ -18,6 +21,9 @@ export function optimizedUploadSrc(src: string, width: OptimizedUploadWidth) {
 // than the variant label. Do not advertise missing variants for dynamic uploads.
 export function optimizedUploadSrcSet(src: string) {
   const pathname = src.split(/[?#]/u)[0];
+  if (pathname.startsWith("/product-galleries/") && pathname.endsWith(".webp")) {
+    return ([160, 320, 480, 640, 1200] as const).map(width => `${optimizedUploadSrc(src, width)} ${width}w`).join(", ");
+  }
   const key = pathname.startsWith("/uploads/") ? pathname.slice(9) : "";
   const dimensions = (variantWidths.sources as Record<string, number[]>)[key];
   if (!dimensions) return undefined;

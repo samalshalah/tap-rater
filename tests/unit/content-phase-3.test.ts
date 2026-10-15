@@ -89,14 +89,14 @@ describe("content phase 3 presentation standard", () => {
     expect(images.find(item => item.src === "/uploads/gallery/scale.png")?.alt).toContain("gallery view");
     expect(images.some(item => item.src === product.assetSet!.standardFrontTemplateUrl)).toBe(false);
     expect(images.some(item => item.src === product.assetSet!.brandedFrontTemplateUrl)).toBe(false);
-    expect(images.find(item => item.src === product.assetSet!.brandedAngledImageUrl)?.caption).toBe("Branded + QR layout example");
+    expect(images.some(item => item.src === product.assetSet!.brandedAngledImageUrl)).toBe(false);
   });
 
   it("announces the selected thumbnail and labels a Branded layout without shifting the image frame", () => {
     const html = renderToStaticMarkup(createElement(ProductGallery, { product, selectedOptionId: "branded_qr_direct" }));
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("min-w-full");
-    expect(html).toContain("Branded + QR layout example");
+    expect(html).toContain("Custom design");
     expect(html).toContain("min-h-5");
   });
 });
