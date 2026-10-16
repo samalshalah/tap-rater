@@ -1,6 +1,7 @@
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { PurchaseOptionId } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
+import customProductGalleries from "@/data/custom-product-galleries.json";
 
 export type GalleryImage = {
   id?: string;
@@ -83,6 +84,10 @@ export const productGalleries: Record<string, Partial<Record<PurchaseOptionId, G
 };
 
 export function getGalleryImages(product: MigratedProduct, optionId: PurchaseOptionId = "standard_direct"): GalleryImage[] {
+  if (optionId === "branded_qr_direct") {
+    const custom = (customProductGalleries as Record<string, GalleryImage[]>)[product.slug];
+    if (custom?.length) return custom;
+  }
   const configured = productGalleries[product.slug]?.[optionId];
   if (configured?.length) return configured;
   const assets = product.assetSet;

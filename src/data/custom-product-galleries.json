@@ -1,0 +1,2909 @@
+{
+  "agoda-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/01-white-background-angled.webp",
+      "alt": "Agoda Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/02-customization-steps.webp",
+      "alt": "Agoda Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/03-front-product.webp",
+      "alt": "Agoda Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/04-tap-or-scan.webp",
+      "alt": "Agoda Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/05-countertop-scene.webp",
+      "alt": "Agoda Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/06-acrylic-detail.webp",
+      "alt": "Agoda Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/agoda-review-stand/07-personalization-detail.webp",
+      "alt": "Agoda Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "airbnb-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/01-white-background-angled.webp",
+      "alt": "Airbnb Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/02-customization-steps.webp",
+      "alt": "Airbnb Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/03-front-product.webp",
+      "alt": "Airbnb Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/04-tap-or-scan.webp",
+      "alt": "Airbnb Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/05-countertop-scene.webp",
+      "alt": "Airbnb Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/06-acrylic-detail.webp",
+      "alt": "Airbnb Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/airbnb-review-stand/07-personalization-detail.webp",
+      "alt": "Airbnb Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "angi-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/angi-review-stand/01-white-background-angled.webp",
+      "alt": "Angi Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/angi-review-stand/02-customization-steps.webp",
+      "alt": "Angi Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/angi-review-stand/03-front-product.webp",
+      "alt": "Angi Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/angi-review-stand/04-tap-or-scan.webp",
+      "alt": "Angi Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/angi-review-stand/05-countertop-scene.webp",
+      "alt": "Angi Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/angi-review-stand/06-acrylic-detail.webp",
+      "alt": "Angi Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/angi-review-stand/07-personalization-detail.webp",
+      "alt": "Angi Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "apartments-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/01-white-background-angled.webp",
+      "alt": "Apartments.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/02-customization-steps.webp",
+      "alt": "Apartments.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/03-front-product.webp",
+      "alt": "Apartments.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/04-tap-or-scan.webp",
+      "alt": "Apartments.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/05-countertop-scene.webp",
+      "alt": "Apartments.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/06-acrylic-detail.webp",
+      "alt": "Apartments.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/apartments-review-stand/07-personalization-detail.webp",
+      "alt": "Apartments.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "autotrader-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/01-white-background-angled.webp",
+      "alt": "Autotrader Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/02-customization-steps.webp",
+      "alt": "Autotrader Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/03-front-product.webp",
+      "alt": "Autotrader Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/04-tap-or-scan.webp",
+      "alt": "Autotrader Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/05-countertop-scene.webp",
+      "alt": "Autotrader Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/06-acrylic-detail.webp",
+      "alt": "Autotrader Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/autotrader-review-stand/07-personalization-detail.webp",
+      "alt": "Autotrader Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "avvo-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/01-white-background-angled.webp",
+      "alt": "Avvo Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/02-customization-steps.webp",
+      "alt": "Avvo Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/03-front-product.webp",
+      "alt": "Avvo Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/04-tap-or-scan.webp",
+      "alt": "Avvo Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/05-countertop-scene.webp",
+      "alt": "Avvo Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/06-acrylic-detail.webp",
+      "alt": "Avvo Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/avvo-review-stand/07-personalization-detail.webp",
+      "alt": "Avvo Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "bbb-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/01-white-background-angled.webp",
+      "alt": "BBB Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/02-customization-steps.webp",
+      "alt": "BBB Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/03-front-product.webp",
+      "alt": "BBB Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/04-tap-or-scan.webp",
+      "alt": "BBB Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/05-countertop-scene.webp",
+      "alt": "BBB Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/06-acrylic-detail.webp",
+      "alt": "BBB Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/bbb-review-stand/07-personalization-detail.webp",
+      "alt": "BBB Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "booksy-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/01-white-background-angled.webp",
+      "alt": "Booksy Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/02-customization-steps.webp",
+      "alt": "Booksy Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/03-front-product.webp",
+      "alt": "Booksy Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/04-tap-or-scan.webp",
+      "alt": "Booksy Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/05-countertop-scene.webp",
+      "alt": "Booksy Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/06-acrylic-detail.webp",
+      "alt": "Booksy Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/booksy-review-stand/07-personalization-detail.webp",
+      "alt": "Booksy Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "caredash-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/01-white-background-angled.webp",
+      "alt": "CareDash Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/02-customization-steps.webp",
+      "alt": "CareDash Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/03-front-product.webp",
+      "alt": "CareDash Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/04-tap-or-scan.webp",
+      "alt": "CareDash Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/05-countertop-scene.webp",
+      "alt": "CareDash Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/06-acrylic-detail.webp",
+      "alt": "CareDash Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/caredash-review-stand/07-personalization-detail.webp",
+      "alt": "CareDash Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "carfax-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/01-white-background-angled.webp",
+      "alt": "CARFAX Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/02-customization-steps.webp",
+      "alt": "CARFAX Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/03-front-product.webp",
+      "alt": "CARFAX Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/04-tap-or-scan.webp",
+      "alt": "CARFAX Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/05-countertop-scene.webp",
+      "alt": "CARFAX Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/06-acrylic-detail.webp",
+      "alt": "CARFAX Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/carfax-review-stand/07-personalization-detail.webp",
+      "alt": "CARFAX Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "cargurus-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/01-white-background-angled.webp",
+      "alt": "CarGurus Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/02-customization-steps.webp",
+      "alt": "CarGurus Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/03-front-product.webp",
+      "alt": "CarGurus Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/04-tap-or-scan.webp",
+      "alt": "CarGurus Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/05-countertop-scene.webp",
+      "alt": "CarGurus Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/06-acrylic-detail.webp",
+      "alt": "CarGurus Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/cargurus-review-stand/07-personalization-detail.webp",
+      "alt": "CarGurus Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "cars-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/cars-review-stand/01-white-background-angled.webp",
+      "alt": "Cars.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/cars-review-stand/02-customization-steps.webp",
+      "alt": "Cars.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/cars-review-stand/03-front-product.webp",
+      "alt": "Cars.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/cars-review-stand/04-tap-or-scan.webp",
+      "alt": "Cars.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/cars-review-stand/05-countertop-scene.webp",
+      "alt": "Cars.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/cars-review-stand/06-acrylic-detail.webp",
+      "alt": "Cars.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/cars-review-stand/07-personalization-detail.webp",
+      "alt": "Cars.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "check-our-information-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/01-white-background-angled.webp",
+      "alt": "Check Our Information Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/02-customization-steps.webp",
+      "alt": "Check Our Information Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/03-front-product.webp",
+      "alt": "Check Our Information Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/04-tap-or-scan.webp",
+      "alt": "Check Our Information Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/05-countertop-scene.webp",
+      "alt": "Check Our Information Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/06-acrylic-detail.webp",
+      "alt": "Check Our Information Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/check-our-information-stand/07-personalization-detail.webp",
+      "alt": "Check Our Information Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "connect-with-us-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/01-white-background-angled.webp",
+      "alt": "Connect With Us Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/02-customization-steps.webp",
+      "alt": "Connect With Us Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/03-front-product.webp",
+      "alt": "Connect With Us Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/04-tap-or-scan.webp",
+      "alt": "Connect With Us Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/05-countertop-scene.webp",
+      "alt": "Connect With Us Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/06-acrylic-detail.webp",
+      "alt": "Connect With Us Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/connect-with-us-stand/07-personalization-detail.webp",
+      "alt": "Connect With Us Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "dealerrater-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/01-white-background-angled.webp",
+      "alt": "DealerRater Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/02-customization-steps.webp",
+      "alt": "DealerRater Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/03-front-product.webp",
+      "alt": "DealerRater Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/04-tap-or-scan.webp",
+      "alt": "DealerRater Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/05-countertop-scene.webp",
+      "alt": "DealerRater Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/06-acrylic-detail.webp",
+      "alt": "DealerRater Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/dealerrater-review-stand/07-personalization-detail.webp",
+      "alt": "DealerRater Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "edmunds-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/01-white-background-angled.webp",
+      "alt": "Edmunds Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/02-customization-steps.webp",
+      "alt": "Edmunds Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/03-front-product.webp",
+      "alt": "Edmunds Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/04-tap-or-scan.webp",
+      "alt": "Edmunds Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/05-countertop-scene.webp",
+      "alt": "Edmunds Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/06-acrylic-detail.webp",
+      "alt": "Edmunds Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/edmunds-review-stand/07-personalization-detail.webp",
+      "alt": "Edmunds Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "explore-our-services-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/01-white-background-angled.webp",
+      "alt": "Explore Our Services Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/02-customization-steps.webp",
+      "alt": "Explore Our Services Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/03-front-product.webp",
+      "alt": "Explore Our Services Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/04-tap-or-scan.webp",
+      "alt": "Explore Our Services Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/05-countertop-scene.webp",
+      "alt": "Explore Our Services Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/06-acrylic-detail.webp",
+      "alt": "Explore Our Services Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/explore-our-services-stand/07-personalization-detail.webp",
+      "alt": "Explore Our Services Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "facebook-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/01-white-background-angled.webp",
+      "alt": "Facebook Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/02-customization-steps.webp",
+      "alt": "Facebook Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/03-front-product.webp",
+      "alt": "Facebook Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/04-tap-or-scan.webp",
+      "alt": "Facebook Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/05-countertop-scene.webp",
+      "alt": "Facebook Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/06-acrylic-detail.webp",
+      "alt": "Facebook Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/facebook-follow-stand/07-personalization-detail.webp",
+      "alt": "Facebook Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "facebook-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/01-white-background-angled.webp",
+      "alt": "Facebook Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/02-customization-steps.webp",
+      "alt": "Facebook Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/03-front-product.webp",
+      "alt": "Facebook Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/04-tap-or-scan.webp",
+      "alt": "Facebook Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/05-countertop-scene.webp",
+      "alt": "Facebook Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/06-acrylic-detail.webp",
+      "alt": "Facebook Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/facebook-review-stand/07-personalization-detail.webp",
+      "alt": "Facebook Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "findlaw-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/01-white-background-angled.webp",
+      "alt": "FindLaw Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/02-customization-steps.webp",
+      "alt": "FindLaw Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/03-front-product.webp",
+      "alt": "FindLaw Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/04-tap-or-scan.webp",
+      "alt": "FindLaw Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/05-countertop-scene.webp",
+      "alt": "FindLaw Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/06-acrylic-detail.webp",
+      "alt": "FindLaw Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/findlaw-review-stand/07-personalization-detail.webp",
+      "alt": "FindLaw Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "follow-us-social-media-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/01-white-background-angled.webp",
+      "alt": "Follow Us on Social Media Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/02-customization-steps.webp",
+      "alt": "Follow Us on Social Media Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/03-front-product.webp",
+      "alt": "Follow Us on Social Media Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/04-tap-or-scan.webp",
+      "alt": "Follow Us on Social Media Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/05-countertop-scene.webp",
+      "alt": "Follow Us on Social Media Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/06-acrylic-detail.webp",
+      "alt": "Follow Us on Social Media Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/follow-us-social-media-stand/07-personalization-detail.webp",
+      "alt": "Follow Us on Social Media Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "fresha-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/01-white-background-angled.webp",
+      "alt": "Fresha Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/02-customization-steps.webp",
+      "alt": "Fresha Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/03-front-product.webp",
+      "alt": "Fresha Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/04-tap-or-scan.webp",
+      "alt": "Fresha Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/05-countertop-scene.webp",
+      "alt": "Fresha Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/06-acrylic-detail.webp",
+      "alt": "Fresha Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/fresha-review-stand/07-personalization-detail.webp",
+      "alt": "Fresha Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "healthgrades-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/01-white-background-angled.webp",
+      "alt": "Healthgrades Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/02-customization-steps.webp",
+      "alt": "Healthgrades Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/03-front-product.webp",
+      "alt": "Healthgrades Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/04-tap-or-scan.webp",
+      "alt": "Healthgrades Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/05-countertop-scene.webp",
+      "alt": "Healthgrades Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/06-acrylic-detail.webp",
+      "alt": "Healthgrades Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/healthgrades-review-stand/07-personalization-detail.webp",
+      "alt": "Healthgrades Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "homeadvisor-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/01-white-background-angled.webp",
+      "alt": "HomeAdvisor Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/02-customization-steps.webp",
+      "alt": "HomeAdvisor Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/03-front-product.webp",
+      "alt": "HomeAdvisor Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/04-tap-or-scan.webp",
+      "alt": "HomeAdvisor Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/05-countertop-scene.webp",
+      "alt": "HomeAdvisor Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/06-acrylic-detail.webp",
+      "alt": "HomeAdvisor Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/homeadvisor-review-stand/07-personalization-detail.webp",
+      "alt": "HomeAdvisor Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "homes-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/homes-review-stand/01-white-background-angled.webp",
+      "alt": "Homes.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/homes-review-stand/02-customization-steps.webp",
+      "alt": "Homes.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/homes-review-stand/03-front-product.webp",
+      "alt": "Homes.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/homes-review-stand/04-tap-or-scan.webp",
+      "alt": "Homes.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/homes-review-stand/05-countertop-scene.webp",
+      "alt": "Homes.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/homes-review-stand/06-acrylic-detail.webp",
+      "alt": "Homes.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/homes-review-stand/07-personalization-detail.webp",
+      "alt": "Homes.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "hotels-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/01-white-background-angled.webp",
+      "alt": "Hotels.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/02-customization-steps.webp",
+      "alt": "Hotels.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/03-front-product.webp",
+      "alt": "Hotels.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/04-tap-or-scan.webp",
+      "alt": "Hotels.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/05-countertop-scene.webp",
+      "alt": "Hotels.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/06-acrylic-detail.webp",
+      "alt": "Hotels.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/hotels-review-stand/07-personalization-detail.webp",
+      "alt": "Hotels.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "houzz-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/01-white-background-angled.webp",
+      "alt": "Houzz Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/02-customization-steps.webp",
+      "alt": "Houzz Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/03-front-product.webp",
+      "alt": "Houzz Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/04-tap-or-scan.webp",
+      "alt": "Houzz Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/05-countertop-scene.webp",
+      "alt": "Houzz Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/06-acrylic-detail.webp",
+      "alt": "Houzz Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/houzz-review-stand/07-personalization-detail.webp",
+      "alt": "Houzz Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "instagram-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/01-white-background-angled.webp",
+      "alt": "Instagram Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/02-customization-steps.webp",
+      "alt": "Instagram Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/03-front-product.webp",
+      "alt": "Instagram Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/04-tap-or-scan.webp",
+      "alt": "Instagram Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/05-countertop-scene.webp",
+      "alt": "Instagram Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/06-acrylic-detail.webp",
+      "alt": "Instagram Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/instagram-follow-stand/07-personalization-detail.webp",
+      "alt": "Instagram Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "lawyers-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/01-white-background-angled.webp",
+      "alt": "Lawyers.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/02-customization-steps.webp",
+      "alt": "Lawyers.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/03-front-product.webp",
+      "alt": "Lawyers.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/04-tap-or-scan.webp",
+      "alt": "Lawyers.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/05-countertop-scene.webp",
+      "alt": "Lawyers.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/06-acrylic-detail.webp",
+      "alt": "Lawyers.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/lawyers-review-stand/07-personalization-detail.webp",
+      "alt": "Lawyers.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "linkedin-connect-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/01-white-background-angled.webp",
+      "alt": "LinkedIn Connect Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/02-customization-steps.webp",
+      "alt": "LinkedIn Connect Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/03-front-product.webp",
+      "alt": "LinkedIn Connect Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/04-tap-or-scan.webp",
+      "alt": "LinkedIn Connect Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/05-countertop-scene.webp",
+      "alt": "LinkedIn Connect Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/06-acrylic-detail.webp",
+      "alt": "LinkedIn Connect Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/linkedin-connect-stand/07-personalization-detail.webp",
+      "alt": "LinkedIn Connect Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "linkedin-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/01-white-background-angled.webp",
+      "alt": "LinkedIn Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/02-customization-steps.webp",
+      "alt": "LinkedIn Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/03-front-product.webp",
+      "alt": "LinkedIn Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/04-tap-or-scan.webp",
+      "alt": "LinkedIn Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/05-countertop-scene.webp",
+      "alt": "LinkedIn Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/06-acrylic-detail.webp",
+      "alt": "LinkedIn Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/linkedin-follow-stand/07-personalization-detail.webp",
+      "alt": "LinkedIn Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "martindale-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/01-white-background-angled.webp",
+      "alt": "Martindale Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/02-customization-steps.webp",
+      "alt": "Martindale Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/03-front-product.webp",
+      "alt": "Martindale Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/04-tap-or-scan.webp",
+      "alt": "Martindale Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/05-countertop-scene.webp",
+      "alt": "Martindale Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/06-acrylic-detail.webp",
+      "alt": "Martindale Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/martindale-review-stand/07-personalization-detail.webp",
+      "alt": "Martindale Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "menu-and-order-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/01-white-background-angled.webp",
+      "alt": "Menu and Order Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/02-customization-steps.webp",
+      "alt": "Menu and Order Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/03-front-product.webp",
+      "alt": "Menu and Order Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/04-tap-or-scan.webp",
+      "alt": "Menu and Order Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/05-countertop-scene.webp",
+      "alt": "Menu and Order Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/06-acrylic-detail.webp",
+      "alt": "Menu and Order Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/menu-and-order-stand/07-personalization-detail.webp",
+      "alt": "Menu and Order Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "nextdoor-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/01-white-background-angled.webp",
+      "alt": "Nextdoor Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/02-customization-steps.webp",
+      "alt": "Nextdoor Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/03-front-product.webp",
+      "alt": "Nextdoor Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/04-tap-or-scan.webp",
+      "alt": "Nextdoor Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/05-countertop-scene.webp",
+      "alt": "Nextdoor Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/06-acrylic-detail.webp",
+      "alt": "Nextdoor Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/nextdoor-review-stand/07-personalization-detail.webp",
+      "alt": "Nextdoor Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "opencare-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/01-white-background-angled.webp",
+      "alt": "Opencare Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/02-customization-steps.webp",
+      "alt": "Opencare Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/03-front-product.webp",
+      "alt": "Opencare Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/04-tap-or-scan.webp",
+      "alt": "Opencare Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/05-countertop-scene.webp",
+      "alt": "Opencare Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/06-acrylic-detail.webp",
+      "alt": "Opencare Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/opencare-review-stand/07-personalization-detail.webp",
+      "alt": "Opencare Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "patient-resources-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/01-white-background-angled.webp",
+      "alt": "Patient Resources Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/02-customization-steps.webp",
+      "alt": "Patient Resources Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/03-front-product.webp",
+      "alt": "Patient Resources Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/04-tap-or-scan.webp",
+      "alt": "Patient Resources Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/05-countertop-scene.webp",
+      "alt": "Patient Resources Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/06-acrylic-detail.webp",
+      "alt": "Patient Resources Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/patient-resources-stand/07-personalization-detail.webp",
+      "alt": "Patient Resources Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "pinterest-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/01-white-background-angled.webp",
+      "alt": "Pinterest Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/02-customization-steps.webp",
+      "alt": "Pinterest Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/03-front-product.webp",
+      "alt": "Pinterest Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/04-tap-or-scan.webp",
+      "alt": "Pinterest Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/05-countertop-scene.webp",
+      "alt": "Pinterest Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/06-acrylic-detail.webp",
+      "alt": "Pinterest Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/pinterest-follow-stand/07-personalization-detail.webp",
+      "alt": "Pinterest Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "porch-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/porch-review-stand/01-white-background-angled.webp",
+      "alt": "Porch Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/porch-review-stand/02-customization-steps.webp",
+      "alt": "Porch Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/porch-review-stand/03-front-product.webp",
+      "alt": "Porch Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/porch-review-stand/04-tap-or-scan.webp",
+      "alt": "Porch Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/porch-review-stand/05-countertop-scene.webp",
+      "alt": "Porch Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/porch-review-stand/06-acrylic-detail.webp",
+      "alt": "Porch Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/porch-review-stand/07-personalization-detail.webp",
+      "alt": "Porch Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "rate-your-experience-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/01-white-background-angled.webp",
+      "alt": "Rate Your Experience Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/02-customization-steps.webp",
+      "alt": "Rate Your Experience Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/03-front-product.webp",
+      "alt": "Rate Your Experience Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/04-tap-or-scan.webp",
+      "alt": "Rate Your Experience Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/05-countertop-scene.webp",
+      "alt": "Rate Your Experience Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/06-acrylic-detail.webp",
+      "alt": "Rate Your Experience Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/rate-your-experience-stand/07-personalization-detail.webp",
+      "alt": "Rate Your Experience Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "ratemds-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/01-white-background-angled.webp",
+      "alt": "RateMDs Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/02-customization-steps.webp",
+      "alt": "RateMDs Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/03-front-product.webp",
+      "alt": "RateMDs Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/04-tap-or-scan.webp",
+      "alt": "RateMDs Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/05-countertop-scene.webp",
+      "alt": "RateMDs Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/06-acrylic-detail.webp",
+      "alt": "RateMDs Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/ratemds-review-stand/07-personalization-detail.webp",
+      "alt": "RateMDs Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "realtor-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/01-white-background-angled.webp",
+      "alt": "Realtor.com Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/02-customization-steps.webp",
+      "alt": "Realtor.com Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/03-front-product.webp",
+      "alt": "Realtor.com Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/04-tap-or-scan.webp",
+      "alt": "Realtor.com Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/05-countertop-scene.webp",
+      "alt": "Realtor.com Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/06-acrylic-detail.webp",
+      "alt": "Realtor.com Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/realtor-review-stand/07-personalization-detail.webp",
+      "alt": "Realtor.com Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "snapchat-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/01-white-background-angled.webp",
+      "alt": "Snapchat Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/02-customization-steps.webp",
+      "alt": "Snapchat Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/03-front-product.webp",
+      "alt": "Snapchat Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/04-tap-or-scan.webp",
+      "alt": "Snapchat Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/05-countertop-scene.webp",
+      "alt": "Snapchat Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/06-acrylic-detail.webp",
+      "alt": "Snapchat Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/snapchat-follow-stand/07-personalization-detail.webp",
+      "alt": "Snapchat Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "styleseat-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/01-white-background-angled.webp",
+      "alt": "StyleSeat Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/02-customization-steps.webp",
+      "alt": "StyleSeat Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/03-front-product.webp",
+      "alt": "StyleSeat Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/04-tap-or-scan.webp",
+      "alt": "StyleSeat Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/05-countertop-scene.webp",
+      "alt": "StyleSeat Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/06-acrylic-detail.webp",
+      "alt": "StyleSeat Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/styleseat-review-stand/07-personalization-detail.webp",
+      "alt": "StyleSeat Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "taskrabbit-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/01-white-background-angled.webp",
+      "alt": "Taskrabbit Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/02-customization-steps.webp",
+      "alt": "Taskrabbit Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/03-front-product.webp",
+      "alt": "Taskrabbit Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/04-tap-or-scan.webp",
+      "alt": "Taskrabbit Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/05-countertop-scene.webp",
+      "alt": "Taskrabbit Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/06-acrylic-detail.webp",
+      "alt": "Taskrabbit Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/taskrabbit-review-stand/07-personalization-detail.webp",
+      "alt": "Taskrabbit Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "thumbtack-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/01-white-background-angled.webp",
+      "alt": "Thumbtack Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/02-customization-steps.webp",
+      "alt": "Thumbtack Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/03-front-product.webp",
+      "alt": "Thumbtack Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/04-tap-or-scan.webp",
+      "alt": "Thumbtack Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/05-countertop-scene.webp",
+      "alt": "Thumbtack Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/06-acrylic-detail.webp",
+      "alt": "Thumbtack Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/thumbtack-review-stand/07-personalization-detail.webp",
+      "alt": "Thumbtack Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "tiktok-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/01-white-background-angled.webp",
+      "alt": "TikTok Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/02-customization-steps.webp",
+      "alt": "TikTok Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/03-front-product.webp",
+      "alt": "TikTok Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/04-tap-or-scan.webp",
+      "alt": "TikTok Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/05-countertop-scene.webp",
+      "alt": "TikTok Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/06-acrylic-detail.webp",
+      "alt": "TikTok Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/tiktok-follow-stand/07-personalization-detail.webp",
+      "alt": "TikTok Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "tripadvisor-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/01-white-background-angled.webp",
+      "alt": "TripAdvisor Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/02-customization-steps.webp",
+      "alt": "TripAdvisor Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/03-front-product.webp",
+      "alt": "TripAdvisor Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/04-tap-or-scan.webp",
+      "alt": "TripAdvisor Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/05-countertop-scene.webp",
+      "alt": "TripAdvisor Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/06-acrylic-detail.webp",
+      "alt": "TripAdvisor Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/tripadvisor-review-stand/07-personalization-detail.webp",
+      "alt": "TripAdvisor Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "trulia-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/01-white-background-angled.webp",
+      "alt": "Trulia Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/02-customization-steps.webp",
+      "alt": "Trulia Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/03-front-product.webp",
+      "alt": "Trulia Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/04-tap-or-scan.webp",
+      "alt": "Trulia Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/05-countertop-scene.webp",
+      "alt": "Trulia Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/06-acrylic-detail.webp",
+      "alt": "Trulia Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/trulia-review-stand/07-personalization-detail.webp",
+      "alt": "Trulia Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "ubereats-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/01-white-background-angled.webp",
+      "alt": "Uber Eats Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/02-customization-steps.webp",
+      "alt": "Uber Eats Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/03-front-product.webp",
+      "alt": "Uber Eats Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/04-tap-or-scan.webp",
+      "alt": "Uber Eats Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/05-countertop-scene.webp",
+      "alt": "Uber Eats Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/06-acrylic-detail.webp",
+      "alt": "Uber Eats Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/ubereats-review-stand/07-personalization-detail.webp",
+      "alt": "Uber Eats Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "vagaro-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/01-white-background-angled.webp",
+      "alt": "Vagaro Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/02-customization-steps.webp",
+      "alt": "Vagaro Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/03-front-product.webp",
+      "alt": "Vagaro Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/04-tap-or-scan.webp",
+      "alt": "Vagaro Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/05-countertop-scene.webp",
+      "alt": "Vagaro Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/06-acrylic-detail.webp",
+      "alt": "Vagaro Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/vagaro-review-stand/07-personalization-detail.webp",
+      "alt": "Vagaro Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "vitals-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/01-white-background-angled.webp",
+      "alt": "Vitals Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/02-customization-steps.webp",
+      "alt": "Vitals Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/03-front-product.webp",
+      "alt": "Vitals Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/04-tap-or-scan.webp",
+      "alt": "Vitals Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/05-countertop-scene.webp",
+      "alt": "Vitals Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/06-acrylic-detail.webp",
+      "alt": "Vitals Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/vitals-review-stand/07-personalization-detail.webp",
+      "alt": "Vitals Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "vrbo-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/01-white-background-angled.webp",
+      "alt": "Vrbo Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/02-customization-steps.webp",
+      "alt": "Vrbo Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/03-front-product.webp",
+      "alt": "Vrbo Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/04-tap-or-scan.webp",
+      "alt": "Vrbo Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/05-countertop-scene.webp",
+      "alt": "Vrbo Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/06-acrylic-detail.webp",
+      "alt": "Vrbo Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/vrbo-review-stand/07-personalization-detail.webp",
+      "alt": "Vrbo Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "x-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/x-follow-stand/01-white-background-angled.webp",
+      "alt": "X Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/x-follow-stand/02-customization-steps.webp",
+      "alt": "X Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/x-follow-stand/03-front-product.webp",
+      "alt": "X Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/x-follow-stand/04-tap-or-scan.webp",
+      "alt": "X Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/x-follow-stand/05-countertop-scene.webp",
+      "alt": "X Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/x-follow-stand/06-acrylic-detail.webp",
+      "alt": "X Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/x-follow-stand/07-personalization-detail.webp",
+      "alt": "X Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "yelp-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/01-white-background-angled.webp",
+      "alt": "Yelp Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/02-customization-steps.webp",
+      "alt": "Yelp Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/03-front-product.webp",
+      "alt": "Yelp Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/04-tap-or-scan.webp",
+      "alt": "Yelp Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/05-countertop-scene.webp",
+      "alt": "Yelp Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/06-acrylic-detail.webp",
+      "alt": "Yelp Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/yelp-review-stand/07-personalization-detail.webp",
+      "alt": "Yelp Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "youtube-follow-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/01-white-background-angled.webp",
+      "alt": "YouTube Follow Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/02-customization-steps.webp",
+      "alt": "YouTube Follow Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/03-front-product.webp",
+      "alt": "YouTube Follow Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/04-tap-or-scan.webp",
+      "alt": "YouTube Follow Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/05-countertop-scene.webp",
+      "alt": "YouTube Follow Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/06-acrylic-detail.webp",
+      "alt": "YouTube Follow Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/youtube-follow-stand/07-personalization-detail.webp",
+      "alt": "YouTube Follow Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "zillow-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/01-white-background-angled.webp",
+      "alt": "Zillow Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/02-customization-steps.webp",
+      "alt": "Zillow Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/03-front-product.webp",
+      "alt": "Zillow Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/04-tap-or-scan.webp",
+      "alt": "Zillow Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/05-countertop-scene.webp",
+      "alt": "Zillow Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/06-acrylic-detail.webp",
+      "alt": "Zillow Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/zillow-review-stand/07-personalization-detail.webp",
+      "alt": "Zillow Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ],
+  "zocdoc-review-stand": [
+    {
+      "id": "01-white-background-angled",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/01-white-background-angled.webp",
+      "alt": "Zocdoc Review Stand custom design — custom stand",
+      "label": "Custom stand",
+      "caption": "Custom design with your logo, business name and QR code."
+    },
+    {
+      "id": "02-customization-steps",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/02-customization-steps.webp",
+      "alt": "Zocdoc Review Stand custom design — make it yours",
+      "label": "Make it yours",
+      "caption": "Add your logo, business name and destination link."
+    },
+    {
+      "id": "03-front-product",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/03-front-product.webp",
+      "alt": "Zocdoc Review Stand custom design — front view",
+      "label": "Front view",
+      "caption": "Front view of the custom stand."
+    },
+    {
+      "id": "04-tap-or-scan",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/04-tap-or-scan.webp",
+      "alt": "Zocdoc Review Stand custom design — tap or scan",
+      "label": "Tap or scan",
+      "caption": "Customers can tap with NFC or scan your printed QR code."
+    },
+    {
+      "id": "05-countertop-scene",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/05-countertop-scene.webp",
+      "alt": "Zocdoc Review Stand custom design — countertop",
+      "label": "Countertop",
+      "caption": "Illustrative countertop setting."
+    },
+    {
+      "id": "06-acrylic-detail",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/06-acrylic-detail.webp",
+      "alt": "Zocdoc Review Stand custom design — stand details",
+      "label": "Stand details",
+      "caption": "A closer look at the rounded corners and bent acrylic base."
+    },
+    {
+      "id": "07-personalization-detail",
+      "src": "/product-galleries/custom-v3/zocdoc-review-stand/07-personalization-detail.webp",
+      "alt": "Zocdoc Review Stand custom design — your branding",
+      "label": "Your branding",
+      "caption": "Red placeholders show the areas personalized for your business."
+    }
+  ]
+}

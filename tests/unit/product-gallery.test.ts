@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { migratedProducts } from "@/data/migrated-products";
+import customProductGalleries from "@/data/custom-product-galleries.json";
 import { galleryImageKey, getGalleryImages } from "@/lib/product-gallery";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 
@@ -20,21 +21,36 @@ describe("design-specific galleries", () => {
   });
   it("uses each other existing stand's own custom artwork", () => {
     const yelp = migratedProducts.find(p => p.slug === "yelp-review-stand")!;
-    expect(getGalleryImages(yelp, "branded_qr_direct")[0].src).toBe(yelp.assetSet!.brandedAngledImageUrl);
-    expect(getGalleryImages({ ...yelp, assetSet: undefined }, "branded_qr_direct")).toEqual([]);
+    expect(getGalleryImages(yelp, "branded_qr_direct")[0].src).toContain("/custom-v3/yelp-review-stand/");
+    expect(getGalleryImages({ ...yelp, slug: "unconfigured", assetSet: undefined }, "branded_qr_direct")).toEqual([]);
   });
-  it("builds independently selectable panels with only each stand's custom assets", () => {
-    for (const product of migratedProducts.filter(p => p.assetSet?.brandedAngledImageUrl && p.slug !== google.slug)) {
+  it("keeps each stand's seven raster images separate from standard artwork", () => {
+    // The live catalog differs from the legacy seed (for example, LinkedIn Connect).
+    for (const product of migratedProducts.filter(p => p.slug in customProductGalleries)) {
       const images = getGalleryImages(product, "branded_qr_direct");
-      expect(images.length).toBe(product.assetSet?.brandedFrontTemplateUrl ? 7 : 6);
+      expect(images.length).toBe(7);
       expect(new Set(images.map(galleryImageKey)).size).toBe(images.length);
       for (const image of images) {
-        expect([product.assetSet!.brandedAngledImageUrl, product.assetSet!.brandedFrontTemplateUrl]).toContain(image.src);
+        expect(image.src).toContain(`/custom-v3/${product.slug}/`);
         expect(image.src).not.toBe(product.assetSet!.standardAngledImageUrl);
         expect(image.alt).toContain(product.title);
       }
-      expect(images.filter(i => i.panel)).toHaveLength(5);
-      expect(images.find(i => i.id === "customize")!.panel!.items[2].body).toContain(product.title.replace(/ Stand$/i, ""));
+      expect(images.filter(i => i.panel)).toHaveLength(0);
+      const standard = getGalleryImages(product, "standard_direct");
+      expect(standard[0].src).toBe(product.assetSet!.standardAngledImageUrl);
+      expect(standard.some(i => images.some(c => c.src === i.src))).toBe(false);
+    }
+  });
+  it("ships complete optimized files for all 57 sets including LinkedIn Connect", () => {
+    expect(Object.keys(customProductGalleries)).toHaveLength(57);
+    expect(customProductGalleries["linkedin-connect-stand"]).toHaveLength(7);
+    for (const [slug, images] of Object.entries(customProductGalleries)) {
+      expect(images).toHaveLength(7);
+      for (const image of images) {
+        expect(image.src).toContain(`/custom-v3/${slug}/`);
+        expect(existsSync(`public${image.src}`), image.src).toBe(true);
+        for (const width of [160, 320, 480, 640, 1200] as const) expect(existsSync(`public${optimizedUploadSrc(image.src, width)}`), `${image.src} width ${width}`).toBe(true);
+      }
     }
   });
 });
