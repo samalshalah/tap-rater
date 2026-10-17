@@ -2,7 +2,7 @@
 
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminAlert,
   AdminBadge,
@@ -17,10 +17,32 @@ import type {
   EmailDeliveryStatus
 } from "@/lib/email-deliveries";
 
+type EmailPreview = { subject: string; recipient: string; status: string; html: string; text: string; source: "original" | "reconstructed" | "unavailable" };
+
 type DeliveryFilter = "all" | "problems" | "pending" | "delivered";
 
 export function EmailDeliveryHistory({ overview, orderScoped = false }: { overview: AdminEmailDeliveryOverview; orderScoped?: boolean }) {
   const router = useRouter();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [preview, setPreview] = useState<EmailPreview | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  useEffect(() => {
+    if (preview) dialogRef.current?.showModal();
+    else dialogRef.current?.close();
+  }, [preview]);
+  async function openPreview(id: string) {
+    setPreviewLoading(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/email-deliveries/${encodeURIComponent(id)}/preview`, { cache: "no-store" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Email preview could not be loaded.");
+      setPreview(body);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Email preview could not be loaded.");
+    } finally { setPreviewLoading(false); }
+  }
+
   const [filter, setFilter] = useState<DeliveryFilter>("all");
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -66,6 +88,17 @@ export function EmailDeliveryHistory({ overview, orderScoped = false }: { overvi
         <AdminSummaryCard label="In progress" value={overview.pendingCount.toLocaleString()} description="Sending, delayed, or retrying" />
       </div>
 
+      <dialog ref={dialogRef} onCancel={() => setPreview(null)} aria-labelledby="email-preview-title" className="m-auto max-h-[90vh] w-[min(960px,95vw)] overflow-y-auto rounded-xl border border-line bg-white p-5 text-ink shadow-xl backdrop:bg-black/50">
+        {preview ? <>
+          <div className="flex items-start justify-between gap-4">
+            <div><h2 id="email-preview-title" className="text-lg font-semibold">{preview.subject}</h2><p className="mt-1 break-all text-sm">To: {preview.recipient}</p></div>
+            <AdminButton type="button" variant="outline" onClick={() => setPreview(null)}>Close preview</AdminButton>
+          </div>
+          <p className="my-4 text-sm text-muted">{preview.source === "original" ? "Original email retrieved from the email provider." : preview.source === "reconstructed" ? "Reconstructed preview using current order details and template. The original sent email could not be retrieved and may differ." : "The original email content is unavailable for this message."} Remote images and tracking pixels are blocked in this preview.</p>
+          {preview.html ? <iframe title="Customer email preview" sandbox="" referrerPolicy="no-referrer" className="h-[65vh] w-full rounded border border-line bg-white" srcDoc={`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">${preview.html}`} /> : preview.text ? <pre className="whitespace-pre-wrap text-sm">{preview.text}</pre> : null}
+        </> : null}
+      </dialog>
+      {previewLoading ? <p role="status" className="text-sm text-muted">Loading email preview...</p> : null}
       <AdminCard className="overflow-hidden">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -109,8 +142,10 @@ export function EmailDeliveryHistory({ overview, orderScoped = false }: { overvi
                   <tr key={delivery.id}>
                     <td className="py-3 pr-4 text-muted">{formatDate(delivery.createdAt)}</td>
                     <td className="max-w-72 py-3 pr-4">
-                      <strong className="block font-semibold text-ink">{formatMessageType(delivery.messageType)}</strong>
-                      <span className="mt-1 block truncate text-xs text-muted" title={delivery.subject}>{delivery.subject}</span>
+                      <button type="button" className="block text-left text-brand underline disabled:opacity-50" disabled={previewLoading} onClick={() => openPreview(delivery.id)} aria-label={`Preview ${delivery.subject}`}>
+                        <strong className="block font-semibold">{formatMessageType(delivery.messageType)}</strong>
+                        <span className="mt-1 block text-xs">{delivery.subject}</span>
+                      </button>
                       {delivery.failureReason ? (
                         <span className="mt-1 block text-xs leading-5 text-red-700">{delivery.failureReason}</span>
                       ) : null}
