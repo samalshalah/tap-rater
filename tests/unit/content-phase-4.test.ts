@@ -37,7 +37,8 @@ describe("final content and shopping continuity", () => {
     expect(selectedInput(html, "Select Branded")).toContain('checked=""');
     expect(selectedInput(html, "Select Standard")).not.toContain('checked=""');
     expect(html).toContain("Set Up My Stand - $49");
-    expect(html).toContain("Branded + QR layout example");
+    expect(html).toContain("Custom Google Review stand with red logo, company name and QR placeholders");
+    expect(html).toContain("tap-rater-custom-google-review-stand-01-white-background-angled");
   });
 
   it("keeps Standard as the ordinary entry point", () => {
