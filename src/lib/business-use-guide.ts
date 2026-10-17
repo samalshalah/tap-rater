@@ -9,7 +9,11 @@ export const businessUseGuideSchema = z.object({
   seoDescription: z.string().trim().max(320).optional(),
   recommendationsTitle: z.string().trim().max(160).optional(),
   placementTitle: z.string().trim().max(160).optional(),
-  placements: z.array(z.object({ title: z.string().trim().min(2).max(100), body: z.string().trim().min(2).max(800) })).max(6).optional(),
+  placements: z.array(z.object({
+    title: z.string().trim().min(2).max(100),
+    body: z.string().trim().min(2).max(800),
+    productSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/).optional()
+  })).max(6).optional(),
   howItWorksTitle: z.string().trim().max(160).optional(),
   steps: z.array(z.object({ title: z.string().trim().min(2).max(100), body: z.string().trim().min(2).max(800) })).max(5).optional(),
   faqTitle: z.string().trim().max(160).optional(),
@@ -41,9 +45,9 @@ export function defaultBusinessUseGuide(slug: string): BusinessUseGuide {
     recommendationsTitle: "Recommended Stands for Your Restaurant",
     placementTitle: "Where to Place Your Restaurant Stands",
     placements: [
-      { title: "Tables and ordering counters", body: "Put a menu stand where guests can see it before ordering, with enough space to bring a phone close. Link to a mobile-friendly menu or ordering page. Check that dishes, prices, and availability are maintained by your existing provider so guests see the information they need." },
-      { title: "Checkout and the host desk", body: "A Google Review stand fits beside checkout, where guests finish their visit. Make the option available to all guests without asking for a particular rating. Keep the stand visible without blocking payment equipment, and confirm that the link opens the review destination for this restaurant." },
-      { title: "Pickup and waiting areas", body: "Use a social stand where guests wait for an order or table. Your Instagram profile can help them discover new dishes and events after their visit. Keep the invitation clear: a social stand opens your profile, and guests decide whether to follow. Avoid placing several competing stands together." }
+      { title: "Tables and ordering counters", productSlug: "menu-and-order-stand", body: "Let diners open your current menu before they order, whether they are seated at a table or waiting at a café counter. Use the public menu or ordering URL for that location. Your existing provider continues to handle menu updates, orders, and payments." },
+      { title: "Checkout and the host desk", productSlug: "google-review-stand", body: "Make your restaurant’s Google review page easy to reach as guests finish their meal. Place the stand beside checkout or the host desk, with space away from the payment terminal. Invite honest feedback from all guests and check that the destination belongs to this restaurant location." },
+      { title: "Pickup and waiting areas", productSlug: "instagram-follow-stand", body: "Give guests waiting for takeaway orders a way to discover new dishes, daily specials, and upcoming events on your restaurant’s Instagram profile. Position the stand beside pickup signage where phones can reach it. Opening the profile leaves the decision to follow with the guest." }
     ],
     howItWorksTitle: "How Your Restaurant Stand Works",
     steps: [

@@ -11,6 +11,10 @@ describe("business buying guides", () => {
     expect(businessUseGuideSchema.safeParse(guide).success).toBe(true);
     expect(resolveRecommendations(guide, staticStorefrontProducts())).toHaveLength(3);
     expect(guide.placements).toHaveLength(3);
+    const publicSlugs = new Set(staticStorefrontProducts().map((product) => product.slug));
+    for (const placement of guide.placements ?? []) {
+      expect(publicSlugs.has(placement.productSlug ?? "")).toBe(true);
+    }
     expect(guide.steps).toHaveLength(3);
     expect(guide.faqs).toHaveLength(5);
     expect(guide.seoTitle).toBeTruthy();

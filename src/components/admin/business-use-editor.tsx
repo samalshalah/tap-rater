@@ -138,7 +138,7 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
         </Panel>
         <Panel title="Placement guide">
           <TextInput label="Placement heading (H2)" value={form.guide.placementTitle ?? ""} onChange={(placementTitle) => updateGuide({ ...form.guide, placementTitle })} />
-          <GuideSectionEditor items={form.guide.placements ?? []} limit={6} label="Placement" onChange={(placements) => updateGuide({ ...form.guide, placements })} />
+          <GuideSectionEditor items={form.guide.placements ?? []} limit={6} label="Placement" products={products} onChange={(placements) => updateGuide({ ...form.guide, placements })} />
         </Panel>
         <Panel title="How it works">
           <TextInput label="How it works heading (H2)" value={form.guide.howItWorksTitle ?? ""} onChange={(howItWorksTitle) => updateGuide({ ...form.guide, howItWorksTitle })} />
@@ -203,15 +203,22 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
   );
 }
 
-function GuideSectionEditor({ items, limit, label, onChange }: {
-  items: Array<{ title: string; body: string }>; limit: number; label: string;
-  onChange: (items: Array<{ title: string; body: string }>) => void;
+function GuideSectionEditor({ items, limit, label, products, onChange }: {
+  items: Array<{ title: string; body: string; productSlug?: string }>; limit: number; label: string;
+  products?: MigratedProduct[];
+  onChange: (items: Array<{ title: string; body: string; productSlug?: string }>) => void;
 }) {
   return <div className="space-y-4">
     {items.map((item, index) => <fieldset key={index} className="space-y-3 rounded-lg border border-line p-4">
       <legend className="px-2 font-semibold">{label} {index + 1}</legend>
       <TextInput label="Title (H3)" value={item.title} onChange={(title) => onChange(items.map((current, i) => i === index ? { ...current, title } : current))} />
       <TextArea label="Description" rows={4} value={item.body} onChange={(body) => onChange(items.map((current, i) => i === index ? { ...current, body } : current))} />
+      {products ? <label className="block text-xs font-black uppercase text-muted">Related product
+        <select className="mt-2 w-full rounded-md border border-line bg-white px-3 py-2 text-sm font-normal text-ink" value={item.productSlug ?? ""} onChange={(event) => onChange(items.map((current, i) => i === index ? { ...current, productSlug: event.target.value || undefined } : current))}>
+          <option value="">No product link</option>
+          {products.map((product) => <option key={product.slug} value={product.slug}>{product.title}</option>)}
+        </select>
+      </label> : null}
       <div className="flex gap-4"><button type="button" className="text-sm underline disabled:opacity-40" disabled={index === 0} onClick={() => { const next = [...items]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; onChange(next); }}>Move up</button><button type="button" className="text-sm text-red-700 underline" onClick={() => onChange(items.filter((_, i) => i !== index))}>Remove {label.toLowerCase()}</button></div>
     </fieldset>)}
     <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={items.length >= limit} onClick={() => onChange([...items, { title: "", body: "" }])}>Add {label.toLowerCase()}</button>
