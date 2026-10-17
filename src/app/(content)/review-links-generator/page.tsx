@@ -20,6 +20,11 @@ export default function ReviewLinksGeneratorPage() {
           <h1 className="tr-page-title mt-5">Google Review Link Generator</h1>
           <p className="tr-body mt-4">A direct link to your Google Business Profile review form, ready for your NFC stand or Branded QR code.</p>
           <div className="mt-8"><ReviewLinkTool /></div>
+          <aside className="mt-8 rounded-xl border border-line bg-white p-6" aria-labelledby="review-stand-next-step">
+            <h2 id="review-stand-next-step" className="text-xl font-semibold">Put your Google review link on your counter</h2>
+            <p className="tr-body-sm mt-3">Use the link you found with a <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">Google review stand</Link> so visitors can open your review form without searching for your business. Choose Standard for NFC tapping, or Branded + QR for your logo, business name, and a printed QR code.</p>
+            <Link href="/product/google-review-stand" className="tr-button-primary mt-5">Choose your Google review stand</Link>
+          </aside>
         </div>
       </SectionShell>
       <SectionShell tone="soft" spacing="compact">

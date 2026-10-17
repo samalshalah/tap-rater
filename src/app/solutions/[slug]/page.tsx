@@ -60,6 +60,8 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   const guide = await getBusinessUseGuide(slug);
   const assignedProducts = orderBusinessUseProducts(products, slug, businessUse.productSlugs);
   const recommendations = resolveRecommendations(guide, products);
+  const googleReviewRecommendation = recommendations.find((item) => item.productSlug === "google-review-stand");
+  const googleReviewStand = products.find((product) => product.slug === "google-review-stand");
   const remainingProducts = assignedProducts.filter((product) => !recommendations.some((item) => item.product.slug === product.slug));
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
   const copy = getBusinessUsePageCopy(businessUse);
@@ -103,7 +105,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
               <p className="mt-3 text-sm leading-6 text-muted">{item.reason}</p>
               <p className="mb-5 mt-4 rounded-lg bg-soft p-3 text-sm leading-6"><strong>Where to place it:</strong> {item.placement}</p>
               <ProductCard product={item.product} />
-              <Link href={`/product/${item.product.slug}`} className="tr-editorial-link mt-4">Choose this stand <span aria-hidden="true">→</span></Link>
+              <Link href={`/product/${item.product.slug}`} className="tr-editorial-link mt-4">{item.product.slug === "google-review-stand" ? "Shop the Google review stand" : "Choose this stand"} <span aria-hidden="true">→</span></Link>
             </article>)}
           </div> : null}
           {remainingProducts.length > 0 ? <h3 className="mt-10 text-xl font-semibold">{recommendations.length ? "More options for your business" : "Explore your stands"}</h3> : null}
@@ -122,6 +124,15 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
           </Link>
         </div>
       </SectionShell>
+      {googleReviewStand ? <SectionShell spacing="compact">
+        <div className="tr-container-narrow">
+          <h2 className="tr-section-title">Connect your customers to Google reviews</h2>
+          <p className="tr-body mt-4">{googleReviewRecommendation?.reason || "If your business has an eligible Google Business Profile, give visitors a direct route to its review form. Confirm the correct business and location before setting up your stand."}</p>
+          {googleReviewRecommendation ? <p className="tr-body mt-4"><strong>Suggested placement:</strong> {googleReviewRecommendation.placement}</p> : null}
+          <p className="tr-body mt-4">The <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">Google review stand</Link> offers Standard NFC tapping or a custom Branded + QR design with your logo and business name. Compare both designs on the product page, then use our <Link href="/review-links-generator" className="font-semibold text-brand underline underline-offset-4">Google review link generator</Link> to find the destination for your business.</p>
+          <Link href="/product/google-review-stand" className="tr-button-primary mt-6">Compare Google review stand designs</Link>
+        </div>
+      </SectionShell> : null}
       {guide.placements?.length ? <SectionShell spacing="compact"><div className="tr-container">
         <SectionHeader title={guide.placementTitle || "Where to Place Your Stands"} />
         <div className="mt-7 grid gap-6 md:grid-cols-3">{guide.placements.map((item, index) => <article key={index}><h3 className="text-xl font-semibold">{item.title}</h3><p className="tr-body-sm mt-3">{item.body}</p></article>)}</div>

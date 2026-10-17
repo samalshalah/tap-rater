@@ -56,6 +56,14 @@ export default async function SolutionsPage() {
           <div className="mt-10 flex flex-col justify-between gap-4 rounded-xl border border-line bg-white p-6 sm:flex-row sm:items-center"><div><h2 className="text-xl font-semibold">Don’t see your business?</h2><p className="mt-2 text-sm text-muted">Choose by what customers should do: review, follow, book, or open a link.</p></div><Link href="/shop" className="tr-editorial-link shrink-0">Shop all stands →</Link></div>
         </div>
       </SectionShell>
+      <SectionShell spacing="compact">
+        <div className="tr-container-narrow">
+          <h2 className="tr-section-title">Looking for a stand for Google reviews?</h2>
+          <p className="tr-body mt-4">For a restaurant checkout, reception desk, or service counter, the <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">Google review stand</Link> connects visitors to your business’s review form. Choose Standard for NFC tapping or Branded + QR for your logo, business name, and a printed QR code.</p>
+          <p className="tr-body mt-4">Already have an eligible Google Business Profile? Find its destination with our <Link href="/review-links-generator" className="font-semibold text-brand underline underline-offset-4">Google review link generator</Link> and check the business location before ordering.</p>
+          <Link href="/product/google-review-stand" className="tr-button-primary mt-6">Shop Google review stands</Link>
+        </div>
+      </SectionShell>
     </main>
   );
 }
