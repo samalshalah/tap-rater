@@ -162,20 +162,19 @@ export async function finishEmailDeliveryAttempt(
   }
 }
 
-export async function getAdminEmailDeliveries(): Promise<AdminEmailDeliveryOverview> {
+export async function getAdminEmailDeliveries(orderId?: string): Promise<AdminEmailDeliveryOverview> {
   if (!hasSupabaseAdminConfig()) return emptyOverview(false);
-  return getAdminEmailDeliveriesWithClient(getSupabaseAdmin() as EmailDeliveryDbClient);
+  return getAdminEmailDeliveriesWithClient(getSupabaseAdmin() as EmailDeliveryDbClient, orderId);
 }
 
 export async function getAdminEmailDeliveriesWithClient(
-  client: EmailDeliveryDbClient
+  client: EmailDeliveryDbClient,
+  orderId?: string
 ): Promise<AdminEmailDeliveryOverview> {
   try {
-    const { data, error } = await client
-      .from("email_deliveries")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(250);
+    let query = client.from("email_deliveries").select("*");
+    if (orderId) query = query.eq("entity_type", "order").eq("entity_id", orderId).eq("audience", "customer");
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(250);
 
     if (error || !Array.isArray(data)) return emptyOverview(false);
     const deliveries = data.map(normalizeEmailDelivery).filter((row): row is EmailDeliveryRecord => Boolean(row));
@@ -288,7 +287,7 @@ function normalizeEmailDelivery(value: unknown): EmailDeliveryRecord | null {
     audience: readAudience(row.audience),
     recipient: readString(row.recipient) ?? "",
     subject: readString(row.subject) ?? "",
-    status: readStatus(row.status),
+    status: row.delivered_at && ["sending", "accepted", "delayed"].includes(String(row.status)) ? "delivered" : readStatus(row.status),
     providerMessageId: readString(row.provider_message_id),
     idempotencyKey,
     failureReason: readString(row.failure_reason),

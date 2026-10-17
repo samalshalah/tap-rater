@@ -9,6 +9,28 @@ import {
 } from "@/lib/email-deliveries";
 
 describe("email delivery ledger", () => {
+  it("scopes order history to customer messages for that order", async () => {
+    const db = createEmailDeliveryDb([
+      deliveryRow({ id: "customer" }),
+      deliveryRow({ id: "other-order", entity_id: "order-2" }),
+      deliveryRow({ id: "admin", audience: "admin" }),
+      deliveryRow({ id: "other-entity", entity_type: "customer" })
+    ]);
+    const overview = await getAdminEmailDeliveriesWithClient(db.client, "order-1");
+    expect(overview.deliveries.map((row) => row.id)).toEqual(["customer"]);
+  });
+
+  it("shows confirmed delivery despite a stale accepted status, preserving complaints", async () => {
+    const db = createEmailDeliveryDb([
+      deliveryRow({ id: "delivered", status: "accepted", delivered_at: "2026-09-05T12:01:00.000Z" }),
+      deliveryRow({ id: "complaint", status: "complained", delivered_at: "2026-09-05T12:01:00.000Z" })
+    ]);
+    const overview = await getAdminEmailDeliveriesWithClient(db.client);
+    expect(overview.deliveries.map((row) => row.status)).toEqual(["delivered", "complained"]);
+    expect(overview.deliveredCount).toBe(1);
+    expect(overview.problemCount).toBe(1);
+  });
+
   it("builds stable, bounded idempotency keys without exposing source values", () => {
     const first = createEmailIdempotencyKey("paid_order_customer", "order-secret-value");
     const second = createEmailIdempotencyKey("paid_order_customer", "order-secret-value");

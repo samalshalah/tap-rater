@@ -21,18 +21,10 @@ export default async function AdminEmailTemplatesPage() {
       <section className="tr-admin-section">
         <p className="tr-eyebrow">Settings</p>
         <div className="mt-3">
-          <h1 className="tr-admin-title">Email templates</h1>
+          <h1 className="tr-admin-title">Emails &amp; notifications</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            Manage safe email copy for operational notifications. Product, order, setup, shipping, and policy details are still generated from trusted order data.
+            Review sent emails and delivery status. Template previews are available separately below.
           </p>
-        </div>
-        <CheckoutReminderSettings />
-        <div className="mt-8 border-y border-line py-6">
-          <h2 className="mb-4 text-lg font-semibold">Payment recovery</h2>
-          <CommerceRecoveryList {...recovery} />
-        </div>
-        <div className="mt-8">
-          <EmailTemplatesForm initialTemplates={templates} />
         </div>
         <div className="mt-12 border-t border-line pt-10">
           <p className="tr-eyebrow">Operations</p>
@@ -44,6 +36,15 @@ export default async function AdminEmailTemplatesPage() {
             <EmailDeliveryHistory overview={deliveryOverview} />
           </div>
         </div>
+        <CheckoutReminderSettings />
+        <div className="mt-8 border-y border-line py-6">
+          <h2 className="mb-4 text-lg font-semibold">Payment recovery</h2>
+          <CommerceRecoveryList {...recovery} />
+        </div>
+        <div className="mt-8">
+          <EmailTemplatesForm initialTemplates={templates} />
+        </div>
+
       </section>
     </AdminShell>
   );

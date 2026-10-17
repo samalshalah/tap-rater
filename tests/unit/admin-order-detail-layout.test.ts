@@ -3,6 +3,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import AdminOrderDetailPage from "@/app/admin/orders/[id]/page";
 
+vi.mock("next/navigation", async original => ({
+  ...await original<typeof import("next/navigation")>(),
+  useRouter: () => ({ refresh: vi.fn() })
+}));
+vi.mock("@/lib/email-deliveries", () => ({
+  getAdminEmailDeliveries: vi.fn(async () => ({ available: true, deliveries: [], acceptedCount: 0, deliveredCount: 0, problemCount: 0, pendingCount: 0 }))
+}));
+
 const { getOrder } = vi.hoisted(() => ({ getOrder: vi.fn() }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: ({ children }: { children: ReactNode }) => children }));
@@ -50,5 +58,7 @@ describe("admin order detail wrapping", () => {
     expect(html).toContain("tr-admin-title mt-2 break-words");
     expect(html).toContain("xl:grid-cols-[minmax(0,1fr)_420px]");
     expect(html).toContain("$82.68");
+    expect(html).toContain("Customer emails &amp; notifications");
+    expect(html).toContain("View customer email history");
   });
 });

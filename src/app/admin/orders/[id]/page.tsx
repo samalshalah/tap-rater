@@ -1,3 +1,5 @@
+import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
+import { getAdminEmailDeliveries } from "@/lib/email-deliveries";
 import { canChangeComplimentaryStand } from "@/lib/complimentary-orders";
 import { OrderCustomerEmail } from "@/components/admin/order-customer-email";
 import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
@@ -29,6 +31,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
     notFound();
   }
 
+  const deliveryOverview = await getAdminEmailDeliveries(order.id);
   const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
   const attentionItems = buildAttentionItems(order, summaries);
 
@@ -52,6 +55,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
         </div>
 
         {attentionItems.length ? <OrderAttentionCard items={attentionItems} /> : null}
+        <a href="#customer-email-history" className="mt-4 inline-block font-semibold text-brand underline">View customer email history</a>
 
         <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div className="min-w-0 space-y-6">
@@ -104,6 +108,13 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             <OrderFulfillmentForm order={order} productionBlockers={getOrderProductionBlockers(order)} />
           </div>
         </div>
+        <section id="customer-email-history" className="mt-8 scroll-mt-24">
+          <h2 className="text-xl font-semibold">Customer emails &amp; notifications</h2>
+          <p className="mb-5 mt-2 text-sm text-muted">Actual email attempts for this order. Accepted means the email provider received it; Delivered means the recipient's mail server confirmed delivery. This does not confirm the customer read it.</p>
+          {order.tracking_number && !order.shipped_at && order.shipping_status !== "shipped" && order.shipping_status !== "delivered" && !deliveryOverview.deliveries.some((email) => email.messageType === "shipping_tracking_customer") ? <AdminAlert tone="warning" className="mb-4">Tracking is saved, but this order is not marked shipped. Saving tracking alone does not send the shipping notification. Mark the order shipped in Fulfillment operations when it has shipped.</AdminAlert> : null}
+          <EmailDeliveryHistory overview={deliveryOverview} orderScoped />
+          <a className="mt-4 inline-block text-sm font-semibold text-brand underline" href="/admin/settings/emails">View all email delivery history</a>
+        </section>
       </section>
     </AdminShell>
   );

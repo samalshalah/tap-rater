@@ -19,7 +19,7 @@ import type {
 
 type DeliveryFilter = "all" | "problems" | "pending" | "delivered";
 
-export function EmailDeliveryHistory({ overview }: { overview: AdminEmailDeliveryOverview }) {
+export function EmailDeliveryHistory({ overview, orderScoped = false }: { overview: AdminEmailDeliveryOverview; orderScoped?: boolean }) {
   const router = useRouter();
   const [filter, setFilter] = useState<DeliveryFilter>("all");
   const [retryingId, setRetryingId] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function EmailDeliveryHistory({ overview }: { overview: AdminEmailDeliver
   if (!overview.available) {
     return (
       <AdminAlert tone="warning">
-        Email delivery history is unavailable until the email-delivery database migration is applied.
+        Email delivery history could not be loaded. Refresh the page to try again.
       </AdminAlert>
     );
   }
@@ -70,8 +70,9 @@ export function EmailDeliveryHistory({ overview }: { overview: AdminEmailDeliver
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 className="text-lg font-semibold text-ink">Recent attempts</h3>
-            <p className="mt-1 text-sm text-muted">Up to 250 recent transactional email attempts.</p>
+            <p className="mt-1 text-sm text-muted">{orderScoped ? "Up to 250 customer email attempts for this order." : "Up to 250 recent transactional email attempts."}</p>
           </div>
+          <AdminButton type="button" variant="outline" onClick={() => router.refresh()}>Refresh history</AdminButton>
           <AdminSelect
             aria-label="Filter email attempts"
             className="w-full md:w-48"
@@ -115,7 +116,9 @@ export function EmailDeliveryHistory({ overview }: { overview: AdminEmailDeliver
                       ) : null}
                     </td>
                     <td className="max-w-64 break-all py-3 pr-4 text-ink">{delivery.recipient}</td>
-                    <td className="py-3 pr-4"><DeliveryStatusBadge status={delivery.status} /></td>
+                    <td className="py-3 pr-4"><DeliveryStatusBadge status={delivery.status} />
+                      {delivery.deliveredAt ? <span className="mt-1 block text-xs text-muted">Delivered {formatDate(delivery.deliveredAt)}</span> : null}
+                    </td>
                     <td className="py-3 pr-4 text-ink">{delivery.attemptNumber} of 5</td>
                     <td className="py-3 pr-4">{renderSource(delivery)}</td>
                     <td className="py-3">

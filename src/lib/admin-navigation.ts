@@ -99,9 +99,9 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
           "Storefront use cases, imagery, SEO, and product relationships",
       },
       {
-        label: "Email Templates",
+        label: "Emails & Notifications",
         href: "/admin/settings/emails",
-        description: "Order, request, and shipping notification copy",
+        description: "Customer email delivery history and notification templates",
       },
       {
         label: "Settings",
