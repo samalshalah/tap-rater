@@ -1,3 +1,4 @@
+import { productDisplayNames } from "@/data/product-display-names";
 export type SupportedDestination =
   | "google"
   | "facebook"
@@ -2136,5 +2137,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
 
 export const migratedProducts: MigratedProduct[] = migratedProductsWithoutMarketSort.map((product) => ({
   ...product,
+  title: productDisplayNames[product.slug] ?? product.title,
+  seoTitle: productDisplayNames[product.slug]?.replace(/^Tap Rater /, "") ?? product.seoTitle,
   sortOrder: marketSortOrderBySlug.get(product.slug) ?? product.sortOrder ?? 1000
 }));

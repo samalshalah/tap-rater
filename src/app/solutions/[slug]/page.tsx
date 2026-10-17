@@ -105,7 +105,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
               <p className="mt-3 text-sm leading-6 text-muted">{item.reason}</p>
               <p className="mb-5 mt-4 rounded-lg bg-soft p-3 text-sm leading-6"><strong>Where to place it:</strong> {item.placement}</p>
               <ProductCard product={item.product} />
-              <Link href={`/product/${item.product.slug}`} className="tr-editorial-link mt-4">{item.product.slug === "google-review-stand" ? "Shop the Google review stand" : "Choose this stand"} <span aria-hidden="true">→</span></Link>
+              <Link href={`/product/${item.product.slug}`} className="tr-editorial-link mt-4">{item.product.slug === "google-review-stand" ? "Shop the review stand for Google Reviews" : "Choose this stand"} <span aria-hidden="true">→</span></Link>
             </article>)}
           </div> : null}
           {remainingProducts.length > 0 ? <h3 className="mt-10 text-xl font-semibold">{recommendations.length ? "More options for your business" : "Explore your stands"}</h3> : null}
@@ -129,8 +129,8 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
           <h2 className="tr-section-title">Connect your customers to Google reviews</h2>
           <p className="tr-body mt-4">{googleReviewRecommendation?.reason || "If your business has an eligible Google Business Profile, give visitors a direct route to its review form. Confirm the correct business and location before setting up your stand."}</p>
           {googleReviewRecommendation ? <p className="tr-body mt-4"><strong>Suggested placement:</strong> {googleReviewRecommendation.placement}</p> : null}
-          <p className="tr-body mt-4">The <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">Google review stand</Link> offers Standard NFC tapping or a custom Branded + QR design with your logo and business name. Compare both designs on the product page, then use our <Link href="/review-links-generator" className="font-semibold text-brand underline underline-offset-4">Google review link generator</Link> to find the destination for your business.</p>
-          <Link href="/product/google-review-stand" className="tr-button-primary mt-6">Compare Google review stand designs</Link>
+          <p className="tr-body mt-4">The <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">review stand for Google Reviews</Link> offers Standard NFC tapping or a custom Branded + QR design with your logo and business name. Compare both designs on the product page, then use our <Link href="/review-links-generator" className="font-semibold text-brand underline underline-offset-4">Google review link generator</Link> to find the destination for your business.</p>
+          <Link href="/product/google-review-stand" className="tr-button-primary mt-6">Compare review stand for Google Reviews designs</Link>
         </div>
       </SectionShell> : null}
       {guide.placements?.length ? <SectionShell spacing="compact"><div className="tr-container">

@@ -47,7 +47,7 @@ describe("product repository", () => {
 
     expect(product).toMatchObject({
       slug: "google-review-stand",
-      title: "Supabase Google Stand",
+      title: "Tap Rater Review Stand for Google Reviews",
       sku: "SUP-1",
       categorySlug: "reviews",
       basePriceCents: 5900,
@@ -69,7 +69,7 @@ describe("product repository", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "logo",
-      seoTitle: "Supabase SEO",
+      seoTitle: "Review Stand for Google Reviews",
       seoDescription: "Supabase description",
       searchKeywords: ["supabase", "google"],
       isActive: true
@@ -130,7 +130,7 @@ describe("product repository", () => {
     ]));
 
     expect(products).toHaveLength(1);
-    expect(products[0].title).toBe("Supabase Google Stand");
+    expect(products[0].title).toBe("Tap Rater Review Stand for Google Reviews");
     expect(products[0].salePriceCents).toBe(4900);
     expect(products.map((product) => product.title)).not.toContain("Old active tag");
   });

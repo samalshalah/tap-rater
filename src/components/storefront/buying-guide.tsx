@@ -132,7 +132,7 @@ export function BuyingGuide({
           <Link href="/stand-bundles">Stands for multiple counters</Link>
           <Link href="/multi-link">Explore Multi-Link</Link>
           {kind === "category" && slug === "reviews" ? <>
-            <Link href="/product/google-review-stand">Google Review Stand</Link>
+            <Link href="/product/google-review-stand">Tap Rater Review Stand for Google Reviews</Link>
             <Link href="/product/yelp-review-stand">Yelp Review Stand</Link>
             <Link href="/product/facebook-review-stand">Facebook Review Stand</Link>
           </> : null}

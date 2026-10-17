@@ -1,3 +1,4 @@
+import { productDisplayNames } from "@/data/product-display-names";
 import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnapshot } from "@/data/migrated-products";
@@ -356,7 +357,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
   const productRow = row as ProductRow;
   const slug = readString(productRow.slug);
   const staticProduct = slug ? getProductBySlug(slug) : undefined;
-  const title = readString(productRow.title) ?? staticProduct?.title;
+  const title = (slug ? productDisplayNames[slug] : undefined) ?? readString(productRow.title) ?? staticProduct?.title;
   const sku = readString(productRow.sku) ?? staticProduct?.sku ?? slug?.toUpperCase().replace(/[^A-Z0-9]+/g, "-");
   const rawCategorySlug =
     readString(productRow.category_slug) ??
@@ -512,7 +513,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
     images: readImages(productRow.images) ?? staticProduct?.images ?? [],
     variants: readVariants(productRow.variants) ?? staticProduct?.variants ?? [],
     isActive: readBoolean(productRow.is_active) ?? readBoolean(productRow.isActive) ?? true,
-    seoTitle: readString(productRow.seo_title) ?? readString(productRow.seoTitle) ?? staticProduct?.seoTitle,
+    seoTitle: (slug ? productDisplayNames[slug]?.replace(/^Tap Rater /, "") : undefined) ?? readString(productRow.seo_title) ?? readString(productRow.seoTitle) ?? staticProduct?.seoTitle,
     seoDescription: readString(productRow.seo_description) ?? readString(productRow.seoDescription) ?? staticProduct?.seoDescription,
     searchKeywords:
       readStringArray(productRow.search_keywords) ?? readStringArray(productRow.searchKeywords),

@@ -86,7 +86,10 @@ export const productGalleries: Record<string, Partial<Record<PurchaseOptionId, G
 export function getGalleryImages(product: MigratedProduct, optionId: PurchaseOptionId = "standard_direct"): GalleryImage[] {
   if (optionId === "branded_qr_direct") {
     const custom = (customProductGalleries as Record<string, GalleryImage[]>)[product.slug];
-    if (custom?.length) return custom;
+    if (custom?.length) return custom.map((image) => ({
+      ...image,
+      alt: `${product.title} custom design — ${image.label ?? image.caption ?? "product view"}`
+    }));
   }
   const configured = productGalleries[product.slug]?.[optionId];
   if (configured?.length) return configured;

@@ -31,7 +31,7 @@ describe("product SEO generation", () => {
   it("generates product metadata from stand type, platform, use, and price", () => {
     const seo = generateProductSeo(productFixture());
 
-    expect(seo.generatedTitle).toBe("Google Review Stand | NFC Review Stand from $39");
+    expect(seo.generatedTitle).toBe("Tap Rater Review Stand for Google Reviews");
     expect(seo.generatedDescription).toBe(
       "Get more Google reviews with a Tap Rater NFC review stand. Choose NFC-only Standard or Branded + QR with your logo and name. Starts at $39."
     );

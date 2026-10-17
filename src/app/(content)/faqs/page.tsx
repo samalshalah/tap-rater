@@ -27,7 +27,7 @@ export default async function FaqsPage() {
         <div className="tr-container">
           <FaqList faqs={faqs} className="mx-auto grid max-w-4xl gap-3" />
           <nav aria-label="Explore stands by purpose" className="mx-auto mt-7 flex max-w-4xl flex-wrap gap-5 text-sm font-semibold text-brand underline underline-offset-4">
-            <Link href="/product/google-review-stand">Google Review Stand</Link>
+            <Link href="/product/google-review-stand">Tap Rater Review Stand for Google Reviews</Link>
             <Link href="/product/yelp-review-stand">Yelp Review Stand</Link>
             <Link href="/product/facebook-review-stand">Facebook Review Stand</Link>
             <Link href="/product/menu-and-order-stand">Menu and Order Stand</Link>

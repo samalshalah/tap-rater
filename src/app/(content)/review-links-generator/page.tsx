@@ -7,14 +7,14 @@ import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Free Google Review Link Generator",
-  description: "Find and copy your Google review link for free. Then put it on a Google review stand with NFC, or personalize a stand with your logo, business name and QR code.",
+  description: "Find and copy your Google review link for free. Then put it on a review stand for Google Reviews with NFC, or personalize a stand with your logo, business name and QR code.",
   alternates: { canonical: "/review-links-generator" }
 };
 
 const questions = [
   { question: "Is the Google review link generator free?", answer: "Yes. Find, copy and use your review link without buying a stand. The stand is an optional way to share that same link with customers in person." },
   { question: "What if I cannot find my business?", answer: "Check your business name and location. You can also copy the review link from your Google Business Profile's review-sharing option and paste it into the generator." },
-  { question: "Which Google review stand should I choose?", answer: "Standard uses NFC tapping. Branded + QR includes NFC plus your logo, business name and a printed QR code. Both Direct designs open your chosen Google review link and are one-time purchases without a subscription." },
+  { question: "Which review stand for Google Reviews should I choose?", answer: "Standard uses NFC tapping. Branded + QR includes NFC plus your logo, business name and a printed QR code. Both Direct designs open your chosen Google review link and are one-time purchases without a subscription." },
   { question: "Will my stand include the red placeholder text?", answer: "No. The red text in the custom sample shows where your logo, business name and QR code go. Your finished Branded + QR stand uses your approved business details." },
   { question: "Does opening the link automatically post a review?", answer: "No. Customers choose whether to leave a review and may need to sign in to Google. A link or stand does not guarantee a rating or publication. Invite honest feedback without incentives." }
 ];
@@ -38,13 +38,13 @@ export default function ReviewLinksGeneratorPage() {
               <ReviewLinkTool />
             </section>
             <aside className="min-w-0 rounded-2xl border border-line bg-white p-5 sm:p-6" aria-labelledby="review-stand-next-step">
-              <Link href="/product/google-review-stand?design=branded" aria-label="View the custom Google review stand">
-                <Image src="/product-galleries/google-custom/tap-rater-custom-google-review-stand-01-white-background-angled.webp" alt="Custom Google review stand with red placeholders for your logo, business name and QR code" width={1024} height={1024} sizes="(min-width: 1024px) 440px, 100vw" className="mx-auto aspect-square max-h-80 w-full rounded-xl object-contain" />
+              <Link href="/product/google-review-stand?design=branded" aria-label="View the custom review stand for Google Reviews">
+                <Image src="/product-galleries/google-custom/tap-rater-custom-google-review-stand-01-white-background-angled.webp" alt="Custom review stand for Google Reviews with red placeholders for your logo, business name and QR code" width={1024} height={1024} sizes="(min-width: 1024px) 440px, 100vw" className="mx-auto aspect-square max-h-80 w-full rounded-xl object-contain" />
               </Link>
               <p className="mt-3 text-xs text-muted">Custom design example. Red placeholders are replaced with your business details.</p>
               <h2 id="review-stand-next-step" className="mt-5 text-2xl font-semibold">Your link. Your logo. Your counter.</h2>
-              <p className="tr-body-sm mt-3">Put your link on a <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">Google review stand</Link>. Customers can tap with NFC—or scan the printed QR code on the custom design—to open your review form.</p>
-              <Link href="/product/google-review-stand?design=branded" className="tr-button-primary mt-5">Personalize my Google stand</Link>
+              <p className="tr-body-sm mt-3">Put your link on a <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">review stand for Google Reviews</Link>. Customers can tap with NFC—or scan the printed QR code on the custom design—to open your review form.</p>
+              <Link href="/product/google-review-stand?design=branded" className="tr-button-primary mt-5">Personalize my review stand</Link>
               <Link href="/product/google-review-stand" className="mt-4 block text-sm font-semibold text-brand underline underline-offset-4">Compare Standard and Branded + QR</Link>
             </aside>
           </div>
@@ -58,7 +58,7 @@ export default function ReviewLinksGeneratorPage() {
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">2. Choose your stand</h3><p className="tr-body-sm mt-3">Keep it simple with Standard NFC, or choose Branded + QR for your logo, business name and printed review QR code.</p></li>
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">3. Share it in person</h3><p className="tr-body-sm mt-3">Place your stand at reception or checkout. Invite customers to tap or scan and leave honest feedback about their visit.</p></li>
           </ol>
-          <div className="mt-8 flex flex-wrap gap-3"><Link href="/product/google-review-stand" className="tr-button-primary">Choose your Google review stand</Link><a href="#generate-review-link" className="tr-button-outline">Find my review link first</a></div>
+          <div className="mt-8 flex flex-wrap gap-3"><Link href="/product/google-review-stand" className="tr-button-primary">Choose your review stand for Google Reviews</Link><a href="#generate-review-link" className="tr-button-outline">Find my review link first</a></div>
         </div>
       </SectionShell>
       <SectionShell spacing="compact">
