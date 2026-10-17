@@ -830,7 +830,7 @@ describe("Stripe checkout helpers", () => {
         price_data: {
           currency: "usd",
           product_data: {
-            name: "Google Review Stand",
+            name: "Tap Rater Review Stand for Google Reviews",
             description: `Standard - ${migratedProducts.find((product) => product.slug === "google-review-stand")!.shortDescription}`,
             metadata: {
               product_id: "google-review-stand",
@@ -874,7 +874,7 @@ describe("Stripe checkout helpers", () => {
         currency: "usd",
         unit_amount: 3900,
         product_data: {
-          name: "Google Review Stand"
+          name: "Tap Rater Review Stand for Google Reviews"
         }
       }
     });

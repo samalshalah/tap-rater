@@ -32,8 +32,8 @@ describe("catalog categories", () => {
   it("filters active products by category", () => {
     const products = getProductsByCategory("reviews");
 
-    expect(products.map((product) => product.title)).toContain("Google Review Stand");
-    expect(products.map((product) => product.title)).not.toContain("Google Review Plate");
+    expect(products.map((product) => product.title)).toContain("Tap Rater Review Stand for Google Reviews");
+    expect(products.map((product) => product.title)).not.toContain("Tap Rater Review Plate for Google Reviews");
     expect(products.every((product) => product.categorySlug === "reviews")).toBe(true);
   });
 
@@ -42,7 +42,7 @@ describe("catalog categories", () => {
     const products = getProductsByCategory("google-review-stands");
 
     expect(category?.slug).toBe("reviews");
-    expect(products.map((product) => product.title)).toContain("Google Review Stand");
+    expect(products.map((product) => product.title)).toContain("Tap Rater Review Stand for Google Reviews");
   });
 
   it("adds product strategy metadata to every active product", () => {
@@ -73,7 +73,7 @@ describe("catalog categories", () => {
     ).toBe(true);
 
     expect(getProductBySlug("google-review-stand")).toMatchObject({
-      title: "Google Review Stand",
+      title: "Tap Rater Review Stand for Google Reviews",
       productType: "physical_redirect",
       serviceMode: "basic_redirect",
       checkoutMode: "buy_now",
@@ -100,7 +100,7 @@ describe("catalog categories", () => {
     expect(regularProducts.every((product) => product.customizationOptions.includes("add_logo"))).toBe(true);
     expect(regularProducts.every((product) => !product.customizationOptions.includes("custom_design"))).toBe(true);
     expect(customStand).toMatchObject({
-      title: "Custom Stand",
+      title: "Tap Rater Custom Stand",
       allowsCustomDesign: true,
       supportsMultiLink: true
     });
@@ -133,72 +133,72 @@ describe("catalog categories", () => {
     expect(products).toHaveLength(66);
     expect(titles).toEqual(
       expect.arrayContaining([
-        "Google Review Stand",
-        "Facebook Review Stand",
-        "Yelp Review Stand",
-        "TripAdvisor Review Stand",
-        "Uber Eats Review Stand",
-        "Angi Review Stand",
-        "DealerRater Review Stand",
-        "Autotrader Review Stand",
-        "CARFAX Review Stand",
-        "Edmunds Review Stand",
-        "Cars.com Review Stand",
-        "CarGurus Review Stand",
-        "RepairPal Review Stand",
-        "SureCritic Review Stand",
-        "BBB Review Stand",
-        "Nextdoor Review Stand",
-        "Avvo Review Stand",
-        "Taskrabbit Review Stand",
-        "Martindale Review Stand",
-        "Justia Review Stand",
-        "FindLaw Review Stand",
-        "Lawyers.com Review Stand",
-        "Zillow Review Stand",
-        "Realtor.com Review Stand",
-        "Homes.com Review Stand",
-        "Fresha Review Stand",
-        "Booksy Review Stand",
-        "StyleSeat Review Stand",
-        "Vagaro Review Stand",
-        "Apartments.com Review Stand",
-        "Trulia Review Stand",
-        "HomeAdvisor Review Stand",
-        "Thumbtack Review Stand",
-        "Houzz Review Stand",
-        "Porch Review Stand",
-        "Airbnb Review Stand",
-        "Agoda Review Stand",
-        "Vrbo Review Stand",
-        "Hotels.com Review Stand",
-        "Healthgrades Review Stand",
-        "Vitals Review Stand",
-        "Zocdoc Review Stand",
-        "RateMDs Review Stand",
-        "CareDash Review Stand",
-        "Opencare Review Stand",
-        "Rate Your Experience Stand",
-        "Follow Us on Social Media Stand",
-        "Facebook Follow Stand",
-        "Instagram Follow Stand",
-        "TikTok Follow Stand",
-        "YouTube Follow Stand",
-        "LinkedIn Follow Stand",
-        "X Follow Stand",
-        "Snapchat Follow Stand",
-        "Pinterest Follow Stand",
-        "WhatsApp Message Stand",
-        "Telegram Message Stand",
-        "Book Your Next Visit Stand",
-        "Menu and Order Stand",
-        "View Our Menu Stand",
-        "Patient Resources Stand",
-        "Check Our Information Stand",
-        "Explore Our Services Stand",
-        "Connect With Us Stand",
-        "Visit Our Website Stand",
-        "Custom Stand"
+        "Tap Rater Review Stand for Google Reviews",
+        "Tap Rater Review Stand for Facebook",
+        "Tap Rater Review Stand for Yelp",
+        "Tap Rater Review Stand for Tripadvisor",
+        "Tap Rater Review Stand for Uber Eats",
+        "Tap Rater Review Stand for Angi",
+        "Tap Rater Review Stand for DealerRater",
+        "Tap Rater Review Stand for Autotrader",
+        "Tap Rater Review Stand for CARFAX",
+        "Tap Rater Review Stand for Edmunds",
+        "Tap Rater Review Stand for Cars.com",
+        "Tap Rater Review Stand for CarGurus",
+        "Tap Rater Review Stand for RepairPal",
+        "Tap Rater Review Stand for SureCritic",
+        "Tap Rater Review Stand for BBB",
+        "Tap Rater Review Stand for Nextdoor",
+        "Tap Rater Review Stand for Avvo",
+        "Tap Rater Review Stand for Taskrabbit",
+        "Tap Rater Review Stand for Martindale",
+        "Tap Rater Review Stand for Justia",
+        "Tap Rater Review Stand for FindLaw",
+        "Tap Rater Review Stand for Lawyers.com",
+        "Tap Rater Review Stand for Zillow",
+        "Tap Rater Review Stand for Realtor.com",
+        "Tap Rater Review Stand for Homes.com",
+        "Tap Rater Review Stand for Fresha",
+        "Tap Rater Review Stand for Booksy",
+        "Tap Rater Review Stand for StyleSeat",
+        "Tap Rater Review Stand for Vagaro",
+        "Tap Rater Review Stand for Apartments.com",
+        "Tap Rater Review Stand for Trulia",
+        "Tap Rater Review Stand for HomeAdvisor",
+        "Tap Rater Review Stand for Thumbtack",
+        "Tap Rater Review Stand for Houzz",
+        "Tap Rater Review Stand for Porch",
+        "Tap Rater Review Stand for Airbnb",
+        "Tap Rater Review Stand for Agoda",
+        "Tap Rater Review Stand for Vrbo",
+        "Tap Rater Review Stand for Hotels.com",
+        "Tap Rater Review Stand for Healthgrades",
+        "Tap Rater Review Stand for Vitals",
+        "Tap Rater Review Stand for Zocdoc",
+        "Tap Rater Review Stand for RateMDs",
+        "Tap Rater Review Stand for CareDash",
+        "Tap Rater Review Stand for Opencare",
+        "Tap Rater Rate Your Experience Stand",
+        "Tap Rater Follow Us on Social Media Stand",
+        "Tap Rater Follow Stand for Facebook",
+        "Tap Rater Follow Stand for Instagram",
+        "Tap Rater Follow Stand for TikTok",
+        "Tap Rater Channel Stand for YouTube",
+        "Tap Rater Follow Stand for LinkedIn",
+        "Tap Rater Follow Stand for X",
+        "Tap Rater Follow Stand for Snapchat",
+        "Tap Rater Follow Stand for Pinterest",
+        "Tap Rater Message Stand for WhatsApp",
+        "Tap Rater Message Stand for Telegram",
+        "Tap Rater Book Your Next Visit Stand",
+        "Tap Rater Menu & Ordering Stand",
+        "Tap Rater View Our Menu Stand",
+        "Tap Rater Patient Resources Stand",
+        "Tap Rater Check Our Information Stand",
+        "Tap Rater Explore Our Services Stand",
+        "Tap Rater Connect With Us Stand",
+        "Tap Rater Visit Our Website Stand",
+        "Tap Rater Custom Stand"
       ])
     );
     expect(titles).not.toContain("Multi-Link Stand");

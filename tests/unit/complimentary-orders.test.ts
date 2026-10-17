@@ -27,7 +27,7 @@ describe("complimentary orders", () => {
     expect(db.table("orders")).toHaveLength(1);
     const order = db.table("orders")[0];
     expect(order).toMatchObject({ total_cents: 0, shipping_amount_cents: 0, payment_status: "complimentary", shipping_method: "Pickup" });
-    expect(order.line_items_json[0]).toMatchObject({ title: "Google Review Stand", unitAmountCents: 0, quantity: 2 });
+    expect(order.line_items_json[0]).toMatchObject({ title: "Tap Rater Review Stand for Google Reviews", unitAmountCents: 0, quantity: 2 });
   });
   it("requires admin and a same-origin request", async () => {
     mocks.auth.mockResolvedValue(new Response(null, { status: 401 }));
