@@ -813,6 +813,9 @@ function loadTsExports(relativePath) {
   });
   const module = { exports: {} };
   const localRequire = (specifier) => {
+    if (specifier === "@/data/product-display-names") {
+      return loadTsExports("src/data/product-display-names.ts");
+    }
     if (specifier === "@/data/migrated-products") {
       return loadTsExports("src/data/migrated-products.ts");
     }
