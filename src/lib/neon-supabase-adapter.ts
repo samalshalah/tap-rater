@@ -4,7 +4,7 @@ export type NeonQueryExecutor = (sql: string, params: unknown[]) => Promise<unkn
 
 type SupabaseResult<T = unknown[]> = {
   data: T | null;
-  error: null | { message: string };
+  error: null | { message: string; code?: string };
 };
 
 type FilterOperator = "eq" | "gte" | "in";
@@ -564,7 +564,8 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
     } catch (error) {
       return {
         data: null,
-        error: { message: error instanceof Error ? error.message : "Database query failed." }
+        error: { message: error instanceof Error ? error.message : "Database query failed.",
+          ...(error && typeof error === "object" && "code" in error && typeof error.code === "string" ? { code: error.code } : {}) }
       };
     }
   }

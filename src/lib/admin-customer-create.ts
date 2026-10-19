@@ -12,7 +12,7 @@ export async function createAdminCustomer(input: unknown, client = getSupabaseAd
  if (existing.data) return { ok: false as const, status: 409, error: "A customer with this email already exists. Use the existing account." };
  const {data,error} = await client.from("customers").insert({
   email:value.email,name:value.name,phone:value.phone || null,role:"customer",account_status:"pending_activation"
- }).select("id,email,name").single();
+ }).select("id,email,name").maybeSingle();
  if(error || !data) return { ok: false as const, status: error?.code === "23505" ? 409 : 503,
   error: error?.code === "23505" ? "A customer with this email already exists." : "Customer could not be created. Please try again." };
  return { ok:true as const, customer:data };

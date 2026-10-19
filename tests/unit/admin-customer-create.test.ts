@@ -3,15 +3,29 @@ const {auth}=vi.hoisted(()=>({auth:vi.fn()}));
 vi.mock("@/lib/google-business/http",()=>({googleAdminIdentity:auth}));
 vi.mock("@/lib/db",()=>({getSupabaseAdmin:vi.fn()}));
 import {createAdminCustomer,createCustomerSchema} from "@/lib/admin-customer-create";
+import {createNeonSupabaseAdapter} from "@/lib/neon-supabase-adapter";
 import {POST} from "@/app/api/admin/customers/route";
 afterEach(()=>vi.clearAllMocks());
 function client(existing:unknown=null,insertError:unknown=null) {
  const insert=vi.fn();
  const c={from:vi.fn(()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:existing,error:null})})}),insert}))};
- insert.mockReturnValue({select:()=>({single:async()=>({data:insertError?null:{id:"new",email:"owner@example.com"},error:insertError})})});
+ insert.mockReturnValue({select:()=>({maybeSingle:async()=>({data:insertError?null:{id:"new",email:"owner@example.com"},error:insertError})})});
  return {c,insert};
 }
 describe("admin customer creation",()=>{
+ it("creates through the production Neon adapter query interface",async()=>{
+  const executor=vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([{id:"new",email:"owner@example.com",name:"Norah"}]);
+  const result=await createAdminCustomer({name:"Norah",email:"owner@example.com"},createNeonSupabaseAdapter(executor));
+  expect(result).toMatchObject({ok:true,customer:{id:"new"}});
+  expect(executor).toHaveBeenCalledTimes(2);
+  expect(executor.mock.calls[1][0]).toContain('INSERT INTO');
+  expect(executor.mock.calls[1][0]).toContain('RETURNING');
+ });
+ it("preserves the production duplicate-key error for racing requests",async()=>{
+  const executor=vi.fn().mockResolvedValueOnce([]).mockRejectedValueOnce(Object.assign(new Error("duplicate"),{code:"23505"}));
+  expect(await createAdminCustomer({name:"Norah",email:"owner@example.com"},createNeonSupabaseAdapter(executor))).toMatchObject({ok:false,status:409});
+ });
+
  it("creates a pending customer without password, admin privileges or an email side effect",async()=>{
   const {c,insert}=client();
   const result=await createAdminCustomer({name:" Norah Boutique ",email:" OWNER@EXAMPLE.COM "},c);
