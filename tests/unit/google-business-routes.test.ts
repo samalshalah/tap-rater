@@ -23,7 +23,8 @@ describe("Google OAuth routes", () => {
   it("binds connection initiation to the authenticated session", async () => {
     mocks.begin.mockResolvedValue("https://accounts.google.com/o/oauth2/v2/auth?state=state");
     const response = await connect(new Request("https://taprater.com"));
-    expect(response.status).toBe(303);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth?state=state" });
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(mocks.begin).toHaveBeenCalledWith("owner", "signed-session");
   });

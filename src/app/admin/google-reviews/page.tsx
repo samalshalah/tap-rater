@@ -1,6 +1,7 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminBadge, AdminButton } from "@/components/admin/admin-ui";
 import { GoogleReviewsPreview } from "@/components/admin/google-reviews-preview";
+import { GoogleConnectButton } from "@/components/admin/google-connect-button";
 import { requireAdmin } from "@/lib/admin-auth";
 import { googleConnectionConfigured, googleConnectionSummary } from "@/lib/google-business/connection";
 import { googleAdminIdentity } from "@/lib/google-business/http";
@@ -29,9 +30,7 @@ export default async function GoogleReviewsPage({ searchParams }: { searchParams
       {!identity && <p className="mb-4 text-sm">Sign in to the admin account to connect Google. Local preview access alone cannot connect an account.</p>}
       {!configured && <p className="mb-4 text-sm">OAuth server configuration is not ready yet.</p>}
       {configured && identity && !storageReady && <p className="mb-4 text-sm">Secure connection storage needs setup before connecting.</p>}
-      <form action="/api/admin/google-business/connect" method="post">
-        <AdminButton type="submit" disabled={!identity || !configured || !storageReady}>{connection ? "Reconnect Google account" : "Connect Google account"}</AdminButton>
-      </form>
+      <GoogleConnectButton disabled={!identity || !configured || !storageReady} connected={Boolean(connection)} />
       {connection && <form action="/api/admin/google-business/disconnect" method="post" className="mt-3"><AdminButton type="submit">Disconnect Google and remove stored tokens</AdminButton></form>}
       <p className="mt-3 text-sm text-muted">Google tokens are encrypted on the server. Connecting an account does not publish replies or confirm API approval. In Google’s testing mode, you may need to reconnect after seven days.</p>
     </section>
