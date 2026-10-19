@@ -67,6 +67,11 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     label: "Operations",
     items: [
       {
+        label: "Google Reviews",
+        href: "/admin/google-reviews",
+        description: "Google connection setup and sample review reply workflow",
+      },
+      {
         label: "Production Queue",
         href: "/admin/orders?filter=production",
         description: "Orders needing artwork, production, or review",
