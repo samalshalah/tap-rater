@@ -64,6 +64,14 @@ const sections = [
     ],
   },
   {
+    title: "Optional Google Business Profile connection",
+    body: [
+      "Authorized business administrators can choose to connect a Google account to Tap Rater. We use the account identifier and email address to identify the connection and store encrypted access and refresh tokens on our server. Google Business Profile permissions allow the review service, when available, to list managed businesses, read reviews, and submit replies that an authorized administrator approves. Connecting alone does not publish replies.",
+      "Google account and Business Profile data are used only to provide the requested connection and review-management features. We do not sell this data, use it for advertising, or use it to train generalized AI models. Tap Rater's use and transfer of information received from Google APIs adheres to the Google API Services User Data Policy, including its Limited Use requirements.",
+      "Administrators can disconnect Google from the Google reviews page to revoke access and remove stored tokens, or revoke Tap Rater access in their Google Account settings. Contact support@taprater.com for help or requests to remove related account data. Google processes information according to its own privacy policy at https://policies.google.com/privacy.",
+    ],
+  },
+  {
     title: "Google Customer Reviews",
     body: [
       "After a confirmed purchase, we share your order identifier, email address, delivery country, and estimated delivery date with Google to display the Google Customer Reviews survey invitation. Google sends a survey email only if you choose to participate in its invitation. This choice is separate from analytics consent and is not required to complete your purchase.",

@@ -3,8 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 export const GOOGLE_BUSINESS_SCOPE = "https://www.googleapis.com/auth/business.manage";
 export const GOOGLE_BUSINESS_CALLBACK_PATH = "/api/admin/google-business/callback";
 
-/** Preparation primitive, not an OAuth endpoint. Store state/verifier in a short-lived,
- * HttpOnly encrypted cookie bound to the initiating admin session before redirecting. */
+/** State and verifier are stored encrypted, bound to the admin session, for ten minutes. */
 export function createGoogleOAuthRequest(clientId: string, redirectUri: string) {
   if (!clientId.endsWith(".apps.googleusercontent.com")) throw new Error("Google OAuth web client ID is required.");
   const redirect = new URL(redirectUri);
@@ -15,7 +14,7 @@ export function createGoogleOAuthRequest(clientId: string, redirectUri: string) 
   const state = randomBytes(32).toString("base64url");
   const verifier = randomBytes(32).toString("base64url");
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  url.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirect.href, response_type: "code", scope: GOOGLE_BUSINESS_SCOPE, access_type: "offline", prompt: "consent", state, code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" }).toString();
+  url.search = new URLSearchParams({ client_id: clientId, redirect_uri: redirect.href, response_type: "code", scope: `openid email ${GOOGLE_BUSINESS_SCOPE}`, access_type: "offline", prompt: "consent", state, code_challenge: createHash("sha256").update(verifier).digest("base64url"), code_challenge_method: "S256" }).toString();
   return { url: url.href, state, verifier };
 }
 

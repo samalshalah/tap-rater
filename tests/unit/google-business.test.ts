@@ -57,7 +57,7 @@ describe("Google OAuth preparation", () => {
     const first = createGoogleOAuthRequest("123.apps.googleusercontent.com", callback);
     const second = createGoogleOAuthRequest("123.apps.googleusercontent.com", callback);
     const params = new URL(first.url).searchParams;
-    expect(params.get("scope")).toBe("https://www.googleapis.com/auth/business.manage");
+    expect(params.get("scope")).toBe("openid email https://www.googleapis.com/auth/business.manage");
     expect(params.get("access_type")).toBe("offline");
     expect(params.get("code_challenge")).toBe(createHash("sha256").update(first.verifier).digest("base64url"));
     expect(first.state).not.toBe(second.state);
