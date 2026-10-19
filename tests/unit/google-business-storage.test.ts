@@ -52,6 +52,17 @@ describe("encrypted Google token storage", () => {
     expect(query).toContain("expires_at > now()");
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it("rejects token endpoint redirects before identity lookup or token storage", async () => {
+    const state = "a".repeat(43);
+    const stateHash = createHash("sha256").update(state).digest("hex");
+    sql.mockResolvedValueOnce([{ verifier_ciphertext: encryptGoogleSecret("verifier", `oauth:${stateHash}`) }]);
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://example.com" } }));
+    vi.stubGlobal("fetch", fetcher);
+    await expect(completeGoogleConnection(owner, "session", state, "code")).rejects.toMatchObject({ reason: "provider_error" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][1].redirect).toBe("manual");
+    expect(sql).toHaveBeenCalledTimes(1);
+  });
   it("requires the requested Business Profile scope before saving", async () => {
     const state = "a".repeat(43); const stateHash = createHash("sha256").update(state).digest("hex");
     sql.mockResolvedValueOnce([{ verifier_ciphertext: encryptGoogleSecret("verifier", `oauth:${stateHash}`) }]);

@@ -11,7 +11,7 @@ describe("Google Business transport", () => {
     expect(String(url)).not.toContain("private-token");
     expect(new URL(String(url)).searchParams.get("pageToken")).toBe("a+b&c");
     expect(new URL(String(url)).searchParams.get("pageSize")).toBe("50");
-    expect(options).toMatchObject({ cache: "no-store", redirect: "error", headers: { Authorization: "Bearer private-token" } });
+    expect(options).toMatchObject({ cache: "no-store", redirect: "manual", headers: { Authorization: "Bearer private-token" } });
     expect(result.nextPageToken).toBe("next");
     expect(result.reviews[0].comment).toBeUndefined();
   });
@@ -27,6 +27,12 @@ describe("Google Business transport", () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("secret internal error", { status: Number(status) }));
     await expect(createGoogleBusinessClient("token", fetcher).listAccounts()).rejects.toMatchObject({ code, status });
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("rejects redirects without forwarding the access token", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://example.com" } }));
+    await expect(createGoogleBusinessClient("private-token", fetcher).listAccounts()).rejects.toMatchObject({ code: "unavailable", status: 302 });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls[0][1].redirect).toBe("manual");
   });
   it("rejects malformed responses and network failures", async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json({ reviews: [{ starRating: "WRONG" }] })).mockRejectedValueOnce(new Error("secret"));

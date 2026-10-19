@@ -32,7 +32,7 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     let response: Response;
     try {
       response = await fetcher(url, {
-        method: body ? "PUT" : "GET", cache: "no-store", redirect: "error",
+        method: body ? "PUT" : "GET", cache: "no-store", redirect: "manual",
         signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${accessToken}`, ...(body ? { "Content-Type": "application/json" } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),

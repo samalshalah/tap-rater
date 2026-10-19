@@ -36,7 +36,7 @@ export class GoogleTokenExchangeError extends Error {
 async function tokenRequest(body: URLSearchParams) {
   let response: Response;
   try {
-    response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+    response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
   } catch (error) {
     throw new GoogleTokenExchangeError(error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError") ? "network_timeout" : "network_error");
   }
@@ -68,7 +68,7 @@ export async function completeGoogleConnection(owner: string, session: string, s
   progress("permission");
   if (!token.scope?.split(" ").includes(GOOGLE_BUSINESS_SCOPE)) throw new Error("Google Business Profile permission was not granted.");
   progress("identity");
-  const identityResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: `Bearer ${token.access_token}` }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000) });
+  const identityResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: `Bearer ${token.access_token}` }, redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15_000) });
   if (!identityResponse.ok) throw new Error("Google account identity could not be verified.");
   const identity = z.object({ sub: z.string().min(1), email: z.string().email(), email_verified: z.literal(true) }).parse(await identityResponse.json());
   // Preserve a missing refresh token only for the same Google identity.
@@ -121,7 +121,7 @@ export async function disconnectGoogle(owner: string) {
   const rows = await sql`SELECT google_subject, refresh_ciphertext, version FROM google_business_connections WHERE owner = ${owner}`;
   if (rows[0]) {
     const token = decryptGoogleSecret(String(rows[0].refresh_ciphertext), `refresh:${owner}:${rows[0].google_subject}`);
-    const response = await fetch("https://oauth2.googleapis.com/revoke", { method: "POST", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }) });
+    const response = await fetch("https://oauth2.googleapis.com/revoke", { method: "POST", redirect: "manual", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }) });
     // Already-invalid tokens are effectively disconnected. Preserve local storage on temporary Google failures.
     if (!response.ok && response.status !== 400) throw new Error("Google revocation failed. Try disconnecting again.");
     await sql`DELETE FROM google_business_connections WHERE owner = ${owner} AND version = ${rows[0].version}`;
