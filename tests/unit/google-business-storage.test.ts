@@ -26,7 +26,7 @@ describe("encrypted Google token storage", () => {
     expect(() => decryptGoogleSecret(ciphertext, "refresh:two", key)).toThrow();
     expect(() => decryptGoogleSecret(ciphertext, "refresh:one", "cd".repeat(32))).toThrow();
     const parts = ciphertext.split(".");
-    parts[3] = "A" + parts[3].slice(1);
+    parts[3] = (parts[3][0] === "A" ? "B" : "A") + parts[3].slice(1);
     expect(() => decryptGoogleSecret(parts.join("."), "refresh:one", key)).toThrow();
   });
   it("fails closed with an absent or malformed encryption key", () => {
@@ -64,6 +64,19 @@ describe("encrypted Google token storage", () => {
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
     expect(await googleAccessToken(owner)).toBe("access");
     expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("exchanges a valid callback and saves only encrypted credentials", async () => {
+    const state = "a".repeat(43); const stateHash = createHash("sha256").update(state).digest("hex");
+    sql.mockResolvedValueOnce([{ verifier_ciphertext: encryptGoogleSecret("verifier", `oauth:${stateHash}`) }]).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ access_token: "raw-access", refresh_token: "raw-refresh", expires_in: 3600, token_type: "Bearer", scope: "openid email https://www.googleapis.com/auth/business.manage" })).mockResolvedValueOnce(Response.json({ sub: "subject", email: "pilot@example.com", email_verified: true }));
+    vi.stubGlobal("fetch", fetcher);
+    await completeGoogleConnection(owner, "session", state, "auth-code");
+    const saved = sql.mock.calls[2];
+    expect(JSON.stringify(saved)).not.toContain("raw-access");
+    expect(JSON.stringify(saved)).not.toContain("raw-refresh");
+    expect(decryptGoogleSecret(saved[4], `access:${owner}:subject`)).toBe("raw-access");
+    expect(decryptGoogleSecret(saved[5], `refresh:${owner}:subject`)).toBe("raw-refresh");
+    expect(fetcher.mock.calls[0][1].body.get("code_verifier")).toBe("verifier");
   });
   it("does not run concurrent token refreshes", async () => {
     sql.mockResolvedValueOnce([{ google_subject: "sub", expires_at: new Date(0).toISOString(), version: 1 }]).mockResolvedValueOnce([]);
