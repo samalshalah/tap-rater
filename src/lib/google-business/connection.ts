@@ -35,25 +35,34 @@ async function tokenRequest(body: URLSearchParams) {
   if (!response.ok) throw new Error(response.status === 400 ? "Google authorization expired or was revoked. Reconnect Google." : "Google token request failed.");
   return tokensSchema.parse(await response.json());
 }
-export async function completeGoogleConnection(owner: string, session: string, state: string, code: string) {
+export type GoogleConnectionStage = "validate" | "state" | "decrypt" | "exchange" | "permission" | "identity" | "offline" | "storage";
+export async function completeGoogleConnection(owner: string, session: string, state: string, code: string, progress: (stage: GoogleConnectionStage) => void = () => {}) {
+  progress("validate");
   if (!/^[A-Za-z0-9_-]{43}$/.test(state) || !code || code.length > 4096) throw new Error("Invalid OAuth response.");
   const config = googleConfig();
   const sql = database();
   const stateHash = hash(state);
+  progress("state");
   // DELETE RETURNING makes state consumption atomic and single use across workers.
   const attempts = await sql`DELETE FROM google_business_oauth_attempts WHERE state_hash = ${stateHash}
     AND owner = ${owner} AND session_hash = ${hash(session)} AND expires_at > now() RETURNING verifier_ciphertext`;
   if (attempts.length !== 1) throw new Error("OAuth request expired or does not match this admin session.");
+  progress("decrypt");
   const verifier = decryptGoogleSecret(String(attempts[0].verifier_ciphertext), `oauth:${stateHash}`);
+  progress("exchange");
   const token = await tokenRequest(new URLSearchParams({ client_id: config.clientId, client_secret: config.clientSecret, redirect_uri: config.redirectUri, code, code_verifier: verifier, grant_type: "authorization_code" }));
+  progress("permission");
   if (!token.scope?.split(" ").includes(GOOGLE_BUSINESS_SCOPE)) throw new Error("Google Business Profile permission was not granted.");
+  progress("identity");
   const identityResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", { headers: { Authorization: `Bearer ${token.access_token}` }, redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000) });
   if (!identityResponse.ok) throw new Error("Google account identity could not be verified.");
   const identity = z.object({ sub: z.string().min(1), email: z.string().email(), email_verified: z.literal(true) }).parse(await identityResponse.json());
   // Preserve a missing refresh token only for the same Google identity.
+  progress("offline");
   const previous = await sql`SELECT refresh_ciphertext, google_subject FROM google_business_connections WHERE owner = ${owner}`;
   const refresh = token.refresh_token ? encryptGoogleSecret(token.refresh_token, `refresh:${owner}:${identity.sub}`) : previous[0]?.google_subject === identity.sub ? previous[0].refresh_ciphertext : null;
   if (!refresh) throw new Error("Google did not grant offline access. Reconnect and grant consent.");
+  progress("storage");
   await sql`INSERT INTO google_business_connections (owner, google_subject, email, access_ciphertext, refresh_ciphertext, expires_at, scopes)
     VALUES (${owner}, ${identity.sub}, ${identity.email}, ${encryptGoogleSecret(token.access_token, `access:${owner}:${identity.sub}`)}, ${refresh}, ${new Date(Date.now() + token.expires_in * 1000).toISOString()}, ${token.scope})
     ON CONFLICT (owner) DO UPDATE SET google_subject = EXCLUDED.google_subject, email = EXCLUDED.email,

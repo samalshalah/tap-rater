@@ -31,7 +31,7 @@ describe("Google OAuth routes", () => {
   it("does not reflect token errors or attacker-controlled redirect hosts", async () => {
     mocks.complete.mockRejectedValue(new Error("private-code-or-token"));
     const response = await callback(new Request("https://attacker.example/callback?code=secret&state=state"));
-    expect(response.headers.get("location")).toBe("https://taprater.com/admin/google-reviews?connection=failed");
+    expect(response.headers.get("location")).toBe("https://taprater.com/admin/google-reviews?connection=failed&step=validate");
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");
     expect(await response.text()).not.toContain("private-code-or-token");
   });
