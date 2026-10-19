@@ -101,4 +101,5 @@ const nextConfig: NextConfig = {
 
 export default nextConfig;
 
-initOpenNextCloudflareForDev();
+// Builds must not establish a remote AI session; production uses Worker bindings.
+initOpenNextCloudflareForDev({ remoteBindings: process.env.NODE_ENV === "development" });
