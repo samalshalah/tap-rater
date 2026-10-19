@@ -3,7 +3,8 @@ import { z } from "zod";
 
 export type ReviewActor = { kind: "customer"; email: string } | { kind: "admin" };
 export type SampleReview = { id: string; reviewer: string; rating: number; comment: string; reply: string; status: "draft" | "ready"; version: number };
-export type ReviewWorkspace = { businessId: string; businessName: string; reviews: SampleReview[] };
+import type { AutoReplySettings } from "./review-ai-options";
+export type ReviewWorkspace = { autoSettings: AutoReplySettings; businessId: string; businessName: string; reviews: SampleReview[] };
 export const reviewDraftSchema = z.object({
   id: z.string().uuid(),
   reply: z.string().trim().max(4000),
@@ -18,7 +19,7 @@ function database() {
 }
 export async function listReviewWorkspaces(actor: ReviewActor, sql = database()): Promise<ReviewWorkspace[]> {
   // Authorize in the query, never by a client-supplied customer or business identifier.
-  const rows = await sql`SELECT b.id, b.business_name FROM review_workspaces w
+  const rows = await sql`SELECT b.id, b.business_name,w.auto_enabled,w.auto_four,w.auto_five,w.auto_style,w.settings_version FROM review_workspaces w
     JOIN businesses b ON b.id = w.business_id JOIN customers c ON c.id = b.customer_id
     WHERE ${actor.kind === "admin"} OR (lower(c.email) = ${actor.kind === "customer" ? actor.email.trim().toLowerCase() : ""} AND c.account_status = 'active')
     ORDER BY b.business_name`;
@@ -28,7 +29,7 @@ export async function listReviewWorkspaces(actor: ReviewActor, sql = database())
       JOIN businesses b ON b.id=r.business_id JOIN customers c ON c.id=b.customer_id
       WHERE r.business_id=${row.id} AND (${actor.kind === "admin"} OR (lower(c.email)=${actor.kind === "customer" ? actor.email.trim().toLowerCase() : ""} AND c.account_status='active'))
       ORDER BY r.sample_key`;
-    workspaces.push({ businessId: String(row.id), businessName: String(row.business_name), reviews: reviews as SampleReview[] });
+    workspaces.push({ autoSettings: {enabled:Boolean(row.auto_enabled),four:Boolean(row.auto_four),five:Boolean(row.auto_five),style:row.auto_style as AutoReplySettings["style"],version:Number(row.settings_version)}, businessId: String(row.id), businessName: String(row.business_name), reviews: reviews as SampleReview[] });
   }
   return workspaces;
 }
@@ -36,7 +37,7 @@ export async function saveSampleReply(actor: ReviewActor, input: unknown, sql = 
   const value = reviewDraftSchema.parse(input);
   // A single conditional update enforces ownership and prevents stale tabs overwriting newer drafts.
   const rows = await sql`UPDATE workspace_sample_reviews r SET reply=${value.reply}, status=${value.status},
-    version=r.version+1,updated_at=now() FROM businesses b JOIN customers c ON c.id=b.customer_id
+    version=r.version+1,updated_at=now(),reply_source='manual' FROM businesses b JOIN customers c ON c.id=b.customer_id
     WHERE r.id=${value.id} AND r.business_id=b.id AND r.version=${value.version}
     AND (${actor.kind === "admin"} OR (lower(c.email)=${actor.kind === "customer" ? actor.email.trim().toLowerCase() : ""} AND c.account_status='active'))
     RETURNING r.id,r.reply,r.status,r.version`;

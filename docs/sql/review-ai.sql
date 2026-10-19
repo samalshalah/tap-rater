@@ -1,0 +1,12 @@
+BEGIN;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS auto_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS auto_four boolean NOT NULL DEFAULT true;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS auto_five boolean NOT NULL DEFAULT true;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS auto_style text NOT NULL DEFAULT 'friendly' CHECK (auto_style IN ('friendly','professional','personal','short'));
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS settings_version integer NOT NULL DEFAULT 1;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS ai_day date;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS ai_calls integer NOT NULL DEFAULT 0;
+ALTER TABLE review_workspaces ADD COLUMN IF NOT EXISTS ai_last_at timestamptz;
+ALTER TABLE workspace_sample_reviews ADD COLUMN IF NOT EXISTS auto_attempt_at timestamptz;
+ALTER TABLE workspace_sample_reviews ADD COLUMN IF NOT EXISTS reply_source text NOT NULL DEFAULT 'manual';
+COMMIT;

@@ -64,6 +64,13 @@ const sections = [
     ],
   },
   {
+    title: "AI reply suggestions",
+    body: [
+      "The current review workspace uses fictional sample reviews. When you request AI suggestions or enable automatic practice drafts, the business name, sample review text and star rating are processed by Cloudflare Workers AI to generate reply drafts. We do not send account passwords, Google access tokens or customer login email addresses to the AI model.",
+      "Suggestions can be inaccurate. Review and edit them before saving. Automatic practice drafts can be switched off in the workspace. Sample mode never publishes replies to Google, and sample content will not be converted into live reviews."
+    ]
+  },
+  {
     title: "Optional Google Business Profile connection",
     body: [
       "Authorized business administrators can choose to connect a Google account to Tap Rater. We use the account identifier and email address to identify the connection and store encrypted access and refresh tokens on our server. Google Business Profile permissions allow the review service, when available, to list managed businesses, read reviews, and submit replies that an authorized administrator approves. Connecting alone does not publish replies.",
@@ -162,3 +169,4 @@ function PolicyPage({
     </main>
   );
 }
+

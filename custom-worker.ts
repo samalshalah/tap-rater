@@ -32,6 +32,12 @@ export default {
       }), env, context);
       console.log(JSON.stringify({ event: "checkout_reminders", ok: reminders.ok }));
     } catch { console.warn("Checkout reminders unavailable"); }
+    try {
+      const drafts = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/review-auto-drafts", {
+        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+      }), env, context);
+      console.log(JSON.stringify({ event: "review_sample_auto_drafts", ok: drafts.ok }));
+    } catch { console.warn("Sample auto drafts unavailable"); }
     const state = await runMediaBackupBatch(
       env.PRODUCT_MEDIA_BUCKET,
       env.RECOVERY_BACKUPS,

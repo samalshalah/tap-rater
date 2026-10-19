@@ -1,4 +1,5 @@
 "use client";
+import { ReviewAiSuggestions, ReviewAutoSettings } from "./review-ai-controls";
 import { useState } from "react";
 import type { ReviewWorkspace, SampleReview } from "@/lib/review-workspaces";
 
@@ -28,6 +29,10 @@ function ReviewCard({ review, endpoint }: { review: SampleReview; endpoint: stri
     </div>
     <p className="mt-2 text-sm font-semibold" aria-label={review.rating + " out of 5 stars"}>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)} · {review.rating}/5</p>
     <p className="mt-3 text-sm leading-6">{review.comment}</p>
+    <ReviewAiSuggestions id={review.id} endpoint={endpoint} disabled={busy} onChoose={suggestion=>{
+      if(reply.trim() && !window.confirm("Replace the text in your reply box with this AI suggestion? Your saved draft stays unchanged until you save."))return;
+      setReply(suggestion);setMessage("AI suggestion added. Review and edit it, then save your draft.");
+    }} />
     <label className="mt-5 block text-sm font-semibold" htmlFor={"reply-"+review.id}>Your reply</label>
     <textarea id={"reply-"+review.id} value={reply} onChange={event => { setReply(event.target.value); setMessage(""); }} disabled={busy}
       maxLength={4000} rows={4} className="mt-2 w-full rounded-lg border border-line bg-white p-3 text-sm" placeholder="Thank the customer, address their experience, and offer a helpful next step." />
@@ -48,7 +53,8 @@ export function ReviewWorkspaces({ initialWorkspaces, endpoint }: { initialWorks
     {!initialWorkspaces.length && <p className="tr-card p-6">No review workspace is assigned to your account yet. Contact Tap Rater support to get started.</p>}
     {initialWorkspaces.map(workspace => <section key={workspace.businessId} aria-label={workspace.businessName} className="space-y-4">
       <div><p className="tr-eyebrow">Business workspace</p><h2 className="mt-1 text-2xl font-semibold">{workspace.businessName}</h2><p className="mt-2 text-sm text-muted">{workspace.reviews.length} sample reviews</p></div>
-      <div className="grid gap-5 xl:grid-cols-2">{workspace.reviews.map(review => <ReviewCard key={review.id} review={review} endpoint={endpoint} />)}</div>
+      <ReviewAutoSettings businessId={workspace.businessId} initial={workspace.autoSettings} endpoint={endpoint} />
+      <div className="grid gap-5 xl:grid-cols-2">{workspace.reviews.map(review => <ReviewCard key={review.id+":"+review.version} review={review} endpoint={endpoint} />)}</div>
     </section>)}
   </div>;
 }
