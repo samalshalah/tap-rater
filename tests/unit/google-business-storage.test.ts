@@ -76,7 +76,7 @@ describe("encrypted Google token storage", () => {
     expect(JSON.stringify(saved)).not.toContain("raw-refresh");
     expect(decryptGoogleSecret(saved[4], `access:${owner}:subject`)).toBe("raw-access");
     expect(decryptGoogleSecret(saved[5], `refresh:${owner}:subject`)).toBe("raw-refresh");
-    expect(fetcher.mock.calls[0][1].body.get("code_verifier")).toBe("verifier");
+    expect(new URLSearchParams(fetcher.mock.calls[0][1].body).get("code_verifier")).toBe("verifier");
   });
   it("does not run concurrent token refreshes", async () => {
     sql.mockResolvedValueOnce([{ google_subject: "sub", expires_at: new Date(0).toISOString(), version: 1 }]).mockResolvedValueOnce([]);

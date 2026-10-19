@@ -34,13 +34,20 @@ export class GoogleTokenExchangeError extends Error {
   constructor(public readonly reason: string) { super("Google token exchange failed."); }
 }
 async function tokenRequest(body: URLSearchParams) {
-  const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
+  let response: Response;
+  try {
+    response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body.toString() });
+  } catch (error) {
+    throw new GoogleTokenExchangeError(error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError") ? "network_timeout" : "network_error");
+  }
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     const allowed = ["invalid_grant", "invalid_client", "unauthorized_client", "access_denied", "invalid_scope", "invalid_request", "temporarily_unavailable"];
     throw new GoogleTokenExchangeError(allowed.includes(error.error) ? error.error : "provider_error");
   }
-  return tokensSchema.parse(await response.json());
+  const parsed = tokensSchema.safeParse(await response.json().catch(() => null));
+  if (!parsed.success) throw new GoogleTokenExchangeError("invalid_token_response");
+  return parsed.data;
 }
 export type GoogleConnectionStage = "validate" | "state" | "decrypt" | "exchange" | "permission" | "identity" | "offline" | "storage";
 export async function completeGoogleConnection(owner: string, session: string, state: string, code: string, progress: (stage: GoogleConnectionStage) => void = () => {}) {
