@@ -1,3 +1,4 @@
+import { CustomerCreateForm } from "@/components/admin/customer-create-form";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { CustomerAccessControl } from "@/components/admin/customer-access-control";
 import {
@@ -38,6 +39,8 @@ export default async function AdminCustomersPage() {
             View orders
           </AdminLinkButton>
         </div>
+
+        <CustomerCreateForm />
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <AdminSummaryCard
