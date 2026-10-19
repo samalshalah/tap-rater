@@ -18,8 +18,8 @@ describe("admin customer creation",()=>{
   const result=await createAdminCustomer({name:"Norah",email:"owner@example.com"},createNeonSupabaseAdapter(executor));
   expect(result).toMatchObject({ok:true,customer:{id:"new"}});
   expect(executor).toHaveBeenCalledTimes(2);
-  expect(executor.mock.calls[1][0]).toContain('INSERT INTO');
-  expect(executor.mock.calls[1][0]).toContain('RETURNING');
+  expect(executor.mock.calls[1][0]).toContain('insert into');
+  expect(executor.mock.calls[1][0]).toContain('returning');
  });
  it("preserves the production duplicate-key error for racing requests",async()=>{
   const executor=vi.fn().mockResolvedValueOnce([]).mockRejectedValueOnce(Object.assign(new Error("duplicate"),{code:"23505"}));
@@ -54,3 +54,4 @@ describe("admin customer creation",()=>{
   expect((await POST(new Request("https://taprater.com/api/admin/customers",{method:"POST",headers:{origin:"https://evil.example"}}))).status).toBe(403);
  });
 });
+
