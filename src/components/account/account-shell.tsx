@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 const links = [
   { href: "/account", label: "Overview" },
   { href: "/account/stands", label: "My Stands" },
+  { href: "/account/reviews", label: "Reviews" },
   { href: "/account/orders", label: "Orders & Billing" }
 ];
 

@@ -46,6 +46,7 @@ export default async function GoogleReviewsPage({ searchParams }: { searchParams
       </ol>
       <a className="mt-5 inline-block text-sm font-semibold text-brand underline" href="https://console.cloud.google.com/apis/dashboard?project=taprater-review-replies" target="_blank" rel="noreferrer">Open Google Cloud project</a>
     </section>
+    <a href="/admin/google-reviews/workspaces" className="tr-button-primary mt-6">Open customer review workspaces</a>
     <GoogleReviewsPreview />
   </section></AdminShell>;
 }
