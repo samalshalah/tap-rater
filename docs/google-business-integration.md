@@ -33,7 +33,7 @@ OpenID/email scopes identify the connected Google account; business.manage is re
 ## Remaining steps before review service launch
 
 1. Confirm domain verification and OAuth scope verification requirements before public launch. Keep External / Testing for the pilot.
-2. Complete the actual Google account consent flow. Verify token exchange, encrypted storage, refresh and disconnect against Google; mocks alone do not establish these live results.
+2. Live consent, token exchange, encrypted storage and refresh are verified for admin@taprater.com. Disconnect is covered by tests; a live revocation test was not performed to preserve the authorized connection.
 3. Verify deployment and Cloudflare log handling: application code does not log OAuth codes or token bodies; restrict provider request-log access and retention because callback request URLs contain temporary authorization codes.
 4. Add a migration/rotation procedure before changing the encryption key. No customer review data is currently cached.
 5. Add tenant/connection/location ownership records, migrations and authorization tests before any live API route. API resource IDs must come from API discovery; public organization/group numbers and Maps IDs are not assumed to be API resource names.
@@ -41,7 +41,7 @@ OpenID/email scopes identify the connected Google account; business.manage is re
 7. Pilot with the authorized Norah Boutique connection. Fetch accounts and child groups, let the admin choose the correct location, paginate reviews, and verify the displayed Google account and business. Restrict stored review data to necessary fields and implement Google-compliant retention.
 8. Add persistent reply drafts and a separate explicit publish action with same-origin/CSRF protection, tenant checks, audit history and conflict checks against changed reviews/replies. Do not auto-publish or auto-retry uncertain writes. After OAuth/API approval, manually verify a real read and an authorized test reply.
 
-No completed Google account connection, durable draft storage, automated sync, or customer-facing review service is claimed until separately verified. New OAuth secrets were installed; existing production secrets were not changed.
+Live OAuth connection for admin@taprater.com was verified on October 19, 2026. Both stored tokens have authenticated AES-256-GCM encryption; a refresh request to Google succeeded with HTTP 200. Cloudflare deployment c8e893b0-ad61-483c-ae39-83eac2211613 contains the verified runtime fix (commit c622c1e). Cloudflare requires redirect: manual; all Google transports reject non-success responses without following redirects. CI and 30 focused tests passed. No durable draft storage, automated sync, or customer-facing review service is claimed. Account Management API remains disabled and GBP approval/quota remains outstanding. New OAuth secrets were installed; existing production secrets were not changed.
 
 ## References
 
