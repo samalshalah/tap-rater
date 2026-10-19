@@ -30,9 +30,16 @@ export async function beginGoogleConnection(owner: string, session: string) {
 }
 
 const tokensSchema = z.object({ access_token: z.string().min(1), expires_in: z.number().positive().max(86400), refresh_token: z.string().min(1).optional(), scope: z.string().optional(), token_type: z.string().refine(value => value.toLowerCase() === "bearer") });
+export class GoogleTokenExchangeError extends Error {
+  constructor(public readonly reason: string) { super("Google token exchange failed."); }
+}
 async function tokenRequest(body: URLSearchParams) {
   const response = await fetch("https://oauth2.googleapis.com/token", { method: "POST", redirect: "error", cache: "no-store", signal: AbortSignal.timeout(15_000), headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
-  if (!response.ok) throw new Error(response.status === 400 ? "Google authorization expired or was revoked. Reconnect Google." : "Google token request failed.");
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    const allowed = ["invalid_grant", "invalid_client", "unauthorized_client", "access_denied", "invalid_scope", "invalid_request", "temporarily_unavailable"];
+    throw new GoogleTokenExchangeError(allowed.includes(error.error) ? error.error : "provider_error");
+  }
   return tokensSchema.parse(await response.json());
 }
 export type GoogleConnectionStage = "validate" | "state" | "decrypt" | "exchange" | "permission" | "identity" | "offline" | "storage";

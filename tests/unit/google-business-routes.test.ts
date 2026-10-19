@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ identity: vi.fn(), sameOrigin: vi.fn(), begin: vi.fn(), complete: vi.fn(), disconnect: vi.fn() }));
 vi.mock("@/lib/google-business/http", () => ({ googleAdminIdentity: mocks.identity, googleSameOrigin: mocks.sameOrigin }));
-vi.mock("@/lib/google-business/connection", () => ({ beginGoogleConnection: mocks.begin, completeGoogleConnection: mocks.complete, disconnectGoogle: mocks.disconnect, googleConfig: () => ({ redirectUri: "https://taprater.com/api/admin/google-business/callback" }) }));
+vi.mock("@/lib/google-business/connection", () => ({ GoogleTokenExchangeError: class extends Error {}, beginGoogleConnection: mocks.begin, completeGoogleConnection: mocks.complete, disconnectGoogle: mocks.disconnect, googleConfig: () => ({ redirectUri: "https://taprater.com/api/admin/google-business/callback" }) }));
 import { POST as connect } from "../../src/app/api/admin/google-business/connect/route";
 import { GET as callback } from "../../src/app/api/admin/google-business/callback/route";
 import { POST as disconnect } from "../../src/app/api/admin/google-business/disconnect/route";
