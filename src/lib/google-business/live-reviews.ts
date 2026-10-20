@@ -1,0 +1,190 @@
+import { randomUUID } from "node:crypto";
+import { neon } from "@neondatabase/serverless";
+import { z } from "zod";
+import { createGoogleBusinessClient, type GoogleReview } from "./client";
+import { googleAccessToken } from "./connection";
+import { generateReviewSuggestions } from "../review-ai-provider";
+import type { ReviewActor } from "../review-workspaces";
+import type { ReplyStyle } from "../review-ai-options";
+export const livePublishingEnabled = () => process.env.GOOGLE_REVIEWS_PUBLISHING_ENABLED === "true";
+export const liveDb = () => neon(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL!);
+export class LiveReviewError extends Error { constructor(message:string,public status=409){super(message);} }
+const actorEmail=(a:ReviewActor)=>a.kind==='customer'?a.email.trim().toLowerCase():'';
+const stars:Record<string,number>={ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5};
+export const reviewStars=(r:GoogleReview)=>stars[r.starRating] || 0;
+export type LiveClient = ReturnType<typeof createGoogleBusinessClient>;
+export const clientFor = async(owner:string)=>createGoogleBusinessClient(await googleAccessToken(owner));
+export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liveDb()) {
+ const rows=await sql`SELECT l.*, b.business_name FROM google_review_links l JOIN businesses b ON b.id=l.business_id
+ JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
+ WHERE b.id=${businessId} AND b.customer_id=l.customer_id AND c.account_status='active'
+ AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;
+ if(!rows[0])throw new LiveReviewError('Business connection is unavailable. Ask Tap Rater to check the connection and business assignment.',404);
+ return rows[0];
+}
+export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
+ const links=await sql`SELECT l.business_id,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,
+ b.business_name, (g.owner IS NOT NULL) AS connected FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
+ LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
+ WHERE b.customer_id=l.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) ORDER BY b.business_name`;
+ const result=[];
+ for(const link of links){
+  const reviews=await sql`SELECT id,data,draft,version,publish_state FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
+  result.push({...link,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
+ }
+ return result;
+}
+export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
+ await authorizedLink(actor,businessId,sql);
+ const rows=await sql`SELECT id,data,draft,version,publish_state FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
+}
+export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor){
+ z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/).parse(account);z.string().regex(/^locations\/[A-Za-z0-9_-]+$/).parse(location);
+ const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${businessId} AND c.account_status='active'`;
+ const connections=await sql`SELECT google_subject FROM google_business_connections WHERE owner=${owner}`;
+ if(!businesses[0] || !connections[0])throw new LiveReviewError('An active customer and connected Google account are required.');
+ const client=await makeClient(owner);let token:string|undefined;let title='';
+ for(let page=0;page<100;page++){
+  const result=await client.listLocations(account,token);const found=result.locations.find(l=>l.name===location);
+  if(found){title=found.title || location;break;}token=result.nextPageToken;if(!token)break;
+ }
+ if(!title)throw new LiveReviewError('Choose a location returned by the connected Google account.');
+ const parent=account+'/'+location;
+ await client.listReviews(parent); // A real read must succeed before an assignment is accepted.
+ const rows=await sql`INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title)
+ VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title}) ON CONFLICT DO NOTHING RETURNING business_id`;
+ if(!rows.length)throw new LiveReviewError('This customer workspace or Google location is already assigned. Stop and remove its previous assignment first.');
+ return {linked:true};
+}
+export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb(),makeClient=clientFor){
+ const link=await authorizedLink(actor,businessId,sql);if(!link.enabled)throw new LiveReviewError('Google review access is stopped.');
+ const lock=randomUUID();const run=link.sync_run || randomUUID();
+ const claims=await sql`UPDATE google_review_links SET sync_lock=${lock},sync_lock_until=now()+interval '3 minutes',checked_at=now()
+ WHERE business_id=${businessId} AND enabled AND (sync_lock_until IS NULL OR sync_lock_until<now())
+ AND (checked_at IS NULL OR checked_at<now()-interval '10 seconds') RETURNING business_id`;
+ if(!claims.length)throw new LiveReviewError('A sync is running or was just requested. Please wait briefly.');
+ try{
+  const client=await makeClient(String(link.owner));const page=await client.listReviews(String(link.parent),link.next_page || undefined);
+  for(const review of page.reviews){
+   if(!/^[A-Za-z0-9_-]+$/.test(review.reviewId))throw new LiveReviewError('Google returned an invalid review identifier.');
+   const name=link.parent+'/reviews/'+review.reviewId;
+   if(review.name && review.name!==name)throw new LiveReviewError('Google returned a review from a different location.');
+   await sql`INSERT INTO google_live_reviews (business_id,resource,data,seen_run) SELECT ${businessId},${name},${JSON.stringify(review)}::jsonb,${run}
+    FROM google_review_links WHERE business_id=${businessId} AND enabled AND sync_lock=${lock}
+    ON CONFLICT (resource) DO UPDATE SET data=EXCLUDED.data,fetched_at=now(),seen_run=EXCLUDED.seen_run,
+    version=google_live_reviews.version+CASE WHEN google_live_reviews.data IS DISTINCT FROM EXCLUDED.data THEN 1 ELSE 0 END
+    WHERE google_live_reviews.business_id=EXCLUDED.business_id AND google_live_reviews.publish_state NOT IN ('publishing','uncertain')`;
+  }
+  if(!page.nextPageToken)await sql`DELETE FROM google_live_reviews WHERE business_id=${businessId} AND seen_run IS DISTINCT FROM ${run}::uuid AND publish_state NOT IN ('publishing','uncertain')`;
+  await sql`UPDATE google_review_links SET next_page=${page.nextPageToken || null},sync_run=${page.nextPageToken?run:null},synced_at=now(),last_error=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;
+  return {imported:page.reviews.length,more:Boolean(page.nextPageToken)};
+ }catch(error){await sql`UPDATE google_review_links SET last_error='Sync failed. Reconnect Google or check API access and quota.' WHERE business_id=${businessId} AND sync_lock=${lock}`;throw error;}
+ finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}
+}
+export async function loadLiveReview(actor:ReviewActor,id:string,sql=liveDb()){
+ const rows=await sql`SELECT * FROM google_live_reviews WHERE id=${id} AND fetched_at>now()-interval '30 days'`;
+ if(!rows[0])throw new LiveReviewError('Review is unavailable. Sync Google reviews again.',404);
+ const review=rows[0],link=await authorizedLink(actor,String(review.business_id),sql);
+ if(!link.enabled)throw new LiveReviewError('Google review access is stopped.');
+ return {review,link};
+}
+export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,version:number,sql=liveDb()){
+ await loadLiveReview(actor,id,sql);
+ const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle' WHERE id=${id} AND version=${version}
+ AND publish_state NOT IN ('publishing','uncertain') RETURNING version`;
+ if(!rows.length)throw new LiveReviewError('This review changed or a publish is unresolved. Reload or check the publish result.');return rows[0];
+}
+async function reserveAi(businessId:string,sql=liveDb()){
+ const rows=await sql`UPDATE google_review_links SET ai_day=current_date,ai_calls=CASE WHEN ai_day=current_date THEN ai_calls+1 ELSE 1 END,ai_last_at=now()
+ WHERE business_id=${businessId} AND enabled AND ai_consent AND (ai_day IS DISTINCT FROM current_date OR ai_calls<20)
+ AND (ai_last_at IS NULL OR ai_last_at<now()-interval '10 seconds') RETURNING business_id`;
+ if(!rows.length)throw new LiveReviewError('Enable AI permission, wait 10 seconds between requests, and stay within the 20-generation daily limit.',429);
+}
+export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
+ const {review,link}=await loadLiveReview(actor,id,sql);await reserveAi(String(link.business_id),sql);
+ return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '');
+}
+export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean()}).strict();
+export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
+ const v=liveSettingsSchema.parse(input);await authorizedLink(actor,v.businessId,sql);
+ if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
+ const rows=await sql`UPDATE google_review_links SET ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},
+ consent_at=CASE WHEN ${v.autoEnabled} THEN now() ELSE NULL END,settings_version=settings_version+1
+ WHERE business_id=${v.businessId} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
+ if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');return rows[0];
+}
+export async function stopLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb()){
+ // Stopping must remain possible after Google revokes the connection.
+ const rows=await sql`UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,settings_version=settings_version+1
+ FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE l.business_id=${businessId} AND b.id=l.business_id AND b.customer_id=l.customer_id
+ AND (${actor.kind==='admin'} OR (lower(c.email)=${actorEmail(actor)} AND c.account_status='active')) RETURNING l.business_id`;
+ if(!rows.length)throw new LiveReviewError('Workspace unavailable.',404);return {stopped:true};
+}
+export function isAutomaticCandidate(data:GoogleReview,draft:string,link:{auto_four:boolean;auto_five:boolean;consent_at:unknown}){
+ const rating=reviewStars(data);
+ return !draft.trim() && !data.reviewReply?.comment && ((rating===4&&link.auto_four)||(rating===5&&link.auto_five))
+ && Boolean(data.createTime) && new Date(data.createTime!).getTime()>new Date(String(link.consent_at)).getTime();
+}
+export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){
+ if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
+ const {review,link}=await loadLiveReview(actor,id,sql);
+ if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
+ if(automatic && (!link.auto_enabled || !link.ai_consent || !isAutomaticCandidate(review.data,'',link as never)))throw new LiveReviewError('Automatic posting is no longer eligible.');
+ const client=await makeClient(String(link.owner));
+ // Refresh immediately before a write so we do not blindly overwrite changes made on Google.
+ const current=await client.getReview(String(review.resource));
+ if((current.reviewReply?.comment || '')!==(review.data.reviewReply?.comment || '') || current.updateTime!==review.data.updateTime)throw new LiveReviewError('The review or reply changed on Google. Sync and review it again.');
+ if(automatic && !isAutomaticCandidate(current,'',link as never))throw new LiveReviewError('This review now needs manual attention.');
+ const attempt=randomUUID();
+ const claimed=await sql`UPDATE google_live_reviews r SET publish_state='publishing',attempt_id=${attempt},attempted_reply=draft,attempted_at=now()
+ FROM google_review_links l,businesses b,customers c,google_business_connections g
+ WHERE r.id=${id} AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
+ AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active'
+ AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
+ AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version})) RETURNING r.id`;
+ if(!claimed.length)throw new LiveReviewError('Publishing is already underway or the workspace changed. Check the result before trying again.');
+ try{
+  const reply=await client.publishReply(String(review.resource),String(review.draft));
+  if(reply.comment!==review.draft)throw new LiveReviewError('Google did not confirm the exact reply. Check the publishing result.');
+  await sql`UPDATE google_live_reviews SET data=jsonb_set(data,'{reviewReply}',${JSON.stringify(reply)}::jsonb),publish_state='published',version=version+1,fetched_at=now() WHERE id=${id} AND attempt_id=${attempt}`;
+  return {published:true};
+ }catch(error){
+  await sql`UPDATE google_live_reviews SET publish_state='uncertain' WHERE id=${id} AND attempt_id=${attempt}`;
+  throw new LiveReviewError('Publishing was not confirmed. Use Check publish result before taking another action. No automatic retry will be sent.');
+ }
+}
+export async function reconcileLiveReply(actor:ReviewActor,id:string,sql=liveDb(),makeClient=clientFor){
+ const {review,link}=await loadLiveReview(actor,id,sql);
+ if(!['publishing','uncertain'].includes(review.publish_state))return {resolved:true};
+ if(Date.now()-new Date(review.attempted_at).getTime()<60_000)throw new LiveReviewError('Wait one minute for the outstanding Google request to finish.');
+ const current=await (await makeClient(String(link.owner))).getReview(String(review.resource));
+ const matched=current.reviewReply?.comment===review.attempted_reply;
+ // After five minutes, expose the authoritative result for explicit human review. Never retry automatically.
+ const resolved=matched || Date.now()-new Date(review.attempted_at).getTime()>300_000;
+ await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),publish_state=${matched?'published':resolved?'idle':'uncertain'},version=version+1
+ WHERE id=${id} AND attempt_id=${review.attempt_id} AND publish_state IN ('publishing','uncertain')`;
+ return {resolved,published:matched};
+}
+export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor){
+ await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
+ const links=await sql`SELECT business_id FROM google_review_links WHERE enabled ORDER BY checked_at NULLS FIRST LIMIT 4`;
+ let synced=0,published=0;
+ for(const row of links){
+  const id=String(row.business_id);
+  try{
+   await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;
+   if(!livePublishingEnabled())continue;
+   const link=await authorizedLink({kind:'admin'},id,sql);if(!link.auto_enabled||!link.ai_consent)continue;
+   const candidates=await sql`SELECT * FROM google_live_reviews WHERE business_id=${id} AND draft='' AND publish_state='idle' AND auto_attempt_at IS NULL AND fetched_at>now()-interval '1 day' ORDER BY created_at DESC LIMIT 50`;
+   const review=candidates.find(r=>isAutomaticCandidate(r.data,r.draft,link as never));if(!review)continue;
+   const claimed=await sql`UPDATE google_live_reviews SET auto_attempt_at=now() WHERE id=${review.id} AND version=${review.version} AND draft='' AND auto_attempt_at IS NULL RETURNING id`;if(!claimed.length)continue;
+   await reserveAi(id,sql);
+   const suggestions=await generateReviewSuggestions(String(link.business_name),reviewStars(review.data),review.data.comment || '');
+   const saved=await sql`UPDATE google_live_reviews r SET draft=${suggestions[link.auto_style as ReplyStyle]},version=version+1 FROM google_review_links l
+   WHERE r.id=${review.id} AND r.version=${review.version} AND r.draft='' AND r.business_id=l.business_id AND l.enabled AND l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} RETURNING r.version`;
+   if(saved.length){await publishLiveReply({kind:'admin'},String(review.id),Number(saved[0].version),true,sql,makeClient);published++;}
+  }catch{/* The UI exposes sync errors and unresolved publishing; never log reviews or credentials. */}
+ }
+ return {synced,published};
+}

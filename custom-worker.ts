@@ -38,6 +38,12 @@ export default {
       }), env, context);
       console.log(JSON.stringify({ event: "review_sample_auto_drafts", ok: drafts.ok }));
     } catch { console.warn("Sample auto drafts unavailable"); }
+    try {
+      const reviews = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/google-reviews", {
+        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+      }), env, context);
+      console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok }));
+    } catch { console.warn("Google review maintenance unavailable"); }
     const state = await runMediaBackupBatch(
       env.PRODUCT_MEDIA_BUCKET,
       env.RECOVERY_BACKUPS,

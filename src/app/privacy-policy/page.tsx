@@ -66,8 +66,9 @@ const sections = [
   {
     title: "AI reply suggestions",
     body: [
-      "The current review workspace uses fictional sample reviews. When you request AI suggestions or enable automatic practice drafts, the business name, sample review text and star rating are processed by Cloudflare Workers AI to generate reply drafts. We do not send account passwords, Google access tokens or customer login email addresses to the AI model.",
-      "Suggestions can be inaccurate. Review and edit them before saving. Automatic practice drafts can be switched off in the workspace. Sample mode never publishes replies to Google, and sample content will not be converted into live reviews."
+        "Sample workspaces use fictional reviews. For connected Google businesses, AI processing requires permission in the business’s review settings. When you request suggestions or authorize automatic replies, Cloudflare Workers AI processes the business name, review text and star rating. Review text may contain information its author shared publicly. We do not send account passwords, Google access tokens or customer login email addresses to the AI model.",
+        "Suggestions can be inaccurate. Review and edit them before publishing. Live automatic replies require separate, express consent for selected star ratings and can be disabled at any time. Sample mode never publishes replies to Google, and sample content will not be converted into live reviews.",
+        "We temporarily cache Google review content for the review workflow, refreshing it through Google and removing cached records after 30 days without refresh. You can stop Google review access in your workspace. Contact support@taprater.com to end Tap Rater’s management relationship and remove remaining Google permissions."
     ]
   },
   {

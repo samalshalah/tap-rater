@@ -67,6 +67,10 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
       if (pageToken) url.searchParams.set("pageToken", pageToken);
       return request(url, z.object({ reviews: z.array(reviewSchema).default([]), averageRating: z.number().optional(), totalReviewCount: z.number().optional(), nextPageToken: z.string().optional() }));
     },
+    getReview(reviewName: string) {
+      const name = resource(reviewName, /^accounts\/[A-Za-z0-9_-]+\/locations\/[A-Za-z0-9_-]+\/reviews\/[A-Za-z0-9_-]+$/);
+      return request(new URL(`https://mybusiness.googleapis.com/v4/${name}`), reviewSchema);
+    },
     publishReply(reviewName: string, comment: string) {
       const trimmed = comment.trim();
       if (!trimmed || trimmed.length > 4096) throw new Error("Reply must contain 1–4096 characters.");

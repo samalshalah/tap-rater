@@ -5,6 +5,7 @@ import { GoogleConnectButton } from "@/components/admin/google-connect-button";
 import { requireAdmin } from "@/lib/admin-auth";
 import { googleConnectionConfigured, googleConnectionSummary } from "@/lib/google-business/connection";
 import { googleAdminIdentity } from "@/lib/google-business/http";
+import { GoogleLiveReviews } from "@/components/account/google-live-reviews";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export default async function GoogleReviewsPage({ searchParams }: { searchParams
   return <AdminShell><section className="tr-admin-section">
     <p className="tr-eyebrow">Integrations</p>
     <h1 className="tr-admin-title mt-2">Google reviews</h1>
-    <p className="tr-body mt-3 max-w-3xl">Connect managed businesses, read their reviews, and prepare personal replies. The integration is being built; live syncing and publishing are not available yet.</p>
+    <p className="tr-body mt-3 max-w-3xl">Connect managed businesses, read their reviews, and prepare personal replies. Assign each Google location to its authorized customer. Live publishing stays locked until API approval and activation testing.</p>
     <div className="mt-5"><AdminBadge tone={connection ? "success" : "warning"}>{connection ? "Account connected" : "Not connected"}</AdminBadge></div>
     {typeof outcome === "string" && notices[outcome] && <p role="status" className="mt-4 rounded-lg border border-line bg-white p-4 text-sm">{notices[outcome]}</p>}
     <section className="mt-6 rounded-xl border border-line bg-white p-6" aria-label="Google account connection">
@@ -47,6 +48,7 @@ export default async function GoogleReviewsPage({ searchParams }: { searchParams
       <a className="mt-5 inline-block text-sm font-semibold text-brand underline" href="https://console.cloud.google.com/apis/dashboard?project=taprater-review-replies" target="_blank" rel="noreferrer">Open Google Cloud project</a>
     </section>
     <a href="/admin/google-reviews/workspaces" className="tr-button-primary mt-6">Open customer review workspaces</a>
+    <GoogleLiveReviews admin />
     <GoogleReviewsPreview />
   </section></AdminShell>;
 }
