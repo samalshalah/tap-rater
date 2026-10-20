@@ -1,6 +1,5 @@
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminBadge, AdminButton } from "@/components/admin/admin-ui";
-import { GoogleReviewsPreview } from "@/components/admin/google-reviews-preview";
 import { GoogleConnectButton } from "@/components/admin/google-connect-button";
 import { requireAdmin } from "@/lib/admin-auth";
 import { googleConnectionConfigured, googleConnectionSummary } from "@/lib/google-business/connection";
@@ -49,6 +48,5 @@ export default async function GoogleReviewsPage({ searchParams }: { searchParams
     </section>
     <a href="/admin/google-reviews/workspaces" className="tr-button-primary mt-6">Open customer review workspaces</a>
     <GoogleLiveReviews admin />
-    <GoogleReviewsPreview />
   </section></AdminShell>;
 }
