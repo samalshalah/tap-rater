@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS google_live_reviews (
  auto_attempt_at timestamptz,
  created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Location IDs remain the same when exposed through different managing accounts.
+CREATE UNIQUE INDEX IF NOT EXISTS google_review_links_location ON google_review_links ((split_part(parent,'/',4)));
 CREATE INDEX IF NOT EXISTS google_live_reviews_business ON google_live_reviews(business_id);
 ALTER TABLE google_review_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE google_live_reviews ENABLE ROW LEVEL SECURITY;
