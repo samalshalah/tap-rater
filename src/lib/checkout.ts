@@ -408,9 +408,6 @@ export function createCheckoutSessionParams({
       ...(stripeCustomerId ? {} : { customer_creation: "always" as const }),
       invoice_creation: {
         enabled: true
-      },
-      payment_intent_data: {
-        setup_future_usage: "off_session" as const
       }
     } : {}),
     phone_number_collection: {

@@ -97,6 +97,7 @@ export function EmbeddedCheckoutClient({
   const [reminderConsent, setReminderConsent] = useState(false);
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
+  const [differentRecipient, setDifferentRecipient] = useState(false);
   const rows = getCartRows(items);
   const promotion = quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers);
   const standTotalCents = promotion.subtotalCents;
@@ -447,8 +448,7 @@ export function EmbeddedCheckoutClient({
                   Contact and shipping
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-muted">
-                  Payment comes next. Multi-Link orders include account setup
-                  automatically.
+                  {hasHostedMultiLink ? "Payment comes next. Your Multi-Link account is included." : "Guest checkout. No account or subscription needed."}
                 </p>
               </div>
 
@@ -464,7 +464,7 @@ export function EmbeddedCheckoutClient({
                   required
                 />
                 <CheckoutInput
-                  label="Customer name"
+                  label="Full name"
                   value={customer.name}
                   autoComplete="name"
                   onChange={(value) => {
@@ -481,7 +481,7 @@ export function EmbeddedCheckoutClient({
                   required
                 />
                 <CheckoutInput
-                  label="Phone"
+                  label="Phone (optional)"
                   type="tel"
                   value={customer.phone}
                   autoComplete="tel"
@@ -489,15 +489,21 @@ export function EmbeddedCheckoutClient({
                     setCustomer((current) => ({ ...current, phone: value }))
                   }
                 />
-                <CheckoutInput
-                  label="Ship to name"
+                <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                  <input type="checkbox" checked={differentRecipient || Boolean(shipping.name && shipping.name !== customer.name)} onChange={(event) => {
+                    setDifferentRecipient(event.target.checked);
+                    if (!event.target.checked) setShipping(current => ({ ...current, name: customer.name }));
+                  }} /> Ship to someone else
+                </label>
+                {differentRecipient || Boolean(shipping.name && shipping.name !== customer.name) ? <CheckoutInput
+                  label="Recipient name"
                   value={shipping.name}
                   autoComplete="shipping name"
                   onChange={(value) =>
                     setShipping((current) => ({ ...current, name: value }))
                   }
                   required
-                />
+                /> : null}
               </div>
 
               <div className="grid gap-3">
@@ -517,7 +523,7 @@ export function EmbeddedCheckoutClient({
                   onInvalid={revealFirstInvalidControl}
                 />
                 <CheckoutInput
-                  label="Apartment, suite, unit"
+                  label="Apartment, suite, unit (optional)"
                   value={shipping.line2}
                   autoComplete="shipping address-line2"
                   onChange={(value) =>

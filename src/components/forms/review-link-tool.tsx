@@ -10,6 +10,7 @@ import { normalizeGoogleReviewLink } from "@/lib/google-review";
 export function ReviewLinkTool() {
   const [value, setValue] = useState("");
   const [status, setStatus] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const link = normalizeGoogleReviewLink(value);
 
@@ -27,12 +28,12 @@ export function ReviewLinkTool() {
 
   return (
     <div className="grid min-w-0 gap-5">
-      <GoogleBusinessSearch onConfirm={(place) => { setValue(place.reviewUrl); setStatus(""); }} />
+      <GoogleBusinessSearch onConfirm={(place) => { setValue(place.reviewUrl); setBusinessName(place.name); setStatus(""); }} />
       <label className="grid min-w-0 gap-2 text-sm font-semibold">
         Google review link
         <input ref={input} type="url" className="tr-input min-w-0 w-full" value={value}
           placeholder="https://search.google.com/local/writereview?placeid=..."
-          onChange={(event) => { setValue(event.target.value); setStatus(""); }}
+          onChange={(event) => { setValue(event.target.value); setBusinessName(""); setStatus(""); }}
           aria-invalid={Boolean(value && !link)} aria-describedby="review-link-status" />
       </label>
       <div className="flex flex-wrap gap-3">
@@ -48,10 +49,10 @@ export function ReviewLinkTool() {
         <section className="rounded-xl border border-line bg-soft p-5" aria-labelledby="ready-review-link">
           <h2 id="ready-review-link" className="text-xl font-semibold">Your link is ready. Put it on your counter.</h2>
           <p className="mt-3 text-sm leading-6 text-muted">A Tap Rater Review Stand for Google Reviews opens this link with an NFC tap. Standard is NFC-only; Branded adds your logo and a printed QR code. Direct stands need no subscription.</p>
-          <Link href="/product/google-review-stand" className="tr-button-primary mt-4" onClick={() => {
-            try { sessionStorage.setItem(reviewLinkDraftKey, JSON.stringify({ url: link, createdAt: Date.now() })); } catch { /* Copy link remains available when storage is blocked. */ }
-          }}>Choose my Tap Rater Review Stand for Google Reviews</Link>
-          <p className="mt-3 text-sm text-muted">Copy your link above as a backup. You can check it again during setup.</p>
+          <Link href="/product/google-review-stand?design=standard&setup=review" className="tr-button-primary mt-4" onClick={() => {
+            try { sessionStorage.setItem(reviewLinkDraftKey, JSON.stringify({ url: link, businessName, createdAt: Date.now() })); } catch { /* Copy link remains available when storage is blocked. */ }
+          }}>Use this link on a stand</Link>
+          <p className="mt-3 text-sm text-muted">Your link and business name carry over. Review them before adding to cart, or choose Branded + QR on the product page.</p>
         </section>
       ) : null}
     </div>

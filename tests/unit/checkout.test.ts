@@ -868,7 +868,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.customer_email).toBe("buyer@example.com");
     expect(params.customer_creation).toBe("always");
     expect(params.invoice_creation).toEqual({ enabled: true });
-    expect(params.payment_intent_data).toEqual({ setup_future_usage: "off_session" });
+    expect(params.payment_intent_data).toBeUndefined();
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         currency: "usd",
@@ -997,7 +997,7 @@ describe("Stripe checkout helpers", () => {
     expect(params).not.toHaveProperty("customer_email");
     expect(params).not.toHaveProperty("customer_creation");
     expect(params.invoice_creation).toEqual({ enabled: true });
-    expect(params.payment_intent_data).toEqual({ setup_future_usage: "off_session" });
+    expect(params.payment_intent_data).toBeUndefined();
   });
 
   it("supports direct, branded, direct with subscription, and branded with subscription checkout combinations", () => {

@@ -149,7 +149,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           aria-labelledby="analytics-consent-title"
           className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] overflow-y-auto border-t border-line bg-white p-4 shadow-lg sm:p-5"
         >
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
               <h2
                 id="analytics-consent-title"
@@ -158,10 +158,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                 Your privacy choices
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Essential storage keeps your cart and checkout working. Optional
-                Google Analytics helps us understand visits and purchases. Optional
-                Meta Pixel shares browsing and purchase events with Meta to measure
-                and improve Facebook and Instagram marketing. You can accept analytics alone or both.{" "}
+                Essential cookies keep your cart working. Optional Google Analytics measures visits; Meta receives browsing and purchase events for marketing.{" "}
                 <Link href="/privacy-policy" className="underline">
                   Privacy policy
                 </Link>
@@ -182,13 +179,13 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                 </p>
               ) : null}
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="grid grid-cols-2 gap-2 md:flex md:shrink-0 md:flex-wrap">
               <button
                 type="button"
                 onClick={() => choose("denied")}
                 className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50"
               >
-                Reject optional cookies
+                Reject optional
               </button>
               {configured && !gpc ? (
                 <button
@@ -199,7 +196,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                   Accept analytics
                 </button>
               ) : null}
-              {config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("granted", "granted")} className="min-h-11 rounded-md bg-brand px-4 text-sm font-semibold text-white">Accept analytics and marketing</button> : null}
+              {config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("granted", "granted")} className="col-span-2 min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50">Accept analytics and marketing</button> : null}
               {open && config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("denied", "granted")} className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold">Accept marketing only</button> : null}
               {open ? (
                 <button

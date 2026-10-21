@@ -21,7 +21,7 @@ import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/goog
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-import { parseReviewLinkDraft, reviewLinkDraftKey } from "@/lib/review-link-draft";
+import { readReviewLinkDraft, reviewLinkDraftKey } from "@/lib/review-link-draft";
 
 export type ProductSetupChooserProduct = Pick<
   MigratedProduct,
@@ -87,8 +87,17 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
   useEffect(() => {
     if (product.slug !== "google-review-stand") return;
     try {
-      const saved = parseReviewLinkDraft(sessionStorage.getItem(reviewLinkDraftKey));
-      if (saved) setDestinationUrl((current) => current || saved);
+      const saved = readReviewLinkDraft(sessionStorage.getItem(reviewLinkDraftKey));
+      if (saved) {
+        setDestinationUrl((current) => current || saved.url);
+        setBusinessName((current) => current || saved.businessName);
+        setGooglePlaceName((current) => current || saved.businessName);
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("setup") === "review" && params.get("design") === "standard") {
+          setStep("review");
+          setIsBuilderOpen(true);
+        }
+      }
     } catch { /* Manual entry remains available when storage is blocked. */ }
   }, [product.slug]);
   const [googleSearchQuery, setGoogleSearchQuery] = useState("");
@@ -791,6 +800,7 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
           <Link href="/shipping" className="font-semibold text-brand underline">Delivery estimates</Link>
         </p> : null}
         <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
+        {shipping?.shippingMode === "flat" ? <p className="mb-1 text-center text-xs text-muted">{formatPrice(shipping.flatShippingAmountCents)} US shipping{offers?.shipping.enabled ? ` · Free at ${formatPrice(offers.shipping.thresholdCents)} after discounts` : ""}</p> : shipping?.shippingMode === "free" ? <p className="mb-1 text-center text-xs text-muted">Free shipping on supported orders</p> : null}
         <button
           type="button"
           className="tr-button-primary w-full"
@@ -1069,10 +1079,9 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
                   <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
                     <ReviewLine label="Product" value={product.title} />
                     <ReviewLine label="Setup" value={selectedOption.label} />
-                    <ReviewLine label="Size" value={selectedSize?.label ?? "-"} />
-                    <ReviewLine label="Color" value={selectedColor?.label ?? "-"} />
+                    {selectedSize ? <ReviewLine label="Size" value={selectedSize.label} /> : null}
+                    {selectedColor ? <ReviewLine label="Color" value={selectedColor.label} /> : null}
                     <ReviewLine label="Qty" value={String(selectedQuantity)} />
-                    <ReviewLine label="SKU" value={finalSku} />
                     <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)} />
                     {selectedLinkExperience !== "multilink" ? <ReviewLine label="Destination link" value={destinationUrl || "-"} /> : null}
                     {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}

@@ -9,3 +9,10 @@ export function parseReviewLinkDraft(raw: string | null, now = Date.now()): stri
     return normalizeGoogleReviewLink(draft.url);
   } catch { return undefined; }
 }
+
+export function readReviewLinkDraft(raw: string | null, now = Date.now()) {
+  const url = parseReviewLinkDraft(raw, now);
+  if (!url) return undefined;
+  const draft = JSON.parse(raw!);
+  return { url, businessName: typeof draft.businessName === "string" ? draft.businessName.trim().slice(0, 200) : "" };
+}

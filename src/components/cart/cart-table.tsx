@@ -149,7 +149,7 @@ export function CartTable({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="tr-card grid gap-0 p-4 sm:p-6">
         {rows.map((row) => {
           const cartKey = getCartItemKey(row.item);
@@ -165,9 +165,9 @@ export function CartTable({
           return (
             <div
               key={cartKey}
-              className="grid gap-5 border-b border-line py-5 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-start"
+              className="grid grid-cols-[64px_minmax(0,1fr)] gap-3 border-b border-line py-4 first:pt-0 last:border-b-0 last:pb-0 md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-start"
             >
-              <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-md border border-line bg-soft">
+              <div className="grid h-16 w-16 md:h-24 md:w-24 place-items-center overflow-hidden rounded-md border border-line bg-soft">
                 {rowImage.src ? (
                   <img
                     src={optimizedUploadSrc(rowImage.src, 160)}
@@ -193,10 +193,10 @@ export function CartTable({
                 </p>
                 <div className="mt-3 grid gap-1 text-sm leading-6 text-muted">
                   {row.item.setup?.destinationUrl ? (
-                    <p className="break-words">
-                      <span className="text-muted">Destination link:</span>{" "}
-                      <span className="text-ink">{row.item.setup.destinationUrl}</span>
-                    </p>
+                    <details className="min-w-0">
+                      <summary className="cursor-pointer py-2 font-medium text-brand">View destination link</summary>
+                      <p className="break-all text-ink">{row.item.setup.destinationUrl}</p>
+                    </details>
                   ) : null}
                   {row.item.setup?.businessName ? (
                     <p>
@@ -237,7 +237,7 @@ export function CartTable({
                   ) : null}
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-[auto_1fr_auto] sm:items-center md:min-w-52 md:grid-cols-1 md:justify-items-end">
+              <div className="col-span-2 grid grid-cols-[auto_1fr_auto] items-center gap-3 md:col-span-1 md:min-w-52 md:grid-cols-1 md:justify-items-end">
                 <div className="flex h-10 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
                   <button
                     type="button"
@@ -288,6 +288,10 @@ export function CartTable({
           </aside>
         ) : null}
       </div>
+      {usesStripeCheckout ? <div className="col-span-full flex items-center justify-between gap-3 rounded-xl border border-line bg-white p-4 lg:hidden row-start-1">
+        <div><p className="text-xs text-muted">Including shipping · before tax</p><p className="text-xl font-semibold">{formatPrice(standTotal + recurringTotal + shippingRule.amountCents)}</p>{recurringTotal > 0 ? <p className="text-xs text-muted">Includes {formatPrice(recurringTotal)}/mo hosting</p> : null}</div>
+        <button type="button" className="tr-button-primary" onClick={startCheckout}>Checkout</button>
+      </div> : null}
       <aside className="tr-card grid gap-4 p-5 sm:p-6 lg:sticky lg:top-24">
         <div>
           <p className="tr-eyebrow">Order summary</p>

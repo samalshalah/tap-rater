@@ -18,9 +18,10 @@ export default async function CartPage() {
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
+        spacing="compact"
         eyebrow="Cart"
         title="Review your order"
-        body="Confirm each configured stand before entering shipping and payment details."
+        body="Your stand is configured. Next: shipping and secure payment."
       />
       <SectionShell spacing="compact">
         <div className="tr-container">
