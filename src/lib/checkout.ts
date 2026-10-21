@@ -411,7 +411,7 @@ export function createCheckoutSessionParams({
       }
     } : {}),
     phone_number_collection: {
-      enabled: true
+      enabled: Boolean(customer?.phone?.trim())
     },
     ...(cart.checkoutMode === "subscription" ? { subscription_data: { metadata: { tap_rater: "hosted_multilink" } } } : {}),
     metadata: {

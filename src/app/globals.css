@@ -579,7 +579,7 @@ a {
 @media (max-width: 767px) {
   :root { --tr-mobile-nav-height: calc(68px + env(safe-area-inset-bottom, 0px)); }
   .tr-with-mobile-tabs { padding-bottom: var(--tr-mobile-nav-height); }
-  .tr-product-route { padding-bottom: calc(var(--tr-mobile-nav-height) + 76px); }
+  .tr-product-route { padding-bottom: calc(var(--tr-mobile-nav-height) + 100px); }
   .tr-mobile-tabs { position: fixed; z-index: 35; bottom: 0; inset-inline: 0; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); min-height: var(--tr-mobile-nav-height); padding: 5px 8px calc(5px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #DFE5E3; }
   .tr-mobile-tabs > a { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; min-height:56px; color:#5F6B76; font-size:12px; font-weight:600; }
   .tr-mobile-tabs > a[aria-current] { color:#0B7A75; }

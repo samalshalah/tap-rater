@@ -980,6 +980,15 @@ describe("Stripe checkout helpers", () => {
     });
   });
 
+  it("does not require an optional phone number again at payment", () => {
+    const cart = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    expect(cart.ok).toBe(true);
+    if (!cart.ok) return;
+    const params = createCheckoutSessionParams({cart, customer: {...checkoutCustomer, phone: ""}, shippingAddress: checkoutShippingAddress, siteUrl:"https://taprater.com"});
+    expect(params.phone_number_collection).toEqual({enabled:false});
+    expect(params.payment_intent_data).toBeUndefined();
+  });
+
   it("reuses an authenticated customer's Stripe profile without creating a duplicate", () => {
     const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
 

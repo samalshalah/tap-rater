@@ -93,8 +93,8 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
         setBusinessName((current) => current || saved.businessName);
         setGooglePlaceName((current) => current || saved.businessName);
         const params = new URLSearchParams(window.location.search);
-        if (params.get("setup") === "review" && params.get("design") === "standard") {
-          setStep("review");
+        if (params.get("setup") === "review" && ["standard", "branded"].includes(params.get("design") || "")) {
+          setStep(params.get("design") === "standard" ? "review" : "destination");
           setIsBuilderOpen(true);
         }
       }
