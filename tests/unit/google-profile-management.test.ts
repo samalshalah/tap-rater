@@ -1,0 +1,19 @@
+import {describe,it,expect,vi} from 'vitest';
+import {mutateProfile,profileSnapshot,locationPerformance,profileMutation} from '@/lib/google-business/profile-management';
+import {reportingRange,summarizePerformance} from '@/lib/google-business/profile-data';
+import {createGoogleBusinessClient} from '@/lib/google-business/client';
+const id='9fb3ee3b-0920-4db5-a03d-7245987a8751',actor={kind:'customer' as const,email:'a@example.test'},link={enabled:true,parent:'accounts/a/locations/one',google_subject:'a',owner:'a'};
+const draft={name:'Norah',address:'',phone:'',website:'',categories:'',description:'',hours:'',specialHours:''};
+const sqlRows=(...rows:unknown[])=>{const s=vi.fn();rows.forEach(r=>s.mockResolvedValueOnce(r));return s as any;};
+describe('GBP draft boundaries',()=>{
+ it('denies another customer before accessing Google or profile records',async()=>{const sql=sqlRows([]),factory=vi.fn();await expect(mutateProfile(actor,{action:'refresh',businessId:id},sql,factory)).rejects.toMatchObject({status:404});expect(factory).not.toHaveBeenCalled();expect(sql).toHaveBeenCalledTimes(1);});
+ it('saves locally with optimistic locking and no Google client',async()=>{const sql=sqlRows([link],[{version:2}]),factory=vi.fn();expect(await mutateProfile(actor,{action:'save',businessId:id,version:1,draft},sql,factory)).toEqual({saved:true,published:false});expect(factory).not.toHaveBeenCalled();expect(sql.mock.calls[1][0].join('?')).toContain('p.version=');});
+ it('rejects stale draft versions',async()=>{await expect(mutateProfile(actor,{action:'save',businessId:id,version:1,draft},sqlRows([link],[]),vi.fn())).rejects.toMatchObject({status:409});});
+ it('refresh preserves a saved draft and reads the assigned location',async()=>{const sql=sqlRows([link],[{version:2}]),getProfile=vi.fn().mockResolvedValue(draft);await mutateProfile(actor,{action:'refresh',businessId:id},sql,async()=>({getProfile}) as any);expect(getProfile).toHaveBeenCalledWith('locations/one');const update=sql.mock.calls[1][0].join('?').split('DO UPDATE')[1];expect(update).not.toMatch(/draft\s*=/);});
+ it('filters profile storage by assignment identity',async()=>{const sql=sqlRows([link],[]);await profileSnapshot(actor,id,sql);expect(sql.mock.calls[1]).toContain('accounts/a/locations/one');expect(sql.mock.calls[1]).toContain('a');});
+ it('has no publication action and refuses unsafe website URLs',()=>{expect(profileMutation.safeParse({action:'publish',businessId:id}).success).toBe(false);expect(profileMutation.safeParse({action:'save',businessId:id,version:1,draft:{...draft,website:'javascript:alert(1)'}}).success).toBe(false);});
+ it('uses a fixed lag and equal comparison windows across month boundaries',()=>{expect(reportingRange(7,new Date('2026-03-03T12:00:00Z'))).toEqual({start:'2026-02-15',current:'2026-02-22',end:'2026-02-28',days:7});});
+ it('does not pretend missing series or dates are zero or comparable',()=>{const range=reportingRange(7,new Date('2026-03-03T12:00:00Z'));const empty=summarizePerformance({multiDailyMetricTimeSeries:[]},range);expect(empty.every(m=>m.current===null&&!m.complete)).toBe(true);});
+ it('uses GET only for performance and validates resource names',async()=>{const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({multiDailyMetricTimeSeries:[]})));const c=createGoogleBusinessClient('test',fetcher);await c.getPerformance('locations/one','2026-01-01','2026-01-31');expect(fetcher.mock.calls[0][1].method).toBe('GET');expect(()=>c.getPerformance('locations/one/../../other','2026-01-01','2026-01-31')).toThrow();});
+ it('rejects unbounded report periods before accessing Google',async()=>{await expect(locationPerformance(actor,id,10000,vi.fn() as any,vi.fn())).rejects.toMatchObject({status:400});});
+});
