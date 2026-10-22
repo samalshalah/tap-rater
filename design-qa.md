@@ -55,3 +55,14 @@ Keyword dropdown, + and selected-keyword editor replace the sidebar keyword card
 Production browser checks: switched to boutique near me (25 points), opened its populated editor, opened blank Add form, cancelled both without saving; verified information icon content and competitor unavailable state; keyword summary click opens the matching map. Real summaries show average found rank 7.29 / 1.32 / 8.86 for Norah's three keywords. No scan was purchased, no profile or reply was changed. TypeScript/build and 24 heatmap/location tests passed, including landscape tile/point alignment. Desktop visual QA completed; mobile layout not directly browser-tested.
 
 Evidence: `C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/heatmap-reference-final.png` and `heatmap-keywords-final.png`. Deployment `623022fe-f44d-4aca-82df-f12def0450ba`.
+
+
+## Directory listing reference layout — October 22, 2026
+
+Grounding: seven user-supplied Semrush listing screenshots (`8b639b4a`, `b88dd087`, `22cae336`, `1ac45bb9`, `e5b29519`, `6c8d19cd`, `3152bf17`). Implemented the compact business-profile card and completeness bar, segmented directory filters, status summary, four-column directory table, inline observed name/address/phone, issue links and row actions. Details, correction evidence, listing checks and business profile editing now use accessible native modals. Corrections has its own tab; Duplicates explicitly reports detection unavailable. Generic directory icons preserve identity labels without inventing provider logos.
+
+Ground-truth differences from the reference: actual manual check statuses (Listed, Needs update, Missing, Not checked, Unavailable) replace unsupported Connected/Processing states. No directory distribution provider, Facebook Connect flow, opt-out or duplicate scan is claimed. The existing 11 Norah records are used; screenshot directory counts and business information were not copied into customer data. Multiple locations remain separated by the existing location selector and scoped record IDs. Completeness measures seven saved profile fields, not publication coverage.
+
+Production QA: Norah loaded 11 directory records, 10 checked, 3 Listed, 7 Needs update and 1 Not checked. Listed filter returned exactly 3 rows; searching Apple returned 1 Apple Maps row. Details displayed the expected observed/current comparison and correction draft. Profile editor displayed Norah's saved fields. Corrections tab showed saved draft notes; Duplicates displayed the honest unavailable state. All modals were closed without saving or approving anything. No external writes, pricing activation or new scan charges. TypeScript, Cloudflare build and 34 focused directory/authorization/modal tests passed. Desktop verified; mobile CSS included but not directly browser-tested.
+
+Evidence: `C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/listing-reference-final.png` and `listing-details-popup.png`.
