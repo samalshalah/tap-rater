@@ -1,3 +1,8 @@
+import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {handleProfile} from '@/lib/google-business/profile-http';
-export const GET=(request:Request)=>handleProfile(request,'customer');
-export const POST=GET;
+const marketingGET=(request:Request)=>handleProfile(request,'customer');
+const marketingPOST=marketingGET;
+
+export const GET=(request:Request)=>withMarketingAccess(request,()=>marketingGET(request));
+
+export const POST=(request:Request)=>withMarketingAccess(request,()=>marketingPOST(request));

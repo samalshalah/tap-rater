@@ -203,7 +203,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
  const links=await sql`SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
- WHERE l.enabled AND c.account_status='active' ORDER BY l.checked_at NULLS FIRST,l.business_id LIMIT 12`;
+ WHERE l.enabled AND c.account_status='active' AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) ORDER BY l.checked_at NULLS FIRST,l.business_id LIMIT 12`;
  let synced=0,drafted=0;
  for(const row of links){
   const id=String(row.business_id);

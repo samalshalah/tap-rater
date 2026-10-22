@@ -27,7 +27,7 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
   JOIN google_review_links l ON l.business_id=a.business_id AND l.customer_id=a.customer_id AND l.parent=a.parent AND l.google_subject=a.google_subject AND l.enabled
   JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
   LEFT JOIN local_heatmap_tracks t ON t.business_id=a.business_id AND t.customer_id=a.customer_id AND t.parent=a.parent AND t.google_subject=a.google_subject AND t.active
-  WHERE s.enabled AND NOT EXISTS(SELECT 1 FROM local_rank_runs r WHERE r.business_id=a.business_id AND r.period=${period}::date)
+  WHERE s.enabled AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) AND NOT EXISTS(SELECT 1 FROM local_rank_runs r WHERE r.business_id=a.business_id AND r.period=${period}::date)
   GROUP BY a.business_id ORDER BY a.business_id LIMIT 20`;
  let invalid=0;
  for(const location of locations){

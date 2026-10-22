@@ -1,3 +1,4 @@
+import {MarketingAccessSummary} from './marketing-access-summary';
 import {adminLocationCosts} from '@/lib/admin-location-costs';
 import {MonthlyComparison} from './monthly-comparison';
 import {adminAiUsage} from '@/lib/admin-ai-usage';
@@ -38,6 +39,7 @@ export async function ServiceUsage() {
 
     <p className="mt-2 text-sm text-muted">Account-level usage and internal provider costs. Customer content stays private. Customer pricing is inactive.</p>
 
+    <MarketingAccessSummary/>
     <div className="my-4 rounded-lg border border-line bg-white p-4 text-sm">
 
       <h2 className="font-semibold">Shared heat-map budget · {budget?.month||'Unavailable'} (New York)</h2>

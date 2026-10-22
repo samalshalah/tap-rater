@@ -1,3 +1,4 @@
+import {hasCustomerMarketingAccess} from '@/lib/customer-marketing-access';
 import {cookies} from "next/headers";
 import {googleCustomerIdentity,customerFlowCookie} from "@/lib/google-business/customer-connection";
 import { NextResponse } from "next/server";
@@ -17,6 +18,10 @@ export async function GET(request: Request) {
   let stage: GoogleConnectionStage = "validate";
   let reason = "";
   try {
+    if(customerFlow && (!('email' in identity) || !await hasCustomerMarketingAccess(String(identity.email)))){
+      (await cookies()).delete(customerFlowCookie);
+      return NextResponse.redirect(`${origin}/account/packages`,{status:303,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+    }
     const query = new URL(request.url).searchParams;
     if(customerFlow && query.get("state")!==flow)throw new Error("Invalid customer flow.");
     if (query.has("error")) outcome = "cancelled";

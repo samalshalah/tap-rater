@@ -1,0 +1,5 @@
+import {AccountShell} from '@/components/account/account-shell';
+import {requireCustomer} from '@/lib/customer-auth';
+import {PackageRequest} from '@/components/account/package-request';
+export const dynamic='force-dynamic';
+export default async function Packages(){await requireCustomer();return <AccountShell><section className="tr-marketing-upgrade"><p className="tr-eyebrow">One package · Every marketing tool</p><h1>Reviews package</h1><p>Manage reviews and draft replies, Google Profile, heat maps, directory listings, reports and approvals. Keep each location separate in one account.</p><div className="tr-package-features">{['Import Google reviews','Prepare reply drafts','Track local rankings','Manage directory corrections','Review Google Profile drafts','Compare location reports'].map(x=><span key={x}>{x}</span>)}</div><p>Pricing is not active yet. Request access details below; this does not charge you or activate a subscription. Replies and profile changes stay as drafts.</p><PackageRequest/></section></AccountShell>}

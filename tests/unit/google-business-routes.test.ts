@@ -1,3 +1,4 @@
+vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>true}));
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ cookie:vi.fn(), customer:vi.fn(), clearCookie:vi.fn(), identity: vi.fn(), sameOrigin: vi.fn(), begin: vi.fn(), complete: vi.fn(), disconnect: vi.fn() }));
 vi.mock("next/headers",()=>({cookies:async()=>({get:mocks.cookie,delete:mocks.clearCookie})}));
@@ -46,13 +47,13 @@ describe("Google OAuth routes", () => {
 
 describe('client OAuth callback routing',()=>{
  it('uses the client session and returns only to the client workspace',async()=>{
-  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',session:'client-session'});
+  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
   const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=state&code=code'));
   expect(mocks.complete).toHaveBeenCalledWith('customer:client@example.com','client-session','state','code',expect.any(Function));
   expect(mocks.identity).not.toHaveBeenCalled();expect(response.headers.get('location')).toBe('https://taprater.com/account/reviews?connection=connected');
  });
  it('does not exchange mismatched customer state',async()=>{
-  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',session:'client-session'});
+  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
   const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=wrong&code=code'));
   expect(mocks.complete).not.toHaveBeenCalled();expect(response.headers.get('location')).toContain('/account/reviews?connection=failed');
  });

@@ -1,3 +1,4 @@
+import {MarketingGate} from '@/components/account/marketing-gate';
 import {LocalDashboard} from "@/components/account/local-dashboard";
 import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
@@ -15,7 +16,7 @@ export default async function AccountPage() {
   return (
     <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Customer account storage is not configured yet." /> : null}
-      <LocalDashboard preferenceKey={session.email.toLowerCase()}/>
+      <MarketingGate email={session.email}><LocalDashboard preferenceKey={session.email.toLowerCase()}/></MarketingGate>
       <details className="mt-4 rounded-xl border border-line bg-white p-4">
       <summary className="cursor-pointer text-sm font-semibold">Stands & orders · {portal.orders.length} orders · {countPaidStandQuantity(portal.orders)} paid stands</summary>
       <div className="mt-4 grid gap-3">

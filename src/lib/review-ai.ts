@@ -65,7 +65,7 @@ export async function runSampleAutoReplies(actor:ReviewActor,businessId:string,s
 export async function runScheduledSampleAutoReplies(){
  const sql=db();
  const rows=await sql`SELECT w.business_id FROM review_workspaces w JOIN businesses b ON b.id=w.business_id JOIN customers c ON c.id=b.customer_id
- WHERE w.mode='sample' AND w.auto_enabled AND c.account_status='active' ORDER BY w.ai_last_at NULLS FIRST LIMIT 4`;
+ WHERE w.mode='sample' AND w.auto_enabled AND c.account_status='active' AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) ORDER BY w.ai_last_at NULLS FIRST LIMIT 4`;
  let saved=0;
  for(const row of rows){
   try{saved+=(await runSampleAutoReplies({kind:"admin"},String(row.business_id),sql)).saved;}catch{/* Retry on a later scheduled run; never log review content. */}

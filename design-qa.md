@@ -27,3 +27,20 @@ Residual test gap: no separate mobile device verification; responsive rules reta
 Final deployment: c37a3c14-c805-4354-96b4-f521c87cc7f2. Final browser check confirms 16px/600 section headings, 184px Save button and no publishing action. Post-fix evidence: theme-popup-final.png and regenerated theme-popup-comparison.png. No actionable P0/P1/P2 findings remain in the verified desktop flow.
 
 Final result: passed.
+
+
+## Marketing pages and package access — October 22, 2026
+
+Reference: selected light customer dashboard image, `codex-clipboard-729c1cc2-e027-48ce-8cde-f8fef0e27035.png`.
+
+Applied the same pale sidebar, navy headings, teal navigation, compact borders, tables and controls to Heat Map, Google Profile, Directory Listings and Reports. Browser review found oversized inherited headings and a large schedule banner; corrected heading specificity and collapsed scheduling information. Final heat-map heading computed at 20px and schedule is closed by default. Cost review remains visible before scan approval.
+
+Production browser verification used the authenticated Norah Boutique account. All four pages loaded the correct location; the location persisted across page navigation. Google Profile retained its existing draft, directory corrections remained drafts, and performance displayed actual metrics. No content was edited, approved or published; no scan was requested. Admin Usage displayed only account name, package status and request date in the added access panel. Package page explicitly states pricing is inactive and request does not charge or activate a subscription.
+
+Evidence: `C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/marketing-heatmap-final.png`, `marketing-profile.png`, `marketing-listings.png`, `marketing-reports.png`, `marketing-package-cta.png`. The profile/reports captures preceded the final heading-size adjustment; the final shared CSS was verified on Heat Map.
+
+Validation: 96 focused unit tests passed; TypeScript and Cloudflare build passed. Access tests cover every marketing read/write route, no entitlement, expired grants, database failure, authentication, allowed active/testing accounts, and idempotent requests without granting access. Existing location-isolation and draft safety tests passed. Migration exercised first on the temporary Neon validation branch, then applied to the production app branch; Norah is the only seeded testing grant. Queued scan claims now also require package access.
+
+Limitations: no stand-only customer browser session or mobile viewport was available for visual QA; stand-only API behavior is covered by tests. Paid purchase activation is intentionally not connected while pricing remains inactive. Use trusted administrative grants until a verified billing lifecycle is enabled.
+
+Deployment: Cloudflare `46650da8-79fa-4386-a8b4-a79d15e1e514`.

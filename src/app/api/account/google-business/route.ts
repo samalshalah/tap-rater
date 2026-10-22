@@ -1,3 +1,4 @@
+import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
 import {z} from 'zod';
@@ -13,7 +14,7 @@ const bodySchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('locations'),account:resource,pageToken:z.string().max(4096).optional()}).strict(),
  z.object({action:z.literal('bind'),businessId:z.string().uuid(),account:resource,location:z.string().regex(/^locations\/[A-Za-z0-9_-]+$/),confirmAssignment:z.literal(true)}).strict()
 ]);
-export async function GET(){
+async function marketingGET(){
  const identity=await googleCustomerIdentity();
  if(!identity)return NextResponse.json({error:'Sign in to continue.'},{status:401});
  try{
@@ -21,7 +22,7 @@ export async function GET(){
  return NextResponse.json({connection:await googleConnectionSummary(identity.owner),businesses},{headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Google connection setup is unavailable. Please try again.'},{status:503});}
 }
-export async function POST(request:Request){
+async function marketingPOST(request:Request){
  const identity=await googleCustomerIdentity();
  if(!identity)return NextResponse.json({error:'Sign in to continue.'},{status:401});
  try{
@@ -40,3 +41,7 @@ export async function POST(request:Request){
  return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
  }catch(e){return NextResponse.json({error:e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Could not complete Google setup. Reconnect or try again.'},{status:e instanceof LiveReviewError?e.status:503});}
 }
+
+export const GET=(request:Request)=>withMarketingAccess(request,()=>marketingGET());
+
+export const POST=(request:Request)=>withMarketingAccess(request,()=>marketingPOST(request));

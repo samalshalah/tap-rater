@@ -1,0 +1,12 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),sql:vi.fn(),origin:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
+vi.mock('@neondatabase/serverless',()=>({neon:()=>m.sql}));
+vi.mock('@/lib/google-business/http',()=>({googleSameOrigin:m.origin}));
+import {POST} from '@/app/api/account/package-request/route';
+beforeEach(()=>{vi.clearAllMocks();m.auth.mockResolvedValue({response:null,session:{email:'client@example.test'}});m.origin.mockReturnValue(true);m.sql.mockResolvedValue([]);});
+const request=()=>new Request('https://taprater.com/api/account/package-request',{method:'POST'});
+it('records an idempotent request using the signed-in identity without granting access',async()=>{const result=await POST(request());expect(result.status).toBe(200);expect(await result.json()).toEqual({requested:true});expect(m.sql).toHaveBeenCalledTimes(1);const [parts,email]=m.sql.mock.calls[0];expect(email).toBe('client@example.test');expect(parts.join('')).toContain('ON CONFLICT(customer_id) DO NOTHING');expect(parts.join('')).not.toContain('customer_marketing_access');});
+it('rejects cross-origin requests before writing',async()=>{m.origin.mockReturnValue(false);expect((await POST(request())).status).toBe(403);expect(m.sql).not.toHaveBeenCalled();});
+it('requires authentication',async()=>{m.auth.mockResolvedValue({response:new Response(null,{status:401})});expect((await POST(request())).status).toBe(401);expect(m.sql).not.toHaveBeenCalled();});
+it('does not report success after storage failure',async()=>{m.sql.mockRejectedValue(new Error('database-secret'));const result=await POST(request());expect(result.status).toBe(503);expect(await result.text()).not.toContain('database-secret');});

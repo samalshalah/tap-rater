@@ -1,3 +1,8 @@
+import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {handleLiveReviews} from '@/lib/google-business/live-http';
-export const GET=(request:Request)=>handleLiveReviews(request,'customer');
-export const POST=(request:Request)=>handleLiveReviews(request,'customer');
+const marketingGET=(request:Request)=>handleLiveReviews(request,'customer');
+const marketingPOST=(request:Request)=>handleLiveReviews(request,'customer');
+
+export const GET=(request:Request)=>withMarketingAccess(request,()=>marketingGET(request));
+
+export const POST=(request:Request)=>withMarketingAccess(request,()=>marketingPOST(request));

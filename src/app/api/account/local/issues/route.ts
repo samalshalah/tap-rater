@@ -1,3 +1,8 @@
+import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {handleLocalIssues} from '@/lib/local-issue-http';
-export const GET=(request:Request)=>handleLocalIssues(request,'customer');
-export const POST=GET;
+const marketingGET=(request:Request)=>handleLocalIssues(request,'customer');
+const marketingPOST=marketingGET;
+
+export const GET=(request:Request)=>withMarketingAccess(request,()=>marketingGET(request));
+
+export const POST=(request:Request)=>withMarketingAccess(request,()=>marketingPOST(request));
