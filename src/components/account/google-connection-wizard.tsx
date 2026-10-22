@@ -1,0 +1,35 @@
+"use client";
+import {useEffect,useState} from 'react';
+type Account={name:string;accountName?:string;type?:string};
+type Location={name:string;title?:string;storefrontAddress?:{addressLines?:string[];locality?:string;administrativeArea?:string;postalCode?:string}};
+type Setup={connection:{email:string}|null;businesses:{id:string;business_name:string}[]};
+export function GoogleConnectionWizard({onLinked}:{onLinked:()=>Promise<void>}){
+ const [setup,setSetup]=useState<Setup|null>(null),[accounts,setAccounts]=useState<Account[]>([]),[locations,setLocations]=useState<Location[]>([]),[account,setAccount]=useState(''),[location,setLocation]=useState(''),[business,setBusiness]=useState(''),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const endpoint='/api/account/google-business';
+ useEffect(()=>{let active=true;const outcome=new URLSearchParams(window.location.search).get('connection');if(outcome==='failed'||outcome==='cancelled')setError(outcome==='cancelled'?'Google connection was cancelled. You can try again.':'Google connection did not finish. Reconnect and grant Business Profile access.');fetch(endpoint,{cache:'no-store'}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error);if(active){setSetup(d);if(d.businesses.length===1)setBusiness(d.businesses[0].id);}}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[]);
+ async function post(body:unknown){const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error);return d;}
+ async function run(action:'connect'|'accounts'|'locations'|'bind',parent?:string){
+  setBusy(true);setError('');try{
+   if(action==='connect'){const d=await post({action});window.location.assign(d.authorizationUrl);return;}
+   if(action==='bind'){await post({action,businessId:business,account,location,confirmAssignment:true});setLocations([]);setConfirmed(false);await onLinked();return;}
+   let pageToken:string|undefined;const rows:(Account|Location)[]=[];const seen=new Set<string>();
+   do{const d=await post({action,...(action==='locations'?{account}:parent?{parent}:{}),...(pageToken?{pageToken}:{})});rows.push(...d[action]);pageToken=d.nextPageToken;if(pageToken&&seen.has(pageToken))throw new Error('Google repeated a page. Please try again.');if(pageToken)seen.add(pageToken);}while(pageToken);
+   if(action==='accounts'){setAccounts(rows as Account[]);setAccount('');setLocations([]);}else{setLocations(rows as Location[]);setLocation('');setConfirmed(false);}
+   if(!rows.length)setError(action==='locations'?'No businesses found. Use the Google account that owns or manages your Business Profile.':'No accounts found. Check your Google Business Profile access.');
+  }catch(e){setError(e instanceof Error?e.message:'Connection failed.');}finally{setBusy(false);}
+ }
+ const selected=locations.find(l=>l.name===location);
+ return <section aria-label="Connect your Google business" className="my-5 rounded-xl border border-line p-5"><h3 className="text-xl font-semibold">Connect your Google business</h3><p className="mt-2 text-sm">Connect your account, choose your business, then import all reviews. Replies stay as drafts for your approval. Nothing is published.</p>
+ <ol className="my-4 flex flex-wrap gap-4 text-sm"><li>1. Connect Google</li><li>2. Choose business</li><li>3. Import reviews</li></ol>
+ <fieldset disabled={busy} className="space-y-4">
+ {setup?.connection?<p>Connected as <strong>{setup.connection.email}</strong></p>:<p>Sign in with the Google account that manages your business.</p>}
+ <button className="tr-button-primary" onClick={()=>run('connect')}>{setup?.connection?'Reconnect Google':'Connect Google'}</button>
+ {setup?.connection&&<><button className="tr-button-ghost ml-3" onClick={()=>run('accounts')}>Find my businesses</button>
+ {accounts.length>0&&<><label className="block">Google account <select className="rounded border p-2" value={account} onChange={e=>{setAccount(e.target.value);setLocations([]);setLocation('');setConfirmed(false);}}><option value="">Choose account</option>{accounts.map(a=><option key={a.name} value={a.name}>{a.accountName||a.name}</option>)}</select></label><button className="tr-button-ghost" disabled={!account} onClick={()=>run('locations')}>Find locations</button><button className="tr-button-ghost ml-3" disabled={!account} onClick={()=>run('accounts',account)}>Browse location groups</button></>}
+ {locations.length>0&&<><label className="block">Google business <select className="w-full rounded border p-2" value={location} onChange={e=>{setLocation(e.target.value);setConfirmed(false);}}><option value="">Choose your location</option>{locations.map(l=><option key={l.name} value={l.name}>{l.title||l.name} — {[...(l.storefrontAddress?.addressLines||[]),l.storefrontAddress?.locality,l.storefrontAddress?.administrativeArea,l.storefrontAddress?.postalCode].filter(Boolean).join(', ')||'Service-area business'}</option>)}</select></label>
+ <label className="block">Tap Rater workspace <select className="rounded border p-2" value={business} onChange={e=>{setBusiness(e.target.value);setConfirmed(false);}}><option value="">Choose workspace</option>{setup.businesses.map(b=><option key={b.id} value={b.id}>{b.business_name}</option>)}</select></label>
+ <label className="flex gap-2"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I am authorized to connect {selected?.title||'this business'} to the selected workspace.</label>
+ <button className="tr-button-primary" disabled={!location||!business||!confirmed} onClick={()=>run('bind')}>Connect and import all reviews</button></>}
+ {setup.businesses.length===0&&<p>Contact Tap Rater to create your business workspace before connecting a location.</p>}</>}
+ </fieldset>{busy&&<p role="status" className="mt-3">Checking Google…</p>}{error&&<p role="alert" className="mt-3 text-red-700">{error}</p>}</section>;
+}

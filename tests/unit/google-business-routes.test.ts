@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ identity: vi.fn(), sameOrigin: vi.fn(), begin: vi.fn(), complete: vi.fn(), disconnect: vi.fn() }));
+const mocks = vi.hoisted(() => ({ cookie:vi.fn(), customer:vi.fn(), clearCookie:vi.fn(), identity: vi.fn(), sameOrigin: vi.fn(), begin: vi.fn(), complete: vi.fn(), disconnect: vi.fn() }));
+vi.mock("next/headers",()=>({cookies:async()=>({get:mocks.cookie,delete:mocks.clearCookie})}));
+vi.mock("@/lib/google-business/customer-connection",()=>({customerFlowCookie:"flow",googleCustomerIdentity:mocks.customer}));
 vi.mock("@/lib/google-business/http", () => ({ googleAdminIdentity: mocks.identity, googleSameOrigin: mocks.sameOrigin }));
 vi.mock("@/lib/google-business/connection", () => ({ GoogleTokenExchangeError: class extends Error {}, beginGoogleConnection: mocks.begin, completeGoogleConnection: mocks.complete, disconnectGoogle: mocks.disconnect, googleConfig: () => ({ redirectUri: "https://taprater.com/api/admin/google-business/callback" }) }));
 import { POST as connect } from "../../src/app/api/admin/google-business/connect/route";
 import { GET as callback } from "../../src/app/api/admin/google-business/callback/route";
 import { POST as disconnect } from "../../src/app/api/admin/google-business/disconnect/route";
-beforeEach(() => { vi.clearAllMocks(); mocks.identity.mockResolvedValue({ owner: "owner", session: "signed-session" }); mocks.sameOrigin.mockReturnValue(true); });
+beforeEach(() => { vi.clearAllMocks();mocks.cookie.mockReturnValue(undefined);mocks.customer.mockResolvedValue(null);mocks.complete.mockResolvedValue(undefined); mocks.identity.mockResolvedValue({ owner: "owner", session: "signed-session" }); mocks.sameOrigin.mockReturnValue(true); });
 describe("Google OAuth routes", () => {
   it("requires an authenticated admin on every route", async () => {
     mocks.identity.mockResolvedValue(null);
@@ -40,4 +42,19 @@ describe("Google OAuth routes", () => {
     expect(response.headers.get("location")).toContain("connection=cancelled");
     expect(mocks.complete).not.toHaveBeenCalled();
   });
+});
+
+describe('client OAuth callback routing',()=>{
+ it('uses the client session and returns only to the client workspace',async()=>{
+  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',session:'client-session'});
+  const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=state&code=code'));
+  expect(mocks.complete).toHaveBeenCalledWith('customer:client@example.com','client-session','state','code',expect.any(Function));
+  expect(mocks.identity).not.toHaveBeenCalled();expect(response.headers.get('location')).toBe('https://taprater.com/account/reviews?connection=connected');
+ });
+ it('does not exchange mismatched customer state',async()=>{
+  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',session:'client-session'});
+  const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=wrong&code=code'));
+  expect(mocks.complete).not.toHaveBeenCalled();expect(response.headers.get('location')).toContain('/account/reviews?connection=failed');
+ });
+ it('never falls back to admin when the client session is absent',async()=>{mocks.cookie.mockReturnValue({value:'state'});expect((await callback(new Request('https://taprater.com/callback'))).status).toBe(401);expect(mocks.identity).not.toHaveBeenCalled();});
 });

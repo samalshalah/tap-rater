@@ -21,7 +21,7 @@ describe("Google Business transport", () => {
     expect(await client.listAccounts(undefined, "accounts/org")).toEqual({ accounts: [] });
     expect(new URL(String(fetcher.mock.calls[0][0])).searchParams.get("parentAccount")).toBe("accounts/org");
     expect(await client.listLocations("accounts/1")).toEqual({ locations: [] });
-    expect(new URL(String(fetcher.mock.calls[1][0])).searchParams.get("readMask")).toBe("name,title");
+    expect(new URL(String(fetcher.mock.calls[1][0])).searchParams.get("readMask")).toBe("name,title,storefrontAddress");
   });
   it.each([[401, "reconnect"], [403, "access_denied"], [429, "quota"], [503, "unavailable"]])("classifies HTTP %s without exposing raw errors or retrying", async (status, code) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("secret internal error", { status: Number(status) }));

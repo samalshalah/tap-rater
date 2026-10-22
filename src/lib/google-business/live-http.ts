@@ -4,7 +4,7 @@ import {requireCustomerApi} from '../customer-auth';
 import {googleAdminIdentity} from './http';
 import {GoogleBusinessError} from './client';
 import {GoogleTokenExchangeError} from './connection';
-import {liveReviewPage} from './live-reviews';
+import {approveLiveDraft,liveReviewPage} from './live-reviews';
 import type {ReviewActor} from '../review-workspaces';
 import {authorizedLink,bindGoogleLocation,clientFor,liveDb,livePublishingEnabled,LiveReviewError,listLiveWorkspaces,liveSettingsSchema,saveLiveSettings,stopLiveReviews,syncLiveReviews,saveLiveDraft,suggestLiveReply,publishLiveReply,reconcileLiveReply} from './live-reviews';
 const uuid=z.string().uuid(),token=z.string().max(4096).optional(),account=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/);
@@ -16,6 +16,7 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('stop'),businessId:uuid}).strict(),
  z.object({action:z.literal('remove'),businessId:uuid}).strict(),
  z.object({action:z.literal('save'),id:uuid,draft:z.string().trim().max(4000),version:z.number().int().positive()}).strict(),
+ z.object({action:z.literal('approve'),id:uuid,version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('suggest'),id:uuid}).strict(),
  z.object({action:z.literal('publish'),id:uuid,version:z.number().int().positive(),confirmPublicReply:z.literal(true)}).strict(),
  z.object({action:z.literal('reconcile'),id:uuid}).strict(),
@@ -41,6 +42,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
   let value:unknown;try{value=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
   const parsed=schema.safeParse(value);if(!parsed.success)return NextResponse.json({error:'Check the request and try again.'},{status:400});const v=parsed.data;
   if(['accounts','locations','bind','remove'].includes(v.action)&&kind!=='admin')return NextResponse.json({error:'Administrator access required.'},{status:403});
+  if(kind==='customer'&&(v.action==='publish'||(v.action==='settings'&&v.settings.autoEnabled)))return NextResponse.json({error:'Client workspaces are draft-only. Approval does not publish.'},{status:403});
   let result:unknown;
   switch(v.action){
    case 'accounts':result=await (await clientFor(owner)).listAccounts(v.pageToken,v.parent);break;
@@ -50,6 +52,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'stop':result=await stopLiveReviews(actor,v.businessId);break;
    case 'remove':{const rows=await liveDb()`DELETE FROM google_review_links WHERE business_id=${v.businessId} AND NOT enabled RETURNING business_id`;if(!rows.length)throw new LiveReviewError('Stop the connection before removing its assignment.');result={removed:true};break;}
    case 'save':result=await saveLiveDraft(actor,v.id,v.draft,v.version);break;
+   case 'approve':result=await approveLiveDraft(actor,v.id,v.version);break;
    case 'suggest':result={suggestions:await suggestLiveReply(actor,v.id)};break;
    case 'publish':result=await publishLiveReply(actor,v.id,v.version);break;
    case 'reconcile':result=await reconcileLiveReply(actor,v.id);break;

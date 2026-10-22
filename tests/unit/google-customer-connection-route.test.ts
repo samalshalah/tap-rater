@@ -1,0 +1,18 @@
+import {beforeEach,describe,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({identity:vi.fn(),origin:vi.fn(),sql:vi.fn(),summary:vi.fn(),begin:vi.fn(),bind:vi.fn(),client:vi.fn(),set:vi.fn()}));
+vi.mock('next/headers',()=>({cookies:async()=>({set:m.set})}));
+vi.mock('@/lib/google-business/customer-connection',()=>({googleCustomerIdentity:m.identity,customerFlowCookie:'flow'}));
+vi.mock('@/lib/google-business/http',()=>({googleSameOrigin:m.origin}));
+vi.mock('@/lib/google-business/connection',()=>({beginGoogleConnection:m.begin,googleConnectionSummary:m.summary}));
+vi.mock('@/lib/google-business/live-reviews',async original=>({...await original<object>(),liveDb:()=>m.sql,clientFor:m.client,bindGoogleLocation:m.bind}));
+import {GET,POST} from '@/app/api/account/google-business/route';
+const identity={owner:'customer:one@example.com',email:'one@example.com',session:'signed-one'};
+const req=(body:unknown)=>new Request('https://taprater.com/api/account/google-business',{method:'POST',body:JSON.stringify(body)});
+beforeEach(()=>{vi.clearAllMocks();m.identity.mockResolvedValue(identity);m.origin.mockReturnValue(true);m.sql.mockResolvedValue([]);m.summary.mockResolvedValue(null);});
+describe('customer Google setup endpoint',()=>{
+ it('requires active customer authentication',async()=>{m.identity.mockResolvedValue(null);expect((await GET()).status).toBe(401);expect((await POST(req({action:'connect'}))).status).toBe(401);expect(m.sql).not.toHaveBeenCalled();});
+ it('lists only the signed-in customer workspaces',async()=>{expect((await GET()).status).toBe(200);expect(m.sql.mock.calls[0]).toContain(identity.email);expect(m.summary).toHaveBeenCalledWith(identity.owner);});
+ it('rejects cross-origin connections',async()=>{m.origin.mockReturnValue(false);expect((await POST(req({action:'connect'}))).status).toBe(403);expect(m.begin).not.toHaveBeenCalled();});
+ it('binds OAuth to customer identity and session and sets protected state cookie',async()=>{m.begin.mockResolvedValue('https://accounts.google.com/auth?state=nonce');expect((await POST(req({action:'connect'}))).status).toBe(200);expect(m.begin).toHaveBeenCalledWith(identity.owner,identity.session);expect(m.set).toHaveBeenCalledWith('flow','nonce',expect.objectContaining({httpOnly:true,secure:true,sameSite:'lax',maxAge:600}));});
+ it('passes trusted customer email to binding, never a supplied owner',async()=>{const body={action:'bind',businessId:'9fb3ee3b-0920-4db5-a03d-7245987a8751',account:'accounts/a',location:'locations/l',confirmAssignment:true};m.bind.mockResolvedValue({linked:true});expect((await POST(req(body))).status).toBe(200);expect(m.bind).toHaveBeenCalledWith(identity.owner,body.businessId,body.account,body.location,m.sql,m.client,identity.email);expect((await POST(req({...body,owner:'admin'}))).status).toBe(400);expect(m.bind).toHaveBeenCalledTimes(1);});
+});

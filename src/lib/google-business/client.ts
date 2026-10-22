@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const accountSchema = z.object({ name: z.string(), accountName: z.string().optional(), type: z.string().optional() });
-const locationSchema = z.object({ name: z.string(), title: z.string().optional() });
+const locationSchema = z.object({ name: z.string(), title: z.string().optional(), storefrontAddress:z.object({addressLines:z.array(z.string()).optional(),locality:z.string().optional(),administrativeArea:z.string().optional(),postalCode:z.string().optional()}).optional() });
 const replySchema = z.object({ comment: z.string().optional(), updateTime: z.string().optional() });
 const reviewSchema = z.object({
   reviewId: z.string(), name: z.string().optional(),
@@ -55,7 +55,7 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     },
     listLocations(account: string, pageToken?: string) {
       const url = new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(account, /^accounts\/[A-Za-z0-9_-]+$/)}/locations`);
-      url.searchParams.set("readMask", "name,title");
+      url.searchParams.set("readMask", "name,title,storefrontAddress");
       url.searchParams.set("pageSize", "100");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
       return request(url, z.object({ locations: z.array(locationSchema).default([]), nextPageToken: z.string().optional() }));

@@ -23,25 +23,25 @@ export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liv
  return rows[0];
 }
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
- const links=await sql`SELECT l.business_id,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,
+ const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,
  b.business_name, (g.owner IS NOT NULL) AS connected FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.customer_id=l.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) ORDER BY b.business_name`;
  const result=[];
  for(const link of links){
-  const reviews=await sql`SELECT id,data,draft,version,publish_state FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
+  const reviews=await sql`SELECT id,data,draft,version,publish_state,approved_version FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
   result.push({...link,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
  }
  return result;
 }
 export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
-export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor){
+export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor,customerEmail:string|null=null){
  z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/).parse(account);z.string().regex(/^locations\/[A-Za-z0-9_-]+$/).parse(location);
- const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${businessId} AND c.account_status='active'`;
+ const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${businessId} AND c.account_status='active' AND (${customerEmail===null} OR lower(c.email)=${customerEmail})`;
  const connections=await sql`SELECT google_subject FROM google_business_connections WHERE owner=${owner}`;
  if(!businesses[0] || !connections[0])throw new LiveReviewError('An active customer and connected Google account are required.');
  const client=await makeClient(owner);let token:string|undefined;let title='';
@@ -107,7 +107,8 @@ export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),
 }
 export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean()}).strict();
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
- const v=liveSettingsSchema.parse(input);await authorizedLink(actor,v.businessId,sql);
+ const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
+ if(v.autoEnabled && String(settingsLink.owner).startsWith('customer:'))throw new LiveReviewError('Client connections are draft-only.',403);
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
  const rows=await sql`UPDATE google_review_links SET ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},
  consent_at=CASE WHEN ${v.autoEnabled} THEN now() ELSE NULL END,settings_version=settings_version+1
@@ -129,6 +130,7 @@ export function isAutomaticCandidate(data:GoogleReview,draft:string,link:{auto_f
 export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){
  if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
  const {review,link}=await loadLiveReview(actor,id,sql);
+ if(String(link.owner).startsWith('customer:'))throw new LiveReviewError('Client connections are draft-only. Approval does not publish.',403);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
  if(automatic && (!link.auto_enabled || !link.ai_consent || !isAutomaticCandidate(review.data,'',link as never)))throw new LiveReviewError('Automatic posting is no longer eligible.');
  const client=await makeClient(String(link.owner));
@@ -175,7 +177,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
   try{
    await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;
    if(!livePublishingEnabled())continue;
-   const link=await authorizedLink({kind:'admin'},id,sql);if(!link.auto_enabled||!link.ai_consent)continue;
+   const link=await authorizedLink({kind:'admin'},id,sql);if(String(link.owner).startsWith('customer:')||!link.auto_enabled||!link.ai_consent)continue;
    const candidates=await sql`SELECT * FROM google_live_reviews WHERE business_id=${id} AND draft='' AND publish_state='idle' AND auto_attempt_at IS NULL AND fetched_at>now()-interval '1 day' ORDER BY created_at DESC LIMIT 50`;
    const review=candidates.find(r=>isAutomaticCandidate(r.data,r.draft,link as never));if(!review)continue;
    const claimed=await sql`UPDATE google_live_reviews SET auto_attempt_at=now() WHERE id=${review.id} AND version=${review.version} AND draft='' AND auto_attempt_at IS NULL RETURNING id`;if(!claimed.length)continue;
@@ -187,4 +189,11 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
   }catch{/* The UI exposes sync errors and unresolved publishing; never log reviews or credentials. */}
  }
  return {synced,published};
+}
+
+export async function approveLiveDraft(actor:ReviewActor,id:string,version:number,sql=liveDb()){
+ await loadLiveReview(actor,id,sql);
+ const rows=await sql`UPDATE google_live_reviews SET approved_version=version WHERE id=${id} AND version=${version} AND draft<>'' AND publish_state='idle' RETURNING approved_version`;
+ if(!rows.length)throw new LiveReviewError('Save and review the latest draft before approving.');
+ return {approved:true};
 }
