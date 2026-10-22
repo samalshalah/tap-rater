@@ -1,7 +1,22 @@
 import {describe,it,expect,vi} from 'vitest';
-import {modelPlan} from '@/lib/usage-plan-model';
+import {modelPlan,defaultPlanInputs} from '@/lib/usage-plan-model';
 import {adminLocationCosts,locationCost} from '@/lib/admin-location-costs';
 describe('private cost scenarios',()=>{
+ it('recalculates customized prices, allowances, support and tiered prices',()=>{
+  const m=modelPlan(1,3,{price:39,replies:600,fixes:20,support:10,growthAdditional:25,growthSixPlus:20})!;
+  expect(m.revenue).toBe(89);expect(m.operations).toBe(39);
+  expect(m.ai).toBeCloseTo(7.2819,8);
+  expect(m.contribution).toBeCloseTo(37.4501,8);
+  expect(defaultPlanInputs[1].price).toBe(29);
+ });
+ it('rejects blank, negative, fractional allowances and out of range inputs',()=>{
+  for(const change of [{price:NaN},{support:-1},{replies:1.5},{fixes:1000001},{price:Infinity}])
+   expect(modelPlan(1,1,{...defaultPlanInputs[1],...change})).toBeNull();
+ });
+ it('keeps losses visible and zero revenue margin undefined',()=>{
+  const free=modelPlan(1,1,{...defaultPlanInputs[1],price:0})!;
+  expect(free.revenue).toBe(0);expect(free.margin).toBeNull();expect(free.contribution).toBeLessThan(0);
+ });
  it('matches the reviewed single-location economics',()=>{
   expect(modelPlan(0,1)?.cost).toBeCloseTo(9.56333,8);
   expect(modelPlan(1,1)?.contribution).toBeCloseTo(17.85435,8);
