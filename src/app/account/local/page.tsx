@@ -3,4 +3,4 @@ import {LocalDashboard} from '@/components/account/local-dashboard';
 import {requireCustomer} from '@/lib/customer-auth';
 export const dynamic='force-dynamic';
 export const metadata={title:'Local management',robots:{index:false,follow:false}};
-export default async function Page(){await requireCustomer();return <AccountShell><LocalDashboard/></AccountShell>;}
+export default async function Page(){const session=await requireCustomer();return <AccountShell><LocalDashboard key="local" preferenceKey={session.email.toLowerCase()}/></AccountShell>;}

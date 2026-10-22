@@ -34,6 +34,7 @@ export function MobileAccountOverview({ portal }: { portal: CustomerPortalData }
     </section> : <section className="tr-mobile-order"><h2>Your first stand starts here.</h2><p className="mb-4 text-muted">Your orders and invoices will appear here after checkout.</p><Link href="/shop" className="tr-mobile-primary">Shop stands<ArrowRight size={20} aria-hidden="true" /></Link></section>}
     <section className="tr-account-manage"><h2>Manage</h2>{[
       { label: "My stands", detail: "View stands & edit Multi-Link pages", href: "/account/stands", icon: PanelsTopLeft },
+      { label: "Heat Map", detail: "Track Google Maps rankings by location", href: "/account/heatmap", icon: PanelsTopLeft },
       { label: "Orders & invoices", detail: "Order history and receipts", href: "/account/orders", icon: Receipt },
       { label: "Billing", detail: "Payments and subscriptions", href: "/account/billing", icon: CreditCard },
       { label: "Help & support", detail: "We’re here to help", href: "/support", icon: HelpCircle }

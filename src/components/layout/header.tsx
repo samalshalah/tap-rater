@@ -310,6 +310,7 @@ export function Header() {
 const accountLinks = [
   { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
   { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
+  { href: "/account/heatmap", label: "Heat Map", icon: LayoutDashboard },
   { href: "/account/orders", label: "Orders & billing", icon: PackageCheck },
 ];
 

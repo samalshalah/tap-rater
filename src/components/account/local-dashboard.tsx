@@ -10,20 +10,28 @@ type Location=DirectoryLocation&{id:string;customer_id:string;email:string;busin
 type Listing=DirectoryRecord&{id:string;business_id:string;directory:string;status:string;listing_url:string;listed_name:string;listed_address:string;listed_phone:string;notes:string;version:number;updated_at:string};
 type Snapshot={locations:Location[];listings:Listing[];customers:{id:string;email:string}[]};
 const field='mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm';
-export function LocalDashboard({admin=false}:{admin?:boolean}) {
+export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}:{admin?:boolean;initialTab?:'overview'|'heatmap';preferenceKey?:string}) {
  const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'>('overview'),[location,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
+ const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'>(initialTab),[location,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
  const [adding,setAdding]=useState(false);
  const endpoint=admin?'/api/admin/local':'/api/account/local';
- async function refresh(){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);}
- useEffect(()=>{refresh().catch(e=>setError(e.message));},[endpoint]);
+ const storageKey=!admin&&preferenceKey?`taprater:local-location:${preferenceKey}`:null;
+ async function refresh(restore=false){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);
+  if(restore&&storageKey){
+   let saved:string|null=null;try{saved=window.localStorage.getItem(storageKey);}catch{/* Storage may be unavailable in private browsing. */}
+   // A saved preference never grants access; accept only locations returned for this account.
+   const valid=saved===''||d.locations.some((l:Location)=>l.id===saved);
+   setLocation(valid?saved!:(d.locations.length===1?d.locations[0].id:''));
+  }
+ }
+ useEffect(()=>{refresh(true).catch(e=>setError(e.message));},[endpoint,storageKey]);
  async function save(body:unknown){setBusy(true);setError('');setNotice('');try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error);await refresh();setNotice('Saved in Tap Rater. Nothing was published.');return d;}catch(e){setError(e instanceof Error?e.message:'Unable to save.');return null;}finally{setBusy(false);}}
  const accountLocations=data?.locations.filter(l=>!customer||l.customer_id===customer)||[];
  const visible=accountLocations.filter(l=>(!location||l.id===location)&&(!query||[l.business_name,l.address,l.email].join(' ').toLowerCase().includes(query.toLowerCase())));
  const selected=data?.locations.find(l=>l.id===location);
  const total=(key:'review_count'|'unanswered_count'|'draft_count')=>visible.reduce((sum,l)=>sum+Number(l[key]||0),0);
- async function addLocation(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const d=await save({action:'createLocation',...(admin?{customerId:f.get('customerId')}:{}),name:f.get('name'),address:f.get('address'),phone:f.get('phone'),website:f.get('website')});if(d){setAdding(false);setLocation(d.id);setQuery('');}}
- function choose(id:string){setLocation(id);setQuery('');}
+ async function addLocation(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const d=await save({action:'createLocation',...(admin?{customerId:f.get('customerId')}:{}),name:f.get('name'),address:f.get('address'),phone:f.get('phone'),website:f.get('website')});if(d){setAdding(false);choose(d.id);}}
+ function choose(id:string){setLocation(id);setQuery('');if(storageKey)try{window.localStorage.setItem(storageKey,id);}catch{/* Selection still works without storage. */}}
  return <section className="mx-auto max-w-[1440px] p-4 md:p-8">
   <div className="mb-6 flex flex-wrap items-start justify-between gap-4"><div><p className="tr-eyebrow">Tap Rater Local</p><h1 className="mt-2 text-3xl font-bold tracking-tight">Your locations, together.</h1><p className="mt-2 text-sm text-muted">Manage your local presence and review drafts across every location.</p></div><button className="tr-button-primary gap-2" onClick={()=>setAdding(!adding)}><Plus size={16}/>Add location</button></div>
   <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white p-4">
