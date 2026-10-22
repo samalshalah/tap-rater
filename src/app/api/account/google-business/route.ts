@@ -17,7 +17,7 @@ export async function GET(){
  const identity=await googleCustomerIdentity();
  if(!identity)return NextResponse.json({error:'Sign in to continue.'},{status:401});
  try{
- const businesses=await liveDb()`SELECT b.id,b.business_name FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE lower(c.email)=${identity.email} AND c.account_status='active' ORDER BY b.business_name`;
+ const businesses=await liveDb()`SELECT b.id,b.business_name,b.address FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE lower(c.email)=${identity.email} AND c.account_status='active' ORDER BY b.business_name`;
  return NextResponse.json({connection:await googleConnectionSummary(identity.owner),businesses},{headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Google connection setup is unavailable. Please try again.'},{status:503});}
 }

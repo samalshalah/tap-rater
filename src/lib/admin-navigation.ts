@@ -66,6 +66,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Operations",
     items: [
+      { label: "Local Management", href: "/admin/local", description: "Customer locations, directory listings and review drafts" },
       {
         label: "Google Reviews",
         href: "/admin/google-reviews",

@@ -1,0 +1,11 @@
+import {readFileSync} from 'node:fs';
+import {neon} from '@neondatabase/serverless';
+if(!process.argv.includes('--apply'))throw new Error('Pass --apply with the target database environment loaded.');
+const url=process.env.DATABASE_URL||process.env.NEON_DATABASE_URL;
+if(!url)throw new Error('Database environment required.');
+const sql=neon(url);
+const statements=readFileSync(new URL('../docs/sql/local-management.sql',import.meta.url),'utf8').split(';').map(s=>s.trim()).filter(s=>s&&s!=='BEGIN'&&s!=='COMMIT');
+await sql.transaction(statements.map(s=>sql.query(s)));
+const rows=await sql`SELECT relrowsecurity FROM pg_class WHERE oid='local_directory_listings'::regclass`;
+if(!rows[0]?.relrowsecurity)throw new Error('Row security verification failed.');
+console.log('Local directory storage ready; row security enabled.');
