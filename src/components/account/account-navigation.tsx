@@ -9,7 +9,7 @@ import {customerNavigation, isNavigationActive} from '@/lib/customer-navigation'
 export function AccountNavigation() {
   const pathname = usePathname();
   return <aside className="tr-workspace-sidebar">
-    <Link href="/account" className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w160.webp" alt="Tap Rater" width="140" height="48"/></Link>
+    <Link href="/account" className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w320.webp" alt="Tap Rater" width="140" height="48"/></Link>
     <nav aria-label="Account navigation" className="flex gap-1 overflow-x-auto lg:grid">
       {customerNavigation.map((link,index) => {const Icon=icons[index];return <Link key={link.href} href={link.href}
         aria-current={isNavigationActive(pathname,link.href)?'page':undefined}

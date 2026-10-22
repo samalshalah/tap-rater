@@ -2,7 +2,7 @@
 import {restoreCustomerLocation} from '@/lib/customer-location-selection';
 import {useRouter} from 'next/navigation';
 import {useEffect,useState,type FormEvent} from 'react';
-import {Building2,MessageSquare,Plus,ShieldCheck,Search} from 'lucide-react';
+import {Building2,MessageSquare,Plus,ShieldCheck,LockKeyhole,MapPin,Search} from 'lucide-react';
 import {DirectoryManager,type DirectoryLocation,type DirectoryRecord} from './directory-manager';
 import {LocalIssueCenter} from './local-issue-center';
 import {LocationHeatmap} from './location-heatmap';
@@ -37,11 +37,11 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
  function openTab(next:typeof tab,id=location){if(admin){setTab(next);return;}const routes={overview:'/account',reviews:'/account/reviews',profile:'/account/profile',heatmap:'/account/heatmap',listings:'/account/local',performance:'/account/reports',notifications:'/account/notifications'};router.push(routes[next]+'?location='+encodeURIComponent(id));}
  function choose(id:string){setLocation(id);setQuery('');if(!admin){const url=new URL(window.location.href);url.searchParams.set('location',id);window.history.replaceState(null,'',url);}if(storageKey)try{window.localStorage.setItem(storageKey,id);}catch{/* Selection still works without storage. */}}
  return <section className="tr-local-workspace">
-  <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div><p className="tr-eyebrow">{admin?'Customer operations':'Local presence'}</p><h1 className="mt-1 text-2xl font-semibold">{admin?'Locations & client work':({overview:'Your location at a glance',reviews:'Reviews',profile:'Google Profile',performance:'Reports',heatmap:'Heat Map',listings:'Directory Listings',notifications:'Issues & Approvals'}[tab])}</h1></div><button className="tr-button-primary gap-2" onClick={()=>setAdding(!adding)}><Plus size={16}/>Add location</button></div>
-  <div className="mb-3 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-white p-3">
+  <div className="tr-client-page-heading"><div><h1 className="mt-1 text-2xl font-semibold">{admin?'Locations & client work':({overview:'Your location at a glance',reviews:'Reviews',profile:'Google Profile',performance:'Reports',heatmap:'Heat Map',listings:'Directory Listings',notifications:'Issues & Approvals'}[tab])}</h1><p className="tr-client-page-subtitle">{selected?.business_name||'All locations'} <span>•</span> Your local presence</p></div><button className="tr-client-add-location" onClick={()=>setAdding(!adding)}><Plus size={16}/>Add location</button></div>
+  <div className="tr-client-location-controls">
    {admin&&<label className="text-sm">Customer<select className={field} value={customer} onChange={e=>{setCustomer(e.target.value);choose('');}}><option value="">All customers</option>{data?.customers.map(c=><option key={c.id} value={c.id}>{c.email}</option>)}</select></label>}
-   <label className="min-w-60 flex-1 text-sm">Location<select className={field} value={location} onChange={e=>choose(e.target.value)}><option value="">All locations ({accountLocations.length})</option>{accountLocations.map(l=><option key={l.id} value={l.id}>{l.business_name}{l.address?' · '+l.address:''}{admin?' · '+l.email:''}</option>)}</select></label>
-   <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800"><ShieldCheck size={15}/>Drafts only · Nothing publishes</span>
+   <label className="tr-client-location-label">Location<span className="tr-client-location-input"><MapPin size={18} aria-hidden="true"/><select className={field} value={location} onChange={e=>choose(e.target.value)}><option value="">All locations ({accountLocations.length})</option>{accountLocations.map(l=><option key={l.id} value={l.id}>{l.business_name}{l.address?' · '+l.address:''}{admin?' · '+l.email:''}</option>)}</select></span></label>
+   <span className="tr-client-draft-badge"><LockKeyhole size={15}/>Drafts only · Publishing disabled</span>
   </div>
   {error&&<div role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800">{error} <button className="underline" onClick={()=>{setError('');refresh().catch(e=>setError(e.message));}}>Try again</button></div>}
   {notice&&<p role="status" className="mb-4 text-sm text-emerald-800">{notice}</p>}

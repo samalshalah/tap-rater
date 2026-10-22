@@ -1,28 +1,29 @@
-# Mobile design QA — 2026-10-08
+# Client theme fidelity QA — October 22, 2026
 
-final result: passed
+Source visual truth: C:/Users/hussa/AppData/Local/Temp/codex-clipboard-729c1cc2-e027-48ce-8cde-f8fef0e27035.png (1487 x 1058).
+Evidence folder: C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022.
+Implementation: authenticated Norah Boutique customer account, production.
+Browser CSS viewport: 1920 x 945, devicePixelRatio 1. Captured screenshot: 1905 x 938 (browser capture excludes edges). Full-view comparison preserves aspect ratios and labels viewport differences; focused popup comparison uses approximately equal 650px regions rather than distorting either image.
 
-Scope: approved Home, Product, and Account mobile design adapted to the existing production storefront. Existing product imagery, live prices, required setup, and authentication are retained.
+## Comparison history
+1. Original compact implementation did not match the selected theme. Replaced the full-width location bar, filter dropdown, numeric ratings and old modal with top-right location controls, counted tabs, initials, gold stars, dates and the referenced modal structure.
+2. Initial browser comparison found P2 legacy title sizing, sidebar overflow and an inherited full-width Save button. Fixed CSS specificity, sidebar padding and popup button widths. Final observed title is 40px Arial; sidebar has no horizontal overflow; popup is 650px wide and Save is 184px.
+3. Focused comparison found P2 section heading weight drift. Corrected modal section headings and action font weights.
 
-## Visual evidence
+## Fidelity surfaces
+- Typography: Arial sans-serif; navy 40px page titles, 24px popup title, 16px popup section labels, 14px list text.
+- Spacing: 210px sidebar, top-right selector, compact table, 650px native dialog, outlined Save and navy Approve. Popup height varies with actual review text and the retained AI tools disclosure.
+- Colors: pale blue surfaces, navy text, teal selection, gold stars, blue draft and green replied/approved badges, amber draft-only banner.
+- Assets: authentic existing Tap Rater logo retained (gray wordmark differs from mock navy wordmark); official Google icon downloaded from gstatic; Lucide icons. Real initials and real ratings replace illustrative people and incorrect sample stars.
+- Content: real 22 reviews, 2 awaiting replies, 2 drafts, 0 approved drafts and 20 existing Google replies. Additional Replied filter is intentional; existing replies are not falsely counted as approvals. Existing 4,000-character limit retained. Real account names, addresses and dates replace sample content.
 
-Reference images: exec-b695914d-cfb4-4259-9f76-3418598ea76a.png (Home), exec-3f50e8ec-9555-4fe0-80c5-8350040b556e.png (Product), exec-0960e704-d618-4f3e-a57b-e191ea2293a2.png (Account), under the current chat's generated_images directory.
+## Verification
+TypeScript, production Cloudflare build and 67 targeted tests passed. Draft tab returns two rows; Approved tab displays an empty-state message; Escape closes the popup. Popup has Save draft and Approve draft only, no Publish button. Location-scoped profile still shows publishing disabled. No content saved, approved, generated or published during this pass. No migration or pricing changes. Browser error log empty.
 
-Implementation captures: C:/Sites/tap-rater-claude/artifacts/mobile-design-20261008/{home-after,product-after,account-after,checkout-after,cart-after,desktop-after}.png.
+Evidence: theme-reviews-final.png, theme-popup-final.png, theme-comparison.png, theme-popup-comparison.png. Review the focused comparison for text/control detail; full-view evidence establishes layout and palette.
 
-Each source and corresponding implementation capture was inspected together. References are 853 × 1844 raster designs for a logical 390 × 844 viewport; browser captures use a 390 × 844 viewport (Windows scrollbars reduce the content width). Comparison used logical proportions, not raw-pixel differences. Narrow menu/shop checked at 320 × 740; desktop at 1440 × 900.
+Residual test gap: no separate mobile device verification; responsive rules retain scrolling table and stacked location controls. Existing authentic logo and real-data/AI-tool differences are intentional, not sample-data duplication.
 
-Typography: readable existing brand font, mobile heading overrides restored hierarchy. Spacing: persistent bottom tabs have reserved space; purchase action is separate and hidden while the setup dialog or menu is open. Colors: existing teal, gold, ink, and neutral surfaces. Images: existing product photos retained rather than substituting generated product illustrations. Copy: actual prices and fulfillment state replace mock data. Controls and labels were reviewed at readable capture sizes.
+Final deployment: c37a3c14-c805-4354-96b4-f521c87cc7f2. Final browser check confirms 16px/600 section headings, 184px Save button and no publishing action. Post-fix evidence: theme-popup-final.png and regenerated theme-popup-comparison.png. No actionable P0/P1/P2 findings remain in the verified desktop flow.
 
-## Interaction checks
-
-- Home product shortcut reaches product; sticky setup action opens the existing builder.
-- Destination entry, review, and Add to cart completed locally; cart count became one.
-- Menu opens at narrow width; its Shop link navigates; active tab follows product/account/cart routes.
-- Checkout summary expands and collapses; total stays visible; navigation tabs do not appear during checkout.
-- Desktop mobile hero and tabs are hidden; desktop hero remains intact.
-- Account populated state rendered using the real component with a synthetic order in a temporary development-only harness; harness removed before release. Empty, paid, production, shipped, delivered and refunded states covered by tests. No customer credentials changed.
-- No horizontal document overflow in inspected mobile and desktop views; no browser console errors observed on final Home.
-- TypeScript passes; full suite: 1331 passed, 9 skipped.
-
-No P0/P1/P2 findings remain. P3 differences: stock product photography instead of the mock's lifestyle illustration, existing setup copy and brand typography, and account content scrolls with actual data. This is responsive browser verification, not a physical iOS/Android or real-payment test. Local checkout has no active payment credentials; no payment was submitted.
+Final result: passed.
