@@ -1,0 +1,32 @@
+'use client';
+import {useState} from 'react';
+import {modelPlan,proposedPlans} from '@/lib/usage-plan-model';
+export type ComparisonAccount={id:string;name:string;locations:{id:string;current:boolean;points:number;heat:number;unknown:number;ai:number|null;calls:number;aiUnknown:number}[]};
+const money=(n:number,digits=2)=>n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:digits,maximumFractionDigits:digits});
+export function MonthlyComparison({accounts,month}:{accounts:ComparisonAccount[];month:string}){
+ const [selected,setSelected]=useState(accounts[0]?.id||'');
+ const [plan,setPlan]=useState(1);
+ const a=accounts.find(a=>a.id===selected);
+ if(!a)return null;
+ const current=a.locations.filter(l=>l.current),n=current.length;
+ const heat=a.locations.reduce((s,l)=>s+l.heat,0)/1e6;
+ const aiAvailable=a.locations.every(l=>l.ai!==null),ai=a.locations.reduce((s,l)=>s+(l.ai||0),0)/1e9;
+ const unknown=a.locations.reduce((s,l)=>s+l.unknown+l.aiUnknown,0);
+ const scenario=modelPlan(plan,n);
+ return <div className="my-4 rounded-lg border border-line bg-white p-4 text-sm">
+ <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Monthly costs & proposed profit · {month}</h2><span className="rounded bg-amber-50 px-2 py-1 text-xs text-amber-900">Planning only · Pricing inactive</span></div>
+ <label className="mt-3 block">Client account <select className="ml-2 rounded border border-line p-2" value={selected} onChange={e=>setSelected(e.target.value)}>{accounts.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+ <div className="my-3 flex flex-wrap gap-x-6 gap-y-2"><span>AI recorded: <strong>{aiAvailable?money(ai,6):'Unavailable'}</strong></span><span>Heat maps recorded: <strong>{money(heat,6)}</strong></span><span>Known subtotal: <strong>{aiAvailable?money(ai+heat,6):'Incomplete'}</strong></span><span>{n} current locations</span></div>
+ <p className="text-xs text-muted">Month to date (New York), before credits and tax. Recorded costs are not the complete monthly bill: earlier unmetered AI is unknown. No recorded calls does not establish zero historical cost. {unknown>0&&`${unknown} call / point costs remain unknown or pending.`}</p>
+ <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-xs"><caption className="sr-only">Recorded costs by private location ID</caption><thead><tr>{['Location ID','AI calls','AI recorded','Heat-map points','Heat-map recorded','Known subtotal'].map(x=><th className="p-2" key={x}>{x}</th>)}</tr></thead><tbody>{a.locations.map(l=><tr className="border-t border-line" key={l.id}><td className="p-2">{l.id.slice(0,8)}{!l.current&&' (historical)'}</td><td className="p-2">{l.calls}{l.aiUnknown>0&&` (${l.aiUnknown} unknown)`}</td><td className="p-2">{l.ai===null?'Unavailable':l.calls?money(l.ai/1e9,6):'No recorded calls'}</td><td className="p-2">{l.points}</td><td className="p-2">{money(l.heat/1e6,6)}{l.unknown>0&&` (${l.unknown} unknown)`}</td><td className="p-2">{l.ai===null?'Incomplete':money(l.ai/1e9+l.heat/1e6,6)}</td></tr>)}</tbody></table></div>
+ <h3 className="mt-4 font-semibold">Full-month plan scenarios · {n} current locations</h3>
+ <p className="mt-1 text-xs text-muted">Assumes all current locations subscribe and use the full included allowance. These are hypothetical revenues and contributions, not actual revenue or profit. Historical locations are excluded.</p>
+ {n<1||n>10?<p className="mt-3">{n>10?'More than 10 locations requires a custom quote.':'No current location to model.'}</p>:<>
+ <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs"><caption className="sr-only">Proposed monthly account contribution by plan</caption><thead><tr>{['Plan','Proposed revenue','AI','Heat maps','Hosting + support','Payment fees','Total cost','Contribution','Margin'].map(x=><th className="p-2" key={x}>{x}</th>)}</tr></thead><tbody>{proposedPlans.map((p,i)=>{const m=modelPlan(i,n)!;return <tr key={p.name} className="border-t border-line"><td className="p-2 font-semibold">{p.name}</td>{[m.revenue,m.ai,m.heat,m.operations,m.fees,m.cost,m.contribution].map((v,j)=><td key={j} className="p-2">{money(v)}</td>)}<td className="p-2">{(m.margin*100).toFixed(1)}%</td></tr>})}</tbody></table></div>
+ <label className="mt-3 block">Location scenario <select value={plan} onChange={e=>setPlan(Number(e.target.value))} className="ml-2 rounded border border-line p-2">{proposedPlans.map((p,i)=><option value={i} key={p.name}>{p.name}</option>)}</select></label>
+ <p className="mt-2 text-xs text-muted">Equal per-location allocation of the account scenario below, including Growth discounts and one consolidated payment fee. This is not an assigned location price.</p>
+ {scenario&&<div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr>{['Location ID','Revenue allocation','AI + heat maps','Total cost allocation','Contribution allocation'].map(x=><th className="p-2" key={x}>{x}</th>)}</tr></thead><tbody>{current.map(l=><tr key={l.id} className="border-t border-line"><td className="p-2">{l.id.slice(0,8)}</td>{[scenario.revenue/n,(scenario.ai+scenario.heat)/n,scenario.cost/n,scenario.contribution/n].map((v,j)=><td key={j} className="p-2">{money(v)}</td>)}</tr>)}</tbody></table></div>}
+ </>}
+ <details className="mt-3 text-xs leading-5"><summary className="cursor-pointer font-semibold">Allowances, assumptions & exclusions</summary><p>Per location: Essentials $19, 100 reply drafts + 2 improvement drafts, 300 map points; Growth $29, 300 + 10 drafts, 980 points; Pro $49, 1,000 + 25 drafts, 1,960 points. Four scheduled runs per keyword. Growth locations 2–5 are $19 each; 6–10 are $15 each.</p><p>AI assumes 3,000 input + 1,000 output tokens per generation at $0.293 / $2.253 per million tokens, with 25% retry buffer. Heat maps use $0.0006 per point. Hosting $3 and support $5 per location are budget assumptions. US domestic cards plus pay-as-you-go Billing are modeled at 3.6% + $0.30 per monthly account payment. Rates reviewed October 22, 2026.</p><p>Contribution excludes development, marketing, onboarding, general overhead and tax. Directory profile/correction management is included; automatic external distribution is excluded. The shared scan cap and current daily limits remain unchanged. Selecting a scenario does not assign a plan, change limits, or charge anyone. Rounded allocations may differ by a cent from account totals.</p></details>
+ </div>;
+}
