@@ -21,6 +21,24 @@ describe.skipIf(!url)('isolated local management database',()=>{
    await mutateLocal(actor,{...record,version:1,notes:'Updated'},sql);
    await expect(mutateLocal(actor,{...record,version:1,notes:'Stale'},sql)).rejects.toMatchObject({status:409});
    const final=await localSnapshot(actor,sql);expect(final.listings).toHaveLength(1);expect(final.listings[0].notes).toBe('Updated');expect(final.listings[0].business_id).toBe(first.id);
+   const profile={action:'updateLocation',businessId:first.id,name:'Updated branch',address:'New address',phone:'5551234567',website:'https://example.com',category:'Boutique',description:'Test description',hours:'Mon-Fri 9-5',version:1};
+   await expect(mutateLocal(other,profile,sql)).rejects.toMatchObject({status:409});
+   await mutateLocal(actor,profile,sql);
+   await expect(mutateLocal(actor,profile,sql)).rejects.toMatchObject({status:409});
+   expect((await localSnapshot(actor,sql)).locations.find(l=>l.id===second.id)?.business_name).toBe('Integration test branch 2');
+   const advance={action:'advanceListing',businessId:first.id,directory:record.directory,version:2,profileVersion:2,state:'approved'};
+   await expect(mutateLocal(actor,advance,sql)).rejects.toMatchObject({status:409}); // Not checked yet.
+   await mutateLocal(actor,{...record,version:2,checked:true,notes:'Use updated branch profile'},sql);
+   await expect(mutateLocal(other,{...advance,version:3},sql)).rejects.toMatchObject({status:409});
+   await expect(mutateLocal(actor,{...advance,version:3,profileVersion:1},sql)).rejects.toMatchObject({status:409});
+   await mutateLocal(actor,{...advance,version:3},sql);
+   await mutateLocal(actor,{...profile,version:2,address:'Changed again'},sql);
+   await expect(mutateLocal(actor,{...advance,version:4,profileVersion:3,state:'submitted'},sql)).rejects.toMatchObject({status:409});
+   await mutateLocal(actor,{...record,version:4,checked:true,notes:'Updated correction'},sql);
+   await mutateLocal(actor,{...advance,version:5,profileVersion:3},sql);
+   await mutateLocal(actor,{...advance,version:6,profileVersion:3,state:'submitted'},sql);
+   await mutateLocal(actor,{...advance,version:7,profileVersion:3,state:'resolved'},sql);
+   expect((await localSnapshot(actor,sql)).listings[0].correction_state).toBe('resolved');
    await sql`UPDATE businesses SET customer_id=${customers.find(c=>c.email===b)!.id} WHERE id=${first.id}`;
    expect((await localSnapshot(other,sql)).listings).toHaveLength(0);
    await expect(mutateLocal(other,{...record,version:2},sql)).rejects.toMatchObject({status:409});

@@ -39,3 +39,13 @@ For release, apply the additive migration to the verified LIVE branch `br-restle
 - Confirmed signed-in customer dashboard shows only Norah Boutique: 22 imported reviews, two unanswered, Google connected. Admin dashboard lists the existing multi-location accounts with customer and location selectors.
 - Production API confirms publishingEnabled=false and auto_enabled=false. Reply attempts remained zero through migration and deployment. No replies or external directory updates were published.
 - Evidence: `C:/Sites/tap-rater-claude/artifacts/semrush-local-reference/production-dashboard.png`.
+
+## Directory workflow release — October 22, 2026
+
+The client confirmed that no distribution provider is connected and requested management first. Added per-location canonical profiles (name, address, phone, website, category, description and hours), an eight-directory starter checklist plus custom directories, all-location search/status filters, progress counters and recorded-detail comparisons. Checklist entries begin as Not checked and are not invented scan results.
+
+Corrections progress through draft, approved, manually submitted and resolved. These actions only update Tap Rater. Any correction edit resets approval. Location profile changes invalidate earlier approvals; both profile and listing versions are checked atomically, including at approval time. Account ownership and active status are enforced inside each write. No API syndication, automated scans or external submission is enabled.
+
+Applied docs/sql/local-directory-workflow.sql to isolated staging and verified live branch br-restless-shape-at38e1nu. Production Worker version d18fbe77-1569-4ee9-ace0-0746f720c5b6, preserving false review publishing flag and the 15-minute background schedule.
+
+Validation: 33 focused unit/HTTP/review regression tests; real staging integration verifies multiple locations, cross-account rejection, stale writes, unchecked correction rejection, approval invalidation and the complete manual state progression. TypeScript, production build and deployment dry run passed. Browser tested profile editing and correction approval with three synthetic staging locations. Production Norah view has eight unchecked directories, 22 reviews, two saved drafts and zero publishing attempts. Its directory profile still needs address, phone, website, category and hours entered by the client; no unverified details were filled in.

@@ -1,0 +1,10 @@
+BEGIN;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS local_profile_version integer NOT NULL DEFAULT 1;
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS local_category text NOT NULL DEFAULT '';
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS local_description text NOT NULL DEFAULT '';
+ALTER TABLE businesses ADD COLUMN IF NOT EXISTS local_hours text NOT NULL DEFAULT '';
+ALTER TABLE local_directory_listings ADD COLUMN IF NOT EXISTS listed_website text NOT NULL DEFAULT '';
+ALTER TABLE local_directory_listings ADD COLUMN IF NOT EXISTS checked_at timestamptz;
+ALTER TABLE local_directory_listings ADD COLUMN IF NOT EXISTS correction_state text NOT NULL DEFAULT 'draft' CHECK (correction_state IN ('draft','approved','submitted','resolved'));
+ALTER TABLE local_directory_listings ADD COLUMN IF NOT EXISTS approved_profile_version integer;
+COMMIT;
