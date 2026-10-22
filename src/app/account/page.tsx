@@ -1,3 +1,4 @@
+import {LocalIssueCenter} from "@/components/account/local-issue-center";
 import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
@@ -15,6 +16,7 @@ export default async function AccountPage() {
   return (
     <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Customer account storage is not configured yet." /> : null}
+      <LocalIssueCenter compact/>
       <MobileAccountOverview portal={portal} />
       <div className="tr-account-desktop grid gap-5">
         <section className="tr-card p-5">

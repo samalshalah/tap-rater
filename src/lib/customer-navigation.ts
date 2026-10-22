@@ -3,6 +3,7 @@ export const customerNavigation = [
   { href: "/account/stands", label: "My Stands" },
   { href: "/account/reviews", label: "Reviews" },
   { href: "/account/local", label: "Locations & Listings" },
+  { href: "/account/notifications", label: "Notifications" },
   { href: "/account/heatmap", label: "Heat Map" },
   { href: "/account/orders", label: "Orders & Billing" },
 ];
