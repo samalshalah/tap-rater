@@ -38,9 +38,9 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
     return buildGrid(location.anchor.latitude,location.anchor.longitude,settings.size,settings.spacingKm).map(p=>({track_id:t.id,point_index:p.index,request:rankRequest(settings,p)}));
    });
    await sql`WITH run AS (
-    INSERT INTO local_rank_runs(business_id,customer_id,parent,google_subject,period,anchor,tracks)
-    VALUES(${location.business_id},${location.customer_id},${location.parent},${location.google_subject},${period}::date,${JSON.stringify(location.anchor)}::jsonb,${JSON.stringify(location.tracks)}::jsonb)
-    ON CONFLICT(business_id,period) DO NOTHING RETURNING id
+    INSERT INTO local_rank_runs(business_id,customer_id,parent,google_subject,period,anchor,tracks,methodology)
+    VALUES(${location.business_id},${location.customer_id},${location.parent},${location.google_subject},${period}::date,${JSON.stringify(location.anchor)}::jsonb,${JSON.stringify(location.tracks)}::jsonb,'maps-v2')
+    ON CONFLICT(business_id,period,methodology,request_key) DO NOTHING RETURNING id
    ) INSERT INTO local_rank_points(run_id,track_id,point_index,request)
     SELECT run.id,p.track_id,p.point_index,p.request FROM run CROSS JOIN jsonb_to_recordset(${JSON.stringify(points)}::jsonb) AS p(track_id uuid,point_index smallint,request jsonb)`;
   }catch{invalid++;}

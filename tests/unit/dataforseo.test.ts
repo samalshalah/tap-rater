@@ -11,7 +11,7 @@ describe('DataForSEO paid-request safety and ranking accuracy',()=>{
   const periods=new Set(Array.from({length:31},(_,i)=>scanPeriod(new Date(`2026-10-${String(i+1).padStart(2,'0')}T12:00:00Z`))));expect(periods.size).toBe(4);
  });
  it('fixes paid parameters and rejects operators including encoded syntax',()=>{
-  expect(rankRequest(settings,point)).toMatchObject({priority:1,depth:20,device:'desktop',search_this_area:true,location_coordinate:'38.9,-77,17z'});
+  expect(rankRequest(settings,point)).toMatchObject({priority:1,depth:20,device:'desktop',search_this_area:false,search_places:false,location_coordinate:'38.9,-77,15z'});
   for(const keyword of ['site:example.com','site%3Aexample.com','foo+bar'])expect(()=>rankRequest({...settings,keyword},point)).toThrow();
  });
  it('matches exact Place ID and excludes paid positions and same-name competitors',()=>{

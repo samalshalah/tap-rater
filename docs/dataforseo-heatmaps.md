@@ -2,7 +2,7 @@
 
 Production account: admin@taprater.com. API login/password are Cloudflare secrets
 `DATAFORSEO_LOGIN` and `DATAFORSEO_PASSWORD`, never public environment variables.
-Apply `docs/sql/dataforseo-heatmaps.sql` before deploying the reader/scheduler.
+Apply `docs/sql/dataforseo-heatmaps.sql`, then `docs/sql/heatmap-methodology.sql` before deploying. Pause paid dispatch during migration, deploy, then restore the provider enabled flag.
 
 The existing 15-minute cron calls the authenticated heatmap-scans route. Each
 enabled location gets one immutable run per New York calendar period: days
@@ -10,16 +10,14 @@ enabled location gets one immutable run per New York calendar period: days
 Runs include all active keywords at creation. Changes apply to subsequent runs.
 Each run freezes its Google assignment, map anchor and keyword settings.
 
-Norah Boutique is the initial enabled location: three 5×5 grids, 0.5 km spacing,
-75 paid tasks per period. Standard Google Maps SERP tasks cost $0.0006 each:
-$0.045 per complete location scan, $0.18 for four scans. The target Place ID is
+Norah Boutique is the initial enabled location. Current testing settings are one 7×7 grid at 2 km spacing and two 5×5 grids at 0.5 km spacing. Standard Google Maps SERP tasks cost $0.0006 each: 99 tasks, $0.0594 per scheduled location scan, $0.2376 for four scans. The target Place ID is
 matched exactly against organic Maps results, excluding advertisements. Missing
 businesses are labeled not found in the returned results; errors are not ranks.
 
 The shared monthly application cap is $5. The provider also has a $5 daily
 safeguard; these are different controls. Auto-recharge stays disabled. No top-up
 was purchased. The application cap covers only requests dispatched through this
-scheduler, not manual requests or other tools using the provider account.
+scheduler, including approved dashboard scans. Requests made by unrelated tools directly to the provider are outside this application cap.
 
 ## Budget and failures
 
@@ -50,3 +48,13 @@ matching, malformed/pending responses, response correlation and no paid retry.
 The staging-only integration test runs concurrent schedulers against two fixture
 locations with a $0.003 allowance, verifies exactly five paid reservations,
 retains uncertain costs, checks tenant isolation and prevents duplicate periods.
+
+## Approved extra scans and corrected methodology
+
+Only locations with `local_rank_schedules.manual_enabled=true` may quote and approve extra scans. Norah is enabled for testing; other locations default to false. Quotes are server-priced, expire after 10 minutes, freeze the keyword/grid/version/Google assignment and cost, and perform no provider request. Approval checks current ownership, settings, active schedule and available budget, atomically creates one run and its points, and is idempotent for the quote ID. Dispatch still uses the shared locked budget reservation function; a concurrent budget depletion can pause queued work. No payment is collected from customers.
+
+Changing settings does not start paid work. The latest view only matches the exact saved keyword, grid size, spacing and language using maps-v2; old measurements stay in history. Pending scans refresh every 15 seconds; dispatch and collection run on the 15-minute cron.
+
+Maps-v2 uses fixed zoom 15 with search_this_area=false and search_places=false. This removes the earlier tight viewport restriction and places-search interference. It remains a coordinate-centered Google Maps measurement, not a guarantee of what every physical user sees. Legacy maps-v1 scans are visibly labeled and excluded from the default current-results view.
+
+Staging also tests quotes without billable runs, stale quote rejection, cross-tenant denial, extra-scan gating and concurrent approval deduplication. Replies and profile edits remain drafts.

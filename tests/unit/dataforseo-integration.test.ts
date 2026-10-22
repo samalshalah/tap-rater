@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';
 import {runHeatmapMaintenance} from '@/lib/heatmap-scans';
+import {mutateScanApproval} from '@/lib/heatmap-approval';
 import {heatmapSnapshot} from '@/lib/heatmap-management';
 const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL;
 describe.skipIf(!url)('DataForSEO staging budget and scheduling',()=>{
@@ -34,6 +35,22 @@ describe.skipIf(!url)('DataForSEO staging budget and scheduling',()=>{
    const own=await heatmapSnapshot({kind:'customer',email:owner},locations[0].id,sql);expect(own.scans).toHaveLength(1);expect(own.scans[0].points).toHaveLength(9);expect(own.provider.status).toBe('capped');
    await expect(heatmapSnapshot({kind:'customer',email:'other@example.test'},locations[0].id,sql)).rejects.toMatchObject({status:404});
    const [budget]=await sql`SELECT reserved_microusd FROM local_rank_budgets WHERE month=${month.month}::date`;expect(Number(budget.reserved_microusd)).toBe(Number(prior?.reserved_microusd||0)+3000);
+   const businessId=locations[0].id,actor={kind:'customer' as const,email:owner};
+   const [track]=await sql`SELECT id,version FROM local_heatmap_tracks WHERE business_id=${businessId}`;
+   await expect(mutateScanApproval(actor,{action:'quote',businessId,id:track.id,version:track.version},sql)).rejects.toMatchObject({status:403});
+   await sql`UPDATE local_rank_schedules SET manual_enabled=true WHERE business_id=${businessId}`;
+   await sql`UPDATE local_rank_provider SET monthly_cap_microusd=5000000 WHERE id=true`;
+   await expect(mutateScanApproval({kind:'customer',email:'other@example.test'},{action:'quote',businessId,id:track.id,version:track.version},sql)).rejects.toMatchObject({status:404});
+   const quoted=await mutateScanApproval(actor,{action:'quote',businessId,id:track.id,version:track.version},sql);expect(quoted.quote?.cost).toBe(0.0054);
+   expect(await sql`SELECT id FROM local_rank_runs WHERE customer_id=${customer.id}`).toHaveLength(2);
+   await sql`UPDATE local_heatmap_tracks SET version=version+1 WHERE id=${track.id}`;
+   await expect(mutateScanApproval(actor,{action:'approve',businessId,quoteId:quoted.quote!.id},sql)).rejects.toThrow('Quote expired');
+   const fresh=await mutateScanApproval(actor,{action:'quote',businessId,id:track.id,version:track.version+1},sql);
+   const results=await Promise.allSettled([mutateScanApproval(actor,{action:'approve',businessId,quoteId:fresh.quote!.id},sql),mutateScanApproval(actor,{action:'approve',businessId,quoteId:fresh.quote!.id},sql)]);
+   expect(results.some(r=>r.status==='fulfilled')).toBe(true);
+   expect(await sql`SELECT id FROM local_rank_runs WHERE request_key=${fresh.quote!.id}`).toHaveLength(1);
+   expect((await mutateScanApproval(actor,{action:'approve',businessId,quoteId:fresh.quote!.id},sql)).duplicate).toBe(true);
+   const [manual]=await sql`SELECT count(*)::int AS count FROM local_rank_points p JOIN local_rank_runs r ON r.id=p.run_id WHERE r.request_key=${fresh.quote!.id} AND p.request->>'search_this_area'='false' AND p.request->>'search_places'='false'`;expect(manual.count).toBe(9);
   }finally{
    vi.unstubAllEnvs();
    await sql`UPDATE local_rank_provider SET enabled=${original.enabled},monthly_cap_microusd=${original.monthly_cap_microusd},halt_reason=${original.halt_reason} WHERE id=true`;

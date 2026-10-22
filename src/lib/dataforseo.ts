@@ -5,7 +5,7 @@ export const POINT_COST_MICROUSD=600;
 // Restrict keyword syntax to ordinary searches; encoded operators can change pricing.
 export function rankRequest(settings:GridSettings,point:GridPoint){
  if(!/^[\p{L}\p{N}\s'’&.,-]+$/u.test(settings.keyword))throw new Error('Use a plain search phrase without search operators.');
- return {keyword:settings.keyword,language_code:settings.language,location_coordinate:`${point.latitude},${point.longitude},17z`,depth:20,priority:1,device:'desktop',search_this_area:true};
+ return {keyword:settings.keyword,language_code:settings.language,location_coordinate:`${point.latitude},${point.longitude},15z`,depth:20,priority:1,device:'desktop',search_this_area:false,search_places:false};
 }
 export function scanPeriod(now=new Date()){
  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(now);
