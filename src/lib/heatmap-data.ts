@@ -1,7 +1,7 @@
 import {z} from 'zod';
 
 export const gridSettingsSchema=z.object({
- keyword:z.string().trim().min(2).max(120).transform(v=>v.replace(/\s+/g,' ')),
+ keyword:z.string().trim().min(2).max(120).regex(/^[\p{L}\p{N}\s'’&.,-]+$/u,'Use a plain search phrase without search operators.').transform(v=>v.replace(/\s+/g,' ')),
  size:z.union([z.literal(3),z.literal(5),z.literal(7)]),
  spacingKm:z.union([z.literal(0.25),z.literal(0.5),z.literal(1),z.literal(2)]),
  language:z.enum(['en','es','fr','ar']),

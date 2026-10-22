@@ -44,6 +44,12 @@ export default {
       }), env, context);
       console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok }));
     } catch { console.warn("Google review maintenance unavailable"); }
+    try {
+      const ranks = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/heatmap-scans", {
+        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+      }), env, context);
+      console.log(JSON.stringify({ event: "heatmap_scans", ok: ranks.ok }));
+    } catch { console.warn("Heat map scans unavailable"); }
     const state = await runMediaBackupBatch(
       env.PRODUCT_MEDIA_BUCKET,
       env.RECOVERY_BACKUPS,
