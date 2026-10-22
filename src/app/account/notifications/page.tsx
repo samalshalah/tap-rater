@@ -1,6 +1,6 @@
 import {AccountShell} from '@/components/account/account-shell';
-import {LocalIssueCenter} from '@/components/account/local-issue-center';
+import {LocalDashboard} from '@/components/account/local-dashboard';
 import {requireCustomer} from '@/lib/customer-auth';
 export const dynamic='force-dynamic';
-export const metadata={title:'Notifications & AI drafts',robots:{index:false,follow:false}};
-export default async function Page(){await requireCustomer();return <AccountShell><LocalIssueCenter/></AccountShell>;}
+export const metadata={title:'Issues & Approvals',robots:{index:false,follow:false}};
+export default async function Page(){const session=await requireCustomer();return <AccountShell><LocalDashboard initialTab="notifications" preferenceKey={session.email.toLowerCase()}/></AccountShell>;}

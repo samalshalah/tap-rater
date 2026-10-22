@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || (pathname.startsWith("/account") && !["/account/login", "/account/activate", "/account/forgot-password", "/account/reset-password"].includes(pathname))) {
     return <div className="min-h-screen bg-soft">{children}</div>;
   }
 

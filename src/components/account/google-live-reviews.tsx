@@ -9,9 +9,10 @@ type Workspace={owner:string;business_id:string;business_name:string;title:strin
 type Snapshot={workspaces:Workspace[];publishingEnabled:boolean;businesses?:{id:string;business_name:string;email:string}[]};
 type Post=(body:unknown)=>Promise<Record<string,unknown>>;
 const ratings:Record<string,number>={ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5};
-function LiveCard({review,post,refresh,canPublish,aiAllowed,active}:{review:Row;post:Post;refresh:()=>Promise<void>;canPublish:boolean;aiAllowed:boolean;active:boolean}){
+function LiveCard({review,post,refresh,canPublish,aiAllowed,active,onState}:{review:Row;post:Post;refresh:()=>Promise<void>;canPublish:boolean;aiAllowed:boolean;active:boolean;onState?:(dirty:boolean,busy:boolean)=>void}){
  const [draft,setDraft]=useState(review.draft),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[suggestions,setSuggestions]=useState<ReplySuggestions|null>(null),[preview,setPreview]=useState(false);
  const dirty=draft.trim()!==review.draft,unresolved=['publishing','uncertain'].includes(review.publish_state);
+ useEffect(()=>{onState?.(dirty,busy);},[dirty,busy,onState]);
  async function action(kind:'save'|'suggest'|'publish'|'reconcile'|'approve'){
   if(kind==='publish'&&!window.confirm('Publish this exact saved reply publicly on Google? It will replace the current business reply if one exists.'))return;
   setBusy(true);setMessage('');
@@ -28,16 +29,35 @@ function LiveCard({review,post,refresh,canPublish,aiAllowed,active}:{review:Row;
   {!aiAllowed&&<p className="mt-2 text-xs">Allow AI in this business’s settings to generate suggestions.</p>}
   {suggestions&&<div className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(replyStyles).map(([key,label])=><div className="rounded-lg border border-line p-3" key={key}><strong>{label}</strong><p className="my-2 text-sm">{suggestions[key as ReplyStyle]}</p><button className="text-sm underline" disabled={busy||unresolved} onClick={()=>{if(!draft.trim()||window.confirm('Replace the unsaved reply text with this suggestion?'))setDraft(suggestions[key as ReplyStyle]);}}>Use {label}</button></div>)}</div>}
   <label className="mt-4 block text-sm font-semibold" htmlFor={'live-'+review.id}>Reply draft</label><textarea id={'live-'+review.id} className="mt-2 min-h-32 w-full rounded-lg border border-line p-3" maxLength={4000} value={draft} disabled={busy||unresolved||!active} onChange={e=>setDraft(e.target.value)}/>
-  <div className="mt-3 flex flex-wrap gap-2"><button className="tr-button-ghost" disabled={busy||unresolved||!active} onClick={()=>action('save')}>Save draft</button><button className="tr-button-ghost" disabled={!draft.trim()} onClick={()=>setPreview(!preview)}>Preview reply</button><button className="tr-button-ghost" disabled={busy||dirty||!draft.trim()||unresolved||!active||review.approved_version===review.version} onClick={()=>action('approve')}>Approve draft</button><button className="tr-button-primary" disabled={busy||dirty||!draft.trim()||unresolved||!canPublish||!active||review.publish_state==='published'} onClick={()=>action('publish')}>Publish to Google</button>{unresolved&&<button className="tr-button-ghost" disabled={busy||!active} onClick={()=>action('reconcile')}>Check publish result</button>}</div>
+  <div className="mt-3 flex flex-wrap gap-2"><button className="tr-button-ghost" disabled={busy||unresolved||!active} onClick={()=>action('save')}>Save draft</button><button className="tr-button-ghost" disabled={!draft.trim()} onClick={()=>setPreview(!preview)}>Preview reply</button><button className="tr-button-ghost" disabled={busy||dirty||!draft.trim()||unresolved||!active||review.approved_version===review.version} onClick={()=>action('approve')}>Approve draft</button>{canPublish&&<button className="tr-button-primary" disabled={busy||dirty||!draft.trim()||unresolved||!canPublish||!active||review.publish_state==='published'} onClick={()=>action('publish')}>Publish to Google</button>}{unresolved&&<button className="tr-button-ghost" disabled={busy||!active} onClick={()=>action('reconcile')}>Check publish result</button>}</div>
   <p className="mt-2 text-sm">Approval saves your decision. It does not publish a reply.</p>{dirty&&<p className="mt-2 text-sm">Save your changes before approval.</p>}{preview&&<div className="mt-4 rounded-lg bg-soft p-4"><strong>Reply preview</strong><p className="mt-2 whitespace-pre-wrap">{draft}</p></div>}<p role="status" className="mt-3 text-sm">{message}</p>
  </article>;
+}
+function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
+ const {review}=props;
+ const dialog=useRef<HTMLDialogElement>(null),edits=useRef({dirty:false,busy:false});
+ const [open,setOpen]=useState(false);
+ useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
+ function close(){if(edits.current.busy)return;if(edits.current.dirty&&!window.confirm('Discard unsaved reply changes?'))return;dialog.current?.close();setOpen(false);}
+ const name=review.data.reviewer?.isAnonymous?'Anonymous':review.data.reviewer?.displayName||'Google reviewer';
+ const status=review.draft?(review.approved_version===review.version?'Approved draft':'Draft ready'):review.data.reviewReply?.comment?'Replied':'Unanswered';
+ return <tr className="tr-review-row" onClick={e=>{if(!(e.target as HTMLElement).closest('button,dialog'))setOpen(true);}}>
+ <th scope="row"><span className="tr-review-name">{name}</span><span className="tr-review-rating">{ratings[review.data.starRating]||'—'}/5</span></th>
+ <td><span className="tr-review-excerpt">{review.data.comment||'Rating only; no written review.'}</span></td>
+ <td className="tr-review-reply"><span className="tr-review-excerpt">{review.draft||review.data.reviewReply?.comment||'No reply yet'}</span></td>
+ <td><span className={'tr-review-status '+(status==='Unanswered'?'is-unanswered':'')}>{status}</span></td>
+ <td><button className="tr-button-ghost" aria-label={'Open review from '+name} onClick={()=>setOpen(true)}>Open</button>
+ {open&&<dialog ref={dialog} className="tr-review-dialog" aria-label={'Review and reply draft from '+name} onCancel={e=>{e.preventDefault();close();}} onClick={e=>{if(e.target===dialog.current)close();}} onClose={()=>setOpen(false)}>
+ <header><div><strong>Review & reply draft</strong><p>Approval saves your decision. Nothing is published.</p></div><button className="tr-button-ghost" onClick={close} autoFocus>Close</button></header>
+ <LiveCard {...props} key={review.version+':'+review.publish_state} onState={(dirty,busy)=>{edits.current={dirty,busy};}}/>
+ </dialog>}</td></tr>;
 }
 function LiveSettings({workspace:w,post,refresh}:{workspace:Workspace;post:Post;refresh:()=>Promise<void>;publishing:boolean}){
  const [ai,setAi]=useState(w.ai_consent),[style,setStyle]=useState(w.auto_style),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  async function save(){
   setBusy(true);setMessage('');try{await post({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:false,four:false,five:false,style,version:w.settings_version,confirmAutomaticPosting:false}});await refresh();setMessage('Draft settings saved. Nothing will be published.');}catch(e){setMessage(e instanceof Error?e.message:'Settings could not be saved.');}finally{setBusy(false);}
  }
- return <section className="my-5 rounded-xl border border-line p-4"><h4 className="font-semibold">Automatic imports and reply drafts</h4>
+ return <details className="tr-review-settings"><summary>Automatic imports & draft settings</summary>
  <p className="mt-2 text-sm">Connected locations are checked in the background every 15 minutes. Large imports and busy queues continue in subsequent runs, even when you close this page.</p>
  <fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">
  <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Allow Cloudflare AI to process review text and ratings and automatically prepare reply drafts for this location.</label>
@@ -45,7 +65,7 @@ function LiveSettings({workspace:w,post,refresh}:{workspace:Workspace;post:Post;
  <p className="text-xs text-muted">All star ratings are included. Existing replies and saved drafts are preserved. Up to 20 AI generations per location per day, shared with manual suggestions; remaining reviews stay queued. Review and approve each draft. Approval never publishes.</p>
  <button className="tr-button-ghost" onClick={save}>Save Google review settings</button></fieldset>
  {w.draft_error&&<p role="status" className="mt-3 text-sm text-amber-800">{w.draft_error}</p>}
- <p role="status" className="mt-2 text-sm">{message}</p></section>;
+ <p role="status" className="mt-2 text-sm">{message}</p></details>;
 }
 
 function Discovery({post,refresh,businesses}:{post:Post;refresh:()=>Promise<void>;businesses:NonNullable<Snapshot['businesses']>}){
@@ -85,19 +105,20 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
   if(action==='remove'&&!window.confirm('Remove this stopped assignment and its cached reviews and drafts?'))return;
   setBusy(true);setError('');try{if(action==='sync'){if(importing.current)return;importing.current=true;setImportProgress('Importing all Google reviews…');await importReviewPages(async()=>await post({action,businessId}) as {imported:number;more:boolean},count=>{if(mounted.current)setImportProgress(`Imported ${count} reviews in this run…`);},undefined,()=>!mounted.current);if(mounted.current)setImportProgress('All review pages imported. Replies remain drafts.');}else await post({action,businessId});if(mounted.current)await refresh();}catch(e){if(mounted.current)setError(e instanceof Error?e.message:'Request failed.');}finally{importing.current=false;if(mounted.current)setBusy(false);}
  }
- return <section aria-label="Live Google reviews" className="mb-8 rounded-2xl border border-line bg-white p-5 sm:p-6"><h2 className="text-2xl font-bold">Google reviews</h2>
- <p className="mt-2 text-sm">Read real Google reviews and prepare replies for approval. Customer replies stay as drafts. </p>
- <p className="mt-3 rounded-lg bg-soft p-3 text-sm">{(!admin||draftOnly)?'Draft-only workspace. Approve saved drafts for review; nothing is published.':snapshot?.publishingEnabled?'Live publishing activated. Publishing a saved reply requires your confirmation.':'Live publishing disabled. Saved and approved replies remain drafts.'}</p>
+ return <section aria-label="Live Google reviews" className="tr-review-list"><h2 className="sr-only">Google reviews</h2>
+
+ <p className="sr-only">{(!admin||draftOnly)?'Draft-only workspace. Approve saved drafts for review; nothing is published.':snapshot?.publishingEnabled?'Live publishing activated. Publishing a saved reply requires your confirmation.':'Live publishing disabled. Saved and approved replies remain drafts.'}</p>
  {error&&<p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}{!snapshot&&!error&&<p className="mt-3">Loading Google connection status…</p>}
- {!admin&&<GoogleConnectionWizard onLinked={refresh}/>}
- <label className="my-4 block text-sm">Review filter <select className="ml-2 rounded-lg border border-line p-2" value={reviewFilter} onChange={e=>setReviewFilter(e.target.value)}><option value="all">All reviews</option><option value="unanswered">Without a Google reply</option><option value="drafts">Drafts awaiting approval</option><option value="approved">Approved drafts</option></select></label><p className="text-xs text-muted">Filters apply to loaded reviews. Use Load more Google reviews to include older pages.</p>
+
+ <label className="mb-2 block text-sm">Review filter <select className="ml-2 rounded-lg border border-line p-2" value={reviewFilter} onChange={e=>setReviewFilter(e.target.value)}><option value="all">All reviews</option><option value="unanswered">Without a Google reply</option><option value="drafts">Drafts awaiting approval</option><option value="approved">Approved drafts</option></select></label>{snapshot?.workspaces.some(w=>inScope(w.business_id)&&w.moreReviews)&&<p className="text-xs text-muted">Filters apply to loaded reviews. Load more to include older pages.</p>}
  {importProgress&&<p role="status" className="my-3">{importProgress}</p>}
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
  {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':'Connect your Google business above to import reviews.'}</p>}
- {snapshot?.workspaces.filter(w=>inScope(w.business_id)).map(w=><section key={w.business_id} className="mt-6 border-t border-line pt-5"><h3 className="text-xl font-semibold">{w.business_name}</h3><p className="text-sm">Google location: {w.title} · {!w.enabled?'Stopped':!w.connected?'Reconnect managing Google account':'Connected'}</p><p className="mt-2 text-xs">Last sync: {w.synced_at?new Date(w.synced_at).toLocaleString():'Not synced'}{w.next_page?' · More reviews available to sync':''}</p>{w.last_error&&<p className="mt-2 text-sm text-red-700">{w.last_error}</p>}
- <div className="mt-3 flex gap-3"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}>{busy?'Importing…':w.next_page?'Resume importing all reviews':'Import all reviews'}</button><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Stop Google review access</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</div>
- <LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/>
- <div className="grid gap-5 lg:grid-cols-2">{w.reviews.filter(r=>reviewFilter==='all'||(reviewFilter==='unanswered'?!r.data.reviewReply?.comment:reviewFilter==='drafts'?Boolean(r.draft)&&r.approved_version!==r.version:r.approved_version===r.version)).map(r=><LiveCard key={r.id+':'+r.version+':'+r.publish_state} review={r} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/>)}</div>
+ {snapshot?.workspaces.filter(w=>inScope(w.business_id)).map(w=><section key={w.business_id} className="tr-review-workspace"><h3 className="text-xl font-semibold">{w.business_name}</h3><p className="text-xs">Google location: {w.title} · {!w.enabled?'Stopped':!w.connected?'Reconnect managing Google account':'Connected'}</p><p className="mb-2 text-xs">Last sync: {w.synced_at?new Date(w.synced_at).toLocaleString():'Not synced'}{w.next_page?' · More reviews available to sync':''}</p>{w.last_error&&<p className="mt-2 text-sm text-red-700">{w.last_error}</p>}
+
+ <div className="tr-review-table-wrap"><table className="tr-review-table"><caption className="sr-only">Google reviews and reply drafts. Open a review to read or edit its draft.</caption><thead><tr><th>Reviewer</th><th>Review</th><th className="tr-review-reply">Reply excerpt</th><th>Status</th><th><span className="sr-only">Details</span></th></tr></thead><tbody>{w.reviews.filter(r=>reviewFilter==='all'||(reviewFilter==='unanswered'?!r.data.reviewReply?.comment:reviewFilter==='drafts'?Boolean(r.draft)&&r.approved_version!==r.version:r.approved_version===r.version)).map(r=><ReviewListRow key={r.id} review={r} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/>)}</tbody></table></div>
+ <details className="tr-review-settings"><summary>Import & draft controls</summary> <div className="mt-3 flex gap-3"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}>{busy?'Importing…':w.next_page?'Resume importing all reviews':'Import all reviews'}</button><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Stop Google review access</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</div>
+ <LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/></details>
  {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No cached Google reviews. Sync to read the latest reviews.</p>}<p className="mt-4 text-xs text-muted">Cached Google content expires after 30 days. To end management on Google itself, contact <a className="underline" href="mailto:support@taprater.com">support@taprater.com</a> or remove Tap Rater in your Google Business Profile access settings.</p>
- </section>)}</section>;
+ </section>)} {!admin&&snapshot&&<details className="tr-review-settings" open={!snapshot.workspaces.some(w=>inScope(w.business_id)&&w.connected&&w.enabled)}><summary>Google connection & onboarding</summary><GoogleConnectionWizard onLinked={refresh} businessId={businessId}/></details>}</section>;
 }
