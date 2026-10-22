@@ -24,12 +24,12 @@ export function buildGrid(latitude:number,longitude:number,size:number,spacingKm
  return points;
 }
 
-export function mapLayout(points:GridPoint[],latitude:number,longitude:number){
+export function mapLayout(points:GridPoint[],latitude:number,longitude:number,width=800,height=600){
  const project=(lat:number,lng:number,zoom:number)=>{const scale=256*2**zoom,s=Math.sin(lat*Math.PI/180);return {x:(lng+180)/360*scale,y:(0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*scale};};
  let zoom=17;
- for(;zoom>2;zoom--){const center=project(latitude,longitude,zoom),scale=256*2**zoom;const fits=points.every(p=>{const q=project(p.latitude,p.longitude,zoom),dx=((q.x-center.x+scale*1.5)%scale)-scale/2;return Math.abs(dx)<330&&Math.abs(q.y-center.y)<230;});if(fits)break;}
- const center=project(latitude,longitude,zoom),left=center.x-400,top=center.y-300,tiles=[];
- for(let y=Math.floor(top/256);y<=Math.floor((top+600)/256);y++)for(let x=Math.floor(left/256);x<=Math.floor((left+800)/256);x++)if(y>=0&&y<2**zoom)tiles.push({x:((x%2**zoom)+2**zoom)%2**zoom,y,left:x*256-left,top:y*256-top,zoom});
+ for(;zoom>2;zoom--){const center=project(latitude,longitude,zoom),scale=256*2**zoom;const fits=points.every(p=>{const q=project(p.latitude,p.longitude,zoom),dx=((q.x-center.x+scale*1.5)%scale)-scale/2;return Math.abs(dx)<width/2-70&&Math.abs(q.y-center.y)<height/2-70;});if(fits)break;}
+ const center=project(latitude,longitude,zoom),left=center.x-width/2,top=center.y-height/2,tiles=[];
+ for(let y=Math.floor(top/256);y<=Math.floor((top+height)/256);y++)for(let x=Math.floor(left/256);x<=Math.floor((left+width)/256);x++)if(y>=0&&y<2**zoom)tiles.push({x:((x%2**zoom)+2**zoom)%2**zoom,y,left:x*256-left,top:y*256-top,zoom});
  const scale=256*2**zoom;
- return {zoom,tiles,points:points.map(p=>{const q=project(p.latitude,p.longitude,zoom);return {...p,x:400+((q.x-center.x+scale*1.5)%scale)-scale/2,y:q.y-top};})};
+ return {zoom,tiles,points:points.map(p=>{const q=project(p.latitude,p.longitude,zoom);return {...p,x:width/2+((q.x-center.x+scale*1.5)%scale)-scale/2,y:q.y-top};})};
 }

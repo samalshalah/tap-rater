@@ -44,3 +44,14 @@ Validation: 96 focused unit tests passed; TypeScript and Cloudflare build passed
 Limitations: no stand-only customer browser session or mobile viewport was available for visual QA; stand-only API behavior is covered by tests. Paid purchase activation is intentionally not connected while pricing remains inactive. Use trusted administrative grants until a verified billing lifecycle is enabled.
 
 Deployment: Cloudflare `46650da8-79fa-4386-a8b4-a79d15e1e514`.
+
+
+## Compact rank tracker — October 22, 2026
+
+Visual targets: user-supplied Semrush Heatmap, Competitors and Keywords screenshots (`293b82a4`, `8da987a6`, `5f68eb2d`). Applied their compact toolbar, slim metric strip, narrow side panel and keyword summary-card layout within Tap Rater's established theme. The side panel shows real scan points; competitor details and Share of Voice are explicitly unavailable rather than simulated.
+
+Keyword dropdown, + and selected-keyword editor replace the sidebar keyword cards. Scan history is in the toolbar. Schedule, ranking methodology, grid explanations and metric definitions are available via hover/focus/tap information icons. Costs and explicit scan approval remain visible. Unsaved edits prevent switching tabs. The map uses measured viewport dimensions for projection, tiles, SVG and point targets, preserving geographic alignment without stretching. Responsive CSS stacks the point list below the map on small screens.
+
+Production browser checks: switched to boutique near me (25 points), opened its populated editor, opened blank Add form, cancelled both without saving; verified information icon content and competitor unavailable state; keyword summary click opens the matching map. Real summaries show average found rank 7.29 / 1.32 / 8.86 for Norah's three keywords. No scan was purchased, no profile or reply was changed. TypeScript/build and 24 heatmap/location tests passed, including landscape tile/point alignment. Desktop visual QA completed; mobile layout not directly browser-tested.
+
+Evidence: `C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/heatmap-reference-final.png` and `heatmap-keywords-final.png`. Deployment `623022fe-f44d-4aca-82df-f12def0450ba`.
