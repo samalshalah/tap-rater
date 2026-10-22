@@ -54,6 +54,13 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     catch { throw new GoogleBusinessError("invalid_response", response.status); }
   }
   return {
+    async getMapAnchor(location:string) {
+      const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(location,/^locations\/[A-Za-z0-9_-]+$/)}`);
+      url.searchParams.set('readMask','name,title,latlng,metadata');
+      const data=await request(url,z.object({name:z.string(),title:z.string(),latlng:z.object({latitude:z.number().min(-80).max(80),longitude:z.number().min(-180).max(180)}).optional(),metadata:z.object({placeId:z.string().optional()}).optional()}));
+      if(data.name!==location)throw new GoogleBusinessError('invalid_response',200);
+      return {title:data.title,latitude:data.latlng?.latitude,longitude:data.latlng?.longitude,placeId:data.metadata?.placeId};
+    },
     async getProfile(location:string):Promise<ProfileFields> {
       const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(location,/^locations\/[A-Za-z0-9_-]+$/)}`);
       url.searchParams.set('readMask','name,title,storefrontAddress,phoneNumbers,websiteUri,categories,profile,regularHours,specialHours');
