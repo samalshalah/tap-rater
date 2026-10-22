@@ -103,7 +103,7 @@ async function reserveAi(businessId:string,sql=liveDb()){
 }
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
  const {review,link}=await loadLiveReview(actor,id,sql);await reserveAi(String(link.business_id),sql);
- return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '');
+ return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
 }
 export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean()}).strict();
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
@@ -184,7 +184,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  const review=rows[0];
  try{
   await reserveAi(businessId,sql);
-  const suggestions=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'');
+  const suggestions=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
   const saved=await sql`UPDATE google_live_reviews r SET draft=${suggestions[link.auto_style as ReplyStyle]},version=r.version+1,
    approved_version=NULL,draft_generated_at=now() FROM google_review_links l,businesses b,customers c,google_business_connections g
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz

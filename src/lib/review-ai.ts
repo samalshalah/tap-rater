@@ -28,16 +28,16 @@ async function reserveGeneration(businessId:string,sql=db()){
  if(!rows.length) throw new ReviewAiError("Please wait 10 seconds between generations. The pilot allows 20 per business each day.",429);
 }
 export async function suggestReviewReply(actor:ReviewActor,id:string,sql=db(),generate=generateReviewSuggestions){
- const rows=await sql`SELECT r.id,r.rating,r.comment,r.business_id,b.business_name FROM workspace_sample_reviews r
+ const rows=await sql`SELECT r.id,r.rating,r.comment,r.business_id,b.customer_id,b.business_name FROM workspace_sample_reviews r
  JOIN review_workspaces w ON w.business_id=r.business_id JOIN businesses b ON b.id=w.business_id JOIN customers c ON c.id=b.customer_id
  WHERE r.id=${id} AND w.mode='sample' AND (${actor.kind==="admin"} OR (lower(c.email)=${email(actor)} AND c.account_status='active'))`;
  if(!rows.length)throw new ReviewAiError("Review is unavailable.",404);
  const r=rows[0];
  await reserveGeneration(String(r.business_id),sql);
- return generate(String(r.business_name),Number(r.rating),String(r.comment));
+ return generate(String(r.business_name),Number(r.rating),String(r.comment),undefined,{businessId:String(r.business_id),customerId:String(r.customer_id),service:'sample_manual'});
 }
 export async function runSampleAutoReplies(actor:ReviewActor,businessId:string,sql=db(),generate=generateReviewSuggestions){
- const rows=await sql`SELECT r.id,r.rating,r.reply,r.comment,r.version,r.business_id,b.business_name,w.auto_enabled,w.auto_four,w.auto_five,w.auto_style,w.settings_version
+ const rows=await sql`SELECT r.id,r.rating,r.reply,r.comment,r.version,r.business_id,b.customer_id,b.business_name,w.auto_enabled,w.auto_four,w.auto_five,w.auto_style,w.settings_version
  FROM workspace_sample_reviews r JOIN review_workspaces w ON w.business_id=r.business_id JOIN businesses b ON b.id=w.business_id JOIN customers c ON c.id=b.customer_id
  WHERE b.id=${businessId} AND w.mode='sample' AND w.auto_enabled AND r.reply='' AND r.rating IN (4,5)
  AND ((r.rating=4 AND w.auto_four) OR (r.rating=5 AND w.auto_five))
@@ -51,7 +51,7 @@ export async function runSampleAutoReplies(actor:ReviewActor,businessId:string,s
    AND reply='' AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes') RETURNING id`;
   if(!claimed.length)continue;
   await reserveGeneration(String(r.business_id),sql);
-  const suggestions=await generate(String(r.business_name),Number(r.rating),String(r.comment));
+  const suggestions=await generate(String(r.business_name),Number(r.rating),String(r.comment),undefined,{businessId:String(r.business_id),customerId:String(r.customer_id),service:'sample_automatic'});
   // Recheck ownership, enabled settings and version after inference; never replace a customer's edit.
   const updated=await sql`UPDATE workspace_sample_reviews r SET reply=${suggestions[settings.style]},status='draft',reply_source='ai-auto',version=r.version+1,updated_at=now()
    FROM review_workspaces w,businesses b,customers c WHERE r.id=${r.id} AND r.version=${r.version} AND r.reply=''

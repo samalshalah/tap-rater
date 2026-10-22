@@ -11,7 +11,7 @@ export function usageAccount(row:Record<string,unknown>) {
     scheduledLocations:number(row.scheduled_locations),manualLocations:number(row.manual_locations),
     knownCostMicros:number(row.known_cost),reservedMicros:number(row.reserved),
     unconfirmedCosts:number(row.unconfirmed_costs),
-    // No provider token/charge ledger exists for past AI requests. Never report zero as a known cost.
+    // Daily counters alone cannot yield costs. The separate AI ledger supplies measured costs.
     aiCostMicros:null,
   };
 }

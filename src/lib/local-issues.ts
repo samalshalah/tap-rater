@@ -69,7 +69,7 @@ export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),gen
  if(!claimed.length)throw new LiveReviewError('A draft is already being prepared. Refresh shortly.');
  try{
   const {profile}=await profileSnapshot(actor,input.businessId,sql);
-  const draft=await generate({business:link.business_name,issue:issue.finding,verifiedGoogleFacts:profile?.observed??{}});
+  const draft=await generate({business:link.business_name,issue:issue.finding,verifiedGoogleFacts:profile?.observed??{}},undefined,{businessId:input.businessId,customerId:String(link.customer_id),service:'profile_fix'});
   if(issue.code!=='profile-description')draft.proposedDescription='';
   const rows=await sql`UPDATE local_issue_drafts d SET status='draft',content=${JSON.stringify(draft)}::jsonb FROM local_issues i,businesses b,customers c,google_review_links l
    WHERE d.id=${claimed[0].id} AND d.attempt_token=${attempt} AND d.status='generating' AND i.id=d.issue_id AND i.active AND i.fingerprint=d.fingerprint
