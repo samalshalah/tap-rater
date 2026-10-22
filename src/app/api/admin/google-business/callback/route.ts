@@ -8,10 +8,11 @@ export async function GET(request: Request) {
   const flow=(await cookies()).get(customerFlowCookie)?.value;
   const customerFlow=Boolean(flow);
   const identity = customerFlow ? await googleCustomerIdentity() : await googleAdminIdentity();
-  if (!identity) return NextResponse.json({ error: "Admin login required. Start the Google connection again after signing in." }, { status: 401, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
   let origin: string;
   try { origin = new URL(googleConfig().redirectUri).origin; }
   catch { return NextResponse.json({ error: "Google connection configuration is unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } }); }
+  // Never transfer a callback to another browser/session or retain its code in a login URL.
+  if (!identity) return NextResponse.redirect(`${origin}/google-connection-recovery`, { status: 303, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
   let outcome = "failed";
   let stage: GoogleConnectionStage = "validate";
   let reason = "";

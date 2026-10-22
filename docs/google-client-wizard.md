@@ -66,3 +66,14 @@ This status supersedes the pending items in the preparation record above.
 - Production customer Connect Google opens the Google account chooser. Norah's Google account was not among the signed-in Google accounts; no new client grant or Norah import was performed. A complete non-test-client connection/import remains to be validated after that client signs in and grants permission.
 - These changes only affect Google OAuth distribution and branding. The deployed review-publishing flag remains false from release `e2f81d45-b043-4bee-9f65-0e43afe00cd8`; no code, deployment settings, reply approvals, or replies were changed during this OAuth transition.
 - Evidence: `artifacts/google-production-20261022/oauth-in-production.png` and `verification-complete.png` (outside the checkout).
+
+
+## Missing-session callback recovery — October 22, 2026
+
+A reported callback showed the admin-login error after Google returned. Code inspection confirms that a missing customer-flow cookie routes through the admin branch, which emits that misleading error when no admin session exists. The screenshot alone cannot establish why the cookie was absent (another profile, expiration, or cleared cookies).
+
+The callback now redirects unauthenticated returns to a public restart page on the configured trusted origin. It does not reflect authorization codes/state or transfer a callback between sessions. Existing one-use state, PKCE, owner/session binding and client/admin isolation remain intact. The wizard and recovery page instruct clients to begin and complete OAuth in the same Chrome profile. A fresh authorization is still required; this repair does not recover the failed callback or claim Norah is connected.
+
+Validation: 28 focused tests passed, including missing-session redirects, untrusted-host/query stripping and no token exchange without identity. Production build includes TypeScript checking. No migration or reply publication.
+
+Recovery deployed as Worker version 82d49383-bc46-4671-96d2-2fbe70e85a43. Anonymous production callback returns 303 to the recovery page, which returns 200 and was visually checked. Publishing remains false. The edge currently overrides the route's Referrer-Policy with strict-origin-when-cross-origin; the redirect URL itself contains no OAuth parameters.

@@ -11,7 +11,7 @@ beforeEach(() => { vi.clearAllMocks();mocks.cookie.mockReturnValue(undefined);mo
 describe("Google OAuth routes", () => {
   it("requires an authenticated admin on every route", async () => {
     mocks.identity.mockResolvedValue(null);
-    for (const handler of [connect, callback, disconnect]) {
+    for (const handler of [connect, disconnect]) {
       expect((await handler(new Request("https://taprater.com/api/admin/google-business/callback"))).status).toBe(401);
     }
     expect(mocks.begin).not.toHaveBeenCalled(); expect(mocks.complete).not.toHaveBeenCalled(); expect(mocks.disconnect).not.toHaveBeenCalled();
@@ -56,5 +56,17 @@ describe('client OAuth callback routing',()=>{
   const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=wrong&code=code'));
   expect(mocks.complete).not.toHaveBeenCalled();expect(response.headers.get('location')).toContain('/account/reviews?connection=failed');
  });
- it('never falls back to admin when the client session is absent',async()=>{mocks.cookie.mockReturnValue({value:'state'});expect((await callback(new Request('https://taprater.com/callback'))).status).toBe(401);expect(mocks.identity).not.toHaveBeenCalled();});
+ it('never falls back to admin when the client session is absent',async()=>{mocks.cookie.mockReturnValue({value:'state'});expect((await callback(new Request('https://taprater.com/callback'))).headers.get('location')).toBe('https://taprater.com/google-connection-recovery');expect(mocks.identity).not.toHaveBeenCalled();});
+});
+
+describe('missing OAuth browser session recovery',()=>{
+ it('redirects to a trusted restart page without reflecting code, state, or host',async()=>{
+  mocks.identity.mockResolvedValue(null);
+  const response=await callback(new Request('https://attacker.example/callback?state=private-state&code=private-code'));
+  expect(response.status).toBe(303);
+  expect(response.headers.get('location')).toBe('https://taprater.com/google-connection-recovery');
+  expect(response.headers.get('cache-control')).toBe('no-store');
+  expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+  expect(mocks.complete).not.toHaveBeenCalled();
+ });
 });
