@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
+import { customerNavigation, isNavigationActive } from "@/lib/customer-navigation";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -104,8 +105,8 @@ export function Header() {
     defaultHeaderNavigation,
   );
   const navItems = useMemo(
-    () => orderedEnabledLinks(navigation.items),
-    [navigation.items],
+    () => customerSession.authenticated ? customerNavigation : orderedEnabledLinks(navigation.items),
+    [customerSession.authenticated, navigation.items],
   );
   const accountLabel = customerSession.authenticated
     ? `Welcome, ${getCustomerFirstName(customerSession)}`
@@ -170,24 +171,29 @@ export function Header() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/account/session", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body) => {
-        if (active && body) {
-          setCustomerSession({
-            authenticated: body.authenticated === true,
-            email: typeof body.email === "string" ? body.email : undefined,
-            name: typeof body.name === "string" ? body.name : undefined,
-            businessName: typeof body.businessName === "string" ? body.businessName : undefined,
-          });
-        }
-      })
-      .catch(() => undefined);
+    function refreshSession() {
+      fetch("/api/account/session", { cache: "no-store" })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body) => {
+          if (active) {
+            setCustomerSession({
+              authenticated: body?.authenticated === true,
+              email: typeof body?.email === "string" ? body.email : undefined,
+              name: typeof body?.name === "string" ? body.name : undefined,
+              businessName: typeof body?.businessName === "string" ? body.businessName : undefined,
+            });
+          }
+        })
+        .catch(() => undefined);
+    }
+    refreshSession();
+    window.addEventListener("focus", refreshSession);
 
     return () => {
       active = false;
+      window.removeEventListener("focus", refreshSession);
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <header ref={headerRef} className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
@@ -195,7 +201,7 @@ export function Header() {
         <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
           {pathname.startsWith("/product/") ? <Link href="/shop" className="flex min-h-11 items-center gap-2 font-semibold text-ink md:hidden"><ArrowLeft size={22} aria-hidden="true" />Back to shop</Link> : null}
           <Link
-            href="/"
+            href={customerSession.authenticated ? "/account" : "/"}
             prefetch={false}
             className={pathname.startsWith("/product/") ? "hidden items-center md:inline-flex" : "inline-flex items-center"}
             onClick={() => setIsMenuOpen(false)}
@@ -210,13 +216,14 @@ export function Header() {
               className="h-12 w-auto object-contain"
             />
           </Link>
-          <nav className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
+          <nav aria-label={customerSession.authenticated ? "Customer navigation" : "Main navigation"} className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 prefetch={false}
-                className="min-h-11 rounded-[var(--tr-radius-control)] px-3.5 py-2.5 transition hover:bg-soft hover:text-brand"
+                aria-current={isNavigationActive(pathname, item.href) ? "page" : undefined}
+                className={`min-h-11 rounded-[var(--tr-radius-control)] px-3.5 py-2.5 transition hover:bg-soft hover:text-brand ${isNavigationActive(pathname, item.href) ? "bg-panel text-brand" : ""}`}
               >
                 {item.label}
               </Link>
@@ -299,6 +306,7 @@ export function Header() {
             accountHref={customerSession.authenticated ? "/account" : "/account/login"}
             accountLabel={customerSession.authenticated ? accountLabel : "Account"}
             cartCount={cart.count}
+            authenticated={customerSession.authenticated}
             onNavigate={() => setIsMenuOpen(false)}
           />
         ) : null}
@@ -312,6 +320,7 @@ const accountLinks = [
   { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
   { href: "/account/heatmap", label: "Heat Map", icon: LayoutDashboard },
   { href: "/account/orders", label: "Orders & billing", icon: PackageCheck },
+  { href: "/shop", label: "Shop stands", icon: ShoppingBag },
 ];
 
 function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState; onClose: () => void }) {

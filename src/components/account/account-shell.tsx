@@ -1,14 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-
-const links = [
-  { href: "/account", label: "Overview" },
-  { href: "/account/stands", label: "My Stands" },
-  { href: "/account/reviews", label: "Reviews" },
-  { href: "/account/local", label: "Locations & Listings" },
-  { href: "/account/heatmap", label: "Heat Map" },
-  { href: "/account/orders", label: "Orders & Billing" }
-];
+import { customerNavigation as links } from "@/lib/customer-navigation";
 
 export function AccountShell({ children, overview = false }: { children: ReactNode; overview?: boolean }) {
   return (
