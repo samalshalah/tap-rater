@@ -5,7 +5,7 @@ import {importReviewPages} from '@/lib/google-business/import-pages';
 import {replyStyles,type ReplyStyle,type ReplySuggestions} from '@/lib/review-ai-options';
 import type {GoogleReview} from '@/lib/google-business/client';
 type Row={id:string;data:GoogleReview;draft:string;version:number;approved_version?:number|null;publish_state:string};
-type Workspace={owner:string;business_id:string;business_name:string;title:string;enabled:boolean;connected:boolean;synced_at:string|null;next_page:string|null;last_error:string|null;ai_consent:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;auto_style:ReplyStyle;settings_version:number;moreReviews:boolean;reviews:Row[]};
+type Workspace={owner:string;business_id:string;business_name:string;title:string;enabled:boolean;connected:boolean;synced_at:string|null;next_page:string|null;last_error:string|null;ai_consent:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;auto_style:ReplyStyle;settings_version:number;draft_error?:string|null;draft_checked_at?:string|null;moreReviews:boolean;reviews:Row[]};
 type Snapshot={workspaces:Workspace[];publishingEnabled:boolean;businesses?:{id:string;business_name:string;email:string}[]};
 type Post=(body:unknown)=>Promise<Record<string,unknown>>;
 const ratings:Record<string,number>={ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5};
@@ -32,20 +32,22 @@ function LiveCard({review,post,refresh,canPublish,aiAllowed,active}:{review:Row;
   <p className="mt-2 text-sm">Approval saves your decision. It does not publish a reply.</p>{dirty&&<p className="mt-2 text-sm">Save your changes before approval.</p>}{preview&&<div className="mt-4 rounded-lg bg-soft p-4"><strong>Reply preview</strong><p className="mt-2 whitespace-pre-wrap">{draft}</p></div>}<p role="status" className="mt-3 text-sm">{message}</p>
  </article>;
 }
-function LiveSettings({workspace:w,post,refresh,publishing}:{workspace:Workspace;post:Post;refresh:()=>Promise<void>;publishing:boolean}){
- const [ai,setAi]=useState(w.ai_consent),[auto,setAuto]=useState(w.auto_enabled),[four,setFour]=useState(w.auto_four),[five,setFive]=useState(w.auto_five),[style,setStyle]=useState(w.auto_style),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+function LiveSettings({workspace:w,post,refresh}:{workspace:Workspace;post:Post;refresh:()=>Promise<void>;publishing:boolean}){
+ const [ai,setAi]=useState(w.ai_consent),[style,setStyle]=useState(w.auto_style),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  async function save(){
-  if(auto&&!window.confirm('Authorize Tap Rater to automatically publish AI-written replies to NEW unanswered '+[four?'4-star':'',five?'5-star':''].filter(Boolean).join(' and ')+' Google reviews for '+w.business_name+'? Replies will be public without individual review. Existing reviews and drafts will stay manual.'))return;
-  setBusy(true);setMessage('');try{await post({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:auto,four,five,style,version:w.settings_version,confirmAutomaticPosting:auto}});await refresh();}catch(e){setMessage(e instanceof Error?e.message:'Settings could not be saved.');}finally{setBusy(false);}
+  setBusy(true);setMessage('');try{await post({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:false,four:false,five:false,style,version:w.settings_version,confirmAutomaticPosting:false}});await refresh();setMessage('Draft settings saved. Nothing will be published.');}catch(e){setMessage(e instanceof Error?e.message:'Settings could not be saved.');}finally{setBusy(false);}
  }
- return <section className="my-5 rounded-xl border border-line p-4"><h4 className="font-semibold">AI and automatic posting</h4><fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">
- <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>{setAi(e.target.checked);if(!e.target.checked)setAuto(false);}}/>Allow Cloudflare AI to process review text and ratings to suggest replies. Check suggestions for accuracy before using them.</label>
- <label className="flex gap-2 text-sm"><input type="checkbox" checked={auto} disabled={!publishing||!ai} onChange={e=>setAuto(e.target.checked)}/>Automatically publish replies to new eligible Google reviews</label>
- <div className="flex gap-4"><label><input type="checkbox" checked={four} onChange={e=>setFour(e.target.checked)}/> 4 stars</label><label><input type="checkbox" checked={five} onChange={e=>setFive(e.target.checked)}/> 5 stars</label></div>
+ return <section className="my-5 rounded-xl border border-line p-4"><h4 className="font-semibold">Automatic imports and reply drafts</h4>
+ <p className="mt-2 text-sm">Connected locations are checked in the background every 15 minutes. Large imports and busy queues continue in subsequent runs, even when you close this page.</p>
+ <fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">
+ <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Allow Cloudflare AI to process review text and ratings and automatically prepare reply drafts for this location.</label>
  <label>Reply style <select className="rounded border p-2" value={style} onChange={e=>setStyle(e.target.value as ReplyStyle)}>{Object.entries(replyStyles).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
- <p className="text-xs text-muted">Off by default. 1–3-star reviews, existing replies, saved drafts, and reviews posted before consent stay manual. Up to 20 AI generations per business per day. Saving automatic settings starts a new consent window.</p>
- <button className="tr-button-ghost" disabled={auto&&(!four&&!five)} onClick={save}>Save Google review settings</button></fieldset><p role="status" className="mt-2 text-sm">{message}</p></section>;
+ <p className="text-xs text-muted">All star ratings are included. Existing replies and saved drafts are preserved. Up to 20 AI generations per location per day, shared with manual suggestions; remaining reviews stay queued. Review and approve each draft. Approval never publishes.</p>
+ <button className="tr-button-ghost" onClick={save}>Save Google review settings</button></fieldset>
+ {w.draft_error&&<p role="status" className="mt-3 text-sm text-amber-800">{w.draft_error}</p>}
+ <p role="status" className="mt-2 text-sm">{message}</p></section>;
 }
+
 function Discovery({post,refresh,businesses}:{post:Post;refresh:()=>Promise<void>;businesses:NonNullable<Snapshot['businesses']>}){
  const [accounts,setAccounts]=useState<{name:string;accountName?:string;type?:string}[]>([]),[locations,setLocations]=useState<{name:string;title?:string}[]>([]),[account,setAccount]=useState(''),[location,setLocation]=useState(''),[business,setBusiness]=useState(''),[parent,setParent]=useState(''),[nextAccounts,setNextAccounts]=useState(''),[nextLocations,setNextLocations]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  async function run(kind:'accounts'|'locations'|'bind',more=false,group=''){
