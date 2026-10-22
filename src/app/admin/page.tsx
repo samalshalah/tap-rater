@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {LocalDashboard} from '@/components/account/local-dashboard';
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -20,6 +21,9 @@ export default async function AdminPage() {
 
   return (
     <AdminShell>
+      <LocalDashboard admin/>
+      <details className="mx-4 mb-4 rounded-xl border border-line bg-white lg:mx-6">
+      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">Store operations · {productionOrders.length} need production · {artworkFailures.length} artwork failures · {readyToShip.length} ready to ship</summary>
       <section className="tr-admin-section">
         <p className="tr-eyebrow">Admin</p>
         <h1 className="tr-admin-title mt-1">Operations dashboard</h1>
@@ -54,6 +58,7 @@ export default async function AdminPage() {
           ))}
         </div>
       </section>
+      </details>
     </AdminShell>
   );
 }

@@ -129,5 +129,7 @@ function isAdminNavigationItemActive({
     return (pathname === "/admin/orders" && !currentFilter) || pathname.startsWith("/admin/orders/");
   }
 
+  if (itemHref === "/admin/local") return pathname === "/admin/local";
+
   return pathname === itemPathname || (itemPathname !== "/admin" && pathname.startsWith(`${itemPathname}/`));
 }

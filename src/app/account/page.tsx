@@ -1,10 +1,9 @@
-import {LocalIssueCenter} from "@/components/account/local-issue-center";
+import {LocalDashboard} from "@/components/account/local-dashboard";
 import Link from "next/link";
 import { AccountShell } from "@/components/account/account-shell";
 import { requireCustomer } from "@/lib/customer-auth";
 import { countMultiLinkPages, countPaidStandQuantity, getCustomerPortal, type CustomerPortalData } from "@/lib/customer-portal";
 import { formatOrderReference } from "@/lib/order-reference";
-import { MobileAccountOverview } from "@/components/account/mobile-account-overview";
 
 export default async function AccountPage() {
   const session = await requireCustomer();
@@ -16,9 +15,10 @@ export default async function AccountPage() {
   return (
     <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Customer account storage is not configured yet." /> : null}
-      <LocalIssueCenter compact/>
-      <MobileAccountOverview portal={portal} />
-      <div className="tr-account-desktop grid gap-5">
+      <LocalDashboard preferenceKey={session.email.toLowerCase()}/>
+      <details className="mt-4 rounded-xl border border-line bg-white p-4">
+      <summary className="cursor-pointer text-sm font-semibold">Stands & orders · {portal.orders.length} orders · {countPaidStandQuantity(portal.orders)} paid stands</summary>
+      <div className="mt-4 grid gap-3">
         <section className="tr-card p-5">
           <p className="tr-eyebrow">Overview</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>
@@ -61,6 +61,7 @@ export default async function AccountPage() {
           </section>
         ) : null}
       </div>
+      </details>
     </AccountShell>
   );
 }
