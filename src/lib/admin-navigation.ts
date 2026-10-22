@@ -17,8 +17,17 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         label: "Dashboard",
         href: "/admin",
-        description: "Daily order, production, and fulfillment overview",
+        description: "Account operations and order fulfillment overview",
       },
+    ],
+  },
+  {
+    label: "Client Operations",
+    items: [
+      { label: "Account Status", href: "/admin/customers", description: "Account names, access status, and location counts" },
+      { label: "Usage", href: "/admin/usage", description: "AI requests and heat-map scan usage" },
+      { label: "AI Agent", href: "/admin/ai-agent", description: "Draft-generation status and AI request counts" },
+      { label: "Google Connection", href: "/admin/google-connection", description: "Connection coverage and import status" },
     ],
   },
   {
@@ -42,11 +51,6 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         description: "Product availability and checkout stock status",
       },
       {
-        label: "Customers",
-        href: "/admin/customers",
-        description: "Account names, service status, and usage",
-      },
-      {
         label: "Taxes",
         href: "/admin/taxes",
         description: "Manual checkout tax shown before Stripe",
@@ -54,10 +58,10 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     ],
   },
   {
-    label: "Analytics",
+    label: "Store Analytics",
     items: [
       {
-        label: "Analytics",
+        label: "Store Analytics",
         href: "/admin/analytics",
         description: "Traffic sources, checkout journey, and verified sales",
       },
@@ -66,13 +70,6 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Operations",
     items: [
-      { label: "Local Management", href: "/admin/local", description: "Account status, Google connectivity, and service usage" },
-      { label: "Local Reports", href: "/admin/local/reports", description: "Operational service usage only" },
-      {
-        label: "Google Reviews",
-        href: "/admin/google-reviews",
-        description: "Google connectivity status only",
-      },
       {
         label: "Production Queue",
         href: "/admin/orders?filter=production",

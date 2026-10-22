@@ -15,6 +15,9 @@ describe("admin navigation", () => {
         "/admin/products",
         "/admin/inventory",
         "/admin/customers",
+        "/admin/usage",
+        "/admin/ai-agent",
+        "/admin/google-connection",
         "/admin/orders",
         "/admin/orders?filter=production",
         "/admin/requests",
@@ -57,8 +60,9 @@ describe("admin navigation", () => {
   it("groups navigation into dashboard, commerce, operations, and system", () => {
     expect(adminNavigationGroups.map((group) => group.label)).toEqual([
       "Dashboard",
+      "Client Operations",
       "Commerce",
-      "Analytics",
+      "Store Analytics",
       "Operations",
       "System",
     ]);

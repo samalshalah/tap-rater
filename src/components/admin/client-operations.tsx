@@ -1,12 +1,25 @@
-import {clientOperations} from '@/lib/admin-client-operations';
+import {clientOperations, type ClientOperation} from '@/lib/admin-client-operations';
 
-export async function ClientOperations() {
+type View = 'all'|'accounts'|'usage'|'ai'|'google';
+const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Account status',usage:'Service usage',ai:'AI agent',google:'Google connection'};
+const columns:{label:string; views:View[]; value:(a:ClientOperation)=>string|number}[]=[
+  {label:'Account',views:['accounts','usage','ai','google'],value:a=>a.accountName},
+  {label:'Status',views:['accounts'],value:a=>a.status.replaceAll('_',' ')},
+  {label:'Locations',views:['accounts','usage','ai','google'],value:a=>a.locations},
+  {label:'Google connected',views:['google'],value:a=>`${a.connected} / ${a.locations}`},
+  {label:'Import status',views:['google'],value:a=>a.syncAttention ? `${a.syncAttention} need attention` : a.connected ? 'No errors reported' : 'Not connected'},
+  {label:'AI drafts enabled',views:['ai'],value:a=>`${a.aiLocations} ${a.aiLocations===1?'location':'locations'}`},
+  {label:'AI calls today (UTC)',views:['ai','usage'],value:a=>a.aiCallsToday},
+  {label:'Scans / points this month (UTC)',views:['usage'],value:a=>`${a.scansThisMonth} / ${a.scanPointsThisMonth}`},
+];
+export async function ClientOperations({view='all'}:{view?:View}={}) {
+  const visibleColumns=columns.filter(c=>view==='all'||c.views.includes(view));
   let accounts:Awaited<ReturnType<typeof clientOperations>>=[];
   let unavailable=false;
   try {accounts=await clientOperations();} catch {unavailable=true;}
   return <section className="tr-admin-section">
     <p className="tr-eyebrow">Client operations</p>
-    <h1 className="tr-admin-title mt-1">Accounts & service usage</h1>
+    <h1 className="tr-admin-title mt-1">{titles[view]}</h1>
     <p className="mt-2 text-sm text-muted">Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.</p>
     {unavailable ? <p role="alert" className="mt-4">Operational data is temporarily unavailable.</p> : <>
       <div className="my-4 flex flex-wrap gap-5 text-sm">
@@ -17,13 +30,9 @@ export async function ClientOperations() {
       <div className="overflow-x-auto rounded-lg border border-line bg-white">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Client account operational status and service usage</caption>
-          <thead className="bg-slate-50"><tr>{['Account','Status','Locations','Google connected','Import status','AI drafts enabled','AI calls today (UTC)','Scans / points this month (UTC)'].map(h=><th key={h} className="px-3 py-3 font-semibold">{h}</th>)}</tr></thead>
+          <thead className="bg-slate-50"><tr>{visibleColumns.map(c=><th key={c.label} className="px-3 py-3 font-semibold">{c.label}</th>)}</tr></thead>
           <tbody>{accounts.map(a=><tr key={a.accountId} className="border-t border-line">
-            <td className="px-3 py-3 font-medium">{a.accountName}</td><td className="px-3 py-3">{a.status}</td>
-            <td className="px-3 py-3">{a.locations}</td><td className="px-3 py-3">{a.connected} / {a.locations}</td>
-            <td className="px-3 py-3">{a.syncAttention ? `${a.syncAttention} need attention` : a.connected ? 'No errors reported' : 'Not connected'}</td>
-            <td className="px-3 py-3">{a.aiLocations} locations</td><td className="px-3 py-3">{a.aiCallsToday}</td>
-            <td className="px-3 py-3">{a.scansThisMonth} / {a.scanPointsThisMonth}</td>
+            {visibleColumns.map(c=><td key={c.label} className="px-3 py-3">{c.value(a)}</td>)}
           </tr>)}</tbody>
         </table>
       </div>

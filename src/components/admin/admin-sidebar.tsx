@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
+  Bot,
+  Plug,
+  Activity,
   Boxes,
   ClipboardList,
   FileText,
@@ -28,7 +31,10 @@ const icons = {
   Requests: ClipboardList,
   Orders: ShoppingBag,
   "Production Queue": Hammer,
-  Customers: Users,
+  "Account Status": Users,
+  Usage: Activity,
+  "AI Agent": Bot,
+  "Google Connection": Plug,
   Products: Package,
   Categories: Tags,
   "Business Uses": Tags,
@@ -40,7 +46,7 @@ const icons = {
   Website: FileText,
   Media: GalleryHorizontalEnd,
   SEO: Search,
-  Analytics: BarChart3,
+  "Store Analytics": BarChart3,
   Settings
 };
 
@@ -84,6 +90,7 @@ export function AdminSidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={active ? "page" : undefined}
                     className={
                       active
                         ? "flex shrink-0 items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white lg:gap-3"
