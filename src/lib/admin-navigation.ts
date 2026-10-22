@@ -44,7 +44,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       {
         label: "Customers",
         href: "/admin/customers",
-        description: "Customer accounts, orders, and subscription activity",
+        description: "Account names, service status, and usage",
       },
       {
         label: "Taxes",
@@ -66,12 +66,12 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Operations",
     items: [
-      { label: "Local Management", href: "/admin/local", description: "Customer locations, directory listings and review drafts" },
-      { label: "Local Reports", href: "/admin/local/reports", description: "Saved location totals and dated Google performance" },
+      { label: "Local Management", href: "/admin/local", description: "Account status, Google connectivity, and service usage" },
+      { label: "Local Reports", href: "/admin/local/reports", description: "Operational service usage only" },
       {
         label: "Google Reviews",
         href: "/admin/google-reviews",
-        description: "Google connection setup and sample review reply workflow",
+        description: "Google connectivity status only",
       },
       {
         label: "Production Queue",

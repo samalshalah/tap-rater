@@ -1,3 +1,4 @@
+import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
 import {requireCustomerApi} from '../customer-auth';
@@ -7,6 +8,7 @@ import {GoogleBusinessError} from './client';
 import {profileMutation,profileSnapshot,mutateProfile,locationPerformance} from './profile-management';
 import type {ReviewActor} from '../review-workspaces';
 export async function handleProfile(request:Request,kind:'admin'|'customer'){
+ if(isStaffContentRequest(kind))return denyAdminClientContent();
  let actor:ReviewActor;
  if(kind==='admin'){if(!await googleAdminIdentity())return NextResponse.json({error:'Sign in to continue.'},{status:401});actor={kind:'admin'};}
  else{const auth=await requireCustomerApi();if(auth.response)return auth.response;actor={kind:'customer',email:auth.session.email};}
@@ -26,3 +28,5 @@ export async function handleProfile(request:Request,kind:'admin'|'customer'){
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
  }catch(e){return NextResponse.json({error:e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Google profile data is unavailable. Please try again.'},{status:e instanceof LiveReviewError?e.status:503,headers:{'Cache-Control':'no-store'}});}
 }
+
+function isStaffContentRequest(kind:string):boolean{return kind==='admin';}

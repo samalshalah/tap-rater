@@ -1,3 +1,4 @@
+import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import { NextResponse } from 'next/server';
 import { requireCustomerApi } from './customer-auth';
 import { googleAdminIdentity } from './google-business/http';
@@ -5,6 +6,7 @@ import { LiveReviewError } from './google-business/live-reviews';
 import { localMutation,localSnapshot,mutateLocal } from './local-management';
 import type { ReviewActor } from './review-workspaces';
 export async function handleLocal(request:Request,kind:'admin'|'customer') {
+ if(isStaffContentRequest(kind))return denyAdminClientContent();
  let actor:ReviewActor;
  if(kind==='admin') { if(!await googleAdminIdentity())return NextResponse.json({error:'Sign in to continue.'},{status:401}); actor={kind:'admin'}; }
  else { const auth=await requireCustomerApi();if(auth.response)return auth.response;actor={kind:'customer',email:auth.session.email}; }
@@ -17,3 +19,5 @@ export async function handleLocal(request:Request,kind:'admin'|'customer') {
   return NextResponse.json(await mutateLocal(actor,parsed.data),{headers:{'Cache-Control':'no-store'}});
  } catch(e) { return NextResponse.json({error:e instanceof LiveReviewError?e.message:'Local management is unavailable. Please try again.'},{status:e instanceof LiveReviewError?e.status:503}); }
 }
+
+function isStaffContentRequest(kind:string):boolean{return kind==='admin';}

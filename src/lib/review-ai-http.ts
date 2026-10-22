@@ -1,3 +1,4 @@
+import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireCustomerApi } from "./customer-auth";
@@ -10,6 +11,7 @@ const requestSchema=z.discriminatedUnion("action",[
  z.object({action:z.literal("run"),businessId:z.string().uuid()}).strict()
 ]);
 export async function handleReviewAi(request:Request,kind:"customer"|"admin"){
+ if(isStaffContentRequest(kind))return denyAdminClientContent();
  let actor:ReviewActor;
  if(kind==="admin"){
   if(!await googleAdminIdentity())return NextResponse.json({error:"Sign in to continue."},{status:401});
@@ -30,3 +32,5 @@ export async function handleReviewAi(request:Request,kind:"customer"|"admin"){
   return NextResponse.json(result,{headers:{"Cache-Control":"no-store"}});
  }catch(error){return NextResponse.json({error:error instanceof ReviewAiError?error.message:"AI could not complete this request. Your existing reply is unchanged. Please try again later."},{status:error instanceof ReviewAiError?error.status:503});}
 }
+
+function isStaffContentRequest(kind:string):boolean{return kind==='admin';}

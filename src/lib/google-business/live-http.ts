@@ -1,3 +1,4 @@
+import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
 import {requireCustomerApi} from '../customer-auth';
@@ -23,6 +24,7 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('settings'),settings:liveSettingsSchema}).strict()
 ]);
 export async function handleLiveReviews(request:Request,kind:'admin'|'customer'){
+ if(isStaffContentRequest(kind))return denyAdminClientContent();
  let actor:ReviewActor;let owner='';
  if(kind==='admin'){const identity=await googleAdminIdentity();if(!identity)return NextResponse.json({error:'Sign in to continue.'},{status:401});actor={kind:'admin'};owner=identity.owner;}
  else{const auth=await requireCustomerApi();if(auth.response)return auth.response;actor={kind:'customer',email:auth.session.email};}
@@ -64,3 +66,5 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
   return NextResponse.json({error:message},{status:e instanceof LiveReviewError?e.status:503});
  }
 }
+
+function isStaffContentRequest(kind:string):boolean{return kind==='admin';}

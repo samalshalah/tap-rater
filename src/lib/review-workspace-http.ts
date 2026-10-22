@@ -1,9 +1,11 @@
+import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import { NextResponse } from "next/server";
 import { requireCustomerApi } from "@/lib/customer-auth";
 import { googleAdminIdentity } from "@/lib/google-business/http";
 import { reviewDraftSchema, saveSampleReply, type ReviewActor } from "@/lib/review-workspaces";
 
 export async function handleSampleReply(request: Request, kind: "customer" | "admin") {
+ if(isStaffContentRequest(kind))return denyAdminClientContent();
   let actor: ReviewActor;
   if (kind === "admin") {
     if (!(await googleAdminIdentity())) return NextResponse.json({ error: "Sign in to continue." }, { status: 401 });
@@ -30,3 +32,5 @@ export async function handleSampleReply(request: Request, kind: "customer" | "ad
     return NextResponse.json({ error: "Could not save your reply. Please try again." }, { status: 503 });
   }
 }
+
+function isStaffContentRequest(kind:string):boolean{return kind==='admin';}
