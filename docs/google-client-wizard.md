@@ -52,3 +52,17 @@ Deployed to production on October 22, 2026, with Google reply publishing disable
 - Reference: https://developers.google.com/identity/protocols/oauth2/production-readiness/brand-verification and https://support.google.com/business/answer/3403100.
 
 - Business onboarding release deployed as Worker version `e2f81d45-b043-4bee-9f65-0e43afe00cd8`. Verified in the signed-in Norah production workspace: invitation instructions render with the business email, and draft-only status remains visible. TypeScript, 34 focused tests, production build, and deployment dry-run passed; deployed publishing flag remains false. No database change was needed.
+
+
+## Production OAuth completed — October 22, 2026
+
+This status supersedes the pending items in the preparation record above.
+
+- Confirmed the Owner invitation was accepted and `admin@taprater.com` can administer the existing approved project. Sam remains an additional Owner.
+- Saved `admin@taprater.com` as both user-support email and developer contact from the business account.
+- With explicit action-time approval, changed External OAuth audience from Testing to **In production**. The tester allowlist is no longer the access gate.
+- Ran Google branding verification successfully and published the verified branding. Verification Center confirms: “Your branding has been verified and is being shown to users.”
+- Data access status confirms verification is not required because the current app requests no sensitive or restricted scopes. No separate data-access review submission was needed.
+- Production customer Connect Google opens the Google account chooser. Norah's Google account was not among the signed-in Google accounts; no new client grant or Norah import was performed. A complete non-test-client connection/import remains to be validated after that client signs in and grants permission.
+- These changes only affect Google OAuth distribution and branding. The deployed review-publishing flag remains false from release `e2f81d45-b043-4bee-9f65-0e43afe00cd8`; no code, deployment settings, reply approvals, or replies were changed during this OAuth transition.
+- Evidence: `artifacts/google-production-20261022/oauth-in-production.png` and `verification-complete.png` (outside the checkout).
