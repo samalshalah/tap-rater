@@ -12,8 +12,12 @@ export function compareCompetitors(points:CompetitorPoint[],trackId:string,targe
   row.address=c.address;row.rating=c.rating;row.reviews=c.reviews;
   row.ranks[p.index]=Math.min(row.ranks[p.index]??21,c.rank);
  }
+ // Reciprocal-rank visibility, normalized across all businesses in this scan.
+ // Missing captures contribute nothing; duplicate point/business entries are already deduplicated.
+ const weight=(ranks:(number|null|undefined)[])=>ranks.reduce<number>((sum,rank)=>sum+(typeof rank==='number'?1/rank:0),0);
+ const totalWeight=[...rows.values()].reduce((sum,row)=>sum+weight(row.ranks),0);
  return {captured:unique.length,rows:[...rows.values()].map(row=>{
   const ranks=row.ranks.filter((r):r is number=>typeof r==='number');
-  return {...row,you:row.placeId===target.placeId,found:ranks.length,average:ranks.length?ranks.reduce((a,b)=>a+b,0)/ranks.length:null,top3:unique.length?ranks.filter(r=>r<=3).length/unique.length*100:null};
+  return {...row,shareOfVoice:totalWeight>0?weight(row.ranks)/totalWeight*100:null,you:row.placeId===target.placeId,found:ranks.length,average:ranks.length?ranks.reduce((a,b)=>a+b,0)/ranks.length:null,top3:unique.length?ranks.filter(r=>r<=3).length/unique.length*100:null};
  }).sort((a,b)=>Number(b.you)-Number(a.you)||b.found-a.found||(a.average??21)-(b.average??21)||a.title.localeCompare(b.title))};
 }

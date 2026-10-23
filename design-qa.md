@@ -24,3 +24,14 @@ Replaced point sidebar with pinned own business, competitor names, saved ratings
 Passed TypeScript, production build and 18 focused tests. Live Norah verification: Ekimedo Atelier average 2.00, found 1/49; map and popup agree. Switching to boutique near me returns to Norah (average 1.3), no stale competitor dialog. Escape restores focus. Mobile 390x844 dialog has no horizontal overflow. No scans were approved or submitted, and no recovery was needed because saved competitors were already present. Reused existing map tiles and brand assets; no new raster assets required.
 
 Artifacts: C:/Sites/tap-rater-claude/artifacts/competitor-sidebar-20261023/. Production version: 30071c8e-d76f-4c6b-a53a-6446124a63e6. Status: passed for requested sidebar and details interaction.
+
+
+## Competitors report and share of voice — 2026-10-23
+
+Added compact top-business share-of-voice chart with Other bucket, selected-business ranking preview, searchable/sortable paginated comparison table, mini heat maps, rating, review count, average found rank, share of voice, captured-point coverage, and detail dialogs. Own business is pinned first in table. Query filters do not change the visibility denominator. Keyword and scan labels remain explicit; component remount keeps selection/filter/page separate for each keyword/scan, and parent scope isolates locations.
+
+Method: reciprocal organic rank weights (1/rank), normalized across all captured businesses. Labelled Tap Rater estimate, not Semrush equivalence, traffic, or market share. Documentation consulted: https://www.semrush.com/kb/1399-map-rank-tracker and https://www.semrush.com/kb/1440-competitors-report-in-map-rank-tracker. Historical changes omitted rather than fabricating comparable prior data.
+
+Passed production build/TypeScript and 20 focused tests, including new share normalization, duplicate handling, missing captures, zero denominator, absent target, keyword isolation, and free existing-task retrieval. Live Norah: women's clothing store has 213 businesses; Norah 5.91%, found 35/49, average found rank 7.29. Filtering Norah preserves 5.91%. Crystal Boutique popup matches 3.57%, 12/49. Switching to boutique near me resets comparison to Norah, 104 businesses, 23.72%, 25/25. Pagination moves 1–20 to 21–40. Mobile 390x844 has no page overflow; table scroll stays inside panel. No scan requests, retrieval requests, AI actions or publishing actions were submitted.
+
+Visual QA: reviewed rendered chart, table and mobile against conversation's Semrush reference. Original older reference file has expired from Temp; its conversation image remains available. Ranking-grid preview uses actual captured results; no invented competitor geographic coordinates. Screenshots at C:/Sites/tap-rater-claude/artifacts/competitor-comparison-20261023/. Production version 25b8ac40-9c8b-4bc2-9eb4-ef4d9bcc7e25. Status: passed.

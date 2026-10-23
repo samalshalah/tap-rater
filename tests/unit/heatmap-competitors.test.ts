@@ -5,6 +5,24 @@ import {recoverHeatmapCompetitors} from '@/lib/heatmap-competitor-recovery';
 const target={placeId:'norah',title:'Norah Boutique'};
 const competitor=(placeId:string,rank:number)=>({placeId,title:placeId,rank,address:null,rating:null,reviews:null});
 describe('competitor comparison',()=>{
+ it('normalizes reciprocal-rank share of voice across deduplicated captured businesses only',()=>{
+  const result=compareCompetitors([
+   {trackId:'a',index:0,state:'complete',competitors:[competitor('norah',1),competitor('norah',2),competitor('other',2)]},
+   {trackId:'a',index:1,state:'complete',competitors:[competitor('other',1)]},
+   {trackId:'b',index:0,state:'complete',competitors:[competitor('foreign',1)]},
+   {trackId:'a',index:2,state:'pending',competitors:[competitor('pending',1)]},
+  ],'a',target,3);
+  expect(result.rows.find(r=>r.you)?.shareOfVoice).toBeCloseTo(40);
+  expect(result.rows.find(r=>r.placeId==='other')?.shareOfVoice).toBeCloseTo(60);
+  expect(result.rows.reduce((sum,r)=>sum+(r.shareOfVoice??0),0)).toBeCloseTo(100);
+ });
+ it('shows unavailable share with no visibility and zero for an absent target with captured competitors',()=>{
+  expect(compareCompetitors([],'a',target,3).rows[0].shareOfVoice).toBeNull();
+  expect(compareCompetitors([{trackId:'a',index:0,state:'complete',competitors:[]}],'a',target,3).rows[0].shareOfVoice).toBeNull();
+  const result=compareCompetitors([{trackId:'a',index:0,state:'complete',competitors:[competitor('other',1)]}],'a',target,3);
+  expect(result.rows[0].shareOfVoice).toBe(0);expect(result.rows[1].shareOfVoice).toBe(100);
+ });
+
  it('separates keywords and distinguishes missing capture from absence',()=>{
   const result=compareCompetitors([
    {trackId:'a',index:0,state:'complete',competitors:[competitor('norah',2),competitor('other',1)]},
