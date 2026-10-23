@@ -41,7 +41,7 @@ Length preference for non-short variants: ${knowledge.preferences.length==='deta
   let json=(result as {response?:unknown})?.response;
   if(typeof json==="string")json=JSON.parse(json);
   const parsed=suggestionsSchema.parse(json);
-  const issues=replyQualityIssues(parsed,previousReplies,Boolean(comment.trim()));
+  const issues=replyQualityIssues(parsed,previousReplies,Boolean(comment.trim()),rating>=4?comment:undefined);
   if(!issues.length)return parsed;
   if(attempt===0)messages.push({role:'assistant',content:JSON.stringify(parsed)},{role:'user',content:'Rewrite all four replies. Fix these quality failures: '+issues.join('; ')+'. Use no promises or claims of corrective action. Keep non-short replies at least two complete sentences. Return only the four JSON strings.'});
  }
@@ -50,12 +50,20 @@ Length preference for non-short variants: ${knowledge.preferences.length==='deta
 
 const unsupportedClaim=/\b(?:(?:will|shall|going to|plan to|promise to|commit to|pledge to|aim to|strive to|intend to|hope to|look forward to|want to|like to|need to|must|should)\s+(?:review|investigate|improve|ensure|make sure|take|address|fix|correct|refund|replace|notify|look into|do better)|(?:we|i|our team)(?:['’](?:ll|re|ve)|\s+(?:will|are|am|have|has))\s+(?:review|investigate|improve|ensure|make sure|take|address|fix|correct|refund|replace|notify|look into|do better|strive|reviewing|investigating|taking|addressing|fixing|correcting|refunding|replacing|notifying|addressed|fixed|corrected|notified|resolved)|our team works hard)\b/i;
 const tokens=(s:string)=>s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,'').split(/\s+/).filter(Boolean);
-export function replyQualityIssues(replies:ReplySuggestions,previous:string[],hasComment=true){
+export function replyQualityIssues(replies:ReplySuggestions,previous:string[],hasComment=true,positiveReview?:string){
  const issues:string[]=[];
  const seen:string[]=[];
  for(const [style,text] of Object.entries(replies)){
   if(unsupportedClaim.test(text))issues.push(style+': unsupported promise or action claim');
   const words=tokens(text);
+  if(positiveReview){
+   const source=tokens(positiveReview),stop=new Set(['the','a','an','and','or','is','was','are','were','it','i','we','you','our','your','to','for','of','in','at','with']);
+   const phrase=words.join(' ');
+   for(let i=0;i+2<source.length;i++){
+    const chunk=source.slice(i,i+3);
+    if(chunk.filter(w=>!stop.has(w)).length>=2&&phrase.includes(chunk.join(' '))){issues.push(style+': echoes descriptive wording from the review');break;}
+   }
+  }
   if(style!=='short'&&(words.length<(hasComment?20:12)||(text.match(/[.!?](?:\s|$)/g)||[]).length<2))issues.push(style+': incomplete or too brief');
   for(const prior of [...previous,...seen]){
    const other=tokens(prior),a=new Set(words),b=new Set(other);

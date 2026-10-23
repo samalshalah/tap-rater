@@ -70,3 +70,9 @@ it("repairs repeated, incomplete and promise-filled responses before returning s
  await expect(generateReviewSuggestions('Dubai',3,'Food was disappointing',repeated)).rejects.toThrow('quality check');
  expect(repeated).toHaveBeenCalledTimes(2);
 });
+
+it("rejects copied praise without blocking specific complaint acknowledgments",()=>{
+ const echoed={...outputs,personal:"It warms our hearts to know you enjoyed our fresh and tasty meat. We look forward to seeing you again soon."};
+ expect(replyQualityIssues(echoed,[],true,'Food was amazing, meat always fresh and tasty')).toContain('personal: echoes descriptive wording from the review');
+ expect(replyQualityIssues(outputs,[],true,'Food was amazing, meat always fresh and tasty')).toEqual([]);
+});
