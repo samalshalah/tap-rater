@@ -8,7 +8,7 @@ export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLi
  const [filter,setFilter]=useState('');
  const [pickerOpen,setPickerOpen]=useState(false),[disconnectPrompt,setDisconnectPrompt]=useState(false);
  const picker=useRef<HTMLDialogElement>(null);
- useEffect(()=>{if(pickerOpen&&!picker.current?.open)picker.current?.showModal();else if(!pickerOpen&&picker.current?.open)picker.current.close();},[pickerOpen]);
+ useEffect(()=>{const modal=picker.current;if(pickerOpen&&!modal?.open)modal?.showModal();else if(!pickerOpen&&modal?.open)modal.close();return()=>{if(modal?.open)modal.close();};},[pickerOpen]);
  const endpoint='/api/account/google-business';
  useEffect(()=>{let active=true;const outcome=new URLSearchParams(window.location.search).get('connection');if(outcome==='failed'||outcome==='cancelled')setError(outcome==='cancelled'?'Google connection was cancelled. You can try again.':'Google connection did not finish. Reconnect and grant Business Profile access.');fetch(endpoint,{cache:'no-store'}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error);if(active){setSetup(d);if(businessId&&d.businesses.some((b:{id:string})=>b.id===businessId))setBusiness(businessId);else if(d.businesses.length===1)setBusiness(d.businesses[0].id);}}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[businessId]);
  async function post(body:unknown){const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error);return d;}

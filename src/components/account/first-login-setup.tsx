@@ -9,7 +9,7 @@ export function FirstLoginSetup({children}:{children:ReactNode}){
  const dialog=useRef<HTMLDialogElement>(null);
  async function request(body?:unknown){const r=await fetch('/api/account/onboarding',{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'Setup is unavailable.');setProgress(d);return d as Progress;}
  useEffect(()=>{request().catch(e=>setError(e.message));},[retry]);
- useEffect(()=>{if(!progress?.completed&&!dialog.current?.open)dialog.current?.showModal();},[progress]);
+ useEffect(()=>{const modal=dialog.current;if(!progress?.completed&&!modal?.open)modal?.showModal();return()=>{if(modal?.open)modal.close();};},[Boolean(progress?.completed)]);
  const ready=Boolean(progress?.synced_at&&!progress.next_page&&!progress.last_error&&progress.profile_synced);
  useEffect(()=>{
   if(!progress?.connected||ready||progress.completed||error)return;
