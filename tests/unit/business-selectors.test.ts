@@ -1,0 +1,15 @@
+import {describe,it,expect,vi} from 'vitest';
+import {paymentValue,setPaymentValue} from '@/lib/google-business/payment-options';
+import {searchCategories} from '@/lib/google-business/profile-management';
+import {createGoogleBusinessClient} from '@/lib/google-business/client';
+const actor={kind:'customer' as const,email:'customer@example.test'},id='9fb3ee3b-0920-4db5-a03d-7245987a8751',link={enabled:true,parent:'accounts/a/locations/one',google_subject:'a',owner:'a'};
+const sqlRows=(...rows:unknown[])=>{const sql=vi.fn();rows.forEach(row=>sql.mockResolvedValueOnce(row));return sql as any;};
+describe('Business selectors',()=>{
+ it('preserves explicit No and unknown imported payment fields',()=>{const input='Cash only: No\nChecks: No\nLocal payment: accepted';expect(setPaymentValue(input,'Checks','Yes')).toBe('Cash only: No\nLocal payment: accepted\nChecks: Yes');expect(paymentValue(input,'Credit cards')).toBe('');});
+ it('clears only the selected value when unconfirmed',()=>{expect(setPaymentValue('Debit cards: Yes\nChecks: No','Checks','')).toBe('Debit cards: Yes');});
+ it('denies another customer before a catalog request',async()=>{const factory=vi.fn();await expect(searchCategories(actor,id,'store','',sqlRows([]),factory)).rejects.toMatchObject({status:404});expect(factory).not.toHaveBeenCalled();});
+ it('uses the authorized location country and checks assignment after the request',async()=>{const listCategories=vi.fn().mockResolvedValue({categories:[]});const sql=sqlRows([link],[{observed:{details:{country:'US'}}}],[link]);await searchCategories(actor,id,'store','next',sql,async()=>({listCategories}) as any);expect(listCategories).toHaveBeenCalledWith('US','store','next');expect(sql.mock.calls[1]).toContain(link.parent);expect(sql).toHaveBeenCalledTimes(3);});
+ it('rejects missing country rather than inventing a catalog region',async()=>{const factory=vi.fn();await expect(searchCategories(actor,id,'store','',sqlRows([link],[{observed:{}}]),factory)).rejects.toMatchObject({status:400});expect(factory).not.toHaveBeenCalled();});
+ it('discards results if the location assignment changes',async()=>{await expect(searchCategories(actor,id,'store','',sqlRows([link],[{observed:{details:{country:'US'}}}],[{...link,parent:'accounts/a/locations/two'}]),async()=>({listCategories:async()=>({categories:[]})}) as any)).rejects.toMatchObject({status:409});});
+ it('requests category names and IDs with GET and bounded pagination',async()=>{const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({categories:[{name:'categories/gcid:boutique',displayName:'Boutique'}],nextPageToken:'next'})));const result=await createGoogleBusinessClient('test',fetcher).listCategories('US','bout','page');const [url,init]=fetcher.mock.calls[0];expect(init.method).toBe('GET');expect(url.searchParams.get('view')).toBe('BASIC');expect(url.searchParams.get('regionCode')).toBe('US');expect(url.searchParams.get('filter')).toBe('displayName=bout');expect(result.categories[0].displayName).toBe('Boutique');});
+});

@@ -5,7 +5,7 @@ import {requireCustomerApi} from '../customer-auth';
 import {googleAdminIdentity} from './http';
 import {LiveReviewError} from './live-reviews';
 import {GoogleBusinessError} from './client';
-import {profileMutation,profileSnapshot,mutateProfile,locationPerformance} from './profile-management';
+import {profileMutation,profileSnapshot,mutateProfile,locationPerformance,searchCategories} from './profile-management';
 import type {ReviewActor} from '../review-workspaces';
 export async function handleProfile(request:Request,kind:'admin'|'customer'){
  if(isStaffContentRequest(kind))return denyAdminClientContent();
@@ -17,7 +17,7 @@ export async function handleProfile(request:Request,kind:'admin'|'customer'){
   if(request.method==='GET'){
    const p=new URL(request.url).searchParams,id=z.string().uuid().safeParse(p.get('businessId'));
    if(!id.success)return NextResponse.json({error:'Choose a location.'},{status:400});
-   result=p.get('view')==='performance'?await locationPerformance(actor,id.data,Number(p.get('days')||28)):await profileSnapshot(actor,id.data);
+   result=p.get('view')==='categories'?await searchCategories(actor,id.data,p.get('query')||'',p.get('pageToken')||''):p.get('view')==='performance'?await locationPerformance(actor,id.data,Number(p.get('days')||28)):await profileSnapshot(actor,id.data);
   }else{
    if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
    const raw=await request.text();if(raw.length>2000000)return NextResponse.json({error:'Request too large.'},{status:413});

@@ -41,3 +41,15 @@ export async function locationPerformance(actor:ReviewActor,businessId:string,da
  if(!current.enabled||current.parent!==link.parent||current.google_subject!==link.google_subject)throw new LiveReviewError('The Google assignment changed. Reload this location.');
  return {range,metrics:summarizePerformance(raw,range),fetchedAt:new Date().toISOString()};
 }
+
+export async function searchCategories(actor:ReviewActor,businessId:string,query:string,pageToken='',sql=liveDb(),makeClient=clientFor){
+ if(query.length>100||/[\r\n=<>"\\]/.test(query)||pageToken.length>2048)throw new LiveReviewError('Check the category search.',400);
+ const link=await authorizedLink(actor,businessId,sql);if(!link.enabled)throw new LiveReviewError('Google access is stopped.');
+ const rows=await sql`SELECT observed FROM google_profile_drafts WHERE business_id=${businessId} AND parent=${link.parent} AND google_subject=${link.google_subject}`;
+ const country=rows[0]?.observed?.details?.country;
+ if(typeof country!=='string'||!/^[A-Z]{2}$/.test(country))throw new LiveReviewError('Refresh this location from Google to load its country before choosing categories.',400);
+ const client=await makeClient(String(link.owner));const result=await client.listCategories(country,query.trim(),pageToken);
+ const current=await authorizedLink(actor,businessId,sql);
+ if(!current.enabled||current.parent!==link.parent||current.google_subject!==link.google_subject)throw new LiveReviewError('The Google assignment changed. Reload this location.');
+ return result;
+}

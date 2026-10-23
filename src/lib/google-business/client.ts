@@ -55,6 +55,12 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     catch { throw new GoogleBusinessError("invalid_response", response.status); }
   }
   return {
+    async listCategories(regionCode:string,query:string,pageToken='') {
+      if(!/^[A-Z]{2}$/.test(regionCode)||query.length>100||/[\r\n=<>"\\]/.test(query)||pageToken.length>2048)throw new Error('Invalid category search.');
+      const url=new URL('https://mybusinessbusinessinformation.googleapis.com/v1/categories');
+      for(const [key,value] of Object.entries({regionCode,languageCode:'en',view:'BASIC',pageSize:'100',...(query?{filter:`displayName=${query}`} : {}),...(pageToken?{pageToken}: {})}))url.searchParams.set(key,value);
+      return request(url,z.object({categories:z.array(z.object({name:z.string(),displayName:z.string()})).default([]),nextPageToken:z.string().optional()}));
+    },
     async getBusinessDetails(parent:string):Promise<BusinessDetails> {
       resource(parent,/^accounts\/[A-Za-z0-9_-]+\/locations\/[A-Za-z0-9_-]+$/);
       const location=parent.split('/').slice(-2).join('/');

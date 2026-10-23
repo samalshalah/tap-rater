@@ -92,3 +92,12 @@ Artifacts: `C:/Sites/tap-rater-claude/artifacts/business-hours-20261023/desktop.
 Replaces the previous P3 note about regular/special hours requiring text editing. Unrecognized legacy entries are preserved unchanged under Other saved hours.
 
 final result: passed
+
+
+## 2026-10-23 Category and payment selectors
+- Replaced category free text with primary/additional selection and searchable, paginated Google category results. Existing selections are excluded from other slots; imported IDs remain aligned.
+- Replaced payment text with Yes/No/Not confirmed selectors and card-brand checklist dropdown. Preserved unknown imported details; mirrored edits into payment attributes.
+- Category lookup authorizes the customer/location before using its observed country and rechecks assignment after the read. Save remains the existing local optimistic-lock draft operation.
+- Validation: TypeScript, production build, 28 focused tests passed. Production 180e2d8f-18c3-4ada-8bce-c15a89572218.
+- Live Norah: searched women, reselected original primary category, exercised Checks and Visa then restored original choices; saved draft and reloaded successfully. No Google profile writes or publishing.
+- Desktop and mobile visual check passed; mobile document width matched viewport (375px), no horizontal overflow. Screenshots in artifacts/business-selectors-20261023.
