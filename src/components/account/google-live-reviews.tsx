@@ -66,6 +66,7 @@ function LiveSettings({workspace:w,post,refresh}:{workspace:Workspace;post:Post;
  }
  return <details className="tr-review-settings"><summary>Automatic imports & draft settings</summary>
  <p className="mt-2 text-sm">Connected locations are checked in the background every 15 minutes. Large imports and busy queues continue in subsequent runs, even when you close this page.</p>
+ <p className="mt-2 text-xs text-muted">Last import: {w.synced_at?new Date(w.synced_at).toLocaleString():'Not completed'} · Last automatic draft check: {w.draft_checked_at?new Date(w.draft_checked_at).toLocaleString():'Not yet confirmed'}. Refresh this page for the latest status.</p>
  <fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">
  <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Allow Cloudflare AI to process review text and ratings and automatically prepare reply drafts for this location.</label>
  <label>Reply style <select className="rounded border p-2" value={style} onChange={e=>setStyle(e.target.value as ReplyStyle)}>{Object.entries(replyStyles).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>

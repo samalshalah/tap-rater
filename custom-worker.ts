@@ -12,6 +12,15 @@ export default {
     context: unknown,
   ) {
     try {
+      console.log(JSON.stringify({ event: "google_review_maintenance_started" }));
+      const reviews = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/google-reviews", {
+        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
+      }), env, context);
+      const result = reviews.ok ? await reviews.json() as {synced?:number;drafted?:number;published?:number} : null;
+      console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok, status: reviews.status,
+        synced: result?.synced, drafted: result?.drafted, published: result?.published }));
+    } catch { console.warn("Google review maintenance unavailable"); }
+    try {
       const analytics = await openNextWorker.fetch(
         new Request("https://taprater.com/api/internal/analytics", {
           method: "POST",
@@ -38,12 +47,6 @@ export default {
       }), env, context);
       console.log(JSON.stringify({ event: "review_sample_auto_drafts", ok: drafts.ok }));
     } catch { console.warn("Sample auto drafts unavailable"); }
-    try {
-      const reviews = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/google-reviews", {
-        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-      }), env, context);
-      console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok }));
-    } catch { console.warn("Google review maintenance unavailable"); }
     try {
       const ranks = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/heatmap-scans", {
         method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },

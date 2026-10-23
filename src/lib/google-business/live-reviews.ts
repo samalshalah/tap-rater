@@ -180,7 +180,11 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  ORDER BY auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
  AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
  AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*`;
- if(!rows.length)return {drafted:false};
+ if(!rows.length){
+  // A quiet queue is still a completed background check. Do not hide a retryable error.
+  await sql`UPDATE google_review_links SET draft_checked_at=now() WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
+  return {drafted:false};
+ }
  const review=rows[0];
  try{
   await reserveAi(businessId,sql);
