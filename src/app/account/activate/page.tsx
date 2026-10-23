@@ -3,7 +3,7 @@ import { AccountActivationForm } from "@/components/account/account-activation-f
 
 export const metadata = {
   title: "Activate Account",
-  description: "Activate your Tap Rater Multi-Link account and create your password."
+  description: "Activate your Tap Rater account and create your password."
 };
 
 type AccountActivatePageProps = {
@@ -21,10 +21,10 @@ export default async function AccountActivatePage({ searchParams }: AccountActiv
       <section className="tr-container grid min-h-[calc(100vh-220px)] items-center py-12">
         <div className="mx-auto grid w-full max-w-5xl gap-8 md:grid-cols-[0.85fr_1.15fr] md:items-center">
           <div className="space-y-4">
-            <p className="tr-eyebrow">Multi-Link account</p>
+            <p className="tr-eyebrow">Tap Rater account</p>
             <h1 className="tr-page-title">Activate your account</h1>
             <p className="tr-body max-w-md">
-              Create your password to manage your hosted Multi-Link page, links, icons, business information, and page style.
+              Create your password to purchase your package and manage your subscribed tools, stands, and orders.
             </p>
           </div>
           {token ? (

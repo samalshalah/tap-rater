@@ -18,7 +18,7 @@ export function buildCustomerActivationEmailHtml(input: { activationUrl: string 
     eyebrow: "WELCOME TO TAP RATER",
     body: [
       "A new activation link was requested for your Tap Rater account.",
-      "Activate your account and set your password to access your orders, invoices, billing details, and Multi-Link pages.",
+      "Activate your account and set your password to purchase your package and manage your subscribed tools, stands, orders, and billing details.",
       "This activation link expires in 7 days. If you did not expect this email, you can ignore it.",
       "Support: https://taprater.com/support"
     ],

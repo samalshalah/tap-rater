@@ -17,7 +17,10 @@ export async function POST(request:Request){
   await recordLoginAttempt(limit.context,false);
   const token=createCustomerActivationToken();
   const rows=await liveDb()`INSERT INTO customers(email,name,account_status,activation_token_hash,activation_expires_at) VALUES(${email},${name},'pending_activation',${token.tokenHash},now()+interval '7 days') ON CONFLICT(email) DO UPDATE SET activation_token_hash=EXCLUDED.activation_token_hash,activation_expires_at=EXCLUDED.activation_expires_at WHERE customers.account_status='pending_activation' RETURNING id`;
-  if(rows.length)await sendCustomerActivationEmail({to:email,activationToken:token.token,customerId:String(rows[0].id)});
+  if(rows.length){
+   const delivery=await sendCustomerActivationEmail({to:email,activationToken:token.token,customerId:String(rows[0].id)});
+   if(!delivery.sent)return NextResponse.json({error:'We could not send your activation email. Please try again shortly or contact support.'},{status:503,headers:{'Cache-Control':'no-store'}});
+  }
   return NextResponse.json({sent:true},{headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Could not start registration. Check your details and try again.'},{status:400});}
 }
