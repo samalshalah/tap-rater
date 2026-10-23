@@ -35,3 +35,12 @@ Method: reciprocal organic rank weights (1/rank), normalized across all captured
 Passed production build/TypeScript and 20 focused tests, including new share normalization, duplicate handling, missing captures, zero denominator, absent target, keyword isolation, and free existing-task retrieval. Live Norah: women's clothing store has 213 businesses; Norah 5.91%, found 35/49, average found rank 7.29. Filtering Norah preserves 5.91%. Crystal Boutique popup matches 3.57%, 12/49. Switching to boutique near me resets comparison to Norah, 104 businesses, 23.72%, 25/25. Pagination moves 1–20 to 21–40. Mobile 390x844 has no page overflow; table scroll stays inside panel. No scan requests, retrieval requests, AI actions or publishing actions were submitted.
 
 Visual QA: reviewed rendered chart, table and mobile against conversation's Semrush reference. Original older reference file has expired from Temp; its conversation image remains available. Ranking-grid preview uses actual captured results; no invented competitor geographic coordinates. Screenshots at C:/Sites/tap-rater-claude/artifacts/competitor-comparison-20261023/. Production version 25b8ac40-9c8b-4bc2-9eb4-ef4d9bcc7e25. Status: passed.
+
+
+## Keywords summary — 2026-10-23
+
+Implemented compact per-keyword cards with average found rank, reciprocal-rank share-of-voice estimate consistent with Competitors, Top 3 / 4–10 / 11–20 / not-found bands, distribution strip, completion count, scan date and state. Keyword opens its heat map; Compare competitors opens that keyword's comparison. Uses latest matching saved scan per track/area/language/anchor; no mutation or scan submission on view/navigation. Missing scans/captures produce unavailable metrics rather than invented zeros.
+
+Passed TypeScript, production build, 24 focused tests across keyword summary, scan matching, competitor methodology and location selection. Live Norah cards: women's clothing store 7.29 / 5.91% / 49 points; boutique near me 1.32 / 23.72% / 25 points; clothing store 8.86 / 5.10% / 25 points. Verified links land on matching keyword and values agree. Desktop screenshot reviewed against conversation's Semrush keyword reference; mobile 390x844 wraps six metrics into two rows and has no page overflow. No paid scans or provider recovery requests were submitted. Replies, profile drafts and pricing unchanged.
+
+Artifacts: C:/Sites/tap-rater-claude/artifacts/keyword-summary-20261023/. Production version 1fdaf6da-41f0-432f-a21c-4a5070da2996. Status: passed.
