@@ -125,3 +125,10 @@ final result: passed
 - TypeScript, build and 15 focused tests passed. Production 10f02849-3ae3-484c-9977-7099f24ea508.
 - Norah live QA passed: Cancel and Escape leave main Save disabled; Apply enables draft Save; reopened popup reflects applied values; original values restored, saved locally and verified after reload. No publication.
 - Desktop/mobile screenshots inspected in artifacts/attributes-popup-20261023. Mobile dialog 341px wide with 339px scroll width; controls and footer visible.
+
+
+## 2026-10-23 Compact payment popup
+- Payment methods now use a single Manage payment methods button and native modal matching categories/attributes. Yes/No/unconfirmed selectors and card brands stay within the popup.
+- Payment values and mirrored attributes stage together. Cancel/Escape discard edits; Apply updates the location draft and main Save persists it locally.
+- TypeScript, production build and 17 focused tests passed. Production 32fb73a4-7080-4b27-8adf-942bdb090069.
+- Norah QA passed: Cancel restored Checks No and Visa selected with main Save disabled; Escape discarded edits; Apply reflected changes on reopen; original values restored, saved and reloaded. Desktop/mobile inspected with footer visible. Screenshots in artifacts/payment-popup-20261023. Nothing published.
