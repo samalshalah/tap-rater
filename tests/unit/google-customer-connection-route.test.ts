@@ -11,6 +11,13 @@ const identity={owner:'customer:one@example.com',email:'one@example.com',session
 const req=(body:unknown)=>new Request('https://taprater.com/api/account/google-business',{method:'POST',body:JSON.stringify(body)});
 beforeEach(()=>{vi.clearAllMocks();m.identity.mockResolvedValue(identity);m.origin.mockReturnValue(true);m.sql.mockResolvedValue([]);m.summary.mockResolvedValue(null);});
 describe('customer Google setup endpoint',()=>{
+ it('requires confirmation and disconnects only this customer connection while preserving saved content',async()=>{
+  expect((await POST(req({action:'disconnect'}))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();
+  expect((await POST(req({action:'disconnect',confirm:true,owner:'other'}))).status).toBe(400);
+  expect((await POST(req({action:'disconnect',confirm:true}))).status).toBe(200);
+  const call=m.sql.mock.calls[0],query=call[0].join('?');expect(call.slice(1)).toEqual([identity.owner,identity.owner,identity.owner]);
+  expect(query).toContain('SET enabled=false');expect(query).toContain('DELETE FROM google_business_connections');expect(query).not.toContain('DELETE FROM google_live_reviews');expect(query).not.toContain('DELETE FROM google_profile_drafts');
+ });
  it('requires active customer authentication',async()=>{m.identity.mockResolvedValue(null);expect((await GET(new Request("https://taprater.com/api/account/google-business"))).status).toBe(401);expect((await POST(req({action:'connect'}))).status).toBe(401);expect(m.sql).not.toHaveBeenCalled();});
  it('lists only the signed-in customer workspaces',async()=>{expect((await GET(new Request("https://taprater.com/api/account/google-business"))).status).toBe(200);expect(m.sql.mock.calls[0]).toContain(identity.email);expect(m.summary).toHaveBeenCalledWith(identity.owner);});
  it('rejects cross-origin connections',async()=>{m.origin.mockReturnValue(false);expect((await POST(req({action:'connect'}))).status).toBe(403);expect(m.begin).not.toHaveBeenCalled();});

@@ -10,6 +10,7 @@ import {GoogleBusinessError} from '@/lib/google-business/client';
 const resource=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/);
 const bodySchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('connect')}).strict(),
+ z.object({action:z.literal('disconnect'),confirm:z.literal(true)}).strict(),
  z.object({action:z.literal('accounts'),parent:resource.optional(),pageToken:z.string().max(4096).optional()}).strict(),
  z.object({action:z.literal('locations'),account:resource,pageToken:z.string().max(4096).optional()}).strict(),
  z.object({action:z.literal('bind'),businessId:z.string().uuid(),account:resource,location:z.string().regex(/^locations\/[A-Za-z0-9_-]+$/),confirmAssignment:z.literal(true)}).strict()
@@ -35,6 +36,9 @@ async function marketingPOST(request:Request){
   const state=new URL(authorizationUrl).searchParams.get('state')!;
   (await cookies()).set(customerFlowCookie,state,{httpOnly:true,secure:true,sameSite:'lax',path:'/',maxAge:600});
   result={authorizationUrl};
+ }else if(v.action==='disconnect'){
+  await liveDb()`WITH stopped AS (UPDATE google_review_links SET enabled=false WHERE owner=${identity.owner} RETURNING business_id), attempts AS (DELETE FROM google_business_oauth_attempts WHERE owner=${identity.owner}) DELETE FROM google_business_connections WHERE owner=${identity.owner}`;
+  result={disconnected:true};
  }else if(v.action==='accounts')result=await (await clientFor(identity.owner)).listAccounts(v.pageToken,v.parent);
  else if(v.action==='locations')result=await (await clientFor(identity.owner)).listLocations(v.account,v.pageToken);
  else result=await bindGoogleLocation(identity.owner,v.businessId,v.account,v.location,liveDb(),clientFor,identity.email);

@@ -1,23 +1,27 @@
 "use client";
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {discoverGoogleLocations,type GoogleLocationChoice} from '@/lib/google-business/location-discovery';
 type Setup={connection:{email:string}|null;businesses:{id:string;business_name:string;address?:string}[]};
 export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLinked:()=>Promise<void>;businessId?:string;compact?:boolean}){
  const [setup,setSetup]=useState<Setup|null>(null),[locations,setLocations]=useState<GoogleLocationChoice[]>([]),[account,setAccount]=useState(''),[location,setLocation]=useState(''),[business,setBusiness]=useState(''),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [pickerOpen,setPickerOpen]=useState(false),[disconnectPrompt,setDisconnectPrompt]=useState(false);
+ const picker=useRef<HTMLDialogElement>(null);
+ useEffect(()=>{if(pickerOpen&&!picker.current?.open)picker.current?.showModal();else if(!pickerOpen&&picker.current?.open)picker.current.close();},[pickerOpen]);
  const endpoint='/api/account/google-business';
  useEffect(()=>{let active=true;const outcome=new URLSearchParams(window.location.search).get('connection');if(outcome==='failed'||outcome==='cancelled')setError(outcome==='cancelled'?'Google connection was cancelled. You can try again.':'Google connection did not finish. Reconnect and grant Business Profile access.');fetch(endpoint,{cache:'no-store'}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error);if(active){setSetup(d);if(businessId&&d.businesses.some((b:{id:string})=>b.id===businessId))setBusiness(businessId);else if(d.businesses.length===1)setBusiness(d.businesses[0].id);}}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[businessId]);
  async function post(body:unknown){const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error);return d;}
  useEffect(()=>{
   if(!setup?.connection)return;
-  let active=true;setBusy(true);setError('');setLocations([]);setLocation('');setAccount('');setConfirmed(false);
+  let active=true;setPickerOpen(true);setBusy(true);setError('');setLocations([]);setLocation('');setAccount('');setConfirmed(false);
   discoverGoogleLocations(post).then(rows=>{if(active){setLocations(rows);if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');}}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setBusy(false);});
   return()=>{active=false;};
  },[setup]);
- async function run(action:'connect'|'accounts'|'bind'){
+ async function run(action:'connect'|'accounts'|'bind'|'disconnect'){
   setBusy(true);setError('');try{
    if(action==='connect'){const d=await post({action});window.location.assign(d.authorizationUrl);return;}
-   if(action==='bind'){if(!confirmed||!location||!business||!locations.some(l=>l.name===location&&l.account===account))throw Error('Choose and confirm one business first.');await post({action,businessId:business,account,location,confirmAssignment:true});setLocations([]);setConfirmed(false);await onLinked();return;}
-   setLocation('');setAccount('');setConfirmed(false);setLocations([]);
+   if(action==='disconnect'){await post({action,confirm:true});setPickerOpen(false);setDisconnectPrompt(false);setLocations([]);setLocation('');setAccount('');setConfirmed(false);setSetup(current=>current?{...current,connection:null}:current);return;}
+   if(action==='bind'){if(!confirmed||!location||!business||!locations.some(l=>l.name===location&&l.account===account))throw Error('Choose and confirm one business first.');await post({action,businessId:business,account,location,confirmAssignment:true});setPickerOpen(false);setLocations([]);setConfirmed(false);await onLinked();return;}
+   setPickerOpen(true);setLocation('');setAccount('');setConfirmed(false);setLocations([]);
    const rows=await discoverGoogleLocations(post);setLocations(rows);if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');
   }catch(e){setError(e instanceof Error?e.message:'Connection failed.');}finally{setBusy(false);}
  }
@@ -30,11 +34,15 @@ export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLi
  <fieldset disabled={busy} className="space-y-4">
  {setup?.connection?<p>Google account authorized: <strong>{setup.connection.email}</strong></p>:<p>Sign in with the Google account that manages your business.</p>}
  <button className="tr-button-primary" onClick={()=>run('connect')}>{setup?.connection?'Reconnect Google':'Connect Google'}</button>
- {setup?.connection&&<><button className="tr-button-ghost ml-3" onClick={()=>run('accounts')}>Refresh business list</button>
+ {setup?.connection&&<><button type="button" className="tr-button-ghost ml-3" onClick={()=>{setDisconnectPrompt(true);setPickerOpen(false);}}>Disconnect Google</button>
+ {disconnectPrompt&&<div className="rounded border border-line p-3 text-sm"><p>Disconnect {setup.connection.email} from this Tap Rater account? Imports for its linked locations will stop. Saved reviews and drafts remain.</p><button type="button" className="tr-button-primary mt-2" onClick={()=>run('disconnect')}>Confirm disconnect</button><button type="button" className="tr-button-ghost ml-2" onClick={()=>setDisconnectPrompt(false)}>Cancel</button></div>}
+ <button type="button" className="tr-button-ghost ml-3" onClick={()=>setPickerOpen(true)}>Choose location</button><button className="tr-button-ghost ml-3" onClick={()=>run('accounts')}>Refresh business list</button>
+ <dialog ref={picker} onCancel={e=>{e.preventDefault();setPickerOpen(false);}} aria-labelledby="google-location-picker-title" className="m-auto max-h-[85vh] w-[min(620px,92vw)] overflow-y-auto rounded-xl border border-line bg-white p-5 text-ink shadow-xl backdrop:bg-slate-900/40"><h3 id="google-location-picker-title" className="text-lg font-semibold">Choose your Google location</h3><p className="my-3 text-sm">{setup.connection.email} · Select one location to connect.</p>
  {locations.length>0&&<><label className="block">Choose one business ({locations.length} available) <select className="w-full rounded border p-2" value={location} onChange={e=>{setLocation(e.target.value);setAccount(locations.find(l=>l.name===e.target.value)?.account||'');setConfirmed(false);}}><option value="">Choose your location</option>{locations.map(l=><option key={l.name} value={l.name}>{l.title||l.name} — {[...(l.storefrontAddress?.addressLines||[]),l.storefrontAddress?.locality,l.storefrontAddress?.administrativeArea,l.storefrontAddress?.postalCode].filter(Boolean).join(', ')||'Service-area business'}</option>)}</select></label>
  {!compact&&<label className="block">Tap Rater location <select className="rounded border p-2" value={business} onChange={e=>{setBusiness(e.target.value);setConfirmed(false);}}><option value="">Choose workspace</option>{setup.businesses.map(b=><option key={b.id} value={b.id}>{b.business_name}{b.address?' · '+b.address:''}</option>)}</select></label>}
  <label className="flex gap-2"><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>I am authorized to connect {selected?.title||'this business'} to the selected workspace and allow Tap Rater to use AI to process its review text and ratings to prepare reply drafts for my approval. Nothing will be published.</label>
  <button className="tr-button-primary" disabled={!location||!business||!confirmed} onClick={()=>run('bind')}>Connect selected business and import reviews</button></>}
+ <button type="button" className="tr-button-ghost mt-3" disabled={busy} onClick={()=>{setPickerOpen(false);setConfirmed(false);}}>Back to Google connection</button>{busy&&<p role="status" className="mt-3">Loading businesses…</p>}{error&&<p role="alert" className="mt-3 text-red-700">{error}</p>}</dialog>
  {setup.businesses.length===0&&<p>Add a location in Locations & Listings before connecting it to Google.</p>}</>}
  </fieldset>{busy&&<p role="status" className="mt-3">Checking Google…</p>}{error&&<p role="alert" className="mt-3 text-red-700">{error}</p>}</section>;
 }
