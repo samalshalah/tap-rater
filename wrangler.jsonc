@@ -69,7 +69,7 @@
   },
   "triggers": { "crons": ["*/15 * * * *"] },
   "vars": {
-    "GOOGLE_REVIEWS_PUBLISHING_ENABLED": "false",
+    "GOOGLE_REVIEWS_PUBLISHING_ENABLED": "true",
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
     "NEXT_PUBLIC_ACCOUNT_APP_URL": "https://taprater.com",
     "GA4_MEASUREMENT_ID": "G-MVBHN8KW2S",

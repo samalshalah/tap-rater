@@ -12,13 +12,13 @@ import type {RankCompetitor} from '@/lib/dataforseo';
 import {sameGrid,keywordPoints,matchingScan,selectedScan,sameAnchor} from '@/lib/heatmap-results';
 
 type Scan={id:string;methodology?:string;period:string;created_at?:string;anchor:HeatmapAnchor;tracks:{id:string;version:number;settings:GridSettings}[];points:{trackId:string;index:number;state:string;rank:number|null;count:number|null;competitors?:RankCompetitor[]|null}[]};
-type Snapshot={anchor:HeatmapAnchor|null;tracks:HeatmapTrack[];provider:{monthlyPoints?:number;pointsUsed?:number;pointCost?:number;connected:boolean;status:string;scheduled:boolean;manualEnabled?:boolean;monthlyCap?:number;reserved?:number};scans:Scan[]};
+export type HeatmapSnapshot={anchor:HeatmapAnchor|null;tracks:HeatmapTrack[];provider:{monthlyPoints?:number;pointsUsed?:number;pointCost?:number;connected:boolean;status:string;scheduled:boolean;manualEnabled?:boolean;monthlyCap?:number;reserved?:number};scans:Scan[]};
 const initial:GridSettings={keyword:'',size:5,spacingKm:0.5,language:'en'};
 const field='mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm';
 
 export function LocationHeatmap(props:{businessId:string;admin?:boolean}){return <LocationHeatmapWorkspace key={props.businessId} {...props}/>;}
 function LocationHeatmapWorkspace({businessId,admin=false}:{businessId:string;admin?:boolean}){
- const [data,setData]=useState<Snapshot|null>(null),[selected,setSelected]=useState(''),[form,setForm]=useState<GridSettings>(initial),[editing,setEditing]=useState(false),[dirty,setDirty]=useState(false);
+ const [data,setData]=useState<HeatmapSnapshot|null>(null),[selected,setSelected]=useState(''),[form,setForm]=useState<GridSettings>(initial),[editing,setEditing]=useState(false),[dirty,setDirty]=useState(false);
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[point,setPoint]=useState<number|null>(null),[streets,setStreets]=useState(true),[tileError,setTileError]=useState(false),[latitude,setLatitude]=useState(''),[longitude,setLongitude]=useState('');
  const endpoint=admin?'/api/admin/local/heatmap':'/api/account/local/heatmap';
  const [scanId,setScanId]=useState('');

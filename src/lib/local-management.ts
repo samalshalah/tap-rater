@@ -18,11 +18,11 @@ const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim(
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const locations = await sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
-   l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_style,
+   l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.settings_version,l.profile_ai_enabled,
    (g.owner IS NOT NULL AND l.enabled) AS connected,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,
-   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND r.draft<>'') AS draft_count,
+   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND r.draft<>'' AND r.publish_state<>'published') AS draft_count,
    (SELECT jsonb_build_object('sum',coalesce(sum(CASE r.data->>'starRating' WHEN 'ONE' THEN 1 WHEN 'TWO' THEN 2 WHEN 'THREE' THEN 3 WHEN 'FOUR' THEN 4 WHEN 'FIVE' THEN 5 END),0),'count',count(*) FILTER (WHERE r.data->>'starRating' IN ('ONE','TWO','THREE','FOUR','FIVE'))) FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS rating_summary,
    (SELECT coalesce(jsonb_agg(x),'[]'::jsonb) FROM (SELECT left(r.data->>'createTime',7) AS month,r.data->>'starRating' AS rating,count(*)::int AS count FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND left(r.data->>'createTime',7)>=to_char(current_date-interval '11 months','YYYY-MM') GROUP BY 1,2 ORDER BY 1,2) x) AS review_growth
    FROM businesses b JOIN customers c ON c.id=b.customer_id

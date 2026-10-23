@@ -45,9 +45,9 @@ describe('live Google review safety',()=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const google=client();google.publishReply.mockRejectedValue(new Error('timeout'));const sql=sqlRows([review],[link],[{id}],[]);
   await expect(publishLiveReply({kind:'admin'},id,2,false,sql,async()=>google)).rejects.toThrow('No automatic retry');expect(google.publishReply).toHaveBeenCalledTimes(1);expect(sql.mock.calls[3][0].join('?')).toContain("publish_state='uncertain'");
  });
- it('publishes exactly the saved text and persists confirmation',async()=>{
+ it('lets the authenticated client submit exactly the saved text and persists confirmation',async()=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const google=client(),sql=sqlRows([review],[link],[{id}],[]);
-  expect(await publishLiveReply({kind:'admin'},id,2,false,sql,async()=>google)).toEqual({published:true});expect(google.publishReply).toHaveBeenCalledWith(review.resource,review.draft);expect(sql.mock.calls[3][0].join('?')).toContain("publish_state='published'");
+  expect(await publishLiveReply({kind:'customer',email:'owner@example.com'},id,2,false,sql,async()=>google)).toEqual({published:true});expect(google.publishReply).toHaveBeenCalledWith(review.resource,review.draft);expect(sql.mock.calls[3][0].join('?')).toContain("publish_state='published'");
  });
  it('reconciles a timed-out publish using a read only',async()=>{
   const google=client();google.getReview.mockResolvedValue({...data,reviewReply:{comment:review.draft}} as any);

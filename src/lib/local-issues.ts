@@ -45,8 +45,9 @@ export async function localIssueSnapshot(actor:ReviewActor,businessId?:string,sq
   ORDER BY i.read_at NULLS FIRST,i.updated_at DESC`;
  return {issues,locations,errors,pricing:'not_configured',publishingEnabled:false};
 }
-export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),generate=generateIssueDraft){
+export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),generate=generateIssueDraft,automaticVersion?:number){
  const input=issueMutation.parse(raw),link=await authorizedLink(actor,input.businessId,sql);
+ if(automaticVersion!==undefined&&(!link.profile_ai_enabled||Number(link.settings_version)!==automaticVersion))throw new LiveReviewError('Profile agent settings changed.',409);
  await syncLocationIssues(actor,input.businessId,sql);
  const [issue]=await sql`SELECT * FROM local_issues WHERE id=${input.id} AND business_id=${input.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND fingerprint=${input.fingerprint} AND active`;
  if(!issue)throw new LiveReviewError('This notification changed. Refresh before continuing.',409);
@@ -80,6 +81,7 @@ export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),gen
    WHERE d.id=${claimed[0].id} AND d.attempt_token=${attempt} AND d.status='generating' AND i.id=d.issue_id AND i.active AND i.fingerprint=d.fingerprint
    AND b.id=i.business_id AND b.customer_id=i.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
    AND l.business_id=b.id AND l.customer_id=i.customer_id AND l.parent=i.parent AND l.google_subject=i.google_subject AND l.enabled
+   AND (${automaticVersion===undefined} OR (l.profile_ai_enabled AND l.settings_version=${automaticVersion??0}))
    AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) RETURNING d.id`;
   if(!rows.length)throw new LiveReviewError('The location or issue changed. The draft was not saved.');
   await sql`UPDATE local_issues SET requested_at=now(),read_at=now() WHERE id=${issue.id} AND fingerprint=${input.fingerprint}`;

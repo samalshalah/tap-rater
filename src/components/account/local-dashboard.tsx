@@ -1,4 +1,6 @@
 "use client";
+import {ProfileAgentControls} from './review-automation-controls';
+import {OverviewLocationInsights} from './overview-location-insights';
 import {ReviewOverview,type OverviewLocation} from './review-overview';
 import {restoreCustomerLocation} from '@/lib/customer-location-selection';
 import {useRouter} from 'next/navigation';
@@ -43,7 +45,7 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
   <div className="tr-client-location-controls">
    {admin&&<label className="text-sm">Customer<select className={field} value={customer} onChange={e=>{setCustomer(e.target.value);choose('');}}><option value="">All customers</option>{data?.customers.map(c=><option key={c.id} value={c.id}>{c.email}</option>)}</select></label>}
    <label className="tr-client-location-label">Location<span className="tr-client-location-input"><MapPin size={18} aria-hidden="true"/><select className={field} value={location} onChange={e=>choose(e.target.value)}><option value="">All locations ({accountLocations.length})</option>{accountLocations.map(l=><option key={l.id} value={l.id}>{l.business_name}{l.address?' · '+l.address:''}{admin?' · '+l.email:''}</option>)}</select></span></label>
-   <span className="tr-client-draft-badge"><LockKeyhole size={15}/>Drafts only · Publishing disabled</span>
+   <span className="tr-client-draft-badge"><LockKeyhole size={15}/>Profile changes stay drafts</span>
   </div>
   {error&&<div role="alert" className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-800">{error} <button className="underline" onClick={()=>{setError('');refresh().catch(e=>setError(e.message));}}>Try again</button></div>}
   {notice&&<p role="status" className="mb-4 text-sm text-emerald-800">{notice}</p>}
@@ -52,7 +54,8 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
   {adding&&canAdd&&<form onSubmit={addLocation} className="mb-6 rounded-xl border border-line bg-white p-3"><h2 className="text-lg font-semibold">Add a location to your account</h2><p className="mt-1 text-sm text-muted">Each location keeps its own Google assignment, reviews and directory records.</p><fieldset disabled={busy} className="mt-4 grid gap-4 md:grid-cols-2">{admin&&<label className="text-sm">Customer<select name="customerId" required className={field} defaultValue={customer}><option value="">Choose customer</option>{data?.customers.map(c=><option key={c.id} value={c.id}>{c.email}</option>)}</select></label>}<label className="text-sm">Location name<input name="name" required maxLength={200} className={field} placeholder="Business name — Downtown"/></label><label className="text-sm">Address<input name="address" maxLength={1000} className={field}/></label><label className="text-sm">Phone<input name="phone" maxLength={80} className={field}/></label><label className="text-sm">Website<input name="website" type="url" maxLength={2048} className={field}/></label><div className="flex items-end gap-2"><button className="tr-button-primary">{busy?'Saving…':'Save location'}</button><button type="button" className="tr-button-ghost" onClick={()=>setAdding(false)}>Cancel</button></div></fieldset></form>}
   {admin&&<nav aria-label="Local management" className="mb-4 flex gap-4 overflow-x-auto border-b border-line">{(['overview','profile','performance','heatmap','listings','reviews'] as const).map(t=><button key={t} aria-current={tab===t?'page':undefined} onClick={()=>{setTab(t);setQuery('');}} className={'shrink-0 border-b-2 px-1 py-2 text-sm font-semibold '+(tab===t?'border-ink text-ink':'border-transparent text-muted')}>{t==='overview'?'Overview':t==='profile'?'Google profile':t==='performance'?'Reports':t==='heatmap'?'Heat map':t==='listings'?'Directory listings':'Reviews & approvals'}</button>)}</nav>}
 
-  {tab==='overview'&&data&&<ReviewOverview locations={visible} onReviews={()=>openTab('reviews')} onProfile={()=>openTab('profile')} onIssues={()=>openTab('notifications')}/>}
+  {tab==='overview'&&data&&<ReviewOverview onSaved={()=>refresh()} locations={visible} onReviews={()=>openTab('reviews')} onProfile={()=>openTab('profile')} onIssues={()=>openTab('notifications')}/>}
+  {tab==='overview'&&selected&&<div className="mt-3"><ProfileAgentControls location={selected} onSaved={()=>refresh()} onReview={()=>openTab('profile')}/><div className="mt-3"/><OverviewLocationInsights key={selected.id} businessId={selected.id} onProfile={()=>openTab('profile')} onHeatmap={()=>openTab('heatmap')}/></div>}
   {((tab==='overview'&&!location&&accountLocations.length>1)||tab==='performance')&&<details open={tab==='overview'||!selected} className="mb-3"><summary hidden={tab==='overview'} className="mb-3 cursor-pointer text-sm font-semibold">Saved reviews & listing summary</summary>
     {tab==='performance'&&<div className="mb-3"><h2 className="text-lg font-semibold">Location report</h2><p className="mt-1 text-sm text-muted">Current saved totals, not a date-range report. Select a location for dated Google performance below.</p></div>}
     <label className="mb-3 flex max-w-md items-center gap-2 rounded-lg border border-line bg-white px-3"><Search size={16}/><input aria-label="Search locations" className="w-full bg-transparent py-2 text-sm outline-none" placeholder="Search locations" value={query} onChange={e=>setQuery(e.target.value)}/></label>
@@ -65,6 +68,6 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
   {data&&tab==='heatmap'&&(selected?<LocationHeatmap key={selected.id} businessId={selected.id} admin={admin}/>:<div className="rounded-xl border border-line bg-white p-6"><h2 className="text-lg font-semibold">Choose a location for its heat map</h2><p className="mt-2 text-sm text-muted">Keywords and geographic grids are saved separately for each branch.</p><div className="mt-4 flex flex-wrap gap-3">{visible.map(l=><button key={l.id} className="tr-button-ghost" onClick={()=>choose(l.id)}>{l.business_name}</button>)}</div></div>)}
   {tab==='listings'&&<DirectoryManager key={location+customer} locations={visible} records={data?.listings||[]} save={save} busy={busy}/>}
   {tab==='notifications'&&data&&<LocalIssueCenter key={location||'all'} businessId={location||undefined}/>}
-  {tab==='reviews'&&data&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={customer?accountLocations.map(l=>l.id):undefined} draftOnly/>}
+  {tab==='reviews'&&data&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={customer?accountLocations.map(l=>l.id):undefined}/>}
  </section>;
 }

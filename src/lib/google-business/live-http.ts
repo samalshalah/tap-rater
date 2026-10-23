@@ -8,6 +8,7 @@ import {GoogleTokenExchangeError} from './connection';
 import {approveLiveDraft,liveReviewPage,flagLiveReview} from './live-reviews';
 import type {ReviewActor} from '../review-workspaces';
 import {authorizedLink,bindGoogleLocation,clientFor,liveDb,livePublishingEnabled,LiveReviewError,listLiveWorkspaces,liveSettingsSchema,saveLiveSettings,stopLiveReviews,syncLiveReviews,saveLiveDraft,suggestLiveReply,publishLiveReply,reconcileLiveReply} from './live-reviews';
+import {profileAgentSettings,saveProfileAgentSettings} from '../profile-ai-agent';
 const uuid=z.string().uuid(),token=z.string().max(4096).optional(),account=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/);
 const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('accounts'),parent:account.optional(),pageToken:token}).strict(),
@@ -22,6 +23,7 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('suggest'),id:uuid}).strict(),
  z.object({action:z.literal('publish'),id:uuid,version:z.number().int().positive(),confirmPublicReply:z.literal(true)}).strict(),
  z.object({action:z.literal('reconcile'),id:uuid}).strict(),
+ z.object({action:z.literal('profileAgent'),settings:profileAgentSettings}).strict(),
  z.object({action:z.literal('settings'),settings:liveSettingsSchema}).strict()
 ]);
 export async function handleLiveReviews(request:Request,kind:'admin'|'customer'){
@@ -45,7 +47,6 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
   let value:unknown;try{value=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
   const parsed=schema.safeParse(value);if(!parsed.success)return NextResponse.json({error:'Check the request and try again.'},{status:400});const v=parsed.data;
   if(['accounts','locations','bind','remove'].includes(v.action)&&kind!=='admin')return NextResponse.json({error:'Administrator access required.'},{status:403});
-  if(kind==='customer'&&(v.action==='publish'||(v.action==='settings'&&v.settings.autoEnabled)))return NextResponse.json({error:'Client workspaces are draft-only. Approval does not publish.'},{status:403});
   let result:unknown;
   switch(v.action){
    case 'accounts':result=await (await clientFor(owner)).listAccounts(v.pageToken,v.parent);break;
@@ -60,6 +61,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'suggest':result={suggestions:await suggestLiveReply(actor,v.id)};break;
    case 'publish':result=await publishLiveReply(actor,v.id,v.version);break;
    case 'reconcile':result=await reconcileLiveReply(actor,v.id);break;
+   case 'profileAgent':result=await saveProfileAgentSettings(actor,v.settings);break;
    case 'settings':result=await saveLiveSettings(actor,v.settings);break;
   }
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});

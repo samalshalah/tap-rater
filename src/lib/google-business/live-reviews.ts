@@ -112,16 +112,15 @@ export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),
 export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean()}).strict();
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
- if(v.autoEnabled && String(settingsLink.owner).startsWith('customer:'))throw new LiveReviewError('Client connections are draft-only.',403);
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
  const rows=await sql`UPDATE google_review_links SET ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},
- consent_at=CASE WHEN ${v.autoEnabled} THEN now() ELSE NULL END,settings_version=settings_version+1
- WHERE business_id=${v.businessId} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
+ consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
+ WHERE business_id=${v.businessId} AND customer_id=${settingsLink.customer_id} AND parent=${settingsLink.parent} AND google_subject=${settingsLink.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');return rows[0];
 }
 export async function stopLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb()){
  // Stopping must remain possible after Google revokes the connection.
- const rows=await sql`UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,settings_version=settings_version+1
+ const rows=await sql`UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,profile_ai_enabled=false,settings_version=settings_version+1
  FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE l.business_id=${businessId} AND b.id=l.business_id AND b.customer_id=l.customer_id
  AND (${actor.kind==='admin'} OR (lower(c.email)=${actorEmail(actor)} AND c.account_status='active')) RETURNING l.business_id`;
  if(!rows.length)throw new LiveReviewError('Workspace unavailable.',404);return {stopped:true};
@@ -134,7 +133,6 @@ export function isAutomaticCandidate(data:GoogleReview,draft:string,link:{auto_f
 export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){
  if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
- if(String(link.owner).startsWith('customer:'))throw new LiveReviewError('Client connections are draft-only. Approval does not publish.',403);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
  if(automatic && (!link.auto_enabled || !link.ai_consent || !isAutomaticCandidate(review.data,'',link as never)))throw new LiveReviewError('Automatic posting is no longer eligible.');
  const client=await makeClient(String(link.owner));
@@ -146,7 +144,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  const claimed=await sql`UPDATE google_live_reviews r SET publish_state='publishing',attempt_id=${attempt},attempted_reply=draft,attempted_at=now()
  FROM google_review_links l,businesses b,customers c,google_business_connections g
  WHERE r.id=${id} AND NOT r.suspected_spam AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
- AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active'
+ AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
  AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version})) RETURNING r.id`;
  if(!claimed.length)throw new LiveReviewError('Publishing is already underway or the workspace changed. Check the result before trying again.');
@@ -172,8 +170,8 @@ export async function reconcileLiveReply(actor:ReviewActor,id:string,sql=liveDb(
  WHERE id=${id} AND attempt_id=${review.attempt_id} AND publish_state IN ('publishing','uncertain')`;
  return {resolved,published:matched};
 }
-/** Generate at most one draft per location per run. Never calls a Google write API. */
-export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate=generateReviewSuggestions){
+/** Generate one draft per location per run; publish only newly eligible opted-in positive replies. */
+export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate=generateReviewSuggestions,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
  const claimTime=new Date().toISOString();
@@ -181,7 +179,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND fetched_at>now()-interval '1 day' AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
- ORDER BY auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
+ ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
  AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*`;
  if(!rows.length){
@@ -201,6 +199,9 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
    AND l.settings_version=${link.settings_version} AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
   await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId}`;
+  if(saved.length&&publish&&livePublishingEnabled()&&link.auto_enabled&&isAutomaticCandidate(review.data,'',link as never)){
+   try{return {drafted:true,...await publish(String(review.id),Number(review.version)+1)};}catch{await sql`UPDATE google_review_links SET draft_error='Automatic reply was not confirmed. Review the saved draft and check its publishing status.' WHERE business_id=${businessId}`;return {drafted:true,published:false};}
+  }
   return {drafted:saved.length>0};
  }catch(error){
   await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the daily AI allowance or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
@@ -209,17 +210,20 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
 }
 export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor,generate=generateReviewSuggestions){
  await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
- const links=await sql`SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id
+ const links=await sql`SELECT l.business_id,l.profile_ai_enabled FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE l.enabled AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) ORDER BY l.checked_at NULLS FIRST,l.business_id LIMIT 12`;
- let synced=0,drafted=0;
+ let synced=0,drafted=0,published=0;
  for(const row of links){
   const id=String(row.business_id);
   try{await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;}catch{continue;}
-  try{if((await prepareAutomaticDraft(id,sql,generate)).drafted)drafted++;}catch{/* One unavailable location must not block the others. */}
+  try{const result=await prepareAutomaticDraft(id,sql,generate,(reviewId,version)=>publishLiveReply({kind:'admin'},reviewId,version,true,sql,makeClient));if(result.drafted)drafted++;if('published' in result&&result.published)published++;}catch{/* One unavailable location must not block the others. */}
  }
- // Scheduled work can only import and save drafts, even if publishing is enabled elsewhere.
- return {synced,drafted,published:0};
+ for(const row of links.filter(row=>row.profile_ai_enabled)){
+  try{const {prepareProfileAgentDraft}=await import('../profile-ai-agent');await prepareProfileAgentDraft(String(row.business_id),sql);}catch{/* Preserve other locations when this agent is unavailable. */}
+ }
+ // Only newly generated, explicitly opted-in positive reviews can publish.
+ return {synced,drafted,published};
 }
 
 export async function approveLiveDraft(actor:ReviewActor,id:string,version:number,sql=liveDb()){
