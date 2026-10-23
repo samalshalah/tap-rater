@@ -1,6 +1,6 @@
 # Marketing access, allowances and suspected spam
 
-Status: implemented locally; migration and integration tests applied only to the isolated `google-client-staging-20261022` Neon branch. Not deployed to production.
+Status: deployed with the Growth monthly package on October 23, 2026. Migration applied to the verified production runtime database. See growth-subscription-launch-20261023.md for version, checks and remaining verification limits.
 
 ## Scope
 
@@ -15,7 +15,7 @@ Apply `supabase/2026-10-22-marketing-package-access.sql` if missing, then `supab
 
 Default operational allowances are one location, 100 shared AI attempts per location/month and 300 scan points per location/month; existing location counts are preserved. These are configurable test allowances, not published subscription plans. Usage enforcement counters begin at this migration; historical actual costs remain in the existing cost ledger. Counters reset on the New York calendar month. Failed/uncertain attempts consume allowance to prevent retry overspend.
 
-The follow-up Growth subscription implementation adds retail billing, renewal, cancellation and payment-failure synchronization; see `growth-subscription-launch-20261023.md`. Manual access is not evidence of payment. Live pricing remains inactive. Keep ranking provider disabled until separately authorized.
+The follow-up Growth subscription implementation adds retail billing, renewal, cancellation and payment-failure synchronization; see `growth-subscription-launch-20261023.md`. Manual access is not evidence of payment. Monthly checkout is now enabled with owner approval. Keep ranking provider disabled until separately authorized.
 
 ## Verification
 
