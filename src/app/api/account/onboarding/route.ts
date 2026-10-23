@@ -5,7 +5,7 @@ import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {liveDb,syncLiveReviews} from '@/lib/google-business/live-reviews';
 import {mutateProfile} from '@/lib/google-business/profile-management';
 const input=z.discriminatedUnion('action',[
- z.object({action:z.literal('choose'),name:z.string().trim().min(1).max(200),address:z.string().max(1000)}).strict(),
+ z.object({action:z.literal('choose'),name:z.string().trim().min(1).max(200),address:z.string().max(1000),placeId:z.string().max(500).optional(),reviewUrl:z.string().url().max(2000).refine(value=>{const u=new URL(value);return u.protocol==='https:'&&['google.com','www.google.com','search.google.com','maps.google.com','g.page','maps.app.goo.gl'].includes(u.hostname);}).optional()}).strict(),
  z.object({action:z.literal('import')}).strict(),z.object({action:z.literal('finish')}).strict()
 ]);
 async function handle(request:Request){
@@ -20,7 +20,7 @@ async function handle(request:Request){
   if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
   const raw=await request.text();if(raw.length>4000)throw Error('Invalid request.');const v=input.parse(JSON.parse(raw));
   if(v.action==='choose'){
-   await sql`WITH account AS (SELECT id,marketing_onboarding_business_id FROM customers WHERE lower(email)=${email} AND account_status='active' FOR UPDATE), created AS (INSERT INTO businesses(customer_id,business_name,address,status) SELECT id,${v.name},${v.address},'active' FROM account WHERE marketing_onboarding_business_id IS NULL RETURNING id,customer_id) UPDATE customers c SET marketing_onboarding_business_id=n.id FROM created n WHERE c.id=n.customer_id`;
+   await sql`WITH account AS (SELECT id,marketing_onboarding_business_id FROM customers WHERE lower(email)=${email} AND account_status='active' FOR UPDATE), created AS (INSERT INTO businesses(customer_id,business_name,address,status,google_place_id,google_review_url) SELECT id,${v.name},${v.address},'active',${v.placeId||null},${v.reviewUrl||null} FROM account WHERE marketing_onboarding_business_id IS NULL RETURNING id,customer_id) UPDATE customers c SET marketing_onboarding_business_id=n.id FROM created n WHERE c.id=n.customer_id`;
   }else{
    const row=await snapshot();if(!row?.business_id||!row.connected)throw Error('Connect the selected Google business first.');
    if(v.action==='import'){
