@@ -1089,3 +1089,12 @@ main.tr-client-shell .tr-local-workspace .tr-marketing-feature .text-xs{font-siz
 .tr-keyword-card>header>button{font-size:14px;text-align:left;}.tr-keyword-card>header>span{display:flex;align-items:center;gap:6px;}
 .tr-keyword-card .tr-rank-metrics{margin:0;padding:12px 4px!important;}.tr-keyword-card footer{display:flex;align-items:center;gap:12px;border-top:1px solid #edf1f5;padding:9px 14px;font-size:11px;color:#60779b;}.tr-keyword-distribution{display:flex;height:6px;overflow:hidden;border-radius:4px;flex:1;max-width:280px;}.tr-keyword-card footer>button{margin-left:auto;color:#007c87;}.tr-keyword-card footer>button:hover{text-decoration:underline;}
 @media(max-width:640px){.tr-keyword-card>header{flex-wrap:wrap;}.tr-keyword-card footer{flex-wrap:wrap;}.tr-keyword-distribution{min-width:100px;}.tr-keyword-card footer>button{margin-left:0;}}
+
+/* Keep comparison controls above the data without a second status or purchase row. */
+.tr-heatmap-topbar.is-compact{display:flex;align-items:center;gap:12px;border-bottom:1px solid #d6e0ec;}
+.tr-heatmap-topbar.is-compact .tr-heatmap-tabs{flex:1;min-width:0;margin:0;border-bottom:0;}
+.tr-heatmap-topbar.is-compact .tr-heatmap-status{margin-left:auto;flex-shrink:0;}
+.tr-heatmap-topbar.is-compact .tr-heatmap-status>.tr-button-ghost{min-width:32px;padding:7px;}
+.tr-voice-heading{display:inline-flex;align-items:center;gap:6px;}
+.tr-voice-panel{overflow:visible;}.tr-voice-panel>.tr-card-heading{border-radius:6px 6px 0 0;}
+@media(max-width:640px){.tr-heatmap-topbar.is-compact{flex-wrap:wrap;gap:4px;}.tr-heatmap-topbar.is-compact .tr-heatmap-tabs{gap:12px;}.tr-heatmap-topbar.is-compact .tr-heatmap-status{font-size:11px;}}

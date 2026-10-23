@@ -44,3 +44,10 @@ Implemented compact per-keyword cards with average found rank, reciprocal-rank s
 Passed TypeScript, production build, 24 focused tests across keyword summary, scan matching, competitor methodology and location selection. Live Norah cards: women's clothing store 7.29 / 5.91% / 49 points; boutique near me 1.32 / 23.72% / 25 points; clothing store 8.86 / 5.10% / 25 points. Verified links land on matching keyword and values agree. Desktop screenshot reviewed against conversation's Semrush keyword reference; mobile 390x844 wraps six metrics into two rows and has no page overflow. No paid scans or provider recovery requests were submitted. Replies, profile drafts and pricing unchanged.
 
 Artifacts: C:/Sites/tap-rater-claude/artifacts/keyword-summary-20261023/. Production version 1fdaf6da-41f0-432f-a21c-4a5070da2996. Status: passed.
+
+
+## Compact comparison controls — 2026-10-23
+
+Applied annotated screenshot: removed scan-cost banner and settings/pause row from Competitors only. Moved schedule and refresh controls into tab row; active schedule details are behind info icon while capped/error statuses remain visible. Grid metadata is in scan-history help. Moved methodology and captured-point metadata to info icon beside Share of voice. Shared accessible tooltip component extracted without changing provider calls or approval paths.
+
+Passed TypeScript/build, 9 existing approval/matching tests, desktop and 390px mobile inspection. No horizontal page overflow. Live Competitors has zero scan banners and one methodology icon; help displays 49/49 captured points and the existing formula. Heatmap still shows Review new scan. No scans, billing, profile or reply mutations. Screenshot: C:/Sites/tap-rater-claude/artifacts/compact-comparison-20261023/desktop.png. Version 6942c126-6fd7-406d-8387-240e63a73972. Status: passed.
