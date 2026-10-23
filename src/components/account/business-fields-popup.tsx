@@ -1,0 +1,12 @@
+ 'use client';
+import {useEffect,useId,useRef,useState} from 'react';
+import {Pencil,X} from 'lucide-react';
+type Field={key:string;label:string;value:string;rows?:number;max?:number;type?:'url'|'text'};
+export function BusinessFieldsPopup({title,fields,busy,onApply}:{title:string;fields:Field[];busy:boolean;onApply:(values:Record<string,string>)=>void}){
+ const [open,setOpen]=useState(false),[pending,setPending]=useState<Record<string,string>>({});const dialog=useRef<HTMLDialogElement>(null),id=useId();
+ useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
+ const close=()=>{dialog.current?.close();setOpen(false);};
+ const error=fields.some(f=>f.type==='url'&&pending[f.key]&&(()=>{try{const url=new URL(pending[f.key]);return !['http:','https:'].includes(url.protocol)||Boolean(url.username||url.password);}catch{return true;}})());
+ const changed=fields.some(f=>(pending[f.key]||'')!==f.value);
+ return <section className="tr-profile-field-popup"><h3>{title}</h3><button type="button" className="tr-attributes-trigger" disabled={busy} aria-haspopup="dialog" onClick={()=>{setPending(Object.fromEntries(fields.map(f=>[f.key,f.value])));setOpen(true);}}><Pencil size={15}/>Edit {title.toLowerCase()}</button>{fields.some(f=>f.value)&&<p className="tr-profile-field-preview">{fields.map(f=>f.value).filter(Boolean).join(' · ')}</p>}{open&&<dialog ref={dialog} className="tr-category-dialog tr-attributes-dialog" aria-labelledby={id} onCancel={e=>{e.preventDefault();close();}} onClose={()=>setOpen(false)} onClick={e=>{if(e.target===dialog.current)close();}}><header><h2 id={id}>{title}</h2><button type="button" aria-label={'Close '+title.toLowerCase()} onClick={close}><X size={18}/></button></header><div className="tr-attributes-dialog-content">{fields.map(f=><label className="tr-business-field" key={f.key}><span>{f.label}</span>{(f.rows||1)>1?<textarea disabled={busy} rows={f.rows} maxLength={f.max||5000} value={pending[f.key]||''} onChange={e=>setPending({...pending,[f.key]:e.target.value})}/>:<input disabled={busy} type={f.type||'text'} maxLength={f.max||5000} value={pending[f.key]||''} onChange={e=>setPending({...pending,[f.key]:e.target.value})}/>}</label>)}{error&&<p role="alert">Enter a complete http or https URL, or leave it blank.</p>}</div><footer><button type="button" className="tr-button-primary" disabled={busy||!changed||error} onClick={()=>{onApply(pending);close();}}>Apply changes</button><button type="button" onClick={close}>Cancel</button><small>Applied to your draft only</small></footer></dialog>}</section>;
+}

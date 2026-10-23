@@ -139,3 +139,11 @@ final result: passed
 - Link and mirrored-attribute edits are staged together. Invalid links block Apply; Cancel/Escape discard pending edits without affecting parent draft validity. Apply updates only the current location draft; main Save remains required.
 - TypeScript, production build and 15 focused tests passed. Production 5a37cf23-9907-41d6-a00c-ffe250c4c6fe.
 - Norah live checks: wrong-platform URL disabled Apply; Cancel left main Save disabled; Escape restored original URL; clearing and applying reflected on reopen; original Instagram restored, saved and verified after reload. Desktop/mobile inspected; screenshots in artifacts/social-popup-20261023. No publishing.
+
+
+## 2026-10-23 Hours and secondary profile popups
+- Regular/special/additional hours moved into one staged popup. Description, additional phones, service areas, services, featured message and photo URLs use a shared staged field popup with compact previews. Core identity/address fields remain inline.
+- Apply only changes the current location's draft; Cancel/close discard edits. Incomplete hours disable Apply; URL fields validate before Apply. No publishing path added.
+- TypeScript, build and 21 focused tests passed. Production b8893839-ed76-4746-996e-336918cd800a.
+- Norah QA: new blank special date blocked Apply and Cancel left main draft clean; Sunday changed to 12:15 temporarily, applied/reopened then restored to noon; saved/reloaded with original special dates preserved. Description Cancel preserved text; unsafe featured URL blocked Apply.
+- Desktop/mobile screenshots inspected in artifacts/compact-profile-20261023. Mobile hours dialog 341px wide/339px scroll width, internal scroll and footer visible.
