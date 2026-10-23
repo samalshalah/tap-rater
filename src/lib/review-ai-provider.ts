@@ -3,6 +3,11 @@ import { z } from "zod";
 import type { ReplySuggestions } from "./review-ai-options";
 const reply = z.string().trim().min(5).max(1500);
 const suggestionsSchema = z.object({ friendly: reply, professional: reply, personal: reply, short: reply }).strict();
+// Review replies must not invent operational commitments or claims about staff actions.
+export function removeUnsupportedReplyClaims(value:string):string {
+ const unsupported=/\b(?:we(?:['’]ll| will)\s+(?:strive|do better|improve|ensure|make sure|take|address|fix|correct|investigate|refund|replace|notify|look into)|(?:we(?:['’]ve| have)|our team has)\s+(?:addressed|fixed|corrected|notified|resolved)|our team works hard)\b/i;
+ return value.split(/(?<=[.!?])\s+/).filter(sentence=>!unsupported.test(sentence)).join(' ').trim();
+}
 export const reviewAiModel = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 export const reviewAiSystem = `Write four distinct business-owner replies to a customer review.
 Return ONLY a JSON object with exactly four string keys: friendly, professional, personal, short.
@@ -34,5 +39,6 @@ Length preference for non-short variants: ${knowledge.preferences.length==='deta
  const value=result as {response?:unknown};
  let json=value?.response;
  if(typeof json==="string") json=JSON.parse(json);
- return suggestionsSchema.parse(json);
+ const parsed=suggestionsSchema.parse(json);
+ return suggestionsSchema.parse(Object.fromEntries(Object.entries(parsed).map(([key,text])=>[key,removeUnsupportedReplyClaims(text)])));
 }

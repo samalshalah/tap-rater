@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from "vitest";
 import {eligibleForAutoReply,type AutoReplySettings} from "@/lib/review-ai-options";
-import {generateReviewSuggestions} from "@/lib/review-ai-provider";
+import {generateReviewSuggestions,removeUnsupportedReplyClaims} from "@/lib/review-ai-provider";
 import {suggestReviewReply,runSampleAutoReplies,saveAutoSettings} from "@/lib/review-ai";
 const settings:AutoReplySettings={enabled:true,four:true,five:true,style:"friendly",version:1};
 const id="9fb3ee3b-0920-4db5-a03d-7245987a8751";
@@ -51,4 +51,10 @@ describe("AI review replies",()=>{
   await expect(saveAutoSettings({kind:"admin"},{businessId:id,enabled:true,four:false,five:false,style:"friendly",version:1},sql as any)).rejects.toThrow();
   expect(sql).not.toHaveBeenCalled();
  });
+});
+
+it("removes unsupported promises without losing the complaint acknowledgment",()=>{
+ expect(removeUnsupportedReplyClaims("Sorry your order was incomplete. We'll strive to do better.")).toBe("Sorry your order was incomplete.");
+ expect(removeUnsupportedReplyClaims("We apologize for the mistake. We'll take this as a reminder to double-check our orders.")).toBe("We apologize for the mistake.");
+ expect(removeUnsupportedReplyClaims("Thank you for visiting. Our team works hard to provide a great experience. We'd love to welcome you back soon.")).toBe("Thank you for visiting. We'd love to welcome you back soon.");
 });
