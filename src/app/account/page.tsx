@@ -15,7 +15,7 @@ export default async function AccountPage() {
 
   return (
     <AccountShell overview>
-      {!portal.configured ? <PortalMessage message="Customer account storage is not configured yet." /> : null}
+      {!portal.configured ? <PortalMessage message="Your account is temporarily unavailable. Please try again shortly." /> : null}
       <MarketingGate email={session.email}><LocalDashboard preferenceKey={session.email.toLowerCase()}/></MarketingGate>
       <details className="mt-4 rounded-xl border border-line bg-white p-4">
       <summary className="cursor-pointer text-sm font-semibold">Stands & orders · {portal.orders.length} orders · {countPaidStandQuantity(portal.orders)} paid stands</summary>
@@ -24,7 +24,7 @@ export default async function AccountPage() {
           <p className="tr-eyebrow">Overview</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Use this dashboard for the next step only. Stands are managed separately from order, invoice, and payment history.
+            Manage your stands, orders and billing.
           </p>
         </section>
 

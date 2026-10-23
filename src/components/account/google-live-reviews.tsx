@@ -1,6 +1,7 @@
 "use client";
-import {Star,X} from 'lucide-react';
+import {Star,X,Settings,RefreshCw} from 'lucide-react';
 import {useEffect,useState,useRef} from 'react';
+import {ModalDialog} from '@/components/ui/modal-dialog';
 import {GoogleConnectionWizard} from './google-connection-wizard';
 import {importReviewPages} from '@/lib/google-business/import-pages';
 import {replyStyles,type ReplyStyle,type ReplySuggestions} from '@/lib/review-ai-options';
@@ -59,21 +60,23 @@ function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
  <LiveCard {...props} key={review.version+':'+review.publish_state} onState={(dirty,busy)=>{edits.current={dirty,busy};}}/>
  </dialog>}</td></tr>;
 }
-function LiveSettings({workspace:w,post,refresh}:{workspace:Workspace;post:Post;refresh:()=>Promise<void>;publishing:boolean}){
+function LiveSettings({workspace:w,post,refresh,children}:{workspace:Workspace;post:Post;refresh:()=>Promise<void>;publishing:boolean;children?:React.ReactNode}){
+ const [open,setOpen]=useState(false);
  const [ai,setAi]=useState(w.ai_consent),[style,setStyle]=useState(w.auto_style),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  async function save(){
   setBusy(true);setMessage('');try{await post({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:false,four:false,five:false,style,version:w.settings_version,confirmAutomaticPosting:false}});await refresh();setMessage('Draft settings saved. Nothing will be published.');}catch(e){setMessage(e instanceof Error?e.message:'Settings could not be saved.');}finally{setBusy(false);}
  }
- return <details className="tr-review-settings"><summary>Automatic imports & draft settings</summary>
- <p className="mt-2 text-sm">Connected locations are checked in the background every 15 minutes. Large imports and busy queues continue in subsequent runs, even when you close this page.</p>
+ function close(){if(busy)return;if((ai!==w.ai_consent||style!==w.auto_style)&&!window.confirm('Discard unsaved review settings?'))return;setAi(w.ai_consent);setStyle(w.auto_style);setOpen(false);}
+ return <><button className="tr-button-ghost" onClick={()=>setOpen(true)}><Settings size={14}/>Settings</button>{open&&<ModalDialog labelledBy={'review-settings-'+w.business_id} onClose={close}><div className="tr-listing-dialog"><header><h2 id={'review-settings-'+w.business_id} tabIndex={-1} data-dialog-heading>Review settings · {w.business_name}</h2><button disabled={busy} aria-label="Close review settings" onClick={close}><X size={20}/></button></header>
+ <p className="mt-2 text-sm">New reviews import automatically every 15 minutes.</p>
  <p className="mt-2 text-xs text-muted">Last import: {w.synced_at?new Date(w.synced_at).toLocaleString():'Not completed'} · Last automatic draft check: {w.draft_checked_at?new Date(w.draft_checked_at).toLocaleString():'Not yet confirmed'}. Refresh this page for the latest status.</p>
  <fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">
- <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Allow Cloudflare AI to process review text and ratings and automatically prepare reply drafts for this location.</label>
+ <label className="flex gap-2 text-sm"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/>Use AI to prepare reply drafts from this location’s review text and ratings.</label>
  <label>Reply style <select className="rounded border p-2" value={style} onChange={e=>setStyle(e.target.value as ReplyStyle)}>{Object.entries(replyStyles).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
- <p className="text-xs text-muted">All star ratings are included. Existing replies and saved drafts are preserved. Up to 20 AI generations per location per day, shared with manual suggestions; remaining reviews stay queued. Review and approve each draft. Approval never publishes.</p>
- <button className="tr-button-ghost" onClick={save}>Save Google review settings</button></fieldset>
+ <p className="text-xs text-muted">Review every draft before approval. Existing replies and saved drafts are preserved.</p>
+ <button className="tr-button-ghost" onClick={save}>Save settings</button></fieldset>
  {w.draft_error&&<p role="status" className="mt-3 text-sm text-amber-800">{w.draft_error}</p>}
- <p role="status" className="mt-2 text-sm">{message}</p></details>;
+ <p role="status" className="mt-2 text-sm">{message}</p><details className="mt-4 text-xs text-muted"><summary className="cursor-pointer">Import limits & privacy</summary><p className="mt-2">Up to 20 AI generations per location per day, including manual suggestions. Remaining reviews wait for the next available run. Imported Google content is retained for up to 30 days and refreshed while connected. <a href="/privacy-policy" className="underline">Privacy policy</a></p></details><details className="mt-4 text-sm"><summary className="cursor-pointer">Google connection</summary><div className="mt-3">{children}</div><p className="mt-2 text-xs text-muted">To remove Tap Rater’s manager access, use Google Business Profile’s People and access settings or <a className="underline" href="mailto:support@taprater.com">contact support</a>.</p></details></div></ModalDialog>}</>;
 }
 
 function Discovery({post,refresh,businesses}:{post:Post;refresh:()=>Promise<void>;businesses:NonNullable<Snapshot['businesses']>}){
@@ -121,12 +124,12 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  <nav className="tr-review-filters" aria-label="Review filters">{[['all','All reviews'],['unanswered','Awaiting reply'],['drafts','Drafts'],['approved','Approved'],['replied','Replied']].map(([key,label])=><button key={key} aria-pressed={reviewFilter===key} onClick={()=>setReviewFilter(key)}>{label} ({snapshot?snapshot.workspaces.filter(w=>inScope(w.business_id)).flatMap(w=>w.reviews).filter(r=>matchesReview(r,key)).length:'…'})</button>)}</nav>{snapshot?.workspaces.some(w=>inScope(w.business_id)&&w.moreReviews)&&<p className="text-xs text-muted">Filters apply to loaded reviews. Load more to include older pages.</p>}
  {importProgress&&<p role="status" className="my-3">{importProgress}</p>}
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
- {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':'Connect your Google business above to import reviews.'}</p>}
+ {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':'Connect your Google business below to import reviews.'}</p>}
  {snapshot?.workspaces.filter(w=>inScope(w.business_id)).map(w=><section key={w.business_id} className="tr-review-workspace"><div className="tr-review-workspace-meta">{!businessId&&<h3>{w.business_name}</h3>}<span>{!w.enabled?'Stopped':!w.connected?'Google reconnection required':''}</span></div>{w.last_error&&<p className="mt-2 text-sm text-red-700">{w.last_error}</p>}
 
+ <div className="my-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-muted">{w.enabled&&w.connected?'Automatic imports on':'Imports paused'}{w.synced_at?' · Updated '+new Date(w.synced_at).toLocaleString():''}</span><div className="flex gap-2"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}><RefreshCw size={14}/>{busy?'Importing…':w.next_page?'Continue import':'Sync reviews'}</button><LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={false}><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Disconnect review imports</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</LiveSettings></div></div>
  <div className="tr-review-table-wrap"><table className="tr-review-table"><caption className="sr-only">Google reviews and reply drafts. Open a review to read or edit its draft.</caption><thead><tr><th>Reviewer</th><th>Rating</th><th>Review (excerpt)</th><th>Reply status</th><th>Date</th><th>Open</th></tr></thead><tbody>{w.reviews.filter(r=>matchesReview(r,reviewFilter)).map(r=><ReviewListRow key={r.id} review={r} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/>)}</tbody></table>{w.reviews.length>0&&!w.reviews.some(r=>matchesReview(r,reviewFilter))&&<p className="p-4 text-sm">No reviews match this filter.</p>}</div>
- <details className="tr-review-settings"><summary>Import & draft controls</summary> <div className="mt-3 flex gap-3"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}>{busy?'Importing…':w.next_page?'Resume importing all reviews':'Import all reviews'}</button><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Stop Google review access</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</div>
- <LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={!draftOnly&&admin&&!w.owner.startsWith('customer:')&&snapshot.publishingEnabled}/></details>
- {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No cached Google reviews. Sync to read the latest reviews.</p>}<p className="mt-4 text-xs text-muted">Cached Google content expires after 30 days. To end management on Google itself, contact <a className="underline" href="mailto:support@taprater.com">support@taprater.com</a> or remove Tap Rater in your Google Business Profile access settings.</p>
- </section>)} {!admin&&snapshot&&<details className="tr-review-settings" open={!snapshot.workspaces.some(w=>inScope(w.business_id)&&w.connected&&w.enabled)}><summary>Google connection & onboarding</summary><GoogleConnectionWizard onLinked={refresh} businessId={businessId}/></details>}</section>;
+
+ {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No reviews imported yet. Sync reviews to get started.</p>}
+ </section>)} {!admin&&snapshot&&<details className="tr-review-settings" open={!snapshot.workspaces.some(w=>inScope(w.business_id)&&w.connected&&w.enabled)}><summary>Manage Google connection</summary><GoogleConnectionWizard onLinked={refresh} businessId={businessId}/></details>}</section>;
 }

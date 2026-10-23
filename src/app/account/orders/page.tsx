@@ -18,8 +18,8 @@ export default async function AccountOrdersPage({
 
   return (
     <AccountShell>
-      <div className="grid gap-5">
-        <section className="tr-card p-5">
+      <div className="grid gap-3">
+        <section className="rounded-xl border border-line bg-white p-4">
           <p className="tr-eyebrow">Orders & Billing</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Orders, invoices, and payments</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted">
@@ -50,14 +50,14 @@ export default async function AccountOrdersPage({
         ) : null}
 
         {portal.orders.some((order) => ["shipped", "delivered"].includes(order.shippingStatus)) ? (
-          <section className="tr-card p-5">
+          <section className="rounded-xl border border-line bg-white p-4">
             <h2 className="text-lg font-medium">Received and tried your stand?</h2>
             <p className="mt-2 text-sm leading-6 text-muted">Tell us what worked well and what could be better. Sharing your experience is optional.</p>
             <Link href="/account/feedback" className="tr-button-outline mt-4">Share product feedback</Link>
           </section>
         ) : null}
 
-        <section id="invoices" className="tr-card scroll-mt-28 p-5">
+        <section id="invoices" className="rounded-xl border border-line bg-white scroll-mt-28 p-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="tr-eyebrow">Invoices</p>
@@ -69,12 +69,12 @@ export default async function AccountOrdersPage({
             {portal.invoices.length ? (
               portal.invoices.map((invoice) => <InvoiceCard key={invoice.id} invoice={invoice} />)
             ) : (
-              <EmptyState message="Invoices will appear here after Stripe confirms payment." />
+              <EmptyState message="Invoices appear here after payment is confirmed." />
             )}
           </div>
         </section>
 
-        <section className="tr-card p-5">
+        <section className="rounded-xl border border-line bg-white p-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="tr-eyebrow">Recurring billing</p>
@@ -132,7 +132,7 @@ function InvoiceCard({ invoice }: { invoice: CustomerPortalInvoice }) {
   return (
     <article className="grid gap-3 p-4 text-sm md:grid-cols-[minmax(0,1fr)_140px_220px] md:items-center">
       <div className="min-w-0">
-        <h3 className="text-base font-medium text-ink">{invoice.invoiceNumber ?? "Stripe invoice"}</h3>
+        <h3 className="text-base font-medium text-ink">{invoice.invoiceNumber ?? "Invoice"}</h3>
         <p className="mt-1 text-muted">
           {invoice.issuedAt ? new Date(invoice.issuedAt).toLocaleDateString() : "Date pending"} · {invoice.paymentMethodLabel}
         </p>
