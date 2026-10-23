@@ -13,25 +13,32 @@ export function scanPeriod(now=new Date()){
  const day=Number(part('day'));return `${part('year')}-${part('month')}-${String(day>=22?22:day>=15?15:day>=8?8:1).padStart(2,'0')}`;
 }
 const envelope=z.object({status_code:z.number(),tasks:z.array(z.object({id:z.string().nullable().optional(),status_code:z.number(),cost:z.number().nonnegative().optional(),data:z.object({tag:z.string().optional()}).passthrough().optional(),result:z.unknown().optional()})).nullable()});
-export type RankResult={state:'pending'|'complete'|'error';rank?:number|null;count?:number;code?:string};
+export type RankCompetitor={placeId:string;title:string;rank:number;address:string|null;rating:number|null;reviews:number|null};
+export type RankResult={state:'pending'|'complete'|'error';rank?:number|null;count?:number;code?:string;competitors?:RankCompetitor[]};
 export function parseRankResult(raw:unknown,id:string,placeId:string):RankResult{
  const parsed=envelope.safeParse(raw);if(!parsed.success||parsed.data.status_code!==20000)return {state:'error',code:'invalid_response'};
  const task=parsed.data.tasks?.find(t=>t.id===id);if(!task)return {state:'error',code:'task_mismatch'};
  if([20100,40601,40602].includes(task.status_code))return {state:'pending'};
- if(task.status_code===40102)return {state:'complete',rank:null,count:0};
+ if(task.status_code===40102)return {state:'complete',rank:null,count:0,competitors:[]};
  if(task.status_code!==20000)return {state:'error',code:`provider_${task.status_code}`};
- const results=z.array(z.object({items:z.array(z.object({type:z.string(),place_id:z.string().nullable().optional(),rank_group:z.number().int().positive().optional()}))})).min(1).safeParse(task.result);
+ const results=z.array(z.object({items:z.array(z.object({type:z.string(),place_id:z.string().nullable().optional(),rank_group:z.number().int().positive().optional(),title:z.string().nullable().optional(),address:z.string().nullable().optional(),rating:z.unknown().optional()}))})).min(1).safeParse(task.result);
  if(!results.success)return {state:'error',code:'invalid_result'};
  const organic=results.data[0].items.filter(i=>i.type==='maps_search');
  const match=organic.find(i=>i.place_id===placeId);
  if(match&&(!match.rank_group||match.rank_group>100))return {state:'error',code:'invalid_rank'};
- return {state:'complete',rank:match?.rank_group??null,count:organic.length};
+ const competitors:RankCompetitor[]=[];
+ for(const item of organic){
+  if(!item.place_id||!item.rank_group||item.rank_group>20||competitors.some(c=>c.placeId===item.place_id))continue;
+  const rating=z.object({rating_type:z.literal('Max5'),value:z.number().min(0).max(5),votes_count:z.number().int().nonnegative().optional()}).safeParse(item.rating);
+  competitors.push({placeId:item.place_id.slice(0,250),title:(item.title||'Unnamed business').slice(0,250),rank:item.rank_group,address:item.address?.slice(0,500)||null,rating:rating.success?rating.data.value:null,reviews:rating.success?rating.data.votes_count??null:null});
+ }
+ return {state:'complete',rank:match?.rank_group??null,count:organic.length,competitors:competitors.slice(0,20)};
 }
 export function providerConfigured(){return Boolean(process.env.DATAFORSEO_LOGIN&&process.env.DATAFORSEO_PASSWORD);}
 export function createRankProvider(fetcher:typeof fetch=fetch){
  async function request(path:string,body?:unknown){
   if(!providerConfigured())throw new Error('Ranking provider credentials are not configured.');
-  const response=await fetcher(`https://api.dataforseo.com/v3/serp/google/maps/${path}`,{method:body?'POST':'GET',headers:{Authorization:`Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString('base64')}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000),redirect:'error',cache:'no-store'});
+  const response=await fetcher.call(globalThis,`https://api.dataforseo.com/v3/serp/google/maps/${path}`,{method:body?'POST':'GET',headers:{Authorization:`Basic ${Buffer.from(`${process.env.DATAFORSEO_LOGIN}:${process.env.DATAFORSEO_PASSWORD}`).toString('base64')}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(20000),redirect:'manual',cache:'no-store'});
   if(!response.ok)throw new Error('Ranking provider request failed.');
   return response.json();
  }

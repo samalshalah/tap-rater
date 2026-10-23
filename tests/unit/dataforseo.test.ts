@@ -16,14 +16,14 @@ describe('DataForSEO paid-request safety and ranking accuracy',()=>{
  });
  it('matches exact Place ID and excludes paid positions and same-name competitors',()=>{
   const raw={status_code:20000,tasks:[{id:'task',status_code:20000,result:[{items:[{type:'maps_paid_item',place_id:'target',rank_group:1},{type:'maps_search',place_id:'other',rank_group:1},{type:'maps_search',place_id:'target',rank_group:7}]}]}]};
-  expect(parseRankResult(raw,'task','target')).toEqual({state:'complete',rank:7,count:2});
-  expect(parseRankResult(raw,'task','absent')).toEqual({state:'complete',rank:null,count:2});
+  expect(parseRankResult(raw,'task','target')).toMatchObject({state:'complete',rank:7,count:2});
+  expect(parseRankResult(raw,'task','absent')).toMatchObject({state:'complete',rank:null,count:2});
   expect(parseRankResult(raw,'different','target').state).toBe('error');
  });
  it('does not label pending or malformed responses as unranked',()=>{
   expect(parseRankResult({status_code:20000,tasks:[{id:'task',status_code:40602}]},'task','target')).toEqual({state:'pending'});
   expect(parseRankResult({status_code:20000,tasks:[{id:'task',status_code:20000,result:null}]},'task','target').state).toBe('error');
-  expect(parseRankResult({status_code:20000,tasks:[{id:'task',status_code:40102}]},'task','target')).toEqual({state:'complete',rank:null,count:0});
+  expect(parseRankResult({status_code:20000,tasks:[{id:'task',status_code:40102}]},'task','target')).toEqual({state:'complete',rank:null,count:0,competitors:[]});
  });
  it('never retries paid requests after a lost HTTP response',async()=>{
   vi.stubEnv('DATAFORSEO_LOGIN','test');vi.stubEnv('DATAFORSEO_PASSWORD','test');const fetcher=vi.fn().mockRejectedValue(new Error('network'));

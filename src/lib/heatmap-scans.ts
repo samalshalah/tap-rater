@@ -15,7 +15,7 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
  for(let offset=0;offset<pending.length;offset+=10)await Promise.all(pending.slice(offset,offset+10).map(async p=>{
   try{
    const result=await provider.collect(String(p.provider_id),String(p.anchor.placeId));
-   await sql`UPDATE local_rank_points SET state=${result.state},rank=${result.rank??null},result_count=${result.count??null},error_code=${result.code??null},checked_at=now() WHERE id=${p.id} AND state='pending'`;
+   await sql`UPDATE local_rank_points SET state=${result.state},rank=${result.rank??null},result_count=${result.count??null},competitors=${result.competitors?JSON.stringify(result.competitors):null}::jsonb,error_code=${result.code??null},checked_at=now() WHERE id=${p.id} AND state='pending'`;
    if(result.state==='complete')collected++;
   }catch{await sql`UPDATE local_rank_points SET checked_at=now(),error_code='retrieval_unavailable' WHERE id=${p.id} AND state='pending'`;}
  }));

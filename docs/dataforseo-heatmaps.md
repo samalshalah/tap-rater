@@ -58,3 +58,22 @@ Changing settings does not start paid work. The latest view only matches the exa
 Maps-v2 uses fixed zoom 15 with search_this_area=false and search_places=false. This removes the earlier tight viewport restriction and places-search interference. It remains a coordinate-centered Google Maps measurement, not a guarantee of what every physical user sees. Legacy maps-v1 scans are visibly labeled and excluded from the default current-results view.
 
 Staging also tests quotes without billable runs, stale quote rejection, cross-tenant denial, extra-scan gating and concurrent approval deduplication. Replies and profile edits remain drafts.
+
+## Competitor comparisons
+
+Apply `docs/sql/heatmap-competitors.sql` before deploying the comparison feature.
+Each point stores up to 20 organic competitors by Place ID, including the rank,
+name, address and available five-star rating/review count. Null means not captured;
+an empty array means a completed scan returned no organic competitors.
+
+The customer Competitors tab uses the same selected keyword, saved area and scan
+history as the heatmap. It shows the customer's own business first, then competitors
+by grid presence and average rank. Top-three coverage is the percentage of captured
+points ranked 1–3; it is not Semrush Share of Voice or estimated market share.
+Uncaptured points are excluded from comparison denominators, not counted as losses.
+
+`competitors` retrieves only existing task IDs for one authorized run and keyword,
+within a conservative 29-day retrieval window. It uses free task GETs, never paid
+submission. The normal scanner captures competitors for new scans automatically.
+Manual new scans still require the existing server-priced quote and approval.
+No customer pricing, Google publishing, or profile-writing behavior is changed.
