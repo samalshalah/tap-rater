@@ -66,3 +66,8 @@ Ground-truth differences from the reference: actual manual check statuses (Liste
 Production QA: Norah loaded 11 directory records, 10 checked, 3 Listed, 7 Needs update and 1 Not checked. Listed filter returned exactly 3 rows; searching Apple returned 1 Apple Maps row. Details displayed the expected observed/current comparison and correction draft. Profile editor displayed Norah's saved fields. Corrections tab showed saved draft notes; Duplicates displayed the honest unavailable state. All modals were closed without saving or approving anything. No external writes, pricing activation or new scan charges. TypeScript, Cloudflare build and 34 focused directory/authorization/modal tests passed. Desktop verified; mobile CSS included but not directly browser-tested.
 
 Evidence: `C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/listing-reference-final.png` and `listing-details-popup.png`.
+
+
+## Directory catalog expansion — October 23, 2026
+
+Added all 73 reference directories with stable IDs, alias matching, reference relationships and a read-only provider adapter contract. No external adapter is installed. Existing checks remain intact. Production Norah verification: 75 rows (73 catalog entries plus Official website and Union Station directory), 10 checked, 3 listed, 7 needing updates. Waze Details shows catalog ID and pending provider/coverage status. Search and modal verified. Replies/profile changes remain drafts; pricing unchanged. TypeScript, 41 targeted tests and Cloudflare build passed. Deployment: 1826b984-3de4-4b37-9dba-f4f6cf7dd79e. Evidence: artifacts/dashboard-redesign-20261022/directory-api-ready.png.
