@@ -20,7 +20,7 @@ export async function syncLocationIssues(actor:ReviewActor,businessId:string,sql
   findings.push(...notes.map(n=>n.finding as Finding));
  }
  for(const finding of findings){
-  const fingerprint=createHash('sha256').update(JSON.stringify({finding,aiGuidanceVersion:2,...(finding.kind==='profile'?{observed}:{})})).digest('hex');
+  const fingerprint=createHash('sha256').update(JSON.stringify({finding,aiGuidanceVersion:finding.code==='profile-description'?3:2,...(finding.kind==='profile'?{observed}:{})})).digest('hex');
   await sql`INSERT INTO local_issues(business_id,customer_id,parent,google_subject,code,fingerprint,finding)
    VALUES(${businessId},${link.customer_id},${link.parent},${link.google_subject},${finding.code},${fingerprint},${JSON.stringify(finding)}::jsonb)
    ON CONFLICT(business_id,parent,google_subject,code) DO UPDATE SET finding=EXCLUDED.finding,fingerprint=EXCLUDED.fingerprint,active=true,

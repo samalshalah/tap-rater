@@ -78,3 +78,25 @@ Added all 73 reference directories with stable IDs, alias matching, reference re
 Matching now requires track ID, keyword, size, spacing, language and anchor Place ID/coordinates. Location-keyed workspace resets transient selection and quotes. History retains eight runs per keyword rather than eight for the whole location; history shows timestamps and grid dimensions. Historical mismatches are explicit. Cost estimates use the server-configured point rate; editor and approval show point count/area/cost; expired quotes disable approval.
 
 Validation: TypeScript and 61 targeted tests passed; Cloudflare build and deployment da583ecb-db77-476d-a2e2-e28c1e8529e3 succeeded. Norah live keyword averages: women clothing 7.29 (49 points), boutique near me 1.32 (25), clothing store 8.86 (25). Temporarily changed clothing store to 7x7 at 1 km: New scan required, 0/49, quote $0.0294 for 6x6 km. Historical 5x5 scan showed explicit different-settings label. Canceled quote and restored 5x5 at 0.5 km; original result returned. Database confirmed four scan runs unchanged and zero approvals in the test window. No paid scan, publishing or pricing activation. Live test uses Norah only; cross-location protections covered by unit tests, not a second live customer. Evidence: artifacts/dashboard-redesign-20261022/heatmap-cost-approval.png. Competitor data remains unavailable in existing scans; not part of this matching/cost change.
+
+## 2026-10-23 competitor comparison verification
+
+- Competitor snapshots added via docs/sql/heatmap-competitors.sql, tested on validation branch then applied to production.
+- 69 focused unit tests passed; production TypeScript and Cloudflare build passed.
+- Cloudflare redirect:error was unsupported; provider uses manual redirects and rejects non-OK responses without forwarding credentials or retrying paid work.
+- Live Norah: recovered 99 existing task results using GET only. Women's clothing store: 49/49, boutique near me: 25/25, clothing store: 25/25.
+- Verified switching keyword resets selected competitor/grid; LiLi The First selection shows its actual 23/49 presence and 10.17 average.
+- Reviewed clothing store quote $0.0150 for 25 points / 2x2 km, canceled before approval.
+- Four existing runs remain; zero scans approved in verification. Publishing disabled and no pricing changes.
+- Screenshot: C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/norah-competitors-live.png
+- Worker version: 1827db2b-e7f5-4e1b-b227-550119c8c235.
+
+## 2026-10-23 Google profile optimization
+
+- Added the location-specific Improvements & AI fixes view, eight factual-presence checks, and separate draft editor.
+- Past special hours are a confirmation task, not an invented Google error; photos/products and website content remain explicitly outside these checks.
+- Embedded scoped issue requests, no-charge test confirmation, collapsible AI proposals and explicit copy-to-unsaved-editor action. No automatic profile save or Google write.
+- Updated description guidance; previous proposal records remain stored. No pricing activation or schema migration.
+- 51 focused tests and TypeScript passed; Cloudflare production build passed.
+- Live Norah refresh preserved existing address/description draft and Sunday noon–6 pm. Tested description AI preview, then copied to unsaved editor and reloaded without saving. Database version remained 3; original description and Sunday hours preserved. AI proposal is an unapproved draft.
+- Worker version 11c9c604-97f4-4e27-b8fc-d98c6ee53e86. Screenshot: C:/Sites/tap-rater-claude/artifacts/dashboard-redesign-20261022/norah-profile-improvements-live.png.

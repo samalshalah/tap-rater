@@ -2,7 +2,7 @@ import type {GridSettings} from './heatmap-data';
 import {sameGrid} from './heatmap-results';
 export type Finding={code:string;kind:'heatmap'|'profile'|'system';title:string;evidence:string;improvement:string;aiEligible:boolean;source:string};
 type Scan={methodology?:string;created_at:string;tracks:{id:string;settings:GridSettings}[];points:{trackId:string;state:string;rank:number|null}[]};
-export function detectLocalIssues(profile:{observed:Record<string,string>;draft:unknown;synced_at:string}|null,tracks:({id:string;active:boolean}&GridSettings)[],scans:Scan[]):Finding[]{
+export function detectLocalIssues(profile:{observed:Record<string,string>;draft:unknown;synced_at:string}|null,tracks:({id:string;active:boolean}&GridSettings)[],scans:Scan[],now=new Date()):Finding[]{
  const findings:Finding[]=[];
  if(!profile)findings.push({code:'profile-import',kind:'system',title:'Google profile details need to be imported',evidence:'No saved Google profile snapshot is available.',improvement:'Open Google profile and refresh its details before assessing completeness.',aiEligible:false,source:'Tap Rater connection data'});
  else {
@@ -10,6 +10,8 @@ export function detectLocalIssues(profile:{observed:Record<string,string>;draft:
   if(missing.length)findings.push({code:'profile-missing',kind:'profile',title:'Confirm missing profile information',evidence:`The saved Google snapshot has no ${missing.join(', ')}. Snapshot: ${new Date(profile.synced_at).toISOString().slice(0,10)}.`,improvement:'Confirm the missing facts before preparing changes. An AI draft cannot verify business hours or contact details.',aiEligible:true,source:'Saved Google Business Profile snapshot'});
   const description=profile.observed.description||'';
   if(description.length>450&&(description.match(/luxur/gi)||[]).length>=3)findings.push({code:'profile-description',kind:'profile',title:'Make the business description more specific',evidence:'The current description repeats luxury-related wording at least three times and exceeds 450 characters. This is an editorial suggestion, not a Google policy violation.',improvement:'Prepare concise wording using verified location, category and service details. Avoid repeated claims and unsupported promises.',aiEligible:true,source:'Saved Google Business Profile description'});
+  const specialDates=(profile.observed.specialHours||'').match(/\b\d{4}-\d{2}-\d{2}\b/g)||[];
+  if(specialDates.length&&!specialDates.some(date=>date>=now.toISOString().slice(0,10)))findings.push({code:'profile-special-hours',kind:'profile',title:'Confirm upcoming special hours',evidence:`The imported special hours only contain past dates (latest: ${specialDates.sort().at(-1)}). This does not prove Google is missing any required holiday hours.`,improvement:'Confirm upcoming holiday closures or changed hours with the owner. AI can prepare a checklist, but cannot choose opening hours. Keep regular Sunday hours unchanged unless the owner confirms a change.',aiEligible:true,source:'Saved Google Business Profile special hours'});
   if(profile.draft)findings.push({code:'profile-draft',kind:'profile',title:'A Google profile draft is waiting for review',evidence:'Tap Rater has a saved profile draft. It has not been published by this workflow.',improvement:'Review the existing draft in Google profile before requesting more changes.',aiEligible:false,source:'Tap Rater saved draft'});
  }
  for(const track of tracks.filter(t=>t.active)){
