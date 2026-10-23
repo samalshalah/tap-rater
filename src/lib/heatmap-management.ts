@@ -3,7 +3,7 @@ import {authorizedLink,clientFor,liveDb,LiveReviewError} from './google-business
 import {gridSettingsSchema} from './heatmap-data';
 import type {ReviewActor} from './review-workspaces';
 import {mutateScanApproval} from './heatmap-approval';
-import {providerConfigured} from './dataforseo';
+import {POINT_COST_MICROUSD,providerConfigured} from './dataforseo';
 
 export const heatmapMutation=z.discriminatedUnion('action',[
  z.object({action:z.literal('quote'),businessId:z.string().uuid(),id:z.string().uuid(),version:z.number().int().positive()}).strict(),
@@ -21,12 +21,12 @@ export async function heatmapSnapshot(actor:ReviewActor,businessId:string,sql=li
  const tracks=await sql`SELECT id,keyword,settings,active,version,updated_at FROM local_heatmap_tracks WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} ORDER BY active DESC,slot`;
  const configs=await sql`SELECT p.enabled,p.halt_reason,p.monthly_cap_microusd,coalesce(b.reserved_microusd,0) AS reserved_microusd FROM local_rank_provider p LEFT JOIN local_rank_budgets b ON b.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date WHERE p.id=true`;
  const schedules=await sql`SELECT enabled,manual_enabled FROM local_rank_schedules WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}`;
- const scans=await sql`SELECT r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at,coalesce(jsonb_agg(jsonb_build_object('trackId',p.track_id,'index',p.point_index,'state',p.state,'rank',p.rank,'count',p.result_count,'checkedAt',p.checked_at) ORDER BY p.track_id,p.point_index) FILTER(WHERE p.id IS NOT NULL),'[]'::jsonb) AS points
-  FROM (SELECT * FROM local_rank_runs WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} ORDER BY period DESC,created_at DESC LIMIT 8) r
-  LEFT JOIN local_rank_points p ON p.run_id=r.id GROUP BY r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at ORDER BY r.period DESC,r.created_at DESC`;
+ const scans=await sql`WITH scoped AS (SELECT * FROM local_rank_runs WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}), history AS (SELECT r.id,row_number() OVER(PARTITION BY t->>'id' ORDER BY r.created_at DESC) AS position FROM scoped r CROSS JOIN LATERAL jsonb_array_elements(r.tracks) t) SELECT r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at,coalesce(jsonb_agg(jsonb_build_object('trackId',p.track_id,'index',p.point_index,'state',p.state,'rank',p.rank,'count',p.result_count,'checkedAt',p.checked_at) ORDER BY p.track_id,p.point_index) FILTER(WHERE p.id IS NOT NULL),'[]'::jsonb) AS points
+  FROM scoped r
+  LEFT JOIN local_rank_points p ON p.run_id=r.id WHERE r.id IN (SELECT id FROM history WHERE position<=8) GROUP BY r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at ORDER BY r.period DESC,r.created_at DESC`;
  const config=configs[0],connected=providerConfigured(),scheduled=Boolean(schedules[0]?.enabled);
  const status=!connected?'not_connected':config?.halt_reason?'halted':!config?.enabled?'disabled':!scheduled?'not_scheduled':Number(config.reserved_microusd)+600>Number(config.monthly_cap_microusd)?'capped':'active';
- return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{connected,status,scheduled,scansPerMonth:4,manualEnabled:Boolean(schedules[0]?.manual_enabled),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
+ return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{pointCost:POINT_COST_MICROUSD/1e6,connected,status,scheduled,scansPerMonth:4,manualEnabled:Boolean(schedules[0]?.manual_enabled),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
 }
 
 export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),makeClient=clientFor){
