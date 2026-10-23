@@ -5,6 +5,21 @@ import {liveDb} from './google-business/live-reviews';
 import {getSupabaseAdmin} from './db';
 import {withStripeResourceLock} from './stripe-processing';
 import {addMarketingToCheckout,marketingPurchaseSchema,type MarketingPurchase} from './marketing-plan';
+import {createCustomerActivationToken} from './customer-account';
+import {sendCustomerActivationEmail} from './hosted-setup-email';
+
+/** A guest reservation never grants access or sends an activation email. */
+export async function prepareMarketingBuyer(email:string,name:string,authenticatedEmail?:string){
+ const normalized=email.trim().toLowerCase(),sql=liveDb();
+ const [existing]=await sql`SELECT id,account_status FROM customers WHERE lower(email)=${normalized}`;
+ if(existing?.account_status==='disabled')throw Error('Contact support about this account.');
+ if(existing?.account_status==='active'&&authenticatedEmail?.toLowerCase()!==normalized)throw Error('This email already has an account. Sign in to continue.');
+ if(!existing)await sql`INSERT INTO customers(email,name,account_status,sessions_invalid_before) VALUES(${normalized},${name},'pending_activation',now()) ON CONFLICT(email) DO NOTHING`;
+ // Recheck races with signup/activation; never treat an active account as a guest.
+ const [buyer]=await sql`SELECT account_status FROM customers WHERE lower(email)=${normalized}`;
+ if(buyer?.account_status!=='pending_activation'&&!(buyer?.account_status==='active'&&authenticatedEmail?.toLowerCase()===normalized))throw Error('Sign in to continue.');
+ return normalized;
+}
 
 export function marketingCheckoutEnabled(){return process.env.MARKETING_CHECKOUT_ENABLED==='true'&&Boolean(process.env.MARKETING_PORTAL_CONFIGURATION_ID);}
 export async function createMarketingCheckout(email:string,purchase:MarketingPurchase,attempt:string,params:Stripe.Checkout.SessionCreateParams){
@@ -12,7 +27,7 @@ export async function createMarketingCheckout(email:string,purchase:MarketingPur
  const p=marketingPurchaseSchema.parse(purchase),sql=liveDb(),mode=getStripeMode();
  const {integration_identifier:ignored,...stableParams}=params;
  const fingerprint=createHash('sha256').update(JSON.stringify({p,params:stableParams})).digest('hex');
- const [customer]=await sql`SELECT id,email FROM customers WHERE lower(email)=${email.toLowerCase()} AND account_status='active'`;
+ const [customer]=await sql`SELECT id,email FROM customers WHERE lower(email)=${email.toLowerCase()} AND account_status IN ('active','pending_activation')`;
  if(!customer)throw Error('Sign in to your customer account before subscribing.');
  const result=await withStripeResourceLock(getSupabaseAdmin(),`marketing:${mode}:${customer.id}`,async assertActive=>{
   const [old]=await sql`SELECT * FROM marketing_subscriptions WHERE customer_id=${customer.id} AND stripe_mode=${mode}`;
@@ -88,6 +103,15 @@ export async function syncMarketingSubscription(event:Stripe.Event){
   // A downgrade never exposes more locations than were paid for. Existing content is preserved.
   await sql`UPDATE marketing_location_access SET enabled=false WHERE business_id IN (SELECT business_id FROM marketing_location_access WHERE customer_id=${account}::uuid AND enabled ORDER BY created_at,business_id OFFSET ${state.locations})`;
   await sql`UPDATE local_heatmap_tracks SET active=false,version=version+1 WHERE customer_id=${account}::uuid AND slot>3 AND active`;
+  if(state.paid&&!row.activation_email_sent_at){
+   const token=createCustomerActivationToken();
+   const [pending]=await sql`UPDATE customers SET activation_token_hash=${token.tokenHash},activation_expires_at=now()+interval '7 days' WHERE id=${account}::uuid AND account_status='pending_activation' RETURNING email`;
+   if(pending){
+    const delivery=await sendCustomerActivationEmail({to:String(pending.email),activationToken:token.token,customerId:account});
+    if(!delivery.sent)throw Error('Paid account activation email could not be sent. Retry webhook delivery.');
+    await sql`UPDATE marketing_subscriptions SET activation_email_sent_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt}`;
+   }
+  }
   return {ok:true as const};
  });
  if(!result.ok)throw Error(result.error);

@@ -5,7 +5,11 @@ import {describe,it,expect,vi} from 'vitest';
 vi.mock('@/lib/db',()=>({getSupabaseAdmin:()=>({})}));
 // Single-process harness: concurrency enforcement is tested separately against Postgres.
 vi.mock('@/lib/stripe-processing',()=>({withStripeResourceLock:async(_db:unknown,_key:string,fn:any)=>fn(async()=>{})}));
-import {createMarketingCheckout,syncMarketingSubscription} from '@/lib/marketing-subscriptions';
+const activationMail=vi.hoisted(()=>vi.fn().mockResolvedValue({sent:true}));
+vi.mock('@/lib/hosted-setup-email',()=>({sendCustomerActivationEmail:activationMail}));
+import {activateCustomerAccountWithClient} from '@/lib/customer-account';
+import {createNeonSupabaseAdapterFromUrl} from '@/lib/neon-supabase-adapter';
+import {prepareMarketingBuyer,createMarketingCheckout,syncMarketingSubscription} from '@/lib/marketing-subscriptions';
 describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated Stripe sandbox',()=>{
  it('validates standalone and bundled sessions, paid access, cancellation and location allowances',async()=>{
   const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL!;
@@ -14,8 +18,10 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY),sql=neon(url);
   expect((await stripe.accounts.retrieve('acct_1U1TpVJEgI4VUlPP')).id).toBe('acct_1U1TpVJEgI4VUlPP');
   const email=`growth-${randomUUID()}@example.test`,email2=`growth-${randomUUID()}@example.test`;
-  const accounts=await sql`INSERT INTO customers(email,account_status) VALUES(${email},'active'),(${email2},'active') RETURNING id,email`;
+  const accounts=await sql`INSERT INTO customers(email,account_status) VALUES(${email},'pending_activation'),(${email2},'pending_activation') RETURNING id,email`;
   const c=accounts.find(a=>a.email===email)!;
+  activationMail.mockClear();
+  await prepareMarketingBuyer(email,'QA new buyer');
   let subscription:Stripe.Subscription|undefined,product:string|undefined;const sessions:Stripe.Checkout.Session[]=[];
   try{
    const attempt=randomUUID(),params={mode:'payment' as const,ui_mode:'hosted_page' as const,success_url:'https://taprater.com/account/packages',cancel_url:'https://taprater.com/growth',metadata:{marketing_only:'true'}};
@@ -27,6 +33,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
    expect(bundled.amount_total).toBe(6900);
    const bundledItems=await stripe.checkout.sessions.listLineItems(bundled.id);expect(bundledItems.data.find(i=>i.price?.recurring)?.price?.recurring?.interval).toBe('month');expect(bundledItems.data.filter(i=>!i.price?.recurring)).toHaveLength(1);
    expect((await sql`SELECT * FROM customer_marketing_access WHERE customer_id=${c.id}`)).toHaveLength(0);
+   expect(activationMail).not.toHaveBeenCalled();
    product=(await stripe.products.create({name:'Growth sandbox lifecycle QA',metadata:{test_only:'true'}})).id;
    const customer=await stripe.customers.create({email,name:'Growth sandbox QA',payment_method:'pm_card_visa',invoice_settings:{default_payment_method:'pm_card_visa'}});
    subscription=await stripe.subscriptions.create({customer:customer.id,items:[{price_data:{currency:'usd',unit_amount:2900,recurring:{interval:'month'},product},quantity:2}],metadata:{tap_rater:'marketing_growth_v1',account_id:String(c.id),purchase_attempt:attempt}});
@@ -34,6 +41,13 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
    expect(portal.url).toMatch(/^https:\/\/billing.stripe.com\//);
    const event=()=>({type:'customer.subscription.updated',data:{object:subscription}} as unknown as Stripe.Event);
    await syncMarketingSubscription(event());
+   expect(activationMail).toHaveBeenCalledTimes(1);
+   await syncMarketingSubscription(event());
+   expect(activationMail).toHaveBeenCalledTimes(1);
+   expect((await sql`SELECT account_status FROM customers WHERE id=${c.id}`)[0].account_status).toBe('pending_activation');
+   const activation=await activateCustomerAccountWithClient(createNeonSupabaseAdapterFromUrl(url),activationMail.mock.calls[0][0].activationToken,randomUUID());
+   expect(activation.ok).toBe(true);
+   await expect(prepareMarketingBuyer(email,'QA takeover')).rejects.toThrow('Sign in');
    const [access]=await sql`SELECT * FROM customer_marketing_access WHERE customer_id=${c.id}`;
    expect(access).toMatchObject({status:'active',source:'paid',location_limit:2,ai_monthly_limit:310,heatmap_monthly_points:588});
    const locations=await sql`INSERT INTO businesses(customer_id,business_name) VALUES(${c.id},'QA A'),(${c.id},'QA B'),(${c.id},'QA C') RETURNING id`;

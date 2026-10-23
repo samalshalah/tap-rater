@@ -177,7 +177,7 @@ export async function processStripeCommerceEvent(
               if (artwork.paymentReversed)
                 return NextResponse.json({ received: true });
 
-              if (!provisioning.provisioned) {
+              if (!provisioning.provisioned && !marketing.handled) {
                 const accountProvisioning =
                   await provisionPaidCustomerAccountFromOrder({
                     order: paidOrder,

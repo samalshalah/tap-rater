@@ -413,7 +413,7 @@ export function EmbeddedCheckoutClient({
         </li>
       </ol>
       {marketingAvailable&&step==='details'&&!hasHostedMultiLink&&<fieldset className="tr-card space-y-3 p-4"><legend className="font-semibold">Optional: add Tap Rater Growth</legend>
-       <p className="text-sm">Reviews, GBP AI drafts and 3 heat-map keywords updated four times monthly. One-time stand price stays separate. <Link className="underline" href="/growth">Package details / create account</Link> · <Link className="underline" href="/account/login">Sign in before adding</Link></p>
+       <p className="text-sm">Reviews, GBP AI drafts and 3 heat-map keywords updated four times monthly. One-time stand price stays separate. <Link className="underline" href="/growth">Package details</Link>. New customers receive an activation email after payment.</p>
        <label><input type="checkbox" checked={Boolean(marketing)} onChange={e=>{checkoutAttemptId.current='';setMarketing(e.target.checked?{cadence:'month',locations:1,acceptedTerms:true}:undefined);}}/> Add Growth and agree to automatic renewal until canceled under the <Link href="/terms" className="underline">terms</Link>.</label>
        {marketing&&<div className="flex flex-wrap gap-3"><p>$29 / location / month</p><label>Locations <input type="number" min={1} max={10} value={marketing.locations} onChange={e=>{checkoutAttemptId.current='';setMarketing({...marketing,locations:Number(e.target.value)});}}/></label><p>Growth: ${(marketingAmount(marketing)/100).toFixed(2)} today and each month until canceled. Replies and profile changes remain drafts.</p></div>}
       </fieldset>}

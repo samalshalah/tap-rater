@@ -1,6 +1,6 @@
 import { enrollCheckoutReminder } from "@/lib/checkout-reminders";
 import {requireCustomerApi} from '@/lib/customer-auth';
-import {createMarketingCheckout} from '@/lib/marketing-subscriptions';
+import {createMarketingCheckout,prepareMarketingBuyer} from '@/lib/marketing-subscriptions';
 import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
 import { requestIsInternal } from "@/lib/storefront-analytics-server";
 import { getOffersSettings } from "@/lib/offer-settings";
@@ -249,8 +249,9 @@ export async function handleCheckoutPost(
   );
   if(parsed.data.marketing){
     if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
-    const auth=await requireCustomerApi();if(auth.response)return auth.response;
-    if(auth.session.email.toLowerCase()!==parsed.data.customer.email.toLowerCase())return NextResponse.json({error:'Use your signed-in account email for the subscription.'},{status:403});
+    const auth=await requireCustomerApi();
+    if(auth.session&&auth.session.email.toLowerCase()!==parsed.data.customer.email.toLowerCase())return NextResponse.json({error:'Use your signed-in account email for the subscription.'},{status:403});
+    try{await prepareMarketingBuyer(parsed.data.customer.email,parsed.data.customer.name,auth.session?.email);}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to prepare checkout.'},{status:400});}
     if(cart.checkoutMode==='subscription')return NextResponse.json({error:'Purchase Growth separately from a Multi-Link subscription.'},{status:400});
   }
   if (parsed.data.quotedTotalCents !== undefined && parsed.data.quotedTotalCents !== cart.totalCents + cart.recurringTotalCents + shippingAmountCents + taxAmountCents+(parsed.data.marketing?marketingAmount(parsed.data.marketing):0)) {
