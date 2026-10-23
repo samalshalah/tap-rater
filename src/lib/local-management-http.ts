@@ -17,7 +17,7 @@ export async function handleLocal(request:Request,kind:'admin'|'customer') {
   let data;try{data=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
   const parsed=localMutation.safeParse(data);if(!parsed.success)return NextResponse.json({error:'Check the fields and listing URL.'},{status:400});
   return NextResponse.json(await mutateLocal(actor,parsed.data),{headers:{'Cache-Control':'no-store'}});
- } catch(e) { return NextResponse.json({error:e instanceof LiveReviewError?e.message:'Local management is unavailable. Please try again.'},{status:e instanceof LiveReviewError?e.status:503}); }
+ } catch(e) { return NextResponse.json({error:(e as {code?:string}).code==='P0001'?'Purchase an additional location license before adding another business.':e instanceof LiveReviewError?e.message:'Local management is unavailable. Please try again.'},{status:(e as {code?:string}).code==='P0001'?403:e instanceof LiveReviewError?e.status:503}); }
 }
 
 function isStaffContentRequest(kind:string):boolean{return kind==='admin';}

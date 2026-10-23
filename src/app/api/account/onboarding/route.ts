@@ -20,7 +20,7 @@ async function handle(request:Request){
   if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
   const raw=await request.text();if(raw.length>4000)throw Error('Invalid request.');const v=input.parse(JSON.parse(raw));
   if(v.action==='choose'){
-   await sql`WITH account AS (SELECT id,marketing_onboarding_business_id FROM customers WHERE lower(email)=${email} AND account_status='active' FOR UPDATE), created AS (INSERT INTO businesses(customer_id,business_name,address,status,google_place_id) SELECT id,${v.name},${v.address},'active',${v.placeId||null} FROM account WHERE marketing_onboarding_business_id IS NULL RETURNING id,customer_id) UPDATE customers c SET marketing_onboarding_business_id=n.id FROM created n WHERE c.id=n.customer_id`;
+   await sql`WITH account AS (SELECT id,marketing_onboarding_business_id FROM customers WHERE lower(email)=${email} AND account_status='active' FOR UPDATE), created AS (SELECT create_marketing_business(id,${v.name},${v.address}) AS id,id AS customer_id FROM account WHERE marketing_onboarding_business_id IS NULL) UPDATE customers c SET marketing_onboarding_business_id=n.id FROM created n WHERE c.id=n.customer_id`;
   }else{
    const row=await snapshot();if(!row?.business_id||!row.connected)throw Error('Connect the selected Google business first.');
    if(v.action==='import'){

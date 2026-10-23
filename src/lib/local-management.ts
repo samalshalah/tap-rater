@@ -31,7 +31,8 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const listings = await sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
     WHERE d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory`;
   const customers = actor.kind==='admin' ? await sql`SELECT id,email FROM customers WHERE account_status='active' ORDER BY email` : [];
-  return {locations,listings,customers};
+  const licenses=actor.kind==='customer'?(await sql`SELECT a.location_limit,a.unlimited_locations,(SELECT count(*)::int FROM marketing_location_access m WHERE m.customer_id=c.id AND m.enabled) AS used FROM customers c JOIN customer_marketing_access a ON a.customer_id=c.id WHERE lower(c.email)=${email(actor)} AND a.status IN ('active','testing') AND (a.expires_at IS NULL OR a.expires_at>now())`)[0]:null;
+  return {locations,listings,customers,licenses};
 }
 
 export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()) {
@@ -39,9 +40,8 @@ export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()
   if(v.action==='createLocation') {
     if(actor.kind==='customer' && v.customerId) throw new LiveReviewError('Customer assignment is managed by Tap Rater.',403);
     if(actor.kind==='admin' && !v.customerId) throw new LiveReviewError('Choose a customer.',400);
-    const rows=await sql`INSERT INTO businesses (customer_id,business_name,address,phone,website_url,status)
-      SELECT c.id,${v.name},${v.address},${v.phone},${v.website},'active' FROM customers c
-      WHERE c.account_status='active' AND ((${actor.kind==='admin'} AND c.id=${v.customerId || null}::uuid) OR (${actor.kind==='customer'} AND lower(c.email)=${email(actor)})) RETURNING id`;
+    const rows=await sql`SELECT create_marketing_business(c.id,${v.name},${v.address},${v.phone},${v.website}) AS id FROM customers c
+      WHERE c.account_status='active' AND ((${actor.kind==='admin'} AND c.id=${v.customerId || null}::uuid) OR (${actor.kind==='customer'} AND lower(c.email)=${email(actor)}))`;
     if(!rows.length)throw new LiveReviewError('Customer unavailable.',404);
     return rows[0];
   }
