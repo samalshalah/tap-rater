@@ -21,8 +21,8 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
    l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,
    (g.owner IS NOT NULL AND l.enabled) AS connected,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
-   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,
-   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND r.draft<>'') AS draft_count
+   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,
+   (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND r.draft<>'') AS draft_count
    FROM businesses b JOIN customers c ON c.id=b.customer_id
    LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
    LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject

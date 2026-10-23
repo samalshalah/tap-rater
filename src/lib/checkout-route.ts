@@ -1,4 +1,7 @@
 import { enrollCheckoutReminder } from "@/lib/checkout-reminders";
+import {requireCustomerApi} from '@/lib/customer-auth';
+import {createMarketingCheckout} from '@/lib/marketing-subscriptions';
+import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
 import { requestIsInternal } from "@/lib/storefront-analytics-server";
 import { getOffersSettings } from "@/lib/offer-settings";
 import { defaultOffers, offerShippingSettings, quoteOffers, type OffersSettings } from "@/lib/offers";
@@ -73,6 +76,7 @@ export type CheckoutRouteDependencies = {
   }) => Promise<PendingOrderResult>;
   createRequestId: () => string;
   createStripeSession: (input: {
+    marketing?:MarketingPurchase;
     cart: Extract<ValidatedCheckoutCart, { ok: true }>;
     customer: CheckoutCustomerInput;
     shippingAddress: CheckoutShippingAddressInput;
@@ -243,10 +247,16 @@ export async function handleCheckoutPost(
       taxSettings,
     }),
   );
-  if (parsed.data.quotedTotalCents !== undefined && parsed.data.quotedTotalCents !== cart.totalCents + cart.recurringTotalCents + shippingAmountCents + taxAmountCents) {
+  if(parsed.data.marketing){
+    if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
+    const auth=await requireCustomerApi();if(auth.response)return auth.response;
+    if(auth.session.email.toLowerCase()!==parsed.data.customer.email.toLowerCase())return NextResponse.json({error:'Use your signed-in account email for the subscription.'},{status:403});
+    if(cart.checkoutMode==='subscription')return NextResponse.json({error:'Purchase Growth separately from a Multi-Link subscription.'},{status:400});
+  }
+  if (parsed.data.quotedTotalCents !== undefined && parsed.data.quotedTotalCents !== cart.totalCents + cart.recurringTotalCents + shippingAmountCents + taxAmountCents+(parsed.data.marketing?marketingAmount(parsed.data.marketing):0)) {
     return NextResponse.json({ error: "Pricing or offers changed. Refresh checkout to review your updated total before payment." }, { status: 409 });
   }
-  const accountRequired = cart.checkoutMode === "subscription";
+  const accountRequired = cart.checkoutMode === "subscription"||Boolean(parsed.data.marketing);
   const customer = {
     ...parsed.data.customer,
     createAccount:
@@ -268,6 +278,7 @@ export async function handleCheckoutPost(
     const requestOrigin = new URL(request.url).origin;
     const session = await withTimeout(
       dependencies.createStripeSession({
+        marketing:parsed.data.marketing,
         cart,
         customer,
         idempotencyKey: `checkout-${parsed.data.checkoutAttemptId}`,
@@ -328,7 +339,7 @@ export async function handleCheckoutPost(
           cart.totalCents +
           cart.recurringTotalCents +
           shippingAmountCents +
-          taxAmountCents,
+          taxAmountCents+(parsed.data.marketing?marketingAmount(parsed.data.marketing):0),
         currency: cart.currency,
         customer,
         shippingAddress: parsed.data.shippingAddress,
@@ -406,6 +417,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
   createPendingOrder: createPendingOrderForCheckout,
   createRequestId: createCheckoutRequestId,
   createStripeSession: async ({
+    marketing,
     cart,
     customer,
     idempotencyKey,
@@ -417,8 +429,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
     taxSettings,
   }) => {
     const stripe = getStripeClient();
-    return stripe.checkout.sessions.create(
-      createCheckoutSessionParams({
+    const params=createCheckoutSessionParams({
         cart,
         customer,
         shippingAddress,
@@ -427,9 +438,8 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
         stripeMode,
         shippingSettings,
         taxSettings,
-      }),
-      { idempotencyKey },
-    );
+      });
+    return marketing?createMarketingCheckout(customer.email,marketing,idempotencyKey,params):stripe.checkout.sessions.create(params,{idempotencyKey});
   },
   getProducts: getCheckoutProducts,
   resolveStripeCustomerId: async ({ request, email, stripeMode }) => {

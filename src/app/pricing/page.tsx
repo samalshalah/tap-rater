@@ -32,6 +32,7 @@ export default async function PricingPage() {
       : "See product options";
   };
   const prices = [
+    ['Tap Rater Growth','$29/month per location','300 AI reply drafts, 10 GBP improvement drafts, and 3 heat-map keywords updated four times per month. Buy independently or add to your Google stand order.','/growth'],
     [
       "Standard Direct",
       minimum("standard_direct"),

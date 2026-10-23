@@ -14,6 +14,7 @@ describe.skipIf(!url)('review import to AI draft across isolated locations',()=>
   const [customer]=await sql`INSERT INTO customers(email,account_status) VALUES (${uid+'@example.test'},'active') RETURNING id`;
   const publishReply=vi.fn();
   try{
+   await sql`INSERT INTO customer_marketing_access(customer_id,status,source,location_limit,ai_monthly_limit) VALUES(${customer.id},'testing','testing',2,10)`;
    await sql`INSERT INTO google_business_connections(owner,google_subject,email,access_ciphertext,refresh_ciphertext,expires_at,scopes) VALUES (${owner},${uid},${uid+'@example.test'},'test-only','test-only',now(),'test-only')`;
    for(const name of ['Synthetic North Boutique','Synthetic South Boutique']){
     const [b]=await sql`INSERT INTO businesses(customer_id,business_name) VALUES (${customer.id},${name}) RETURNING id`;businesses.push(b.id);

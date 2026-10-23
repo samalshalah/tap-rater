@@ -5,7 +5,7 @@ import {requireCustomerApi} from '../customer-auth';
 import {googleAdminIdentity} from './http';
 import {GoogleBusinessError} from './client';
 import {GoogleTokenExchangeError} from './connection';
-import {approveLiveDraft,liveReviewPage} from './live-reviews';
+import {approveLiveDraft,liveReviewPage,flagLiveReview} from './live-reviews';
 import type {ReviewActor} from '../review-workspaces';
 import {authorizedLink,bindGoogleLocation,clientFor,liveDb,livePublishingEnabled,LiveReviewError,listLiveWorkspaces,liveSettingsSchema,saveLiveSettings,stopLiveReviews,syncLiveReviews,saveLiveDraft,suggestLiveReply,publishLiveReply,reconcileLiveReply} from './live-reviews';
 const uuid=z.string().uuid(),token=z.string().max(4096).optional(),account=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/);
@@ -18,6 +18,7 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('remove'),businessId:uuid}).strict(),
  z.object({action:z.literal('save'),id:uuid,draft:z.string().trim().max(4000),version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('approve'),id:uuid,version:z.number().int().positive()}).strict(),
+ z.object({action:z.literal('spam'),id:uuid,spam:z.boolean(),version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('suggest'),id:uuid}).strict(),
  z.object({action:z.literal('publish'),id:uuid,version:z.number().int().positive(),confirmPublicReply:z.literal(true)}).strict(),
  z.object({action:z.literal('reconcile'),id:uuid}).strict(),
@@ -54,6 +55,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'stop':result=await stopLiveReviews(actor,v.businessId);break;
    case 'remove':{const rows=await liveDb()`DELETE FROM google_review_links WHERE business_id=${v.businessId} AND NOT enabled RETURNING business_id`;if(!rows.length)throw new LiveReviewError('Stop the connection before removing its assignment.');result={removed:true};break;}
    case 'save':result=await saveLiveDraft(actor,v.id,v.draft,v.version);break;
+   case 'spam':result=await flagLiveReview(actor,v.id,v.spam,v.version);break;
    case 'approve':result=await approveLiveDraft(actor,v.id,v.version);break;
    case 'suggest':result={suggestions:await suggestLiveReply(actor,v.id)};break;
    case 'publish':result=await publishLiveReply(actor,v.id,v.version);break;
@@ -62,7 +64,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
   }
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
  }catch(e){
-  const message=e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:e instanceof GoogleTokenExchangeError?'Reconnect the managing Google account.':'Google reviews could not complete this request. Check the connection and try again.';
+  const message=(e as {code?:string}).code==='P0001'?'This account has no available marketing location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:e instanceof GoogleTokenExchangeError?'Reconnect the managing Google account.':'Google reviews could not complete this request. Check the connection and try again.';
   return NextResponse.json({error:message},{status:e instanceof LiveReviewError?e.status:503});
  }
 }

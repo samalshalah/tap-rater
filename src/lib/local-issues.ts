@@ -20,7 +20,7 @@ export async function syncLocationIssues(actor:ReviewActor,businessId:string,sql
   findings.push(...notes.map(n=>n.finding as Finding));
  }
  for(const finding of findings){
-  const fingerprint=createHash('sha256').update(JSON.stringify({finding,aiGuidanceVersion:finding.code==='profile-description'?3:2,...(finding.kind==='profile'?{observed}:{})})).digest('hex');
+  const fingerprint=createHash('sha256').update(JSON.stringify({finding,aiGuidanceVersion:4,...(finding.kind==='profile'?{observed}:{})})).digest('hex');
   await sql`INSERT INTO local_issues(business_id,customer_id,parent,google_subject,code,fingerprint,finding)
    VALUES(${businessId},${link.customer_id},${link.parent},${link.google_subject},${finding.code},${fingerprint},${JSON.stringify(finding)}::jsonb)
    ON CONFLICT(business_id,parent,google_subject,code) DO UPDATE SET finding=EXCLUDED.finding,fingerprint=EXCLUDED.fingerprint,active=true,
@@ -36,7 +36,7 @@ export async function localIssueSnapshot(actor:ReviewActor,businessId?:string,sq
   WHERE c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND (${businessId??null}::uuid IS NULL OR b.id=${businessId??null}::uuid) ORDER BY b.business_name LIMIT 100`;
  const errors:string[]=[];
  for(const location of locations)try{await syncLocationIssues(actor,location.id,sql);}catch{errors.push(location.business_name);}
- const issues=await sql`SELECT i.*,b.business_name,coalesce(a.preview_enabled,false) AS preview_enabled,d.id AS draft_id,d.status AS draft_status,d.content AS draft,d.approved_at
+ const issues=await sql`SELECT i.*,b.business_name,marketing_location_allowed(i.business_id) AS preview_enabled,d.id AS draft_id,d.status AS draft_status,d.content AS draft,d.approved_at
   FROM local_issues i JOIN businesses b ON b.id=i.business_id AND b.customer_id=i.customer_id JOIN customers c ON c.id=b.customer_id
   JOIN google_review_links l ON l.business_id=i.business_id AND l.customer_id=i.customer_id AND l.parent=i.parent AND l.google_subject=i.google_subject
   LEFT JOIN local_issue_access a ON a.business_id=i.business_id AND a.customer_id=i.customer_id AND a.parent=i.parent AND a.google_subject=i.google_subject
@@ -59,25 +59,30 @@ export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),gen
  }
  const [existing]=await sql`SELECT status,content FROM local_issue_drafts WHERE issue_id=${issue.id} AND fingerprint=${input.fingerprint}`;
  if(existing?.status==='draft')return {draft:existing.content,charged:false};
+ await sql`INSERT INTO local_issue_access(business_id,customer_id,parent,google_subject,preview_enabled) VALUES(${input.businessId},${link.customer_id},${link.parent},${link.google_subject},true)
+  ON CONFLICT(business_id) DO UPDATE SET parent=EXCLUDED.parent,google_subject=EXCLUDED.google_subject
+  WHERE local_issue_access.customer_id=EXCLUDED.customer_id`;
  const [access]=await sql`UPDATE local_issue_access SET ai_day=current_date,ai_calls=CASE WHEN ai_day=current_date THEN ai_calls+1 ELSE 1 END,ai_last_at=now()
-  WHERE business_id=${input.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND preview_enabled
+  WHERE business_id=${input.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND marketing_location_allowed(business_id)
   AND (ai_day IS DISTINCT FROM current_date OR ai_calls<10) AND (ai_last_at IS NULL OR ai_last_at<now()-interval '15 seconds') RETURNING business_id`;
- if(!access)throw new LiveReviewError('AI preview is not enabled or its test limit was reached. Requests are saved without charge.',429);
+ if(!access)throw new LiveReviewError('AI is temporarily limited for this location. Please wait before trying again.',429);
  const attempt=randomUUID();
  const claimed=await sql`INSERT INTO local_issue_drafts(issue_id,fingerprint,status,attempt_token) VALUES(${issue.id},${input.fingerprint},'generating',${attempt})
   ON CONFLICT(issue_id,fingerprint) DO UPDATE SET status='generating',attempt_at=now(),attempt_token=EXCLUDED.attempt_token WHERE local_issue_drafts.status='failed' OR (local_issue_drafts.status='generating' AND local_issue_drafts.attempt_at<now()-interval '3 minutes') RETURNING id,attempt_at`;
  if(!claimed.length)throw new LiveReviewError('A draft is already being prepared. Refresh shortly.');
  try{
+  const [allowance]=await sql`SELECT reserve_marketing_units(${input.businessId}::uuid,'ai',1,${'profile:'+attempt}) AS allowed`;
+  if(!allowance?.allowed)throw new LiveReviewError('This location’s monthly AI allowance is used or its package access has expired.',429);
   const {profile}=await profileSnapshot(actor,input.businessId,sql);
   const draft=await generate({business:link.business_name,issue:issue.finding,verifiedGoogleFacts:profile?.observed??{}},undefined,{businessId:input.businessId,customerId:String(link.customer_id),service:'profile_fix'});
   if(issue.code!=='profile-description')draft.proposedDescription='';
   const rows=await sql`UPDATE local_issue_drafts d SET status='draft',content=${JSON.stringify(draft)}::jsonb FROM local_issues i,businesses b,customers c,google_review_links l
    WHERE d.id=${claimed[0].id} AND d.attempt_token=${attempt} AND d.status='generating' AND i.id=d.issue_id AND i.active AND i.fingerprint=d.fingerprint
-   AND b.id=i.business_id AND b.customer_id=i.customer_id AND c.id=b.customer_id AND c.account_status='active'
+   AND b.id=i.business_id AND b.customer_id=i.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
    AND l.business_id=b.id AND l.customer_id=i.customer_id AND l.parent=i.parent AND l.google_subject=i.google_subject AND l.enabled
    AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) RETURNING d.id`;
   if(!rows.length)throw new LiveReviewError('The location or issue changed. The draft was not saved.');
   await sql`UPDATE local_issues SET requested_at=now(),read_at=now() WHERE id=${issue.id} AND fingerprint=${input.fingerprint}`;
   return {draft,charged:false,published:false};
- }catch(e){await sql`UPDATE local_issue_drafts SET status='failed' WHERE id=${claimed[0].id} AND attempt_token=${attempt} AND status='generating'`;throw new LiveReviewError(e instanceof LiveReviewError?e.message:'AI preview was unavailable. No charge was made. Try again later.',503);}
+ }catch(e){await sql`UPDATE local_issue_drafts SET status='failed' WHERE id=${claimed[0].id} AND attempt_token=${attempt} AND status='generating'`;throw new LiveReviewError(e instanceof LiveReviewError?e.message:'AI draft was unavailable. No charge was made. Try again later.',e instanceof LiveReviewError?e.status:503);}
 }

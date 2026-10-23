@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
 import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
 import type { ShippingSettingsInput } from "@/lib/validators";
 import { OfferSummary } from "@/components/cart/offer-summary";
@@ -83,10 +84,12 @@ const emptyShipping: ShippingForm = {
 };
 
 export function EmbeddedCheckoutClient({
+  marketingAvailable=false,
   offers, shippingSettings,
   stripePublicConfig,
   taxSettings,
 }: {
+  marketingAvailable?:boolean;
   offers: OffersSettings; shippingSettings: ShippingSettingsInput;
   stripePublicConfig: StripePublicConfig;
   taxSettings: TaxSettingsInput;
@@ -95,6 +98,7 @@ export function EmbeddedCheckoutClient({
   const sessionId = searchParams.get("session_id") ?? "";
   const { items } = useCart();
   const [reminderConsent, setReminderConsent] = useState(false);
+  const [marketing,setMarketing]=useState<MarketingPurchase|undefined>();
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const [differentRecipient, setDifferentRecipient] = useState(false);
@@ -117,7 +121,7 @@ export function EmbeddedCheckoutClient({
     standTotalCents +
     recurringTotalCents +
     shippingRule.amountCents +
-    taxAmountCents;
+    taxAmountCents+(marketing?marketingAmount(marketing):0);
   const hasHostedMultiLink = rows.some(
     (row) =>
       row.item.setup?.serviceMode === "HOSTED" &&
@@ -307,7 +311,7 @@ export function EmbeddedCheckoutClient({
           )
           .sort();
         const attemptKey = reservations.length
-          ? `taprater:branded-checkout-attempt:${reservations.join(":")}`
+          ? `taprater:branded-checkout-attempt:${reservations.join(":")}:${marketing ? `${marketing.cadence}:${marketing.locations}` : 'stand-only'}`
           : undefined;
         checkoutAttemptId.current =
           (attemptKey ? window.sessionStorage.getItem(attemptKey) : null) ||
@@ -322,6 +326,7 @@ export function EmbeddedCheckoutClient({
         method: "POST",
         headers: { "Content-Type": "application/json", ...analyticsHeaders },
         body: JSON.stringify({
+          marketing,
           reminderConsent,
           checkoutAttemptId: checkoutAttemptId.current,
           quotedTotalCents: dueTodayCents,
@@ -407,6 +412,11 @@ export function EmbeddedCheckoutClient({
           2. Payment
         </li>
       </ol>
+      {marketingAvailable&&step==='details'&&!hasHostedMultiLink&&<fieldset className="tr-card space-y-3 p-4"><legend className="font-semibold">Optional: add Tap Rater Growth</legend>
+       <p className="text-sm">Reviews, GBP AI drafts and 3 heat-map keywords updated four times monthly. One-time stand price stays separate. <Link className="underline" href="/growth">Package details / create account</Link> · <Link className="underline" href="/account/login">Sign in before adding</Link></p>
+       <label><input type="checkbox" checked={Boolean(marketing)} onChange={e=>{checkoutAttemptId.current='';setMarketing(e.target.checked?{cadence:'month',locations:1,acceptedTerms:true}:undefined);}}/> Add Growth and agree to automatic renewal until canceled under the <Link href="/terms" className="underline">terms</Link>.</label>
+       {marketing&&<div className="flex flex-wrap gap-3"><p>$29 / location / month</p><label>Locations <input type="number" min={1} max={10} value={marketing.locations} onChange={e=>{checkoutAttemptId.current='';setMarketing({...marketing,locations:Number(e.target.value)});}}/></label><p>Growth: ${(marketingAmount(marketing)/100).toFixed(2)} today and each month until canceled. Replies and profile changes remain drafts.</p></div>}
+      </fieldset>}
 
       <div
         className={
@@ -416,7 +426,7 @@ export function EmbeddedCheckoutClient({
         }
       >
         {step === "details" ? (
-          <CheckoutSummary promotion={promotion} offers={offers}
+          <CheckoutSummary marketing={marketing} promotion={promotion} offers={offers}
             compact
             dueTodayCents={dueTodayCents}
             recurringTotalCents={recurringTotalCents}
@@ -615,7 +625,7 @@ export function EmbeddedCheckoutClient({
             <CheckoutError message={error} />
           ) : session && options ? (
             <>
-              <CheckoutSummary promotion={promotion} offers={offers}
+              <CheckoutSummary marketing={marketing} promotion={promotion} offers={offers}
                 dueTodayCents={dueTodayCents}
                 recurringTotalCents={recurringTotalCents}
                 rows={rows}
@@ -657,6 +667,7 @@ function createCheckoutAttemptId() {
 }
 
 function CheckoutSummary({
+  marketing,
   promotion, offers,
   compact = false,
   dueTodayCents,
@@ -668,6 +679,7 @@ function CheckoutSummary({
   taxCalculationPending,
   taxSettings,
 }: {
+  marketing?:MarketingPurchase;
   promotion: OfferQuote; offers: OffersSettings;
   compact?: boolean;
   dueTodayCents: number;
@@ -767,6 +779,7 @@ function CheckoutSummary({
         <div className="mt-4 grid gap-2 border-t border-line pt-4 text-sm">
           <OfferSummary quote={promotion} offers={offers} />
           <SummaryRow label="Stands after savings" value={formatPrice(standTotalCents)} />
+          {marketing&&<SummaryRow label={`Growth · ${marketing.locations} location(s)`} value={`${formatPrice(marketingAmount(marketing))}/month`}/>}
           {recurringTotalCents > 0 ? (
             <SummaryRow
               label="Monthly"

@@ -663,6 +663,7 @@ export const checkoutShippingAddressSchema = z.object({
 });
 
 export const checkoutRequestSchema = checkoutCartSchema.extend({
+  marketing: z.object({cadence:z.literal('month'),locations:z.number().int().min(1).max(10),acceptedTerms:z.literal(true)}).strict().optional(),
   reminderConsent: z.boolean().optional().default(false),
   quotedTotalCents: z.number().int().nonnegative().optional(),
   checkoutAttemptId: z.string().trim().regex(/^[A-Za-z0-9_-]{16,80}$/),

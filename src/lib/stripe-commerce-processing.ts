@@ -1,4 +1,5 @@
 import { flushAnalyticsPurchases } from "@/lib/storefront-analytics-server";
+import {syncMarketingSubscription} from '@/lib/marketing-subscriptions';
 import type Stripe from "stripe";
 import { NextResponse } from "next/server";
 import {
@@ -26,6 +27,8 @@ export async function processStripeCommerceEvent(
   siteUrl: string,
 ) {
   try {
+    const marketing=await syncMarketingSubscription(event);
+    if(marketing.handled&&marketing.standalone)return NextResponse.json({received:true});
     if (
       event.type === "refund.created" ||
       event.type === "refund.updated" ||

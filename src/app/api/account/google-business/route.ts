@@ -39,7 +39,7 @@ async function marketingPOST(request:Request){
  else if(v.action==='locations')result=await (await clientFor(identity.owner)).listLocations(v.account,v.pageToken);
  else result=await bindGoogleLocation(identity.owner,v.businessId,v.account,v.location,liveDb(),clientFor,identity.email);
  return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
- }catch(e){return NextResponse.json({error:e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Could not complete Google setup. Reconnect or try again.'},{status:e instanceof LiveReviewError?e.status:503});}
+ }catch(e){return NextResponse.json({error:(e as {code?:string}).code==='P0001'?'Your package has no available location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Could not complete Google setup. Reconnect or try again.'},{status:e instanceof LiveReviewError?e.status:503});}
 }
 
 export const GET=(request:Request)=>withMarketingAccess(request,()=>marketingGET());

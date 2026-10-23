@@ -21,14 +21,16 @@ export async function heatmapSnapshot(actor:ReviewActor,businessId:string,sql=li
  if(!link.enabled)throw new LiveReviewError('Google access is stopped. Reconnect this location to manage its tracking.');
  const anchors=await sql`SELECT anchor,synced_at FROM local_heatmap_locations WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}`;
  const tracks=await sql`SELECT id,keyword,settings,active,version,updated_at FROM local_heatmap_tracks WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} ORDER BY active DESC,slot`;
- const configs=await sql`SELECT p.enabled,p.halt_reason,p.monthly_cap_microusd,coalesce(b.reserved_microusd,0) AS reserved_microusd FROM local_rank_provider p LEFT JOIN local_rank_budgets b ON b.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date WHERE p.id=true`;
+ const configs=await sql`SELECT p.enabled,p.halt_reason,p.monthly_cap_microusd,coalesce(b.reserved_microusd,0) AS reserved_microusd,
+ (SELECT a.heatmap_monthly_points FROM customer_marketing_access a WHERE a.customer_id=${link.customer_id}) AS monthly_points,
+ (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=${businessId} AND service='heatmap' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS points_used FROM local_rank_provider p LEFT JOIN local_rank_budgets b ON b.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date WHERE p.id=true`;
  const schedules=await sql`SELECT enabled,manual_enabled FROM local_rank_schedules WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}`;
  const scans=await sql`WITH scoped AS (SELECT * FROM local_rank_runs WHERE business_id=${businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}), history AS (SELECT r.id,row_number() OVER(PARTITION BY t->>'id' ORDER BY r.created_at DESC) AS position FROM scoped r CROSS JOIN LATERAL jsonb_array_elements(r.tracks) t) SELECT r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at,coalesce(jsonb_agg(jsonb_build_object('trackId',p.track_id,'index',p.point_index,'state',p.state,'rank',p.rank,'count',p.result_count,'checkedAt',p.checked_at,'competitors',p.competitors) ORDER BY p.track_id,p.point_index) FILTER(WHERE p.id IS NOT NULL),'[]'::jsonb) AS points
   FROM scoped r
   LEFT JOIN local_rank_points p ON p.run_id=r.id WHERE r.id IN (SELECT id FROM history WHERE position<=8) GROUP BY r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at ORDER BY r.period DESC,r.created_at DESC`;
  const config=configs[0],connected=providerConfigured(),scheduled=Boolean(schedules[0]?.enabled);
  const status=!connected?'not_connected':config?.halt_reason?'halted':!config?.enabled?'disabled':!scheduled?'not_scheduled':Number(config.reserved_microusd)+600>Number(config.monthly_cap_microusd)?'capped':'active';
- return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{pointCost:POINT_COST_MICROUSD/1e6,connected,status,scheduled,scansPerMonth:4,manualEnabled:Boolean(schedules[0]?.manual_enabled),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
+ return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{pointCost:POINT_COST_MICROUSD/1e6,connected,status,scheduled,scansPerMonth:4,monthlyPoints:Number(config?.monthly_points??0),pointsUsed:Number(config?.points_used??0),manualEnabled:Boolean(schedules[0]?.manual_enabled&&config?.enabled&&!config?.halt_reason),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
 }
 
 export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),makeClient=clientFor){
@@ -55,11 +57,11 @@ export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),m
    SELECT a.business_id,a.customer_id,a.parent,a.google_subject,s.slot,${input.settings.keyword},${JSON.stringify(input.settings)}::jsonb
    FROM local_heatmap_locations a JOIN businesses b ON b.id=a.business_id JOIN customers c ON c.id=b.customer_id
    JOIN google_review_links l ON l.business_id=a.business_id AND l.customer_id=a.customer_id AND l.parent=a.parent AND l.google_subject=a.google_subject
-   CROSS JOIN LATERAL (SELECT n AS slot FROM generate_series(1,20) n WHERE NOT EXISTS (SELECT 1 FROM local_heatmap_tracks t WHERE t.business_id=a.business_id AND t.slot=n) ORDER BY n LIMIT 1) s
+   CROSS JOIN LATERAL (SELECT n AS slot FROM generate_series(1,CASE WHEN EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=a.customer_id AND ma.source='paid') THEN 3 ELSE 20 END) n WHERE NOT EXISTS (SELECT 1 FROM local_heatmap_tracks t WHERE t.business_id=a.business_id AND t.slot=n) ORDER BY n LIMIT 1) s
    WHERE a.business_id=${input.businessId} AND a.customer_id=b.customer_id AND a.customer_id=${link.customer_id} AND a.parent=${link.parent} AND a.google_subject=${link.google_subject}
    AND l.enabled AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
    ON CONFLICT DO NOTHING RETURNING id`;
-  if(!rows.length)throw new LiveReviewError('Import the Google map pin first. Keywords must be unique, with up to 20 per location. Reload if another edit was just saved.');
+  if(!rows.length)throw new LiveReviewError('Import the Google map pin first. Keywords must be unique and within your package allowance (3 for Growth). Edit an existing keyword to replace it.');
   return {id:rows[0].id,saved:true,published:false};
  }
  // Settings and pause/resume are internal tracking preferences, never Google profile updates.

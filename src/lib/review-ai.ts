@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
 import type { ReviewActor } from "./review-workspaces";
@@ -25,7 +26,9 @@ async function reserveGeneration(businessId:string,sql=db()){
  ai_calls=CASE WHEN ai_day=current_date THEN ai_calls+1 ELSE 1 END,ai_last_at=now()
  WHERE business_id=${businessId} AND mode='sample' AND (ai_day IS DISTINCT FROM current_date OR ai_calls<20)
  AND (ai_last_at IS NULL OR ai_last_at<now()-interval '10 seconds') RETURNING business_id`;
- if(!rows.length) throw new ReviewAiError("Please wait 10 seconds between generations. The pilot allows 20 per business each day.",429);
+ if(!rows.length) throw new ReviewAiError("Please wait for the daily safety limit or cooldown to reset.",429);
+ const [allowance]=await sql`SELECT reserve_marketing_units(${businessId}::uuid,'ai',1,${randomUUID()}) AS allowed`;
+ if(!allowance?.allowed)throw new ReviewAiError("This location’s monthly AI allowance is used or package access has expired.",429);
 }
 export async function suggestReviewReply(actor:ReviewActor,id:string,sql=db(),generate=generateReviewSuggestions){
  const rows=await sql`SELECT r.id,r.rating,r.comment,r.business_id,b.customer_id,b.business_name FROM workspace_sample_reviews r

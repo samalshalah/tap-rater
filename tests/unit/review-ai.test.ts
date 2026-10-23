@@ -39,10 +39,10 @@ describe("AI review replies",()=>{
  });
  it("does not overwrite a human edit made while AI runs",async()=>{
   const sql=vi.fn().mockResolvedValueOnce([{id,business_id:id,business_name:"Norah",rating:5,comment:"Nice",reply:"",version:1,auto_enabled:true,auto_four:true,auto_five:true,auto_style:"friendly",settings_version:2}])
-   .mockResolvedValueOnce([{id}]).mockResolvedValueOnce([{business_id:id}]).mockResolvedValueOnce([]);
+   .mockResolvedValueOnce([{id}]).mockResolvedValueOnce([{business_id:id}]).mockResolvedValueOnce([{allowed:true}]).mockResolvedValueOnce([]);
   const result=await runSampleAutoReplies({kind:"customer",email:"owner@example.com"},id,sql as any,async()=>outputs);
   expect(result.saved).toBe(0);
-  const update=sql.mock.calls[3][0].join("?");
+  const update=sql.mock.calls[4][0].join("?");
   expect(update).toContain("r.version=");expect(update).toContain("w.settings_version=");expect(update).toContain("w.auto_enabled");
   expect(update).toContain("r.reply=''");expect(update).toContain("status='draft'");expect(update).not.toContain("google");
  });

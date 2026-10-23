@@ -7,7 +7,7 @@ const observed={description:'A clothing boutique.',phone:'123',website:'https://
 it('reports past special hours as a confirmation task, not a proven Google error',()=>{
  const issues=detectLocalIssues({observed,draft:null,synced_at:'2026-10-22'},[],[],now);
  expect(issues).toHaveLength(1);expect(issues[0]).toMatchObject({code:'profile-special-hours',aiEligible:true});
- expect(issues[0].evidence).toContain('does not prove');expect(issues[0].improvement).toContain('Keep regular Sunday hours unchanged');
+ expect(issues[0].evidence).toContain('does not prove');expect(issues[0].improvement).toContain('Keep regular hours unchanged');
  expect(detectLocalIssues({observed:{...observed,specialHours:'2026-12-25: Closed'},draft:null,synced_at:'2026-10-22'},[],[],now)).toEqual([]);
 });
 it('does not claim unqueried photos, products or website defects',()=>{
@@ -23,5 +23,5 @@ it('keeps location data independent and does not mutate observed facts',()=>{
 it('directs AI to prepare drafts without external update steps or invented holiday hours',async()=>{
  const run=vi.fn().mockResolvedValue({response:{summary:'Confirm upcoming exceptions.',steps:['Ask the owner to confirm upcoming holiday closures before saving a draft.'],proposedDescription:'',questions:['Will any upcoming holiday change your regular opening hours?']}});
  await generateIssueDraft({verifiedGoogleFacts:observed},run);const prompt=JSON.stringify(run.mock.calls[0][1]);
- expect(prompt).toContain('Do not include a step to publish');expect(prompt).toContain('never infer holiday opening times');expect(prompt).toContain('preserve noon–6 pm');
+ expect(prompt).toContain('Do not include a step to publish');expect(prompt).toContain('never infer holiday opening times');expect(prompt).toContain('preserve the owner-confirmed value');expect(prompt).not.toContain('For the confirmed Sunday-hours discrepancy');
 });

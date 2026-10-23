@@ -36,6 +36,10 @@ export async function mutateScanApproval(actor:ReviewActor,input:Input,sql=liveD
   AND b.id=q.business_id AND b.customer_id=q.customer_id AND c.id=b.customer_id AND c.account_status='active'
   AND (${actor.kind==='admin'} OR lower(c.email)=${actor.kind==='customer'?actor.email.toLowerCase():''})
   AND cfg.id=true AND cfg.enabled AND cfg.halt_reason IS NULL
+  AND marketing_location_allowed(q.business_id)
+  AND EXISTS(SELECT 1 FROM customer_marketing_access a WHERE a.customer_id=q.customer_id
+   AND a.heatmap_monthly_points>=${points.length}+coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u
+    WHERE u.business_id=q.business_id AND u.service='heatmap' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0))
   AND cfg.monthly_cap_microusd>=q.cost_microusd+coalesce((SELECT reserved_microusd FROM local_rank_budgets WHERE month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0)
   RETURNING q.*
  ), run AS (
@@ -45,6 +49,6 @@ export async function mutateScanApproval(actor:ReviewActor,input:Input,sql=liveD
   INSERT INTO local_rank_points(run_id,track_id,point_index,request)
   SELECT run.id,${q.track_id}::uuid,p.point_index,p.request FROM run CROSS JOIN jsonb_to_recordset(${JSON.stringify(points)}::jsonb) AS p(point_index smallint,request jsonb) RETURNING id
  ) SELECT id FROM run`;
- if(!rows.length)throw new LiveReviewError('Quote expired, settings changed, or scan budget is unavailable. Refresh and request a new quote.');
+ if(!rows.length)throw new LiveReviewError('Quote expired, settings changed, or scan budget or location allowance is unavailable. Refresh and request a new quote.');
  return {approved:true,runId:rows[0].id,queued:true};
 }

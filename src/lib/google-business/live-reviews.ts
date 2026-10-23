@@ -18,25 +18,27 @@ export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liv
  const rows=await sql`SELECT l.*, b.business_name FROM google_review_links l JOIN businesses b ON b.id=l.business_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.id=${businessId} AND b.customer_id=l.customer_id AND c.account_status='active'
- AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;
+ AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;
  if(!rows[0])throw new LiveReviewError('Business connection is unavailable. Ask Tap Rater to check the connection and business assignment.',404);
  return rows[0];
 }
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,l.draft_error,l.draft_checked_at,
- b.business_name, (g.owner IS NOT NULL) AS connected FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
+ b.business_name, (g.owner IS NOT NULL) AS connected,
+ (SELECT ai_monthly_limit FROM customer_marketing_access WHERE customer_id=b.customer_id) AS ai_monthly_limit,
+ (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=b.id AND service='ai' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_monthly_used FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
- WHERE b.customer_id=l.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) ORDER BY b.business_name`;
+ WHERE b.customer_id=l.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) ORDER BY b.business_name`;
  const result=[];
  for(const link of links){
-  const reviews=await sql`SELECT id,data,draft,version,publish_state,approved_version FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
+  const reviews=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
   result.push({...link,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
  }
  return result;
 }
 export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
 export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor,customerEmail:string|null=null){
@@ -90,19 +92,21 @@ export async function loadLiveReview(actor:ReviewActor,id:string,sql=liveDb()){
  return {review,link};
 }
 export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,version:number,sql=liveDb()){
- await loadLiveReview(actor,id,sql);
+ const {review}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
  const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle' WHERE id=${id} AND version=${version}
- AND publish_state NOT IN ('publishing','uncertain') RETURNING version`;
+ AND NOT suspected_spam AND publish_state NOT IN ('publishing','uncertain') RETURNING version`;
  if(!rows.length)throw new LiveReviewError('This review changed or a publish is unresolved. Reload or check the publish result.');return rows[0];
 }
 async function reserveAi(businessId:string,sql=liveDb()){
  const rows=await sql`UPDATE google_review_links SET ai_day=current_date,ai_calls=CASE WHEN ai_day=current_date THEN ai_calls+1 ELSE 1 END,ai_last_at=now()
  WHERE business_id=${businessId} AND enabled AND ai_consent AND (ai_day IS DISTINCT FROM current_date OR ai_calls<20)
  AND (ai_last_at IS NULL OR ai_last_at<now()-interval '10 seconds') RETURNING business_id`;
- if(!rows.length)throw new LiveReviewError('Enable AI permission, wait 10 seconds between requests, and stay within the 20-generation daily limit.',429);
+ if(!rows.length)throw new LiveReviewError('Enable AI permission and wait for the daily safety limit or cooldown to reset.',429);
+ const [allowance]=await sql`SELECT reserve_marketing_units(${businessId}::uuid,'ai',1,${randomUUID()}) AS allowed`;
+ if(!allowance?.allowed)throw new LiveReviewError('This location’s monthly AI allowance is used or package access has expired.',429);
 }
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
- const {review,link}=await loadLiveReview(actor,id,sql);await reserveAi(String(link.business_id),sql);
+ const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);await reserveAi(String(link.business_id),sql);
  return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
 }
 export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean()}).strict();
@@ -129,7 +133,7 @@ export function isAutomaticCandidate(data:GoogleReview,draft:string,link:{auto_f
 }
 export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){
  if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
- const {review,link}=await loadLiveReview(actor,id,sql);
+ const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
  if(String(link.owner).startsWith('customer:'))throw new LiveReviewError('Client connections are draft-only. Approval does not publish.',403);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
  if(automatic && (!link.auto_enabled || !link.ai_consent || !isAutomaticCandidate(review.data,'',link as never)))throw new LiveReviewError('Automatic posting is no longer eligible.');
@@ -141,7 +145,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  const attempt=randomUUID();
  const claimed=await sql`UPDATE google_live_reviews r SET publish_state='publishing',attempt_id=${attempt},attempted_reply=draft,attempted_at=now()
  FROM google_review_links l,businesses b,customers c,google_business_connections g
- WHERE r.id=${id} AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
+ WHERE r.id=${id} AND NOT r.suspected_spam AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active'
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
  AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version})) RETURNING r.id`;
@@ -174,11 +178,11 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  if(!link.enabled||!link.ai_consent)return {drafted:false};
  const claimTime=new Date().toISOString();
  const rows=await sql`UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz
- WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND draft='' AND draft_generated_at IS NULL
+ WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND fetched_at>now()-interval '1 day' AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
- AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
+ AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
  AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*`;
  if(!rows.length){
   // A quiet queue is still a completed background check. Do not hide a retryable error.
@@ -192,7 +196,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
   const saved=await sql`UPDATE google_live_reviews r SET draft=${suggestions[link.auto_style as ReplyStyle]},version=r.version+1,
    approved_version=NULL,draft_generated_at=now() FROM google_review_links l,businesses b,customers c,google_business_connections g
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz
-   AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
+   AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
    AND coalesce(r.data->'reviewReply'->>'comment','')='' AND r.business_id=l.business_id AND l.enabled AND l.ai_consent
    AND l.settings_version=${link.settings_version} AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
@@ -207,7 +211,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
  const links=await sql`SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
- WHERE l.enabled AND c.account_status='active' AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) ORDER BY l.checked_at NULLS FIRST,l.business_id LIMIT 12`;
+ WHERE l.enabled AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=c.id AND ma.status IN ('active','testing') AND (ma.expires_at IS NULL OR ma.expires_at>now())) ORDER BY l.checked_at NULLS FIRST,l.business_id LIMIT 12`;
  let synced=0,drafted=0;
  for(const row of links){
   const id=String(row.business_id);
@@ -219,8 +223,19 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
 }
 
 export async function approveLiveDraft(actor:ReviewActor,id:string,version:number,sql=liveDb()){
- await loadLiveReview(actor,id,sql);
- const rows=await sql`UPDATE google_live_reviews SET approved_version=version WHERE id=${id} AND version=${version} AND draft<>'' AND publish_state='idle' RETURNING approved_version`;
+ const {review}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
+ const rows=await sql`UPDATE google_live_reviews SET approved_version=version WHERE id=${id} AND version=${version} AND draft<>'' AND NOT suspected_spam AND publish_state='idle' RETURNING approved_version`;
  if(!rows.length)throw new LiveReviewError('Save and review the latest draft before approving.');
  return {approved:true};
+}
+
+export function assertReviewNotSpam(review:{suspected_spam?:boolean}){
+ if(review.suspected_spam)throw new LiveReviewError('This review is marked as suspected spam. Remove the flag before preparing or approving a reply.',409);
+}
+export async function flagLiveReview(actor:ReviewActor,id:string,spam:boolean,version:number,sql=liveDb()){
+ await loadLiveReview(actor,id,sql);
+ const rows=await sql`UPDATE google_live_reviews SET suspected_spam=${spam},approved_version=NULL,version=version+1
+ WHERE id=${id} AND version=${version} AND publish_state NOT IN ('publishing','uncertain') RETURNING version`;
+ if(!rows.length)throw new LiveReviewError('This review changed. Reload before changing its spam flag.',409);
+ return {flagged:spam,published:false};
 }
