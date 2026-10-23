@@ -17,7 +17,7 @@ export default async function AccountPage() {
     <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Your account is temporarily unavailable. Please try again shortly." /> : null}
       <MarketingGate email={session.email}><LocalDashboard preferenceKey={session.email.toLowerCase()}/></MarketingGate>
-      <details className="mt-4 rounded-xl border border-line bg-white p-4">
+      {portal.orders.length>0&&<details className="mt-4 rounded-xl border border-line bg-white p-4">
       <summary className="cursor-pointer text-sm font-semibold">Stands & orders · {portal.orders.length} orders · {countPaidStandQuantity(portal.orders)} paid stands</summary>
       <div className="mt-4 grid gap-3">
         <section className="tr-card p-5">
@@ -62,7 +62,7 @@ export default async function AccountPage() {
           </section>
         ) : null}
       </div>
-      </details>
+      </details>}
     </AccountShell>
   );
 }
