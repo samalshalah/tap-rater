@@ -101,3 +101,11 @@ final result: passed
 - Validation: TypeScript, production build, 28 focused tests passed. Production 180e2d8f-18c3-4ada-8bce-c15a89572218.
 - Live Norah: searched women, reselected original primary category, exercised Checks and Visa then restored original choices; saved draft and reloaded successfully. No Google profile writes or publishing.
 - Desktop and mobile visual check passed; mobile document width matched viewport (375px), no horizontal overflow. Screenshots in artifacts/business-selectors-20261023.
+
+
+## 2026-10-23 Grouped business attributes
+- Replaced the raw attribute textarea with grouped controls, an attribute-group dropdown, Yes/No dropdowns for business/planning attributes and mutually exclusive Yes/No checkboxes for services, accessibility and amenities. Clearing a checked choice leaves an explicit unconfirmed value.
+- Preserved imported social links and unsupported values as read-only details; payment attributes remain in their existing controls. No new attribute values are invented.
+- Existing customer/location-scoped optimistic-lock draft save is unchanged; no publishing path added.
+- TypeScript, production build and 22 focused tests passed. Live release 018bbbb6-dd0a-40e2-80b6-eefc892f4a5e.
+- Verified Norah checkbox clearing/restoring, dropdown editing/restoring, draft save and reload. Original values retained. Desktop/mobile inspected; mobile document and viewport both 375px. Screenshots: artifacts/business-attributes-20261023.
