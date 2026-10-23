@@ -5,7 +5,7 @@ const reply = z.string().trim().min(5).max(1500);
 const suggestionsSchema = z.object({ friendly: reply, professional: reply, personal: reply, short: reply }).strict();
 // Review replies must not invent operational commitments or claims about staff actions.
 export function removeUnsupportedReplyClaims(value:string):string {
- const unsupported=/\b(?:we(?:['’]ll| will)\s+(?:strive|do better|improve|ensure|make sure|take|address|fix|correct|investigate|refund|replace|notify|look into)|(?:we(?:['’]ve| have)|our team has)\s+(?:addressed|fixed|corrected|notified|resolved)|our team works hard)\b/i;
+ const unsupported=/\b(?:we(?:['’]ll| will)\s+(?:strive|do better|improve|ensure|make sure|take|address|fix|correct|investigate|refund|replace|notify|look into)|(?:we(?:['’]ve| have)|our team has)\s+(?:addressed|fixed|corrected|notified|resolved)|we(?:['’]re| are)\s+(?:taking|reviewing|investigating|addressing|fixing|correcting|refunding|replacing|notifying)|our team works hard)\b/i;
  return value.split(/(?<=[.!?])\s+/).filter(sentence=>!unsupported.test(sentence)).join(' ').trim();
 }
 export const reviewAiModel = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";

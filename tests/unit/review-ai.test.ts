@@ -54,6 +54,7 @@ describe("AI review replies",()=>{
 });
 
 it("removes unsupported promises without losing the complaint acknowledgment",()=>{
+ expect(removeUnsupportedReplyClaims("We apologize for the mistake. We're taking this as an opportunity to review our processes.")).toBe("We apologize for the mistake.");
  expect(removeUnsupportedReplyClaims("Sorry your order was incomplete. We'll strive to do better.")).toBe("Sorry your order was incomplete.");
  expect(removeUnsupportedReplyClaims("We apologize for the mistake. We'll take this as a reminder to double-check our orders.")).toBe("We apologize for the mistake.");
  expect(removeUnsupportedReplyClaims("Thank you for visiting. Our team works hard to provide a great experience. We'd love to welcome you back soon.")).toBe("Thank you for visiting. We'd love to welcome you back soon.");
