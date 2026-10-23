@@ -1,3 +1,5 @@
+import {reviewKnowledgeSnapshot,saveReviewKnowledge,knowledgeSave} from '../review-knowledge';
+import {mutateProfile} from './profile-management';
 import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
@@ -24,6 +26,8 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('publish'),id:uuid,version:z.number().int().positive(),confirmPublicReply:z.literal(true)}).strict(),
  z.object({action:z.literal('reconcile'),id:uuid}).strict(),
  z.object({action:z.literal('profileAgent'),settings:profileAgentSettings}).strict(),
+ z.object({action:z.literal('knowledgeSave'),settings:knowledgeSave}).strict(),
+ z.object({action:z.literal('knowledgeRefresh'),businessId:uuid}).strict(),
  z.object({action:z.literal('settings'),settings:liveSettingsSchema}).strict()
 ]);
 export async function handleLiveReviews(request:Request,kind:'admin'|'customer'){
@@ -34,6 +38,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
  try{
   if(request.method==='GET'){
    const params=new URL(request.url).searchParams;
+   if(params.get('view')==='knowledge'){const id=uuid.safeParse(params.get('businessId'));if(!id.success)return NextResponse.json({error:'Choose a location.'},{status:400});return NextResponse.json(await reviewKnowledgeSnapshot(actor,id.data),{headers:{'Cache-Control':'no-store'}});}
    if(params.has('businessId')){
     const page=z.object({businessId:uuid,offset:z.coerce.number().int().min(0).max(100000)}).safeParse({businessId:params.get('businessId'),offset:params.get('offset') || 0});
     if(!page.success)return NextResponse.json({error:'Invalid review page.'},{status:400});
@@ -62,6 +67,8 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'publish':result=await publishLiveReply(actor,v.id,v.version);break;
    case 'reconcile':result=await reconcileLiveReply(actor,v.id);break;
    case 'profileAgent':result=await saveProfileAgentSettings(actor,v.settings);break;
+   case 'knowledgeSave':result=await saveReviewKnowledge(actor,v.settings);break;
+   case 'knowledgeRefresh':result=await mutateProfile(actor,{action:'refresh',businessId:v.businessId});break;
    case 'settings':result=await saveLiveSettings(actor,v.settings);break;
   }
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
