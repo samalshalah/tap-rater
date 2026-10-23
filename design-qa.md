@@ -117,3 +117,11 @@ final result: passed
 - TypeScript, production build and 20 focused tests passed. Production bd9bda9d-90fa-4527-9dd9-ec31d3d8c732. Initial browser asset-load error resolved after rollout/reload; live controls verified.
 - Norah live QA: cancelled removal restored all five selections; primary selection and Apply worked; test edits discarded to retain original category order. Wrong-platform URL blocked save even outside Contact; original Instagram restored and draft saved/reloaded successfully. No external writes, scans or pricing changes.
 - Desktop and mobile layouts inspected. Category dialog 341px wide with 339px scroll width on mobile. Screenshots in artifacts/social-category-20261023.
+
+
+## 2026-10-23 Compact attributes popup
+- Replaced inline attribute groups with Manage attributes + count. Native modal reuses category dialog styling, grouped dropdown/checkbox controls, a scrollable body and Apply/Cancel footer. Social links remain in Contact.
+- Popup edits are staged independently; Cancel, close and Escape discard them. Apply updates only the selected location's unsaved profile draft; existing draft Save remains required.
+- TypeScript, build and 15 focused tests passed. Production 10f02849-3ae3-484c-9977-7099f24ea508.
+- Norah live QA passed: Cancel and Escape leave main Save disabled; Apply enables draft Save; reopened popup reflects applied values; original values restored, saved locally and verified after reload. No publication.
+- Desktop/mobile screenshots inspected in artifacts/attributes-popup-20261023. Mobile dialog 341px wide with 339px scroll width; controls and footer visible.
