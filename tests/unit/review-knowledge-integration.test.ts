@@ -28,6 +28,10 @@ describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
    expect(context.preferences).toEqual(knowledge);expect(context.googleFacts?.name).toBe(a.business_name);expect(JSON.stringify(context)).not.toContain('Unsaved public change');
    expect((await replyKnowledgeContext(b.id,c.id,sql)).preferences.policies).toBe('');
    await expect(replyKnowledgeContext(a.id,randomUUID(),sql)).rejects.toMatchObject({status:404});
+   const latest=await reviewKnowledgeSnapshot(actor,a.id,sql);
+   await saveReviewKnowledge(actor,{businessId:a.id,version:latest.version,knowledge:{...knowledge,enabled:false}},sql);
+   const disabled=await reviewKnowledgeSnapshot(actor,a.id,sql);expect(disabled.knowledge.enabled).toBe(false);expect(disabled.knowledge.policies).toBe(knowledge.policies);
+   expect((await reviewKnowledgeSnapshot(actor,b.id,sql)).knowledge.enabled).toBe(true);
    const [saved]=await sql`SELECT auto_enabled,profile_ai_enabled FROM google_review_links WHERE business_id=${a.id}`;expect(saved).toEqual({auto_enabled:false,profile_ai_enabled:false});
    expect((await sql`SELECT draft FROM google_profile_drafts WHERE business_id=${a.id}`)[0].draft.name).toBe('Unsaved public change');
   }finally{await sql`DELETE FROM businesses WHERE customer_id=${c.id}`;await sql`DELETE FROM google_business_connections WHERE owner=${email}`;await sql`DELETE FROM customers WHERE id=${c.id}`;}

@@ -8,3 +8,11 @@ it('passes location knowledge as reference data and applies bounded preferences'
  await generateReviewSuggestions('Dubai',2,'Late order',run,{businessId:'b',customerId:'c',service:'review_manual'});
  expect(context).toHaveBeenCalledWith('b','c');const input=run.mock.calls[0][1];expect(input.messages[0].content).toContain('Language preference: Arabic');expect(input.messages[0].content).toContain('60–85 words');expect(input.messages[0].content).not.toContain('publish now');expect(input.messages[1].content).toContain('Only this location policy');
 });
+
+it('excludes business facts and policies from generic replies while keeping reply preferences',async()=>{
+ context.mockResolvedValue({preferences:{enabled:false,language:'English',length:'standard',style:'friendly',policies:'SECRET POLICY',rules:'PRIVATE NOTE',contact:'private@example.test'},googleFacts:{description:'EXCLUDED FACT'}});
+ const run=vi.fn().mockResolvedValue({response:{friendly:'Thank you for visiting.',professional:'Thank you for visiting.',personal:'Thank you for visiting.',short:'Thank you.'}});
+ await generateReviewSuggestions('Dubai',3,'Nice food',run,{businessId:'b',customerId:'c',service:'review_automatic'});
+ const input=run.mock.calls[0][1];expect(input.messages[0].content).toContain('Business knowledge is disabled');expect(input.messages[0].content).toContain('Language preference: English');
+ for(const excluded of ['SECRET POLICY','PRIVATE NOTE','private@example.test','EXCLUDED FACT'])expect(JSON.stringify(input)).not.toContain(excluded);
+});
