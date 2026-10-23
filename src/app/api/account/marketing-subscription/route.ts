@@ -26,7 +26,7 @@ export async function POST(request:Request){
    return NextResponse.json({url:portal.url},{headers});
   }
   const {attempt,...p}=z.object({attempt:z.string().uuid(),...marketingPurchaseSchema.shape}).strict().parse(data);
-  const session=await createMarketingCheckout(auth.session.email,p,attempt,{mode:'payment',ui_mode:'hosted',integration_identifier:'taprater_growth_hjksapqw',success_url:`${site}/account/packages?payment=processing`,cancel_url:`${site}/account/packages`,metadata:{marketing_only:'true'},billing_address_collection:'required'});
+  const session=await createMarketingCheckout(auth.session.email,p,attempt,{mode:'payment',ui_mode:'hosted_page',integration_identifier:'taprater_growth_hjksapqw',success_url:`${site}/account/packages?payment=processing`,cancel_url:`${site}/account/packages`,metadata:{marketing_only:'true'},billing_address_collection:'required'});
   return NextResponse.json({url:session.url},{headers});
  }catch(e){return NextResponse.json({error:e instanceof z.ZodError?'Check your plan selection.':e instanceof Error?e.message:'Checkout is unavailable.'},{status:400,headers});}
 }

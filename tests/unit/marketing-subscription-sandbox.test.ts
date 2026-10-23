@@ -18,7 +18,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
   const c=accounts.find(a=>a.email===email)!;
   let subscription:Stripe.Subscription|undefined,product:string|undefined;const sessions:Stripe.Checkout.Session[]=[];
   try{
-   const attempt=randomUUID(),params={mode:'payment' as const,success_url:'https://taprater.com/account/packages',cancel_url:'https://taprater.com/growth',metadata:{marketing_only:'true'}};
+   const attempt=randomUUID(),params={mode:'payment' as const,ui_mode:'hosted_page' as const,success_url:'https://taprater.com/account/packages',cancel_url:'https://taprater.com/growth',metadata:{marketing_only:'true'}};
    const monthly=await createMarketingCheckout(email,{cadence:'month',locations:2,acceptedTerms:true},attempt,params);sessions.push(monthly);
    expect(monthly.amount_total).toBe(5800);expect(monthly.mode).toBe('subscription');expect(monthly.livemode).toBe(false);
    expect((await createMarketingCheckout(email,{cadence:'month',locations:2,acceptedTerms:true},attempt,params)).id).toBe(monthly.id);
