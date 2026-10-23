@@ -8,6 +8,13 @@ const sqlRows=(...rows:unknown[])=>{const sql=vi.fn();for(const r of rows)sql.mo
 const client=()=>({listCategories:vi.fn(),getBusinessDetails:vi.fn(),getMapAnchor:vi.fn(),getProfile:vi.fn(),getPerformance:vi.fn(),getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:review.draft}),listReviews:vi.fn().mockResolvedValue({reviews:[data],nextPageToken:'next'}),listLocations:vi.fn(),listAccounts:vi.fn()});
 afterEach(()=>vi.unstubAllEnvs());
 describe('live Google review safety',()=>{
+ it('keeps pagination and progress totals scoped to the selected location',async()=>{
+  const google=client();google.listReviews.mockResolvedValue({reviews:[data],nextPageToken:'next-page',totalReviewCount:605} as any);
+  const sql=sqlRows([{...link,next_page:'selected-page'}],[{id}],[],[],[]);
+  await syncLiveReviews({kind:'admin'},id,sql,async()=>google);
+  expect(google.listReviews).toHaveBeenCalledExactlyOnceWith(link.parent,'selected-page');expect(google.listAccounts).not.toHaveBeenCalled();expect(google.listLocations).not.toHaveBeenCalled();
+  const update=sql.mock.calls.find((c:any)=>c[0].join('?').includes('SET review_total='));expect(update).toContain(605);expect(update).toContain(id);expect(update[0].join('?')).toContain('WHERE business_id=');
+ });
  it('binds authorization to active customer ownership and the same Google identity',async()=>{
   const sql=sqlRows([]);await expect(authorizedLink({kind:'customer',email:'other@example.com'},id,sql)).rejects.toMatchObject({status:404});
   const query=sql.mock.calls[0][0].join('?');expect(query).toContain('b.customer_id=l.customer_id');expect(query).toContain('g.google_subject=l.google_subject');expect(query).toContain("c.account_status='active'");expect(sql.mock.calls[0]).toContain('other@example.com');

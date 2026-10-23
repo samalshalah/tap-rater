@@ -53,9 +53,9 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
  }
  if(!title)throw new LiveReviewError('Choose a location returned by the connected Google account.');
  const parent=account+'/'+location;
- await client.listReviews(parent); // A real read must succeed before an assignment is accepted.
- const rows=await sql`INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title,ai_consent)
- VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},${customerEmail!==null}) ON CONFLICT DO NOTHING RETURNING business_id`;
+ const preview=await client.listReviews(parent); // Read only the selected location before assignment.
+ const rows=await sql`INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title,ai_consent,review_total)
+ VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},${customerEmail!==null},${preview.totalReviewCount??null}) ON CONFLICT DO NOTHING RETURNING business_id`;
  if(!rows.length)throw new LiveReviewError('This customer workspace or Google location is already assigned. Stop and remove its previous assignment first.');
  return {linked:true};
 }
@@ -79,7 +79,7 @@ export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=li
     WHERE google_live_reviews.business_id=EXCLUDED.business_id AND google_live_reviews.publish_state NOT IN ('publishing','uncertain')`;
   }
   if(!page.nextPageToken)await sql`DELETE FROM google_live_reviews WHERE business_id=${businessId} AND seen_run IS DISTINCT FROM ${run}::uuid AND publish_state NOT IN ('publishing','uncertain')`;
-  await sql`UPDATE google_review_links SET next_page=${page.nextPageToken || null},sync_run=${page.nextPageToken?run:null},synced_at=now(),last_error=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;
+  await sql`UPDATE google_review_links SET review_total=${page.totalReviewCount??null},next_page=${page.nextPageToken || null},sync_run=${page.nextPageToken?run:null},synced_at=now(),last_error=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;
   return {imported:page.reviews.length,more:Boolean(page.nextPageToken)};
  }catch(error){await sql`UPDATE google_review_links SET last_error='Sync failed. Reconnect Google or check API access and quota.' WHERE business_id=${businessId} AND sync_lock=${lock}`;throw error;}
  finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}

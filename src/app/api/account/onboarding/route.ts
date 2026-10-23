@@ -12,7 +12,7 @@ async function handle(request:Request){
  const auth=await requireCustomerApi();if(auth.response)return auth.response;
  const email=auth.session.email.toLowerCase(),sql=liveDb();
  const snapshot=async()=>{
-  const [row]=await sql`SELECT c.marketing_onboarding_completed_at AS completed,c.marketing_onboarding_business_id AS business_id,b.business_name,l.enabled AS connected,l.synced_at,l.next_page,l.last_error,p.synced_at AS profile_synced,(SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=b.id) AS review_count FROM customers c LEFT JOIN businesses b ON b.id=c.marketing_onboarding_business_id AND b.customer_id=c.id LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=c.id LEFT JOIN google_profile_drafts p ON p.business_id=b.id AND p.parent=l.parent AND p.google_subject=l.google_subject WHERE lower(c.email)=${email}`;
+  const [row]=await sql`SELECT c.marketing_onboarding_completed_at AS completed,c.marketing_onboarding_business_id AS business_id,COALESCE(l.title,b.business_name) AS business_name,l.review_total,l.enabled AS connected,l.synced_at,l.next_page,l.last_error,p.synced_at AS profile_synced,(SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=b.id AND (l.sync_run IS NULL OR r.seen_run=l.sync_run)) AS review_count FROM customers c LEFT JOIN businesses b ON b.id=c.marketing_onboarding_business_id AND b.customer_id=c.id LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=c.id LEFT JOIN google_profile_drafts p ON p.business_id=b.id AND p.parent=l.parent AND p.google_subject=l.google_subject WHERE lower(c.email)=${email}`;
   return row;
  };
  try{
