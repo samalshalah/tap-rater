@@ -20,7 +20,7 @@ export async function handleProfile(request:Request,kind:'admin'|'customer'){
    result=p.get('view')==='performance'?await locationPerformance(actor,id.data,Number(p.get('days')||28)):await profileSnapshot(actor,id.data);
   }else{
    if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
-   const raw=await request.text();if(raw.length>20000)return NextResponse.json({error:'Request too large.'},{status:413});
+   const raw=await request.text();if(raw.length>2000000)return NextResponse.json({error:'Request too large.'},{status:413});
    let body;try{body=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
    const input=profileMutation.safeParse(body);if(!input.success)return NextResponse.json({error:'Check the draft fields.'},{status:400});
    result=await mutateProfile(actor,input.data);

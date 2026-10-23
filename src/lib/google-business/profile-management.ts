@@ -22,11 +22,12 @@ export async function mutateProfile(actor:ReviewActor,input:z.infer<typeof profi
   if(!rows.length)throw new LiveReviewError('This location changed. Reload before saving your draft.');return {saved:true,published:false};
  }
  const client=await makeClient(String(link.owner));const observed=await client.getProfile(String(link.parent).split('/').slice(-2).join('/'));
+ observed.details=await client.getBusinessDetails(String(link.parent));
  const rows=await sql`INSERT INTO google_profile_drafts (business_id,parent,google_subject,observed)
  SELECT l.business_id,l.parent,l.google_subject,${JSON.stringify(observed)}::jsonb FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  WHERE l.business_id=${input.businessId} AND l.parent=${link.parent} AND l.google_subject=${link.google_subject} AND l.enabled AND c.account_status='active'
  AND (${actor.kind==='admin'} OR lower(c.email)=${actor.kind==='customer'?actor.email.toLowerCase():''})
- ON CONFLICT (business_id) DO UPDATE SET observed=EXCLUDED.observed,synced_at=now(),version=google_profile_drafts.version+1
+ ON CONFLICT (business_id) DO UPDATE SET observed=EXCLUDED.observed || jsonb_build_object('details',coalesce(google_profile_drafts.observed->'details','{}'::jsonb) || coalesce(EXCLUDED.observed->'details','{}'::jsonb)),synced_at=now(),version=google_profile_drafts.version+1
  WHERE google_profile_drafts.parent=EXCLUDED.parent AND google_profile_drafts.google_subject=EXCLUDED.google_subject RETURNING version`;
  if(!rows.length)throw new LiveReviewError('The Google assignment changed. Ask Tap Rater to check this location.');
  return {refreshed:true,published:false};

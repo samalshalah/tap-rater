@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {metricNames,performanceSchema,type ProfileFields} from './profile-data';
+import type {BusinessDetails} from './business-details';
 
 const accountSchema = z.object({ name: z.string(), accountName: z.string().optional(), type: z.string().optional() });
 const locationSchema = z.object({ name: z.string(), title: z.string().optional(), storefrontAddress:z.object({addressLines:z.array(z.string()).optional(),locality:z.string().optional(),administrativeArea:z.string().optional(),postalCode:z.string().optional()}).optional() });
@@ -54,6 +55,29 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     catch { throw new GoogleBusinessError("invalid_response", response.status); }
   }
   return {
+    async getBusinessDetails(parent:string):Promise<BusinessDetails> {
+      resource(parent,/^accounts\/[A-Za-z0-9_-]+\/locations\/[A-Za-z0-9_-]+$/);
+      const location=parent.split('/').slice(-2).join('/');
+      const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${location}`);
+      url.searchParams.set('readMask','name,storefrontAddress,phoneNumbers,categories,serviceArea,latlng,openInfo,moreHours,serviceItems');
+      const data=await request(url,z.object({name:z.string(),storefrontAddress:z.object({addressLines:z.array(z.string()).optional(),locality:z.string().optional(),administrativeArea:z.string().optional(),postalCode:z.string().optional(),regionCode:z.string().optional()}).optional(),phoneNumbers:z.object({additionalPhones:z.array(z.string()).optional()}).optional(),categories:z.object({primaryCategory:z.object({name:z.string()}).optional(),additionalCategories:z.array(z.object({name:z.string()})).optional()}).optional(),serviceArea:z.object({businessType:z.string().optional(),places:z.object({placeInfos:z.array(z.object({placeName:z.string().optional()})).optional()}).optional()}).optional(),latlng:z.object({latitude:z.number(),longitude:z.number()}).optional(),openInfo:z.object({status:z.enum(['OPEN','CLOSED_TEMPORARILY','CLOSED_PERMANENTLY']).optional()}).optional(),moreHours:z.array(z.object({hoursTypeId:z.string(),periods:z.array(z.unknown()).optional()})).optional(),serviceItems:z.array(z.object({structuredServiceItem:z.object({serviceTypeId:z.string(),description:z.string().optional()}).optional(),freeFormServiceItem:z.object({label:z.object({displayName:z.string().optional(),description:z.string().optional()}).optional()}).optional()})).optional()}));
+      if(data.name!==location)throw new GoogleBusinessError('invalid_response',200);
+      const a=data.storefrontAddress;
+      const result:BusinessDetails={street:(a?.addressLines||[]).join('\n'),city:a?.locality||'',region:a?.administrativeArea||'',postalCode:a?.postalCode||'',country:a?.regionCode||'',additionalPhones:(data.phoneNumbers?.additionalPhones||[]).join('\n'),categoryIds:[data.categories?.primaryCategory?.name,...(data.categories?.additionalCategories||[]).map(c=>c.name)].filter((v):v is string=>Boolean(v)),serviceAreas:(data.serviceArea?.places?.placeInfos||[]).map(p=>p.placeName).filter(Boolean).join('\n'),addressVisibility:data.serviceArea?.businessType==='CUSTOMER_LOCATION_ONLY'?'hidden':a?'visible':'unknown',openStatus:data.openInfo?.status||'unknown',latitude:data.latlng?.latitude,longitude:data.latlng?.longitude,moreHours:(data.moreHours||[]).map(h=>h.hoursTypeId+'\n'+displayHours(h.periods||[])).join('\n\n'),services:(data.serviceItems||[]).map(s=>s.freeFormServiceItem?.label?.displayName||s.structuredServiceItem?.description||s.structuredServiceItem?.serviceTypeId||'').filter(Boolean).join('\n')};
+      const [attributes,media]=await Promise.allSettled([
+        request(new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${location}/attributes`),z.object({attributes:z.array(z.object({name:z.string(),values:z.array(z.union([z.string(),z.number(),z.boolean()])).optional(),repeatedEnumValue:z.object({setValues:z.array(z.string()).optional()}).optional(),uriValues:z.array(z.object({uri:z.string()})).optional()})).default([])})),
+        (async()=>{const items:NonNullable<BusinessDetails['media']>=[];let token:string|undefined;const seen=new Set<string>();do{const u=new URL(`https://mybusiness.googleapis.com/v4/${parent}/media`);u.searchParams.set('pageSize','100');if(token)u.searchParams.set('pageToken',token);const page=await request(u,z.object({mediaItems:z.array(z.object({name:z.string(),googleUrl:z.string().optional(),thumbnailUrl:z.string().optional(),mediaFormat:z.string().optional(),description:z.string().optional(),locationAssociation:z.object({category:z.string().optional()}).optional()})).default([]),nextPageToken:z.string().optional()}));for(const item of page.mediaItems){if(item.googleUrl&&/^https?:\/\//i.test(item.googleUrl))items.push({name:item.name,url:item.googleUrl,thumbnail:item.thumbnailUrl,format:item.mediaFormat||'PHOTO',category:item.locationAssociation?.category||'ADDITIONAL',description:item.description});}token=page.nextPageToken;if(token&&seen.has(token))throw new GoogleBusinessError('invalid_response',200);if(token)seen.add(token);}while(token&&items.length<1000);return {items:items.slice(0,1000),partial:Boolean(token)};})()
+      ]);
+      if(attributes.status==='fulfilled'){
+        const label=(name:string)=>{const key=name.split('/').pop()!;const labels:Record<string,string>={pay_debit_card:'Debit cards',pay_credit_card:'Credit cards',pay_credit_card_types_accepted:'Accepted credit cards',pay_check:'Checks',pay_mobile_nfc:'Contactless mobile payments',requires_cash_only:'Cash only'};const text=labels[key]||key.replace(/_/g,' ');return text.charAt(0).toUpperCase()+text.slice(1);};
+        const value=(a:typeof attributes.value.attributes[number])=>[...(a.values||[]).map(v=>v===true?'Yes':v===false?'No':String(v)),...(a.repeatedEnumValue?.setValues||[]),...(a.uriValues||[]).map(v=>v.uri)].join(', ');
+        result.attributes=attributes.value.attributes.map(a=>`${label(a.name)}: ${value(a)}`).join('\n');
+        result.paymentMethods=attributes.value.attributes.filter(a=>/payment|pay_|cash_only/i.test(a.name)).map(a=>`${label(a.name)}: ${value(a)}`).join('\n');
+        result.socialLinks=attributes.value.attributes.filter(a=>/facebook|instagram|twitter|tiktok|youtube|linkedin|pinterest|social/i.test(a.name)).flatMap(a=>(a.uriValues||[]).map(v=>v.uri)).join('\n');result.attributesStatus='complete';
+      }else result.attributesStatus='unavailable';
+      if(media.status==='fulfilled'){result.media=media.value.items;result.mediaStatus=media.value.partial?'partial':'complete';result.logo=result.media.find(m=>['PROFILE','LOGO'].includes(m.category))?.url||'';result.cover=result.media.find(m=>m.category==='COVER')?.url||'';}else result.mediaStatus='unavailable';
+      return result;
+    },
     async getMapAnchor(location:string) {
       const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(location,/^locations\/[A-Za-z0-9_-]+$/)}`);
       url.searchParams.set('readMask','name,title,latlng,metadata');

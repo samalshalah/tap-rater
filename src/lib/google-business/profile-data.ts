@@ -1,5 +1,6 @@
 import {z} from 'zod';
-export const profileFields=z.object({name:z.string().trim().min(1).max(200),address:z.string().max(1000),phone:z.string().max(80),website:z.union([z.literal(''),z.string().url().max(2048).refine(v=>/^https?:\/\//.test(v))]),categories:z.string().max(1000),description:z.string().max(750),hours:z.string().max(5000),specialHours:z.string().max(5000)}).strict();
+import {businessDetails} from './business-details';
+export const profileFields=z.object({name:z.string().trim().min(1).max(200),address:z.string().max(1000),phone:z.string().max(80),website:z.union([z.literal(''),z.string().url().max(2048).refine(v=>/^https?:\/\//.test(v))]),categories:z.string().max(1000),description:z.string().max(750),hours:z.string().max(5000),specialHours:z.string().max(5000),details:businessDetails.optional()}).strict();
 export type ProfileFields=z.infer<typeof profileFields>;
 export const metricNames=['BUSINESS_IMPRESSIONS_DESKTOP_MAPS','BUSINESS_IMPRESSIONS_MOBILE_MAPS','BUSINESS_IMPRESSIONS_DESKTOP_SEARCH','BUSINESS_IMPRESSIONS_MOBILE_SEARCH','WEBSITE_CLICKS','CALL_CLICKS','BUSINESS_DIRECTION_REQUESTS'] as const;
 export const metricLabels:Record<string,string>={BUSINESS_IMPRESSIONS_DESKTOP_MAPS:'Maps views · desktop',BUSINESS_IMPRESSIONS_MOBILE_MAPS:'Maps views · mobile',BUSINESS_IMPRESSIONS_DESKTOP_SEARCH:'Search views · desktop',BUSINESS_IMPRESSIONS_MOBILE_SEARCH:'Search views · mobile',WEBSITE_CLICKS:'Website clicks',CALL_CLICKS:'Call button clicks',BUSINESS_DIRECTION_REQUESTS:'Direction requests'};

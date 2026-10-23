@@ -51,3 +51,26 @@ Artifacts: C:/Sites/tap-rater-claude/artifacts/keyword-summary-20261023/. Produc
 Applied annotated screenshot: removed scan-cost banner and settings/pause row from Competitors only. Moved schedule and refresh controls into tab row; active schedule details are behind info icon while capped/error statuses remain visible. Grid metadata is in scan-history help. Moved methodology and captured-point metadata to info icon beside Share of voice. Shared accessible tooltip component extracted without changing provider calls or approval paths.
 
 Passed TypeScript/build, 9 existing approval/matching tests, desktop and 390px mobile inspection. No horizontal page overflow. Live Competitors has zero scan banners and one methodology icon; help displays 49/49 captured points and the existing formula. Heatmap still shows Review new scan. No scans, billing, profile or reply mutations. Screenshot: C:/Sites/tap-rater-claude/artifacts/compact-comparison-20261023/desktop.png. Version 6942c126-6fd7-406d-8387-240e63a73972. Status: passed.
+
+## Business profile editor — October 23, 2026
+
+Reference: six supplied Semrush business-info screenshots (About, Contact, Placement, Hours, More, completeness). Real Norah photos are used; no sample business data or generated assets.
+
+Implemented smaller 24px desktop / 22px mobile customer page headings with selected business name underneath. Expanded location-bound Google import into structured address, categories, phone details, service areas, additional hours, attributes, payments, social links and paginated business media. Added compact five-tab profile editor, logo/cover/gallery, completeness breakdown, sticky draft-save action and directory link preserving the selected location.
+
+Verification:
+- TypeScript and production build pass; 34 focused import/profile/review-safety tests pass.
+- Norah import returned 146 media items, logo, cover, five categories, social links and payment attributes. Optional fields remain blank when not returned. Existing description draft and Sunday noon–6 pm hours preserved.
+- Saved the enriched draft without changing existing proposed business facts, then reloaded and verified persistence.
+- Directory Listings opens the same profile with Norah's location ID.
+- Desktop screenshot inspected against the supplied reference: compact tabs/form left, real gallery right, small header and location context visible.
+- Mobile 390px screenshot inspected: single-column fields/gallery, horizontal navigation, no document overflow. Sticky footer remains available while scrolling.
+- No browser console errors observed.
+- Replies and profile changes remain drafts. No paid scans, external publication or pricing activation performed.
+
+Artifacts: `C:/Sites/tap-rater-claude/artifacts/business-profile-20261023/desktop.png`, `mobile.png`.
+Production version: `33ac2a36-0585-4848-bf5b-2877f22de76d`.
+
+P3 follow-up: hours use editable text for flexible split/overnight periods; a dedicated time-picker grid can be added later. Provider category mapping, asset rights and explicit distribution approval remain part of the deferred directory integration.
+
+final result: passed
