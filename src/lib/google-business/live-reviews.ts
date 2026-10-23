@@ -46,16 +46,16 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
  const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${businessId} AND c.account_status='active' AND (${customerEmail===null} OR lower(c.email)=${customerEmail})`;
  const connections=await sql`SELECT google_subject FROM google_business_connections WHERE owner=${owner}`;
  if(!businesses[0] || !connections[0])throw new LiveReviewError('An active customer and connected Google account are required.');
- const client=await makeClient(owner);let token:string|undefined;let title='';
+ const client=await makeClient(owner);let token:string|undefined;let title='';let selectedAddress='';
  for(let page=0;page<100;page++){
   const result=await client.listLocations(account,token);const found=result.locations.find(l=>l.name===location);
-  if(found){title=found.title || location;break;}token=result.nextPageToken;if(!token)break;
+  if(found){title=found.title || location;selectedAddress=[...(found.storefrontAddress?.addressLines||[]),found.storefrontAddress?.locality,found.storefrontAddress?.administrativeArea,found.storefrontAddress?.postalCode].filter(Boolean).join(', ');break;}token=result.nextPageToken;if(!token)break;
  }
  if(!title)throw new LiveReviewError('Choose a location returned by the connected Google account.');
  const parent=account+'/'+location;
  const preview=await client.listReviews(parent); // Read only the selected location before assignment.
- const rows=await sql`INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title,ai_consent,review_total)
- VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},${customerEmail!==null},${preview.totalReviewCount??null}) ON CONFLICT DO NOTHING RETURNING business_id`;
+ const rows=await sql`WITH linked AS (INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title,ai_consent,review_total)
+ VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},${customerEmail!==null},${preview.totalReviewCount??null}) ON CONFLICT DO NOTHING RETURNING business_id), named AS (UPDATE businesses b SET business_name=${title},address=${selectedAddress},google_place_id=NULL,google_review_url=NULL FROM linked l,customers c WHERE b.id=l.business_id AND b.customer_id=c.id AND c.marketing_onboarding_business_id=b.id AND c.marketing_onboarding_completed_at IS NULL RETURNING b.id) SELECT business_id FROM linked`;
  if(!rows.length)throw new LiveReviewError('This customer workspace or Google location is already assigned. Stop and remove its previous assignment first.');
  return {linked:true};
 }

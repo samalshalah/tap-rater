@@ -8,6 +8,12 @@ const sqlRows=(...rows:unknown[])=>{const sql=vi.fn();for(const r of rows)sql.mo
 const client=()=>({listCategories:vi.fn(),getBusinessDetails:vi.fn(),getMapAnchor:vi.fn(),getProfile:vi.fn(),getPerformance:vi.fn(),getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:review.draft}),listReviews:vi.fn().mockResolvedValue({reviews:[data],nextPageToken:'next'}),listLocations:vi.fn(),listAccounts:vi.fn()});
 afterEach(()=>vi.unstubAllEnvs());
 describe('live Google review safety',()=>{
+ it('uses the confirmed Google name and address for a new service workspace atomically with binding',async()=>{
+  const google=client();google.listLocations.mockResolvedValue({locations:[{name:'locations/l',title:'Dubai Shawarma & Cafe',storefrontAddress:{addressLines:['10180 Lakeridge Pkwy'],locality:'Ashland',administrativeArea:'VA',postalCode:'23005'}}]} as any);
+  const sql=sqlRows([{customer_id:id}],[{google_subject:'subject'}],[{business_id:id}]);
+  expect(await bindGoogleLocation('customer:client@example.com',id,'accounts/a','locations/l',sql,async()=>google,'client@example.com')).toEqual({linked:true});
+  const write=sql.mock.calls[2];expect(write).toContain('Dubai Shawarma & Cafe');expect(write).toContain('10180 Lakeridge Pkwy, Ashland, VA, 23005');expect(write[0].join('?')).toContain('FROM linked l,customers c');expect(write[0].join('?')).toContain('c.marketing_onboarding_completed_at IS NULL');
+ });
  it('keeps pagination and progress totals scoped to the selected location',async()=>{
   const google=client();google.listReviews.mockResolvedValue({reviews:[data],nextPageToken:'next-page',totalReviewCount:605} as any);
   const sql=sqlRows([{...link,next_page:'selected-page'}],[{id}],[],[],[]);
