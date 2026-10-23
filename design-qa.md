@@ -74,3 +74,21 @@ Production version: `33ac2a36-0585-4848-bf5b-2877f22de76d`.
 P3 follow-up: hours use editable text for flexible split/overnight periods; a dedicated time-picker grid can be added later. Provider category mapping, asset rights and explicit distribution approval remain part of the deferred directory integration.
 
 final result: passed
+
+## Daily and special hours — October 23, 2026
+
+Reference: the supplied Semrush Hours editor screenshot. Replaced regular/special free-text editors with Monday–Sunday status and opening/closing selectors, inline add/remove split shifts, overnight toggle, dated special schedules and closure date ranges. Retained additional hours under a disclosure.
+
+Verified production version `340de1aa-0d0a-412b-aa3b-2601532bc84f`:
+- TypeScript / production build passed. 21 focused tests passed for hours parsing, preservation, overlap/invalid input detection, profile ownership and draft-only mutation.
+- Norah's Mon–Sat 11am–7pm and Sunday noon–6pm loaded correctly. Existing dated closures remained unchanged.
+- Adding an incomplete date or split shift disabled Save. A completed special-date opening interval enabled Save. Test entries were removed before saving.
+- Saved the original schedule as a draft and reloaded to verify persistence. No Google write or publishing action exists in this workflow.
+- Location scoping continues through the existing business-keyed component and authorized profile endpoint; parsers allocate independent schedules.
+- Desktop reviewed against the Semrush reference: compact rows with status/time selectors, inline plus controls, special dates below. Mobile 390px layout has no horizontal document overflow. No browser console errors observed.
+- Browser automation's date fill did not trigger React's native date event until keyboard interaction; verified the real date change via arrow-key selection and corrected the empty end-date fallback.
+
+Artifacts: `C:/Sites/tap-rater-claude/artifacts/business-hours-20261023/desktop.png`, `mobile.png`.
+Replaces the previous P3 note about regular/special hours requiring text editing. Unrecognized legacy entries are preserved unchanged under Other saved hours.
+
+final result: passed
