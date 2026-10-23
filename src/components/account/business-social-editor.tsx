@@ -1,0 +1,8 @@
+ 'use client';
+import {useEffect} from 'react';
+import {socialPlatforms,socialValues,socialError,updateSocialLink} from '@/lib/google-business/social-links';
+export function BusinessSocialEditor({value,attributes,busy,onChange,onValidity}:{value:string;attributes:string;busy:boolean;onChange:(patch:{socialLinks:string;attributes:string})=>void;onValidity:(error:string)=>void}){
+ const {values,other}=socialValues(value);const invalid=socialPlatforms.some(platform=>socialError(platform.key,values[platform.key]||''));const error=invalid?'Check the social media links in Contact.':value.length>5000?'Social media links are too long.':'';
+ useEffect(()=>onValidity(error),[error,onValidity]);
+ return <section className="tr-social-editor" aria-label="Social media links"><h3>Social media</h3>{socialPlatforms.map(platform=>{const current=values[platform.key]||'',message=socialError(platform.key,current);return <label className="tr-business-field" key={platform.key}><span>{platform.label}</span><input type="url" inputMode="url" autoComplete="off" disabled={busy} maxLength={1000} aria-invalid={Boolean(message)} aria-describedby={message?`social-${platform.key}-error`:undefined} placeholder={platform.example} value={current} onChange={e=>onChange(updateSocialLink(value,attributes,platform.key,e.target.value))}/>{message&&<small id={`social-${platform.key}-error`} role="alert">{message}</small>}</label>;})}{other.length>0&&<details><summary>Additional imported links ({other.length})</summary>{other.map((line,index)=><p key={index}>{line}</p>)}<small>Preserved with this location's draft.</small></details>}</section>;
+}

@@ -109,3 +109,11 @@ final result: passed
 - Existing customer/location-scoped optimistic-lock draft save is unchanged; no publishing path added.
 - TypeScript, production build and 22 focused tests passed. Live release 018bbbb6-dd0a-40e2-80b6-eefc892f4a5e.
 - Verified Norah checkbox clearing/restoring, dropdown editing/restoring, draft save and reload. Original values retained. Desktop/mobile inspected; mobile document and viewport both 375px. Screenshots: artifacts/business-attributes-20261023.
+
+
+## 2026-10-23 Social fields and category popup
+- Contact now has seven platform-specific URL fields. Imported URLs are recognized by exact host/subdomain; unsupported and additional links are preserved. Updating a field mirrors its social attribute and clearing it persists without resurrecting another imported URL. Invalid platform URLs block draft save across tabs.
+- Categories now use a compact summary button and native modal matching the supplied reference: searchable catalog checkboxes, selection count, primary marker, Make primary, Apply and Cancel; maximum ten categories. Popup edits remain local until Apply and still require draft Save.
+- TypeScript, production build and 20 focused tests passed. Production bd9bda9d-90fa-4527-9dd9-ec31d3d8c732. Initial browser asset-load error resolved after rollout/reload; live controls verified.
+- Norah live QA: cancelled removal restored all five selections; primary selection and Apply worked; test edits discarded to retain original category order. Wrong-platform URL blocked save even outside Contact; original Instagram restored and draft saved/reloaded successfully. No external writes, scans or pricing changes.
+- Desktop and mobile layouts inspected. Category dialog 341px wide with 339px scroll width on mobile. Screenshots in artifacts/social-category-20261023.
