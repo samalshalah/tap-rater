@@ -132,3 +132,10 @@ final result: passed
 - Payment values and mirrored attributes stage together. Cancel/Escape discard edits; Apply updates the location draft and main Save persists it locally.
 - TypeScript, production build and 17 focused tests passed. Production 32fb73a4-7080-4b27-8adf-942bdb090069.
 - Norah QA passed: Cancel restored Checks No and Visa selected with main Save disabled; Escape discarded edits; Apply reflected changes on reopen; original values restored, saved and reloaded. Desktop/mobile inspected with footer visible. Screenshots in artifacts/payment-popup-20261023. Nothing published.
+
+
+## 2026-10-23 Compact social links popup
+- Contact now shows Manage social media links; the seven platform fields open in a native modal matching categories/attributes/payments.
+- Link and mirrored-attribute edits are staged together. Invalid links block Apply; Cancel/Escape discard pending edits without affecting parent draft validity. Apply updates only the current location draft; main Save remains required.
+- TypeScript, production build and 15 focused tests passed. Production 5a37cf23-9907-41d6-a00c-ffe250c4c6fe.
+- Norah live checks: wrong-platform URL disabled Apply; Cancel left main Save disabled; Escape restored original URL; clearing and applying reflected on reopen; original Instagram restored, saved and verified after reload. Desktop/mobile inspected; screenshots in artifacts/social-popup-20261023. No publishing.
