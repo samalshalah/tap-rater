@@ -13,3 +13,14 @@ Source and rendered profile screenshots were reviewed together. Screenshots: C:/
 Limitations: Semrush live tab repeatedly timed out; supplied screenshots used. Norah has one location, so multi-location isolation is covered by existing selection tests and unchanged scoped endpoints. No scans, AI generations, draft approvals, external profile changes or replies were submitted during QA. Full visual parity for every admin commerce screen was not audited in this pass.
 
 Status: passed for changed customer surfaces and admin shared table styling; live Semrush comparison blocked by browser timeout.
+
+
+## Competitor sidebar — 2026-10-23
+
+Reference: codex-clipboard-89d29e1e-61ba-477c-8c02-e4a855955a0a.png, compared alongside the rendered competitor-map.png.
+
+Replaced point sidebar with pinned own business, competitor names, saved ratings/review counts, average ranks and sorting. Business selection changes map markers and metrics; details dialog shows saved business data and full ranking grid. Keyword, scan and location context constrain selection; switching context resets to own business. Missing competitor captures stay unavailable. No new provider submission is added; optional existing-task recovery remains free.
+
+Passed TypeScript, production build and 18 focused tests. Live Norah verification: Ekimedo Atelier average 2.00, found 1/49; map and popup agree. Switching to boutique near me returns to Norah (average 1.3), no stale competitor dialog. Escape restores focus. Mobile 390x844 dialog has no horizontal overflow. No scans were approved or submitted, and no recovery was needed because saved competitors were already present. Reused existing map tiles and brand assets; no new raster assets required.
+
+Artifacts: C:/Sites/tap-rater-claude/artifacts/competitor-sidebar-20261023/. Production version: 30071c8e-d76f-4c6b-a53a-6446124a63e6. Status: passed for requested sidebar and details interaction.

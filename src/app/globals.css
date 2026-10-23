@@ -1060,3 +1060,18 @@ main.tr-client-shell .tr-local-workspace .tr-marketing-feature .text-xs{font-siz
 .tr-admin-shell :is(.tr-admin-card,.tr-admin-section) {border-color:#dce5ef;border-radius:6px;box-shadow:none;}
 .tr-admin-shell table thead {background:#eff4f9;color:#566c93;}
 @media(max-width:720px){.tr-location-cards,.tr-issue-grid,.tr-performance-cards {grid-template-columns:1fr;}.tr-card-heading {gap:6px;}.tr-client-shell .tr-heatmap-scan-bar {flex-wrap:wrap;}}
+
+/* Saved competitor navigation beside the keyword's geographic grid. */
+.tr-rank-layout:has(.tr-rank-businesses){grid-template-columns:270px minmax(0,1fr);}
+.tr-rank-businesses header {padding:0;}
+.tr-rank-businesses header>button,.tr-rank-businesses>div>button {display:block;width:100%;text-align:left;padding:13px 14px!important;border-bottom:1px solid #dce5ef;}
+.tr-rank-businesses button[aria-pressed=true]{background:#eaf0ff;box-shadow:inset 3px 0 #008c87;}
+.tr-competitor-name {display:flex;gap:8px;justify-content:space-between;align-items:center;font-size:13px;line-height:1.5;}
+.tr-competitor-meta {display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:8px;color:#7185a8;font-size:12px;}
+.tr-competitor-average {white-space:nowrap;border-radius:12px;background:#edf0f3;padding:2px 7px;color:#596675;font-size:11px;}
+.tr-competitor-sort {display:flex;gap:6px;align-items:center;padding:9px 12px;border-bottom:1px solid #dce5ef;font-size:12px;color:#60779b;}
+.tr-competitor-sort select {min-width:0;border:1px solid #dce5ef;border-radius:4px;padding:4px;background:white;}
+.tr-rank-businesses footer {padding:10px 12px;border-top:1px solid #dce5ef;font-size:11px;color:#60779b;}.tr-rank-businesses footer p{margin-top:5px;}
+.tr-competitor-detail-grid {display:grid;gap:6px;max-width:300px;margin:16px auto;}.tr-competitor-detail-grid>span {display:flex;align-items:center;justify-content:center;aspect-ratio:1;border-radius:50%;font-size:13px;font-weight:600;color:white;}
+@media(max-width:900px){.tr-rank-layout:has(.tr-rank-businesses){grid-template-columns:220px minmax(0,1fr);}}
+@media(max-width:640px){.tr-rank-businesses{order:0;}.tr-rank-businesses>div{max-height:190px;}}
