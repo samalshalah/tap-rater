@@ -31,5 +31,5 @@ export async function GET(request: Request) {
     if (error instanceof GoogleTokenExchangeError) reason = error.reason;
   }
   if(customerFlow)(await cookies()).delete(customerFlowCookie);
-  return NextResponse.redirect(`${origin}${customerFlow?"/account/reviews":"/admin/google-reviews"}?connection=${outcome}${outcome === "failed" ? `&step=${stage}${reason ? `&reason=${reason}` : ""}` : ""}`, { status: 303, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
+  return NextResponse.redirect(`${origin}${customerFlow?"/account":"/admin/google-reviews"}?connection=${outcome}${outcome === "failed" ? `&step=${stage}${reason ? `&reason=${reason}` : ""}` : ""}`, { status: 303, headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" } });
 }

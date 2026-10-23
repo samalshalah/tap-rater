@@ -1,23 +1,27 @@
 'use client';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
+import {useRouter} from 'next/navigation';
 import type {GoogleBusinessSelection} from '@/lib/google-places-client';
 import {SetupBusinessPicker} from './setup-business-picker';
 import {GoogleConnectionWizard} from './google-connection-wizard';
 type Progress={completed:string|null;business_id:string|null;business_name:string;connected:boolean;synced_at:string|null;next_page:string|null;profile_synced:string|null;last_error:string|null;review_count:number;review_total:number|null};
 export function FirstLoginSetup({children}:{children:ReactNode}){
+ const router=useRouter();
  const [progress,setProgress]=useState<Progress|null>(null),[selection,setSelection]=useState<GoogleBusinessSelection|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false),[retry,setRetry]=useState(0);
  const dialog=useRef<HTMLDialogElement>(null);
  async function request(body?:unknown){const r=await fetch('/api/account/onboarding',{method:body?'POST':'GET',headers:body?{'Content-Type':'application/json'}:undefined,body:body?JSON.stringify(body):undefined,cache:'no-store'});const d=await r.json();if(!r.ok)throw Error(d.error||'Setup is unavailable.');setProgress(d);return d as Progress;}
  useEffect(()=>{request().catch(e=>setError(e.message));},[retry]);
- useEffect(()=>{const modal=dialog.current;if(!progress?.completed&&!modal?.open)modal?.showModal();return()=>{if(modal?.open)modal.close();};},[Boolean(progress?.completed)]);
+ const needsSetup=Boolean(progress&&!progress.completed);
+ useEffect(()=>{const modal=dialog.current;if(needsSetup&&!modal?.open)modal?.showModal();return()=>{if(modal?.open)modal.close();};},[needsSetup]);
  const ready=Boolean(progress?.synced_at&&!progress.next_page&&!progress.last_error&&progress.profile_synced);
  useEffect(()=>{
   if(!progress?.connected||ready||progress.completed||error)return;
   let stopped=false;const timer=window.setTimeout(async()=>{setBusy(true);try{await request({action:'import'});}catch(e){if(!stopped)setError(e instanceof Error?e.message:'Import paused.');}finally{if(!stopped)setBusy(false);}},11000);
   return()=>{stopped=true;window.clearTimeout(timer);};
  },[progress,ready,error]);
- async function next(){setBusy(true);setError('');try{if(ready)await request({action:'finish'});else if(selection)await request({action:'choose',name:selection.name,address:selection.formattedAddress,placeId:selection.placeId});}catch(e){setError(e instanceof Error?e.message:'Please try again.');}finally{setBusy(false);}}
+ async function next(){setBusy(true);setError('');try{if(ready){await request({action:'finish'});router.replace('/account');}else if(selection)await request({action:'choose',name:selection.name,address:selection.formattedAddress,placeId:selection.placeId});}catch(e){setError(e instanceof Error?e.message:'Please try again.');}finally{setBusy(false);}}
  if(progress?.completed)return <>{children}</>;
+ if(!progress)return error?<div role="alert"><p>{error}</p><button className="tr-button-ghost" onClick={()=>{setError('');setRetry(n=>n+1);}}>Retry</button></div>:<div aria-busy="true" aria-label="Loading account" className="h-24 animate-pulse rounded-lg bg-slate-100"/>;
  const total=progress?.review_total;
  const percent=ready?100:typeof total==='number'&&total>0?Math.min(99,Math.floor((progress?.review_count||0)/total*100)):null;
  const step=!progress?.business_id?0:!progress.connected?1:!ready?2:3;
