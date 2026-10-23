@@ -1,10 +1,10 @@
 import {describe,it,expect,vi} from "vitest";
 import {eligibleForAutoReply,type AutoReplySettings} from "@/lib/review-ai-options";
-import {generateReviewSuggestions,removeUnsupportedReplyClaims} from "@/lib/review-ai-provider";
+import {generateReviewSuggestions,removeUnsupportedReplyClaims,replyQualityIssues} from "@/lib/review-ai-provider";
 import {suggestReviewReply,runSampleAutoReplies,saveAutoSettings} from "@/lib/review-ai";
 const settings:AutoReplySettings={enabled:true,four:true,five:true,style:"friendly",version:1};
 const id="9fb3ee3b-0920-4db5-a03d-7245987a8751";
-const outputs={friendly:"Thanks for visiting.",professional:"Thank you for your feedback.",personal:"We are glad you visited.",short:"Thank you!"};
+const outputs={friendly:"Thank you for spending part of your day with us. It is lovely to know your visit was enjoyable, and you are always welcome back.",professional:"Your thoughtful review is appreciated. We are pleased that the visit was a positive experience for you and thank you for choosing our business.",personal:"What a lovely note to receive from you today. Hearing that you had a good time here means a great deal to us.",short:"Many thanks for stopping by!"};
 describe("AI review replies",()=>{
  it("never auto-replies to low ratings, existing drafts, or disabled rules",()=>{
   for(const rating of [1,2,3])expect(eligibleForAutoReply(rating,"",settings)).toBe(false);
@@ -58,4 +58,15 @@ it("removes unsupported promises without losing the complaint acknowledgment",()
  expect(removeUnsupportedReplyClaims("Sorry your order was incomplete. We'll strive to do better.")).toBe("Sorry your order was incomplete.");
  expect(removeUnsupportedReplyClaims("We apologize for the mistake. We'll take this as a reminder to double-check our orders.")).toBe("We apologize for the mistake.");
  expect(removeUnsupportedReplyClaims("Thank you for visiting. Our team works hard to provide a great experience. We'd love to welcome you back soon.")).toBe("Thank you for visiting. We'd love to welcome you back soon.");
+});
+
+it("repairs repeated, incomplete and promise-filled responses before returning suggestions",async()=>{
+ const bad={...outputs,friendly:"Sorry. We will review our processes.",professional:"I will look into this and fix it."};
+ const run=vi.fn().mockResolvedValueOnce({response:bad}).mockResolvedValueOnce({response:outputs});
+ expect(await generateReviewSuggestions('Dubai',3,'Food was disappointing',run)).toEqual(outputs);
+ expect(run).toHaveBeenCalledTimes(2);
+ expect(replyQualityIssues(outputs,[outputs.friendly])).toContain('friendly: repeats another reply');
+ const repeated=vi.fn().mockResolvedValue({response:bad});
+ await expect(generateReviewSuggestions('Dubai',3,'Food was disappointing',repeated)).rejects.toThrow('quality check');
+ expect(repeated).toHaveBeenCalledTimes(2);
 });

@@ -25,5 +25,7 @@ export async function replyKnowledgeContext(businessId:string,customerId:string,
  WHERE l.business_id=${businessId} AND l.customer_id=${customerId} AND l.enabled AND c.account_status='active' AND marketing_location_allowed(b.id)`;
  if(!row)throw new LiveReviewError('This location is unavailable.',404);
  const p=row.observed;
- return {preferences:{...reviewKnowledgeSchema.parse(row.review_knowledge||{}),style:row.auto_style},googleFacts:p?{name:p.name,address:p.address,phone:p.phone,website:p.website,categories:p.categories,description:p.description,hours:p.hours,specialHours:p.specialHours}:null};
+ const recent=await sql`SELECT draft,data->'reviewReply'->>'comment' AS published FROM google_live_reviews WHERE business_id=${businessId} ORDER BY fetched_at DESC,id LIMIT 100`;
+ const recentReplies=[...new Set(recent.flatMap(r=>[r.draft,r.published]).filter((v):v is string=>typeof v==='string'&&v.trim().length>0))].slice(0,12).map(v=>v.slice(0,1500));
+ return {recentReplies,preferences:{...reviewKnowledgeSchema.parse(row.review_knowledge||{}),style:row.auto_style},googleFacts:p?{name:p.name,address:p.address,phone:p.phone,website:p.website,categories:p.categories,description:p.description,hours:p.hours,specialHours:p.specialHours}:null};
 }

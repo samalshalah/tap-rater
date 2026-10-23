@@ -24,7 +24,9 @@ describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
    await expect(saveReviewKnowledge(actor,{businessId:a.id,version:snap.version,knowledge},sql)).rejects.toMatchObject({status:409});
    await expect(reviewKnowledgeSnapshot({kind:'customer',email:'other@example.test'},a.id,sql)).rejects.toMatchObject({status:404});
    await expect(saveReviewKnowledge({kind:'customer',email:'other@example.test'},{businessId:a.id,version:2,knowledge},sql)).rejects.toMatchObject({status:404});
+   await sql`INSERT INTO google_live_reviews(business_id,resource,data,draft) VALUES(${a.id},${'reviews/'+a.id},'{}'::jsonb,'North location reply'),(${b.id},${'reviews/'+b.id},'{}'::jsonb,'South location reply')`;
    const context=await replyKnowledgeContext(a.id,c.id,sql);
+   expect(context.recentReplies).toEqual(['North location reply']);
    expect(context.preferences).toEqual(knowledge);expect(context.googleFacts?.name).toBe(a.business_name);expect(JSON.stringify(context)).not.toContain('Unsaved public change');
    expect((await replyKnowledgeContext(b.id,c.id,sql)).preferences.policies).toBe('');
    await expect(replyKnowledgeContext(a.id,randomUUID(),sql)).rejects.toMatchObject({status:404});
