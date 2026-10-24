@@ -1,4 +1,5 @@
 import {clientOperations, type ClientOperation} from '@/lib/admin-client-operations';
+import {ClientLicencesButton} from './marketing-access-editor';
 
 type View = 'all'|'accounts'|'usage'|'ai'|'google';
 const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Account status',usage:'Service usage',ai:'AI agent',google:'Google connection'};
@@ -30,9 +31,10 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
       <div className="overflow-x-auto rounded-lg border border-line bg-white">
         <table className="w-full text-left text-sm">
           <caption className="sr-only">Client account operational status and service usage</caption>
-          <thead className="bg-slate-50"><tr>{visibleColumns.map(c=><th key={c.label} className="px-3 py-3 font-semibold">{c.label}</th>)}</tr></thead>
+          <thead className="bg-slate-50"><tr>{visibleColumns.map(c=><th key={c.label} className="px-3 py-3 font-semibold">{c.label}</th>)}{view==='accounts'&&<th className="px-3 py-3">Licences</th>}</tr></thead>
           <tbody>{accounts.map(a=><tr key={a.accountId} className="border-t border-line">
             {visibleColumns.map(c=><td key={c.label} className="px-3 py-3">{c.value(a)}</td>)}
+            {view==='accounts'&&<td className="px-3 py-3"><ClientLicencesButton customerId={a.accountId}/></td>}
           </tr>)}</tbody>
         </table>
       </div>

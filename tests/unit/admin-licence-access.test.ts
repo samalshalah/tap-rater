@@ -1,0 +1,18 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({admin:vi.fn(),sql:vi.fn()}));
+vi.mock('@/lib/admin-auth',()=>({requireAdminApi:m.admin}));
+vi.mock('@/lib/google-business/live-reviews',()=>({liveDb:()=>m.sql}));
+import {GET,POST} from '@/app/api/admin/marketing-access/route';
+const id='00000000-0000-4000-8000-000000000001';
+const input={customerId:id,version:0,status:'active',expiresAt:null,locationLimit:1,unlimitedLocations:false,aiMonthlyLimit:100,heatmapMonthlyPoints:0,enabledLocations:[]};
+const req=(patch={},origin='https://taprater.com')=>new Request('https://taprater.com/api/admin/marketing-access',{method:'POST',headers:{origin},body:JSON.stringify({...input,...patch})});
+beforeEach(()=>{vi.resetAllMocks();m.admin.mockResolvedValue(null);m.sql.mockResolvedValue([{customer_id:id}]);});
+it('requires admin for licence reads and writes',async()=>{m.admin.mockResolvedValue(new Response(null,{status:403}));expect((await GET(new Request('https://taprater.com/api/admin/marketing-access'))).status).toBe(403);expect((await POST(req())).status).toBe(403);expect(m.sql).not.toHaveBeenCalled();});
+it('rejects cross-origin grants',async()=>{expect((await POST(req({},'https://evil.test'))).status).toBe(403);expect(m.sql).not.toHaveBeenCalled();});
+it('filters the selected client',async()=>{await GET(new Request(`https://taprater.com/api/admin/marketing-access?customerId=${id}`));expect(m.sql.mock.calls[0]).toContain(id);expect(m.sql.mock.calls[0][0].join('?')).toContain('c.id=');});
+it('rejects malformed client filters',async()=>{expect((await GET(new Request('https://taprater.com/api/admin/marketing-access?customerId=bad'))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();});
+it('saves unlimited locations with separate usage limits and audited tenant checks',async()=>{expect((await POST(req({unlimitedLocations:true,locationLimit:0,enabledLocations:[id]}))).status).toBe(200);const [parts,...values]=m.sql.mock.calls[0];const sql=parts.join('?');expect(values).toContain(true);expect(sql).toContain('unlimited_locations=EXCLUDED.unlimited_locations');expect(sql).toContain('m.customer_id=c.id');expect(sql).toContain('marketing_access_audit');expect(sql).toContain('WHERE customer_marketing_access.version=');expect(sql).not.toContain('stripe');});
+it('rejects finite allowance below selected locations',async()=>{expect((await POST(req({locationLimit:0,enabledLocations:[id]}))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();});
+it('rejects past expiry for an active licence',async()=>{expect((await POST(req({expiresAt:'2000-01-01T00:00:00Z'}))).status).toBe(400);});
+it('rejects stale or unavailable customer changes',async()=>{m.sql.mockResolvedValue([]);expect((await POST(req())).status).toBe(409);});
+it('does not disclose storage errors',async()=>{m.sql.mockRejectedValue(Error('secret'));const response=await POST(req());expect(response.status).toBe(503);expect(await response.text()).not.toContain('secret');});
