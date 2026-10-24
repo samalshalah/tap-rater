@@ -16,3 +16,18 @@ it('rejects finite allowance below selected locations',async()=>{expect((await P
 it('rejects past expiry for an active licence',async()=>{expect((await POST(req({expiresAt:'2000-01-01T00:00:00Z'}))).status).toBe(400);});
 it('rejects stale or unavailable customer changes',async()=>{m.sql.mockResolvedValue([]);expect((await POST(req())).status).toBe(409);});
 it('does not disclose storage errors',async()=>{m.sql.mockRejectedValue(Error('secret'));const response=await POST(req());expect(response.status).toBe(503);expect(await response.text()).not.toContain('secret');});
+it('grant always activates even when the prior status was disabled',async()=>{
+ expect((await POST(req({action:'grant',status:'inactive',unlimitedLocations:true}))).status).toBe(200);
+ const values=m.sql.mock.calls[0].slice(1);expect(values).toContain('active');expect(values).not.toContain('inactive');
+ const audit=JSON.parse(values.find((v:unknown)=>typeof v==='string'&&v.startsWith('{')));expect(audit).toMatchObject({action:'grant',status:'active',unlimitedLocations:true});
+});
+it('disable is explicit and overrides an active status',async()=>{
+ expect((await POST(req({action:'disable',status:'active'}))).status).toBe(200);
+ expect(m.sql.mock.calls[0].slice(1)).toContain('inactive');
+});
+it('cannot grant a finite licence with no location capacity',async()=>{
+ expect((await POST(req({action:'grant',status:'inactive',locationLimit:0}))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();
+});
+it('grant cannot bypass the expiry check using a disabled prior status',async()=>{
+ expect((await POST(req({action:'grant',status:'inactive',expiresAt:'2000-01-01T00:00:00Z'}))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();
+});

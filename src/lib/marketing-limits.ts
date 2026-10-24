@@ -3,6 +3,7 @@ import {z} from 'zod';
 // Operational entitlements only. No price, checkout or charge is created here.
 export const marketingLimitsInput=z.object({
  customerId:z.string().uuid(),version:z.number().int().nonnegative(),
+ action:z.enum(['grant','update','disable']).optional(),
  status:z.enum(['testing','active','inactive']),
  expiresAt:z.string().datetime({offset:true}).nullable(),
  locationLimit:z.number().int().min(0).max(1000),

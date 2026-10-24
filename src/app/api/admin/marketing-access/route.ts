@@ -23,7 +23,7 @@ export async function POST(request:Request){
  const denied=await requireAdminApi();if(denied)return denied;
  if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403,headers});
  let input;
- try{const raw=await request.text();if(raw.length>60000)throw Error();input=marketingLimitsInput.parse(JSON.parse(raw));if(!input.unlimitedLocations&&input.enabledLocations.length>input.locationLimit)throw Error();if(input.status!=='inactive'&&input.expiresAt&&Date.parse(input.expiresAt)<=Date.now())throw Error();}
+ try{const raw=await request.text();if(raw.length>60000)throw Error();input=marketingLimitsInput.parse(JSON.parse(raw));if(input.action==='grant')input.status='active';if(input.action==='disable')input.status='inactive';if(input.status!=='inactive'&&!input.unlimitedLocations&&input.locationLimit<1)throw Error();if(!input.unlimitedLocations&&input.enabledLocations.length>input.locationLimit)throw Error();if(input.status!=='inactive'&&input.expiresAt&&Date.parse(input.expiresAt)<=Date.now())throw Error();}
  catch{return NextResponse.json({error:'Check limits, expiry and enabled locations.'},{status:400,headers});}
  try{
   const rows=await liveDb()`WITH saved AS (
