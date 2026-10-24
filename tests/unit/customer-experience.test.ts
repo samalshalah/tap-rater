@@ -16,3 +16,8 @@ it('does not treat an outage as permission to load service data',async()=>{
  m.portal.mockResolvedValue({stands:[{}],devices:[],subscriptions:[]});m.access.mockRejectedValue(Error('private'));
  expect(await getCustomerExperience('client@example.test')).toMatchObject({stands:true,service:false,unavailable:true});
 });
+
+it.each([["ACTIVE",true],["EXPIRED",false],["RETIRED_INTERNAL",false]])("Multi-Link navigation uses licence state %s",async(lifecycleStatus,expected)=>{
+ m.portal.mockResolvedValue({stands:[],devices:[],subscriptions:[{lifecycleStatus}]});m.access.mockResolvedValue(false);
+ expect(await getCustomerExperience("owner@example.test")).toMatchObject({multilink:expected,service:false});
+});

@@ -112,6 +112,8 @@ export type CustomerPortalSubscription = {
   currentPeriodEnd?: string;
   cancelAtPeriodEnd: boolean;
   billingProfileAvailable: boolean;
+  source?: string;
+  createdAt?: string;
 };
 
 export type CustomerPortalInvoice = {
@@ -135,7 +137,12 @@ export type CustomerPortalInvoice = {
   paidAt?: string;
 };
 
+export type CustomerPortalLicence = {
+  id: string; title: string; source: string; status: string; expiresAt?: string; updatedAt?: string; locationLimit?: number;
+};
+
 export type CustomerPortalData = {
+  licences?: CustomerPortalLicence[];
   configured: boolean;
   customer: CustomerPortalCustomer | null;
   businesses: CustomerPortalBusiness[];
@@ -185,13 +192,14 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     return emptyPortal(true);
   }
 
-  const [{ data: businessRows }, { data: deviceRows }, { data: eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult] = await Promise.all([
+  const [{ data: businessRows }, { data: deviceRows }, { data: eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult, accessResult] = await Promise.all([
     client.from("businesses").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     client.from("devices").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     client.from("tap_events").select("device_id"),
     client.from("orders").select("*").eq("email", customer.email).order("created_at", { ascending: false }),
     client.from("hosted_subscriptions").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
-    loadCustomerInvoices(client, customer)
+    loadCustomerInvoices(client, customer),
+    client.from("customer_marketing_access").select("*").eq("customer_id", customer.id)
   ]);
 
   const tapCounts = new Map<string, number>();
@@ -216,7 +224,8 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     orders,
     invoices,
     stands: buildCustomerStands(orders, subscriptions),
-    subscriptions
+    subscriptions,
+    licences: Array.isArray(accessResult.data) ? accessResult.data.filter((row: any)=>row.source === "manual" || row.source === "testing").map((row: any)=>({id: `reviews-${customer.id}`, title: "Reviews service", source: row.source, status: row.status, expiresAt: row.expires_at || undefined, updatedAt: row.updated_at || undefined, locationLimit: row.unlimited_locations ? undefined : row.location_limit})) : []
   };
 }
 
@@ -336,6 +345,8 @@ function normalizeSubscription(row: unknown): CustomerPortalSubscription | null 
     lifecycleStatus: readString(value.lifecycle_status) ?? "ACTIVE",
     currentPeriodEnd: readString(value.current_period_end),
     cancelAtPeriodEnd: value.cancel_at_period_end === true,
+    source: /^(admin:|manual:comp_)/.test(readString(value.stripe_subscription_id) || "") ? "admin" : readString(value.stripe_subscription_id)?.startsWith("manual:") ? "manual" : "subscription",
+    createdAt: readString(value.created_at),
     billingProfileAvailable: Boolean(readString(value.stripe_customer_id))
   };
 }

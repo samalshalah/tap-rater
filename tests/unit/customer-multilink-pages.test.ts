@@ -2,6 +2,7 @@ import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AccountPage from "@/app/account/page";
+import AccountMultiLinkPage from "@/app/account/multilink/page";
 import AccountStandsPage from "@/app/account/stands/page";
 import type { CustomerPortalData, CustomerPortalStand } from "@/lib/customer-portal";
 
@@ -86,4 +87,12 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
     renderToStaticMarkup(await AccountStandsPage());
     expect(manager).toHaveBeenCalledWith({ stands: expect.arrayContaining(stands), hostedPages: {} });
   });
+});
+
+it("the dedicated Multi-Link page loads only owned page editors",async()=>{
+ getCustomerPortal.mockResolvedValue(portal([{...stand,kind:"standard"}]));
+ getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code}}));
+ const html=renderToStaticMarkup(await AccountMultiLinkPage());expect(html).toContain("Multi-Link");
+ expect(manager.mock.calls[0][0].stands).toHaveLength(2);expect(manager.mock.calls[0][0].stands.every((s:CustomerPortalStand)=>s.kind==='multilink')).toBe(true);
+ expect(getHostedPageEditorContext.mock.calls.every(([email])=>email==='owner@example.com')).toBe(true);
 });

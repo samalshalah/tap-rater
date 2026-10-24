@@ -80,6 +80,18 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
   const snapshot = buildSnapshotFromDraft(context.page);
+  if (!getLocalHostedPageEditorFileFromEnv()) {
+    const {data, error} = await getSupabaseAdmin().from("hosted_subscriptions").select("stripe_subscription_id,current_period_end,status").eq("customer_id", context.page.customerId).eq("hosted_page_id", context.page.id);
+    if (error) throw new HostedPageEditorError("Licence could not be verified. Try again.", 503);
+    const grant = Array.isArray(data) ? data.find(row => String(row.stripe_subscription_id).startsWith("admin:")) : undefined;
+    if (grant) {
+      if (grant.status !== "active" || (grant.current_period_end && Date.parse(grant.current_period_end) <= Date.now())) throw new HostedPageEditorError("This Multi-Link licence has expired.", 403);
+      if (grant.current_period_end) {
+        snapshot.lifecycleStatus = "CANCELLED_AT_PERIOD_END";
+        snapshot.subscriptionPaidThrough = grant.current_period_end;
+      }
+    }
+  }
   await ensureHostedPageCodeIsAssigned(storage, context.page);
   await publishHostedPageSnapshot(storage, snapshot);
 

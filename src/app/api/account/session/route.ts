@@ -11,11 +11,11 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
-  const {portal,service,stands}=await getCustomerExperience(session.email);
+  const {portal,service,stands,multilink}=await getCustomerExperience(session.email);
 
   return NextResponse.json({
     authenticated: true,
-    service,stands,
+    service,stands,multilink,
     email: session.email,
     name: portal.customer?.name,
     businessName: portal.businesses[0]?.businessName

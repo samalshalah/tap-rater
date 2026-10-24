@@ -6,7 +6,7 @@ const headers={'Cache-Control':'private, no-store'};
 export async function GET(){
  const denied=await requireAdminApi();if(denied)return denied;
  try{
-  const rows=await liveDb()`SELECT c.id,coalesce(nullif(c.name,''),'Unnamed account') AS name,
+  const rows=await liveDb()`SELECT c.id,c.email,coalesce(nullif(c.name,''),'Unnamed account') AS name,
    a.status,a.expires_at,coalesce(a.version,0) AS version,coalesce(a.location_limit,1) AS location_limit,
    coalesce(a.ai_monthly_limit,100) AS ai_monthly_limit,coalesce(a.heatmap_monthly_points,300) AS heatmap_monthly_points,
    coalesce((SELECT jsonb_agg(jsonb_build_object('id',m.business_id,'enabled',m.enabled,

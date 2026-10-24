@@ -277,3 +277,9 @@ describe("Neon Supabase adapter", () => {
     expect(query).not.toHaveBeenCalled();
   });
 });
+
+it("loads licence metadata with a customer scope",async()=>{
+ const query=vi.fn().mockResolvedValue([]);const client=createNeonSupabaseAdapter(query);
+ const result=await client.from("customer_marketing_access").select("*").eq("customer_id","owner");
+ expect(result.error).toBeNull();expect(query.mock.calls[0][0]).toContain('customer_marketing_access.customer_id = $1');expect(query.mock.calls[0][1]).toEqual(["owner"]);
+});

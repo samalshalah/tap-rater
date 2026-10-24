@@ -1,5 +1,5 @@
 import {createElement, type ReactNode} from "react";
-import {InvoiceDetails,SubscriptionDetails,OrderInvoiceAttachments} from "@/components/account/customer-orders-manager";
+import {LicenceDetails,InvoiceDetails,SubscriptionDetails,OrderInvoiceAttachments} from "@/components/account/customer-orders-manager";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AccountOrdersPage from "@/app/account/orders/page";
@@ -56,8 +56,14 @@ describe("compact customer billing",()=>{
  it("preserves invoice breakdown and documents in the popup content",()=>{const html=renderToStaticMarkup(createElement(InvoiceDetails,{invoice:portal.invoices[0]}));expect(html).toContain("$53.34");expect(html).toContain("Visa ending 4242");expect(html).toContain('href="https://example.test/invoice.pdf"');expect(html).toContain("Download PDF");expect(html).toContain('href="https://example.test/receipt"');});
  it("shows a partial invoice balance accurately",()=>{Object.assign(portal.invoices[0],{status:"open",totalCents:999,amountPaidCents:400});const html=renderToStaticMarkup(createElement(InvoiceDetails,{invoice:portal.invoices[0]}));expect(html).toContain("$5.99");expect(html).toContain("Amount due");expect(html).toContain("Complete payment");});
  it.each(["paid","void","uncollectible","draft"])("never offers payment for %s",status=>{Object.assign(portal.invoices[0],{status,amountPaidCents:0});const html=renderToStaticMarkup(createElement(InvoiceDetails,{invoice:portal.invoices[0]}));expect(html).not.toContain("Complete payment");expect(html).toContain("$0.00");});
- it("keeps subscription-specific billing and cancellation dates",()=>{const html=renderToStaticMarkup(createElement(SubscriptionDetails,{subscription:{id:"owned-subscription",permanentCode:"PAGE1",hostedPageUrl:"https://example.test/p/PAGE1",status:"active",lifecycleStatus:"ACTIVE",cancelAtPeriodEnd:true,billingProfileAvailable:true,currentPeriodEnd:"2026-11-01"}}));expect(html).toContain('name="subscription_id" value="owned-subscription"');expect(html).toContain("Ends");expect(html).not.toContain("Renews");});
+ it("keeps subscription-specific billing and cancellation dates",()=>{const html=renderToStaticMarkup(createElement(SubscriptionDetails,{subscription:{id:"owned-subscription",source:"subscription",permanentCode:"PAGE1",hostedPageUrl:"https://example.test/p/PAGE1",status:"active",lifecycleStatus:"ACTIVE",cancelAtPeriodEnd:true,billingProfileAvailable:true,currentPeriodEnd:"2026-11-01"}}));expect(html).toContain('name="subscription_id" value="owned-subscription"');expect(html).toContain("Ends");expect(html).not.toContain("Renews");});
  it("keeps billing errors and payment-review status",async()=>{portal.orders[0].paymentStatus="manual_unpaid";const html=renderToStaticMarkup(await AccountOrdersPage({searchParams:Promise.resolve({billing_error:"Billing unavailable"})}));expect(html).toContain("Billing unavailable");expect(html).toContain("Some payments are waiting");});
  it("has simple empty states without empty subscription panels",async()=>{portal.orders=[];portal.invoices=[];const html=renderToStaticMarkup(await AccountOrdersPage({}));expect(html).toContain("No orders yet.");expect(html).not.toContain("Other invoices");expect(html).not.toContain("Subscriptions");});
  it("does not label a generic document as a PDF",()=>{portal.invoices[0].invoicePdfUrl=undefined;portal.invoices[0].hostedInvoiceUrl=undefined;const html=renderToStaticMarkup(createElement(InvoiceDetails,{invoice:portal.invoices[0]}));expect(html).toContain("Open invoice");expect(html).not.toContain("Download PDF");});
+});
+
+it("shows an admin grant in the order table without a payment action",async()=>{
+ portal.orders=[];portal.invoices=[];portal.licences=[{id:"grant",title:"Reviews service",source:"manual",status:"active",locationLimit:1,expiresAt:"2027-01-01"}];
+ const html=renderToStaticMarkup(await AccountOrdersPage({}));expect(html).toContain("Granted by admin");expect(html).toContain("View licence");expect(html).toContain("No charge");expect(html).not.toContain("No orders yet");expect(html).not.toContain("Download PDF");
+ const details=renderToStaticMarkup(createElement(LicenceDetails,{licence:portal.licences[0]}));expect(details).toContain("Jan 1, 2027");expect(details).toContain("Complimentary access");
 });

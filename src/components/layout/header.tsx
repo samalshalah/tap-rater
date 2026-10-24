@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ArrowLeft, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { Link2, ArrowLeft, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
@@ -23,6 +23,7 @@ type CustomerSessionState = {
   authenticated: boolean;
   service?: boolean;
   stands?: boolean;
+  multilink?: boolean;
   email?: string;
   name?: string;
   businessName?: string;
@@ -108,7 +109,7 @@ export function Header() {
   );
   const navItems = useMemo(
     () => customerSession.authenticated ? navigationForPurchases(customerSession) : orderedEnabledLinks(navigation.items),
-    [customerSession.authenticated, customerSession.service, customerSession.stands, navigation.items],
+    [customerSession.authenticated, customerSession.service, customerSession.stands, customerSession.multilink, navigation.items],
   );
   const accountLabel = customerSession.authenticated
     ? `Welcome, ${getCustomerFirstName(customerSession)}`
@@ -180,6 +181,9 @@ export function Header() {
           if (active) {
             setCustomerSession({
               authenticated: body?.authenticated === true,
+              service: body?.service === true,
+              stands: body?.stands === true,
+              multilink: body?.multilink === true,
               email: typeof body?.email === "string" ? body.email : undefined,
               name: typeof body?.name === "string" ? body.name : undefined,
               businessName: typeof body?.businessName === "string" ? body.businessName : undefined,
@@ -318,6 +322,7 @@ export function Header() {
 }
 
 const accountLinks = [
+  { href: "/account/multilink", label: "Multi-Link", icon: Link2 },
   { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
   { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
   { href: "/account/heatmap", label: "Heat Map", icon: LayoutDashboard },

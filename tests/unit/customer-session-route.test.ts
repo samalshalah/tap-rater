@@ -46,7 +46,7 @@ describe("customer session route", () => {
     const response = await GET();
 
     await expect(response.json()).resolves.toEqual({
-      authenticated: true,service:false,stands:false,
+      authenticated: true,service:false,stands:false,multilink:false,
       email: "owner@example.com",
       name: "Owner"
     });

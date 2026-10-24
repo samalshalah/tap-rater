@@ -22,6 +22,7 @@ type QueryOptions = {
 };
 
 const tableColumns = {
+  customer_marketing_access: ["customer_id", "status", "source", "expires_at", "updated_at", "version", "location_limit", "ai_monthly_limit", "heatmap_monthly_points", "unlimited_locations"],
   commerce_recovery_jobs: ["id", "kind", "object_id", "stripe_mode", "status", "attempts", "last_error", "updated_at", "created_at"],
   commerce_email_outbox: ["id", "entity_id", "status", "payload", "first_attempt_at", "updated_at"],
   contact_requests: ["id", "name", "email", "message", "status", "admin_notes", "resolved_at", "created_at", "updated_at"],

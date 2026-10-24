@@ -339,8 +339,9 @@ describe("customer portal repository", () => {
 
 type TableName = "customers" | "businesses" | "devices" | "tap_events" | "orders" | "hosted_subscriptions" | "billing_invoices";
 
-function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unknown>>>) {
+function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unknown>>> & {customer_marketing_access?: Array<Record<string, unknown>>}) {
   const rows = {
+    customer_marketing_access: [...(seed.customer_marketing_access || [])],
     customers: [...seed.customers],
     businesses: [...seed.businesses],
     devices: [...seed.devices],
@@ -351,7 +352,7 @@ function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unk
   };
 
   const client = {
-    from(table: TableName) {
+    from(table: TableName | "customer_marketing_access") {
       let filters: Array<{ column: string; value: unknown }> = [];
       const matchRows = () => rows[table].filter((row) => filters.every((filter) => row[filter.column] === filter.value));
 
@@ -374,3 +375,13 @@ function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unk
 
   return { client: client as unknown as CustomerPortalDbClient };
 }
+
+it("scopes admin licences to the signed-in customer",async()=>{
+ const db=createCustomerPortalDb({customers:[{id:"a",email:"a@example.com"}],businesses:[],devices:[],tap_events:[],orders:[],hosted_subscriptions:[],billing_invoices:[],customer_marketing_access:[{customer_id:"a",source:"manual",status:"active",location_limit:2,expires_at:"2027-01-01"},{customer_id:"b",source:"manual",status:"active",location_limit:99}]});
+ const portal=await getCustomerPortalFromClient(db.client,"a@example.com");expect(portal.licences).toHaveLength(1);expect(portal.licences?.[0]).toMatchObject({source:"manual",locationLimit:2,expiresAt:"2027-01-01"});
+});
+
+it.each([["manual:checkout","manual"],["admin:request","admin"],["manual:comp_request","admin"],["sub_paid","subscription"]])("distinguishes grant evidence from manual checkout %s",async(reference,source)=>{
+ const db=createCustomerPortalDb({customers:[{id:"a",email:"a@example.com"}],businesses:[],devices:[],tap_events:[],orders:[],billing_invoices:[],hosted_subscriptions:[{id:"sub",customer_id:"a",stripe_subscription_id:reference,permanent_code:"PAGE",hosted_page_url:"https://taprater.com/p/PAGE"}]});
+ expect((await getCustomerPortalFromClient(db.client,"a@example.com")).subscriptions[0].source).toBe(source);
+});
