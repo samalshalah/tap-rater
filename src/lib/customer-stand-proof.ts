@@ -14,16 +14,16 @@ export async function loadCustomerStandProof(order:OrderRecord,index:number){
  const item=assertProofOrder(order,index,false);let bytes:Buffer,contentType:string;
  const snapshot=buildCurrentApprovalSnapshot(item),attachment=item.setup?.customerProof as {storageKey?:string;contentType?:string}|undefined;
  if(attachment?.storageKey){
-  if(!attachment.storageKey.startsWith(`products/customer-proofs/production_artwork/${order.id}/${index}/`))throw new StandProofError('Proof unavailable.');
+  if(!attachment.storageKey.startsWith(`products/customer-proofs/production_artwork/${order.id}/`))throw new StandProofError('Proof unavailable.');
   const object=await getProductMediaObject(attachment.storageKey);if(!object)throw new StandProofError('Proof unavailable.',404);
   bytes=Buffer.from(await (object.arrayBuffer?object.arrayBuffer():new Response(object.body).arrayBuffer()));
   contentType=attachment.contentType||'';if(!['image/png','image/jpeg','image/webp'].includes(contentType))throw new StandProofError('Proof format unavailable.');
  }else{
   const template=getProductionArtworkTemplate(item);
   if(!template||item.setup?.designAssistanceRequested===true)throw new StandProofError('Your design is being prepared.');
-  const composed=await composeProductionArtworkDocument(item,template,'customer-preview',order.updated_at||order.created_at||'');
+  const composed=await composeProductionArtworkDocument(item,template,'customer-preview',order.created_at||'');
   Object.assign(snapshot,composed.assetHashes);bytes=Buffer.from(composed.svg);contentType='image/svg+xml';
  }
- const version=createHash('sha256').update(JSON.stringify({snapshot,updatedAt:order.updated_at,index,quantity:item.quantity})).update(bytes).digest('hex');
+ const version=createHash('sha256').update(JSON.stringify({snapshot,line:item.standLineId||index,attachment,quantity:item.quantity})).update(bytes).digest('hex');
  return {version,image:`data:${contentType};base64,${bytes.toString('base64')}`,snapshot,quantity:item.quantity};
 }

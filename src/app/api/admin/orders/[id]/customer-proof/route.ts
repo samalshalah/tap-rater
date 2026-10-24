@@ -4,6 +4,7 @@ import {getAdminOrderById,guardedOrderUpdate,getOrderLineItemProductionSummary} 
 import {getSupabaseAdmin} from '@/lib/db';
 import {getProductMediaBucket,readImageDimensions} from '@/lib/admin-media-storage';
 import {assertProofOrder,StandProofError} from '@/lib/customer-stand-proof';
+import {proofHistory,type ProofEvent} from '@/lib/stand-proof-history';
 export async function POST(request:Request,{params}:{params:Promise<{id:string}>}){
  const denied=await requireAdminApi();if(denied)return denied;
  if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
@@ -17,7 +18,9 @@ export async function POST(request:Request,{params}:{params:Promise<{id:string}>
   const bucket=await getProductMediaBucket();if(!bucket)throw Error();
   const key=`products/customer-proofs/production_artwork/${id}/${index}/${crypto.randomUUID()}`;
   await bucket.put(key,bytes,{httpMetadata:{contentType:file.type,cacheControl:'private, no-store'}});
-  const items=order.line_items_json.map((line,i)=>i!==index?line:{...item,proofApproved:false,setup:{...item.setup,customerProof:{storageKey:key,contentType:file.type,uploadedAt:new Date().toISOString()},proofApprovalSnapshot:undefined,customerProofApproval:undefined,proofApprovedAt:undefined}});
+  const now=new Date().toISOString(),attachment={storageKey:key,contentType:file.type,uploadedAt:now};
+  const event:ProofEvent={id:crypto.randomUUID(),action:'uploaded',at:now,attachment};
+  const items=order.line_items_json.map((line,i)=>i!==index?line:{...item,proofApproved:false,setup:{...item.setup,customerProof:attachment,customerProofHistory:[...proofHistory(item),event],customerProofCorrection:undefined,proofApprovalSnapshot:undefined,customerProofApproval:undefined,proofApprovedAt:undefined}});
   const {data,error}=await guardedOrderUpdate(getSupabaseAdmin(),order,{line_items_json:items,production_status:'blocked'}).select('id').maybeSingle();
   if(error)throw Error();if(!data)throw new StandProofError('Order changed. Reload and upload again.');
   return NextResponse.json({saved:true});

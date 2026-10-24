@@ -18,3 +18,17 @@ it.each([{version:'old',confirmed:true},{version:'version',confirmed:false}])('r
 it.each([{payment_status:'refunded'},{status:'pending_payment'},{shipping_status:'shipped'},{production_status:'in_production'},{production_status:'completed'},{refund_status:'pending'}])('blocks ineligible orders %j',async fields=>{Object.assign(order,fields);expect((await POST(request(),context)).status).toBe(409);expect(m.guard).not.toHaveBeenCalled();});
 it('records exact proof approval only, with no fulfillment change',async()=>{expect((await POST(request(),context)).status).toBe(200);const payload=m.guard.mock.calls[0][2];expect(Object.keys(payload)).toEqual(['line_items_json']);expect(payload.line_items_json[0]).toMatchObject({proofApproved:true,setup:{customerProofApproval:{version:'version',approvedBy:'owner@example.com'}}});});
 it('rejects a concurrent order change',async()=>{m.single.mockResolvedValue({data:null});expect((await POST(request(),context)).status).toBe(409);});
+it('stores a correction without approval and preserves other items',async()=>{
+ order.line_items_json.push({...order.line_items_json[0],title:'Other stand'});
+ const r=await POST(request({version:'version',action:'corrections',notes:'Please enlarge the logo.'} as any),context);
+ expect(r.status).toBe(200);const patch=m.guard.mock.calls[0][2];expect(patch.production_status).toBe('blocked');expect(patch.line_items_json[0]).toMatchObject({proofApproved:false,setup:{customerProofCorrection:{notes:'Please enlarge the logo.',version:'version'},customerProofHistory:[{action:'corrections',notes:'Please enlarge the logo.'}]}});expect(patch.line_items_json[1]).toEqual(order.line_items_json[1]);
+});
+it.each(['',' ', 'x'.repeat(2001)])('rejects invalid correction notes',async notes=>{expect((await POST(request({version:'version',action:'corrections',notes} as any),context)).status).toBe(400);expect(m.guard).not.toHaveBeenCalled();});
+it('blocks repeated responses until a revised proof is uploaded',async()=>{order.line_items_json[0].setup={customerProofCorrection:{version:'version'}};expect((await POST(request(),context)).status).toBe(409);expect(m.guard).not.toHaveBeenCalled();expect(await (await GET(request(),context)).json()).toMatchObject({awaitingRevision:true,canRespond:false});});
+it('blocks duplicate approvals',async()=>{order.line_items_json[0].proofApproved=true;expect((await POST(request(),context)).status).toBe(409);expect(m.guard).not.toHaveBeenCalled();});
+it('hides internal storage keys from history and scopes historical previews',async()=>{
+ order.line_items_json[0].setup={customerProofHistory:[{id:'rev1',action:'uploaded',at:'2026-10-24',attachment:{storageKey:'private',contentType:'image/png'}}]};
+ const r=await GET(request(),context);expect(await r.text()).not.toContain('private');
+ const missing=await GET(new Request('https://taprater.com/proof?revision=foreign'),context);expect(missing.status).toBe(404);
+});
+it('loads historical previews only through the owned order',async()=>{order.line_items_json[0].setup={customerProofHistory:[{id:'rev1',action:'uploaded',at:'2026-10-24',attachment:{storageKey:'private',contentType:'image/png'}}]};const r=await GET(new Request('https://taprater.com/proof?revision=rev1'),context);expect(r.status).toBe(200);expect(await r.json()).toEqual({image:'data:image/png;base64,YQ=='});expect(m.guard).not.toHaveBeenCalled();});

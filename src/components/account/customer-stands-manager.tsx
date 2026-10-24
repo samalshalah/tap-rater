@@ -143,7 +143,7 @@ function StandDetailModal({
             <X size={18} />
           </button></div>
         </div>
-        {proofOpen ? <CustomerProofReview orderId={stand.orderId} index={stand.lineItemIndex} canApprove={Boolean(stand.proofReviewAvailable)} onDone={onClose}/> : isMultiLink ? (
+        {proofOpen ? <CustomerProofReview orderId={stand.orderId} index={stand.lineItemIndex} canApprove={Boolean(stand.proofReviewAvailable)} onDone={onClose} onBusyChange={setBusy}/> : isMultiLink ? (
           <div className="min-h-0 overflow-hidden p-3">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} onDirtyChange={setDirty} onBusyChange={setBusy} />

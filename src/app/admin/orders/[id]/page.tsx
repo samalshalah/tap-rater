@@ -1,4 +1,5 @@
 import {orderStandRegistry} from "@/lib/customer-stand-registry";
+import {publicProofHistory} from '@/lib/stand-proof-history';
 import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
 import { getAdminEmailDeliveries } from "@/lib/email-deliveries";
 import { canChangeComplimentaryStand } from "@/lib/complimentary-orders";
@@ -228,6 +229,8 @@ function LineItemDetail({ item, artworkUrl, order, index, standIds }: { standIds
         businessName={summary.businessName}
       />
       <LineItemVisuals item={item} downloadUrl={artworkUrl} />
+      {Boolean(item.setup?.customerProofCorrection)&&<AdminAlert tone="warning" className="mt-4"><p className="font-semibold">Customer requested corrections</p><p className="whitespace-pre-wrap">{readSetupString(item.setup?.customerProofCorrection as Record<string,unknown>,"notes")}</p></AdminAlert>}
+      {!!publicProofHistory(item).length&&<details className="mt-4 text-sm"><summary className="cursor-pointer font-medium">Customer proof history</summary><ol className="mt-2 divide-y">{publicProofHistory(item).map(event=><li key={event.id} className="py-2"><p>{event.action==='uploaded'?'Proof uploaded':event.action==='approved'?'Design approved':'Corrections requested'} - {event.at}</p>{event.notes&&<p className="whitespace-pre-wrap text-muted">{event.notes}</p>}</li>)}</ol></details>}
       {summary.warnings.length ? (
         <AdminAlert tone="warning" className="mt-4">
           <p className="font-black text-ink">Production warnings</p>

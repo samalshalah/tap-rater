@@ -3,11 +3,20 @@
 import Link from 'next/link';
 import {LayoutDashboard,MessageSquare,Building2,Map, ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag,UserRound} from 'lucide-react';
 const icons=[LayoutDashboard,MessageSquare,Building2,Map,ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag,UserRound];
-import {usePathname} from 'next/navigation';
+import {usePathname,useRouter} from 'next/navigation';
+import {useEffect} from 'react';
 import {customerNavigation, isNavigationActive} from '@/lib/customer-navigation';
 
 export function AccountNavigation({links}:{links:typeof customerNavigation}) {
   const pathname = usePathname();
+  const router=useRouter();
+  useEffect(()=>{
+    let refreshed=0;
+    const refreshAccess=()=>{if(document.visibilityState==='visible'&&Date.now()-refreshed>15000){refreshed=Date.now();router.refresh();}};
+    window.addEventListener('focus',refreshAccess);
+    document.addEventListener('visibilitychange',refreshAccess);
+    return()=>{window.removeEventListener('focus',refreshAccess);document.removeEventListener('visibilitychange',refreshAccess);};
+  },[router]);
   return <aside className="tr-workspace-sidebar">
     <Link href="/account" className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w320.webp" alt="Tap Rater" width="140" height="48"/></Link>
     <nav aria-label="Account navigation" className="flex gap-1 overflow-x-auto lg:grid">
