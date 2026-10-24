@@ -58,12 +58,12 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
             <h3 className="text-base font-medium text-ink">{stand.title}</h3>
             {stand.quantity > 1 ? <span className="rounded-full bg-soft px-2 py-1 text-xs text-muted">Qty {stand.quantity}</span> : null}
             <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-brand">{formatKind(stand.kind)}</span>
-            <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>
+            {stand.orderId && <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>}
           </div>
           <p className="mt-2 max-w-full break-all text-sm text-muted">
             {stand.businessName ? `${stand.businessName} · ` : ""}{stand.orderId ? `Order ${formatOrderReference(stand.orderReference)}` : "Multi-Link"}
           </p>
-          <p className="mt-2 text-xs capitalize text-muted">{stand.shippingStatus === "not_shipped" ? stand.productionStatus.replaceAll("_", " ") : stand.shippingStatus.replaceAll("_", " ")}</p>
+          {stand.orderId && <p className="mt-2 text-xs capitalize text-muted">{stand.shippingStatus === "not_shipped" ? stand.productionStatus.replaceAll("_", " ") : stand.shippingStatus.replaceAll("_", " ")}</p>}
           {isMultiLink && stand.hostedPageUrl ? (
             <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-brand">
               {stand.hostedPageUrl}
