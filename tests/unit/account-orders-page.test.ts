@@ -1,5 +1,5 @@
 import {createElement, type ReactNode} from "react";
-import {InvoiceDetails,SubscriptionDetails} from "@/components/account/customer-orders-manager";
+import {InvoiceDetails,SubscriptionDetails,OrderInvoiceAttachments} from "@/components/account/customer-orders-manager";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AccountOrdersPage from "@/app/account/orders/page";
@@ -36,6 +36,11 @@ beforeEach(() => {
 });
 
 describe("compact customer billing",()=>{
+ it("attaches only this order's invoice in order details",()=>{
+ const html=renderToStaticMarkup(createElement(OrderInvoiceAttachments,{orderId:"qa-order",invoices:[...portal.invoices,{...portal.invoices[0],id:"foreign",orderId:"another-order",invoiceNumber:"DO-NOT-SHOW",invoicePdfUrl:"https://example.test/foreign.pdf"}],onView:()=>{}}));
+ expect(html).toContain("QA-0001");expect(html).toContain("Download PDF");expect(html).toContain("https://example.test/invoice.pdf");expect(html).not.toContain("DO-NOT-SHOW");expect(html).not.toContain("foreign.pdf");
+ });
+
  it("keeps each invoice PDF on its matching order row",async()=>{
   portal.orders.push({...portal.orders[0],id:"second-order",reference:"cs_second"});
   portal.invoices.push({...portal.invoices[0],id:"second-invoice",orderId:"second-order",invoiceNumber:"SECOND",invoicePdfUrl:"https://example.test/second.pdf"});
