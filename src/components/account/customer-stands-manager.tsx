@@ -175,7 +175,7 @@ function DetailLine({ label, value }: { label: string; value: string }) {
   return (
     <p className="rounded-md bg-soft px-3 py-2">
       <span className="block text-xs text-muted">{label}</span>
-      <span className="mt-1 block break-words capitalize text-ink">{value}</span>
+      <span className={`mt-1 block break-words text-ink ${label==='Stand ID'?'font-mono text-xs normal-case':'capitalize'}`}>{value}</span>
     </p>
   );
 }
