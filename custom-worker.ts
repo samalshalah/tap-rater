@@ -1,3 +1,5 @@
+import {neon} from '@neondatabase/serverless';
+import {observeWorker} from './src/lib/worker-observation';
 import { getCanonicalRedirectUrl } from "./src/lib/canonical-request";
 import { getLegacyPublicAssetUrl } from "./src/lib/legacy-public-assets";
 import { runMediaBackupBatch } from "./src/lib/media-recovery";
@@ -11,62 +13,32 @@ export default {
     env: CloudflareEnv,
     context: unknown,
   ) {
+    const sql=neon(env.DATABASE_URL);
+    const invoke=async(name:string,path:string)=>{
+      try {
+        await observeWorker(name,async()=>{
+          const response=await openNextWorker.fetch(new Request(`https://taprater.com/api/internal/${path}`,{
+            method:'POST',headers:{'x-internal-secret':env.ADMIN_SESSION_SECRET},
+          }),env,context);
+          if(!response.ok)throw new Error(`Worker HTTP ${response.status}`);
+          return response.json();
+        },sql);
+      }catch { console.warn(`${name} worker unavailable`); }
+    };
+    await invoke('reviews','google-reviews');
+    if(new Date(_controller.scheduledTime).getUTCMinutes()%15!==0)return;
+    await invoke('analytics','analytics');
+    await invoke('reminders','checkout-reminders');
+    await invoke('sample-drafts','review-auto-drafts');
+    await invoke('heatmap','heatmap-scans');
     try {
-      console.log(JSON.stringify({ event: "google_review_maintenance_started" }));
-      const reviews = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/google-reviews", {
-        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-      }), env, context);
-      const result = reviews.ok ? await reviews.json() as {synced?:number;drafted?:number;published?:number} : null;
-      console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok, status: reviews.status,
-        synced: result?.synced, drafted: result?.drafted, published: result?.published }));
-    } catch { console.warn("Google review maintenance unavailable"); }
-    if (new Date(_controller.scheduledTime).getUTCMinutes() % 15 !== 0) return;
-    try {
-      const analytics = await openNextWorker.fetch(
-        new Request("https://taprater.com/api/internal/analytics", {
-          method: "POST",
-          headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-        }),
-        env,
-        context,
-      );
-      console.log(
-        JSON.stringify({ event: "analytics_purchase_retry", ok: analytics.ok }),
-      );
-    } catch {
-      console.warn("Analytics retry unavailable");
-    }
-    try {
-      const reminders = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/checkout-reminders", {
-        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-      }), env, context);
-      console.log(JSON.stringify({ event: "checkout_reminders", ok: reminders.ok }));
-    } catch { console.warn("Checkout reminders unavailable"); }
-    try {
-      const drafts = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/review-auto-drafts", {
-        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-      }), env, context);
-      console.log(JSON.stringify({ event: "review_sample_auto_drafts", ok: drafts.ok }));
-    } catch { console.warn("Sample auto drafts unavailable"); }
-    try {
-      const ranks = await openNextWorker.fetch(new Request("https://taprater.com/api/internal/heatmap-scans", {
-        method: "POST", headers: { "x-internal-secret": env.ADMIN_SESSION_SECRET },
-      }), env, context);
-      console.log(JSON.stringify({ event: "heatmap_scans", ok: ranks.ok }));
-    } catch { console.warn("Heat map scans unavailable"); }
-    const state = await runMediaBackupBatch(
-      env.PRODUCT_MEDIA_BUCKET,
-      env.RECOVERY_BACKUPS,
-    );
-    console.log(
-      JSON.stringify({
-        event: "media_backup",
-        completed: Boolean(state.completedAt),
-        objects: state.objects,
-        bytes: state.bytes,
-      }),
-    );
+      await observeWorker('backup',async()=>{
+        const state=await runMediaBackupBatch(env.PRODUCT_MEDIA_BUCKET,env.RECOVERY_BACKUPS);
+        return {completed:Boolean(state.completedAt),objects:state.objects,bytes:state.bytes};
+      },sql);
+    }catch {console.warn('Media backup unavailable');}
   },
+
   fetch(request: Request, env: CloudflareEnv, context: unknown) {
     const redirectUrl = getCanonicalRedirectUrl(request);
     if (redirectUrl) {
