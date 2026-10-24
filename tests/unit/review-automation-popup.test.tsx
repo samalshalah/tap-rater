@@ -11,24 +11,25 @@ function text(node:any):string{if(node==null)return '';if(typeof node==='string'
 let fetcher:ReturnType<typeof vi.fn>;
 beforeEach(()=>{state.values=[];state.cursor=0;state.ref.current='one';saved.mockClear();fetcher=vi.fn().mockResolvedValue({ok:true,json:async()=>({workspaces:[workspace]})});vi.stubGlobal('fetch',fetcher);vi.stubGlobal('window',{confirm:vi.fn(()=>{throw Error('Native confirmation must not be used');})});});
 afterEach(()=>vi.unstubAllGlobals());
-it('groups the positive ratings and shows the latest delay in a website popup without changing settings',async()=>{
- let tree=render();expect(find(tree,n=>n.type===Toggle&&n.props.label==='5-star autopilot')).toBeFalsy();
- await find(tree,n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();tree=render();
- expect(text(tree)).toContain('Enable 4–5-star autopilot?');expect(text(tree)).toContain('4–5 stars · 6 hours delay');
- expect(fetcher).toHaveBeenCalledTimes(1);expect(fetcher.mock.calls[0][1].method).toBeUndefined();
- find(tree,n=>n.type==='button'&&n.props.children==='Cancel').props.onClick();expect(text(render())).not.toContain('Enable 4–5-star autopilot?');expect(fetcher).toHaveBeenCalledTimes(1);
+it('saves the combined positive toggle in one click using the latest saved delay',async()=>{
+ const tree=render();expect(find(tree,n=>n.type===Toggle&&n.props.label==='5-star autopilot')).toBeFalsy();
+ await find(tree,n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ expect(fetcher).toHaveBeenCalledTimes(2);
+ const body=JSON.parse(fetcher.mock.calls[1][1].body);expect(body.action).toBe('settings');expect(body.settings).toMatchObject({businessId:'one',four:true,five:true,autoEnabled:true,lowStars:false,delayMinutes:360,version:8,confirmAutomaticPosting:true});
+ expect(saved).toHaveBeenCalledOnce();expect(text(render())).not.toContain('Enable autopilot');expect(text(render())).not.toContain('hours delay');
 });
-it('only enables both positive ratings after explicit website confirmation',async()=>{
+it('turns low-star drafts on directly without enabling autopilot',async()=>{
+ await find(render(),n=>n.type===Toggle&&n.props.label==='1–3-star drafts').props.onChange();
+ expect(JSON.parse(fetcher.mock.calls[1][1].body).settings).toMatchObject({autoEnabled:false,lowStars:true,confirmAutomaticPosting:false});expect(saved).toHaveBeenCalledOnce();
+});
+it('shows save errors without reporting success or changing the switch',async()=>{
+ fetcher.mockResolvedValueOnce({ok:true,json:async()=>({workspaces:[workspace]})}).mockResolvedValueOnce({ok:false,json:async()=>({error:'Settings changed. Please reload.'})});
  await find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
- await find(render(),n=>n.type==='button'&&n.props.children==='Enable autopilot').props.onClick();
- const body=JSON.parse(fetcher.mock.calls[1][1].body);expect(body.action).toBe('settings');expect(body.settings).toMatchObject({businessId:'one',four:true,five:true,autoEnabled:true,lowStars:false,delayMinutes:360,version:8,confirmAutomaticPosting:true});expect(saved).toHaveBeenCalledOnce();
+ const tree=render();expect(text(tree)).toContain('Settings changed. Please reload.');expect(find(tree,n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.on).toBe(false);expect(saved).not.toHaveBeenCalled();
 });
-it('offers low-star drafts without enabling autopilot or publishing',async()=>{
- await find(render(),n=>n.type===Toggle&&n.props.label==='1–3-star drafts').props.onChange();const tree=render();
- expect(text(tree)).toContain('1–3 stars · Drafts only');expect(text(tree)).toContain('never published automatically');expect(text(tree)).not.toContain('6 hours delay');
- await find(tree,n=>n.type==='button'&&n.props.children==='Enable drafts').props.onClick();
- expect(JSON.parse(fetcher.mock.calls[1][1].body).settings).toMatchObject({autoEnabled:false,lowStars:true,confirmAutomaticPosting:false});
-});
-it('does not show another location’s pending confirmation after switching locations',async()=>{
- await find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();expect(text(render({...location,id:'two'}))).not.toContain('Enable 4–5-star autopilot?');expect(fetcher).toHaveBeenCalledTimes(1);
+it('does not save if the user switches location while settings are loading',async()=>{
+ let resolve!:(value:unknown)=>void;fetcher.mockReturnValueOnce(new Promise(r=>{resolve=r;}));
+ const change=find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ render({...location,id:'two'});resolve({ok:true,json:async()=>({workspaces:[workspace]})});await change;
+ expect(fetcher).toHaveBeenCalledTimes(1);expect(saved).not.toHaveBeenCalled();
 });
