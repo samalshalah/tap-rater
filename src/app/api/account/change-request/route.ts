@@ -1,3 +1,5 @@
+import { getCustomerPortal } from "@/lib/customer-portal";
+import { formatOrderReference } from "@/lib/order-reference";
 import { NextResponse } from "next/server";
 import { requireCustomerApi } from "@/lib/customer-auth";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
@@ -19,6 +21,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const portal = await getCustomerPortal(session.email);
+    const reference = parsed.data.tapraterId.trim().toLowerCase();
+    const owned = portal.devices.some(device => device.deviceCode.toLowerCase() === reference)
+      || portal.stands.some(stand => stand.orderId && `${formatOrderReference(stand.orderReference)} / ${stand.lineItemIndex + 1}`.toLowerCase() === reference);
+    if (!owned) return NextResponse.json({error: "Stand was not found for this account."}, {status: 404});
     await saveChangeLinkRequest(getSupabaseAdmin(), {
       name: session.email,
       email: session.email,

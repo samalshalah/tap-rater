@@ -39,6 +39,15 @@ describe("hosted page editor", () => {
     expect(other.configured && other.page).toBeNull();
   });
 
+  it("rejects another customer's draft save and a foreign page code", async () => {
+    const before = await getOwnedPage();
+    await expect(saveHostedPageDraft("other@example.com", before.draft, before.code)).rejects.toThrow();
+    await expect(saveHostedPageDraft("qa-customer@example.com", before.draft, "FOREIGNCODE")).rejects.toThrow();
+    const after = await getOwnedPage();
+    expect(after.draft).toEqual(before.draft);
+    expect(after.publishedVersion).toEqual(before.publishedVersion);
+  });
+
   it("saves a draft without publishing or changing the permanent code", async () => {
     const pageBefore = await getOwnedPage();
     const updated = await saveHostedPageDraft("qa-customer@example.com", {

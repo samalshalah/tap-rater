@@ -1,0 +1,16 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),portal:vi.fn(),save:vi.fn(),notify:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
+vi.mock('@/lib/customer-portal',()=>({getCustomerPortal:m.portal}));
+vi.mock('@/lib/db',()=>({hasSupabaseAdminConfig:()=>true,getSupabaseAdmin:()=>({})}));
+vi.mock('@/lib/request-repository',()=>({saveChangeLinkRequest:m.save}));
+vi.mock('@/lib/request-notifications',()=>({sendRequestNotification:m.notify}));
+import {POST} from '@/app/api/account/change-request/route';
+import {formatOrderReference} from '@/lib/order-reference';
+beforeEach(()=>{vi.clearAllMocks();m.auth.mockResolvedValue({session:{email:'owner@example.com'}});m.portal.mockResolvedValue({devices:[{deviceCode:'OWN-DEVICE'}],stands:[{orderId:'own-order',orderReference:'cs_owner',lineItemIndex:0}]});});
+const request=(tapraterId:string,url='https://example.com/review')=>POST(new Request('https://taprater.test/api/account/change-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tapraterId,newReviewUrl:url})}));
+it.each(['OTHER-DEVICE','FOREIGN / 1',`${formatOrderReference('cs_owner')} / 2`])('rejects unowned reference %s without saving or notifying',async ref=>{expect((await request(ref)).status).toBe(404);expect(m.save).not.toHaveBeenCalled();expect(m.notify).not.toHaveBeenCalled();});
+it.each(['OWN-DEVICE',`${formatOrderReference('cs_owner')} / 1`])('accepts owned reference %s',async ref=>{expect((await request(ref)).status).toBe(200);expect(m.portal).toHaveBeenCalledWith('owner@example.com');expect(m.save).toHaveBeenCalledOnce();expect(m.notify).toHaveBeenCalledOnce();});
+it('requires sign in',async()=>{m.auth.mockResolvedValue({response:Response.json({}, {status:401})});expect((await request('OWN-DEVICE')).status).toBe(401);expect(m.portal).not.toHaveBeenCalled();});
+it('rejects unsafe destination',async()=>{expect((await request('OWN-DEVICE','javascript:alert(1)')).status).toBe(400);expect(m.save).not.toHaveBeenCalled();});
+it('fails closed when lookup fails',async()=>{m.portal.mockRejectedValue(new Error('offline'));expect((await request('OWN-DEVICE')).status).toBe(500);expect(m.save).not.toHaveBeenCalled();});
