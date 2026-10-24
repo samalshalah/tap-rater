@@ -6,12 +6,12 @@ const icons=[LayoutDashboard,MessageSquare,Building2,Map,ListChecks,BarChart3,Be
 import {usePathname} from 'next/navigation';
 import {customerNavigation, isNavigationActive} from '@/lib/customer-navigation';
 
-export function AccountNavigation() {
+export function AccountNavigation({links}:{links:typeof customerNavigation}) {
   const pathname = usePathname();
   return <aside className="tr-workspace-sidebar">
     <Link href="/account" className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w320.webp" alt="Tap Rater" width="140" height="48"/></Link>
     <nav aria-label="Account navigation" className="flex gap-1 overflow-x-auto lg:grid">
-      {customerNavigation.map((link,index) => {const Icon=icons[index];return <Link key={link.href} href={link.href}
+      {links.map((link) => {const Icon=icons[customerNavigation.findIndex(item=>item.href===link.href)];return <Link key={link.href} href={link.href}
         aria-current={isNavigationActive(pathname,link.href)?'page':undefined}
         className="tr-workspace-nav-link"><Icon size={17} aria-hidden="true"/>{link.label}</Link>;})}
     </nav>

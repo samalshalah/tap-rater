@@ -1,3 +1,4 @@
+import {getCustomerExperience} from '@/lib/customer-experience';
 import {MarketingGate} from '@/components/account/marketing-gate';
 import {LocalDashboard} from "@/components/account/local-dashboard";
 import Link from "next/link";
@@ -8,7 +9,7 @@ import { formatOrderReference } from "@/lib/order-reference";
 
 export default async function AccountPage() {
   const session = await requireCustomer();
-  const portal = await getCustomerPortal(session.email);
+  const {portal,service,stands,unavailable}=await getCustomerExperience(session.email);
   const firstName = portal.customer?.name?.trim().split(/\s+/)[0] ?? "there";
   const actions = buildDashboardActions(portal);
   const latestOrder = portal.orders[0];
@@ -16,12 +17,13 @@ export default async function AccountPage() {
   return (
     <AccountShell overview>
       {!portal.configured ? <PortalMessage message="Your account is temporarily unavailable. Please try again shortly." /> : null}
-      <MarketingGate email={session.email}><LocalDashboard preferenceKey={session.email.toLowerCase()}/></MarketingGate>
-      {portal.orders.length>0&&<details className="mt-4 rounded-xl border border-line bg-white p-4">
-      <summary className="cursor-pointer text-sm font-semibold">Stands & orders · {portal.orders.length} orders · {countPaidStandQuantity(portal.orders)} paid stands</summary>
+      {unavailable&&<PortalMessage message="Service access is temporarily unavailable. Your stand information is available below."/>}
+      {service&&<MarketingGate email={session.email}><LocalDashboard preferenceKey={session.email.toLowerCase()}/></MarketingGate>}
+      {(!service||stands)&&<section aria-label="Stands overview" className="mt-4">
+      {service&&<h2 className="text-xl font-semibold">My stands</h2>}
       <div className="mt-4 grid gap-3">
         <section className="tr-card p-5">
-          <p className="tr-eyebrow">Overview</p>
+          <p className="tr-eyebrow">{service?"Stands & orders":"Overview"}</p>
           <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
             Manage your stands, orders and billing.
@@ -62,7 +64,7 @@ export default async function AccountPage() {
           </section>
         ) : null}
       </div>
-      </details>}
+      </section>}
     </AccountShell>
   );
 }

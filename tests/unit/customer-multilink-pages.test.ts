@@ -8,6 +8,7 @@ import type { CustomerPortalData, CustomerPortalStand } from "@/lib/customer-por
 const { getCustomerPortal, getHostedPageEditorContext, manager } = vi.hoisted(() => ({
   getCustomerPortal: vi.fn(), getHostedPageEditorContext: vi.fn(), manager: vi.fn()
 }));
+vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>false}));
 vi.mock("@/lib/customer-auth", () => ({ requireCustomer: async () => ({ email: "owner@example.com" }) }));
 vi.mock("@/components/account/account-shell", () => ({ AccountShell: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/customer-portal", async (importOriginal) => ({ ...await importOriginal<object>(), getCustomerPortal }));

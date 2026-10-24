@@ -1,12 +1,14 @@
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
 import { requireCustomer } from "@/lib/customer-auth";
-import { getCustomerPortal } from "@/lib/customer-portal";
+import {getCustomerExperience} from '@/lib/customer-experience';
+import {redirect} from 'next/navigation';
 import { getHostedPageEditorContext } from "@/lib/hosted-page-editor";
 
 export default async function AccountStandsPage() {
   const session = await requireCustomer();
-  const portal = await getCustomerPortal(session.email);
+  const {portal,service,stands}=await getCustomerExperience(session.email);
+  if(service&&!stands)redirect('/account');
   const hostedPageEntries = await Promise.all(
     portal.stands
       .filter((stand) => stand.kind === "multilink" && stand.hostedPageCode)

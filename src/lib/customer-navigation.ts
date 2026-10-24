@@ -13,3 +13,7 @@ export const customerNavigation = [
 export function isNavigationActive(pathname: string, href: string) {
   return pathname === href || (href.startsWith("/account/") && pathname.startsWith(`${href}/`));
 }
+
+export function navigationForPurchases({service=false,stands=false}:{service?:boolean;stands?:boolean}){
+ return customerNavigation.filter(link=>link.href==='/account'||link.href==='/account/orders'||(link.href==='/account/stands'?stands:service));
+}

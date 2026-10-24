@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-import { customerNavigation, isNavigationActive } from "@/lib/customer-navigation";
+import { navigationForPurchases, isNavigationActive } from "@/lib/customer-navigation";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -21,6 +21,8 @@ type HeaderNavigationContent = {
 
 type CustomerSessionState = {
   authenticated: boolean;
+  service?: boolean;
+  stands?: boolean;
   email?: string;
   name?: string;
   businessName?: string;
@@ -105,8 +107,8 @@ export function Header() {
     defaultHeaderNavigation,
   );
   const navItems = useMemo(
-    () => customerSession.authenticated ? customerNavigation : orderedEnabledLinks(navigation.items),
-    [customerSession.authenticated, navigation.items],
+    () => customerSession.authenticated ? navigationForPurchases(customerSession) : orderedEnabledLinks(navigation.items),
+    [customerSession.authenticated, customerSession.service, customerSession.stands, navigation.items],
   );
   const accountLabel = customerSession.authenticated
     ? `Welcome, ${getCustomerFirstName(customerSession)}`
@@ -332,7 +334,7 @@ function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState
         <p className="font-medium text-ink">Welcome, {firstName}</p>
       </div>
       <div className="py-2">
-        {accountLinks.map((link) => {
+        {accountLinks.filter(link=>link.href==='/shop'||navigationForPurchases(customer).some(item=>item.href===link.href)).map((link) => {
           const Icon = link.icon;
           return (
             <Link

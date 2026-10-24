@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   parseCustomerSession: vi.fn()
 }));
 
+vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>false}));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => ({ value: "signed-session" }) })
 }));
@@ -29,7 +30,7 @@ describe("customer session route", () => {
     mocks.isActiveCustomerSession.mockReset();
     mocks.isActiveCustomerSession.mockResolvedValue(true);
     mocks.getCustomerPortal.mockReset();
-    mocks.getCustomerPortal.mockResolvedValue({ customer: { name: "Owner" }, businesses: [] });
+    mocks.getCustomerPortal.mockResolvedValue({ customer: { name: "Owner" }, businesses: [],stands:[],devices:[],subscriptions:[] });
   });
 
   it("reports a disabled or pending customer session as unauthenticated", async () => {
@@ -45,7 +46,7 @@ describe("customer session route", () => {
     const response = await GET();
 
     await expect(response.json()).resolves.toEqual({
-      authenticated: true,
+      authenticated: true,service:false,stands:false,
       email: "owner@example.com",
       name: "Owner"
     });
