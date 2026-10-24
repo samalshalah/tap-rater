@@ -47,17 +47,17 @@ describe("Google OAuth routes", () => {
 
 describe('client OAuth callback routing',()=>{
  it('uses the client session and returns only to the client workspace',async()=>{
-  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
+  mocks.cookie.mockImplementation((name:string)=>name==='flow'?{value:'state'}:undefined);mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
   const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=state&code=code'));
   expect(mocks.complete).toHaveBeenCalledWith('customer:client@example.com','client-session','state','code',expect.any(Function));
   expect(mocks.identity).not.toHaveBeenCalled();expect(response.headers.get('location')).toBe('https://taprater.com/account?connection=connected');
  });
  it('does not exchange mismatched customer state',async()=>{
-  mocks.cookie.mockReturnValue({value:'state'});mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
+  mocks.cookie.mockImplementation((name:string)=>name==='flow'?{value:'state'}:undefined);mocks.customer.mockResolvedValue({owner:'customer:client@example.com',email:'client@example.com',session:'client-session'});
   const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=wrong&code=code'));
   expect(mocks.complete).not.toHaveBeenCalled();expect(response.headers.get('location')).toContain('/account?connection=failed');
  });
- it('never falls back to admin when the client session is absent',async()=>{mocks.cookie.mockReturnValue({value:'state'});expect((await callback(new Request('https://taprater.com/callback'))).headers.get('location')).toBe('https://taprater.com/google-connection-recovery');expect(mocks.identity).not.toHaveBeenCalled();});
+ it('never falls back to admin when the client session is absent',async()=>{mocks.cookie.mockImplementation((name:string)=>name==='flow'?{value:'state'}:undefined);expect((await callback(new Request('https://taprater.com/callback'))).headers.get('location')).toBe('https://taprater.com/google-connection-recovery');expect(mocks.identity).not.toHaveBeenCalled();});
 });
 
 describe('missing OAuth browser session recovery',()=>{

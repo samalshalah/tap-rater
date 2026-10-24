@@ -106,7 +106,7 @@ function Discovery({post,refresh,businesses}:{post:Post;refresh:()=>Promise<void
  {nextLocations&&<button className="tr-button-ghost" onClick={()=>run('locations',true)}>More locations</button>}</fieldset><p role="status" className="mt-3 text-sm">{message}</p></section>;
 }
 export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false}:{admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean}){
- const [manageConnectionOpen,setManageConnectionOpen]=useState(false);
+ const [manageConnectionOpen,setManageConnectionOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('connection')&&new URLSearchParams(window.location.search).get('location')===businessId);
  const [reviewFilter,setReviewFilter]=useState('all');
  const inScope=(id:string)=>(!businessId||id===businessId)&&(!businessIds||businessIds.includes(id));
  const endpoint=admin?'/api/admin/google-business/reviews':'/api/account/reviews/live';
@@ -138,5 +138,5 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  <div className="tr-review-table-wrap"><table className="tr-review-table"><caption className="sr-only">Google reviews and reply drafts. Open a review to read or edit its draft.</caption><thead><tr><th>Reviewer</th><th>Rating</th><th>Review (excerpt)</th><th>Reply status</th><th>Date</th><th>Open</th></tr></thead><tbody>{w.reviews.filter(r=>matchesReview(r,reviewFilter)).map(r=><ReviewListRow key={r.id} review={r} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&snapshot.publishingEnabled}/>)}</tbody></table>{w.reviews.length>0&&!w.reviews.some(r=>matchesReview(r,reviewFilter))&&<p className="p-4 text-sm">No reviews match this filter.</p>}</div>
 
  {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No reviews imported yet. Sync reviews to get started.</p>}
- </section>)} {!admin&&snapshot&&<details className="tr-review-settings" onToggle={e=>setManageConnectionOpen(e.currentTarget.open)}><summary>Manage Google connection</summary>{manageConnectionOpen&&<GoogleConnectionWizard key={businessId||'all'} onLinked={refresh} businessId={businessId}/>}</details>}</section>;
+ </section>)} {!admin&&snapshot&&<details className="tr-review-settings" open={manageConnectionOpen} onToggle={e=>setManageConnectionOpen(e.currentTarget.open)}><summary>Manage Google connection</summary>{manageConnectionOpen&&<GoogleConnectionWizard key={businessId||'all'} onLinked={refresh} businessId={businessId}/>}</details>}</section>;
 }

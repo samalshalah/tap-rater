@@ -1,0 +1,15 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({cookie:vi.fn(),customer:vi.fn(),scope:vi.fn(),complete:vi.fn(),sql:vi.fn(),clear:vi.fn()}));
+vi.mock('next/headers',()=>({cookies:async()=>({get:m.cookie,delete:m.clear})}));
+vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>true}));
+vi.mock('@/lib/google-business/customer-connection',()=>({customerFlowCookie:'flow',googleCustomerIdentity:m.customer}));
+vi.mock('@/lib/google-business/customer-location-connection',()=>({customerLocationFlowCookie:'location-flow',customerLocationConnection:m.scope}));
+vi.mock('@/lib/google-business/live-reviews',()=>({liveDb:()=>m.sql}));
+vi.mock('@/lib/google-business/http',()=>({googleAdminIdentity:vi.fn()}));
+vi.mock('@/lib/google-business/connection',()=>({completeGoogleConnection:m.complete,googleConfig:()=>({redirectUri:'https://taprater.com/api/admin/google-business/callback'}),GoogleTokenExchangeError:class extends Error{}}));
+import {GET} from '@/app/api/admin/google-business/callback/route';
+const id='9fb3ee3b-0920-4db5-a03d-7245987a8751',owner='customer:sam@example.com:location:'+id;
+beforeEach(()=>{vi.resetAllMocks();m.cookie.mockImplementation((name:string)=>({value:name==='flow'?'nonce':id}));m.customer.mockResolvedValue({owner:'customer:sam@example.com',email:'sam@example.com',session:'session'});m.scope.mockResolvedValue({owner});m.sql.mockResolvedValue([]);});
+it('finishes OAuth for only the selected location and returns to its connection picker',async()=>{const r=await GET(new Request('https://taprater.com/api/admin/google-business/callback?state=nonce&code=code'));expect(m.complete).toHaveBeenCalledWith(owner,'session','nonce','code',expect.any(Function));expect(r.headers.get('location')).toBe('https://taprater.com/account/reviews?connection=connected&location='+id);const [parts,...values]=m.sql.mock.calls[0];expect(parts.join('?')).toContain('g.google_subject=l.google_subject');expect(parts.join('?')).toContain('l.business_id=');expect(values).toContain(id);expect(values).toContain('sam@example.com');expect(m.clear).toHaveBeenCalledWith('location-flow');});
+it('rejects a location not owned by the signed-in customer before exchanging credentials',async()=>{m.scope.mockRejectedValue(Error('Not owned'));const r=await GET(new Request('https://taprater.com/api/admin/google-business/callback?state=nonce&code=code'));expect(m.complete).not.toHaveBeenCalled();expect(r.headers.get('location')).toContain('connection=failed');});
+it('does not exchange cancelled or mismatched flows',async()=>{await GET(new Request('https://taprater.com/api/admin/google-business/callback?state=wrong&code=code'));expect(m.complete).not.toHaveBeenCalled();await GET(new Request('https://taprater.com/api/admin/google-business/callback?state=nonce&error=access_denied'));expect(m.complete).not.toHaveBeenCalled();});
