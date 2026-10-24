@@ -34,6 +34,15 @@ describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
    await saveReviewKnowledge(actor,{businessId:a.id,version:latest.version,knowledge:{...knowledge,enabled:false}},sql);
    const disabled=await reviewKnowledgeSnapshot(actor,a.id,sql);expect(disabled.knowledge.enabled).toBe(false);expect(disabled.knowledge.policies).toBe(knowledge.policies);
    expect((await reviewKnowledgeSnapshot(actor,b.id,sql)).knowledge.enabled).toBe(true);
+   await expect(saveReviewKnowledge(actor,{businessId:a.id,version:disabled.version,knowledge,approveLowStars:true},sql)).rejects.toThrow('Turn on AI replies');
+   await sql`UPDATE google_review_links SET ai_consent=true WHERE business_id=${a.id}`;
+   await saveReviewKnowledge(actor,{businessId:a.id,version:disabled.version,knowledge,approveLowStars:true},sql);
+   const [approved]=await sql`SELECT draft_low_stars,review_knowledge_approved_at,auto_enabled FROM google_review_links WHERE business_id=${a.id}`;
+   expect(approved.draft_low_stars).toBe(true);expect(approved.review_knowledge_approved_at).toBeTruthy();expect(approved.auto_enabled).toBe(false);
+   expect((await sql`SELECT draft_low_stars FROM google_review_links WHERE business_id=${b.id}`)[0].draft_low_stars).toBe(false);
+   const approvedSnapshot=await reviewKnowledgeSnapshot(actor,a.id,sql);
+   await saveReviewKnowledge(actor,{businessId:a.id,version:approvedSnapshot.version,knowledge:{...knowledge,policies:'Updated policy'}},sql);
+   expect((await sql`SELECT draft_low_stars,review_knowledge_approved_at FROM google_review_links WHERE business_id=${a.id}`)[0]).toEqual({draft_low_stars:false,review_knowledge_approved_at:null});
    const [saved]=await sql`SELECT auto_enabled,profile_ai_enabled FROM google_review_links WHERE business_id=${a.id}`;expect(saved).toEqual({auto_enabled:false,profile_ai_enabled:false});
    expect((await sql`SELECT draft FROM google_profile_drafts WHERE business_id=${a.id}`)[0].draft.name).toBe('Unsaved public change');
   }finally{await sql`DELETE FROM businesses WHERE customer_id=${c.id}`;await sql`DELETE FROM google_business_connections WHERE owner=${email}`;await sql`DELETE FROM customers WHERE id=${c.id}`;}

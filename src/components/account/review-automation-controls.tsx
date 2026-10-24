@@ -1,6 +1,6 @@
 'use client';
 import {ReviewScheduleSettings} from './review-schedule-settings';
-import {AiKnowledgeSettings} from './ai-knowledge-settings';
+import {AiKnowledgeSettings,KnowledgePopup} from './ai-knowledge-settings';
 import {useState,useRef} from 'react';
 import type {ReplyStyle} from '@/lib/review-ai-options';
 export type ReviewAutomation={id:string;connected:boolean;ai_consent?:boolean;auto_enabled?:boolean;auto_four?:boolean;auto_five?:boolean;auto_style?:string;profile_ai_enabled?:boolean;settings_version?:number;reply_delay_minutes?:number;draft_low_stars?:boolean};
@@ -8,7 +8,7 @@ export function Toggle({label,on,disabled,onChange}:{label:string;on:boolean;dis
 type AutomationWorkspace={business_id:string;business_name:string;ai_consent:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;auto_style:ReplyStyle;settings_version:number;reply_delay_minutes:number;draft_low_stars:boolean};
 type AutomationChange='ai'|'positive'|'low';
 export function ReviewAutomationControls({location,onSaved}:{location:ReviewAutomation;onSaved:()=>Promise<void>}){
- const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [busy,setBusy]=useState(false),[error,setError]=useState(''),[knowledgeFor,setKnowledgeFor]=useState<string|null>(null);
  const activeLocation=useRef(location.id);activeLocation.current=location.id;
  const positiveOn=Boolean(location.ai_consent&&location.auto_enabled&&(location.auto_four||location.auto_five));
  async function save(w:AutomationWorkspace,key:AutomationChange,enabled:boolean){
@@ -26,6 +26,7 @@ export function ReviewAutomationControls({location,onSaved}:{location:ReviewAuto
    const w=d.workspaces?.find((item:AutomationWorkspace)=>item.business_id===id) as AutomationWorkspace|undefined;
    if(!w)throw Error('This location is unavailable.');if(activeLocation.current!==id)return;
    if(enabled&&key!=='ai'&&!w.ai_consent)throw Error('Turn on AI replies for this location first.');
+   if(key==='low'&&enabled){setKnowledgeFor(id);return;}
    await save(w,key,enabled);
   }catch(e){setError(e instanceof Error?e.message:'Settings could not be saved.');}finally{setBusy(false);}
  }
@@ -36,6 +37,7 @@ export function ReviewAutomationControls({location,onSaved}:{location:ReviewAuto
  </div>{positiveOn&&location.auto_four!==location.auto_five&&<p className="text-xs text-muted">Currently {location.auto_five?'5':'4'}-star autopilot only.</p>}
  <ReviewScheduleSettings businessId={location.id}/><AiKnowledgeSettings businessId={location.id} onSaved={onSaved}/>
  {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
+ {knowledgeFor===location.id&&<KnowledgePopup key={location.id} businessId={location.id} approveLowStars onSaved={onSaved} onClose={()=>setKnowledgeFor(null)}/>}
  </div>;
 }
 

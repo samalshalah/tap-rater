@@ -3,7 +3,7 @@ import {authorizedLink,liveDb,LiveReviewError} from './google-business/live-revi
 import {profileSnapshot} from './google-business/profile-management';
 import {reviewKnowledgeSchema} from './review-knowledge-data';
 import type {ReviewActor} from './review-workspaces';
-export const knowledgeSave=z.object({businessId:z.string().uuid(),version:z.number().int().positive(),knowledge:reviewKnowledgeSchema}).strict();
+export const knowledgeSave=z.object({businessId:z.string().uuid(),version:z.number().int().positive(),knowledge:reviewKnowledgeSchema,approveLowStars:z.boolean().optional()}).strict();
 export async function reviewKnowledgeSnapshot(actor:ReviewActor,businessId:string,sql=liveDb()){
  const link=await authorizedLink(actor,businessId,sql);
  const {profile}=await profileSnapshot(actor,businessId,sql);
@@ -13,7 +13,8 @@ export async function reviewKnowledgeSnapshot(actor:ReviewActor,businessId:strin
 }
 export async function saveReviewKnowledge(actor:ReviewActor,raw:unknown,sql=liveDb()){
  const v=knowledgeSave.parse(raw),link=await authorizedLink(actor,v.businessId,sql);
- const rows=await sql`UPDATE google_review_links SET review_knowledge=${JSON.stringify(v.knowledge)}::jsonb,auto_style=${v.knowledge.style},settings_version=settings_version+1
+ if(v.approveLowStars&&!link.ai_consent)throw new LiveReviewError('Turn on AI replies before activating drafts.');
+ const rows=await sql`UPDATE google_review_links SET review_knowledge_approved_at=CASE WHEN ${Boolean(v.approveLowStars)} THEN now() ELSE NULL END,draft_low_stars=${Boolean(v.approveLowStars)},review_knowledge=${JSON.stringify(v.knowledge)}::jsonb,auto_style=${v.knowledge.style},settings_version=settings_version+1
  WHERE business_id=${v.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reopen this popup before saving.',409);
  return {saved:true,version:Number(rows[0].settings_version),published:false};

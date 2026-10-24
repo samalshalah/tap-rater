@@ -114,6 +114,7 @@ export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),
 export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean(),lowStars:z.boolean().optional(),delayMinutes:z.union([z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]).optional()}).strict();
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
+ if(v.lowStars===true&&!settingsLink.review_knowledge_approved_at)throw new LiveReviewError('Approve your Knowledge Center information before activating 1–3-star drafts.');
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
  const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??120},
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
@@ -181,7 +182,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  const rows=await sql`UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz
  WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
- AND (${link.draft_low_stars!==false} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
+ AND (${Boolean(link.draft_low_stars&&link.review_knowledge_approved_at)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
  AND fetched_at>now()-interval '1 day' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
@@ -200,7 +201,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz
    AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
    AND coalesce(r.data->'reviewReply'->>'comment','')='' AND r.business_id=l.business_id AND l.enabled AND l.ai_consent
-   AND l.settings_version=${link.settings_version} AND (l.draft_low_stars OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
+   AND l.settings_version=${link.settings_version} AND (l.draft_low_stars AND l.review_knowledge_approved_at IS NOT NULL OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
   await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId}`;
   if(saved.length)await scheduleSavedReply(String(review.id),Number(review.version)+1,sql);
@@ -280,7 +281,7 @@ export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
 export async function olderReviews(actor:ReviewActor,businessId:string,confirm=false,sql=liveDb()){
  const link=await authorizedLink(actor,businessId,sql);
  if(!link.enabled||!link.ai_consent)throw new LiveReviewError('Enable AI replies for this location first.');
- const rows=await sql`SELECT id,data,draft,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND (${link.draft_low_stars!==false} OR data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND NOT suspected_spam AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')='' AND fetched_at>now()-interval '30 days' AND scheduled_at IS NULL AND old_reply_requested_at IS NULL AND draft='' AND NULLIF(data->>'createTime','')::timestamptz<=coalesce(${link.consent_at||null}::timestamptz,now()) ORDER BY created_at LIMIT 5000`;
+ const rows=await sql`SELECT id,data,draft,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND (${Boolean(link.draft_low_stars&&link.review_knowledge_approved_at)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND NOT suspected_spam AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')='' AND fetched_at>now()-interval '30 days' AND scheduled_at IS NULL AND old_reply_requested_at IS NULL AND draft='' AND NULLIF(data->>'createTime','')::timestamptz<=coalesce(${link.consent_at||null}::timestamptz,now()) ORDER BY created_at LIMIT 5000`;
  const automatic=rows.filter(r=>link.auto_enabled&&((reviewStars(r.data)===4&&link.auto_four)||(reviewStars(r.data)===5&&link.auto_five))).length;
  if(confirm){
  await sql`UPDATE google_live_reviews SET old_reply_requested_at=now() WHERE business_id=${businessId} AND id=ANY(${rows.map(r=>String(r.id))}::uuid[]) AND draft='' AND publish_state='idle' AND NOT suspected_spam AND coalesce(data->'reviewReply'->>'comment','')=''`;

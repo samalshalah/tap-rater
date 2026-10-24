@@ -17,6 +17,7 @@ describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no exter
    await sql`SELECT claim_marketing_location(${businessId}::uuid,${customer.id}::uuid)`;
    await sql`INSERT INTO google_business_connections(owner,google_subject,email,access_ciphertext,refresh_ciphertext,expires_at,scopes) VALUES(${email},${email},${email},'fixture','fixture',now(),'fixture')`;
    await sql`INSERT INTO google_review_links(business_id,customer_id,owner,google_subject,parent,title,ai_consent) VALUES(${businessId},${customer.id},${email},${email},${parent},'Dubai Shawarma & Cafe — isolated test',true)`;
+   await sql`UPDATE google_review_links SET draft_low_stars=true,review_knowledge_approved_at=now() WHERE business_id=${businessId}`;
    const cases=[...['ONE','TWO','THREE','FOUR','FIVE'].flatMap(starRating=>[false,true].map(on=>({starRating,on,four:true,five:true,historical:false,spam:false}))),
     {starRating:'FOUR',on:true,four:false,five:true,historical:false,spam:false},
     {starRating:'FIVE',on:true,four:true,five:false,historical:false,spam:false},
