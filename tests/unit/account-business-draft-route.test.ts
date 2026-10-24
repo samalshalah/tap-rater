@@ -1,0 +1,16 @@
+import {it,expect,vi,beforeEach} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),read:vi.fn(),save:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
+vi.mock('@/lib/account-business-drafts',async original=>({...await original<object>(),accountBusinesses:m.read,saveAccountBusinessDraft:m.save}));
+import {GET,POST} from '@/app/api/account/businesses/[id]/draft/route';
+const id='00000000-0000-4000-8000-000000000001',ctx={params:Promise.resolve({id})};
+const input={version:0,draft:{name:'First branch',address:'',phone:'',website:''}};
+const request=(body:unknown=input,origin='https://taprater.com')=>new Request('https://taprater.com/api/account/businesses/'+id+'/draft',{method:'POST',headers:{origin},body:JSON.stringify(body)});
+beforeEach(()=>{vi.resetAllMocks();m.auth.mockResolvedValue({session:{email:'owner@example.com'}});m.read.mockResolvedValue([{id}]);m.save.mockResolvedValue({draft:input.draft,version:1});});
+it('blocks unauthenticated reads and writes',async()=>{m.auth.mockResolvedValue({response:new Response(null,{status:401})});expect((await GET(request(),ctx)).status).toBe(401);expect((await POST(request(),ctx)).status).toBe(401);expect(m.read).not.toHaveBeenCalled();expect(m.save).not.toHaveBeenCalled();});
+it('blocks cross-origin saves',async()=>{expect((await POST(request(input,'https://evil.test'),ctx)).status).toBe(403);expect(m.save).not.toHaveBeenCalled();});
+it('does not expose an unowned business',async()=>{m.read.mockResolvedValue([]);expect((await GET(request(),ctx)).status).toBe(404);expect(m.read).toHaveBeenCalledWith('owner@example.com',id);});
+it('returns a saved draft with private cache headers',async()=>{const response=await POST(request(),ctx);expect(response.status).toBe(200);expect(response.headers.get('cache-control')).toContain('no-store');expect(m.save).toHaveBeenCalledWith('owner@example.com',id,input);});
+it('rejects publication or customer override fields',async()=>{expect((await POST(request({...input,publish:true}),ctx)).status).toBe(400);expect(m.save).not.toHaveBeenCalled();});
+it('returns a conflict without overwriting another edit',async()=>{m.save.mockResolvedValue(null);expect((await POST(request(),ctx)).status).toBe(409);});
+it('handles storage errors without exposing details',async()=>{m.read.mockRejectedValue(Error('secret'));const response=await GET(request(),ctx);expect(response.status).toBe(503);expect(await response.text()).not.toContain('secret');});
