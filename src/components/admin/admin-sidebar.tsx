@@ -31,7 +31,7 @@ const icons = {
   Requests: ClipboardList,
   Orders: ShoppingBag,
   "Production Queue": Hammer,
-  "Account Status": Users,
+  "Customers & Licences": Users,
   Usage: Activity,
   "AI Agent": Bot,
   "Google Connection": Plug,

@@ -2,7 +2,7 @@ import {clientOperations, type ClientOperation} from '@/lib/admin-client-operati
 import {ClientLicencesButton} from './marketing-access-editor';
 
 type View = 'all'|'accounts'|'usage'|'ai'|'google';
-const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Account status',usage:'Service usage',ai:'AI agent',google:'Google connection'};
+const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Customers & Licences',usage:'Service usage',ai:'AI agent',google:'Google connection'};
 const columns:{label:string; views:View[]; value:(a:ClientOperation)=>string|number}[]=[
   {label:'Account',views:['accounts','usage','ai','google'],value:a=>a.accountName},
   {label:'Status',views:['accounts'],value:a=>a.status.replaceAll('_',' ')},
@@ -21,7 +21,7 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
   return <section className="tr-admin-section">
     <p className="tr-eyebrow">Client operations</p>
     <h1 className="tr-admin-title mt-1">{titles[view]}</h1>
-    <p className="mt-2 text-sm text-muted">Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.</p>
+    <p className="mt-2 text-sm text-muted">{view==='accounts'?'Manage customers and their licences.':'Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.'}</p>
     {unavailable ? <p role="alert" className="mt-4">Operational data is temporarily unavailable.</p> : <>
       <div className="my-4 flex flex-wrap gap-5 text-sm">
         <span><strong>{accounts.length}</strong> accounts</span>
@@ -39,7 +39,7 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
         </table>
       </div>
       {!accounts.length&&<p className="mt-4 text-sm">No client accounts yet.</p>}
-      <p className="mt-3 text-xs text-muted">Usage counts requests, including attempts; it is not a billing statement. Replies and profile changes remain drafts. New pricing is not active.</p>
+      {view!=='accounts'&&<p className="mt-3 text-xs text-muted">Usage counts requests, including attempts; it is not a billing statement. Replies and profile changes remain drafts. New pricing is not active.</p>}
     </>}
   </section>;
 }
