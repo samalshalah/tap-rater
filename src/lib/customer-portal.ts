@@ -1,3 +1,5 @@
+import { getProductBySlug } from "@/lib/products";
+import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getOrderLineItemProductionSummary, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
@@ -84,6 +86,7 @@ export type CustomerPortalStand = {
   destinationUrl?: string;
   logoUrl?: string;
   proofPreviewUrl?: string;
+  productImageUrl?: string;
   proofTemplateUrl?: string;
   qrTargetUrl?: string;
   nfcTargetUrl?: string;
@@ -515,6 +518,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         destinationUrl,
         logoUrl: summary.logoMediaUrl,
         proofPreviewUrl,
+        productImageUrl: getProductBySlug(getCanonicalProductSlug(rawItem.productId))?.images[0]?.src,
         proofTemplateUrl: summary.frontTemplateUrl,
         qrTargetUrl: summary.qrTargetUrl,
         nfcTargetUrl: summary.nfcTargetUrl,

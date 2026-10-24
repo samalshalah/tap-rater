@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import { useId, useState } from "react";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
-import { ChangeRequestForm } from "@/components/account/change-request-form";
 import { StandPreview } from "@/components/account/stand-preview";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
@@ -100,7 +99,6 @@ function StandDetailModal({
 }) {
   const isMultiLink = stand.kind === "multilink" && !showStandPreview;
   const headingId = useId();
-  const [requestChange, setRequestChange] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
 
@@ -128,7 +126,7 @@ function StandDetailModal({
           </div>
         ) : (
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <StandPreview key={stand.id} url={stand.proofPreviewUrl} title={stand.title} />
+          <StandPreview key={stand.id} url={stand.proofPreviewUrl || stand.productImageUrl} title={stand.title} />
           <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 text-sm">
             <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />
@@ -141,8 +139,6 @@ function StandDetailModal({
             {stand.destinationUrl && <button className="tr-button-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(stand.destinationUrl!);setCopied(true);setCopyError(false);}catch{setCopyError(true);}}}>{copied ? "Link copied" : "Copy destination link"}</button>}
             {copyError && <p role="status">Copy unavailable. Open the destination link below.</p>}
             <Link className="tr-button-ghost" href="/account/orders#invoices">Invoices & receipts</Link>
-            <button className="tr-button-ghost" aria-expanded={requestChange} onClick={()=>setRequestChange(!requestChange)}>Request a change</button>
-            {requestChange && <ChangeRequestForm deviceCode={`${formatOrderReference(stand.orderReference)} / ${stand.lineItemIndex + 1}`} />}
 
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
