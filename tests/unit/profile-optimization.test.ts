@@ -38,3 +38,14 @@ it('includes absent or undated special hours as draft-eligible confirmation with
  expect(JSON.stringify(profile)).toBe(before);
  }
 });
+
+it('limits imported facts to relevant fields and excludes large media metadata',async()=>{
+ const run=vi.fn().mockResolvedValue({response:{summary:'Confirm upcoming exceptions.',steps:['Ask the owner for upcoming exceptions before saving a draft.'],proposedDescription:'',questions:[]}});
+ const facts={...observed,details:{media:'x'.repeat(100000)},hours:'x'.repeat(6000)};
+ await generateIssueDraft({business:'Fixture',verifiedGoogleFacts:facts},run);
+ const payload=JSON.parse((run.mock.calls[0][1] as any).messages[1].content);
+ expect(payload.verifiedGoogleFacts.details).toBeUndefined();
+ expect(payload.verifiedGoogleFacts.hours).toHaveLength(5000);
+ expect(payload.verifiedGoogleFacts.specialHours).toBe(observed.specialHours);
+ expect(facts.hours).toHaveLength(6000);
+});
