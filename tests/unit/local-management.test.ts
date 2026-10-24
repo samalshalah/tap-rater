@@ -10,3 +10,18 @@ describe('local directory validation',()=>{
  it('does not allow customers to choose another account for a new location',async()=>{const sql=vi.fn();await expect(mutateLocal({kind:'customer',email:'one@example.com'},{action:'createLocation',customerId:id,name:'Branch 2',address:'',phone:'',website:''},sql as never)).rejects.toMatchObject({status:403});expect(sql).not.toHaveBeenCalled();});
  it('reports conflicting saves without overwriting',async()=>{const sql=vi.fn().mockResolvedValue([]);await expect(mutateLocal({kind:'customer',email:'one@example.com'},record,sql as never)).rejects.toMatchObject({status:409});});
 });
+
+it('removes only the owned location and stops its automation atomically',async()=>{
+ const sql=vi.fn().mockResolvedValue([{id}]);
+ await expect(mutateLocal({kind:'customer',email:'OWNER@example.com'},{action:'deleteLocation',businessId:id,version:2},sql as never)).resolves.toEqual({id});
+ const [parts,...values]=sql.mock.calls[0];const query=parts.join('?');
+ expect(query).toContain('lower(c.email)=');expect(values).toContain('owner@example.com');
+ expect(query).toContain('b.local_profile_version=');expect(values).toContain(2);
+ expect(query).toContain('UPDATE google_review_links');expect(query).toContain('UPDATE local_rank_schedules');expect(query).toContain('UPDATE marketing_location_access');
+ expect(query).not.toMatch(/DELETE FROM|UPDATE orders|UPDATE devices/);
+ expect(sql).toHaveBeenCalledTimes(1);
+});
+it('rejects deleting an unavailable, foreign or stale location',async()=>{
+ const sql=vi.fn().mockResolvedValue([]);
+ await expect(mutateLocal({kind:'customer',email:'other@example.com'},{action:'deleteLocation',businessId:id,version:1},sql as never)).rejects.toMatchObject({status:409});
+});

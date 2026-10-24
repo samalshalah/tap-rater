@@ -43,7 +43,7 @@ export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:
 }
 export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor,customerEmail:string|null=null){
  z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/).parse(account);z.string().regex(/^locations\/[A-Za-z0-9_-]+$/).parse(location);
- const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${businessId} AND c.account_status='active' AND (${customerEmail===null} OR lower(c.email)=${customerEmail})`;
+ const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.status IS DISTINCT FROM 'marketing_removed' AND b.id=${businessId} AND c.account_status='active' AND (${customerEmail===null} OR lower(c.email)=${customerEmail})`;
  const connections=await sql`SELECT google_subject FROM google_business_connections WHERE owner=${owner}`;
  if(!businesses[0] || !connections[0])throw new LiveReviewError('An active customer and connected Google account are required.');
  const client=await makeClient(owner);let token:string|undefined;let title='';let selectedAddress='';
@@ -103,7 +103,7 @@ async function reserveAi(businessId:string,sql=liveDb()){
  AND (ai_last_at IS NULL OR ai_last_at<now()-interval '10 seconds') RETURNING business_id`;
  if(!rows.length)throw new LiveReviewError('Enable AI permission and wait for the daily safety limit or cooldown to reset.',429);
  const [allowance]=await sql`SELECT reserve_marketing_units(${businessId}::uuid,'ai',1,${randomUUID()}) AS allowed`;
- if(!allowance?.allowed)throw new LiveReviewError('This location’s monthly AI allowance is used or package access has expired.',429);
+ if(!allowance?.allowed)throw new LiveReviewError('The monthly AI allowance is used or package access has expired.',429);
 }
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);await reserveAi(String(link.business_id),sql);

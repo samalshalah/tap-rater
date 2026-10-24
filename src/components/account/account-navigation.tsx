@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {LayoutDashboard,MessageSquare,Building2,Map, ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag,UserRound} from 'lucide-react';
-const icons=[LayoutDashboard,MessageSquare,Building2,Map,ListChecks,BarChart3,Bell,LayoutDashboard,Tablet,Link2,ShoppingBag,UserRound];
+const icons=[LayoutDashboard,Building2,MessageSquare,Building2,Map,ListChecks,BarChart3,Bell,LayoutDashboard,Tablet,Link2,ShoppingBag,UserRound];
 import {usePathname,useRouter} from 'next/navigation';
 import {useEffect} from 'react';
 import {customerNavigation, groupCustomerNavigation, isNavigationActive} from '@/lib/customer-navigation';

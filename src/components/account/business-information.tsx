@@ -8,7 +8,7 @@ export function BusinessInformation({businesses}:{businesses:AccountBusiness[]})
  {selected&&<BusinessEditor key={selected.id} business={selected} onClose={()=>setSelected(null)} onSaved={(draft,version)=>{setItems(previous=>previous.map(item=>item.id===selected.id?{...item,draft,version}:item));setNotice('Business draft saved.');setSelected(null);}}/>}</section>;
 }
 function Field({label,value}:{label:string;value:string}){return <div><dt className="text-muted">{label}</dt><dd className="mt-1 whitespace-pre-line break-words">{value||'Not added'}</dd></div>}
-function BusinessEditor({business,onClose,onSaved}:{business:AccountBusiness;onClose:()=>void;onSaved:(draft:BusinessDraftFields,version:number)=>void}){
+export function BusinessEditor({business,onClose,onSaved}:{business:AccountBusiness;onClose:()=>void;onSaved:(draft:BusinessDraftFields,version:number)=>void}){
  const [loaded,setLoaded]=useState<AccountBusiness|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const endpoint=`/api/account/businesses/${business.id}/draft`;
  useEffect(()=>{let active=true;fetch(endpoint,{cache:'no-store'}).then(async response=>{const value=await response.json();if(!response.ok)throw Error(value.error);if(active)setLoaded(value);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[endpoint]);

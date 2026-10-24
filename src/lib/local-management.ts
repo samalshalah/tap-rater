@@ -9,6 +9,7 @@ export const publicUrl = text(2048).refine(value => {
 }, 'Use a public http or https URL.');
 export const listingStatuses = ['not_checked','listed','needs_update','missing','unavailable'] as const;
 export const localMutation = z.discriminatedUnion('action', [
+  z.object({action:z.literal('deleteLocation'),businessId:z.string().uuid(),version:z.number().int().positive()}).strict(),
   z.object({ action:z.literal('createLocation'), customerId:z.string().uuid().optional(), name:text(200).min(1), address:text(1000), phone:text(80), website:publicUrl }).strict(),
   z.object({ action:z.literal('updateLocation'), businessId:z.string().uuid(), name:text(200).min(1), address:text(1000), phone:text(80), website:publicUrl, category:text(100), description:text(750), hours:text(1000), version:z.number().int().positive() }).strict(),
   z.object({ action:z.literal('advanceListing'), businessId:z.string().uuid(), directory:text(100).min(1), state:z.enum(['approved','submitted','resolved']), profileVersion:z.number().int().positive(), version:z.number().int().positive() }).strict(),
@@ -28,10 +29,10 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
    FROM businesses b JOIN customers c ON c.id=b.customer_id
    LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
    LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
-   WHERE c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
+   WHERE b.status IS DISTINCT FROM 'marketing_removed' AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
    ORDER BY c.email,b.business_name,b.address,b.id`;
   const listings = await sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
-    WHERE d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory`;
+    WHERE b.status IS DISTINCT FROM 'marketing_removed' AND d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory`;
   const customers = actor.kind==='admin' ? await sql`SELECT id,email FROM customers WHERE account_status='active' ORDER BY email` : [];
   const licenses=actor.kind==='customer'?(await sql`SELECT a.location_limit,a.unlimited_locations,(SELECT count(*)::int FROM marketing_location_access m WHERE m.customer_id=c.id AND m.enabled) AS used FROM customers c JOIN customer_marketing_access a ON a.customer_id=c.id WHERE lower(c.email)=${email(actor)} AND a.status IN ('active','testing') AND (a.expires_at IS NULL OR a.expires_at>now())`)[0]:null;
   return {locations,listings,customers,licenses};
@@ -45,6 +46,24 @@ export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()
     const rows=await sql`SELECT create_marketing_business(c.id,${v.name},${v.address},${v.phone},${v.website}) AS id FROM customers c
       WHERE c.account_status='active' AND ((${actor.kind==='admin'} AND c.id=${v.customerId || null}::uuid) OR (${actor.kind==='customer'} AND lower(c.email)=${email(actor)}))`;
     if(!rows.length)throw new LiveReviewError('Customer unavailable.',404);
+    return rows[0];
+  }
+  if(v.action==='deleteLocation') {
+    // Remove only the service location. Retain stand assignments, invoices and history.
+    const rows=await sql`WITH removed AS (
+      UPDATE businesses b SET status='marketing_removed',local_profile_version=local_profile_version+1
+      FROM customers c WHERE b.id=${v.businessId} AND c.id=b.customer_id AND c.account_status='active'
+      AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND b.local_profile_version=${v.version}
+      AND b.status IS DISTINCT FROM 'marketing_removed' RETURNING b.id,b.customer_id
+    ), links AS (
+      UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,profile_ai_enabled=false,settings_version=settings_version+1
+      FROM removed r WHERE l.business_id=r.id AND l.customer_id=r.customer_id RETURNING l.business_id
+    ), schedules AS (
+      UPDATE local_rank_schedules s SET enabled=false FROM removed r WHERE s.business_id=r.id AND s.customer_id=r.customer_id RETURNING s.business_id
+    ), access AS (
+      UPDATE marketing_location_access m SET enabled=false FROM removed r WHERE m.business_id=r.id AND m.customer_id=r.customer_id RETURNING m.business_id
+    ) SELECT id FROM removed`;
+    if(!rows.length)throw new LiveReviewError('Location unavailable or changed. Refresh and try again.',409);
     return rows[0];
   }
   if(v.action==='updateLocation') {

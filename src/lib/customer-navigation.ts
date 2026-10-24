@@ -1,5 +1,6 @@
 export const customerNavigation = [
   {href:'/account',label:'Overview'},
+  {href:'/account/locations',label:'Locations'},
   {href:'/account/reviews',label:'Reviews'},
   {href:'/account/profile',label:'Google Profile'},
   {href:'/account/heatmap',label:'Heat Map'},
