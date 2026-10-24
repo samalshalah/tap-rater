@@ -5,7 +5,7 @@ import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import {useEffect,useState} from 'react';
 import {customerNavigation,groupCustomerNavigation,isNavigationActive,locationTools,locationToolHref,activeLocationId} from '@/lib/customer-navigation';
 import type {NavigationLocation} from '@/lib/customer-navigation-locations';
-const icons:Record<string,typeof Building2>={'/account':LayoutDashboard,'/account/locations':Building2,'/account/stands/overview':LayoutDashboard,'/account/stands':Tablet,'/account/multilink':Link2,'/account/orders':ShoppingBag,'/account/settings':UserRound,'/account/profile':Building2,'/account/reviews':MessageSquare,'/account/heatmap':Map};
+const icons:Record<string,typeof Building2>={'/account':LayoutDashboard,'/account/locations':Building2,'/account/stands/overview':LayoutDashboard,'/account/stands':Tablet,'/account/multilink':Link2,'/account/orders':ShoppingBag,'/account/settings':UserRound,'/account/profile':Building2,'/account/reviews':MessageSquare,'/account/heatmap':Map,'/account/business':Building2};
 export function AccountNavigation({links,locations=[],locationsError=false}:{links:typeof customerNavigation;locations?:NavigationLocation[];locationsError?:boolean}){
  const pathname=usePathname(),router=useRouter(),params=useSearchParams();
  const selected=activeLocationId(params.get('location'),locations);

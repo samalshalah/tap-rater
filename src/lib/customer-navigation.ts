@@ -28,6 +28,7 @@ export const locationTools=[
  {href:'/account/profile',label:'Google Profile'},
  {href:'/account/reviews',label:'Reviews'},
  {href:'/account/heatmap',label:'Heat Map'},
+ {href:'/account/business',label:'Business Information'},
 ];
 export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}
 export function activeLocationId(requested:string|null,locations:{id:string}[]){return locations.some(l=>l.id===requested)?requested!:'';}
