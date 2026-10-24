@@ -9,3 +9,16 @@ describe('profile agent',()=>{
  it('rejects a stale toggle',async()=>{await expect(saveProfileAgentSettings({kind:'customer',email:'c@example.com'},{businessId:id,enabled:true,version:2},rows([link],[]))).rejects.toMatchObject({status:409});});
  it('requires ownership before changing settings',async()=>{const sql=rows([]);await expect(saveProfileAgentSettings({kind:'customer',email:'other@example.com'},{businessId:id,enabled:true,version:3},sql)).rejects.toMatchObject({status:404});expect(sql).toHaveBeenCalledTimes(1);});
 });
+
+it('does not prepare when disconnected or when there is no eligible issue',async()=>{
+ const sync=vi.fn(),prepare=vi.fn();
+ expect(await prepareProfileAgentDraft(id,rows([{...link,enabled:false}]),sync,prepare)).toEqual({drafted:false});
+ expect(sync).not.toHaveBeenCalled();
+ expect(await prepareProfileAgentDraft(id,rows([link],[]),sync,prepare)).toEqual({drafted:false});
+ expect(prepare).not.toHaveBeenCalled();
+});
+it('respects an authorization failure before inspecting any issues',async()=>{
+ const sync=vi.fn(),prepare=vi.fn();
+ await expect(prepareProfileAgentDraft(id,rows([]),sync,prepare)).rejects.toMatchObject({status:404});
+ expect(sync).not.toHaveBeenCalled();expect(prepare).not.toHaveBeenCalled();
+});

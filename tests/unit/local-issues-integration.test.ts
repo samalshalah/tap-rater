@@ -15,7 +15,7 @@ describe.skipIf(!url)('location notification ownership and draft-only AI',()=>{
    for(const b of locations){
     const parent=`accounts/test/locations/${b.id}`;
     await sql`INSERT INTO google_review_links(business_id,customer_id,owner,google_subject,parent,title) VALUES(${b.id},${customer.id},${owner},${owner},${parent},'Fixture')`;
-    await sql`INSERT INTO google_profile_drafts(business_id,parent,google_subject,observed) VALUES(${b.id},${parent},${owner},${JSON.stringify({description:'Boutique',phone:'',website:'',hours:'',categories:'Boutique'})}::jsonb)`;
+    await sql`INSERT INTO google_profile_drafts(business_id,parent,google_subject,observed) VALUES(${b.id},${parent},${owner},${JSON.stringify({description:'Boutique',phone:'',website:'',hours:'',categories:'Boutique',specialHours:'2099-12-25: Closed'})}::jsonb)`;
     await sql`INSERT INTO local_issue_access(business_id,customer_id,parent,google_subject) VALUES(${b.id},${customer.id},${parent},${owner})`;
    }
    const a=locations[0].id,b=locations[1].id;
