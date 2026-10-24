@@ -19,7 +19,7 @@ const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim(
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const locations = await sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
-   l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.settings_version,l.profile_ai_enabled,
+   l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
    (g.owner IS NOT NULL AND l.enabled) AS connected,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,

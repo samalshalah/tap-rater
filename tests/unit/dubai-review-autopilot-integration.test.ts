@@ -51,9 +51,20 @@ describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no exter
     if(c.spam)expect(generator).not.toHaveBeenCalled();
     else expect(generator).toHaveBeenCalledWith('Dubai Shawarma & Cafe — isolated test',expect.any(Number),data.comment,undefined,{businessId,customerId:String(customer.id),service:'review_automatic'});
    }
+   // Low-star opt-out must prevent generation, including the older-review action.
+   const lowId=randomUUID(),lowData={reviewId:lowId,starRating:'ONE',comment:'Synthetic low-star feedback',createTime:new Date().toISOString(),updateTime:new Date().toISOString()};
+   await sql`INSERT INTO google_live_reviews(business_id,resource,data) VALUES(${businessId},${parent+'/reviews/'+lowId},${JSON.stringify(lowData)}::jsonb)`;
+   await sql`UPDATE google_review_links SET draft_low_stars=false,ai_last_at=NULL WHERE business_id=${businessId}`;
+   const lowGenerator=vi.fn().mockResolvedValue(styles);
+   expect((await prepareAutomaticDraft(businessId,sql,lowGenerator)).drafted).toBe(false);expect(lowGenerator).not.toHaveBeenCalled();
+   expect((await olderReviews({kind:'customer',email},businessId,false,sql)).total).toBe(0);
+   await sql`UPDATE google_review_links SET draft_low_stars=true WHERE business_id=${businessId}`;
+   expect((await prepareAutomaticDraft(businessId,sql,lowGenerator)).drafted).toBe(true);
+   const [lowSaved]=await sql`SELECT scheduled_at,publish_state FROM google_live_reviews WHERE resource=${parent+'/reviews/'+lowId}`;
+   expect(lowSaved.scheduled_at).toBeNull();expect(lowSaved.publish_state).toBe('idle');
    const cached=await sql`SELECT data FROM google_live_reviews WHERE business_id=${businessId}`;
    const imported=await syncLiveReviews({kind:'customer',email},businessId,sql,async()=>({listReviews:async()=>({reviews:cached.map(r=>r.data),totalReviewCount:cached.length})} as any));
-   expect(imported.imported).toBe(cases.length);
+   expect(imported.imported).toBe(cases.length+1);
   }finally{
    vi.unstubAllEnvs();
    await sql`DELETE FROM businesses WHERE customer_id=${customer.id}`;
