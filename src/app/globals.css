@@ -1149,3 +1149,14 @@ main.tr-client-shell .tr-local-workspace .tr-marketing-feature .text-xs{font-siz
 .tr-client-shell .tr-account-form input {width:100%;border:1px solid #cbd8e9;border-radius:5px;padding:8px 10px;font-size:14px;background:#fff;}
 .tr-client-shell .tr-account-form label {display:grid;gap:6px;font-size:13px;}
 .tr-client-shell .tr-account-form input:disabled {background:#f4f6f8;color:#64748b;}
+
+/* Purchased products have distinct navigation groups and overview destinations. */
+.tr-client-shell .tr-workspace-sidebar nav.tr-account-navigation{gap:18px;}
+.tr-client-shell .tr-account-navigation .tr-workspace-nav-link{margin-top:0;border-top:0;border-radius:6px;padding-top:10px;padding-bottom:10px;}
+.tr-account-navigation > section + section{border-top:1px solid #dce5ef;padding-top:14px;}
+@media(max-width:1023px){
+ .tr-client-shell .tr-account-navigation{display:flex;overflow-x:auto;align-items:flex-start;}
+ .tr-account-navigation > section{flex-shrink:0;}
+ .tr-account-navigation > section + section{border-top:0;border-left:1px solid #dce5ef;padding-top:0;padding-left:12px;}
+ .tr-account-navigation > section > div{display:flex;}
+}
