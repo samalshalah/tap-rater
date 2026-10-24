@@ -33,6 +33,15 @@ describe.skipIf(!url)('location notification ownership and draft-only AI',()=>{
    expect(await mutateIssue(actor,{...input,action:'preview'},sql,generate)).toMatchObject({charged:false,published:false});
    await mutateIssue(actor,{...input,action:'preview'},sql,generate);expect(generate).toHaveBeenCalledTimes(1);
    expect(await mutateIssue(actor,{...input,action:'approveDraft'},sql,generate)).toMatchObject({published:false});
+   const original=(await localIssueSnapshot(actor,a,sql)).issues[0].draft;
+   const edited={...original,summary:'Owner corrected the confirmation checklist.'};
+   const edit={...input,action:'editDraft',draft:edited,expectedDraft:original};
+   await expect(mutateIssue({kind:'customer',email:'other@example.test'},edit,sql,generate)).rejects.toMatchObject({status:404});
+   await expect(mutateIssue(actor,{...edit,businessId:b},sql,generate)).rejects.toThrow();
+   expect(await mutateIssue(actor,edit,sql,generate)).toMatchObject({saved:true,charged:false,published:false});
+   const saved=(await localIssueSnapshot(actor,a,sql)).issues[0];expect(saved.draft.summary).toBe(edited.summary);expect(saved.approved_at).toBeNull();
+   await expect(mutateIssue(actor,edit,sql,generate)).rejects.toMatchObject({status:409});
+   expect(generate).toHaveBeenCalledTimes(1);
    const [profile]=await sql`SELECT draft,version FROM google_profile_drafts WHERE business_id=${a}`;expect(profile.draft).toBeNull();expect(profile.version).toBe(1);
    await sql`UPDATE google_profile_drafts SET observed=observed||'{"hours":"Sunday 12–6"}'::jsonb WHERE business_id=${a}`;
    await expect(mutateIssue(actor,{...input,action:'preview'},sql,generate)).rejects.toThrow('notification changed');

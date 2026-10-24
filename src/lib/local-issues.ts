@@ -4,10 +4,14 @@ import {authorizedLink,liveDb,LiveReviewError} from './google-business/live-revi
 import {profileSnapshot} from './google-business/profile-management';
 import {heatmapSnapshot} from './heatmap-management';
 import {detectLocalIssues,type Finding} from './local-issue-rules';
-import {generateIssueDraft} from './local-issue-ai';
+import {generateIssueDraft,issueDraftSchema} from './local-issue-ai';
 import type {ReviewActor} from './review-workspaces';
 const email=(actor:ReviewActor)=>actor.kind==='customer'?actor.email.toLowerCase():'';
-export const issueMutation=z.object({action:z.enum(['read','request','preview','approveDraft']),businessId:z.string().uuid(),id:z.string().uuid(),fingerprint:z.string().regex(/^[a-f0-9]{64}$/)}).strict();
+const issueIdentity={businessId:z.string().uuid(),id:z.string().uuid(),fingerprint:z.string().regex(/^[a-f0-9]{64}$/)};
+export const issueMutation=z.union([
+ z.object({...issueIdentity,action:z.enum(['read','request','preview','approveDraft'])}).strict(),
+ z.object({...issueIdentity,action:z.literal('editDraft'),draft:issueDraftSchema,expectedDraft:issueDraftSchema}).strict()
+]);
 export async function syncLocationIssues(actor:ReviewActor,businessId:string,sql=liveDb()){
  const link=await authorizedLink(actor,businessId,sql);
  let findings:Finding[]=[];let observed:unknown=null;
@@ -54,6 +58,13 @@ export async function mutateIssue(actor:ReviewActor,raw:unknown,sql=liveDb(),gen
  if(input.action==='read'){await sql`UPDATE local_issues SET read_at=now() WHERE id=${issue.id} AND fingerprint=${input.fingerprint}`;return {reviewed:true};}
  if(!issue.finding.aiEligible||!link.enabled)throw new LiveReviewError('This issue needs a manual check, not an AI fix.');
  if(input.action==='request'){await sql`UPDATE local_issues SET requested_at=now(),read_at=now() WHERE id=${issue.id} AND fingerprint=${input.fingerprint}`;return {requested:true,charged:false};}
+ if(input.action==='editDraft'){
+  if(issue.code!=='profile-description'&&input.draft.proposedDescription)throw new LiveReviewError('This improvement does not include a business description.',400);
+  const rows=await sql`UPDATE local_issue_drafts SET content=${JSON.stringify(input.draft)}::jsonb,approved_at=NULL
+   WHERE issue_id=${issue.id} AND fingerprint=${input.fingerprint} AND status='draft' AND content=${JSON.stringify(input.expectedDraft)}::jsonb RETURNING id`;
+  if(!rows.length)throw new LiveReviewError('This draft changed. Reopen it before saving your edits.',409);
+  return {saved:true,charged:false,published:false};
+ }
  if(input.action==='approveDraft'){
   const rows=await sql`UPDATE local_issue_drafts SET approved_at=now() WHERE issue_id=${issue.id} AND fingerprint=${input.fingerprint} AND status='draft' RETURNING id`;
   if(!rows.length)throw new LiveReviewError('Generate and review the draft first.');return {approved:true,published:false,charged:false};
