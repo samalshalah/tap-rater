@@ -49,6 +49,9 @@ export type CustomerPortalOrder = {
   invoicePdfUrl?: string;
   hostedInvoiceUrl?: string;
   receiptUrl?: string;
+  customerName?: string;
+  deliveryAddress?: string[];
+  taxCents?: number;
   productionStatus: string;
   shippingStatus: string;
   trackingUrl?: string;
@@ -77,6 +80,10 @@ export type CustomerPortalStand = {
   id: string;
   orderId: string;
   lineItemIndex: number;
+  standId?: string;
+  proofReviewAvailable?: boolean;
+  proofAvailable?: boolean;
+  proofQuantity?: number;
   orderReference: string;
   paymentStatus?: string;
   title: string;
@@ -291,6 +298,11 @@ function normalizeDevice(row: unknown, tapCounts: Map<string, number>): Customer
   };
 }
 
+function normalizeDeliveryAddress(input: unknown): string[] {
+ const shipping=readRecord(input),address=Object.keys(readRecord(shipping.address)).length?readRecord(shipping.address):shipping;
+ return [readString(shipping.name),readString(address.line1),readString(address.line2),[readString(address.city),readString(address.state),readString(address.postal_code)].filter(Boolean).join(', '),readString(address.country)].filter((v):v is string=>Boolean(v));
+}
+
 function normalizeOrder(row: unknown): CustomerPortalOrder | null {
   const value = readRecord(row);
   const id = readString(value.id);
@@ -304,6 +316,9 @@ function normalizeOrder(row: unknown): CustomerPortalOrder | null {
     id,
     reference,
     status: readString(value.status) ?? "pending_payment",
+    customerName: readString(value.customer_name),
+    deliveryAddress: normalizeDeliveryAddress(value.shipping_address_json),
+    taxCents: readNumber(readRecord(readRecord(value.customer_details_json).tax_summary).amount_cents),
     paymentStatus: readString(value.payment_status),
     paymentMethodLabel: readPaymentMethodLabel(value),
     paymentReference: readString(value.stripe_payment_intent_id),
@@ -498,7 +513,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
   const subscriptionByUrl = new Map(subscriptions.map((subscription) => [subscription.hostedPageUrl, subscription]));
 
   return orders.flatMap((order) =>
-    order.items.map((item) => {
+    order.items.flatMap((item) => {
       const index = Number(item.id) - 1;
       const rawItem = item.lineItem;
       const summary = getOrderLineItemProductionSummary(rawItem);
@@ -516,14 +531,18 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
           : undefined
         : readProofPreviewString(rawItem.setup, "previewImageUrl") ?? summary.frontTemplateUrl;
 
-      return {
-        id: `${order.id}-${index + 1}`,
+      return Array.from({length: Math.min(1000, Math.max(1,Math.floor(item.quantity)))},(_,unit)=>({
+        id: unit===0?`${order.id}-${index + 1}`:`${order.id}-${index + 1}-unit-${unit+1}`,
+        standId: `ST-${order.id}-${index+1}-${unit+1}`,
+        proofAvailable: Boolean(rawItem.setup?.customerProof || rawItem.optionId==='branded_qr_direct'),
+        proofReviewAvailable: proofStatus==='needs_review' && Boolean(rawItem.setup?.customerProof || (rawItem.optionId==='branded_qr_direct' && rawItem.setup?.designAssistanceRequested!==true)) && isOrderPaymentConfirmed(order.status as OrderRecord['status'],order.paymentStatus) && !['shipped','delivered'].includes(order.shippingStatus) && !['in_production','completed'].includes(order.productionStatus),
+        proofQuantity: item.quantity,
         orderId: order.id,
         lineItemIndex: index,
         orderReference: order.reference,
         paymentStatus: order.paymentStatus ?? order.status,
         title: item.title,
-        quantity: item.quantity,
+        quantity: 1,
         kind,
         businessName: summary.businessName,
         destinationUrl,
@@ -550,7 +569,7 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
           : kind === "multilink"
             ? "/account/stands#multi-link-editor"
             : "/account/orders"
-      };
+      }));
     })
   );
 }

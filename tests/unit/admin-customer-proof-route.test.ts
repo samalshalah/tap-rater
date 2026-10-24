@@ -1,0 +1,17 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),order:vi.fn(),guard:vi.fn(),put:vi.fn(),single:vi.fn()}));
+vi.mock('@/lib/admin-auth',()=>({requireAdminApi:m.auth}));
+vi.mock('@/lib/orders',async original=>({...await original<object>(),getAdminOrderById:m.order,guardedOrderUpdate:m.guard}));
+vi.mock('@/lib/db',()=>({getSupabaseAdmin:()=>({})}));
+vi.mock('@/lib/admin-media-storage',async original=>({...await original<object>(),getProductMediaBucket:async()=>({put:m.put})}));
+import {POST} from '@/app/api/admin/orders/[id]/customer-proof/route';
+const id='00000000-0000-4000-8000-000000000001';let order:any;
+function request(origin='https://taprater.com',type='image/png'){const form=new FormData();form.set('lineItemIndex','0');form.set('file',new File([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII=','base64')],'proof.png',{type}));return new Request(`https://taprater.com/api/admin/orders/${id}/customer-proof`,{method:'POST',headers:{origin},body:form});}
+const context={params:Promise.resolve({id})};
+beforeEach(()=>{vi.resetAllMocks();m.auth.mockResolvedValue(null);order={id,status:'paid',payment_status:'paid',production_status:'not_started',shipping_status:'not_shipped',line_items_json:[{productId:'stand',optionId:'custom_direct',proofApproved:true,quantity:1,setup:{customerProofApproval:{version:'old'}}}]};m.order.mockImplementation(async()=>({order}));m.guard.mockReturnValue({select:()=>({maybeSingle:m.single})});m.single.mockResolvedValue({data:{id}});});
+it('requires admin authentication',async()=>{m.auth.mockResolvedValue(new Response(null,{status:401}));expect((await POST(request(),context)).status).toBe(401);expect(m.put).not.toHaveBeenCalled();});
+it('rejects cross-origin upload',async()=>{expect((await POST(request('https://other.test'),context)).status).toBe(403);expect(m.put).not.toHaveBeenCalled();});
+it('rejects unsupported proof formats',async()=>{expect((await POST(request(undefined,'image/svg+xml'),context)).status).toBe(400);expect(m.put).not.toHaveBeenCalled();});
+it('stores a private proof and clears previous approval',async()=>{expect((await POST(request(),context)).status).toBe(200);expect(m.put.mock.calls[0][0]).toContain(`products/customer-proofs/production_artwork/${id}/0/`);const payload=m.guard.mock.calls[0][2];expect(payload.production_status).toBe('blocked');expect(payload.line_items_json[0].proofApproved).toBe(false);expect(payload.line_items_json[0].setup.customerProofApproval).toBeUndefined();});
+it('does not replace configured branded artwork with a different uploaded proof',async()=>{order.line_items_json[0].optionId='branded_qr_direct';expect((await POST(request(),context)).status).toBe(409);expect(m.put).not.toHaveBeenCalled();});
+it('does not overwrite concurrent order changes',async()=>{m.single.mockResolvedValue({data:null});expect((await POST(request(),context)).status).toBe(409);});

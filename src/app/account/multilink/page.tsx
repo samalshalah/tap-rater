@@ -18,8 +18,14 @@ export default async function AccountMultiLinkPage() {
     multiLinkSetupPending: false, proofStatus: "not_needed" as const, productionStatus: "", shippingStatus: "",
     primaryActionLabel: "Manage links", primaryActionHref: "/account/stands"
   }))];
+  const seenCodes = new Set<string>();
+  const multiLinkStands = allStands.filter(stand=>{
+    const code=stand.hostedPageCode;
+    if(stand.kind!=="multilink"||!code||seenCodes.has(code)||!portal.subscriptions.some(subscription=>subscription.permanentCode===code))return false;
+    seenCodes.add(code);return true;
+  });
   const hostedPageEntries = await Promise.all(
-    allStands
+    multiLinkStands
       .filter((stand) => stand.kind === "multilink" && stand.hostedPageCode)
       .map(async (stand) => {
         const context = await getHostedPageEditorContext(session.email, stand.hostedPageCode);
@@ -35,7 +41,7 @@ export default async function AccountMultiLinkPage() {
           <h1 className="text-xl font-semibold text-ink">Multi-Link</h1>
         </section>
 
-        <CustomerStandsManager stands={allStands.filter(stand=>stand.kind==="multilink"&&portal.subscriptions.some(subscription=>subscription.permanentCode===stand.hostedPageCode))} hostedPages={hostedPages} />
+        <CustomerStandsManager stands={multiLinkStands} hostedPages={hostedPages} />
       </div>
     </AccountShell>
   );

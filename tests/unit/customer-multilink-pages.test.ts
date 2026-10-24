@@ -96,3 +96,9 @@ it("the dedicated Multi-Link page loads only owned page editors",async()=>{
  expect(manager.mock.calls[0][0].stands).toHaveLength(2);expect(manager.mock.calls[0][0].stands.every((s:CustomerPortalStand)=>s.kind==='multilink')).toBe(true);
  expect(getHostedPageEditorContext.mock.calls.every(([email])=>email==='owner@example.com')).toBe(true);
 });
+
+it('shows a single Multi-Link editor when several stand units share a page',async()=>{
+ getCustomerPortal.mockResolvedValue(portal([{...stand,id:'unit1',hostedPageCode:'PAGE1'},{...stand,id:'unit2',hostedPageCode:'PAGE1'}]));
+ getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code}}));
+ renderToStaticMarkup(await AccountMultiLinkPage());expect(manager.mock.calls[0][0].stands).toHaveLength(2);expect(getHostedPageEditorContext.mock.calls.filter(([,code])=>code==='PAGE1')).toHaveLength(1);
+});

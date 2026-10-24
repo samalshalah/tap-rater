@@ -385,3 +385,10 @@ it.each([["manual:checkout","manual"],["admin:request","admin"],["manual:comp_re
  const db=createCustomerPortalDb({customers:[{id:"a",email:"a@example.com"}],businesses:[],devices:[],tap_events:[],orders:[],billing_invoices:[],hosted_subscriptions:[{id:"sub",customer_id:"a",stripe_subscription_id:reference,permanent_code:"PAGE",hosted_page_url:"https://taprater.com/p/PAGE"}]});
  expect((await getCustomerPortalFromClient(db.client,"a@example.com")).subscriptions[0].source).toBe(source);
 });
+
+it('assigns stable unique IDs to every unit and preserves delivery/payment details',async()=>{
+ const seed={customers:[{id:'a',email:'owner@example.com'}],businesses:[],devices:[],tap_events:[],hosted_subscriptions:[],billing_invoices:[],orders:[{id:'order-a',email:'owner@example.com',stripe_checkout_session_id:'cs_a',status:'paid',payment_status:'paid',shipping_address_json:{name:'Owner',address:{line1:'123 Main St',city:'Fairfax',state:'VA',postal_code:'22030',country:'US'}},customer_details_json:{tax_summary:{amount_cents:234},payment_method_details:{type:'card',brand:'visa',last4:'4242'}},line_items_json:[{productId:'google-review-stand',title:'Stand',quantity:3,unitAmountCents:3900,lineSubtotalCents:11700}]}]};
+ const first=await getCustomerPortalFromClient(createCustomerPortalDb(seed).client,'owner@example.com');const second=await getCustomerPortalFromClient(createCustomerPortalDb(seed).client,'owner@example.com');
+ expect(first.stands).toHaveLength(3);expect(new Set(first.stands.map(s=>s.standId)).size).toBe(3);expect(first.stands.map(s=>s.standId)).toEqual(second.stands.map(s=>s.standId));expect(first.stands.every(s=>s.quantity===1&&s.lineItemIndex===0)).toBe(true);
+ expect(first.orders[0]).toMatchObject({paymentMethodLabel:'Visa ending 4242',taxCents:234,deliveryAddress:['Owner','123 Main St','Fairfax, VA, 22030','US']});
+});

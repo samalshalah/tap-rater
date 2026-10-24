@@ -946,7 +946,7 @@ function matchOrderField(query: any, field: string, value: unknown) {
   return value == null && typeof query.is === "function" ? query.is(field, null) : query.eq(field, value ?? null);
 }
 
-function guardedOrderUpdate(client: OrdersDbClient, order: OrderRecord, payload: Record<string, unknown>) {
+export function guardedOrderUpdate(client: OrdersDbClient, order: OrderRecord, payload: Record<string, unknown>) {
   const previousTime = Date.parse(order.updated_at ?? "");
   const updatedAt = new Date(Math.max(Date.now(), Number.isFinite(previousTime) ? previousTime + 1 : 0)).toISOString();
   let query = client.from("orders").update({ ...payload, updated_at: updatedAt }).eq("stripe_checkout_session_id", order.stripe_checkout_session_id);

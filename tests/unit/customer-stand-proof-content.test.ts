@@ -1,0 +1,11 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+const m=vi.hoisted(()=>({media:vi.fn()}));
+vi.mock('@/lib/admin-media-storage',async original=>({...await original<object>(),getProductMediaObject:m.media}));
+import {loadCustomerStandProof} from '@/lib/customer-stand-proof';
+import type {OrderRecord} from '@/lib/orders';
+let order:OrderRecord;
+beforeEach(()=>{vi.resetAllMocks();order={internal_notes:'',admin_fulfillment_notes:'',id:'owned',stripe_checkout_session_id:'cs',status:'paid',payment_status:'paid',subtotal_cents:0,total_cents:0,currency:'usd',shipping_amount_cents:0,production_status:'not_started',shipping_status:'not_shipped',updated_at:'2026-10-24T00:00:00Z',line_items_json:[{productId:'stand',optionId:'custom_direct',sku:'custom',title:'Custom',quantity:2,unitAmountCents:0,lineSubtotalCents:0,setup:{customerProof:{storageKey:'products/customer-proofs/production_artwork/owned/0/proof',contentType:'image/png'}}}]};m.media.mockResolvedValue({arrayBuffer:async()=>new Uint8Array([1,2,3]).buffer});});
+it('versions exact proof contents and quantity',async()=>{const a=await loadCustomerStandProof(order,0);const b=await loadCustomerStandProof(order,0);expect(a.version).toBe(b.version);expect(a.image).toBe('data:image/png;base64,AQID');order.line_items_json[0].quantity=3;expect((await loadCustomerStandProof(order,0)).version).not.toBe(a.version);});
+it('rejects a proof key belonging to another order',async()=>{(order.line_items_json[0].setup!.customerProof as any).storageKey='products/customer-proofs/production_artwork/foreign/0/proof';await expect(loadCustomerStandProof(order,0)).rejects.toThrow('Proof unavailable');expect(m.media).not.toHaveBeenCalled();});
+it('invalidates approval when proof bytes change',async()=>{const a=await loadCustomerStandProof(order,0);m.media.mockResolvedValue({arrayBuffer:async()=>new Uint8Array([4]).buffer});expect((await loadCustomerStandProof(order,0)).version).not.toBe(a.version);});
+it('does not substitute a product photo for a missing custom proof',async()=>{order.line_items_json[0].setup={};await expect(loadCustomerStandProof(order,0)).rejects.toThrow('being prepared');});

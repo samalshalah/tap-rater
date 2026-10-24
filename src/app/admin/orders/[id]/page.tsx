@@ -104,7 +104,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               />
             ) : null}
             {typeof order.customer_details_json?.recovery_original_order_id === "string" ? <InfoCard title="Recovered checkout"><a className="text-sm underline" href={`/admin/orders/${order.customer_details_json.recovery_original_order_id}`}>View original order and email history</a></InfoCard> : order.id && order.status !== "paid" && <OrderCustomerEmail orderId={order.id} />}
-            {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} /> : null}
+            {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} customItems={order.line_items_json.flatMap((item,index)=>getOrderLineItemProductionSummary(item).fulfillmentKind==='custom'?[{index,title:item.title,quantity:item.quantity}]:[])} /> : null}
             <OrderFulfillmentForm order={order} productionBlockers={getOrderProductionBlockers(order)} />
           </div>
         </div>
@@ -184,6 +184,7 @@ function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineIte
         <div className="min-w-0">
           <p className="break-words font-black text-ink">{item.quantity} x {item.title}</p>
           <p className="mt-1 break-all font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
+          {order.id&&<details className="mt-2 text-xs text-muted"><summary className="cursor-pointer">Stand IDs ({item.quantity})</summary>{Array.from({length:Math.min(1000,Math.max(1,Math.floor(item.quantity)))},(_,unit)=><p key={unit} className="mt-1 break-all font-mono">ST-{order.id}-{index+1}-{unit+1}</p>)}</details>}
           <div className="mt-2 flex flex-wrap gap-2">
             <AdminBadge tone="neutral">{summary.optionLabel}</AdminBadge>
             <AdminBadge tone="neutral">{summary.nfcBehavior}</AdminBadge>

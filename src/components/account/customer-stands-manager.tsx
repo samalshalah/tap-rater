@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink, Link2, Package, X } from "lucide-react";
 import { useId, useState } from "react";
+import {CustomerProofReview} from "./customer-proof-review";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
 import { StandPreview } from "@/components/account/stand-preview";
 import { ModalDialog } from "@/components/ui/modal-dialog";
@@ -18,10 +19,11 @@ export function CustomerStandsManager({
   hostedPages?: Record<string, HostedPageEditorRecord>;
 }) {
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
+  const [proofOpen,setProofOpen]=useState(false);
   const [showStandPreview, setShowStandPreview] = useState(false);
   const [search, setSearch] = useState("");
   const [kind, setKind] = useState("all");
-  const visible = stands.filter(stand => (kind === "all" || stand.kind === kind) && `${stand.title} ${stand.businessName ?? ""} ${formatOrderReference(stand.orderReference)}`.toLowerCase().includes(search.toLowerCase()));
+  const visible = stands.filter(stand => (kind === "all" || stand.kind === kind) && `${stand.standId??""} ${stand.title} ${stand.businessName ?? ""} ${formatOrderReference(stand.orderReference)}`.toLowerCase().includes(search.toLowerCase()));
 
   if (!stands.length) {
     return <EmptyState message="No stands are linked to this account yet." />;
@@ -37,15 +39,15 @@ export function CustomerStandsManager({
         {!visible.length && <EmptyState message="No matching stands." />}
         {visible.map((stand) => (
           <StandCard key={stand.id} stand={stand} hasHostedPage={Boolean(hostedPages[stand.id])}
-            onOpen={(preview = false) => { setShowStandPreview(preview); setSelectedStand(stand); }} />
+            onOpen={(preview = false, proof = false) => { setProofOpen(proof);setShowStandPreview(preview); setSelectedStand(stand); }} />
         ))}
       </section>
-      {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} showStandPreview={showStandPreview} onClose={() => setSelectedStand(null)} /> : null}
+      {selectedStand ? <StandDetailModal stand={selectedStand} hostedPage={hostedPages[selectedStand.id]} proofOpen={proofOpen} showStandPreview={showStandPreview} onClose={() => setSelectedStand(null)} /> : null}
     </>
   );
 }
 
-function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStand; hasHostedPage: boolean; onOpen: (preview?: boolean) => void }) {
+function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStand; hasHostedPage: boolean; onOpen: (preview?: boolean, proof?:boolean) => void }) {
   const isMultiLink = stand.kind === "multilink";
   const historyOnly = isMultiLink && !hasHostedPage && !stand.hostedPageCode && !stand.hostedPageUrl && !stand.multiLinkSetupPending;
 
@@ -61,6 +63,7 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
             <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-brand">{formatKind(stand.kind)}</span>
             {stand.orderId && <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>}
           </div>
+          {stand.standId&&<p className="mt-2 break-all font-mono text-[11px] text-muted">{stand.standId}</p>}
           <p className="mt-2 max-w-full break-all text-sm text-muted">
             {stand.businessName ? `${stand.businessName} · ` : ""}{stand.orderId ? `Order ${formatOrderReference(stand.orderReference)}` : "Multi-Link"}
           </p>
@@ -73,6 +76,7 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
         </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
+          {stand.proofAvailable&&<button className="tr-button-ghost" onClick={()=>onOpen(false,true)}>{stand.proofReviewAvailable?"Review proof":"View proof"}</button>}
           {isMultiLink && stand.proofStatus === "approved" && stand.proofPreviewUrl ? (
             <button type="button" onClick={() => onOpen(true)} className="tr-button-ghost">View stand preview</button>
           ) : null}
@@ -102,11 +106,13 @@ function StandDetailModal({
   stand,
   hostedPage,
   showStandPreview,
+  proofOpen,
   onClose
 }: {
   stand: CustomerPortalStand;
   hostedPage?: HostedPageEditorRecord;
   showStandPreview: boolean;
+  proofOpen:boolean;
   onClose: () => void;
 }) {
   const isMultiLink = stand.kind === "multilink" && !showStandPreview;
@@ -127,7 +133,7 @@ function StandDetailModal({
             <X size={18} />
           </button></div>
         </div>
-        {isMultiLink ? (
+        {proofOpen ? <CustomerProofReview orderId={stand.orderId} index={stand.lineItemIndex} canApprove={Boolean(stand.proofReviewAvailable)} onDone={onClose}/> : isMultiLink ? (
           <div className="min-h-0 overflow-hidden p-3">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} />
@@ -141,12 +147,13 @@ function StandDetailModal({
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
           <StandPreview key={stand.id} url={stand.proofPreviewUrl || stand.productImageUrl} title={stand.title} />
           <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 text-sm">
+            {stand.standId&&<DetailLine label="Stand ID" value={stand.standId}/>}
             <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />
             {stand.businessName && <DetailLine label="Business" value={stand.businessName} />}
             <DetailLine label="Production" value={stand.productionStatus.replaceAll("_", " ")} />
             <DetailLine label="Delivery" value={stand.shippingStatus.replaceAll("_", " ")} />
-            {stand.proofStatus !== "not_needed" && <DetailLine label="Design" value={stand.proofStatus === "approved" ? "Approved" : "Awaiting review"} />}
+            {stand.proofStatus !== "not_needed" && <DetailLine label="Design" value={stand.proofStatus === "approved" ? "Approved" : stand.proofAvailable ? "Awaiting review" : "Design being prepared"} />}
             {stand.trackingNumber && <DetailLine label={stand.shippingCarrier || "Tracking number"} value={stand.trackingNumber} />}
             {stand.trackingUrl && <DetailLink label="Track delivery" href={stand.trackingUrl} />}
             {stand.destinationUrl && <button className="tr-button-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(stand.destinationUrl!);setCopied(true);setCopyError(false);}catch{setCopyError(true);}}}>{copied ? "Link copied" : "Copy destination link"}</button>}
