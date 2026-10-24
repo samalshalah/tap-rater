@@ -17,6 +17,8 @@ export type CustomerPortalCustomer = {
 export type CustomerPortalBusiness = {
   id: string;
   businessName: string;
+  address?: string;
+  phone?: string;
   websiteUrl?: string;
   googleReviewUrl?: string;
   facebookUrl?: string;
@@ -267,6 +269,8 @@ function normalizeBusiness(row: unknown): CustomerPortalBusiness | null {
   return {
     id,
     businessName: readString(value.business_name) ?? "Business",
+    address: readString(value.address),
+    phone: readString(value.phone),
     websiteUrl: readString(value.website_url),
     googleReviewUrl: readString(value.google_review_url),
     facebookUrl: readString(value.facebook_url),
