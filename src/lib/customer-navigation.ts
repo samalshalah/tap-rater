@@ -1,12 +1,6 @@
 export const customerNavigation = [
   {href:'/account',label:'Overview'},
   {href:'/account/locations',label:'Locations'},
-  {href:'/account/reviews',label:'Reviews'},
-  {href:'/account/profile',label:'Google Profile'},
-  {href:'/account/heatmap',label:'Heat Map'},
-  {href:'/account/local',label:'Directory Listings'},
-  {href:'/account/reports',label:'Reports'},
-  {href:'/account/notifications',label:'Issues & Approvals'},
   {href:'/account/stands/overview',label:'Overview'},
   {href:'/account/stands',label:'My Stands'},
   {href:'/account/multilink',label:'Multi-Link'},
@@ -24,7 +18,16 @@ export function navigationForPurchases({service=false,stands=false,multilink=fal
 }
 
 export function groupCustomerNavigation(links:typeof customerNavigation){
- const service=links.some(link=>link.href==='/account/reviews');
+ const service=links.some(link=>link.href==='/account/locations');
  const group=(href:string)=>href==='/account/orders'||href==='/account/settings'?'account':href==='/account/stands'||href==='/account/stands/overview'||href==='/account/multilink'||(href==='/account'&&!service)?'stands':'reviews';
  return ([['reviews','Google Reviews'],['stands','Stands'],['account','Account']] as const).map(([id,label])=>({id,label,links:links.filter(link=>group(link.href)===id)})).filter(section=>section.links.length);
 }
+
+export const locationTools=[
+ {href:'/account',label:'Overview'},
+ {href:'/account/profile',label:'Google Profile'},
+ {href:'/account/reviews',label:'Reviews'},
+ {href:'/account/heatmap',label:'Heat Map'},
+];
+export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}
+export function activeLocationId(requested:string|null,locations:{id:string}[]){return locations.some(l=>l.id===requested)?requested!:'';}

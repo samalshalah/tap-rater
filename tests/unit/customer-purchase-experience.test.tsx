@@ -23,9 +23,9 @@ it.each([{service:false,stands:true},{service:true,stands:false},{service:true,s
  expect(html).not.toContain('<details');
  const links=navigationForPurchases(access).map(l=>l.href);
  expect(links.includes('/account/stands')).toBe(access.stands);
- expect(links.includes('/account/reviews')).toBe(access.service);
+ expect(links).not.toContain('/account/reviews');
  expect(links.includes('/account/locations')).toBe(access.service);
- expect(links.includes('/account/heatmap')).toBe(access.service);
+ expect(links).not.toContain('/account/heatmap');
  expect(links).toContain('/account/orders');
 });
 it('does not mount Google setup when service access is unavailable',async()=>{

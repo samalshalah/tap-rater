@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState,type FormEvent} from 'react';
 import Link from 'next/link';
+import {useRouter} from 'next/navigation';
 import {Building2,Plus,Search,Pencil,Trash2,X} from 'lucide-react';
 import {ModalDialog} from '@/components/ui/modal-dialog';
 import {BusinessEditor} from './business-information';
@@ -8,11 +9,12 @@ import type {AccountBusiness} from '@/lib/account-business-drafts';
 type Location={id:string;business_name:string;address:string;connected:boolean;synced_at:string|null;review_count:number;draft_count:number;local_profile_version:number;rating_summary:{sum:number;count:number}};
 type Snapshot={locations:Location[];listings:{business_id:string;status:string}[];licenses?:{unlimited_locations:boolean;location_limit:number;used:number}};
 export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
+ const router=useRouter();
  const [data,setData]=useState<Snapshot|null>(null),[items,setItems]=useState(businesses),[query,setQuery]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const [editing,setEditing]=useState<AccountBusiness|null>(null),[adding,setAdding]=useState(false),[removing,setRemoving]=useState<Location|null>(null);
  async function refresh(){const r=await fetch('/api/account/local',{cache:'no-store'});const value=await r.json();if(!r.ok)throw Error(value.error);setData(value);}
  useEffect(()=>{refresh().catch(e=>setError(e.message));},[]);
- async function mutate(value:object){const r=await fetch('/api/account/local',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const result=await r.json();if(!r.ok)throw Error(result.error);await refresh();return result;}
+ async function mutate(value:object){const r=await fetch('/api/account/local',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const result=await r.json();if(!r.ok)throw Error(result.error);await refresh();router.refresh();return result;}
  async function add(event:FormEvent<HTMLFormElement>){event.preventDefault();if(busy)return;const f=new FormData(event.currentTarget);setBusy(true);setError('');try{const fields={name:String(f.get('name')||''),address:String(f.get('address')||''),phone:String(f.get('phone')||''),website:String(f.get('website')||'')};const result=await mutate({action:'createLocation',...fields});setItems(old=>[...old,{id:result.id,current:fields,draft:null,version:0}]);setAdding(false);setNotice('Location added.');}catch(e){setError(e instanceof Error?e.message:'Could not add location.');}finally{setBusy(false);}}
  async function remove(){if(!removing||busy)return;setBusy(true);setError('');try{await mutate({action:'deleteLocation',businessId:removing.id,version:removing.local_profile_version});setRemoving(null);setNotice('Location removed.');}catch(e){setError(e instanceof Error?e.message:'Could not remove location.');}finally{setBusy(false);}}
  const canAdd=Boolean(data?.licenses&&(data.licenses.unlimited_locations||data.licenses.used<data.licenses.location_limit));

@@ -3,7 +3,7 @@ import {ProfileAgentControls} from './review-automation-controls';
 import {OverviewLocationInsights} from './overview-location-insights';
 import {ReviewOverview,type OverviewLocation} from './review-overview';
 import {restoreCustomerLocation} from '@/lib/customer-location-selection';
-import {useRouter} from 'next/navigation';
+import {useRouter,useSearchParams} from 'next/navigation';
 import {useEffect,useState,type FormEvent} from 'react';
 import {Building2,MessageSquare,Plus,ShieldCheck,LockKeyhole,MapPin,Search} from 'lucide-react';
 import {DirectoryManager,type DirectoryLocation,type DirectoryRecord} from './directory-manager';
@@ -18,14 +18,16 @@ type Snapshot={licenses?:{location_limit:number;unlimited_locations:boolean;used
 const field='mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm';
 export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}:{admin?:boolean;initialTab?:'overview'|'heatmap'|'performance'|'reviews'|'profile'|'listings'|'notifications';preferenceKey?:string}) {
  const router=useRouter();
+ const requestedLocation=useSearchParams().get('location');
  const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'>(initialTab),[location,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
+ const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'>(initialTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
+ const location=!admin&&requestedLocation!==null?requestedLocation:storedLocation;
  const [adding,setAdding]=useState(false);
  const endpoint=admin?'/api/admin/local':'/api/account/local';
  const storageKey=!admin&&preferenceKey?`taprater:local-location:${preferenceKey}`:null;
  async function refresh(restore=false){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);
   if(restore&&storageKey){
-   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??window.localStorage.getItem(storageKey);const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
+   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
    // A saved preference never grants access; accept only locations returned for this account.
    const restored=restoreCustomerLocation(saved,d.locations);setLocation(restored);try{window.localStorage.setItem(storageKey,restored);}catch{}
   }
@@ -40,6 +42,7 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
  async function addLocation(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const d=await save({action:'createLocation',...(admin?{customerId:f.get('customerId')}:{}),name:f.get('name'),address:f.get('address'),phone:f.get('phone'),website:f.get('website')});if(d){setAdding(false);choose(d.id);}}
  function openTab(next:typeof tab,id=location){if(admin){setTab(next);return;}const routes={overview:'/account',reviews:'/account/reviews',profile:'/account/profile',heatmap:'/account/heatmap',listings:'/account/local',performance:'/account/reports',notifications:'/account/notifications'};router.push(routes[next]+'?location='+encodeURIComponent(id));}
  function choose(id:string){setLocation(id);setQuery('');if(!admin){const url=new URL(window.location.href);url.searchParams.set('location',id);window.history.replaceState(null,'',url);}if(storageKey)try{window.localStorage.setItem(storageKey,id);}catch{/* Selection still works without storage. */}}
+ if(!admin&&data&&location&&!data.locations.some(l=>l.id===location))return <section className="tr-card p-5"><p>This location is unavailable.</p><a className="tr-button-ghost mt-3" href="/account/locations">View locations</a></section>;
  return <section className="tr-local-workspace">
   <div className="tr-client-page-heading"><div><h1 className="mt-1 text-2xl font-semibold">{admin?'Locations & client work':({overview:'Overview',reviews:'Reviews',profile:'Google Profile',performance:'Reports',heatmap:'Heat Map',listings:'Directory Listings',notifications:'Issues & Approvals'}[tab])}</h1><p className="tr-client-page-subtitle">{selected?.business_name||'All locations'}</p></div><button className="tr-client-add-location" onClick={()=>setAdding(!adding)}><Plus size={16}/>Add location</button></div>
   <div className="tr-client-location-controls">
