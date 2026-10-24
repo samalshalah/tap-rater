@@ -36,7 +36,7 @@ export default async function AccountPage() {
           <SummaryCard label="Multi-Link pages" value={String(countMultiLinkPages(portal.subscriptions))} />
         </section>
 
-        <section className="tr-card p-5">
+        {actions.length > 0 && <section className="tr-card p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="tr-eyebrow">Next actions</p>
@@ -47,7 +47,9 @@ export default async function AccountPage() {
           <div className="mt-5 grid gap-3">
             {actions.length ? actions.map((action) => <ActionRow key={action.id} {...action} />) : <EmptyState message="No action is needed right now." />}
           </div>
-        </section>
+        </section>}
+
+        <div className="flex gap-2"><Link href="/account/stands" className="tr-button-primary">My Stands</Link><Link href="/account/orders" className="tr-button-ghost">Orders & billing</Link></div>
 
         {latestOrder ? (
           <section className="tr-card p-5">

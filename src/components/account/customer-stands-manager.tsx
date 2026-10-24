@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ExternalLink, X } from "lucide-react";
 import { useId, useState } from "react";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
+import { ChangeRequestForm } from "@/components/account/change-request-form";
 import { StandPreview } from "@/components/account/stand-preview";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
@@ -19,6 +20,9 @@ export function CustomerStandsManager({
 }) {
   const [selectedStand, setSelectedStand] = useState<CustomerPortalStand | null>(null);
   const [showStandPreview, setShowStandPreview] = useState(false);
+  const [search, setSearch] = useState("");
+  const [kind, setKind] = useState("all");
+  const visible = stands.filter(stand => (kind === "all" || stand.kind === kind) && `${stand.title} ${stand.businessName ?? ""} ${formatOrderReference(stand.orderReference)}`.toLowerCase().includes(search.toLowerCase()));
 
   if (!stands.length) {
     return <EmptyState message="No stands are linked to this account yet." />;
@@ -26,8 +30,13 @@ export function CustomerStandsManager({
 
   return (
     <>
+      {stands.length > 1 && <div className="flex flex-wrap gap-3">
+        <input className="tr-input flex-1" aria-label="Search stands" placeholder="Search stands" value={search} onChange={e=>setSearch(e.target.value)} />
+        <select className="tr-input w-auto" aria-label="Stand type" value={kind} onChange={e=>setKind(e.target.value)}><option value="all">All types</option><option value="standard">Standard</option><option value="multilink">Multi-Link</option><option value="branded">Branded</option><option value="custom">Custom</option></select>
+      </div>}
       <section className="grid gap-3">
-        {stands.map((stand) => (
+        {!visible.length && <EmptyState message="No matching stands." />}
+        {visible.map((stand) => (
           <StandCard key={stand.id} stand={stand} hasHostedPage={Boolean(hostedPages[stand.id])}
             onOpen={(preview = false) => { setShowStandPreview(preview); setSelectedStand(stand); }} />
         ))}
@@ -52,8 +61,9 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
             <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>
           </div>
           <p className="mt-2 max-w-full break-all text-sm text-muted">
-            Order {formatOrderReference(stand.orderReference)}
+            {stand.businessName ? `${stand.businessName} · ` : ""}{stand.orderId ? `Order ${formatOrderReference(stand.orderReference)}` : "Multi-Link"}
           </p>
+          <p className="mt-2 text-xs capitalize text-muted">{stand.shippingStatus === "not_shipped" ? stand.productionStatus.replaceAll("_", " ") : stand.shippingStatus.replaceAll("_", " ")}</p>
           {isMultiLink && stand.hostedPageUrl ? (
             <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-brand">
               {stand.hostedPageUrl}
@@ -90,6 +100,9 @@ function StandDetailModal({
 }) {
   const isMultiLink = stand.kind === "multilink" && !showStandPreview;
   const headingId = useId();
+  const [requestChange, setRequestChange] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState(false);
 
   return (
     <ModalDialog labelledBy={headingId} onClose={onClose} className="px-3 py-2">
@@ -119,7 +132,18 @@ function StandDetailModal({
           <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 text-sm">
             <DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />
             <DetailLine label="Type" value={formatKind(stand.kind)} />
-            <DetailLine label="Business" value={stand.businessName ?? "-"} />
+            {stand.businessName && <DetailLine label="Business" value={stand.businessName} />}
+            <DetailLine label="Production" value={stand.productionStatus.replaceAll("_", " ")} />
+            <DetailLine label="Delivery" value={stand.shippingStatus.replaceAll("_", " ")} />
+            {stand.proofStatus !== "not_needed" && <DetailLine label="Design" value={stand.proofStatus === "approved" ? "Approved" : "Awaiting review"} />}
+            {stand.trackingNumber && <DetailLine label={stand.shippingCarrier || "Tracking number"} value={stand.trackingNumber} />}
+            {stand.trackingUrl && <DetailLink label="Track delivery" href={stand.trackingUrl} />}
+            {stand.destinationUrl && <button className="tr-button-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(stand.destinationUrl!);setCopied(true);setCopyError(false);}catch{setCopyError(true);}}}>{copied ? "Link copied" : "Copy destination link"}</button>}
+            {copyError && <p role="status">Copy unavailable. Open the destination link below.</p>}
+            <Link className="tr-button-ghost" href="/account/orders#invoices">Invoices & receipts</Link>
+            <button className="tr-button-ghost" aria-expanded={requestChange} onClick={()=>setRequestChange(!requestChange)}>Request a change</button>
+            {requestChange && <ChangeRequestForm deviceCode={`${formatOrderReference(stand.orderReference)} / ${stand.lineItemIndex + 1}`} />}
+
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
             {stand.qrTargetUrl && stand.qrTargetUrl !== stand.destinationUrl ? <DetailLink label="QR target" href={stand.qrTargetUrl} /> : null}

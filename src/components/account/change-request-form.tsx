@@ -14,6 +14,7 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
     setStatus("saving");
     setMessage("");
 
+    try {
     const response = await fetch("/api/account/change-request", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,6 +32,7 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
     setMessage("Change request saved. Tap Rater support will review it.");
     setNewReviewUrl("");
     setNotes("");
+    } catch { setStatus("error"); setMessage("Unable to send. Please try again."); }
   }
 
   return (
@@ -40,6 +42,7 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
         required
         value={tapraterId}
         onChange={(event) => setTapraterId(event.target.value)}
+        aria-label="Stand reference"
         placeholder="Tap Rater ID"
         className="tr-input"
       />
@@ -48,12 +51,14 @@ export function ChangeRequestForm({ deviceCode }: { deviceCode?: string }) {
         type="url"
         value={newReviewUrl}
         onChange={(event) => setNewReviewUrl(event.target.value)}
+        aria-label="New destination URL"
         placeholder="https://new-destination.example"
         className="tr-input"
       />
       <textarea
         value={notes}
         onChange={(event) => setNotes(event.target.value)}
+        aria-label="Change details"
         placeholder="Notes for support"
         className="tr-textarea min-h-24"
       />

@@ -49,6 +49,9 @@ export type CustomerPortalOrder = {
   receiptUrl?: string;
   productionStatus: string;
   shippingStatus: string;
+  trackingUrl?: string;
+  trackingNumber?: string;
+  shippingCarrier?: string;
   subtotalCents: number;
   shippingAmountCents: number;
   totalCents: number;
@@ -90,6 +93,9 @@ export type CustomerPortalStand = {
   proofStatus: "not_needed" | "needs_review" | "approved";
   productionStatus: string;
   shippingStatus: string;
+  trackingUrl?: string;
+  trackingNumber?: string;
+  shippingCarrier?: string;
   primaryActionLabel: string;
   primaryActionHref: string;
 };
@@ -296,6 +302,9 @@ function normalizeOrder(row: unknown): CustomerPortalOrder | null {
     receiptUrl: readOrderUrl(value, ["receipt_url", "receiptUrl"]),
     productionStatus: readString(value.production_status) ?? "not_started",
     shippingStatus: readString(value.shipping_status) ?? "not_shipped",
+    trackingUrl: readOrderUrl(value, ["tracking_url"]),
+    trackingNumber: readString(value.tracking_number),
+    shippingCarrier: readString(value.shipping_carrier),
     subtotalCents: readNumber(value.subtotal_cents) ?? 0,
     shippingAmountCents: readNumber(value.shipping_amount_cents) ?? 0,
     totalCents: readNumber(value.total_cents) ?? 0,
@@ -517,6 +526,9 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
         proofStatus,
         productionStatus: order.productionStatus,
         shippingStatus: order.shippingStatus,
+        trackingUrl: order.trackingUrl,
+        trackingNumber: order.trackingNumber,
+        shippingCarrier: order.shippingCarrier,
         primaryActionLabel: kind === "multilink" ? "Manage links" : proofStatus === "needs_review" ? "Review proof" : "View details",
         primaryActionHref: kind === "multilink" && (hostedPageCode ?? subscription?.permanentCode)
           ? `/account/stands?code=${encodeURIComponent(hostedPageCode ?? subscription?.permanentCode ?? "")}#multi-link-editor`

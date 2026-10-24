@@ -2,6 +2,7 @@ import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
 import { requireCustomer } from "@/lib/customer-auth";
 import {getCustomerExperience} from '@/lib/customer-experience';
+import type {CustomerPortalStand} from "@/lib/customer-portal";
 import {redirect} from 'next/navigation';
 import { getHostedPageEditorContext } from "@/lib/hosted-page-editor";
 
@@ -9,8 +10,16 @@ export default async function AccountStandsPage() {
   const session = await requireCustomer();
   const {portal,service,stands}=await getCustomerExperience(session.email);
   if(service&&!stands)redirect('/account');
+  const linkedCodes = new Set(portal.stands.map(stand=>stand.hostedPageCode).filter(Boolean));
+  const linkedUrls = new Set(portal.stands.map(stand=>stand.hostedPageUrl).filter(Boolean));
+  const allStands: CustomerPortalStand[] = [...portal.stands, ...portal.subscriptions.filter(page=>!linkedCodes.has(page.permanentCode)&&!linkedUrls.has(page.hostedPageUrl)).map(page=>({
+    id: `page-${page.id}`, orderId: "", lineItemIndex: 0, orderReference: "", title: "Multi-Link page", quantity: 1,
+    kind: "multilink" as const, hostedPageCode: page.permanentCode, hostedPageUrl: page.hostedPageUrl,
+    multiLinkSetupPending: false, proofStatus: "not_needed" as const, productionStatus: "", shippingStatus: "",
+    primaryActionLabel: "Manage links", primaryActionHref: "/account/stands"
+  }))];
   const hostedPageEntries = await Promise.all(
-    portal.stands
+    allStands
       .filter((stand) => stand.kind === "multilink" && stand.hostedPageCode)
       .map(async (stand) => {
         const context = await getHostedPageEditorContext(session.email, stand.hostedPageCode);
@@ -23,11 +32,10 @@ export default async function AccountStandsPage() {
     <AccountShell>
       <div className="grid gap-5">
         <section className="tr-card p-5">
-          <p className="tr-eyebrow">My Stands</p>
-          <h2 className="mt-2 text-xl font-medium text-ink">Stand history</h2>
+          <h1 className="text-xl font-semibold text-ink">My Stands</h1>
         </section>
 
-        <CustomerStandsManager stands={portal.stands} hostedPages={hostedPages} />
+        <CustomerStandsManager stands={allStands} hostedPages={hostedPages} />
       </div>
     </AccountShell>
   );

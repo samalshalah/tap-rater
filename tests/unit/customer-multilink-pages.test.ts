@@ -69,11 +69,21 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
     expect(manager).toHaveBeenCalledWith({ stands, hostedPages: { "stand-1": page } });
   });
 
+  it("loads an owned page even when its original order line is missing", async () => {
+    getCustomerPortal.mockResolvedValue(portal([]));
+    getHostedPageEditorContext.mockImplementation(async (_email, code) => ({configured: true, page: {code}}));
+    renderToStaticMarkup(await AccountStandsPage());
+    expect(getHostedPageEditorContext).toHaveBeenCalledWith("owner@example.com", "PAGE1");
+    expect(getHostedPageEditorContext).toHaveBeenCalledWith("owner@example.com", "PAGE2");
+    expect(manager.mock.calls[0][0].stands).toHaveLength(2);
+    expect(manager.mock.calls[0][0].hostedPages["page-PAGE2"].code).toBe("PAGE2");
+  });
+
   it.each([null, { code: "WRONG_PAGE" }])("does not attach a missing or mismatched page: %j", async (page) => {
     const stands = [{ ...stand, hostedPageCode: "PAGE1" }];
     getCustomerPortal.mockResolvedValue(portal(stands));
     getHostedPageEditorContext.mockResolvedValue({ configured: true, page });
     renderToStaticMarkup(await AccountStandsPage());
-    expect(manager).toHaveBeenCalledWith({ stands, hostedPages: {} });
+    expect(manager).toHaveBeenCalledWith({ stands: expect.arrayContaining(stands), hostedPages: {} });
   });
 });
