@@ -31,7 +31,7 @@ export default async function AccountStandsPage() {
   return (
     <AccountShell>
       <div className="grid gap-5">
-        <section className="tr-card p-5">
+        <section className="tr-account-page-header">
           <h1 className="text-xl font-semibold text-ink">My Stands</h1>
         </section>
 

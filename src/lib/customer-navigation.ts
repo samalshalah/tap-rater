@@ -9,6 +9,7 @@ export const customerNavigation = [
   {href:'/account/stands',label:'My Stands'},
   {href:'/account/multilink',label:'Multi-Link'},
   {href:'/account/orders',label:'Orders & Billing'},
+  {href:'/account/settings',label:'Account'},
 ];
 
 export function isNavigationActive(pathname: string, href: string) {
@@ -16,5 +17,5 @@ export function isNavigationActive(pathname: string, href: string) {
 }
 
 export function navigationForPurchases({service=false,stands=false,multilink=false}:{service?:boolean;stands?:boolean;multilink?:boolean}){
- return customerNavigation.filter(link=>link.href==='/account'||link.href==='/account/orders'||(link.href==='/account/multilink'?multilink:link.href==='/account/stands'?stands:service));
+ return customerNavigation.filter(link=>link.href==='/account'||link.href==='/account/orders'||link.href==='/account/settings'||(link.href==='/account/multilink'?multilink:link.href==='/account/stands'?stands:service));
 }

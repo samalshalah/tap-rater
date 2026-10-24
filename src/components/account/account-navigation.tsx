@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import {LayoutDashboard,MessageSquare,Building2,Map, ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag} from 'lucide-react';
-const icons=[LayoutDashboard,MessageSquare,Building2,Map,ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag];
+import {LayoutDashboard,MessageSquare,Building2,Map, ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag,UserRound} from 'lucide-react';
+const icons=[LayoutDashboard,MessageSquare,Building2,Map,ListChecks,BarChart3,Bell,Tablet,Link2,ShoppingBag,UserRound];
 import {usePathname} from 'next/navigation';
 import {customerNavigation, isNavigationActive} from '@/lib/customer-navigation';
 

@@ -1138,3 +1138,14 @@ main.tr-client-shell .tr-local-workspace .tr-marketing-feature .text-xs{font-siz
 @media(max-width:600px){.tr-attributes-dialog-content{max-height:calc(100dvh - 230px)}.tr-attributes-dialog .tr-attribute-row{gap:8px;padding:10px}.tr-attributes-dialog .tr-attribute-row select{width:115px!important}}
 
 .tr-profile-field-popup{display:grid;gap:8px;min-width:0}.tr-profile-field-popup h3{margin:0;font-size:14px}.tr-profile-field-preview{margin:0;font-size:12px;color:#657fa7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}.tr-hours-dialog{width:min(780px,calc(100vw - 32px))}.tr-business-media>.tr-profile-field-popup{margin:12px 0}
+
+/* One visual language for all customer pages, including stands and account settings. */
+.tr-client-shell {font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#162d56;}
+.tr-client-shell .tr-card {border:1px solid #dce5ef;border-radius:6px;box-shadow:none;background:#fff;}
+.tr-client-shell .tr-account-page-header {padding:8px 0 16px;border-bottom:1px solid #dce5ef;background:transparent;}
+.tr-client-shell .tr-account-page-header h1 {font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-.3px;}
+.tr-client-shell .tr-button-primary {background:#10274e;color:#fff;}
+.tr-client-shell .tr-button-ghost {background:#fff;color:#10274e;}
+.tr-client-shell .tr-account-form input {width:100%;border:1px solid #cbd8e9;border-radius:5px;padding:8px 10px;font-size:14px;background:#fff;}
+.tr-client-shell .tr-account-form label {display:grid;gap:6px;font-size:13px;}
+.tr-client-shell .tr-account-form input:disabled {background:#f4f6f8;color:#64748b;}

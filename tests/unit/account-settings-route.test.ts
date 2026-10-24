@@ -1,0 +1,14 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),from:vi.fn(),update:vi.fn(),eq:vi.fn(),select:vi.fn(),single:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
+vi.mock('@/lib/db',()=>({getSupabaseAdmin:()=>({from:m.from})}));
+import {POST} from '@/app/api/account/settings/route';
+import {navigationForPurchases} from '@/lib/customer-navigation';
+const req=(body:unknown={name:'Sam',phone:'123'},origin='https://taprater.com')=>new Request('https://taprater.com/api/account/settings',{method:'POST',headers:{origin},body:JSON.stringify(body)});
+beforeEach(()=>{vi.resetAllMocks();m.auth.mockResolvedValue({session:{email:'owner@example.com'}});const builder={update:m.update,eq:m.eq,select:m.select,maybeSingle:m.single};for(const f of [m.from,m.update,m.eq,m.select])f.mockReturnValue(builder);m.single.mockResolvedValue({data:{id:'owner'}});});
+it('requires login',async()=>{m.auth.mockResolvedValue({response:new Response(null,{status:401})});expect((await POST(req())).status).toBe(401);expect(m.update).not.toHaveBeenCalled();});
+it('rejects foreign origins',async()=>{expect((await POST(req(undefined,'https://evil.test'))).status).toBe(403);expect(m.update).not.toHaveBeenCalled();});
+it.each([{name:'Sam',phone:'123',email:'other@test.com'},{name:'Sam',phone:'123',role:'admin'},{name:'',phone:''}])('rejects invalid or extra fields',async body=>{expect((await POST(req(body))).status).toBe(400);expect(m.update).not.toHaveBeenCalled();});
+it('updates only the active session owner contact fields',async()=>{expect((await POST(req())).status).toBe(200);expect(m.eq).toHaveBeenCalledWith('email','owner@example.com');expect(m.eq).toHaveBeenCalledWith('account_status','active');expect(Object.keys(m.update.mock.calls[0][0]).sort()).toEqual(['name','phone','updated_at']);expect(m.from).toHaveBeenCalledWith('customers');});
+it('does not report success for missing customer',async()=>{m.single.mockResolvedValue({data:null});expect((await POST(req())).status).toBe(503);});
+it.each([{stands:true},{service:true},{stands:true,service:true},{}])('shows Account for every purchase type',access=>{expect(navigationForPurchases(access).some(l=>l.href==='/account/settings')).toBe(true);});
