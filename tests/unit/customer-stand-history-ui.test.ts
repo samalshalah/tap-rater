@@ -14,6 +14,18 @@ const stand: CustomerPortalStand = {
 };
 
 describe("customer stand history", () => {
+  it("uses each stand's own preview or product image without inventing a product for a standalone page", () => {
+    const html = renderToStaticMarkup(createElement(CustomerStandsManager, {stands: [
+      {...stand, productImageUrl: "/products/google.png"},
+      {...stand, id: "custom", title: "Custom stand", proofPreviewUrl: "/owned/design.png", productImageUrl: "/products/custom.png"},
+      {...stand, id: "page", orderId: "", kind: "multilink", title: "Page"}
+    ]}));
+    expect(html).toContain('src="/products/google.png"');
+    expect(html).toContain('src="/owned/design.png"');
+    expect(html).not.toContain('src="/products/custom.png"');
+    expect(html).not.toContain('alt="Page image"');
+  });
+
   it("offers the branded stand preview separately from Multi-Link editing", () => {
     const html = renderToStaticMarkup(createElement(CustomerStandsManager, {
       stands: [{ ...stand, kind: "multilink", proofStatus: "approved", proofPreviewUrl: "/api/account/orders/qa/artwork/0" }],

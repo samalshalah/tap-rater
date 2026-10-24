@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink, Link2, Package, X } from "lucide-react";
 import { useId, useState } from "react";
 import { HostedPageEditor } from "@/components/account/hosted-page-editor";
 import { StandPreview } from "@/components/account/stand-preview";
@@ -52,7 +52,9 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
   return (
     <article className="rounded-md border border-line bg-white p-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-start gap-3">
+          <StandThumbnail stand={stand} />
+          <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base font-medium text-ink">{stand.title}</h3>
             {stand.quantity > 1 ? <span className="rounded-full bg-soft px-2 py-1 text-xs text-muted">Qty {stand.quantity}</span> : null}
@@ -69,6 +71,7 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
             </a>
           ) : null}
         </div>
+        </div>
         <div className="flex shrink-0 flex-wrap gap-2">
           {isMultiLink && stand.proofStatus === "approved" && stand.proofPreviewUrl ? (
             <button type="button" onClick={() => onOpen(true)} className="tr-button-ghost">View stand preview</button>
@@ -84,6 +87,15 @@ function StandCard({ stand, hasHostedPage, onOpen }: { stand: CustomerPortalStan
       </div>
     </article>
   );
+}
+
+function StandThumbnail({stand}: {stand: CustomerPortalStand}) {
+  const [failed, setFailed] = useState<string[]>([]);
+  const source = [stand.proofPreviewUrl, stand.productImageUrl].find((url): url is string => Boolean(url) && !failed.includes(url!));
+  return <div className="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-white p-1">
+    {source ? <img src={source} alt={`${stand.title} image`} width={64} height={80} loading="lazy" className="h-full w-full object-contain" onError={()=>setFailed(previous=>[...previous, source])} />
+      : stand.kind === "multilink" ? <Link2 size={22} className="text-muted" aria-label="Multi-Link page"/> : <Package size={22} className="text-muted" aria-label="Stand"/>}
+  </div>;
 }
 
 function StandDetailModal({
@@ -110,9 +122,10 @@ function StandDetailModal({
             <p className="tr-eyebrow">{isMultiLink && hostedPage ? "Multi-Link page" : "Stand details"}</p>
             <h2 id={headingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-base font-medium text-ink focus:outline-none">{stand.title}</h2>
           </div>
+          <div className="flex shrink-0 items-center gap-2"><Link href="/account/orders" onClick={onClose} className="tr-button-ghost">Orders &amp; Billing</Link>
           <button type="button" onClick={onClose} className="tr-icon-button shrink-0" aria-label="Close stand details">
             <X size={18} />
-          </button>
+          </button></div>
         </div>
         {isMultiLink ? (
           <div className="min-h-0 overflow-hidden p-3">
@@ -138,7 +151,6 @@ function StandDetailModal({
             {stand.trackingUrl && <DetailLink label="Track delivery" href={stand.trackingUrl} />}
             {stand.destinationUrl && <button className="tr-button-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(stand.destinationUrl!);setCopied(true);setCopyError(false);}catch{setCopyError(true);}}}>{copied ? "Link copied" : "Copy destination link"}</button>}
             {copyError && <p role="status">Copy unavailable. Open the destination link below.</p>}
-            <Link className="tr-button-ghost" href="/account/orders#invoices">Invoices & receipts</Link>
 
             {stand.logoUrl ? <DetailLink label="Logo" href={stand.logoUrl} /> : null}
             {stand.destinationUrl ? <DetailLink label="Destination" href={stand.destinationUrl} /> : null}
