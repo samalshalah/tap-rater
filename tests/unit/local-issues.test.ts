@@ -2,7 +2,7 @@ import {it,expect,vi} from 'vitest';
 import {detectLocalIssues} from '@/lib/local-issue-rules';
 import {generateIssueDraft} from '@/lib/local-issue-ai';
 const track={id:'a',active:true,keyword:'boutique',size:3 as const,spacingKm:1 as const,language:'en' as const};
-const profile={observed:{description:'A clothing boutique.',phone:'123',website:'https://example.com',hours:'Sunday 12–6',categories:'Boutique'},draft:null,synced_at:'2026-10-22'};
+const profile={observed:{description:'A clothing boutique.',phone:'123',website:'https://example.com',hours:'Sunday 12–6',categories:'Boutique',specialHours:'2099-12-25: Closed'},draft:null,synced_at:'2026-10-22'};
 const scan=(state:string,rank:number|null)=>({methodology:'maps-v2',created_at:'2026-10-22',tracks:[{id:'a',settings:track}],points:Array.from({length:9},()=>({trackId:'a',state,rank}))});
 it('never sells an AI fix for missing, legacy, failed or pending measurements',()=>{
  expect(detectLocalIssues(profile,[track],[])[0]).toMatchObject({kind:'system',aiEligible:false});

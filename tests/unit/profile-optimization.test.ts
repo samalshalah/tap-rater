@@ -25,3 +25,16 @@ it('directs AI to prepare drafts without external update steps or invented holid
  await generateIssueDraft({verifiedGoogleFacts:observed},run);const prompt=JSON.stringify(run.mock.calls[0][1]);
  expect(prompt).toContain('Do not include a step to publish');expect(prompt).toContain('never infer holiday opening times');expect(prompt).toContain('preserve the owner-confirmed value');expect(prompt).not.toContain('For the confirmed Sunday-hours discrepancy');
 });
+
+it('includes absent or undated special hours as draft-eligible confirmation without altering facts',()=>{
+ for(const specialHours of ['', 'Not provided']){
+ const profile={observed:{...observed,specialHours},draft:null,synced_at:'2026-10-24'};
+ const before=JSON.stringify(profile);
+ const findings=detectLocalIssues(profile,[],[],now);
+ expect(findings).toHaveLength(1);
+ expect(findings[0]).toMatchObject({code:'profile-special-hours',aiEligible:true});
+ expect(findings[0].evidence).toContain('No dated special hours');
+ expect(findings[0].improvement).toContain('cannot choose opening hours');
+ expect(JSON.stringify(profile)).toBe(before);
+ }
+});

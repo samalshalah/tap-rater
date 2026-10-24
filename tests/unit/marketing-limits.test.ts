@@ -15,7 +15,7 @@ it('keeps facts for two different clients separate without Norah-specific instru
  for(const prompt of [north,south]){expect(prompt).not.toContain('noon–6');expect(prompt).toContain('Never reuse facts from another business');}
 });
 it('detects repeated descriptions for any industry without judging accurate long descriptions',()=>{
- const observed={description:'We repair appliances with care. We repair appliances with care.',phone:'123',website:'https://example.test',hours:'Monday 8–5',categories:'Repair shop'};
+ const observed={description:'We repair appliances with care. We repair appliances with care.',phone:'123',website:'https://example.test',hours:'Monday 8–5',categories:'Repair shop',specialHours:'2099-12-25: Closed'};
  expect(detectLocalIssues({observed,draft:null,synced_at:'2026-10-23'},[],[]).some(f=>f.code==='profile-description')).toBe(true);
  expect(detectLocalIssues({observed:{...observed,description:'A'.repeat(600)},draft:null,synced_at:'2026-10-23'},[],[])).toEqual([]);
 });
