@@ -1187,3 +1187,29 @@ main.tr-client-shell .tr-locations-page > header > h1{font-size:24px!important;l
 }
 .tr-client-page-heading.tr-client-location-heading{min-height:0;padding-bottom:16px;margin-bottom:18px;}
 .tr-client-business-address{margin:4px 0 0;font-size:12px;line-height:1.5;color:#64748b;overflow-wrap:anywhere;}
+
+/* A separate business rail keeps location navigation out of the main account menu. */
+.tr-location-sidebar{min-width:0;background:#fff;border-right:1px solid #e1e7ef;padding:20px 12px;display:flex;flex-direction:column;gap:16px;}
+.tr-location-sidebar>header{display:flex;align-items:center;justify-content:space-between;padding:0 6px;}
+.tr-location-sidebar>header h2{font-size:15px!important;margin:0;font-weight:600!important;}
+.tr-location-manage{display:grid;place-items:center;width:28px;height:28px;border:1px solid #dce5ef;border-radius:5px;color:#008c87;}
+.tr-location-sidebar .tr-tree-search{width:100%;margin:0;padding:8px;}
+.tr-location-sidebar nav{min-height:0;overflow-y:auto;overflow-x:hidden;flex:1;}
+.tr-location-sidebar ul{list-style:none;padding:0;margin:0;}
+.tr-location-sidebar nav>ul{display:grid;gap:6px;}
+.tr-location-sidebar-business{display:flex;align-items:flex-start;gap:9px;padding:12px 9px;border-radius:6px;color:#334b70;}
+.tr-location-sidebar-business>svg{flex-shrink:0;margin-top:2px;}
+.tr-location-sidebar-business>span{min-width:0;}
+.tr-location-sidebar-business strong{display:block;font-size:13px;font-weight:600;overflow-wrap:anywhere;line-height:1.45;}
+.tr-location-sidebar-business small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:11px;line-height:1.5;color:#7185a8;margin-top:3px;}
+.tr-location-sidebar .is-selected>.tr-location-sidebar-business{background:#e5f5f3;color:#007f7a;}
+.tr-location-sidebar-business:hover{background:#f3f7fa;}
+.tr-location-sidebar .tr-location-sidebar-tools{padding:4px 0 8px 24px;}
+.tr-location-sidebar-tools a{display:flex;gap:9px;align-items:center;padding:10px;border-radius:5px;font-size:13px;}
+.tr-location-sidebar-tools a[aria-current=page]{background:#edf3fa;color:#12335e;font-weight:600;}
+.tr-location-sidebar-footer{font-size:12px;color:#008c87;padding:8px 6px;border-top:1px solid #e1e7ef;}
+.tr-location-sidebar :is(a,input):focus-visible{outline:2px solid #008c87;outline-offset:2px;}
+@media(min-width:1024px){main.tr-client-shell:has(>.tr-location-sidebar){grid-template-columns:190px 250px minmax(0,1fr);}.tr-location-sidebar{position:sticky;top:0;height:100dvh;}}
+@media(max-width:1023px){.tr-location-sidebar{border-right:0;border-bottom:1px solid #e1e7ef;padding:12px 16px;gap:10px;}.tr-location-sidebar nav{max-height:280px;}.tr-location-sidebar nav>ul{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}.tr-location-sidebar-footer{padding:5px 0;}}
+
+.tr-client-shell .tr-workspace-nav-link[aria-current="true"]{background:#def4f1;color:#006d6b;font-weight:600;}
