@@ -30,3 +30,19 @@ describe('customer Google setup endpoint',()=>{
 it('rejects another customer location before OAuth or discovery',async()=>{m.sql.mockResolvedValue([]);expect((await POST(req({action:'connect'}))).status).toBe(404);expect(m.begin).not.toHaveBeenCalled();expect(m.client).not.toHaveBeenCalled();});
 it('does not inherit the customer-wide Google connection for a new location',async()=>{await GET(new Request('https://taprater.com/api/account/google-business?businessId='+businessId));expect(m.summary).toHaveBeenCalledWith(scoped);expect(m.summary).not.toHaveBeenCalledWith(identity.owner);});
 it('keeps legacy connected locations using their existing authorization for discovery',async()=>{m.sql.mockResolvedValue([{id:businessId,connection_owner:identity.owner}]);await GET(new Request('https://taprater.com/api/account/google-business?businessId='+businessId));expect(m.summary).toHaveBeenCalledWith(identity.owner);});
+
+ it.each(['google_review_links_parent_key','google_review_links_location'])('explains duplicate Google business conflicts without revealing the other customer (%s)',async constraint=>{
+  m.bind.mockRejectedValue({code:'23505',constraint,detail:'Private customer and resource details'});
+  const response=await POST(req({action:'bind',account:'accounts/a',location:'locations/l',confirmAssignment:true}));
+  expect(response.status).toBe(409);
+  const body=await response.json();
+  expect(body.error).toContain('already connected to another workspace');
+  expect(body.error).not.toContain('Private customer');
+  expect(m.begin).not.toHaveBeenCalled();
+ });
+ it('does not mislabel unrelated database failures as duplicate businesses',async()=>{
+  m.bind.mockRejectedValue({code:'23505',constraint:'unrelated_constraint',detail:'private'});
+  const response=await POST(req({action:'bind',account:'accounts/a',location:'locations/l',confirmAssignment:true}));
+  expect(response.status).toBe(503);
+  expect((await response.json()).error).not.toContain('private');
+ });
