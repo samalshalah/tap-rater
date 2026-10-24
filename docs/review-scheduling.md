@@ -1,0 +1,13 @@
+# Review scheduling
+
+Each connected location defaults to a 120-minute wait after an AI draft is saved. Clients can choose 60, 120, 360 or 1440 minutes in Reply schedule. Changes affect newly prepared replies. A scheduled timestamp is a not-before time, not a guaranteed delivery time.
+
+New 4/5-star reviews qualify only after the current autopilot consent timestamp and only for enabled ratings. Older unanswered reviews require the separate preview and Queue these reviews action. Existing replies, saved drafts and suspected spam are excluded. All 1–3-star reviews remain drafts for manual submission. Backlogs respect the existing monthly reservation system and 20-generation daily location limit; there is no automatic overage purchase.
+
+The existing Cloudflare scheduled worker now invokes review maintenance every minute; other maintenance remains every 15 minutes. A durable Postgres lease prevents overlapping runs. Location claims use SKIP LOCKED, oldest-due ordering, a maximum batch of 80 and four concurrent imports. New work stops starting after 50 seconds. Unstarted claims are returned to the due queue. Review pages are stored with one bulk upsert instead of one request per review. Completed location checks recur after 15 minutes; continuation pages after one minute. Actual freshness depends on backlog, latency and quota.
+
+Up to 40 due replies are considered per run. Current ownership, licence, Google identity, consent, selected rating, draft version, spam flag and due time are checked before publishing; the review is read from Google immediately before the write. Editing or cancelling a scheduled draft prevents that version from sending. Disabling autopilot cancels pending schedules. Transient Google read/quota failures back off up to five retries. A write with an uncertain outcome is never retried automatically: use Check publish result. Failed or invalid schedules remain saved drafts.
+
+Apply supabase/2026-10-24-review-scheduling.sql before deploying. Existing autopilot switches are not enabled by this migration. The feature uses existing hosting and database infrastructure.
+
+Validation: unit safety tests, a 1,000-location simulated queue drained over 13 bounded cycles with maximum concurrency four, and isolated database integration across all five star ratings using fake Google and AI clients. Integration also tests the bulk review upsert. No real Google writes or payment operations are involved. This is not a production load or quota certification. Before onboarding 1,000 busy locations, measure worker duration/subrequests, oldest maintenance_due_at, scheduled reply age, Google 429s and actual project quotas; then tune capacity or add notification-driven ingestion.

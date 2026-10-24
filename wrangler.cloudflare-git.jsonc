@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "limits": {
     "cpu_ms": 30000,
-    "subrequests": 1000
+    "subrequests": 5000
   },
   "ai": { "binding": "REVIEW_AI" },
   "assets": {
@@ -67,7 +67,7 @@
   "observability": {
     "enabled": true
   },
-  "triggers": { "crons": ["*/15 * * * *"] },
+  "triggers": { "crons": ["* * * * *"] },
   "vars": {
     "GOOGLE_REVIEWS_PUBLISHING_ENABLED": "true",
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",

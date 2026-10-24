@@ -1,8 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';
-import {prepareAutomaticDraft,publishLiveReply} from '@/lib/google-business/live-reviews';
-import {generateReviewSuggestions} from '@/lib/review-ai-provider';
+import {prepareAutomaticDraft,publishLiveReply,olderReviews,syncLiveReviews} from '@/lib/google-business/live-reviews';
 const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL;
 const styles={friendly:'Thank you for sharing your experience with Dubai Shawarma & Cafe.',professional:'Thank you for your feedback about your visit.',personal:'We appreciate you taking the time to share your experience.',short:'Thank you for your feedback.'};
 describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no external AI or Google calls',()=>{
@@ -28,11 +27,19 @@ describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no exter
     const reviewId=randomUUID(),resource=parent+'/reviews/'+reviewId;
     const data={reviewId,name:resource,starRating:c.starRating,comment:'Synthetic test feedback about the food and service.',createTime:new Date(Date.now()-(c.historical?7200000:1000)).toISOString(),updateTime:new Date().toISOString()};
     const [r]=await sql`INSERT INTO google_live_reviews(business_id,resource,data,suspected_spam) VALUES(${businessId},${resource},${JSON.stringify(data)}::jsonb,${c.spam}) RETURNING id`;
-    const ai=vi.fn().mockResolvedValue({response:JSON.stringify(styles)});
-    const generator=vi.fn((name:string,rating:number,comment:string)=>generateReviewSuggestions(name,rating,comment,ai));
+    if(c.historical)await olderReviews({kind:'customer',email},businessId,true,sql);
+    const generator=vi.fn().mockResolvedValue(styles);
     const google={getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:styles.friendly})};
     const result=await prepareAutomaticDraft(businessId,sql,generator,(id,version)=>publishLiveReply({kind:'admin'},id,version,true,sql,async()=>google as any));
-    const shouldPublish=c.on&&!c.historical&&!c.spam&&((c.starRating==='FOUR'&&c.four)||(c.starRating==='FIVE'&&c.five));
+    const shouldPublish=c.on&&!c.spam&&((c.starRating==='FOUR'&&c.four)||(c.starRating==='FIVE'&&c.five));
+    const [scheduled]=await sql`SELECT scheduled_at,version FROM google_live_reviews WHERE id=${r.id}`;
+    expect(Boolean(scheduled.scheduled_at)).toBe(shouldPublish);
+    expect(google.publishReply).not.toHaveBeenCalled();
+    if(shouldPublish){
+     await expect(publishLiveReply({kind:'admin'},String(r.id),Number(scheduled.version),true,sql,async()=>google as any)).rejects.toThrow('no longer eligible');
+     await sql`UPDATE google_live_reviews SET scheduled_at=now()-interval '1 minute' WHERE id=${r.id}`;
+     await publishLiveReply({kind:'admin'},String(r.id),Number(scheduled.version),true,sql,async()=>google as any);
+    }
     const [saved]=await sql`SELECT draft,approved_version,publish_state,attempted_at FROM google_live_reviews WHERE id=${r.id}`;
     expect(result.drafted,JSON.stringify(c)).toBe(!c.spam);
     expect(saved.draft).toBe(c.spam?'':styles.friendly);
@@ -41,9 +48,12 @@ describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no exter
     expect(Boolean(saved.attempted_at)).toBe(shouldPublish);
     expect(google.publishReply).toHaveBeenCalledTimes(shouldPublish?1:0);
     if(shouldPublish)expect(google.publishReply).toHaveBeenCalledWith(resource,styles.friendly);
-    if(c.spam)expect(ai).not.toHaveBeenCalled();
+    if(c.spam)expect(generator).not.toHaveBeenCalled();
     else expect(generator).toHaveBeenCalledWith('Dubai Shawarma & Cafe — isolated test',expect.any(Number),data.comment,undefined,{businessId,customerId:String(customer.id),service:'review_automatic'});
    }
+   const cached=await sql`SELECT data FROM google_live_reviews WHERE business_id=${businessId}`;
+   const imported=await syncLiveReviews({kind:'customer',email},businessId,sql,async()=>({listReviews:async()=>({reviews:cached.map(r=>r.data),totalReviewCount:cached.length})} as any));
+   expect(imported.imported).toBe(cases.length);
   }finally{
    vi.unstubAllEnvs();
    await sql`DELETE FROM businesses WHERE customer_id=${customer.id}`;

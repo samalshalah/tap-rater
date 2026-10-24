@@ -1,4 +1,5 @@
 "use client";
+import {ReviewScheduleSettings} from './review-schedule-settings';
 import {AiKnowledgeSettings} from './ai-knowledge-settings';
 import {Star,X,Settings,RefreshCw} from 'lucide-react';
 import {useEffect,useState,useRef} from 'react';
@@ -7,8 +8,8 @@ import {GoogleConnectionWizard} from './google-connection-wizard';
 import {importReviewPages} from '@/lib/google-business/import-pages';
 import {replyStyles,type ReplyStyle,type ReplySuggestions} from '@/lib/review-ai-options';
 import type {GoogleReview} from '@/lib/google-business/client';
-type Row={suspected_spam?:boolean;id:string;data:GoogleReview;draft:string;version:number;approved_version?:number|null;publish_state:string};
-type Workspace={review_total?:number|null;imported_count?:number;ai_monthly_limit?:number;ai_monthly_used?:number;owner:string;business_id:string;business_name:string;title:string;enabled:boolean;connected:boolean;synced_at:string|null;next_page:string|null;last_error:string|null;ai_consent:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;auto_style:ReplyStyle;settings_version:number;draft_error?:string|null;draft_checked_at?:string|null;moreReviews:boolean;reviews:Row[]};
+type Row={scheduled_at?:string|null;suspected_spam?:boolean;id:string;data:GoogleReview;draft:string;version:number;approved_version?:number|null;publish_state:string};
+type Workspace={reply_delay_minutes?:number;review_total?:number|null;imported_count?:number;ai_monthly_limit?:number;ai_monthly_used?:number;owner:string;business_id:string;business_name:string;title:string;enabled:boolean;connected:boolean;synced_at:string|null;next_page:string|null;last_error:string|null;ai_consent:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;auto_style:ReplyStyle;settings_version:number;draft_error?:string|null;draft_checked_at?:string|null;moreReviews:boolean;reviews:Row[]};
 type Snapshot={workspaces:Workspace[];publishingEnabled:boolean;businesses?:{id:string;business_name:string;email:string}[]};
 type Post=(body:unknown)=>Promise<Record<string,unknown>>;
 const ratings:Record<string,number>={ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5};
@@ -42,7 +43,7 @@ function LiveCard({review,post,refresh,canPublish,aiAllowed,active,onState}:{rev
   <section className="tr-review-detail-section"><h3>Existing reply</h3><div className="tr-existing-reply">{review.data.reviewReply?.comment||<em>No reply yet.</em>}</div></section>
   <section className="tr-review-detail-section tr-draft-editor"><label htmlFor={'live-'+review.id}>Your reply (draft)</label><textarea id={'live-'+review.id} maxLength={4000} value={draft} disabled={busy||unresolved||!active||review.suspected_spam} onChange={e=>setDraft(e.target.value)}/><span className="tr-draft-count">{draft.length.toLocaleString()}/4,000</span></section>
   <details className="tr-ai-reply-tools"><summary>AI reply suggestions</summary><button className="tr-button-ghost mt-2" disabled={busy||!aiAllowed||!active||unresolved||review.suspected_spam} onClick={()=>action('suggest')}>Suggest four replies with AI</button>{!aiAllowed&&<p>Enable AI in this location’s draft settings first.</p>}{suggestions&&<div className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(replyStyles).map(([key,label])=><div className="rounded border p-3" key={key}><strong>{label}</strong><p>{suggestions[key as ReplyStyle]}</p><button className="underline" disabled={busy||unresolved} onClick={()=>{if(!draft.trim()||window.confirm('Replace the unsaved reply text with this suggestion?'))setDraft(suggestions[key as ReplyStyle]);}}>Use {label}</button></div>)}</div>}</details>
-  <div className="tr-review-detail-actions"><button className="tr-button-ghost" disabled={busy||unresolved||!active||review.suspected_spam} onClick={()=>action('save')}>Save draft</button><button className="tr-button-primary" disabled={busy||dirty||!draft.trim()||unresolved||!active||review.suspected_spam||review.approved_version===review.version} onClick={()=>action('approve')}>{review.approved_version===review.version?'Draft approved':'Approve draft only'}</button>{canPublish&&<button disabled={busy||dirty||!draft.trim()||unresolved||!active||review.suspected_spam||review.publish_state==='published'} onClick={()=>action('publish')} className="tr-button-primary">Submit to Google</button>}{unresolved&&<button disabled={busy||!active} onClick={()=>action('reconcile')}>Check publish result</button>}</div>
+  {review.scheduled_at&&<p className="text-sm">Scheduled for {new Date(review.scheduled_at).toLocaleString()} <button className="tr-button-ghost" disabled={busy} onClick={async()=>{await post({action:"cancelScheduled",id:review.id});await refresh();}}>Cancel scheduled reply</button></p>}<div className="tr-review-detail-actions"><button className="tr-button-ghost" disabled={busy||unresolved||!active||review.suspected_spam} onClick={()=>action('save')}>Save draft</button><button className="tr-button-primary" disabled={busy||dirty||!draft.trim()||unresolved||!active||review.suspected_spam||review.approved_version===review.version} onClick={()=>action('approve')}>{review.approved_version===review.version?'Draft approved':'Approve draft only'}</button>{canPublish&&<button disabled={busy||dirty||!draft.trim()||unresolved||!active||review.suspected_spam||review.publish_state==='published'} onClick={()=>action('publish')} className="tr-button-primary">Submit to Google</button>}{unresolved&&<button disabled={busy||!active} onClick={()=>action('reconcile')}>Check publish result</button>}</div>
   {dirty&&<p className="tr-draft-notice">Save your changes before approval.</p>}{message&&<p role="status" className="tr-draft-notice">{message}</p>}
  </article>;
 }
@@ -54,7 +55,7 @@ function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
  useEffect(()=>{if(open)dialog.current?.showModal();},[open]);
  function close(){if(edits.current.busy)return;if(edits.current.dirty&&!window.confirm('Discard unsaved reply changes?'))return;dialog.current?.close();setOpen(false);}
  const name=reviewerName(review);
- const status=review.suspected_spam?'Suspected spam':review.publish_state==='published'&&review.data.reviewReply?.comment?'Replied':review.draft?(review.approved_version===review.version?'Approved':'Draft'):review.data.reviewReply?.comment?'Replied':'Awaiting reply';
+ const status=review.scheduled_at?'Scheduled · '+new Date(review.scheduled_at).toLocaleString():review.suspected_spam?'Suspected spam':review.publish_state==='published'&&review.data.reviewReply?.comment?'Replied':review.draft?(review.approved_version===review.version?'Approved':'Draft'):review.data.reviewReply?.comment?'Replied':'Awaiting reply';
  return <tr className={"tr-review-row"+(review.suspected_spam?" bg-amber-50":"")} onClick={e=>{if(!(e.target as HTMLElement).closest('button,dialog'))setOpen(true);}}>
  <th scope="row"><div className="tr-review-person"><ReviewAvatar name={name}/><img src="/brand/google-g.png" width="18" height="18" alt="Google"/><span className="tr-review-name">{name}</span></div></th>
  <td><ReviewStars rating={review.data.starRating}/></td>
@@ -75,7 +76,7 @@ function LiveSettings({workspace:w,post,refresh,children}:{workspace:Workspace;p
  }
  function close(){if(busy)return;if((ai!==w.ai_consent||style!==w.auto_style)&&!window.confirm('Discard unsaved review settings?'))return;setAi(w.ai_consent);setStyle(w.auto_style);setOpen(false);}
  return <><button className="tr-button-ghost" onClick={()=>setOpen(true)}><Settings size={14}/>Settings</button>{open&&<ModalDialog labelledBy={'review-settings-'+w.business_id} onClose={close}><div className="tr-listing-dialog"><header><h2 id={'review-settings-'+w.business_id} tabIndex={-1} data-dialog-heading>Review settings · {w.business_name}</h2><button disabled={busy} aria-label="Close review settings" onClick={close}><X size={20}/></button></header>
- <p className="mt-2 text-sm">New reviews import automatically every 15 minutes.</p>
+ <ReviewScheduleSettings businessId={w.business_id}/><p className="mt-2 text-sm">New reviews are checked regularly in the background.</p>
  <p className="mt-2 text-xs text-muted">Last import: {w.synced_at?new Date(w.synced_at).toLocaleString():'Not completed'} · Last automatic draft check: {w.draft_checked_at?new Date(w.draft_checked_at).toLocaleString():'Not yet confirmed'}. Refresh this page for the latest status.</p>
  <p className="mt-2 text-sm">Monthly AI allowance: {w.ai_monthly_used??0} / {w.ai_monthly_limit??0} attempts used · shared with profile improvements.</p>
  <fieldset disabled={busy||!w.enabled||!w.connected} className="mt-3 space-y-3">

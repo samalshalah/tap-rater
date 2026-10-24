@@ -1,3 +1,4 @@
+import {olderReviews,cancelScheduledReply} from './live-reviews';
 import {reviewKnowledgeSnapshot,saveReviewKnowledge,knowledgeSave} from '../review-knowledge';
 import {mutateProfile} from './profile-management';
 import {denyAdminClientContent} from '@/lib/admin-client-privacy';
@@ -16,6 +17,8 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('accounts'),parent:account.optional(),pageToken:token}).strict(),
  z.object({action:z.literal('locations'),account,pageToken:token}).strict(),
  z.object({action:z.literal('bind'),businessId:uuid,account,location:z.string().regex(/^locations\/[A-Za-z0-9_-]+$/),confirmAssignment:z.literal(true)}).strict(),
+ z.object({action:z.literal('olderReviews'),businessId:uuid,confirm:z.boolean()}).strict(),
+ z.object({action:z.literal('cancelScheduled'),id:uuid}).strict(),
  z.object({action:z.literal('sync'),businessId:uuid}).strict(),
  z.object({action:z.literal('stop'),businessId:uuid}).strict(),
  z.object({action:z.literal('remove'),businessId:uuid}).strict(),
@@ -57,6 +60,8 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'accounts':result=await (await clientFor(owner)).listAccounts(v.pageToken,v.parent);break;
    case 'locations':result=await (await clientFor(owner)).listLocations(v.account,v.pageToken);break;
    case 'bind':result=await bindGoogleLocation(owner,v.businessId,v.account,v.location);break;
+   case 'olderReviews':result=await olderReviews(actor,v.businessId,v.confirm);break;
+   case 'cancelScheduled':result=await cancelScheduledReply(actor,v.id);break;
    case 'sync':result=await syncLiveReviews(actor,v.businessId);break;
    case 'stop':result=await stopLiveReviews(actor,v.businessId);break;
    case 'remove':{const rows=await liveDb()`DELETE FROM google_review_links WHERE business_id=${v.businessId} AND NOT enabled RETURNING business_id`;if(!rows.length)throw new LiveReviewError('Stop the connection before removing its assignment.');result={removed:true};break;}

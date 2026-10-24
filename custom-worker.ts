@@ -20,6 +20,7 @@ export default {
       console.log(JSON.stringify({ event: "google_review_maintenance", ok: reviews.ok, status: reviews.status,
         synced: result?.synced, drafted: result?.drafted, published: result?.published }));
     } catch { console.warn("Google review maintenance unavailable"); }
+    if (new Date(_controller.scheduledTime).getUTCMinutes() % 15 !== 0) return;
     try {
       const analytics = await openNextWorker.fetch(
         new Request("https://taprater.com/api/internal/analytics", {

@@ -14,19 +14,19 @@ describe('automatic draft processing',()=>{
  it('records a retryable failure without saving or publishing',async()=>{const sql=rows([link],[review],[{id}],[{allowed:true}],[]);expect(await prepareAutomaticDraft(id,sql,vi.fn().mockRejectedValue(new Error('provider unavailable')))).toEqual({drafted:false});expect(sql.mock.calls[4][0].join('?')).toContain('draft_error=');});
  it('never publishes from scheduled work even when the publishing flag is true',async()=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');
-  const sql=vi.fn(async(strings:TemplateStringsArray)=>{const q=strings.join('?');if(q.includes('SELECT l.business_id,l.profile_ai_enabled FROM'))return [{business_id:id}];if(q.includes('SELECT l.*'))return [link];if(q.includes('SET sync_lock='))return [{business_id:id}];if(q.includes('SET auto_attempt_at='))return [review];if(q.includes('reserve_marketing_units'))return [{allowed:true}];if(q.includes('SET ai_day='))return [{business_id:id}];if(q.includes('draft_generated_at=now()'))return [{id}];return [];});
+  const sql=vi.fn(async(strings:TemplateStringsArray)=>{const q=strings.join('?');if(q.includes('UPDATE google_review_worker_lease')&&q.includes('RETURNING'))return [{id:1}];if(q.includes('RETURNING l.business_id,l.profile_ai_enabled'))return [{business_id:id}];if(q.includes('SELECT l.*'))return [link];if(q.includes('SET sync_lock='))return [{business_id:id}];if(q.includes('SET auto_attempt_at='))return [review];if(q.includes('reserve_marketing_units'))return [{allowed:true}];if(q.includes('SET ai_day='))return [{business_id:id}];if(q.includes('draft_generated_at=now()'))return [{id}];return [];});
   const publishReply=vi.fn();const client={listReviews:vi.fn().mockResolvedValue({reviews:[]}),publishReply};
   expect(await runLiveReviewMaintenance(sql as any,async()=>client as any,vi.fn().mockResolvedValue(suggestions))).toEqual({synced:1,drafted:1,published:0});expect(publishReply).not.toHaveBeenCalled();
  });
 });
 
 describe('opt-in positive review autopilot',()=>{
- it.each(['FOUR','FIVE'])('publishes a new selected %s review only after its draft is saved',async starRating=>{
+ it.each(['FOUR','FIVE'])('schedules a new selected %s review without publishing during generation',async starRating=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');
   const auto={...link,auto_enabled:true,auto_four:true,auto_five:true,consent_at:'2026-10-20T00:00:00Z'};
   const publish=vi.fn().mockResolvedValue({published:true});
   const sql=rows([auto],[{...review,data:{...review.data,starRating,createTime:'2026-10-21T00:00:00Z'}}],[{id}],[{allowed:true}],[{id}],[]);
-  expect(await prepareAutomaticDraft(id,sql,vi.fn().mockResolvedValue(suggestions),publish)).toEqual({drafted:true,published:true});expect(publish).toHaveBeenCalledExactlyOnceWith(id,2);
+  expect(await prepareAutomaticDraft(id,sql,vi.fn().mockResolvedValue(suggestions),publish)).toEqual({drafted:true});expect(publish).not.toHaveBeenCalled();
  });
  it.each(['ONE','TWO','THREE'])('leaves %s as a draft even with autopilot on',async starRating=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const publish=vi.fn();
