@@ -7,6 +7,15 @@ export type AiUsageContext={businessId:string;customerId:string;service:'review_
 // Verified 2026-10-22: https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/
 export const aiRate={model:'@cf/meta/llama-3.3-70b-instruct-fp8-fast',version:'cloudflare-2026-10-22',input:293,output:2253} as const;
 const database=()=>neon(process.env.DATABASE_URL||process.env.NEON_DATABASE_URL!);
+export function providerFailureCategory(error:unknown){
+ const message=error instanceof Error?error.message:'';
+ if(/json|grammar|structured output/i.test(message))return 'structured_output';
+ if(/token|context|too long|too large/i.test(message))return 'input_limit';
+ if(/rate|quota|429|capacity/i.test(message))return 'capacity';
+ if(/timeout|timed out/i.test(message))return 'timeout';
+ if(/auth|permission|403|401/i.test(message))return 'authorization';
+ return 'unclassified';
+}
 export function measuredAiUsage(result:unknown) {
   const usage=(result as {usage?:{prompt_tokens?:unknown;completion_tokens?:unknown}}|null)?.usage;
   const input=usage?.prompt_tokens,output=usage?.completion_tokens;
@@ -25,7 +34,8 @@ export async function meterAiCall(context:AiUsageContext,model:string,input:unkn
     FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.id=${context.businessId}::uuid AND b.customer_id=${context.customerId}::uuid AND c.account_status='active' RETURNING id`;
   if(!rows.length)throw new Error('AI usage account is unavailable.');
   let result:unknown;
-  try {result=await invoke(model,input);}catch {
+  try {result=await invoke(model,input);}catch(error) {
+    console.warn('AI provider failure', {eventId:id,service:context.service,category:providerFailureCategory(error)});
     // A timeout may still have incurred cost. Never log the exception or invent a zero charge.
     try {await sql`UPDATE ai_usage_events SET status='provider_error',finished_at=now() WHERE id=${id}::uuid AND status='started'`;}catch{/* The durable started row remains visibly unresolved. */}
     throw new Error('AI provider request was not confirmed.');

@@ -1,5 +1,5 @@
 import {describe,it,expect,vi} from 'vitest';
-import {aiRate,measuredAiUsage,meterAiCall} from '@/lib/ai-usage-meter';
+import {aiRate,measuredAiUsage,meterAiCall,providerFailureCategory} from '@/lib/ai-usage-meter';
 import {aiUsageTotals,adminAiUsage} from '@/lib/admin-ai-usage';
 import {aiCostMoney} from '@/components/admin/ai-usage-cost';
 const context={customerId:'22222222-2222-4222-8222-222222222222',businessId:'11111111-1111-4111-8111-111111111111',service:'review_manual' as const};
@@ -58,4 +58,10 @@ describe('private AI metering',()=>{
   expect(JSON.stringify(result)).not.toContain('SECRET');
   expect(aiUsageTotals({content:'SECRET'}).costNano).toBe(0);
  });
+});
+
+it('classifies provider failures without exposing their messages',()=>{
+ expect(providerFailureCategory(Error("JSON Mode couldn't be met: SECRET"))).toBe('structured_output');
+ expect(providerFailureCategory(Error('429 quota SECRET'))).toBe('capacity');
+ expect(providerFailureCategory(Error('SECRET'))).toBe('unclassified');
 });
