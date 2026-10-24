@@ -24,7 +24,7 @@ export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liv
 }
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,l.draft_error,l.draft_checked_at,
- b.business_name, (g.owner IS NOT NULL) AS connected,
+ b.business_name, l.review_total, (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND (l.sync_run IS NULL OR r.seen_run=l.sync_run)) AS imported_count, (g.owner IS NOT NULL) AS connected,
  (SELECT ai_monthly_limit FROM customer_marketing_access WHERE customer_id=b.customer_id) AS ai_monthly_limit,
  (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=b.id AND service='ai' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_monthly_used FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
