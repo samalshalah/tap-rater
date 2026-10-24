@@ -1185,3 +1185,5 @@ main.tr-client-shell .tr-locations-page > header > h1{font-size:24px!important;l
  .tr-location-tree{max-width:100%;overflow-x:hidden;}
  .tr-location-tree li,.tr-tree-location,.tr-tree-location span{min-width:0;max-width:100%;}
 }
+.tr-client-page-heading.tr-client-location-heading{min-height:0;padding-bottom:16px;margin-bottom:18px;}
+.tr-client-business-address{margin:4px 0 0;font-size:12px;line-height:1.5;color:#64748b;overflow-wrap:anywhere;}
