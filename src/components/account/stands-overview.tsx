@@ -5,7 +5,7 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
  const firstName=portal.customer?.name?.trim().split(/\s+/)[0]??'there';
  const actions=buildDashboardActions(portal),latestOrder=portal.orders[0];
  return (
-      <section aria-label="Stands overview" className="mt-4">
+      <section aria-label="Stands overview" className="tr-stands-overview mt-4">
       <h1 className="text-2xl font-semibold">Stands overview</h1>
       <div className="mt-4 grid gap-3">
         <section className="tr-card p-5">

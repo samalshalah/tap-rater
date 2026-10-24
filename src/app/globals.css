@@ -1160,3 +1160,7 @@ main.tr-client-shell .tr-local-workspace .tr-marketing-feature .text-xs{font-siz
  .tr-account-navigation > section + section{border-top:0;border-left:1px solid #dce5ef;padding-top:0;padding-left:12px;}
  .tr-account-navigation > section > div{display:flex;}
 }
+
+.tr-client-shell .tr-account-navigation > section > h2{font-size:11px;line-height:1.4;font-weight:600;letter-spacing:.07em;margin:0 0 6px;padding:0 10px;}
+.tr-client-shell .tr-stands-overview > h1{font-size:24px;line-height:1.3;margin:0;font-weight:600;}
+.tr-client-shell .tr-stands-overview h2{font-size:18px;line-height:1.4;font-weight:500;}
