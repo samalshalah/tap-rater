@@ -1,7 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';
-import {prepareAutomaticDraft,publishLiveReply,olderReviews,syncLiveReviews} from '@/lib/google-business/live-reviews';
+import {prepareAutomaticDraft,publishLiveReply,olderReviews,syncLiveReviews,queueHistoricalPositives,scheduleSavedReply} from '@/lib/google-business/live-reviews';
 const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL;
 const styles={friendly:'Thank you for sharing your experience with Dubai Shawarma & Cafe.',professional:'Thank you for your feedback about your visit.',personal:'We appreciate you taking the time to share your experience.',short:'Thank you for your feedback.'};
 describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no external AI or Google calls',()=>{
@@ -66,6 +66,28 @@ describe.skipIf(!url)('Dubai Shawarma rating rules in isolated storage, no exter
    const cached=await sql`SELECT data FROM google_live_reviews WHERE business_id=${businessId}`;
    const imported=await syncLiveReviews({kind:'customer',email},businessId,sql,async()=>({listReviews:async()=>({reviews:cached.map(r=>r.data),totalReviewCount:cached.length})} as any));
    expect(imported.imported).toBe(cases.length+1);
+   await sql`UPDATE google_review_links SET auto_enabled=true,auto_four=true,auto_five=true,consent_at=now() WHERE business_id=${businessId}`;
+   const backlog=[];
+   for(let i=0;i<21;i++){
+    const data={reviewId:randomUUID(),starRating:i%2?'FOUR':'FIVE',comment:'Isolated backlog fixture',createTime:'2025-01-01T00:00:00Z',updateTime:'2025-01-01T00:00:00Z'};
+    const [r]=await sql`INSERT INTO google_live_reviews(business_id,resource,data) VALUES(${businessId},${parent+'/reviews/'+data.reviewId},${JSON.stringify(data)}::jsonb) RETURNING id`;
+    backlog.push({id:r.id,data});
+   }
+   await queueHistoricalPositives(businessId,sql);
+   const [queued]=await sql`SELECT old_reply_requested_at FROM google_live_reviews WHERE id=${backlog[0].id}`;expect(queued.old_reply_requested_at).toBeTruthy();
+   await sql`UPDATE google_live_reviews SET draft='Synthetic approved-style reply',draft_generated_at=now() WHERE id=ANY(${backlog.map(r=>r.id)}::uuid[])`;
+   await scheduleSavedReply(backlog[0].id,1,sql);
+   const [wait]=await sql`SELECT extract(epoch FROM scheduled_at-old_reply_requested_at)::int AS seconds FROM google_live_reviews WHERE id=${backlog[0].id}`;expect(wait.seconds).toBe(3600);
+   await sql`UPDATE google_live_reviews r SET scheduled_at=now()-interval '1 second',scheduled_version=r.version,schedule_consent_at=l.consent_at FROM google_review_links l WHERE l.business_id=r.business_id AND r.id=ANY(${backlog.map(r=>r.id)}::uuid[])`;
+   // Reset earlier fixture attempts to isolate the rolling hourly publishing ceiling.
+   await sql`UPDATE google_live_reviews SET attempted_at=now()-interval '2 hours' WHERE business_id=${businessId} AND id<>ALL(${backlog.map(r=>r.id)}::uuid[])`;
+   const publisher=vi.fn(async()=>({comment:'Synthetic approved-style reply',updateTime:new Date().toISOString()}));
+   for(let i=0;i<backlog.length;i++){
+    const r=backlog[i];const result=await publishLiveReply({kind:'customer',email},r.id,1,true,sql,async()=>({getReview:async()=>r.data,publishReply:publisher} as any));
+    expect(result.published).toBe(i<20);
+   }
+   expect(publisher).toHaveBeenCalledTimes(20);
+   const [deferred]=await sql`SELECT scheduled_at>now() AS deferred,publish_state FROM google_live_reviews WHERE id=${backlog[20].id}`;expect(deferred).toEqual({deferred:true,publish_state:'idle'});
   }finally{
    vi.unstubAllEnvs();
    await sql`DELETE FROM businesses WHERE customer_id=${customer.id}`;

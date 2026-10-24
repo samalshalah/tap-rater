@@ -1,3 +1,4 @@
+import {reviewWorkerFailure,resolveReviewWorkerAlert,sendReviewWorkerAlerts} from '../review-worker-alerts';
 import { randomUUID } from "node:crypto";
 import { neon } from "@neondatabase/serverless";
 import { z } from "zod";
@@ -95,7 +96,7 @@ export async function loadLiveReview(actor:ReviewActor,id:string,sql=liveDb()){
 }
 export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,version:number,sql=liveDb()){
  const {review}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
- const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle',scheduled_at=NULL,old_reply_requested_at=NULL WHERE id=${id} AND version=${version}
+ const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle',auto_schedule_cancelled=true,scheduled_at=NULL,old_reply_requested_at=NULL WHERE id=${id} AND version=${version}
  AND NOT suspected_spam AND publish_state NOT IN ('publishing','uncertain') RETURNING version`;
  if(!rows.length)throw new LiveReviewError('This review changed or a publish is unresolved. Reload or check the publish result.');return rows[0];
 }
@@ -139,6 +140,10 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
  if(automatic && (!link.auto_enabled || !link.ai_consent || !scheduledReplyEligible(review,link)))throw new LiveReviewError('Automatic posting is no longer eligible.');
+ if(automatic&&review.old_reply_requested_at){
+  const [budget]=await sql`SELECT count(*)::int AS used,min(attempted_at)+interval '1 hour' AS next_at FROM google_live_reviews WHERE business_id=${link.business_id} AND old_reply_requested_at IS NOT NULL AND attempted_at>now()-interval '1 hour' AND publish_state IN ('published','publishing','uncertain')`;
+  if(Number(budget?.used)>=20){await sql`UPDATE google_live_reviews SET scheduled_at=${budget.next_at}::timestamptz+interval '1 second' WHERE id=${id} AND version=${version} AND publish_state='idle'`;return {published:false};}
+ }
  const client=await makeClient(String(link.owner));
  // Refresh immediately before a write so we do not blindly overwrite changes made on Google.
  const current=await client.getReview(String(review.resource));
@@ -150,7 +155,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  WHERE r.id=${id} AND NOT r.suspected_spam AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
- AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
+ AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<20) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
  if(!claimed.length)throw new LiveReviewError('Publishing is already underway or the workspace changed. Check the result before trying again.');
  try{
   const reply=await client.publishReply(String(review.resource),String(review.draft));
@@ -183,7 +188,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND (${Boolean(link.draft_low_stars&&link.review_knowledge_approved_at)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
- AND fetched_at>now()-interval '1 day' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
+ AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
  AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*`;
@@ -204,23 +209,27 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
    AND l.settings_version=${link.settings_version} AND (l.draft_low_stars AND l.review_knowledge_approved_at IS NOT NULL OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
   await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId}`;
+  await resolveReviewWorkerAlert(sql,businessId,'draft');
   if(saved.length)await scheduleSavedReply(String(review.id),Number(review.version)+1,sql);
   return {drafted:saved.length>0};
  }catch(error){
   await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the daily AI allowance or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
+  const failures=await reviewWorkerFailure(sql,businessId,'draft');
+  await sql`UPDATE google_review_links SET draft_due_at=now()+${Math.min(60,2**Math.min(failures,6))}*interval '1 minute' WHERE business_id=${businessId}`;
   return {drafted:false};
  }
 }
 export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor,generate=generateReviewSuggestions){
- const workerToken=randomUUID(),deadline=Date.now()+50_000;
+ const workerToken=randomUUID(),deadline=Date.now()+50_000,publishDeadline=Date.now()+15_000,importDeadline=Date.now()+35_000;
  // A database lease prevents overlapping cron invocations from multiplying API traffic.
  const lease=await sql`UPDATE google_review_worker_lease SET token=${workerToken},lease_until=now()+interval '4 minutes' WHERE id=1 AND lease_until<now() RETURNING id`;
  if(!lease.length)return {synced:0,drafted:0,published:0,busy:true};
  let synced=0,drafted=0,published=0;
  try {
  if(new Date().getUTCHours()===0&&new Date().getUTCMinutes()===0)await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
- const due=await sql`SELECT id,version FROM google_live_reviews WHERE scheduled_at<=now() AND publish_state='idle' ORDER BY scheduled_at LIMIT 40`;
- for(const row of due){if(Date.now()>=deadline)break;try{await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);published++;}catch(error){
+ const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<20)) fair ORDER BY turn,scheduled_at LIMIT 40`;
+ for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolveReviewWorkerAlert(sql,String(row.business_id),'publish');}}catch(error){
+ await reviewWorkerFailure(sql,String(row.business_id),'publish',!(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)));
  if(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)){
  await sql`UPDATE google_live_reviews SET scheduled_at=CASE WHEN schedule_failures<5 THEN now()+power(2,schedule_failures)*interval '1 minute' ELSE NULL END,schedule_failures=schedule_failures+1 WHERE id=${row.id} AND publish_state='idle' AND scheduled_at IS NOT NULL`;
  continue;
@@ -233,12 +242,17 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  ORDER BY l.maintenance_due_at,l.business_id LIMIT 80 FOR UPDATE OF l SKIP LOCKED)
  UPDATE google_review_links l SET maintenance_due_at=now()+interval '15 minutes' FROM due WHERE l.business_id=due.business_id RETURNING l.business_id,l.profile_ai_enabled`;
  let cursor=0;
- await Promise.all(Array.from({length:4},async()=>{while(cursor<links.length&&Date.now()<deadline){const row=links[cursor++],id=String(row.business_id);
- try{const result=await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;if(result.more)await sql`UPDATE google_review_links SET maintenance_due_at=now()+interval '1 minute' WHERE business_id=${id}`;}catch{/* Retry on the next bounded cycle. */}
- try{const result=await prepareAutomaticDraft(id,sql,generate);if(result.drafted)drafted++;}catch{/* Isolate locations. */}
+ await Promise.all(Array.from({length:4},async()=>{while(cursor<links.length&&Date.now()<importDeadline){const row=links[cursor++],id=String(row.business_id);
+ try{const result=await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;await resolveReviewWorkerAlert(sql,id,'import');if(result.more)await sql`UPDATE google_review_links SET maintenance_due_at=now()+interval '1 minute' WHERE business_id=${id}`;}catch{const failures=await reviewWorkerFailure(sql,id,'import');await sql`UPDATE google_review_links SET maintenance_due_at=now()+${Math.min(60,5*2**Math.min(failures-1,4))}*interval '1 minute' WHERE business_id=${id}`;}
+
  if(row.profile_ai_enabled)try{const {prepareProfileAgentDraft}=await import('../profile-ai-agent');await prepareProfileAgentDraft(id,sql);}catch{/* Isolate profiles. */}
  }}));
  if(cursor<links.length)await sql`UPDATE google_review_links SET maintenance_due_at=now() WHERE business_id=ANY(${links.slice(cursor).map(r=>String(r.business_id))}::uuid[])`;
+ const draftLinks=await sql`WITH due AS (SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id JOIN customers c ON c.id=b.customer_id WHERE l.enabled AND l.ai_consent AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND l.draft_due_at<=now() ORDER BY l.draft_due_at,l.business_id LIMIT 80 FOR UPDATE OF l SKIP LOCKED) UPDATE google_review_links l SET draft_due_at=now()+interval '1 minute' FROM due WHERE l.business_id=due.business_id RETURNING l.business_id`;
+ let draftCursor=0;
+ await Promise.all(Array.from({length:4},async()=>{while(draftCursor<draftLinks.length&&Date.now()<deadline){const id=String(draftLinks[draftCursor++].business_id);try{await queueHistoricalPositives(id,sql);const result=await prepareAutomaticDraft(id,sql,generate);if(result.drafted)drafted++;}catch{await reviewWorkerFailure(sql,id,'draft');}}}));
+ if(draftCursor<draftLinks.length)await sql`UPDATE google_review_links SET draft_due_at=now() WHERE business_id=ANY(${draftLinks.slice(draftCursor).map(r=>String(r.business_id))}::uuid[])`;
+ try{await sendReviewWorkerAlerts(sql);}catch{/* Persisted alerts retry delivery next cycle. */}
  return {synced,drafted,published};
  }finally{await sql`UPDATE google_review_worker_lease SET lease_until=now() WHERE id=1 AND token=${workerToken}`;}
 }
@@ -264,7 +278,7 @@ export async function flagLiveReview(actor:ReviewActor,id:string,spam:boolean,ve
 /** The same checks run again against Google's current review immediately before a write. */
 export function scheduledReplyEligible(review:any,link:any,now=Date.now()):boolean {
  const rating=reviewStars(review.data);
- return Boolean(link.enabled&&link.auto_enabled&&link.ai_consent&&!review.suspected_spam
+ return Boolean(link.enabled&&link.auto_enabled&&link.ai_consent&&!review.suspected_spam&&!review.auto_schedule_cancelled
  && !review.data.reviewReply?.comment && ((rating===4&&link.auto_four)||(rating===5&&link.auto_five))
  && review.scheduled_at && new Date(review.scheduled_at).getTime()<=now
  && Number(review.scheduled_version)===Number(review.version)
@@ -272,9 +286,9 @@ export function scheduledReplyEligible(review:any,link:any,now=Date.now()):boole
  && (review.old_reply_requested_at || isAutomaticCandidate(review.data,'',link)));
 }
 export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
- await sql`UPDATE google_live_reviews r SET scheduled_at=now()+l.reply_delay_minutes*interval '1 minute',scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
+ await sql`UPDATE google_live_reviews r SET scheduled_at=CASE WHEN r.old_reply_requested_at IS NOT NULL THEN greatest(now(),r.old_reply_requested_at+interval '1 hour') ELSE now()+l.reply_delay_minutes*interval '1 minute' END,scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
  FROM google_review_links l WHERE r.id=${id} AND r.version=${version} AND r.approved_version IS NULL AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled
- AND r.draft<>'' AND r.draft_generated_at IS NOT NULL AND NOT r.suspected_spam AND r.publish_state='idle' AND r.scheduled_at IS NULL
+ AND NOT r.auto_schedule_cancelled AND r.draft<>'' AND r.draft_generated_at IS NOT NULL AND NOT r.suspected_spam AND r.publish_state='idle' AND r.scheduled_at IS NULL
  AND coalesce(r.data->'reviewReply'->>'comment','')='' AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))
  AND (r.old_reply_requested_at IS NOT NULL OR NULLIF(r.data->>'createTime','')::timestamptz>l.consent_at)`;
 }
@@ -291,7 +305,16 @@ export async function olderReviews(actor:ReviewActor,businessId:string,confirm=f
 }
 export async function cancelScheduledReply(actor:ReviewActor,id:string,sql=liveDb()){
  await loadLiveReview(actor,id,sql);
- const rows=await sql`UPDATE google_live_reviews SET scheduled_at=NULL,old_reply_requested_at=NULL WHERE id=${id} AND publish_state='idle' RETURNING id`;
+ const rows=await sql`UPDATE google_live_reviews SET auto_schedule_cancelled=true,scheduled_at=NULL,old_reply_requested_at=NULL WHERE id=${id} AND publish_state='idle' RETURNING id`;
  if(!rows.length)throw new LiveReviewError('Reply is already being submitted. Refresh its status.');
  return {cancelled:true};
+}
+
+/** Autopilot covers historical positives, but never adopts existing human drafts. */
+export async function queueHistoricalPositives(businessId:string,sql=liveDb()){
+ await sql`UPDATE google_live_reviews r SET old_reply_requested_at=now() FROM google_review_links l
+ WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.consent_at IS NOT NULL
+ AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.old_reply_requested_at IS NULL AND r.scheduled_at IS NULL AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
+ AND r.fetched_at>now()-interval '30 days' AND coalesce(r.data->'reviewReply'->>'comment','')='' AND NULLIF(r.data->>'createTime','')::timestamptz<=l.consent_at
+ AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))`;
 }
