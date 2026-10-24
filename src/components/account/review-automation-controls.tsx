@@ -1,5 +1,4 @@
 'use client';
-import {ReviewScheduleSettings} from './review-schedule-settings';
 import {AiKnowledgeSettings,KnowledgePopup} from './ai-knowledge-settings';
 import {useState,useRef} from 'react';
 import type {ReplyStyle} from '@/lib/review-ai-options';
@@ -34,8 +33,8 @@ export function ReviewAutomationControls({location,onSaved}:{location:ReviewAuto
  <Toggle label="AI replies" on={Boolean(location.ai_consent)} disabled={busy||!location.connected} onChange={()=>change('ai',!location.ai_consent)}/>
  <Toggle label="4–5-star autopilot" on={positiveOn} disabled={busy||!location.connected||!location.ai_consent} onChange={()=>change('positive',!positiveOn)}/>
  <Toggle label="1–3-star drafts" on={Boolean(location.ai_consent&&location.draft_low_stars!==false)} disabled={busy||!location.connected||!location.ai_consent} onChange={()=>change('low',location.draft_low_stars===false)}/>
+ <AiKnowledgeSettings businessId={location.id} onSaved={onSaved}/>
  </div>{positiveOn&&location.auto_four!==location.auto_five&&<p className="text-xs text-muted">Currently {location.auto_five?'5':'4'}-star autopilot only.</p>}
- <ReviewScheduleSettings businessId={location.id}/><AiKnowledgeSettings businessId={location.id} onSaved={onSaved}/>
  {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
  {knowledgeFor===location.id&&<KnowledgePopup key={location.id} businessId={location.id} approveLowStars onSaved={onSaved} onClose={()=>setKnowledgeFor(null)}/>}
  </div>;
