@@ -8,7 +8,7 @@ INSERT INTO local_rank_provider(id) VALUES(true) ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS local_rank_schedules (
  business_id uuid PRIMARY KEY REFERENCES local_heatmap_locations(business_id) ON DELETE CASCADE,
  customer_id uuid NOT NULL REFERENCES customers(id), parent text NOT NULL, google_subject text NOT NULL,
- enabled boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now()
+ enabled boolean NOT NULL DEFAULT false, cadence text NOT NULL DEFAULT 'weekly' CHECK (cadence IN ('weekly','four_monthly')), created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS local_rank_runs (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), business_id uuid NOT NULL REFERENCES local_heatmap_locations(business_id) ON DELETE CASCADE,
