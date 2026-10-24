@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect} from 'vitest';
 import {reviewKnowledgeSnapshot,saveReviewKnowledge,replyKnowledgeContext} from '@/lib/review-knowledge';
-import {emptyReviewKnowledge} from '@/lib/review-knowledge-data';
+import {emptyReviewKnowledge,defaultReviewPolicies} from '@/lib/review-knowledge-data';
 const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL;
 describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
  it('separates locations, preserves drafts and autopilot, rejects stale and unauthorized writes',async()=>{
@@ -28,7 +28,7 @@ describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
    const context=await replyKnowledgeContext(a.id,c.id,sql);
    expect(context.recentReplies).toEqual(['North location reply']);
    expect(context.preferences).toEqual(knowledge);expect(context.googleFacts?.name).toBe(a.business_name);expect(JSON.stringify(context)).not.toContain('Unsaved public change');
-   expect((await replyKnowledgeContext(b.id,c.id,sql)).preferences.policies).toBe('');
+   expect((await replyKnowledgeContext(b.id,c.id,sql)).preferences.policies).toBe(defaultReviewPolicies);
    await expect(replyKnowledgeContext(a.id,randomUUID(),sql)).rejects.toMatchObject({status:404});
    const latest=await reviewKnowledgeSnapshot(actor,a.id,sql);
    await saveReviewKnowledge(actor,{businessId:a.id,version:latest.version,knowledge:{...knowledge,enabled:false}},sql);
