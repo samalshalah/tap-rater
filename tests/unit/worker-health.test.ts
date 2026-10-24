@@ -2,6 +2,22 @@ import {describe,it,expect,vi} from 'vitest';
 import {workerState,locationHealth} from '@/lib/admin-worker-health';
 import {observeWorker,workerMetrics} from '@/lib/worker-observation';
 describe('worker health',()=>{
+ it('distinguishes eligible drafting from disabled autopilot',()=>{
+  const state=locationHealth({enabled:true,connected:true,licensed:true,ai_consent:true,auto_enabled:false,synced_at:new Date(),draft_checked_at:new Date()});
+  expect(state.importEligible).toBe(true);expect(state.draftEligible).toBe(true);
+  expect(state.publishEligible).toBe(false);expect(state.publishEligibility).toBe('Autopilot off');
+  expect(state.status).toBe('Reporting');
+ });
+ it('shows expired access rather than misleading worker overdue errors',()=>{
+  const state=locationHealth({enabled:true,connected:true,licensed:false,licence_expires_at:'2020-01-01',synced_at:'2020-01-01',draft_error:true,ai_consent:true});
+  expect(state.reasons).toEqual(['Licence expired']);expect(state.importEligible).toBe(false);
+  expect(state.draftEligibility).toBe('Licence expired');
+ });
+ it('requires active account, AI permission, autopilot and selected ratings for publishing',()=>{
+  const base={account_status:'active',enabled:true,connected:true,licensed:true,ai_consent:true,auto_enabled:true,auto_five:true};
+  expect(locationHealth(base).publishEligible).toBe(true);
+  for(const override of [{account_status:'pending_activation'},{ai_consent:false},{licensed:false},{connected:false},{auto_five:false}])expect(locationHealth({...base,...override}).publishEligible).toBe(false);
+ });
  it('never calls unobserved or stale workers healthy',()=>{
   expect(workerState(undefined,1)).toBe('Not observed');
   expect(workerState({status:'success',started_at:'2020-01-01'},1)).toBe('Overdue');
