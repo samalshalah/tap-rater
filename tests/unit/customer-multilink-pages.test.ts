@@ -9,6 +9,7 @@ import type { CustomerPortalData, CustomerPortalStand } from "@/lib/customer-por
 const { getCustomerPortal, getHostedPageEditorContext, manager } = vi.hoisted(() => ({
   getCustomerPortal: vi.fn(), getHostedPageEditorContext: vi.fn(), manager: vi.fn()
 }));
+vi.mock('@/lib/customer-stand-registry',async original=>({...await original<object>(),customerStandRegistry:async()=>[]}));
 vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>false}));
 vi.mock("@/lib/customer-auth", () => ({ requireCustomer: async () => ({ email: "owner@example.com" }) }));
 vi.mock("@/components/account/account-shell", () => ({ AccountShell: ({ children }: { children: ReactNode }) => children }));
@@ -67,7 +68,7 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
     getHostedPageEditorContext.mockResolvedValue({ configured: true, page });
     renderToStaticMarkup(await AccountStandsPage());
     expect(getHostedPageEditorContext).toHaveBeenCalledExactlyOnceWith("owner@example.com", "PAGE1");
-    expect(manager).toHaveBeenCalledWith({ stands, hostedPages: { "stand-1": page } });
+    expect(manager).toHaveBeenCalledWith(expect.objectContaining({ stands, hostedPages: { "stand-1": page } }));
   });
 
   it("loads an owned page even when its original order line is missing", async () => {
@@ -85,7 +86,7 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
     getCustomerPortal.mockResolvedValue(portal(stands));
     getHostedPageEditorContext.mockResolvedValue({ configured: true, page });
     renderToStaticMarkup(await AccountStandsPage());
-    expect(manager).toHaveBeenCalledWith({ stands: expect.arrayContaining(stands), hostedPages: {} });
+    expect(manager).toHaveBeenCalledWith(expect.objectContaining({ stands: expect.arrayContaining(stands), hostedPages: {} }));
   });
 });
 

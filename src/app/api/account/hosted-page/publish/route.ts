@@ -10,6 +10,7 @@ export async function POST(request: Request) {
   const auth = await requireCustomerApi();
   if (auth.response) return auth.response;
 
+  if(request.headers.get("origin")!==new URL(request.url).origin)return NextResponse.json({error:"Invalid request."},{status:403});
   const storage = await getHostedPageStorage();
   if (!storage) {
     return NextResponse.json({ error: "Publishing storage is not configured. Your current live page is still available." }, { status: 503 });
@@ -18,7 +19,8 @@ export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
     const code = typeof body?.code === "string" ? body.code : undefined;
-    const result = await publishHostedPageDraft(auth.session.email, storage, code);
+    if(!code||!Number.isInteger(body?.version)||body.version<0)return NextResponse.json({error:"Refresh the editor before publishing."},{status:400});
+    const result = await publishHostedPageDraft(auth.session.email, storage, code,body.version);
     return NextResponse.json({
       ok: true,
       page: result.page,

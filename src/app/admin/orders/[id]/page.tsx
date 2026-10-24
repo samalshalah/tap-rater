@@ -1,3 +1,4 @@
+import {orderStandRegistry} from "@/lib/customer-stand-registry";
 import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
 import { getAdminEmailDeliveries } from "@/lib/email-deliveries";
 import { canChangeComplimentaryStand } from "@/lib/complimentary-orders";
@@ -31,6 +32,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
     notFound();
   }
 
+  const standRecords=await orderStandRegistry(id);
   const deliveryOverview = await getAdminEmailDeliveries(order.id);
   const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
   const attentionItems = buildAttentionItems(order, summaries);
@@ -75,7 +77,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               {canChangeComplimentaryStand(order) && <AdminLinkButton href={`/admin/orders/${id}/edit`} variant="primary" className="mb-4 min-h-11">Change stand / design</AdminLinkButton>}
               <div className="space-y-4">
                 {order.line_items_json.map((item, index) => (
-                  <LineItemDetail key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
+                  <LineItemDetail standIds={standRecords.filter(s=>s.line_id===item.standLineId&&Number(s.unit_number)<=item.quantity).map(s=>String(s.public_id))} key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
                 ))}
               </div>
             </InfoCard>
@@ -173,7 +175,7 @@ function AddressBlock({ address }: { address?: Record<string, unknown> | null })
   );
 }
 
-function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
+function LineItemDetail({ item, artworkUrl, order, index, standIds }: { standIds:string[]; item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
   const summary = getOrderLineItemProductionSummary(item);
   const originalLogo = getOrderLogoStorageKey(item);
   const printLogo = getOrderLogoStorageKey(item, false);
@@ -184,7 +186,7 @@ function LineItemDetail({ item, artworkUrl, order, index }: { item: OrderLineIte
         <div className="min-w-0">
           <p className="break-words font-black text-ink">{item.quantity} x {item.title}</p>
           <p className="mt-1 break-all font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
-          {order.id&&<details className="mt-2 text-xs text-muted"><summary className="cursor-pointer">Stand IDs ({item.quantity})</summary>{Array.from({length:Math.min(1000,Math.max(1,Math.floor(item.quantity)))},(_,unit)=><p key={unit} className="mt-1 break-all font-mono">ST-{order.id}-{index+1}-{unit+1}</p>)}</details>}
+          {!!standIds.length&&<details className="mt-2 text-xs text-muted"><summary className="cursor-pointer">Stand IDs ({standIds.length})</summary>{standIds.map(id=><p key={id} className="mt-1 break-all font-mono">{id}</p>)}</details>}
           <div className="mt-2 flex flex-wrap gap-2">
             <AdminBadge tone="neutral">{summary.optionLabel}</AdminBadge>
             <AdminBadge tone="neutral">{summary.nfcBehavior}</AdminBadge>
@@ -325,14 +327,14 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
 }
 
 function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
-  if (order.payment_status === "complimentary") return "Complimentary — no payment due";
+  if (order.payment_status === "complimentary") return "Complimentary â€” no payment due";
   if (order.payment_status === "refunded") return "Refunded";
   if (order.payment_status === "refund_pending") return "Refund pending";
   if (order.payment_status === "refund_failed") return "Refund needs review";
   if (order.payment_status === "partially_refunded") return "Partially refunded";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
-  if (order.status === "pending_payment") return "Unfinished checkout — awaiting payment";
+  if (order.status === "pending_payment") return "Unfinished checkout â€” awaiting payment";
   return order.status.replaceAll("_", " ");
 }
 

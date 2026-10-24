@@ -1,12 +1,14 @@
 "use client";
 
 import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, CalendarDays, Check, Copy, ExternalLink, Eye, Globe, LinkIcon, Mail, Menu, Plus, Save, Trash2, Upload } from "lucide-react";
+import {useRouter} from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
 type EditorStatus = "idle" | "saving" | "saved" | "publishing" | "published" | "error";
 
-export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEditorRecord }) {
+export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { initialPage: HostedPageEditorRecord;onDirtyChange?:(dirty:boolean)=>void;onBusyChange?:(busy:boolean)=>void }) {
+  const router=useRouter();
   const [page, setPage] = useState(initialPage);
   const [draft, setDraft] = useState<HostedPageEditorDraft>(initialPage.draft);
   const [previewHtml, setPreviewHtml] = useState("");
@@ -17,6 +19,8 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   const [isDirty, setIsDirty] = useState(false);
   const previewRequestId = useRef(0);
 
+  useEffect(()=>{onDirtyChange?.(isDirty);},[isDirty,onDirtyChange]);
+  useEffect(()=>{onBusyChange?.(status==="saving"||status==="publishing");},[status,onBusyChange]);
   const permanentUrl = `https://taprater.com/p/${page.code}`;
   const orderedButtons = useMemo(() => [...draft.buttons].sort((a, b) => a.position - b.position), [draft.buttons]);
   const logoAlign = draft.appearance.logoAlign ?? "center";
@@ -101,14 +105,16 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   async function saveDraft() {
     setStatus("saving");
     setMessage("");
+    try {
     const response = await fetch("/api/account/hosted-page/draft", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: page.code, draft })
+      body: JSON.stringify({ code: page.code, draft,version:page.draftVersion??0 })
     });
     const body = await response.json().catch(() => null);
 
     if (!response.ok) {
+      if (response.status === 409) router.refresh();
       setStatus("error");
       setMessage(body?.error ?? "Draft could not be saved.");
       return false;
@@ -119,22 +125,27 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
     setStatus("saved");
     setMessage("Draft saved. Your live page has not changed.");
     setIsDirty(false);
-    return true;
+    router.refresh();
+    return body.page as HostedPageEditorRecord;
+    }catch{setStatus("error");setMessage("Connection interrupted. Your edits are still here. Try saving again.");return false;}
   }
 
   async function publish() {
+    try{
+    let version=page.draftVersion??0;
     setStatus("publishing");
     setMessage("");
     if (isDirty) {
       const saved = await saveDraft();
       if (!saved) return;
+      version=saved.draftVersion??0;
       setStatus("publishing");
     }
 
     const response = await fetch("/api/account/hosted-page/publish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: page.code })
+      body: JSON.stringify({ code: page.code,version })
     });
     const body = await response.json().catch(() => null);
 
@@ -148,6 +159,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
     setStatus("published");
     setMessage(`Published successfully. Permanent page: ${body.published?.permanentUrl ?? permanentUrl}`);
     await refreshPreview(draft);
+    }catch{setStatus("error");setMessage("The request could not be confirmed. Refresh before trying again.");}
   }
 
   async function refreshPreview(nextDraft = draft) {
@@ -189,7 +201,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
   }
 
   return (
-    <div className="grid min-h-0 min-w-0 gap-3">
+    <fieldset disabled={status==="saving"||status==="publishing"} className="grid min-h-0 min-w-0 gap-3">
       <div className="tr-card grid gap-2 p-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <p className="text-xs text-muted">Permanent URL</p>
@@ -391,7 +403,7 @@ export function HostedPageEditor({ initialPage }: { initialPage: HostedPageEdito
         </div>
         </aside>
       </div>
-    </div>
+    </fieldset>
   );
 }
 

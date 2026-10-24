@@ -59,10 +59,10 @@ export async function getHostedPageEditorContext(email: string, code?: string): 
   return getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email, code);
 }
 
-export async function saveHostedPageDraft(email: string, draftInput: unknown, code?: string): Promise<HostedPageEditorRecord> {
+export async function saveHostedPageDraft(email: string, draftInput: unknown, code?: string, expectedVersion?: number): Promise<HostedPageEditorRecord> {
   const draft = validateHostedPageEditorDraft(draftInput);
   const localFile = getLocalHostedPageEditorFileFromEnv();
-  if (localFile) return updateLocalHostedPage(localFile, email, { draft, businessName: draft.businessName }, code);
+  if (localFile) return updateLocalHostedPage(localFile, email, { draft }, code, expectedVersion);
 
   if (!hasSupabaseAdminConfig()) {
     throw new HostedPageEditorError("Hosted page editor storage is not configured.", 503);
@@ -70,15 +70,16 @@ export async function saveHostedPageDraft(email: string, draftInput: unknown, co
 
   const context = await getHostedPageEditorContextFromClient(getSupabaseAdmin() as HostedPageEditorDbClient, email, code);
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
-  await updateHostedPageDraftWithClient(getSupabaseAdmin() as HostedPageEditorDbClient, context.page.id, context.page.customerId, draft);
-  return { ...context.page, businessName: draft.businessName, draft, updatedAt: new Date().toISOString() };
+  const draftVersion=await updateHostedPageDraftWithClient(getSupabaseAdmin() as HostedPageEditorDbClient, context.page.id, context.page.customerId, draft, expectedVersion ?? context.page.draftVersion ?? 0);
+  return { ...context.page, businessName: draft.businessName, draft, draftVersion, updatedAt: new Date().toISOString() };
 }
 
-export async function publishHostedPageDraft(email: string, storage: HostedPageTextStorage, code?: string): Promise<{ page: HostedPageEditorRecord; snapshot: HostedPageSnapshot }> {
+export async function publishHostedPageDraft(email: string, storage: HostedPageTextStorage, code?: string, expectedVersion?:number): Promise<{ page: HostedPageEditorRecord; snapshot: HostedPageSnapshot }> {
   const context = await getHostedPageEditorContext(email, code);
   if (!context.configured) throw new HostedPageEditorError(context.message, 503);
   if (!context.page) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
+  if(expectedVersion!==undefined&&(context.page.draftVersion??0)!==expectedVersion)throw new HostedPageEditorError("This draft changed. Close and reopen the editor before publishing.",409);
   const snapshot = buildSnapshotFromDraft(context.page);
   if (!getLocalHostedPageEditorFileFromEnv()) {
     const {data, error} = await getSupabaseAdmin().from("hosted_subscriptions").select("stripe_subscription_id,current_period_end,status").eq("customer_id", context.page.customerId).eq("hosted_page_id", context.page.id);
@@ -218,17 +219,20 @@ export async function getHostedPageEditorContextFromClient(client: HostedPageEdi
   return { configured: true, page };
 }
 
-async function updateHostedPageDraftWithClient(client: HostedPageEditorDbClient, pageId: string, customerId: string, draft: HostedPageEditorDraft) {
-  const { error } = await client
+export async function updateHostedPageDraftWithClient(client: HostedPageEditorDbClient, pageId: string, customerId: string, draft: HostedPageEditorDraft, version:number) {
+  const { data,error } = await client
     .from("hosted_page_editor_pages")
     .update({
       draft_json: draft,
+      draft_version: version+1,
       updated_at: new Date().toISOString()
     })
     .eq("id", pageId)
-    .eq("customer_id", customerId);
+    .eq("customer_id", customerId).eq("draft_version",version).select("id,draft_version").maybeSingle();
 
-  if (error) throw new HostedPageEditorError(error.message ?? "Draft could not be saved.", 500);
+  if (error) throw new HostedPageEditorError("Draft could not be saved.", 500);
+  if (!data) throw new HostedPageEditorError("This page was changed in another tab. Close and reopen the editor before saving.",409);
+  return Number(data.draft_version);
 }
 
 async function markHostedPagePublished(email: string, version: string, publishedAt: string, code?: string) {
@@ -267,7 +271,7 @@ async function getHostedPageEditorContextFromLocalFile(filePath: string, email: 
   return { configured: true, page: normalizeEditorPage(pageRow, normalizeCustomer(customer)!, business) };
 }
 
-async function updateLocalHostedPage(filePath: string, email: string, patch: { draft?: HostedPageEditorDraft; businessName?: string; publishedVersion?: string; publishedAt?: string }, code?: string) {
+async function updateLocalHostedPage(filePath: string, email: string, patch: { draft?: HostedPageEditorDraft; businessName?: string; publishedVersion?: string; publishedAt?: string }, code?: string, expectedVersion?:number) {
   const store = await readLocalStore(filePath);
   const normalizedEmail = normalizeEmail(email);
   const customer = store.customers.find((row) => normalizeEmail(String(row.email ?? "")) === normalizedEmail);
@@ -276,9 +280,11 @@ async function updateLocalHostedPage(filePath: string, email: string, patch: { d
   if (pageIndex === -1) throw new HostedPageEditorError("Hosted page was not found for this account.", 404);
 
   const page = store.hosted_page_editor_pages[pageIndex];
+  if(patch.draft && expectedVersion!==undefined && Number(page.draft_version||0)!==expectedVersion)throw new HostedPageEditorError("This page was changed in another tab. Close and reopen the editor before saving.",409);
   store.hosted_page_editor_pages[pageIndex] = {
     ...page,
     draft_json: patch.draft ?? page.draft_json,
+    draft_version: Number(page.draft_version||0)+(patch.draft?1:0),
     published_version: patch.publishedVersion ?? page.published_version,
     published_at: patch.publishedAt ?? page.published_at,
     updated_at: new Date().toISOString()
@@ -374,6 +380,7 @@ function normalizeEditorPage(row: unknown, customer: { id: string; email: string
     code: readString(value.code, 40) ?? "",
     lifecycleStatus: readLifecycleStatus(value.lifecycle_status),
     draft,
+    draftVersion: Number(value.draft_version||0),
     publishedVersion: readString(value.published_version, 120),
     publishedAt: readString(value.published_at, 80),
     updatedAt: readString(value.updated_at, 80)

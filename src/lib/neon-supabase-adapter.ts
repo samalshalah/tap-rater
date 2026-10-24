@@ -117,6 +117,7 @@ const tableColumns = {
     "code",
     "lifecycle_status",
     "draft_json",
+    "draft_version",
     "published_version",
     "published_at",
     "created_at",

@@ -1,3 +1,4 @@
+import {customerStandRegistry,attachStandRegistry} from '@/lib/customer-stand-registry';
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
 import { requireCustomer } from "@/lib/customer-auth";
@@ -24,8 +25,10 @@ export default async function AccountMultiLinkPage() {
     if(stand.kind!=="multilink"||!code||seenCodes.has(code)||!portal.subscriptions.some(subscription=>subscription.permanentCode===code))return false;
     seenCodes.add(code);return true;
   });
+  const registry=await customerStandRegistry(session.email);
+  const registeredStands=attachStandRegistry(multiLinkStands,[],registry);
   const hostedPageEntries = await Promise.all(
-    multiLinkStands
+    registeredStands
       .filter((stand) => stand.kind === "multilink" && stand.hostedPageCode)
       .map(async (stand) => {
         const context = await getHostedPageEditorContext(session.email, stand.hostedPageCode);
@@ -41,7 +44,7 @@ export default async function AccountMultiLinkPage() {
           <h1 className="text-xl font-semibold text-ink">Multi-Link</h1>
         </section>
 
-        <CustomerStandsManager stands={multiLinkStands} hostedPages={hostedPages} />
+        <CustomerStandsManager stands={registeredStands} hostedPages={hostedPages} businesses={portal.businesses.map(b=>({id:b.id,name:b.businessName}))} />
       </div>
     </AccountShell>
   );

@@ -25,6 +25,7 @@ export type OrdersDbClient = {
 };
 
 export type OrderLineItem = {
+  standLineId?: string;
   productId: string;
   optionId?: string;
   optionLabel?: string;

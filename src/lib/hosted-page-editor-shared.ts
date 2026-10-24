@@ -44,6 +44,7 @@ export type HostedPageEditorRecord = {
   code: string;
   lifecycleStatus: HostedPageLifecycleStatus;
   draft: HostedPageEditorDraft;
+  draftVersion?: number;
   publishedVersion?: string;
   publishedAt?: string;
   updatedAt?: string;

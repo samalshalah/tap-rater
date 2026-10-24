@@ -1,3 +1,4 @@
+import {customerStandRegistry,attachStandRegistry} from '@/lib/customer-stand-registry';
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
 import { requireCustomer } from "@/lib/customer-auth";
@@ -18,8 +19,10 @@ export default async function AccountStandsPage() {
     multiLinkSetupPending: false, proofStatus: "not_needed" as const, productionStatus: "", shippingStatus: "",
     primaryActionLabel: "Manage links", primaryActionHref: "/account/stands"
   }))];
+  const registry=await customerStandRegistry(session.email);
+  const registeredStands=attachStandRegistry(allStands,portal.devices,registry);
   const hostedPageEntries = await Promise.all(
-    allStands
+    registeredStands
       .filter((stand) => stand.kind === "multilink" && stand.hostedPageCode)
       .map(async (stand) => {
         const context = await getHostedPageEditorContext(session.email, stand.hostedPageCode);
@@ -35,7 +38,7 @@ export default async function AccountStandsPage() {
           <h1 className="text-xl font-semibold text-ink">My Stands</h1>
         </section>
 
-        <CustomerStandsManager stands={allStands} hostedPages={hostedPages} />
+        <CustomerStandsManager stands={registeredStands} hostedPages={hostedPages} businesses={portal.businesses.map(b=>({id:b.id,name:b.businessName}))} />
       </div>
     </AccountShell>
   );

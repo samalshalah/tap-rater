@@ -83,6 +83,14 @@ export type CustomerPortalStand = {
   orderId: string;
   lineItemIndex: number;
   standId?: string;
+  standLineId?: string;
+  unitNumber?: number;
+  registryId?: string;
+  assignedBusinessId?: string;
+  assignedBusinessName?: string;
+  standLabel?: string;
+  assignmentVersion?: number;
+  deviceCode?: string;
   proofReviewAvailable?: boolean;
   proofAvailable?: boolean;
   proofQuantity?: number;
@@ -538,6 +546,8 @@ function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: Custo
       return Array.from({length: Math.min(1000, Math.max(1,Math.floor(item.quantity)))},(_,unit)=>({
         id: unit===0?`${order.id}-${index + 1}`:`${order.id}-${index + 1}-unit-${unit+1}`,
         standId: `ST-${order.id}-${index+1}-${unit+1}`,
+        standLineId: rawItem.standLineId,
+        unitNumber: unit+1,
         proofAvailable: Boolean(rawItem.setup?.customerProof || rawItem.optionId==='branded_qr_direct'),
         proofReviewAvailable: proofStatus==='needs_review' && Boolean(rawItem.setup?.customerProof || (rawItem.optionId==='branded_qr_direct' && rawItem.setup?.designAssistanceRequested!==true)) && isOrderPaymentConfirmed(order.status as OrderRecord['status'],order.paymentStatus) && !['shipped','delivered'].includes(order.shippingStatus) && !['in_production','completed'].includes(order.productionStatus),
         proofQuantity: item.quantity,
@@ -589,6 +599,7 @@ function readProofPreviewString(setup: Record<string, unknown> | undefined, key:
 
 function normalizeOrderLineItem(row: Record<string, unknown>, fallbackTitle: string): OrderLineItem {
   return {
+    standLineId: readString(row.standLineId),
     productId: readString(row.productId) ?? readString(row.product_id) ?? fallbackTitle,
     optionId: readString(row.optionId) ?? readString(row.option_id),
     optionLabel: readString(row.optionLabel) ?? readString(row.option_label),

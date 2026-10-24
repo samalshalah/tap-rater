@@ -1,0 +1,14 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const m=vi.hoisted(()=>({auth:vi.fn(),save:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
+vi.mock('@/lib/customer-stand-registry',()=>({saveStandAssignment:m.save}));
+import {POST} from '@/app/api/account/stands/[id]/assignment/route';
+const id='00000000-0000-4000-8000-000000000001';
+const context={params:Promise.resolve({id})};
+const req=(body:unknown={businessId:null,label:'Counter',version:0},origin='https://taprater.com')=>new Request(`https://taprater.com/api/account/stands/${id}/assignment`,{method:'POST',headers:{origin,'Content-Type':'application/json'},body:JSON.stringify(body)});
+beforeEach(()=>{vi.resetAllMocks();m.auth.mockResolvedValue({session:{email:'owner@example.com'}});m.save.mockResolvedValue({assignment_version:1});});
+it('requires login',async()=>{m.auth.mockResolvedValue({response:new Response(null,{status:401})});expect((await POST(req(),context)).status).toBe(401);expect(m.save).not.toHaveBeenCalled();});
+it('rejects cross origin',async()=>{expect((await POST(req(undefined,'https://other.test'),context)).status).toBe(403);expect(m.save).not.toHaveBeenCalled();});
+it.each([{businessId:null,label:'Counter'},{businessId:'other',label:'Counter',version:0},{businessId:null,label:'x'.repeat(81),version:0},{businessId:null,label:'Counter',version:0,email:'other@example.com'}])('rejects invalid or spoofed input',async body=>{expect((await POST(req(body),context)).status).toBe(400);expect(m.save).not.toHaveBeenCalled();});
+it('always uses authenticated owner',async()=>{expect((await POST(req(),context)).status).toBe(200);expect(m.save).toHaveBeenCalledWith('owner@example.com',id,null,'Counter',0);});
+it('rejects unavailable or stale assignment without leaking business data',async()=>{m.save.mockResolvedValue(null);expect((await POST(req(),context)).status).toBe(409);});
