@@ -36,11 +36,11 @@ function displayHours(periods:unknown[],special=false):string {
  * No automatic write retries: a timed-out reply may already have been published by Google. */
 export function createGoogleBusinessClient(accessToken: string, fetcher: typeof fetch = fetch) {
   if (!accessToken.trim()) throw new Error("A Google access token is required.");
-  async function request<S extends z.ZodTypeAny>(url: URL, schema: S, body?: { comment: string }): Promise<z.output<S>> {
+  async function request<S extends z.ZodTypeAny>(url: URL, schema: S, body?: Record<string,unknown>, method: 'PUT'|'PATCH'='PUT'): Promise<z.output<S>> {
     let response: Response;
     try {
       response = await fetcher(url, {
-        method: body ? "PUT" : "GET", cache: "no-store", redirect: "manual",
+        method: body ? method : "GET", cache: "no-store", redirect: "manual",
         signal: AbortSignal.timeout(15_000),
         headers: { Authorization: `Bearer ${accessToken}`, ...(body ? { "Content-Type": "application/json" } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),
@@ -55,6 +55,21 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
     catch { throw new GoogleBusinessError("invalid_response", response.status); }
   }
   return {
+    async updateProfile(location:string,body:Record<string,unknown>,updateMask:string[]) {
+      const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(location,/^locations\/[A-Za-z0-9_-]+$/)}`);
+      if(!updateMask.length)throw new Error('No profile changes to publish.');
+      url.searchParams.set('updateMask',updateMask.join(','));
+      const result=await request(url,z.object({name:z.string()}).passthrough(),body,'PATCH');
+      if(result.name!==location)throw new GoogleBusinessError('invalid_response',200);
+      return result;
+    },
+    async getProfileFields(location:string,fields:string[]) {
+      const url=new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(location,/^locations\/[A-Za-z0-9_-]+$/)}`);
+      url.searchParams.set('readMask',['name',...fields].join(','));
+      const result=await request(url,z.object({name:z.string()}).passthrough());
+      if(result.name!==location)throw new GoogleBusinessError('invalid_response',200);
+      return result;
+    },
     async listCategories(regionCode:string,query:string,pageToken='') {
       if(!/^[A-Z]{2}$/.test(regionCode)||query.length>100||/[\r\n=<>"\\]/.test(query)||pageToken.length>2048)throw new Error('Invalid category search.');
       const url=new URL('https://mybusinessbusinessinformation.googleapis.com/v1/categories');

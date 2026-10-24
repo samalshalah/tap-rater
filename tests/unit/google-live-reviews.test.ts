@@ -5,7 +5,7 @@ const data={reviewId:'r1',starRating:'FIVE' as const,comment:'Lovely dress',crea
 const review={id,business_id:id,resource:'accounts/a/locations/l/reviews/r1',data,draft:'Thank you for visiting!',version:2,publish_state:'idle'};
 const link={business_id:id,owner:'admin@example.com',business_name:'Norah',parent:'accounts/a/locations/l',enabled:true,auto_enabled:true,ai_consent:true,auto_four:false,auto_five:true,settings_version:1,consent_at:'2026-10-20T10:00:00Z'};
 const sqlRows=(...rows:unknown[])=>{const sql=vi.fn();for(const r of rows)sql.mockResolvedValueOnce(r);return sql as any;};
-const client=()=>({listCategories:vi.fn(),getBusinessDetails:vi.fn(),getMapAnchor:vi.fn(),getProfile:vi.fn(),getPerformance:vi.fn(),getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:review.draft}),listReviews:vi.fn().mockResolvedValue({reviews:[data],nextPageToken:'next'}),listLocations:vi.fn(),listAccounts:vi.fn()});
+const client=()=>({updateProfile:vi.fn(),getProfileFields:vi.fn(),listCategories:vi.fn(),getBusinessDetails:vi.fn(),getMapAnchor:vi.fn(),getProfile:vi.fn(),getPerformance:vi.fn(),getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:review.draft}),listReviews:vi.fn().mockResolvedValue({reviews:[data],nextPageToken:'next'}),listLocations:vi.fn(),listAccounts:vi.fn()});
 afterEach(()=>vi.unstubAllEnvs());
 describe('live Google review safety',()=>{
  it('uses the confirmed Google name and address for a new service workspace atomically with binding',async()=>{
