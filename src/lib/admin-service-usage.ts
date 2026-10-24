@@ -31,7 +31,7 @@ export async function serviceUsage(sql=liveDb()) {
     coalesce(cost.known,0) AS known_cost,coalesce(cost.reserved,0) AS reserved,coalesce(cost.unconfirmed,0) AS unconfirmed_costs
     FROM customers c CROSS JOIN bounds
     LEFT JOIN LATERAL (
-      SELECT sum(CASE WHEN l.ai_day=current_date THEN l.ai_calls ELSE 0 END) AS calls,
+      SELECT sum((SELECT count(*) FROM unnest(l.ai_hour_reservations) AS t WHERE t>now()-interval '1 hour')) AS calls,
       count(*) FILTER(WHERE l.enabled AND l.ai_consent AND c.account_status='active') AS enabled
       FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id WHERE b.customer_id=c.id
     ) l ON true

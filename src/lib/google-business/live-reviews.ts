@@ -101,10 +101,8 @@ export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,ver
  if(!rows.length)throw new LiveReviewError('This review changed or a publish is unresolved. Reload or check the publish result.');return rows[0];
 }
 async function reserveAi(businessId:string,sql=liveDb()){
- const rows=await sql`UPDATE google_review_links SET ai_day=current_date,ai_calls=CASE WHEN ai_day=current_date THEN ai_calls+1 ELSE 1 END,ai_last_at=now()
- WHERE business_id=${businessId} AND enabled AND ai_consent AND (ai_day IS DISTINCT FROM current_date OR ai_calls<20)
- AND (ai_last_at IS NULL OR ai_last_at<now()-interval '10 seconds') RETURNING business_id`;
- if(!rows.length)throw new LiveReviewError('Enable AI permission and wait for the daily safety limit or cooldown to reset.',429);
+ const rows=await sql`SELECT ${businessId}::uuid AS business_id WHERE reserve_review_ai_hour(${businessId}::uuid)`;
+ if(!rows.length)throw new LiveReviewError('Enable AI permission or wait for the hourly AI limit or cooldown to reset.',429);
  const [allowance]=await sql`SELECT reserve_marketing_units(${businessId}::uuid,'ai',1,${randomUUID()}) AS allowed`;
  if(!allowance?.allowed)throw new LiveReviewError('The monthly AI allowance is used or package access has expired.',429);
 }
@@ -213,7 +211,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
   if(saved.length)await scheduleSavedReply(String(review.id),Number(review.version)+1,sql);
   return {drafted:saved.length>0};
  }catch(error){
-  await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the daily AI allowance or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
+  await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the hourly AI limit or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
   const failures=await reviewWorkerFailure(sql,businessId,'draft');
   await sql`UPDATE google_review_links SET draft_due_at=now()+${Math.min(60,2**Math.min(failures,6))}*interval '1 minute' WHERE business_id=${businessId}`;
   return {drafted:false};

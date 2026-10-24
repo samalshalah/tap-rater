@@ -47,7 +47,7 @@ export function ReviewAutoSettings({businessId,initial,endpoint}:{businessId:str
    <div className="flex flex-wrap gap-5"><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={settings.four} onChange={e=>setSettings({...settings,four:e.target.checked})}/>4-star reviews</label>
    <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={settings.five} onChange={e=>setSettings({...settings,five:e.target.checked})}/>5-star reviews</label></div>
    <label className="block text-sm font-semibold">Automatic reply style<select className="ml-3 rounded-lg border border-line bg-white p-2" value={settings.style} onChange={e=>setSettings({...settings,style:e.target.value as ReplyStyle})}>{Object.entries(replyStyles).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label>
-   <p className="text-xs text-muted">1–3-star reviews always stay manual. Existing replies are never replaced. Pilot limit: 20 AI generations per business per day.</p>
+   <p className="text-xs text-muted">1–3-star reviews always stay manual. Existing replies are never replaced. 20 AI generations per business per rolling hour.</p>
    <div className="flex flex-wrap gap-2"><button type="button" className="tr-button-primary" disabled={busy || (settings.enabled&&!settings.four&&!settings.five)} onClick={save}>Save automatic reply settings</button>
    <button type="button" className="tr-button-ghost" disabled={busy||!saved.enabled||dirty} onClick={run}>Prepare next eligible draft now</button></div>
   </fieldset>

@@ -86,7 +86,7 @@ export async function ServiceUsage() {
 
           <td className="px-3 py-3 leading-6">
 
-            <div>Review AI: {a.reviewCalls} / {a.reviewLocations*20} today</div>
+            <div>Review AI: {a.reviewCalls} / {a.reviewLocations*20} in the last hour</div>
 
             <div>AI fixes: {a.fixCalls} / {a.fixLocations*10} today</div>
 
@@ -112,7 +112,7 @@ export async function ServiceUsage() {
 
     <div className="mt-3 grid gap-3 text-xs leading-5 text-muted lg:grid-cols-3">
 
-      <p><strong>AI limits:</strong> 20 review requests and 10 fix requests daily per enabled location; sample AI has a separate 20-request daily limit. Allowances shown are totals, but cannot be pooled between locations. Zero means no eligible location.</p>
+      <p><strong>AI limits:</strong> 20 review requests per rolling hour and 10 fix requests daily per enabled location; sample AI has a separate 20-request daily limit. Allowances shown are totals, but cannot be pooled between locations. Zero means no eligible location.</p>
 
       <p><strong>Heat-map limits:</strong> Four scheduled windows per month per enabled location with active tracking. Extra scans require cost approval. There is no separate client spending cap; all accounts share the budget above. Scan usage counts runs created this month in New York time.</p>
 
