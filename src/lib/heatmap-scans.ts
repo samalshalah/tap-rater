@@ -11,14 +11,14 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
  // Unknown outcomes retain their entire reservation and are never automatically paid for again.
  await sql`UPDATE local_rank_points SET state='uncertain',error_code='submission_interrupted' WHERE state='submitting' AND submitted_at<now()-interval '10 minutes'`;
  let collected=0;
- const pending=await sql`SELECT p.id,p.provider_id,r.anchor FROM local_rank_points p JOIN local_rank_runs r ON r.id=p.run_id WHERE p.state='pending' ORDER BY p.checked_at NULLS FIRST LIMIT 100`;
+ const pending=await sql`SELECT p.id,p.provider_id,r.anchor FROM local_rank_points p JOIN local_rank_runs r ON r.id=p.run_id WHERE p.state IN ('pending','uncertain') AND p.provider_id IS NOT NULL AND r.created_at>now()-interval '29 days' ORDER BY p.checked_at NULLS FIRST LIMIT 100`;
  // Retrieval is free and continues even when paid submissions are disabled or capped.
  for(let offset=0;offset<pending.length;offset+=10)await Promise.all(pending.slice(offset,offset+10).map(async p=>{
   try{
    const result=await provider.collect(String(p.provider_id),String(p.anchor.placeId));
-   await sql`UPDATE local_rank_points SET state=${result.state},rank=${result.rank??null},result_count=${result.count??null},competitors=${result.competitors?JSON.stringify(result.competitors):null}::jsonb,error_code=${result.code??null},checked_at=now() WHERE id=${p.id} AND state='pending'`;
+   await sql`UPDATE local_rank_points SET state=${result.state},rank=${result.rank??null},result_count=${result.count??null},competitors=${result.competitors?JSON.stringify(result.competitors):null}::jsonb,error_code=${result.code??null},checked_at=now() WHERE id=${p.id} AND state IN ('pending','uncertain')`;
    if(result.state==='complete')collected++;
-  }catch{await sql`UPDATE local_rank_points SET checked_at=now(),error_code='retrieval_unavailable' WHERE id=${p.id} AND state='pending'`;}
+  }catch{await sql`UPDATE local_rank_points SET checked_at=now(),error_code='retrieval_unavailable' WHERE id=${p.id} AND state IN ('pending','uncertain')`;}
  }));
  if(!config.enabled||config.halt_reason)return {status:config.halt_reason?'halted':'disabled',submitted:0,collected};
  const period=scanPeriod(now),weeklyPeriod=weeklyScanPeriod(now);
@@ -56,7 +56,7 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
   for(const result of results){
    // Stop all subsequent paid work if the provider's charged rate changes.
    if(result.cost!==undefined&&result.cost>POINT_COST_MICROUSD)await sql`UPDATE local_rank_provider SET enabled=false,halt_reason='provider_price_changed',updated_at=now() WHERE id=true`;
-   await sql`UPDATE local_rank_points SET state=${result.state},provider_id=${result.providerId??null},actual_microusd=${result.cost??null},error_code=${result.state==='uncertain'?'submission_unconfirmed':null} WHERE id=${result.id} AND state='submitting'`;
+   await sql`UPDATE local_rank_points SET state=${result.state},provider_id=${result.providerId??null},actual_microusd=${result.cost??null},error_code=${result.code??(result.state==='uncertain'?'submission_unconfirmed':null)} WHERE id=${result.id} AND state='submitting'`;
    if(result.state==='pending')submitted++;
   }
  }catch{

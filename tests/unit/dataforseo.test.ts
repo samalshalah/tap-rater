@@ -39,3 +39,11 @@ describe('DataForSEO paid-request safety and ranking accuracy',()=>{
   expect((await runHeatmapMaintenance(sql as any,provider)).status).toBe('credentials_required');expect(sql).not.toHaveBeenCalled();expect(provider.submit).not.toHaveBeenCalled();
  });
 });
+
+it('preserves a provider rejection code and never retries its paid submission',async()=>{
+ vi.stubEnv('DATAFORSEO_LOGIN','test');vi.stubEnv('DATAFORSEO_PASSWORD','test');
+ const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({status_code:20000,tasks:[{id:'rejected',status_code:40501,cost:0,data:{tag:'point'}}]})));
+ const results=await createRankProvider(fetcher).submit([{id:'point',request:{}}]);
+ expect(results[0]).toMatchObject({state:'uncertain',providerId:'rejected',code:'provider_40501',cost:0});
+ expect(fetcher).toHaveBeenCalledTimes(1);
+});

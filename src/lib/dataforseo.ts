@@ -47,7 +47,7 @@ export function createRankProvider(fetcher:typeof fetch=fetch){
   submit:async(points:{id:string;request:unknown}[])=>{
    const raw=envelope.parse(await request('task_post',points.map(p=>({...p.request as object,tag:p.id}))));
    if(raw.status_code!==20000)throw new Error('Ranking provider did not confirm submission.');
-   return points.map(p=>{const matches=raw.tasks?.filter(t=>t.data?.tag===p.id)||[];const t=matches.length===1?matches[0]:undefined;return {id:p.id,providerId:t?.id,state:t?.status_code===20100&&t.id?'pending' as const:'uncertain' as const,cost:t?.cost===undefined?undefined:Math.ceil(t.cost*1e6)};});
+   return points.map(p=>{const matches=raw.tasks?.filter(t=>t.data?.tag===p.id)||[];const t=matches.length===1?matches[0]:undefined;return {id:p.id,providerId:t?.id,code:t&&t.status_code!==20100?'provider_'+t.status_code:undefined,state:t?.status_code===20100&&t.id?'pending' as const:'uncertain' as const,cost:t?.cost===undefined?undefined:Math.ceil(t.cost*1e6)};});
   },
   collect:async(id:string,placeId:string)=>{if(!/^[a-zA-Z0-9-]{1,100}$/.test(id))throw new Error('Invalid provider task');return parseRankResult(await request(`task_get/advanced/${id}`),id,placeId);},
  };

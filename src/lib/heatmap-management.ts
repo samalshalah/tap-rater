@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {recoverHeatmapScan} from './heatmap-scan-recovery';
 import {recoverHeatmapCompetitors} from './heatmap-competitor-recovery';
 import {authorizedLink,clientFor,liveDb,LiveReviewError} from './google-business/live-reviews';
 import {gridSettingsSchema} from './heatmap-data';
@@ -7,6 +8,7 @@ import {mutateScanApproval} from './heatmap-approval';
 import {POINT_COST_MICROUSD,providerConfigured} from './dataforseo';
 
 export const heatmapMutation=z.discriminatedUnion('action',[
+ z.object({action:z.literal('recover'),businessId:z.string().uuid()}).strict(),
  z.object({action:z.literal('competitors'),businessId:z.string().uuid(),runId:z.string().uuid(),trackId:z.string().uuid()}).strict(),
  z.object({action:z.literal('quote'),businessId:z.string().uuid(),id:z.string().uuid(),version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('approve'),businessId:z.string().uuid(),quoteId:z.string().uuid()}).strict(),
@@ -30,12 +32,13 @@ export async function heatmapSnapshot(actor:ReviewActor,businessId:string,sql=li
   LEFT JOIN local_rank_points p ON p.run_id=r.id WHERE r.id IN (SELECT id FROM history WHERE position<=8) GROUP BY r.id,r.methodology,r.period,r.anchor,r.tracks,r.created_at ORDER BY r.period DESC,r.created_at DESC`;
  const config=configs[0],connected=providerConfigured(),scheduled=Boolean(schedules[0]?.enabled);
  const status=!connected?'not_connected':config?.halt_reason?'halted':!config?.enabled?'disabled':!scheduled?'not_scheduled':Number(config.reserved_microusd)+600>Number(config.monthly_cap_microusd)?'capped':'active';
- return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{pointCost:POINT_COST_MICROUSD/1e6,connected,status,scheduled,cadence:schedules[0]?.cadence??'weekly',scansPerMonth:4,monthlyPoints:Number(config?.monthly_points??0),pointsUsed:Number(config?.points_used??0),manualEnabled:Boolean(schedules[0]?.manual_enabled&&config?.enabled&&!config?.halt_reason),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
+ return {anchor:anchors[0]?{...anchors[0].anchor,synced_at:anchors[0].synced_at}:null,tracks:tracks.map(t=>({...t.settings,id:t.id,keyword:t.keyword,active:t.active,version:t.version,updated_at:t.updated_at})),provider:{accountPaused:config?.halt_reason==='provider_account_paused',pointCost:POINT_COST_MICROUSD/1e6,connected,status,scheduled,cadence:schedules[0]?.cadence??'weekly',scansPerMonth:4,monthlyPoints:Number(config?.monthly_points??0),pointsUsed:Number(config?.points_used??0),manualEnabled:Boolean(schedules[0]?.manual_enabled&&config?.enabled&&!config?.halt_reason),...(actor.kind==='admin'?{monthlyCap:Number(config?.monthly_cap_microusd||0)/1e6,reserved:Number(config?.reserved_microusd||0)/1e6}:{})},scans};
 }
 
 export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),makeClient=clientFor){
  const input=heatmapMutation.parse(raw),link=await authorizedLink(actor,input.businessId,sql);
  if(!link.enabled)throw new LiveReviewError('Google access is stopped.');
+ if(input.action==='recover')return {id:undefined,...await recoverHeatmapScan(input.businessId,{customer_id:link.customer_id,parent:link.parent,google_subject:link.google_subject},sql)};
  if(input.action==='competitors')return {id:undefined,...await recoverHeatmapCompetitors(input,{customer_id:link.customer_id,parent:link.parent,google_subject:link.google_subject},sql)};
  if(input.action==='quote'||input.action==='approve')return {id:undefined,...await mutateScanApproval(actor,input,sql)};
  if(input.action==='initialize'){
