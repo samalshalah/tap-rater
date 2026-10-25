@@ -57,7 +57,7 @@ export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),m
    SELECT a.business_id,a.customer_id,a.parent,a.google_subject,s.slot,${input.settings.keyword},${JSON.stringify(input.settings)}::jsonb
    FROM local_heatmap_locations a JOIN businesses b ON b.id=a.business_id JOIN customers c ON c.id=b.customer_id
    JOIN google_review_links l ON l.business_id=a.business_id AND l.customer_id=a.customer_id AND l.parent=a.parent AND l.google_subject=a.google_subject
-   CROSS JOIN LATERAL (SELECT n AS slot FROM generate_series(1,CASE WHEN EXISTS(SELECT 1 FROM customer_marketing_access ma WHERE ma.customer_id=a.customer_id AND ma.source='paid') THEN 3 ELSE 20 END) n WHERE NOT EXISTS (SELECT 1 FROM local_heatmap_tracks t WHERE t.business_id=a.business_id AND t.slot=n) ORDER BY n LIMIT 1) s
+   CROSS JOIN LATERAL (SELECT n AS slot FROM generate_series(1,3) n WHERE NOT EXISTS (SELECT 1 FROM local_heatmap_tracks t WHERE t.business_id=a.business_id AND t.slot=n) ORDER BY n LIMIT 1) s
    WHERE a.business_id=${input.businessId} AND a.customer_id=b.customer_id AND a.customer_id=${link.customer_id} AND a.parent=${link.parent} AND a.google_subject=${link.google_subject}
    AND l.enabled AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
    ON CONFLICT DO NOTHING RETURNING id`;
