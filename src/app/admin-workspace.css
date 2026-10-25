@@ -67,3 +67,16 @@
 .tr-admin-shell.tr-admin-compact .tr-admin-content :is(dialog,[role="dialog"]) :is(h1,h2,h3,h4){font-size:var(--app-dialog-title)!important;line-height:1.4!important}
 .tr-admin-compact .tr-admin-content [role="dialog"]>div{height:auto;min-height:0;max-height:calc(100dvh - 32px);overflow:auto;border-radius:6px;padding:12px}
 .tr-admin-compact .tr-admin-content dialog:not(.tr-modal-overlay){height:auto;min-height:0;max-height:calc(100dvh - 32px);border-radius:6px;padding:12px}
+
+/* One compact, single-line presentation for every admin data table. */
+.tr-admin-compact .tr-admin-table-viewport{max-width:100%;overflow-x:auto}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table{width:100%;table-layout:auto;border-collapse:collapse;background:white}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table :is(th,td:not([colspan])){white-space:nowrap!important;height:36px;padding:4px 9px!important;vertical-align:middle}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table th{height:30px;background:#fafbfd}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(p,.block,.flex-col,.flex-wrap):not(dialog *,[role="dialog"] *){display:inline-flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;margin:0!important;white-space:nowrap}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan])>div:not([role="dialog"]){display:inline-flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;vertical-align:middle;margin:0}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan])>:is(p,div,span,a)+:is(p,div,span,a){margin-left:6px!important}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) br{display:none}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) img{width:28px;height:28px;object-fit:contain}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(.h-16,.w-16){height:28px;width:28px;min-width:28px}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(button,select){height:26px;min-height:26px}

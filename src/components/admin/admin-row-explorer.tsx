@@ -7,7 +7,9 @@ export function AdminRowExplorer({children}:{children:ReactNode}){
  const root=useRef<HTMLDivElement>(null),[details,setDetails]=useState<{title:string;fields:{label:string;value:string}[]}|null>(null);
  useEffect(()=>{
   const el=root.current;if(!el)return;
-  const enhance=()=>{el.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach(row=>{
+  const enhance=()=>{
+   el.querySelectorAll('table').forEach(table=>table.parentElement?.classList.add('tr-admin-table-viewport'));
+   el.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach(row=>{
    if(row.closest('dialog')||row.hasAttribute('data-admin-row')||row.cells.length<2||row.cells[0]?.colSpan>1)return;
    row.dataset.adminRow='true';if(!row.hasAttribute('tabindex'))row.tabIndex=0;
    const identity=Array.from(row.cells).map(cell=>cell.innerText.trim()).find(Boolean)||'Row';
