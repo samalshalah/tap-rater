@@ -35,13 +35,17 @@ export function ModalDialog({ children, onClose, labelledBy, className = "" }: M
       ref={dialogRef}
       aria-labelledby={labelledBy}
       aria-modal="true"
-      className={`fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none place-items-center overflow-hidden border-0 bg-transparent text-ink open:grid backdrop:bg-ink/45 ${className}`}
+      className={`tr-modal-overlay fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none place-items-center overflow-hidden border-0 bg-transparent text-ink open:grid backdrop:bg-ink/45 ${className}`}
       onCancel={(event) => {
+        // React propagates nested dialog cancellation to its parent editor.
+        event.stopPropagation();
+        if (event.target !== event.currentTarget) return;
         event.preventDefault();
         onClose();
       }}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
+        event.stopPropagation();
         const dialog = event.currentTarget;
         const controls = getTabStops(dialog);
         const first = controls[0];

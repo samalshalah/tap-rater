@@ -1,9 +1,9 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AccountPage from "@/app/account/page";
-import AccountMultiLinkPage from "@/app/account/multilink/page";
-import AccountStandsPage from "@/app/account/stands/page";
+import AccountPage from "@/app/account/(workspace)/page";
+import AccountMultiLinkPage from "@/app/account/(workspace)/multilink/page";
+import AccountStandsPage from "@/app/account/(workspace)/stands/page";
 import type { CustomerPortalData, CustomerPortalStand } from "@/lib/customer-portal";
 
 const { getCustomerPortal, getHostedPageEditorContext, manager } = vi.hoisted(() => ({
@@ -46,7 +46,7 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
       { ...stand, id: "stand-4", paymentStatus: "expired" }
     ]));
     const html = renderToStaticMarkup(await AccountPage());
-    expect(html).toMatch(/Multi-Link pages<\/p><p[^>]*>2<\/p>/);
+    expect(html).toMatch(/Multi-Link pages<\/dt><dd>2<\/dd>/);
     expect(html).not.toContain("Multi-Link setup is pending");
     expect(html).toContain("Manage Multi-Link page");
   });

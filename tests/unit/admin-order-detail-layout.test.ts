@@ -12,6 +12,7 @@ vi.mock("@/lib/email-deliveries", () => ({
 }));
 
 const { getOrder } = vi.hoisted(() => ({ getOrder: vi.fn() }));
+vi.mock("@/lib/customer-stand-registry", () => ({ orderStandRegistry: vi.fn(async () => []) }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/components/admin/order-fulfillment-form", () => ({ OrderFulfillmentForm: () => null }));

@@ -1,4 +1,5 @@
 "use client";
+import {activateListRow} from './list-row-action';
 
 import Link from "next/link";
 import {StandAssignment} from "./stand-assignment";
@@ -57,29 +58,23 @@ function StandCard({ stand, hasHostedPage, onOpen, onAssign }: { onAssign:()=>vo
   const historyOnly = isMultiLink && !hasHostedPage && !stand.hostedPageCode && !stand.hostedPageUrl && !stand.multiLinkSetupPending;
 
   return (
-    <article className="rounded-md border border-line bg-white p-4">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 items-start gap-3">
+    <article data-dashboard-row onClick={event=>activateListRow(event,()=>onOpen(true))} className="tr-stand-row rounded-md border border-line bg-white p-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <StandThumbnail stand={stand} />
           <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-medium text-ink">{stand.standLabel||stand.title}</h3>
+            <h3 className="text-base font-medium text-ink"><button type="button" className="text-left hover:underline" aria-haspopup="dialog" aria-label={`Open details for ${stand.standLabel||stand.title}`} onClick={()=>onOpen(true)}>{stand.standLabel||stand.title}</button></h3>
             {stand.quantity > 1 ? <span className="rounded-full bg-soft px-2 py-1 text-xs text-muted">Qty {stand.quantity}</span> : null}
             <span className="rounded-full bg-teal-50 px-2 py-1 text-xs font-medium text-brand">{formatKind(stand.kind)}</span>
             {stand.orderId && <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{formatPaymentStatus(stand.paymentStatus)}</span>}
+            {stand.assignmentVersion ? <span className="text-xs text-brand">{stand.assignedBusinessName||"Unassigned"} - Assignment draft</span> : null}
+            {isMultiLink && stand.hostedPageUrl ? (
+              <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="min-w-0 break-all text-xs text-brand">
+                {stand.hostedPageUrl}
+              </a>
+            ) : null}
           </div>
-          {stand.assignmentVersion? <p className="mt-2 text-xs text-brand">{stand.assignedBusinessName||"Unassigned"} - Assignment draft</p>:null}
-          {stand.deviceCode&&<p className="mt-1 text-xs text-muted">Device {stand.deviceCode}</p>}
-          {stand.standId&&<p className="mt-2 break-all font-mono text-[11px] text-muted">{stand.standId}</p>}
-          <p className="mt-2 max-w-full break-all text-sm text-muted">
-            {stand.businessName ? `${stand.businessName} - ` : ""}{stand.orderId ? `Order ${formatOrderReference(stand.orderReference)}` : stand.deviceCode ? "Registered stand" : "Multi-Link"}
-          </p>
-          {stand.orderId && <p className="mt-2 text-xs capitalize text-muted">{stand.shippingStatus === "not_shipped" ? stand.productionStatus.replaceAll("_", " ") : stand.shippingStatus.replaceAll("_", " ")}</p>}
-          {isMultiLink && stand.hostedPageUrl ? (
-            <a href={stand.hostedPageUrl} target="_blank" rel="noreferrer" className="mt-3 block break-all text-sm text-brand">
-              {stand.hostedPageUrl}
-            </a>
-          ) : null}
         </div>
         </div>
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -104,7 +99,7 @@ function StandCard({ stand, hasHostedPage, onOpen, onAssign }: { onAssign:()=>vo
 function StandThumbnail({stand}: {stand: CustomerPortalStand}) {
   const [failed, setFailed] = useState<string[]>([]);
   const source = [stand.proofPreviewUrl, stand.productImageUrl].find((url): url is string => Boolean(url) && !failed.includes(url!));
-  return <div className="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-white p-1">
+  return <div className="tr-stand-thumbnail flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-white p-1">
     {source ? <img src={source} alt={`${stand.title} image`} width={64} height={80} loading="lazy" className="h-full w-full object-contain" onError={()=>setFailed(previous=>[...previous, source])} />
       : stand.kind === "multilink" ? <Link2 size={22} className="text-muted" aria-label="Multi-Link page"/> : <Package size={22} className="text-muted" aria-label="Stand"/>}
   </div>;
@@ -144,7 +139,7 @@ function StandDetailModal({
           </button></div>
         </div>
         {proofOpen ? <CustomerProofReview orderId={stand.orderId} index={stand.lineItemIndex} canApprove={Boolean(stand.proofReviewAvailable)} onDone={onClose} onBusyChange={setBusy}/> : isMultiLink ? (
-          <div className="min-h-0 overflow-hidden p-3">
+          <div className="min-h-0 overflow-y-auto p-3">
             {hostedPage ? (
               <HostedPageEditor initialPage={hostedPage} onDirtyChange={setDirty} onBusyChange={setBusy} />
             ) : (
@@ -157,6 +152,9 @@ function StandDetailModal({
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
           <StandPreview key={stand.id} url={stand.proofPreviewUrl || stand.productImageUrl} title={stand.title} />
           <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] content-start gap-3 text-sm">
+            {stand.orderId&&<DetailLine label="Order" value={formatOrderReference(stand.orderReference)}/>}
+            {stand.deviceCode&&<DetailLine label="Device" value={stand.deviceCode}/>}
+            {stand.businessName&&<DetailLine label="Business" value={stand.businessName}/>}
             {stand.standId&&<DetailLine label="Stand ID" value={stand.standId}/>}
             {stand.orderId&&<DetailLine label="Payment" value={formatPaymentStatus(stand.paymentStatus)} />}
             <DetailLine label="Type" value={formatKind(stand.kind)} />

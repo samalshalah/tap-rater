@@ -1,4 +1,5 @@
 "use client";
+import {WorkspaceDetails} from './workspace-details';
 
 import { AlignCenter, AlignLeft, AlignRight, ArrowDown, ArrowUp, CalendarDays, Check, Copy, ExternalLink, Eye, Globe, LinkIcon, Mail, Menu, Plus, Save, Trash2, Upload } from "lucide-react";
 import {useRouter} from "next/navigation";
@@ -203,10 +204,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
   return (
     <fieldset disabled={status==="saving"||status==="publishing"} className="grid min-h-0 min-w-0 gap-3">
       <div className="tr-card grid gap-2 p-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="min-w-0">
-          <p className="text-xs text-muted">Permanent URL</p>
-          <p className="mt-0.5 truncate text-sm font-medium text-ink">{permanentUrl}</p>
-        </div>
+        <div className="min-w-0"><WorkspaceDetails label="Page URL & publishing" title="Page URL & publishing"><p className="break-all">{permanentUrl}</p><p>{page.publishedAt?`Last published ${new Date(page.publishedAt).toLocaleString()}`:'Not published yet'}</p><p>Save Draft keeps edits private. Publish updates this permanent page address.</p></WorkspaceDetails></div>
         <div className="flex flex-wrap gap-1.5">
           <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
             <Copy size={14} /> Copy
@@ -227,10 +225,9 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
       </div>
 
       <div className="grid min-h-0 min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
-        <section className="grid min-h-0 gap-3">
+        <section className="grid min-h-0 content-start gap-3">
         <div className="tr-card grid gap-2 p-3">
           <div>
-            <p className="tr-eyebrow">Page information</p>
             <h2 className="tr-card-title mt-1">Business</h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -360,7 +357,6 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
 
         <div className="tr-card grid gap-2 p-3">
           <div>
-            <p className="tr-eyebrow">Appearance</p>
             <h2 className="tr-card-title mt-1">Page Style</h2>
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -391,8 +387,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
         <div className="tr-card p-3">
           <div className="mb-2 flex items-center justify-between">
             <div>
-              <p className="tr-eyebrow">Preview</p>
-              <h2 className="tr-card-title mt-1">Preview</h2>
+                <h2 className="tr-card-title mt-1">Preview</h2>
             </div>
             <button type="button" onClick={() => refreshPreview()} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
               <Eye size={16} /> Refresh

@@ -8,9 +8,9 @@ vi.mock('@/components/account/account-shell',()=>({AccountShell:({children}:{chi
 vi.mock('@/components/account/marketing-gate',()=>({MarketingGate:({children}:{children:ReactNode})=>createElement('section',{'data-testid':'service-setup'},children)}));
 vi.mock('@/components/account/local-dashboard',()=>({LocalDashboard:()=>createElement('div',null,'Service dashboard')}));
 vi.mock('next/navigation',()=>({redirect:(url:string)=>{throw Error('redirect:'+url);}}));
-import StandsPage from '@/app/account/stands/page';
-import StandsOverviewPage from '@/app/account/stands/overview/page';
-import AccountPage from '@/app/account/page';
+import StandsPage from '@/app/account/(workspace)/stands/page';
+import StandsOverviewPage from '@/app/account/(workspace)/stands/overview/page';
+import AccountPage from '@/app/account/(workspace)/page';
 import {navigationForPurchases,groupCustomerNavigation,isNavigationActive} from '@/lib/customer-navigation';
 const portal={configured:true,customer:{name:'Test'},orders:[],stands:[],devices:[],subscriptions:[]};
 beforeEach(()=>vi.clearAllMocks());

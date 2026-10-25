@@ -2,7 +2,7 @@ import {createElement, type ReactNode} from "react";
 import {LicenceDetails,InvoiceDetails,SubscriptionDetails,OrderInvoiceAttachments} from "@/components/account/customer-orders-manager";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AccountOrdersPage from "@/app/account/orders/page";
+import AccountOrdersPage from "@/app/account/(workspace)/orders/page";
 import { requireCustomer } from "@/lib/customer-auth";
 import { getCustomerPortal, type CustomerPortalData } from "@/lib/customer-portal";
 
@@ -45,7 +45,7 @@ describe("compact customer billing",()=>{
   portal.orders.push({...portal.orders[0],id:"second-order",reference:"cs_second"});
   portal.invoices.push({...portal.invoices[0],id:"second-invoice",orderId:"second-order",invoiceNumber:"SECOND",invoicePdfUrl:"https://example.test/second.pdf"});
   const html=renderToStaticMarkup(await AccountOrdersPage({}));
-  const rows=html.match(/<tr>.*?<\/tr>/g)!;
+  const rows=html.match(/<tr(?:\s[^>]*)?>.*?<\/tr>/g)!;
   expect(rows[1]).toContain("https://example.test/invoice.pdf");
   expect(rows[1]).not.toContain("https://example.test/second.pdf");
   expect(rows[2]).toContain("https://example.test/second.pdf");

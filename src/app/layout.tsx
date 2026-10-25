@@ -6,6 +6,7 @@ import { CartAnalyticsEvents } from "@/components/analytics/ecommerce-events";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import "./globals.css";
+import "./workspace.css";
 
 export const metadata: Metadata = {
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),

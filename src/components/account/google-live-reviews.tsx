@@ -1,4 +1,5 @@
 "use client";
+import {activateListRow} from './list-row-action';
 import {ReviewScheduleSettings} from './review-schedule-settings';
 import {ReviewAutomationControls} from './review-automation-controls';
 import {Star,X,Settings,RefreshCw} from 'lucide-react';
@@ -56,7 +57,7 @@ function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
  function close(){if(edits.current.busy)return;if(edits.current.dirty&&!window.confirm('Discard unsaved reply changes?'))return;dialog.current?.close();setOpen(false);}
  const name=reviewerName(review);
  const status=review.scheduled_at?'Scheduled · '+new Date(review.scheduled_at).toLocaleString():review.suspected_spam?'Suspected spam':review.publish_state==='published'&&review.data.reviewReply?.comment?'Replied':review.draft?(review.approved_version===review.version?'Approved':'Draft'):review.data.reviewReply?.comment?'Replied':'Awaiting reply';
- return <tr className={"tr-review-row"+(review.suspected_spam?" bg-amber-50":"")} onClick={e=>{if(!(e.target as HTMLElement).closest('button,dialog'))setOpen(true);}}>
+ return <tr className={"tr-review-row"+(review.suspected_spam?" bg-amber-50":"")} data-dashboard-row onClick={event=>activateListRow(event,()=>setOpen(true))}>
  <th scope="row"><div className="tr-review-person"><ReviewAvatar name={name}/><img src="/brand/google-g.png" width="18" height="18" alt="Google"/><span className="tr-review-name">{name}</span></div></th>
  <td><ReviewStars rating={review.data.starRating}/></td>
  <td><span className="tr-review-excerpt">{review.data.comment||'Rating only; no written review.'}</span></td>

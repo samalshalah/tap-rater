@@ -14,13 +14,13 @@ assert(appConfigs[0].compatibility_date >= "2026-09-05", "Application compatibil
 for (const [index, config] of appConfigs.entries()) {
   const label = appConfigPaths[index];
   assert(config.limits?.cpu_ms === 30000, `${label} must preserve the tested 30-second CPU limit.`);
-  assert(config.limits?.subrequests === 1000, `${label} must preserve the tested 1,000-subrequest limit.`);
+  assert(config.limits?.subrequests === 5000, `${label} must preserve the review-worker 5,000-subrequest limit.`);
   assert(config.observability?.enabled === true, `${label} must enable observability.`);
   assert(hasRoute(config, "taprater.com/*"), `${label} must route taprater.com.`);
   assert(hasRoute(config, "www.taprater.com/*"), `${label} must route www.taprater.com.`);
   assert(hasBinding(config.r2_buckets, "PRODUCT_MEDIA_BUCKET"), `${label} is missing product media storage.`);
   assert(hasBinding(config.r2_buckets, "RECOVERY_BACKUPS"), `${label} is missing private recovery backup storage.`);
-  assert(config.triggers?.crons?.includes("*/15 * * * *"), `${label} is missing resumable daily media backups.`);
+  assert(config.triggers?.crons?.includes("* * * * *"), `${label} is missing the minute scheduler for review queues and resumable daily media backups.`);
   assert(hasBinding(config.r2_buckets, "HOSTED_PAGE_SNAPSHOTS"), `${label} is missing hosted-page snapshot storage.`);
   assert(hasRateLimit(config, "PUBLIC_FORM_RATE_LIMITER", 10), `${label} is missing the public form rate limit.`);
   assert(hasRateLimit(config, "SUPPORT_FORM_RATE_LIMITER", 3), `${label} is missing the support form rate limit.`);

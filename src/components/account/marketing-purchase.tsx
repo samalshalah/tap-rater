@@ -1,4 +1,5 @@
 'use client';
+import {WorkspaceDetails} from './workspace-details';
 import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {marketingAmount} from '@/lib/marketing-plan';
@@ -15,7 +16,7 @@ export function MarketingPurchaseCard({available,guest=false}:{available:boolean
   }catch(e){setError(e instanceof Error?e.message:'Please try again.');}finally{setBusy(false);}
  }
  return <section className="tr-card max-w-2xl space-y-4 p-5"><h2 className="text-xl font-semibold">Tap Rater Growth</h2><p>Google review replies, profile improvements and local ranking insights—prepared for your approval.</p>
- <ul className="list-disc space-y-1 pl-5 text-sm"><li>300 AI review reply drafts per location each month</li><li>10 GBP AI improvement drafts per location each month</li><li>3 keywords · 7×7 heat maps · 4 ranking updates per month</li><li>Competitor comparison, reports and spam flags</li><li>Replies and profile changes stay as drafts. Directory distribution is not included.</li></ul>
+ <WorkspaceDetails label="Package features & allowances"><ul className="list-disc space-y-1 pl-5 text-sm"><li>300 AI review reply drafts per location each month</li><li>10 GBP AI improvement drafts per location each month</li><li>3 keywords · 7×7 heat maps · 4 ranking updates per month</li><li>Competitor comparison, reports and spam flags</li><li>Replies and profile changes stay as drafts. Directory distribution is not included.</li></ul></WorkspaceDetails>
  {subscription&&!['checkout','canceled','incomplete_expired'].includes(subscription.status)?<><p>{subscription.locations} location(s) · {subscription.status} · Monthly{subscription.cancel_at_period_end?' · Renewal canceled':''}</p><button className="tr-button-primary" disabled={busy} onClick={()=>action('portal')}>Manage subscription & invoices</button></>:<>
  <fieldset disabled={busy} className="grid gap-3"><p>$29 per location / month</p><label>Locations <input className="tr-input" type="number" min={1} max={10} value={locations} onChange={e=>setLocations(Number(e.target.value))}/></label><p className="font-semibold">${(marketingAmount({cadence,locations})/100).toFixed(2)} / month</p>
  <p className="text-sm">Renews automatically until canceled. Cancel future renewals in your account. Monthly allowances reset each calendar month. Regenerations count toward allowances.</p>

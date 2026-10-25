@@ -84,10 +84,19 @@ describe("shared native modal", () => {
   it("synchronizes Escape cancellation through the controlled close callback", () => {
     const onClose = vi.fn();
     const element = render(onClose);
-    const event = { preventDefault: vi.fn() };
+    const event = { preventDefault: vi.fn(), stopPropagation: vi.fn() };
     element.props.onCancel(event);
     expect(event.preventDefault).toHaveBeenCalledOnce();
     expect(onClose).toHaveBeenCalledOnce();
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
+  });
+
+  it("does not close the editor when cancellation comes from a nested popup", () => {
+    const onClose = vi.fn();
+    const event = { target: {}, currentTarget: {}, preventDefault: vi.fn(), stopPropagation: vi.fn() };
+    render(onClose).props.onCancel(event);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalledOnce();
   });
 
   it("can reopen after a Strict Mode setup/cleanup cycle", () => {
@@ -112,7 +121,7 @@ describe("shared native modal", () => {
     const first = new FocusTarget();
     const last = new FocusTarget();
     vi.stubGlobal("document", { activeElement: shiftKey ? first : last, body });
-    const event = { key: "Tab", shiftKey, preventDefault: vi.fn(), currentTarget: { querySelectorAll: () => [first, last] } };
+    const event = { key: "Tab", shiftKey, preventDefault: vi.fn(), stopPropagation: vi.fn(), currentTarget: { querySelectorAll: () => [first, last] } };
     render().props.onKeyDown(event);
     expect(event.preventDefault).toHaveBeenCalledOnce();
     expect((shiftKey ? last : first).focus).toHaveBeenCalledOnce();
@@ -127,7 +136,7 @@ describe("shared native modal", () => {
     const first = new FocusTarget();
     const last = new FocusTarget();
     vi.stubGlobal("document", { activeElement: last, body });
-    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), currentTarget: { querySelectorAll: () => [disabled, hidden, heading, first, last] } };
+    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), stopPropagation: vi.fn(), currentTarget: { querySelectorAll: () => [disabled, hidden, heading, first, last] } };
     render().props.onKeyDown(event);
     expect(first.focus).toHaveBeenCalledOnce();
     expect(disabled.focus).not.toHaveBeenCalled();
@@ -138,13 +147,13 @@ describe("shared native modal", () => {
     const first = new FocusTarget();
     const last = new FocusTarget();
     vi.stubGlobal("document", { activeElement: first, body });
-    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), currentTarget: { querySelectorAll: () => [first, last] } };
+    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), stopPropagation: vi.fn(), currentTarget: { querySelectorAll: () => [first, last] } };
     render().props.onKeyDown(event);
     expect(event.preventDefault).not.toHaveBeenCalled();
   });
 
   it("keeps focus in the modal if there are no tabbable controls", () => {
-    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), currentTarget: { querySelectorAll: () => [] } };
+    const event = { key: "Tab", shiftKey: false, preventDefault: vi.fn(), stopPropagation: vi.fn(), currentTarget: { querySelectorAll: () => [] } };
     render().props.onKeyDown(event);
     expect(event.preventDefault).toHaveBeenCalledOnce();
   });

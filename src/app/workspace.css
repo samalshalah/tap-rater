@@ -1,0 +1,398 @@
+/* The authenticated application frame. Keep these rules out of public commerce. */
+.tr-app-shell { --app-border:#dfe5ed; --app-muted:#60718a; background:#f7f9fc; }
+.tr-app-main { min-width:0; }
+.tr-app-shell .tr-workspace-sidebar { background:#fff; padding:20px 12px; }
+.tr-app-brand-row { display:flex; align-items:center; justify-content:space-between; padding:0 12px 24px; }
+.tr-app-shell .tr-client-brand { margin:0; }
+.tr-app-navigation { display:flex; flex-direction:column; flex:1; gap:24px; }
+main.tr-app-shell nav.tr-account-navigation { display:flex; flex-direction:column; align-items:stretch; overflow:visible; gap:20px; }
+.tr-app-shell .tr-account-navigation > section > div { display:block; }
+.tr-app-shell .tr-account-navigation > section + section { border:0; border-top:1px solid var(--app-border); padding:16px 0 0; }
+.tr-app-shell .tr-account-navigation .tr-workspace-nav-link { min-height:40px; margin:2px 0; padding:10px 12px; gap:10px; white-space:normal; border:0; font-size:13px; line-height:1.4; }
+.tr-app-shell .tr-workspace-nav-link svg { width:18px; height:18px; }
+.tr-app-shell .tr-app-navigation form { margin-top:auto; padding:16px 10px 0; border-top:1px solid var(--app-border); }
+.tr-app-signout { display:flex; align-items:center; gap:10px; min-height:40px; color:var(--app-muted); font-size:13px; }
+.tr-app-menu { display:none; }
+.tr-app-shell .tr-app-skip { display:block; position:fixed; left:12px; top:-80px; z-index:60; background:white; padding:12px; border:2px solid #008c87; }
+.tr-app-skip:focus { top:12px; }
+.tr-app-context { position:sticky; top:0; z-index:20; display:flex; align-items:center; flex-wrap:wrap; gap:16px; min-height:76px; padding:12px 28px; background:#fff; border-bottom:1px solid var(--app-border); }
+.tr-app-context-picker { display:flex; align-items:center; gap:10px; min-width:0; max-width:100%; }
+.tr-app-context-picker > svg { flex-shrink:0; color:#008c87; }
+.tr-app-context-picker label { display:grid; gap:3px; min-width:0; }
+.tr-app-context-picker label > span { font-size:11px; color:var(--app-muted); }
+.tr-app-context-picker select { width:100%; max-width:480px; min-height:30px; padding:2px 24px 2px 0; background:#fff; color:#162d56; font-weight:600; font-size:14px; text-overflow:ellipsis; }
+.tr-app-context-address { margin-left:auto; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--app-muted); font-size:12px; }
+.tr-app-context-caption,.tr-app-context-status { color:var(--app-muted); font-size:13px; }
+.tr-app-shell .tr-workspace-content { padding:24px 28px 40px; }
+.tr-app-shell .tr-local-workspace { padding:0; }
+.tr-app-page-header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:24px; }
+.tr-app-page-header h1 { margin:0; font-size:24px; font-weight:600; line-height:1.3; letter-spacing:-.4px; }
+.tr-app-page-header p { margin:7px 0 0; color:#60718a; font-size:14px; line-height:1.6; }
+main.tr-app-shell .tr-workspace-content h1 { font-size:24px!important; line-height:1.3!important; font-weight:600!important; letter-spacing:-.4px; }
+main.tr-app-shell .tr-workspace-content :is(h2,h3) { font-size:15px!important; line-height:1.4!important; font-weight:600!important; letter-spacing:0; }
+main.tr-app-shell .tr-local-workspace .tr-marketing-feature h2[class] { font-size:15px!important; }
+.tr-app-page-actions,.tr-app-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.tr-app-toolbar { justify-content:space-between; padding:12px 16px; border:1px solid #dfe5ed; border-radius:8px; background:white; margin-bottom:16px; }
+.tr-toolbar-caption { font-size:13px; color:#60718a; }
+.tr-app-shell .tr-account-page-header { padding:0 0 20px; margin:0; }
+.tr-app-shell :is(.tr-button-primary,.tr-button-ghost) { min-height:36px; border-radius:6px; font-size:13px; padding:8px 12px; gap:8px; }
+.tr-app-shell :is(input,select,textarea,button,a):focus-visible { outline:2px solid #008c87; outline-offset:3px; }
+.tr-app-shell button:disabled { opacity:.55; cursor:not-allowed; }
+.tr-app-loading { padding:4px 0; }
+.tr-app-loading-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:24px; }
+.tr-app-loading-metrics > div { background:white; border:1px solid #dfe5ed; border-radius:8px; padding:20px; }
+.tr-app-loading-metrics :is(span,strong),.tr-app-loading-table > div { display:block; background:#e9eef4; border-radius:4px; animation:tr-app-pulse 1.6s ease-in-out infinite; }
+.tr-app-loading-metrics span { height:12px; width:70%; margin-bottom:16px; }
+.tr-app-loading-metrics strong { height:28px; width:45%; }
+.tr-app-loading-table { background:white; padding:20px; border:1px solid #dfe5ed; border-radius:8px; }
+.tr-app-loading-table > div { height:24px; margin:12px 0; }
+@keyframes tr-app-pulse { 50% { opacity:.45; } }
+@media(min-width:1024px) {
+ main.tr-app-shell { grid-template-columns:224px minmax(0,1fr); }
+ .tr-app-shell .tr-workspace-sidebar { position:sticky; top:0; height:100dvh; overflow-y:auto; }
+}
+@media(max-width:1023px) {
+ .tr-app-shell .tr-workspace-sidebar { padding:12px 16px; }
+ .tr-app-brand-row { padding:0; }
+ .tr-app-shell .tr-client-brand { margin:0; }
+ .tr-app-menu { display:grid; place-items:center; width:44px; height:44px; border:1px solid var(--app-border); border-radius:6px; }
+ .tr-app-navigation { display:none; }
+ .tr-app-navigation.is-open { display:flex; margin-top:20px; max-height:65dvh; overflow-y:auto; }
+ .tr-app-shell .tr-app-navigation form { margin:0; text-align:left; }
+ .tr-app-context { position:relative; padding:12px 16px; min-height:68px; }
+ .tr-app-context-address { display:none; }
+ .tr-app-shell .tr-workspace-content { padding:20px 16px 32px; }
+ .tr-app-loading-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(prefers-reduced-motion:reduce) { .tr-app-loading * { animation:none!important; } }
+
+/* Option 1: one density contract for every authenticated customer workspace.
+   Legacy selectors above remain as layout fallbacks; tokens below own appearance. */
+main.tr-app-shell {
+ --app-border:#dfe6ed; --app-muted:#60718a; --app-ink:#172b4d;
+ --app-accent:#087f7d; --app-title:18px; --app-section:13px;
+ --app-metric:20px; --app-gap:8px; --app-padding:10px; --app-radius:4px;
+ background:#f5f7fa; color:var(--app-ink); font-size:13px; line-height:1.45;
+}
+main.tr-app-shell .tr-workspace-sidebar { padding:8px; border-right:1px solid var(--app-border); }
+.tr-app-shell .tr-app-brand-row { padding:0 12px 8px; }
+.tr-app-shell .tr-client-brand img { width:80px; height:47px; object-fit:contain; }
+.tr-app-shell .tr-app-navigation { gap:8px; }
+main.tr-app-shell nav.tr-account-navigation { gap:7px; }
+.tr-app-shell .tr-account-navigation > section + section { padding-top:7px; }
+.tr-app-shell .tr-account-navigation > section > h2 { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+main.tr-app-shell .tr-account-navigation .tr-workspace-nav-link { min-height:29px; padding:5px 9px; margin:0; gap:9px; font-size:12px; border-radius:3px; color:var(--app-ink); }
+main.tr-app-shell .tr-workspace-nav-link[aria-current=page] { background:#e6f4f2; color:var(--app-accent); font-weight:600; }
+main.tr-app-shell .tr-workspace-nav-link:hover { background:#f0f5f7; }
+.tr-app-shell .tr-workspace-nav-link svg { width:16px; height:16px; }
+.tr-app-shell .tr-app-navigation form { padding:9px 6px 0; }
+.tr-app-shell .tr-app-signout { min-height:29px; font-size:12px; }
+.tr-app-shell .tr-app-context { min-height:43px; padding:5px 18px; gap:12px; }
+.tr-app-shell .tr-app-context-picker label > span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.tr-app-shell .tr-app-context-picker select { min-height:29px; font-size:12px; }
+main.tr-app-shell .tr-workspace-content { padding:12px; }
+main.tr-app-shell .tr-workspace-content h1 { font-size:var(--app-title)!important; line-height:1.3!important; letter-spacing:-.15px; }
+main.tr-app-shell .tr-workspace-content :is(h2,h3),main.tr-app-shell .tr-local-workspace .tr-marketing-feature h2[class] { font-size:var(--app-section)!important; line-height:1.4!important; }
+.tr-app-shell .tr-app-page-header { margin-bottom:9px; gap:10px; }
+.tr-app-shell .tr-app-page-header p { margin-top:3px; font-size:12px; line-height:1.45; }
+.tr-app-shell .tr-account-page-header { padding-bottom:9px; }
+.tr-app-shell :is(.tr-app-page-actions,.tr-app-toolbar) { gap:8px; }
+.tr-app-shell .tr-app-toolbar { padding:8px 10px; margin-bottom:8px; border-radius:var(--app-radius); }
+main.tr-app-shell :is(.tr-button-primary,.tr-button-ghost) { min-height:29px; padding:4px 9px; border-radius:3px; font-size:12px; gap:6px; box-shadow:none; }
+main.tr-app-shell .tr-button-primary { background:var(--app-accent); border-color:var(--app-accent); color:white; }
+main.tr-app-shell .tr-button-ghost { background:white; border:1px solid var(--app-border); color:var(--app-ink); }
+main.tr-app-shell .tr-workspace-content :is(.tr-card,.rounded-lg,.rounded-xl,.rounded-2xl) { border-radius:var(--app-radius); box-shadow:none; }
+main.tr-app-shell .tr-workspace-content :is(.p-4,.p-5,.p-6) { padding:var(--app-padding); }
+main.tr-app-shell .tr-workspace-content :is(.gap-3,.gap-4,.gap-5,.gap-6) { gap:var(--app-gap); }
+main.tr-app-shell .tr-workspace-content :is(.space-y-3,.space-y-4,.space-y-5,.space-y-6) > :not([hidden]) ~ :not([hidden]) { margin-top:var(--app-gap); }
+main.tr-app-shell .tr-workspace-content :is(.mt-4,.mt-5,.mt-6) { margin-top:10px; }
+main.tr-app-shell .tr-workspace-content :is(.mb-4,.mb-5,.mb-6) { margin-bottom:10px; }
+main.tr-app-shell .tr-workspace-content :is(.text-sm,.text-base) { font-size:13px; }
+main.tr-app-shell .tr-workspace-content :is(.text-2xl,.text-3xl,.text-4xl) { font-size:var(--app-metric); line-height:1.3; }
+main.tr-app-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),select,textarea) { font-size:13px; padding:6px 8px; border-radius:3px; }
+main.tr-app-shell .tr-workspace-content table { font-size:13px; }
+main.tr-app-shell .tr-workspace-content table th { padding:6px 10px; font-size:12px; }
+main.tr-app-shell .tr-workspace-content table td { padding:7px 10px; line-height:1.4; }
+main.tr-app-shell .tr-review-filters button { min-height:29px; padding:6px 9px; font-size:12px; }
+main.tr-app-shell .tr-review-status { font-size:11px; padding:3px 6px; border-radius:3px; }
+main.tr-app-shell :is(.tr-review-dialog,.tr-listing-dialog) h2 { font-size:14px!important; }
+main.tr-app-shell .tr-review-dialog :is(p,textarea) { font-size:13px; }
+main.tr-app-shell .tr-review-dialog :is(.tr-button-primary,.tr-button-ghost) { min-width:0; }
+.tr-app-shell .tr-review-overview section > header { padding:8px 10px; }
+.tr-app-shell .tr-review-overview .h-44 { height:174px; }
+.tr-app-shell .tr-review-overview section > h2 { padding:8px 10px; }
+.tr-app-shell .tr-review-overview section > p,.tr-app-shell .tr-review-overview section > div.px-4 { padding:10px; }
+.tr-app-shell .tr-app-loading-metrics { gap:8px; margin-bottom:8px; }
+.tr-app-shell .tr-app-loading-metrics > div,.tr-app-shell .tr-app-loading-table { padding:10px; border-radius:4px; }
+.tr-app-shell .tr-app-loading-metrics span { margin-bottom:8px; }
+.tr-app-shell .tr-app-loading-metrics strong { height:20px; }
+.tr-workspace-metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); border:1px solid var(--app-border,#dfe6ed); border-radius:4px; background:white; padding:7px 0; margin-bottom:8px; }
+.tr-workspace-metrics > div { padding:0 10px; display:grid; grid-template-columns:1fr auto; align-items:baseline; gap:2px 8px; }
+.tr-workspace-metrics > div + div { border-left:1px solid var(--app-border,#dfe6ed); }
+.tr-workspace-metrics dt { font-size:11px; color:var(--app-muted,#60718a); }
+.tr-workspace-metrics dd { font-size:20px; line-height:1.3; font-weight:600; margin:0; }
+.tr-workspace-metrics small { grid-column:1/-1; font-size:10px; color:var(--app-muted,#60718a); }
+@media(min-width:1024px) { main.tr-app-shell { grid-template-columns:194px minmax(0,1fr); } }
+@media(max-width:1023px) {
+ .tr-app-shell .tr-workspace-sidebar { padding:6px 12px; }
+ .tr-app-shell .tr-app-brand-row { padding:0; }
+ .tr-app-shell .tr-app-navigation.is-open { margin-top:8px; }
+ main.tr-app-shell .tr-account-navigation .tr-workspace-nav-link { min-height:38px; }
+ .tr-app-shell .tr-app-context { padding:5px 12px; }
+}
+@media(max-width:620px) {
+ main.tr-app-shell :is(.tr-button-primary,.tr-button-ghost) { min-height:36px; }
+ main.tr-app-shell .tr-workspace-content :is(input,select,textarea) { font-size:16px; }
+ .tr-workspace-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); row-gap:10px; }
+ .tr-workspace-metrics > div:nth-child(odd) { border-left:0; }
+}
+/* Compact application contract. Higher specificity intentionally supersedes legacy
+   customer-page rules; all future dashboard surfaces inherit these same tokens. */
+main.tr-app-shell.tr-client-shell { --app-title:14px; --app-dialog-title:12px; --app-section:11px; --app-metric:16px; --app-body:11px; --app-label:10px; --app-gap:6px; --app-padding:8px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content { font-size:13px; padding:10px 12px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(h1,h2,h3)[class] { font-size:var(--app-section)!important; line-height:1.35!important; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content h1,
+main.tr-app-shell.tr-client-shell .tr-workspace-content h1[class] { font-size:var(--app-title)!important; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-button-primary,.tr-button-ghost) { min-height:28px; padding:4px 8px; font-size:12px; line-height:18px; border-radius:3px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-button-primary { background:var(--app-accent); border-color:var(--app-accent); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),select,textarea) { min-height:28px; padding:4px 7px; font-size:13px; line-height:18px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.p-3,.p-4,.p-5,.p-6,.p-8,.p-10) { padding:8px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.py-4,.py-5,.py-6,.py-8) { padding-block:8px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.mt-3,.mt-4,.mt-5,.mt-6,.mt-8) { margin-top:6px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.mb-3,.mb-4,.mb-5,.mb-6,.mb-8) { margin-bottom:6px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.gap-3,.gap-4,.gap-5,.gap-6,.gap-8) { gap:6px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.text-xl,.text-2xl,.text-3xl,.text-4xl,.text-5xl) { font-size:var(--app-metric); line-height:1.3; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card-heading,.tr-card-body,.tr-location-card footer,.tr-issue-card footer,.tr-listing-toolbar) { padding:7px 9px; font-size:13px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-location-cards,.tr-issue-grid,.tr-performance-cards) { gap:6px; margin-bottom:6px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card-metrics strong,.tr-performance-total strong,.tr-rank-metrics strong,.tr-workspace-metrics dd) { font-size:var(--app-metric); line-height:1.3; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card-metrics { margin:6px 0; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card-metrics>div { gap:2px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-app-toolbar,.tr-business-summary,.tr-business-save) { padding:6px 8px; margin:6px 0; gap:8px; }
+.tr-app-title-row { display:flex; align-items:center; gap:8px; }
+.tr-app-page-help { position:relative; font-size:12px; }
+.tr-app-page-help summary { cursor:pointer; list-style:none; border:1px solid #b8c5d5; border-radius:50%; width:16px; height:16px; text-align:center; line-height:14px; color:#60718a; }
+.tr-app-page-help summary::-webkit-details-marker { display:none; }
+.tr-app-page-help p { position:absolute; z-index:30; top:22px; left:-24px; width:min(300px,65vw); padding:8px 10px; border:1px solid #dfe6ed; background:white; box-shadow:0 4px 12px #172b4d15; border-radius:4px; }
+main.tr-app-shell.tr-client-shell .tr-app-page-header { align-items:center; margin-bottom:6px; }
+main.tr-app-shell.tr-client-shell .tr-profile-agent { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-profile-agent>div { display:flex; gap:16px; }
+main.tr-app-shell.tr-client-shell .tr-profile-agent>button { margin:0; font-size:12px; }
+main.tr-app-shell.tr-client-shell .tr-business-editor-grid { gap:10px; grid-template-columns:minmax(0,1.6fr) minmax(220px,1fr); }
+main.tr-app-shell.tr-client-shell .tr-business-fields { padding:8px; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-business-field { gap:3px; }
+main.tr-app-shell.tr-client-shell .tr-business-form nav { gap:14px; padding-inline:8px; }
+main.tr-app-shell.tr-client-shell .tr-business-form nav button { padding:6px 0; font-size:12px; }
+main.tr-app-shell.tr-client-shell .tr-business-summary strong { font-size:12px; font-weight:500; }
+main.tr-app-shell.tr-client-shell .tr-business-media-empty { min-height:72px; }
+main.tr-app-shell.tr-client-shell .tr-business-brand-media img { height:80px; }
+main.tr-app-shell.tr-client-shell .tr-business-source { margin-top:8px; }
+main.tr-app-shell.tr-client-shell .tr-profile-field-popup { gap:4px; }
+main.tr-app-shell.tr-client-shell .tr-performance-chart { height:85px; margin-top:6px; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile { padding:8px; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile footer { margin-top:6px; padding-top:6px; }
+main.tr-app-shell.tr-client-shell .tr-listing-summary { margin-block:6px; padding:8px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-tabs { gap:16px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-tabs button { padding:5px 0; font-size:12px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-status { font-size:11px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-toolbar label { display:flex; align-items:center; flex-wrap:wrap; gap:3px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-toolbar select { margin-top:0; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-toolbar .tr-keyword-select { flex-basis:230px; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-toolbar .tr-history-select { flex-basis:215px; margin-left:0; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-icon { width:28px; padding:4px!important; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-scan-bar { padding:4px 8px; border:0; background:transparent; }
+main.tr-app-shell.tr-client-shell .tr-heatmap-scan-bar h3[class] { font-size:12px!important; font-weight:500!important; }
+main.tr-app-shell.tr-client-shell .tr-rank-metrics { padding:6px 0; }
+main.tr-app-shell.tr-client-shell .tr-rank-metrics>div { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:3px 8px; padding:0 10px; }
+main.tr-app-shell.tr-client-shell .tr-rank-layout { grid-template-columns:205px minmax(0,1fr); }
+main.tr-app-shell.tr-client-shell .tr-rank-businesses header>button,
+main.tr-app-shell.tr-client-shell .tr-rank-businesses>div>button { padding:8px 10px!important; }
+main.tr-app-shell.tr-client-shell .tr-competitor-sort { padding:6px 8px; }
+main.tr-app-shell.tr-client-shell .tr-rank-layout>div>div.flex { padding:5px 8px!important; align-items:center; }
+main.tr-app-shell.tr-client-shell .tr-rank-layout>div>div.flex>div { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+main.tr-app-shell.tr-client-shell .tr-rank-layout>div>div.flex p { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-rank-capture-status { display:flex; align-items:center; gap:8px; padding:3px 8px!important; font-size:11px!important; }
+@media(min-width:1350px) {
+ main.tr-app-shell.tr-client-shell .tr-heatmap-view { display:grid; grid-template-columns:minmax(520px,1fr) auto; gap:6px; }
+ main.tr-app-shell.tr-client-shell .tr-heatmap-view>* { grid-column:1/-1; margin-top:0!important; }
+ main.tr-app-shell.tr-client-shell .tr-heatmap-view>.tr-heatmap-toolbar { grid-column:1; }
+ main.tr-app-shell.tr-client-shell .tr-heatmap-view>.tr-heatmap-scan-bar { grid-column:2; align-self:end; max-width:370px; }
+}
+@media(max-width:850px) { main.tr-app-shell.tr-client-shell .tr-business-editor-grid { grid-template-columns:1fr; } }
+@media(max-width:640px) {
+ main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-button-primary,.tr-button-ghost) { min-height:36px; }
+ main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { font-size:16px; min-height:36px; }
+ main.tr-app-shell.tr-client-shell .tr-heatmap-topbar { flex-wrap:wrap; }
+ main.tr-app-shell.tr-client-shell .tr-heatmap-toolbar .tr-history-select { flex-basis:100%; }
+ main.tr-app-shell.tr-client-shell .tr-rank-metrics>div { flex-basis:30%; }
+}
+main.tr-app-shell.tr-client-shell .tr-app-toolbar>.tr-profile-agent { padding:0; border:0; margin:0; flex:1; justify-content:flex-start; gap:14px; }
+main.tr-app-shell.tr-client-shell .tr-app-toolbar>.tr-toolbar-caption:empty { display:none; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-profile-field-popup>button,.tr-category-trigger) { min-height:28px; padding:4px 8px; font-size:12px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-business-fields>h3 { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-review-overview .h-44 { height:140px; }
+main.tr-app-shell.tr-client-shell .tr-overview-reply-toolbar { display:flex; align-items:center; gap:12px; padding:6px 8px; border:1px solid var(--app-border); background:white; border-radius:4px; }
+main.tr-app-shell.tr-client-shell .tr-overview-reply-toolbar>button { margin-left:auto; }
+main.tr-app-shell.tr-client-shell .tr-review-table .tr-review-avatar { width:26px; height:26px; font-size:10px; }
+main.tr-app-shell.tr-client-shell .tr-review-table .tr-review-person { gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-review-table .tr-review-stars svg { width:15px; height:15px; }
+main.tr-app-shell.tr-client-shell .tr-review-table td { padding:5px 9px; }
+@media(min-width:1100px) { main.tr-app-shell.tr-client-shell .tr-performance-cards { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+/* Legacy positional selectors must not indent the second child differently. */
+main.tr-app-shell.tr-client-shell .tr-local-workspace>div:nth-child(2) { padding:0; }
+
+/* Typography matched visually to the supplied Semrush reference, at desktop size.
+   Keep this scale shared: never shrink a whole page with zoom or transform. */
+main.tr-app-shell.tr-client-shell,
+main.tr-app-shell.tr-client-shell .tr-workspace-content { font-size:var(--app-body); line-height:1.45; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(p,label,table,td,.text-sm,.text-base,.tr-marketing-feature,.tr-card-body,.tr-toolbar-caption,.tr-business-field,.tr-review-name,.tr-competitor-name,.tr-listing-table) { font-size:var(--app-body); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-button-primary,.tr-button-ghost,.tr-review-filters button,.tr-heatmap-tabs button,.tr-business-form nav button,.tr-profile-field-popup>button,.tr-category-trigger) { font-size:var(--app-body); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),select,textarea) { font-size:var(--app-body); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.text-xs,th,.tr-review-status,.tr-competitor-meta,.tr-workspace-metrics dt,.tr-card-metrics span,.tr-rank-metrics span,.tr-heatmap-status,.tr-heatmap-settings) { font-size:var(--app-label); }
+main.tr-app-shell.tr-client-shell .tr-account-navigation .tr-workspace-nav-link,
+main.tr-app-shell.tr-client-shell .tr-app-signout,
+main.tr-app-shell.tr-client-shell .tr-app-context-picker select { font-size:var(--app-body); }
+main.tr-app-shell.tr-client-shell .tr-app-context-address { font-size:var(--app-label); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card-heading { font-size:var(--app-section); }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-heatmap-feature .tr-heatmap-scan-bar h3[class] { font-size:var(--app-body)!important; }
+@media(max-width:640px) {
+ main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]),select,textarea) { font-size:16px; }
+}
+/* Scan metadata lives beside history, not in two full-width dashboard rows. */
+main.tr-app-shell.tr-client-shell .tr-heatmap-view>.tr-heatmap-toolbar { grid-column:1/-1; }
+.tr-scan-details { position:relative; flex:none; }
+.tr-scan-details>summary { display:flex; align-items:center; min-height:28px; cursor:pointer; list-style:none; padding:4px 8px; font-size:11px; border:1px solid #dfe6ed; background:white; border-radius:3px; gap:6px; }
+.tr-scan-details>summary::after { content:'▾'; }
+.tr-scan-details>summary::-webkit-details-marker { display:none; }
+.tr-scan-details[open]>summary { border-color:#087f7d; color:#087f7d; }
+.tr-scan-details>summary:focus-visible { outline:2px solid #087f7d; outline-offset:2px; }
+.tr-scan-details-panel { position:absolute; right:0; top:calc(100% + 5px); width:340px; max-width:calc(100vw - 32px); z-index:35; padding:10px; background:white; border:1px solid #dfe6ed; border-radius:4px; box-shadow:0 5px 18px #172b4d24; max-height:65vh; overflow-y:auto; }
+main.tr-app-shell.tr-client-shell .tr-scan-details-panel .tr-heatmap-scan-bar { padding:0; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-scan-details-panel .tr-heatmap-scan-bar>p { flex-basis:100%; }
+.tr-scan-grid-details { border-top:1px solid #dfe6ed; padding-top:8px; margin-top:10px; font-size:11px; color:#60718a; }
+.tr-scan-tracking { margin-left:auto; align-self:end; padding-block:4px; }
+@media(max-width:640px) { .tr-scan-details-panel { left:0; right:auto; } }
+/* One secondary-detail popup pattern across the workspace, using native modality
+   for Escape, focus containment and return-to-trigger behavior. */
+.tr-workspace-details-trigger { display:inline-flex; align-items:center; gap:5px; width:fit-content; border:1px solid #dfe6ed; border-radius:3px; background:white; color:#36577d; padding:4px 7px; min-height:26px; font-size:11px; line-height:16px; cursor:pointer; }
+.tr-workspace-details-trigger::after { content:'ⓘ'; color:#7185a5; }
+.tr-workspace-details-trigger:hover { background:#f0f6f7; }
+.tr-workspace-details-trigger:focus-visible { outline:2px solid #087f7d; outline-offset:2px; }
+.tr-workspace-details-dialog { width:min(580px,calc(100vw - 32px)); padding:14px; }
+.tr-workspace-details-body { font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.tr-workspace-details-body>p+ p { margin-top:8px; }
+.tr-workspace-details-body table { width:100%; }
+.tr-secondary-tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#60718a; font-size:11px; }
+main.tr-app-shell.tr-client-shell .tr-business-form nav { align-items:center; flex-wrap:wrap; }
+main.tr-app-shell.tr-client-shell .tr-business-form nav>.tr-workspace-details-trigger { margin-left:auto; padding:3px 6px; border:1px solid #dfe6ed; font-size:10px; }
+main.tr-app-shell.tr-client-shell .tr-performance-card { overflow:visible; }
+main.tr-app-shell.tr-client-shell .tr-card-body>.tr-workspace-details-trigger { margin-top:5px; }
+main.tr-app-shell.tr-client-shell .tr-app-title-row>.tr-workspace-details-trigger { min-height:16px; height:16px; width:16px; padding:0; justify-content:center; border-radius:50%; font-size:11px; }
+main.tr-app-shell.tr-client-shell .tr-app-title-row>.tr-workspace-details-trigger::after { content:none; }
+main.tr-app-shell.tr-client-shell .tr-workspace-details-dialog h2 { font-size:var(--app-dialog-title)!important; }
+
+/* Audit: secondary buttons and thumbnail cards follow the same density scale. */
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-button-secondary { min-height:28px; padding:4px 8px; font-size:var(--app-body); line-height:18px; border:1px solid var(--app-border); border-radius:3px; background:white; color:var(--app-ink); }
+main.tr-app-shell.tr-client-shell .tr-stand-thumbnail { width:42px; height:52px; }
+main.tr-app-shell.tr-client-shell .tr-stand-row .tr-stand-thumbnail { width:30px; height:30px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-stand-row { padding:6px 8px; }
+@media(max-width:640px) { main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-button-secondary { min-height:36px; } }
+
+/* Directory totals use the same metric scale as every other workspace. */
+main.tr-app-shell.tr-client-shell .tr-listing-summary-total > strong { font-size: 16px; line-height: 20px; }
+
+/* Editor icon controls follow the same desktop/touch size rules. */
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-icon-button { width:28px; height:28px; min-height:28px; padding:4px; border-radius:3px; }
+@media(max-width:640px) { main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-icon-button { width:36px; height:36px; min-height:36px; } }
+
+/* Dialogs can sit outside .tr-workspace-content. Include them explicitly so
+   legacy review headings and draft labels cannot escape the shared type scale. */
+main.tr-app-shell.tr-client-shell :is(.tr-workspace-content,dialog) :is(h2,h3,h4,h5,h6,label,legend),
+main.tr-app-shell.tr-client-shell :is(.tr-workspace-content,dialog) :is(h2,h3,h4,h5,h6)[class] {
+ font-size:var(--app-section)!important; line-height:1.4!important; letter-spacing:0;
+}
+main.tr-app-shell.tr-client-shell dialog :is([data-dialog-heading],header > h2),
+main.tr-app-shell.tr-client-shell dialog [data-dialog-heading][class],
+main.tr-app-shell.tr-client-shell dialog .tr-workspace-details-dialog h2 {
+ font-size:var(--app-dialog-title)!important; line-height:1.4!important;
+}
+main.tr-app-shell.tr-client-shell dialog > :is(.tr-card,.tr-review-dialog,.tr-listing-dialog) { padding:14px; }
+
+/* Popup surfaces grow with their content; only the transparent modal overlay
+   fills the viewport. Long forms retain scrolling instead of clipping actions. */
+main.tr-app-shell.tr-client-shell .tr-modal-overlay > :not([data-dialog-focus-guard]) {
+ height:fit-content; min-height:0; max-height:calc(100dvh - 32px);
+}
+main.tr-app-shell.tr-client-shell dialog:not(.tr-modal-overlay) {
+ height:fit-content; min-height:0; max-height:calc(100dvh - 32px); overflow-y:auto;
+}
+main.tr-app-shell.tr-client-shell :is(.tr-listing-dialog,.tr-category-dialog) {
+ padding:12px; border-radius:4px;
+}
+main.tr-app-shell.tr-client-shell .tr-listing-dialog { width:min(620px,calc(100vw - 32px)); }
+main.tr-app-shell.tr-client-shell .tr-workspace-details-dialog { width:min(540px,calc(100vw - 32px)); }
+main.tr-app-shell.tr-client-shell dialog :is(header,footer) { gap:8px; }
+main.tr-app-shell.tr-client-shell :is(.tr-listing-dialog,.tr-category-dialog) > header { margin-bottom:8px; }
+main.tr-app-shell.tr-client-shell :is(.tr-listing-dialog,.tr-category-dialog) > footer { margin-top:8px; }
+main.tr-app-shell.tr-client-shell dialog :is(.p-4,.p-5,.p-6) { padding:10px; }
+main.tr-app-shell.tr-client-shell dialog :is(.gap-4,.gap-5,.gap-6) { gap:8px; }
+main.tr-app-shell.tr-client-shell dialog :is(.space-y-4,.space-y-5,.space-y-6) > :not([hidden]) ~ :not([hidden]) { margin-top:8px; }
+main.tr-app-shell.tr-client-shell dialog :is(.mt-4,.mt-5,.mt-6) { margin-top:8px; }
+main.tr-app-shell.tr-client-shell .tr-category-dialog-grid { gap:12px; align-items:start; }
+main.tr-app-shell.tr-client-shell .tr-category-catalog { height:auto; max-height:310px; }
+main.tr-app-shell.tr-client-shell .tr-category-selected { padding:10px; }
+main.tr-app-shell.tr-client-shell .tr-attributes-dialog-content { gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-review-dialog > header { padding:12px 14px 0; }
+main.tr-app-shell.tr-client-shell .tr-review-detail { padding:10px 14px 12px; }
+main.tr-app-shell.tr-client-shell .tr-review-identity { margin-bottom:10px; gap:10px; }
+main.tr-app-shell.tr-client-shell .tr-review-detail-section { margin-top:10px; }
+main.tr-app-shell.tr-client-shell .tr-review-detail-section:nth-of-type(2) { padding-top:10px; }
+main.tr-app-shell.tr-client-shell .tr-existing-reply { padding:8px 10px; }
+main.tr-app-shell.tr-client-shell .tr-review-detail-actions { margin-top:10px; gap:8px; flex-wrap:wrap; }
+main.tr-app-shell.tr-client-shell .tr-review-dialog .tr-review-detail-actions :is(.tr-button-primary,.tr-button-ghost) { width:auto; min-width:0; flex:1; }
+main.tr-app-shell.tr-client-shell dialog iframe[title="Hosted page draft preview"] { height:420px; min-height:0; max-height:50dvh; }
+
+/* List density: identity, metadata and actions share a row. Wrap naturally on
+   narrow screens; never hide data or turn action controls into nested links. */
+main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-location-list-row,.tr-business-list-row) { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; padding:6px 8px; }
+main.tr-app-shell.tr-client-shell :is(.tr-location-list-row,.tr-business-list-row) > header { display:contents; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > header > span:first-child { padding:5px; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > header > div { display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; flex:1 1 230px; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > header p { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > header > button { order:3; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > div { display:flex; flex-wrap:wrap; gap:6px 10px; margin:0; order:2; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > div > a { display:inline-flex; align-items:center; gap:5px; padding:3px 5px; }
+main.tr-app-shell.tr-client-shell .tr-location-list-row > div > a > span { display:inline; margin:0; }
+main.tr-app-shell.tr-client-shell .tr-business-list-row > header > button { order:3; margin-left:auto; }
+main.tr-app-shell.tr-client-shell .tr-business-list-row > dl { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; margin:0; }
+main.tr-app-shell.tr-client-shell .tr-business-list-row > dl > div { display:flex; align-items:baseline; gap:5px; min-width:0; }
+main.tr-app-shell.tr-client-shell .tr-business-list-row dd { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-issue-grid { grid-template-columns:1fr; }
+main.tr-app-shell.tr-client-shell .tr-issue-card { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; padding:6px 8px; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-issue-card :is(.tr-card-heading,.tr-card-body) { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:0; border:0; background:transparent; }
+main.tr-app-shell.tr-client-shell .tr-issue-card .tr-card-body { flex:1; justify-content:space-between; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile-title { flex:1; flex-wrap:wrap; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile-title > div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile-title p { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-listing-profile > footer { margin:0; padding:0; border:0; flex-wrap:wrap; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-listed-details { flex-direction:row; flex-wrap:wrap; gap:3px 8px; }
+main.tr-app-shell.tr-client-shell .tr-directory-table td { vertical-align:middle; }
+main.tr-app-shell.tr-client-shell .tr-rank-businesses > div > button { display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; }
+main.tr-app-shell.tr-client-shell .tr-rank-businesses .tr-competitor-meta { margin-top:0; }
+main.tr-app-shell.tr-client-shell [aria-label="Order invoices"] article > div:first-child > div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+main.tr-app-shell.tr-client-shell [aria-label="Order invoices"] article p { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-issue-card .tr-card-open { margin:0; }
+main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-issue-card :is(.tr-card-heading,.tr-card-body,.tr-card-open) { font-size:var(--app-body); }
+main.tr-app-shell.tr-client-shell .tr-issue-card .tr-card-body > strong { font-size:var(--app-body); font-weight:500; line-height:1.4; }
+main.tr-app-shell.tr-client-shell .tr-directory-name > div { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+main.tr-app-shell.tr-client-shell .tr-directory-table small { display:inline; margin:0 0 0 6px; }
+main.tr-app-shell.tr-client-shell .tr-directory-table td { padding:5px 8px; }
+main.tr-app-shell.tr-client-shell .tr-listed-details { display:inline-flex; }
+main.tr-app-shell.tr-client-shell .tr-listing-issue { display:inline-flex; margin:0 0 0 6px; }
+main.tr-app-shell.tr-client-shell .tr-account-contact-row { display:flex; align-items:center; flex-wrap:wrap; gap:8px 14px; }
+main.tr-app-shell.tr-client-shell .tr-account-contact-row > div { display:contents; }
+main.tr-app-shell.tr-client-shell .tr-account-contact-row > div > button { order:2; margin-left:auto; }
+main.tr-app-shell.tr-client-shell .tr-account-contact-row > dl { display:flex; flex-wrap:wrap; gap:8px 14px; margin:0; }
+main.tr-app-shell.tr-client-shell .tr-account-contact-row > dl > div { display:flex; gap:5px; }
+main.tr-app-shell.tr-client-shell [data-dashboard-row] { cursor:pointer; }
+main.tr-app-shell.tr-client-shell [data-dashboard-row]:is(:hover,:focus-within) { background:#f0f8f7; }

@@ -23,3 +23,6 @@ exports/
 .env.*
 !.env.example
 !.env.*.example
+
+# Isolated local dashboard sandbox (never commit database or secrets)
+.local-sandbox/

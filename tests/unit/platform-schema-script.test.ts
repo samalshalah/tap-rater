@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-const platformSchemaScriptPath = "../../scripts/check-platform-schema.mjs";
+const platformSchemaScriptPath = "../../scripts/lib/platform-schema.mjs";
 type PlatformSchemaModule = {
   REQUIRED_PLATFORM_TABLES: string[];
   checkSchemaText: (sql: string) => { ok: boolean; missingTables: string[] };

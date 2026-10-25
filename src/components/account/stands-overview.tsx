@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import {WorkspaceDetails} from './workspace-details';
+import {WorkspaceMetrics} from './workspace-ui';
 import {countMultiLinkPages,countPaidStandQuantity,type CustomerPortalData} from '@/lib/customer-portal';
 import {formatOrderReference} from '@/lib/order-reference';
 export function StandsOverview({portal}:{portal:CustomerPortalData}){
@@ -8,19 +10,13 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
       <section aria-label="Stands overview" className="tr-stands-overview mt-4">
       <h1 className="text-2xl font-semibold">Stands overview</h1>
       <div className="mt-4 grid gap-3">
-        <section className="tr-card p-5">
-          <p className="tr-eyebrow">Stands & orders</p>
-          <h2 className="mt-2 text-xl font-medium text-ink">Welcome, {firstName}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
-            Manage your stands, orders and billing.
-          </p>
-        </section>
+        <WorkspaceDetails label="About this workspace"><p>Welcome, {firstName}. Manage your stands, orders and billing here.</p></WorkspaceDetails>
 
-        <section className="grid gap-3 md:grid-cols-3">
-          <SummaryCard label="Paid stands" value={String(countPaidStandQuantity(portal.orders))} />
-          <SummaryCard label="Orders" value={String(portal.orders.length)} />
-          <SummaryCard label="Multi-Link pages" value={String(countMultiLinkPages(portal.subscriptions))} />
-        </section>
+        <WorkspaceMetrics items={[
+          {label:'Paid stands',value:countPaidStandQuantity(portal.orders)},
+          {label:'Orders',value:portal.orders.length},
+          {label:'Multi-Link pages',value:countMultiLinkPages(portal.subscriptions)},
+        ]}/>
 
         {actions.length > 0 && <section className="tr-card p-5">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
@@ -41,9 +37,9 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
           <section className="tr-card p-5">
             <p className="tr-eyebrow">Latest order</p>
             <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="min-w-0">
+              <div className="min-w-0 flex flex-wrap items-center gap-2">
                 <h2 className="break-all text-lg font-medium text-ink">{formatOrderReference(latestOrder.reference)}</h2>
-                <p className="mt-1 text-sm text-muted">
+                <p className="text-sm text-muted">
                   {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"}
                 </p>
               </div>
@@ -95,21 +91,12 @@ function buildDashboardActions(portal: CustomerPortalData) {
 function ActionRow({ title, body, href, cta }: { title: string; body: string; href: string; cta: string }) {
   return (
     <article className="flex flex-col gap-3 rounded-md border border-line bg-white p-4 md:flex-row md:items-center md:justify-between">
-      <div>
+      <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-medium text-ink">{title}</h3>
-        <p className="mt-1 text-sm text-muted">{body}</p>
+        <p className="text-sm text-muted">{body}</p>
       </div>
       <Link href={href} className="tr-button-ghost self-start md:self-auto">{cta}</Link>
     </article>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-line bg-white p-4">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="mt-2 text-2xl font-medium text-ink">{value}</p>
-    </div>
   );
 }
 

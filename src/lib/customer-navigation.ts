@@ -28,6 +28,9 @@ export const locationTools=[
  {href:'/account/profile',label:'Google Profile'},
  {href:'/account/reviews',label:'Reviews'},
  {href:'/account/heatmap',label:'Heat Map'},
+ {href:'/account/local',label:'Directory Listings'},
+ {href:'/account/reports',label:'Reports'},
+ {href:'/account/notifications',label:'Issues & Approvals'},
  {href:'/account/business',label:'Business Information'},
 ];
 export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}

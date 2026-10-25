@@ -6,6 +6,7 @@ import { StandPreview } from "@/components/account/stand-preview";
 import type { CustomerPortalStand } from "@/lib/customer-portal";
 import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
+
 const stand: CustomerPortalStand = {
   id: "qa-stand", orderId: "qa-order", lineItemIndex: 0,
   orderReference: `cs_test_${"a".repeat(70)}`, title: "Google Review Stand", quantity: 1,
@@ -53,7 +54,7 @@ describe("customer stand history", () => {
     expect(html).not.toContain("#order-");
     expect(html).not.toContain("Set up landing page");
     expect(html).not.toContain("Manage links");
-    expect(html).not.toContain("<button");
+    expect(html).toContain('aria-label="Open details for Google Review Stand"');
   });
 
   it("offers details while paid setup is pending", () => {
@@ -80,10 +81,12 @@ describe("customer stand history", () => {
     const html = renderToStaticMarkup(createElement(CustomerStandsManager, { stands: [{ ...stand, paymentStatus }] }));
     expect(html).toContain(label);
     expect(html).toContain("Google Review Stand");
-    expect(html).toMatch(/Order [A-Z0-9]{10}</);
+    expect(html).toContain('aria-haspopup="dialog"');
+    expect(html).toContain('aria-label="Open details for Google Review Stand"');
+    expect(html).not.toContain("Device &amp; order details");
+    expect(html).not.toContain(">blocked<");
     expect(html).not.toContain(stand.orderReference);
     expect(html).not.toContain("#order-");
-    expect(html).toContain("break-all");
   });
 
   it("does not describe an empty or unpaid history as purchased", () => {

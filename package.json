@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "npm run images:generate && next build",
+    "build": "npm run images:generate && next build --webpack",
     "cf:build": "npm run images:generate && opennextjs-cloudflare build",
     "preview": "npm run cf:build && opennextjs-cloudflare preview",
     "deploy": "npm run cf:build && opennextjs-cloudflare deploy",

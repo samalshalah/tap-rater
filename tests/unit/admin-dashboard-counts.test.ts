@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminPage from "@/app/admin/page";
 
 const { getAdminOrders } = vi.hoisted(() => ({ getAdminOrders: vi.fn() }));
+// This unit isolates store counts; the async client-operations panel has its own tests.
+vi.mock("@/components/admin/client-operations", () => ({ ClientOperations: () => null }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/lib/admin-products", () => ({ getAdminProducts: async () => [] }));
 vi.mock("@/lib/admin-navigation", () => ({ adminNavigationGroups: [] }));
