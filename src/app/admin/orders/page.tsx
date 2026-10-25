@@ -28,7 +28,7 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="tr-admin-title">Orders</h1>
-              <AdminLinkButton href="/admin/orders/new" variant="primary" title="Create a $0 order using your existing stands. No payment required."><Plus size={14} aria-hidden="true" />Create complimentary order</AdminLinkButton>
+              <AdminLinkButton href="/admin/orders/new" variant="primary"><Plus size={14} aria-hidden="true" />Create complimentary order</AdminLinkButton>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
               Manage paid and complimentary orders from creation through production, tracking, shipment, delivery, and fulfillment notes.
