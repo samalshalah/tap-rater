@@ -80,3 +80,4 @@
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) img{width:28px;height:28px;object-fit:contain}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(.h-16,.w-16){height:28px;width:28px;min-width:28px}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(button,select){height:26px;min-height:26px}
+.tr-admin-shell.tr-admin-compact .tr-admin-content tbody tr:not([data-admin-row]):not(:has(input:checked)):hover{background-color:white;cursor:default}
