@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BarChart3,
@@ -64,11 +65,10 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-[224px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
-      <div className="px-4 py-4">
+    <aside className="tr-admin-sidebar border-b border-line bg-white text-ink lg:sticky lg:top-0 lg:h-screen lg:w-[224px] lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r">
+      <div className="tr-admin-brand px-4 py-4">
         <Link href="/admin" className="block">
-          <p className="tr-eyebrow">Tap Rater</p>
-          <h2 className="mt-1 text-base font-semibold text-ink">Admin</h2>
+          <Image src="/uploads-optimized/brand/tap-rater-logo-w160.webp" alt="Tap Rater admin" width={86} height={58} priority/>
         </Link>
       </div>
       <nav className="flex gap-2 overflow-x-auto px-4 pb-4 lg:block lg:space-y-3 lg:overflow-visible">

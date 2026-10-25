@@ -1,3 +1,5 @@
+import {AdminHelp} from './admin-help';
+import {Users} from 'lucide-react';
 import {clientOperations, type ClientOperation} from '@/lib/admin-client-operations';
 import {ClientLicencesButton} from './marketing-access-editor';
 
@@ -19,11 +21,9 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
   let unavailable=false;
   try {accounts=await clientOperations();} catch {unavailable=true;}
   return <section className="tr-admin-section">
-    <p className="tr-eyebrow">Client operations</p>
-    <h1 className="tr-admin-title mt-1">{titles[view]}</h1>
-    <p className="mt-2 text-sm text-muted">{view==='accounts'?'Manage customers and their licences.':'Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.'}</p>
+    <header className="flex items-center gap-2"><h1 className="tr-admin-title">{titles[view]}</h1><AdminHelp title={titles[view]}><p>{view==='accounts'?'Manage customers and their licences.':'Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.'}</p><p className="mt-2">Usage counts requests, including attempts; it is not a billing statement. Replies and profile changes remain drafts. New pricing is not active.</p></AdminHelp></header>
     {unavailable ? <p role="alert" className="mt-4">Operational data is temporarily unavailable.</p> : <>
-      <div className="my-4 flex flex-wrap gap-5 text-sm">
+      <div className="tr-admin-metrics my-4 flex flex-wrap gap-5 text-sm">
         <span><strong>{accounts.length}</strong> accounts</span>
         <span><strong>{accounts.reduce((n,a)=>n+a.locations,0)}</strong> locations</span>
         <span><strong>{accounts.reduce((n,a)=>n+a.connected,0)}</strong> Google connections</span>
@@ -33,13 +33,13 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
           <caption className="sr-only">Client account operational status and service usage</caption>
           <thead className="bg-slate-50"><tr>{visibleColumns.map(c=><th key={c.label} className="px-3 py-3 font-semibold">{c.label}</th>)}{view==='accounts'&&<th className="px-3 py-3">Licences</th>}</tr></thead>
           <tbody>{accounts.map(a=><tr key={a.accountId} className="border-t border-line">
-            {visibleColumns.map(c=><td key={c.label} className="px-3 py-3">{c.value(a)}</td>)}
+            {visibleColumns.map(c=><td key={c.label} className="px-3 py-3">{c.label==='Account'?<span className="tr-admin-row-identity"><Users aria-hidden="true"/>{c.value(a)}</span>:c.value(a)}</td>)}
             {view==='accounts'&&<td className="px-3 py-3"><ClientLicencesButton customerId={a.accountId}/></td>}
           </tr>)}</tbody>
         </table>
       </div>
       {!accounts.length&&<p className="mt-4 text-sm">No client accounts yet.</p>}
-      {view!=='accounts'&&<p className="mt-3 text-xs text-muted">Usage counts requests, including attempts; it is not a billing statement. Replies and profile changes remain drafts. New pricing is not active.</p>}
+
     </>}
   </section>;
 }
