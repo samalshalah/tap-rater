@@ -5,6 +5,7 @@ import {useState,useEffect} from 'react';
 import {useRouter} from 'next/navigation';
 
 import {ModalDialog} from '@/components/ui/modal-dialog';
+import {AdminBadge,AdminButton,AdminLinkButton,AdminSummaryCard,AdminDataTable} from './admin-ui';
 
 import type {WorkerHealthData} from '@/lib/admin-worker-health';
 
@@ -14,7 +15,7 @@ const count=(v:unknown)=>Number(v||0);
 
 const on=(v:unknown)=>v?'On':'Off';
 
-function Badge({value}:{value:string}){return <span className={`rounded px-2 py-1 text-xs ${/attention|Failed|Overdue|blocked/i.test(value)?'bg-amber-50 text-amber-900':/Reporting|Running/.test(value)?'bg-teal-50 text-teal-800':'bg-slate-100 text-slate-600'}`}>{value}</span>;}
+function Badge({value}:{value:string}){return <AdminBadge tone={/attention|Failed|Overdue|blocked/i.test(value)?'warning':/Reporting|Running/.test(value)?'success':'neutral'}>{value}</AdminBadge>;}
 
 export function WorkerHealth({data}:{data:WorkerHealthData}){
 
@@ -24,12 +25,12 @@ export function WorkerHealth({data}:{data:WorkerHealthData}){
 
  const account=data.accounts.find(a=>a.id===selected),locations=data.locations.filter(l=>l.customer_id===selected);
 
- return <section className="tr-admin-section"><div className="flex items-center justify-between"><div><h1 className="tr-admin-title">Workers & Health</h1><p className="mt-1 text-sm text-muted">Updated {date(data.checkedAt)} ET · Refreshes every minute</p></div><button className="tr-button-ghost" onClick={()=>router.refresh()}>Refresh</button></div>
+ return <section className="tr-admin-section"><div className="flex items-center justify-between"><div><h1 className="tr-admin-title">Workers & Health</h1><p className="mt-1 text-sm text-muted">Updated {date(data.checkedAt)} ET · Refreshes every minute</p></div><div className="flex items-center gap-2"><AdminLinkButton href="/admin/client-failures">Client failures &amp; support alerts</AdminLinkButton><AdminButton onClick={()=>router.refresh()}>Refresh</AdminButton></div></div>
 
  <div className="my-4 grid gap-3 md:grid-cols-4">{[
  ['Client accounts',data.accounts.length],['Active locations',data.locations.length],['Import / draft eligible',`${data.locations.filter(l=>l.importEligible).length} / ${data.locations.filter(l=>l.draftEligible).length}`],['Autopilot eligible',data.locations.filter(l=>l.publishEligible).length],
- ].map(([label,value])=><div className="rounded border p-3" key={label}><p className="text-xs text-muted">{label}</p><p className="mt-1 font-semibold">{value}</p></div>)}</div>
- <div className="mt-4 overflow-auto rounded border"><table className="w-full text-left text-sm"><thead className="bg-slate-50"><tr>{['Worker','Schedule','Status','Last started','Last success','Last run'].map(h=><th className="p-3" key={h}>{h}</th>)}</tr></thead><tbody>{data.workers.map(w=><tr className="border-t" key={w.name}><td className="p-3 font-medium">{w.label}</td><td>Every {w.minutes} min</td><td><Badge value={w.health}/></td><td>{date(w.started_at)}</td><td>{date(w.succeeded_at)}</td><td className="p-3 text-xs">{Object.entries(w.metrics||{}).map(([k,v])=>`${k}: ${v}`).join(' · ')||'—'}{count(w.failures)>0&&` · ${w.failures} failures`}</td></tr>)}</tbody></table></div>
+ ].map(([label,value])=><AdminSummaryCard key={label} label={String(label)} value={String(value)}/>)}</div>
+ <div className="mt-4"><AdminDataTable caption="Worker schedules and health" headers={['Worker','Schedule','Status','Last started','Last success','Last run']}>{data.workers.map(w=><tr className="border-t" key={w.name}><td className="p-3 font-medium">{w.label}</td><td>Every {w.minutes} min</td><td><Badge value={w.health}/></td><td>{date(w.started_at)}</td><td>{date(w.succeeded_at)}</td><td className="p-3 text-xs">{Object.entries(w.metrics||{}).map(([k,v])=>`${k}: ${v}`).join(' · ')||'—'}{count(w.failures)>0&&` · ${w.failures} failures`}</td></tr>)}</AdminDataTable></div>
 
  <div className="my-4 grid gap-3 md:grid-cols-3">{[
 
@@ -39,17 +40,17 @@ export function WorkerHealth({data}:{data:WorkerHealthData}){
 
  ['Email delivery',`${date(data.integrations.email_last_delivered)} · ${data.integrations.email_failures} failed / bounced in 24h`],
 
- ].map(([label,value])=><div className="rounded border p-3" key={label}><p className="text-xs text-muted">{label}</p><p className="mt-1 text-sm">{value}</p></div>)}</div>
+ ].map(([label,value])=><div className="tr-admin-card p-3" key={label}><p className="text-xs text-muted">{label}</p><p className="mt-1 text-sm">{value}</p></div>)}</div>
 
  <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Client accounts</h2><input aria-label="Find client or location" className="rounded border p-2 text-sm" placeholder="Find client or location" value={search} onChange={e=>setSearch(e.target.value)}/></div>
 
- <div className="mt-3 overflow-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50"><tr>{['Client','Service licence','Locations','Health','Queued / waiting',''].map((h,i)=><th className="p-3" key={i}>{h}</th>)}</tr></thead><tbody>{data.accounts.filter(a=>`${a.name} ${a.email} ${data.locations.filter(l=>l.customer_id===a.id).map(l=>l.name).join(' ')}`.toLowerCase().includes(search.toLowerCase())).map(a=>{
+ <div className="mt-3"><AdminDataTable caption="Client account health" headers={['Client','Service licence','Locations','Health','Queued / waiting','Actions']}>{data.accounts.filter(a=>`${a.name} ${a.email} ${data.locations.filter(l=>l.customer_id===a.id).map(l=>l.name).join(' ')}`.toLowerCase().includes(search.toLowerCase())).map(a=>{
 
  const ls=data.locations.filter(l=>l.customer_id===a.id),attention=ls.filter(l=>l.status==='Needs attention').length;
 
- return <tr className="border-b" key={a.id}><td className="p-3"><strong>{a.name}</strong><div className="text-xs text-muted">{a.email} · {a.account_status}</div></td><td>{a.expires_at&&new Date(a.expires_at).getTime()<=Date.now()?'Expired':a.licence_status||'None'}<div className="text-xs text-muted">{a.unlimited_locations?'Unlimited locations':`${count(a.location_limit)} locations`}</div></td><td>{ls.length}{count(a.removed_locations)>0&&<div className="text-xs text-muted">{a.removed_locations} removed</div>}</td><td><Badge value={attention?`${attention} need attention`:ls.some(l=>l.enabled)?'Reporting':'No connected service'}/>{count(a.email_failures)>0&&<div className="text-xs text-amber-800">Email delivery needs attention</div>}</td><td>{ls.reduce((n,l)=>n+count(l.queued),0)} / {ls.reduce((n,l)=>n+count(l.waiting),0)}</td><td><button className="tr-button-ghost" onClick={()=>setSelected(a.id)}>View health</button></td></tr>;
+ return <tr className="border-b" key={a.id}><td className="p-3"><strong>{a.name}</strong><div className="text-xs text-muted">{a.email} · {a.account_status}</div></td><td><span>{a.expires_at&&new Date(a.expires_at).getTime()<=Date.now()?'Expired':a.licence_status||'None'}</span><div className="text-xs text-muted">{a.unlimited_locations?'Unlimited locations':`${count(a.location_limit)} locations`}</div></td><td><span>{ls.length}</span>{count(a.removed_locations)>0&&<div className="text-xs text-muted">{a.removed_locations} removed</div>}</td><td><Badge value={attention?`${attention} need attention`:ls.some(l=>l.enabled)?'Reporting':'No connected service'}/>{count(a.email_failures)>0&&<div className="text-xs text-amber-800">Email delivery needs attention</div>}</td><td>{ls.reduce((n,l)=>n+count(l.queued),0)} / {ls.reduce((n,l)=>n+count(l.waiting),0)}</td><td><AdminButton data-admin-row-open onClick={()=>setSelected(a.id)}>View health</AdminButton></td></tr>;
 
- })}</tbody></table></div>
+ })}</AdminDataTable></div>
 
  <p className="mt-3 text-xs text-muted">Reporting confirms recent activity, not an external API health check. Waiting counts older reviews queued for drafting; queued counts scheduled replies. Times are Eastern.</p>
 
