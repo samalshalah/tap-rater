@@ -75,7 +75,7 @@
 .tr-admin-shell.tr-admin-compact .tr-admin-content table th{height:30px;background:#fafbfd}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(p,.block,.flex-col,.flex-wrap):not(dialog *,[role="dialog"] *){display:inline-flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;margin:0!important;white-space:nowrap}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan])>div:not([role="dialog"]){display:inline-flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;vertical-align:middle;margin:0}
-.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan])>:is(p,div,span,a)+:is(p,div,span,a){margin-left:6px!important}
+.tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan])>:is(p,div,span,a)+:is(p,div,span,a){padding-left:6px!important}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) br{display:none}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) img{width:28px;height:28px;object-fit:contain}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(.h-16,.w-16){height:28px;width:28px;min-width:28px}
