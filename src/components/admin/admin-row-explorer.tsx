@@ -10,7 +10,8 @@ export function AdminRowExplorer({children}:{children:ReactNode}){
   const enhance=()=>{el.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach(row=>{
    if(row.closest('dialog')||row.hasAttribute('data-admin-row')||row.cells.length<2||row.cells[0]?.colSpan>1)return;
    row.dataset.adminRow='true';if(!row.hasAttribute('tabindex'))row.tabIndex=0;
-   row.setAttribute('aria-label',`Open details: ${row.cells[0].innerText.trim().slice(0,90)}`);
+   const identity=Array.from(row.cells).map(cell=>cell.innerText.trim()).find(Boolean)||'Row';
+   row.setAttribute('aria-label',`Open details: ${identity.slice(0,90)}`);
   });};
   const activate=(event:MouseEvent|KeyboardEvent)=>{
    if(event instanceof KeyboardEvent&&!['Enter',' '].includes(event.key))return;
