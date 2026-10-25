@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {resolveHeatmapAnchor} from './heatmap-anchor';
 import {recoverHeatmapScan} from './heatmap-scan-recovery';
 import {recoverHeatmapCompetitors} from './heatmap-competitor-recovery';
 import {authorizedLink,clientFor,liveDb,LiveReviewError} from './google-business/live-reviews';
@@ -45,9 +46,8 @@ export async function mutateHeatmap(actor:ReviewActor,raw:unknown,sql=liveDb(),m
   const existing=await sql`SELECT business_id FROM local_heatmap_locations WHERE business_id=${input.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject}`;
   if(existing.length)return {initialized:true};
   const client=await makeClient(String(link.owner)),google=await client.getMapAnchor(String(link.parent).split('/').slice(-2).join('/'));
-  const hasPin=google.latitude!==undefined&&google.longitude!==undefined;
-  const anchor={...google,latitude:hasPin?google.latitude:input.center?.latitude,longitude:hasPin?google.longitude:input.center?.longitude,centerSource:hasPin?'google_api':'selected'};
-  if(anchor.latitude===undefined||anchor.longitude===undefined||!anchor.placeId)throw new LiveReviewError('Google did not return a map pin. Use “Set tracking center” below to enter the latitude and longitude from this location’s Google Maps pin.');
+  const anchor=await resolveHeatmapAnchor(google,input.center);
+  if(!anchor)throw new LiveReviewError('We could not confirm your Google map pin right now. Retry, or use “Get setup help” below so Tap Rater can help verify your location. No scan has started.');
   const rows=await sql`INSERT INTO local_heatmap_locations (business_id,customer_id,parent,google_subject,anchor)
    SELECT l.business_id,l.customer_id,l.parent,l.google_subject,${JSON.stringify(anchor)}::jsonb FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
    WHERE l.business_id=${input.businessId} AND l.customer_id=b.customer_id AND l.customer_id=${link.customer_id} AND l.parent=${link.parent} AND l.google_subject=${link.google_subject} AND l.enabled AND c.account_status='active'

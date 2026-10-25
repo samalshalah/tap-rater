@@ -8,7 +8,7 @@ export const gridSettingsSchema=z.object({
 }).strict();
 export type GridSettings=z.infer<typeof gridSettingsSchema>;
 export type GridPoint={index:number;row:number;column:number;latitude:number;longitude:number};
-export type HeatmapAnchor={title:string;latitude:number;longitude:number;placeId:string;centerSource:'google_api'|'selected';synced_at:string};
+export type HeatmapAnchor={title:string;latitude:number;longitude:number;placeId:string;centerSource:'google_api'|'google_places'|'selected';synced_at:string};
 export type HeatmapTrack=GridSettings&{id:string;version:number;active:boolean;updated_at:string};
 
 /** Equally spaced north/east offsets projected onto a sphere, with a stable row-major index. */
