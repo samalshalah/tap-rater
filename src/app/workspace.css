@@ -396,3 +396,5 @@ main.tr-app-shell.tr-client-shell .tr-account-contact-row > dl { display:flex; f
 main.tr-app-shell.tr-client-shell .tr-account-contact-row > dl > div { display:flex; gap:5px; }
 main.tr-app-shell.tr-client-shell [data-dashboard-row] { cursor:pointer; }
 main.tr-app-shell.tr-client-shell [data-dashboard-row]:is(:hover,:focus-within) { background:#f0f8f7; }
+
+main.tr-app-shell.tr-client-shell .tr-heatmap-status select.tr-heatmap-units { width:58px; min-height:26px; height:26px; padding:2px 5px; margin:0; font-size:var(--app-body); border:1px solid var(--app-border); border-radius:3px; background:white; }
