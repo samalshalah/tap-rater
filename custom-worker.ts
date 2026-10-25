@@ -26,6 +26,10 @@ export default {
       }catch { console.warn(`${name} worker unavailable`); }
     };
     await invoke('reviews','google-reviews');
+    // Alert delivery runs independently of scans and publishing.
+    try {await observeWorker('client-alerts',async()=>{const response=await openNextWorker.fetch(new Request('https://taprater.com/api/internal/client-failures',{
+      method:'POST',headers:{'x-internal-secret':env.ADMIN_SESSION_SECRET,'Content-Type':'application/json'},body:JSON.stringify({action:'drain'}),
+    }),env,context);if(!response.ok)throw new Error('Client failure monitor unavailable');return response.json();},sql);}catch{console.warn('Client failure alerts unavailable');}
     if(new Date(_controller.scheduledTime).getUTCMinutes()%15!==0)return;
     await invoke('analytics','analytics');
     await invoke('reminders','checkout-reminders');
@@ -39,7 +43,7 @@ export default {
     }catch {console.warn('Media backup unavailable');}
   },
 
-  fetch(request: Request, env: CloudflareEnv, context: unknown) {
+  async fetch(request: Request, env: CloudflareEnv, context: unknown) {
     const redirectUrl = getCanonicalRedirectUrl(request);
     if (redirectUrl) {
       return new Response(null, {
@@ -57,7 +61,20 @@ export default {
       });
     }
 
-    return openNextWorker.fetch(request, env, context);
+    const url=new URL(request.url);
+    const observed=(/^(?:\/account|\/api\/(?:account|activate|checkout|forms|landing-pages|media|setup|site))(?:\/|$)/.test(url.pathname))&&url.pathname!=='/api/account/client-failures';
+    const report=(status:number)=>{
+      if(!observed||status<400)return;
+      let businessId:string|null=null;
+      try {const ref=new URL(request.headers.get('referer')||request.url);if(ref.origin===url.origin)businessId=ref.searchParams.get('location');}catch{}
+      const work=openNextWorker.fetch(new Request('https://taprater.com/api/internal/client-failures',{
+        method:'POST',headers:{'x-internal-secret':env.ADMIN_SESSION_SECRET,'Content-Type':'application/json',cookie:request.headers.get('cookie')||''},
+        body:JSON.stringify({path:url.pathname,status,businessId}),
+      }),env,context).then((response:Response)=>{if(!response.ok)console.warn('Client failure recording unavailable');}).catch(()=>console.warn('Client failure recording unavailable'));
+      (context as {waitUntil(promise:Promise<unknown>):void}).waitUntil(work);
+    };
+    try{const response=await openNextWorker.fetch(request,env,context);report(response.status);return response;}
+    catch(error){report(500);throw error;}
   },
 };
 

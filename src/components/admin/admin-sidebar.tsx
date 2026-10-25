@@ -34,6 +34,7 @@ const icons = {
   "Customers & Licences": Users,
   Usage: Activity,
   "Workers & Health": Activity,
+  "Client Failures": Activity,
   "AI Agent": Bot,
   "Google Connection": Plug,
   Products: Package,

@@ -1,5 +1,6 @@
 import type {NeonQueryFunction} from '@neondatabase/serverless';
 export const workerCatalog=[
+ {name:'client-alerts',label:'Client failures & support alerts',minutes:1},
  {name:'reviews',label:'Reviews & profile AI',minutes:1},
  {name:'analytics',label:'Purchase analytics retry',minutes:15},
  {name:'reminders',label:'Checkout reminders',minutes:15},

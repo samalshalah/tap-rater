@@ -1,0 +1,11 @@
+import {it,expect,vi,beforeEach} from 'vitest';
+const {auth,record,sql}=vi.hoisted(()=>({auth:vi.fn(),record:vi.fn(),sql:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:auth}));
+vi.mock('@/lib/client-failures',()=>({recordClientFailure:record}));
+vi.mock('@neondatabase/serverless',()=>({neon:()=>sql}));
+import {POST} from '@/app/api/account/client-failures/route';
+const req=(body:unknown,origin='https://taprater.com')=>new Request('https://taprater.com/api/account/client-failures',{method:'POST',headers:{origin},body:JSON.stringify(body)});
+beforeEach(()=>{vi.clearAllMocks();auth.mockResolvedValue({session:{email:'client@example.test'}});sql.mockResolvedValue([{id:'owned-account'}]);});
+it('requires same origin and an authenticated account',async()=>{expect((await POST(req({},'https://evil.test'))).status).toBe(403);auth.mockResolvedValue({response:Response.json({},{status:401})});expect((await POST(req({}))).status).toBe(401);expect(record).not.toHaveBeenCalled();});
+it('rejects arbitrary details and customer identity from the browser',async()=>{expect((await POST(req({kind:'javascript',path:'/account',message:'private'}))).status).toBe(400);expect((await POST(req({kind:'javascript',path:'/account',customerId:'other'}))).status).toBe(400);expect(record).not.toHaveBeenCalled();});
+it('derives identity from the authenticated account',async()=>{expect((await POST(req({kind:'page_render',path:'/account/reviews'}))).status).toBe(200);expect(record).toHaveBeenCalledWith({customerId:'owned-account',source:'browser',code:'page_render',path:'/account/reviews'},sql);});
