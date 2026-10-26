@@ -1,4 +1,5 @@
 "use client";
+import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {WorkspaceDetails} from './workspace-details';
 import {WorkspacePageHeader,WorkspaceLoading} from './workspace-ui';
 import {ProfileAgentControls} from './review-automation-controls';
@@ -22,14 +23,15 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
  const router=useRouter();
  const requestedLocation=useSearchParams().get('location');
  const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'|'business'>(initialTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
+ const clientTab=!admin&&!heatmapFeatureEnabled&&initialTab==='heatmap'?'profile':initialTab;
+ const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'|'business'>(clientTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
  const location=admin?storedLocation:(requestedLocation??'');
  const [adding,setAdding]=useState(false);
  const endpoint=admin?'/api/admin/local':'/api/account/local';
  const storageKey=!admin&&preferenceKey?`taprater:local-location:${preferenceKey}`:null;
  async function refresh(restore=false){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);
   if(restore&&storageKey){
-   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
+   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(!heatmapFeatureEnabled&&view==='heatmap'?'profile':view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
    // A saved preference never grants access; accept only locations returned for this account.
    const restored=restoreCustomerLocation(saved,d.locations);setLocation(restored);try{window.localStorage.setItem(storageKey,restored);}catch{}
   }

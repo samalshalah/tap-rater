@@ -1,3 +1,4 @@
+import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronRight, CreditCard, HelpCircle, PanelsTopLeft, Receipt } from "lucide-react";
@@ -35,7 +36,7 @@ export function MobileAccountOverview({ portal }: { portal: CustomerPortalData }
     <section className="tr-account-manage"><h2>Manage</h2>{[
       { label: "My stands", detail: "View stands & edit Multi-Link pages", href: "/account/stands", icon: PanelsTopLeft },
       { label: "Notifications", detail: "Issues and AI improvement drafts", href: "/account/notifications", icon: PanelsTopLeft },
-      { label: "Heat Map", detail: "Track Google Maps rankings by location", href: "/account/heatmap", icon: PanelsTopLeft },
+      ...(heatmapFeatureEnabled?[{ label: "Heat Map", detail: "Track Google Maps rankings by location", href: "/account/heatmap", icon: PanelsTopLeft }]:[]),
       { label: "Orders & invoices", detail: "Order history and receipts", href: "/account/orders", icon: Receipt },
       { label: "Billing", detail: "Payments and subscriptions", href: "/account/billing", icon: CreditCard },
       { label: "Help & support", detail: "We’re here to help", href: "/support", icon: HelpCircle }

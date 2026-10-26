@@ -1,3 +1,4 @@
+import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 export const customerNavigation = [
   {href:'/account',label:'Overview'},
   {href:'/account/locations',label:'Locations'},
@@ -27,7 +28,7 @@ export const locationTools=[
  {href:'/account',label:'Overview'},
  {href:'/account/profile',label:'Google Profile'},
  {href:'/account/reviews',label:'Reviews'},
- {href:'/account/heatmap',label:'Heat Map'},
+ ...(heatmapFeatureEnabled?[{href:'/account/heatmap',label:'Heat Map'}]:[]),
  {href:'/account/local',label:'Directory Listings'},
  {href:'/account/reports',label:'Reports'},
  {href:'/account/notifications',label:'Issues & Approvals'},

@@ -1,3 +1,4 @@
+import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {liveDb} from './google-business/live-reviews';
 import {weeklyScanPeriod} from './heatmap-schedule';
 import {buildGrid,gridSettingsSchema} from './heatmap-data';
@@ -5,6 +6,7 @@ import {createRankProvider,providerConfigured,rankRequest,scanPeriod,POINT_COST_
 
 /** Called only by the authenticated cron route. No Google write methods are used. */
 export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProvider(),now=new Date()){
+ if(!heatmapFeatureEnabled&&!providerConfigured())return {status:'paused',submitted:0,collected:0};
  if(!providerConfigured())return {status:'credentials_required',submitted:0,collected:0};
  const [config]=await sql`SELECT enabled,halt_reason FROM local_rank_provider WHERE id=true`;
  if(!config)return {status:'setup_required',submitted:0,collected:0};
@@ -20,6 +22,8 @@ export async function runHeatmapMaintenance(sql=liveDb(),provider=createRankProv
    if(result.state==='complete')collected++;
   }catch{await sql`UPDATE local_rank_points SET checked_at=now(),error_code='retrieval_unavailable' WHERE id=${p.id} AND state IN ('pending','uncertain')`;}
  }));
+ // Finish free retrieval of already submitted tasks, but create/claim/submit no new work.
+ if(!heatmapFeatureEnabled)return {status:'paused',submitted:0,collected};
  if(!config.enabled||config.halt_reason)return {status:config.halt_reason?'halted':'disabled',submitted:0,collected};
  const period=scanPeriod(now),weeklyPeriod=weeklyScanPeriod(now);
  const locations=await sql`SELECT a.*,CASE WHEN s.cadence='weekly' THEN ${weeklyPeriod}::date ELSE ${period}::date END AS scan_period,coalesce(jsonb_agg(jsonb_build_object('id',t.id,'version',t.version,'settings',t.settings) ORDER BY t.slot) FILTER(WHERE t.id IS NOT NULL),'[]'::jsonb) AS tracks

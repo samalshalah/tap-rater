@@ -1,3 +1,4 @@
+import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {authorizedLink,liveDb,LiveReviewError} from './google-business/live-reviews';
 import {buildGrid,gridSettingsSchema} from './heatmap-data';
 import {POINT_COST_MICROUSD,rankRequest,scanPeriod,providerConfigured} from './dataforseo';
@@ -5,6 +6,7 @@ import type {ReviewActor} from './review-workspaces';
 
 type Input={action:'quote';businessId:string;id:string;version:number}|{action:'approve';businessId:string;quoteId:string};
 export async function mutateScanApproval(actor:ReviewActor,input:Input,sql=liveDb()){
+ if(!heatmapFeatureEnabled)throw new LiveReviewError('Heat-map scans are temporarily paused. Saved results are preserved.',423);
  const link=await authorizedLink(actor,input.businessId,sql);
  if(!link.enabled||!providerConfigured())throw new LiveReviewError('Connect Google and the ranking provider first.');
  const [schedule]=await sql`SELECT manual_enabled FROM local_rank_schedules WHERE business_id=${input.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND enabled`;

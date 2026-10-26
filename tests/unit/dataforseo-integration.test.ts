@@ -1,3 +1,5 @@
+// Preserve coverage of the retained feature in the explicitly isolated test database.
+vi.mock('@/lib/heatmap-feature',()=>({heatmapFeatureEnabled:true}));
 import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';

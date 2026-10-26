@@ -1,3 +1,4 @@
+vi.mock('@/lib/heatmap-feature',()=>({heatmapFeatureEnabled:true}));
 import {it,expect,vi,afterEach} from 'vitest';
 import {mutateScanApproval} from '@/lib/heatmap-approval';
 const actor={kind:'customer' as const,email:'owner@example.test'},businessId='location-a';

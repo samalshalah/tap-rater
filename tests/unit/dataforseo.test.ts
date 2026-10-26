@@ -1,3 +1,4 @@
+vi.mock('@/lib/heatmap-feature',()=>({heatmapFeatureEnabled:true}));
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import {rankRequest,scanPeriod,parseRankResult,createRankProvider} from '@/lib/dataforseo';
 import {runHeatmapMaintenance} from '@/lib/heatmap-scans';
