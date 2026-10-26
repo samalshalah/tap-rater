@@ -29,10 +29,16 @@ export async function sendClientFailureAlerts(sql=db(),send=sendEmail){
  return {sent:result.sent?rows.length:0};
 }
 export async function collectBackgroundFailures(sql=db()){
- const rows=await sql`SELECT b.customer_id,b.id AS business_id,'review_import' AS code FROM google_review_links l JOIN businesses b ON b.id=l.business_id WHERE l.enabled AND nullif(l.last_error,'') IS NOT NULL
- UNION SELECT b.customer_id,b.id,'review_draft' FROM google_review_links l JOIN businesses b ON b.id=l.business_id WHERE l.enabled AND nullif(l.draft_error,'') IS NOT NULL
+ const rows=await sql`WITH draft_state AS (
+ SELECT b.customer_id,b.id AS business_id,l.draft_error,marketing_location_allowed(b.id) AS allowed,
+ (SELECT coalesce(sum(u.units),0) FROM marketing_usage_reservations u WHERE u.business_id=b.id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date)>=a.ai_monthly_limit AS exhausted,
+ (l.draft_error LIKE 'Draft generation is queued%' OR l.draft_error LIKE 'Monthly AI allowance exhausted.%') AS waiting
+ FROM google_review_links l JOIN businesses b ON b.id=l.business_id LEFT JOIN customer_marketing_access a ON a.customer_id=b.customer_id WHERE l.enabled AND l.ai_consent
+ ) SELECT b.customer_id,b.id AS business_id,'review_import' AS code FROM google_review_links l JOIN businesses b ON b.id=l.business_id WHERE l.enabled AND nullif(l.last_error,'') IS NOT NULL
+ UNION SELECT customer_id,business_id,CASE WHEN NOT allowed THEN 'review_access_unavailable' WHEN exhausted THEN 'review_ai_allowance' ELSE 'review_draft' END
+ FROM draft_state WHERE nullif(draft_error,'') IS NOT NULL AND (NOT allowed OR exhausted OR NOT waiting)
  UNION SELECT b.customer_id,r.business_id,'review_publish_uncertain' FROM google_live_reviews r JOIN businesses b ON b.id=r.business_id WHERE r.publish_state='uncertain'
- UNION SELECT b.customer_id,a.business_id,CASE WHEN a.stage='publish' THEN 'review_publish_uncertain' ELSE 'review_'||a.stage END FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id WHERE a.resolved_at IS NULL AND a.failures>=3
+ UNION SELECT b.customer_id,a.business_id,CASE WHEN a.stage='publish' THEN 'review_publish_uncertain' ELSE 'review_'||a.stage END FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id WHERE a.resolved_at IS NULL AND a.failures>=3 AND (a.stage<>'draft' OR NOT EXISTS(SELECT 1 FROM draft_state d WHERE d.business_id=a.business_id AND (NOT d.allowed OR d.exhausted OR d.waiting)))
  UNION SELECT r.customer_id,r.business_id,'heatmap_result' FROM local_rank_runs r JOIN local_rank_points p ON p.run_id=r.id WHERE p.state IN ('error','failed','uncertain') AND r.created_at>now()-interval '30 days'
  UNION SELECT i.customer_id,i.business_id,'profile_draft' FROM local_issues i JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint WHERE i.active AND d.status='failed'
  UNION SELECT NULL::uuid,NULL::uuid,'worker_'||name FROM system_worker_health WHERE status='failed'

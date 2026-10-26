@@ -39,3 +39,21 @@ describe('opt-in positive review autopilot',()=>{
   await prepareAutomaticDraft(id,sql,vi.fn().mockResolvedValue(suggestions),publish);expect(publish).not.toHaveBeenCalled();
  });
 });
+
+describe('expected AI allowance pauses',()=>{
+ it.each(['hourly','monthly'] as const)('defers %s allowance waits without generating, publishing, or counting a worker failure',async reason=>{
+  const sql=reason==='hourly'?rows([link],[review],[]):rows([link],[review],[{id}],[{allowed:false}]);
+  const generate=vi.fn(),publish=vi.fn();
+  expect(await prepareAutomaticDraft(id,sql,generate,publish)).toEqual({drafted:false,deferred:reason});
+  expect(generate).not.toHaveBeenCalled();expect(publish).not.toHaveBeenCalled();
+  const queries=sql.mock.calls.map((c:any)=>c[0].join('?'));
+  expect(queries.some((q:string)=>q.includes('INSERT INTO review_worker_alerts'))).toBe(false);
+  expect(queries.some((q:string)=>q.includes('SET draft='))).toBe(false);
+  expect(queries.some((q:string)=>q.includes('DELETE FROM'))).toBe(false);
+  const wait=sql.mock.calls.find((c:any)=>c[0].join('?').includes('draft_due_at=CASE'));
+  expect(wait).toContain(reason==='monthly');
+  expect(wait[0].join('?')).toContain("interval '1 month'");
+  expect(wait[0].join('?')).toContain("interval '1 hour'");
+  expect(wait).toContain(reason==='monthly'?'Monthly AI allowance exhausted. Drafts wait until the monthly allowance resets or access is updated.':'Draft generation is queued until the hourly AI limit or cooldown resets.');
+ });
+});

@@ -10,6 +10,9 @@ import type { ReplyStyle } from "../review-ai-options";
 export const livePublishingEnabled = () => process.env.GOOGLE_REVIEWS_PUBLISHING_ENABLED === "true";
 export const liveDb = () => neon(process.env.DATABASE_URL || process.env.NEON_DATABASE_URL!);
 export class LiveReviewError extends Error { constructor(message:string,public status=409){super(message);} }
+export class ReviewAiWaitError extends LiveReviewError {
+ constructor(public reason:'hourly'|'monthly'){super(reason==='monthly'?'Monthly AI allowance exhausted. Drafts wait until the monthly allowance resets or access is updated.':'Draft generation is queued until the hourly AI limit or cooldown resets.',429);}
+}
 const actorEmail=(a:ReviewActor)=>a.kind==='customer'?a.email.trim().toLowerCase():'';
 const stars:Record<string,number>={ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5};
 export const reviewStars=(r:GoogleReview)=>stars[r.starRating] || 0;
@@ -38,7 +41,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
  const result=[];
  for(const link of links){
   const reviews=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
-  result.push({...link,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
+  result.push({...link,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
  }
  return result;
 }
@@ -116,9 +119,9 @@ export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,ver
 }
 async function reserveAi(businessId:string,sql=liveDb()){
  const rows=await sql`SELECT ${businessId}::uuid AS business_id WHERE reserve_review_ai_hour(${businessId}::uuid)`;
- if(!rows.length)throw new LiveReviewError('Enable AI permission or wait for the hourly AI limit or cooldown to reset.',429);
+ if(!rows.length)throw new ReviewAiWaitError('hourly');
  const [allowance]=await sql`SELECT reserve_marketing_units(${businessId}::uuid,'ai',1,${randomUUID()}) AS allowed`;
- if(!allowance?.allowed)throw new LiveReviewError('The monthly AI allowance is used or package access has expired.',429);
+ if(!allowance?.allowed)throw new ReviewAiWaitError('monthly');
 }
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);await reserveAi(String(link.business_id),sql);
@@ -225,6 +228,14 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
   if(saved.length)await scheduleSavedReply(String(review.id),Number(review.version)+1,sql);
   return {drafted:saved.length>0};
  }catch(error){
+  if(error instanceof ReviewAiWaitError){
+   // An expected allowance pause is not an AI/provider failure. Never retry it every minute.
+   await sql`UPDATE google_review_links SET draft_error=${error.message},draft_checked_at=now(),
+    draft_due_at=CASE WHEN ${error.reason==='monthly'} THEN (date_trunc('month',now() AT TIME ZONE 'America/New_York')+interval '1 month') AT TIME ZONE 'America/New_York' ELSE now()+interval '1 hour' END
+    WHERE business_id=${businessId}`;
+   await resolveReviewWorkerAlert(sql,businessId,'draft');
+   return {drafted:false,deferred:error.reason};
+  }
   await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the hourly AI limit or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
   const failures=await reviewWorkerFailure(sql,businessId,'draft');
   await sql`UPDATE google_review_links SET draft_due_at=now()+${Math.min(60,2**Math.min(failures,6))}*interval '1 minute' WHERE business_id=${businessId}`;

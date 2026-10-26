@@ -52,7 +52,7 @@ export async function adminWorkerHealth(sql=liveDb()){
     FROM customers c LEFT JOIN customer_marketing_access ma ON ma.customer_id=c.id WHERE c.account_status<>'guest' ORDER BY c.created_at DESC`,
   sql`SELECT b.id,b.customer_id,b.business_name AS name,c.account_status,ma.expires_at AS licence_expires_at,ma.ai_monthly_limit AS monthly_ai_limit,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.profile_ai_enabled,l.draft_low_stars,l.reply_delay_minutes,
     l.synced_at,l.checked_at,l.maintenance_due_at,l.draft_checked_at,l.draft_due_at,l.review_total,
-    nullif(l.last_error,'') IS NOT NULL AS import_error,nullif(l.draft_error,'') IS NOT NULL AS draft_error,
+    nullif(l.last_error,'') IS NOT NULL AS import_error,(nullif(l.draft_error,'') IS NOT NULL AND l.draft_error NOT LIKE 'Draft generation is queued%' AND l.draft_error NOT LIKE 'Monthly AI allowance exhausted.%') AS draft_error,
     EXISTS(SELECT 1 FROM google_business_connections g WHERE g.owner=l.owner AND g.google_subject=l.google_subject) AS connected,
     (SELECT g.email FROM google_business_connections g WHERE g.owner=l.owner AND g.google_subject=l.google_subject) AS google_email,
     (SELECT coalesce(sum(u.units),0) FROM marketing_usage_reservations u WHERE u.business_id=b.id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS monthly_ai_used,
@@ -71,7 +71,7 @@ export async function adminWorkerHealth(sql=liveDb()){
       count(*) FILTER(WHERE publish_state='uncertain') AS uncertain,
       min(scheduled_at) FILTER(WHERE publish_state='idle' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS next_reply
       FROM google_live_reviews r WHERE r.business_id=b.id) r ON true
-    LEFT JOIN LATERAL (SELECT string_agg(stage || ': ' || failures::text, ', ' ORDER BY stage) AS alert_stages,count(*) AS alerts,max(updated_at) AS last_failure,max(emailed_at) AS email_sent FROM review_worker_alerts a WHERE a.business_id=b.id AND a.resolved_at IS NULL) a ON true
+    LEFT JOIN LATERAL (SELECT string_agg(stage || ': ' || failures::text, ', ' ORDER BY stage) AS alert_stages,count(*) AS alerts,max(updated_at) AS last_failure,max(emailed_at) AS email_sent FROM review_worker_alerts a WHERE a.business_id=b.id AND a.resolved_at IS NULL AND (a.stage<>'draft' OR (coalesce(l.draft_error,'') NOT LIKE 'Draft generation is queued%' AND coalesce(l.draft_error,'') NOT LIKE 'Monthly AI allowance exhausted.%'))) a ON true
     LEFT JOIN LATERAL (SELECT max(i.updated_at) AS profile_checked,count(d.id) FILTER(WHERE d.status<>'failed') AS profile_drafts,count(d.id) FILTER(WHERE d.status='failed') AS profile_errors FROM local_issues i LEFT JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint WHERE i.business_id=b.id AND i.customer_id=b.customer_id AND i.active AND i.finding->>'kind'='profile') p ON true
     LEFT JOIN local_rank_schedules s ON s.business_id=b.id AND s.customer_id=b.customer_id
     LEFT JOIN LATERAL (SELECT max(r.created_at) AS scan_at,count(p.id) FILTER(WHERE p.state IN ('queued','pending','submitting')) AS scan_pending,count(p.id) FILTER(WHERE p.state IN ('error','failed','uncertain')) AS scan_errors FROM local_rank_runs r LEFT JOIN local_rank_points p ON p.run_id=r.id WHERE r.business_id=b.id AND r.customer_id=b.customer_id AND r.created_at>now()-interval '30 days') h ON true
