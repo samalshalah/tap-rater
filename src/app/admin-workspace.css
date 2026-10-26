@@ -81,3 +81,18 @@
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(.h-16,.w-16){height:28px;width:28px;min-width:28px}
 .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(button,select){height:26px;min-height:26px}
 .tr-admin-shell.tr-admin-compact .tr-admin-content tbody tr:not([data-admin-row]):not(:has(input:checked)):hover{background-color:white;cursor:default}
+
+.tr-admin-notifications{position:relative;margin-left:6px;flex-shrink:0}
+.tr-admin-notifications>summary{display:flex;align-items:center;justify-content:center;position:relative;width:30px;height:30px;cursor:pointer;border-radius:4px;list-style:none}
+.tr-admin-notifications>summary::-webkit-details-marker{display:none}
+.tr-admin-notifications>summary:hover,.tr-admin-notifications[open]>summary{background:#e6f4f2;color:#087f7d}
+.tr-admin-notifications>summary:focus-visible{outline:2px solid #087f7d;outline-offset:2px}
+.tr-admin-notification-count{position:absolute;top:-1px;right:-5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;background:#b42318;color:white;font-size:9px;line-height:15px;text-align:center}
+.tr-admin-notification-panel{position:absolute;right:0;top:35px;width:min(380px,calc(100vw - 24px));max-height:min(520px,75vh);overflow:auto;z-index:70;border:1px solid #dfe6ed;border-radius:6px;background:white;box-shadow:0 8px 24px #172b4d26;color:#172b4d;font-size:11px}
+.tr-admin-notification-panel header,.tr-admin-notification-panel footer{display:flex;justify-content:space-between;padding:10px 12px;background:#fafbfd}
+.tr-admin-notification-panel header span,.tr-admin-notification-panel small{color:#60718a;font-size:10px}
+.tr-admin-notification-panel ul{padding:0;margin:0;list-style:none}
+.tr-admin-notification-panel li>a{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-top:1px solid #edf0f4;overflow-wrap:anywhere}
+.tr-admin-notification-panel li>a:hover,.tr-admin-notification-panel li>a:focus-visible{background:#eff8f7}
+.tr-admin-notification-panel p{padding:12px;margin:0}
+.tr-admin-notification-panel footer a,.tr-admin-notification-panel button{color:#087f7d;text-decoration:underline}
