@@ -3,7 +3,7 @@ import {authorizedLink,isAutomaticCandidate,publishLiveReply,reconcileLiveReply,
 const id='9fb3ee3b-0920-4db5-a03d-7245987a8751';
 const data={reviewId:'r1',starRating:'FIVE' as const,comment:'Lovely dress',createTime:'2026-10-20T12:00:00Z',updateTime:'2026-10-20T12:00:00Z'};
 const review={id,business_id:id,resource:'accounts/a/locations/l/reviews/r1',data,draft:'Thank you for visiting!',version:2,publish_state:'idle'};
-const link={business_id:id,owner:'admin@example.com',business_name:'Norah',parent:'accounts/a/locations/l',enabled:true,auto_enabled:true,ai_consent:true,auto_four:false,auto_five:true,settings_version:1,consent_at:'2026-10-20T10:00:00Z'};
+const link={business_id:id,customer_id:id,google_subject:'subject',owner:'admin@example.com',business_name:'Norah',parent:'accounts/a/locations/l',enabled:true,auto_enabled:true,ai_consent:true,auto_four:false,auto_five:true,settings_version:1,consent_at:'2026-10-20T10:00:00Z'};
 const sqlRows=(...rows:unknown[])=>{const sql=vi.fn();for(const r of rows)sql.mockResolvedValueOnce(r);return sql as any;};
 const client=()=>({updateProfile:vi.fn(),getProfileFields:vi.fn(),listCategories:vi.fn(),getBusinessDetails:vi.fn(),getMapAnchor:vi.fn(),getProfile:vi.fn(),getPerformance:vi.fn(),getReview:vi.fn().mockResolvedValue(data),publishReply:vi.fn().mockResolvedValue({comment:review.draft}),listReviews:vi.fn().mockResolvedValue({reviews:[data],nextPageToken:'next'}),listLocations:vi.fn(),listAccounts:vi.fn()});
 afterEach(()=>vi.unstubAllEnvs());
@@ -16,7 +16,7 @@ describe('live Google review safety',()=>{
  });
  it('keeps pagination and progress totals scoped to the selected location',async()=>{
   const google=client();google.listReviews.mockResolvedValue({reviews:[data],nextPageToken:'next-page',totalReviewCount:605} as any);
-  const sql=sqlRows([{...link,next_page:'selected-page'}],[{id}],[],[],[]);
+  const sql=sqlRows([{...link,next_page:'stale-page'}],[{id,next_page:'selected-page',sync_run:id}],[],[],[]);
   await syncLiveReviews({kind:'admin'},id,sql,async()=>google);
   expect(google.listReviews).toHaveBeenCalledExactlyOnceWith(link.parent,'selected-page');expect(google.listAccounts).not.toHaveBeenCalled();expect(google.listLocations).not.toHaveBeenCalled();
   const update=sql.mock.calls.find((c:any)=>c[0].join('?').includes('SET review_total='));expect(update).toContain(605);expect(update).toContain(id);expect(update[0].join('?')).toContain('WHERE business_id=');
@@ -79,4 +79,28 @@ describe('live Google review safety',()=>{
  it('can stop local access even when the Google connection is missing',async()=>{
   const sql=sqlRows([{business_id:id}]);expect(await stopLiveReviews({kind:'customer',email:'owner@example.com'},id,sql)).toEqual({stopped:true});expect(sql.mock.calls[0][0].join('?')).not.toContain('google_business_connections');
  });
+});
+
+it('skips a repeated start after completion without calling Google or writing data',async()=>{
+ const google=client(),sql=sqlRows([{...link,next_page:null,synced_at:new Date().toISOString()}]);
+ expect(await syncLiveReviews({kind:'admin'},id,sql,async()=>google)).toEqual({imported:0,more:false});
+ expect(sql).toHaveBeenCalledTimes(1);expect(google.listReviews).not.toHaveBeenCalled();
+});
+it('finishing a run schedules the next check from completion and preserves saved reviews and replies',async()=>{
+ const google=client();google.listReviews.mockResolvedValue({reviews:[data],totalReviewCount:723} as any);
+ const sql=sqlRows([link],[{id,next_page:'last-page',sync_run:id}],[],[],[]);
+ expect(await syncLiveReviews({kind:'admin'},id,sql,async()=>google)).toEqual({imported:1,more:false});
+ expect(google.listReviews).toHaveBeenCalledExactlyOnceWith(link.parent,'last-page');
+ const queries=sql.mock.calls.map((c:any)=>c[0].join('?'));
+ expect(queries.some((q:string)=>q.includes('DELETE FROM'))).toBe(false);
+ expect(queries.find((q:string)=>q.includes('INSERT INTO'))).not.toContain('draft=');
+ expect(queries.find((q:string)=>q.includes('SET review_total='))).toContain("ELSE interval '15 minutes'");
+ expect(queries.find((q:string)=>q.includes('SET review_total='))).toContain('initial_import_completed_at=CASE');
+ expect(queries[1]).toContain("synced_at<now()-interval '15 minutes'");
+ expect(queries[1]).toContain('RETURNING business_id,next_page,sync_run');
+});
+it('does not call the provider when another request wins the sync claim',async()=>{
+ const google=client(),sql=sqlRows([link],[]);
+ await expect(syncLiveReviews({kind:'admin'},id,sql,async()=>google)).rejects.toMatchObject({status:409});
+ expect(google.listReviews).not.toHaveBeenCalled();
 });

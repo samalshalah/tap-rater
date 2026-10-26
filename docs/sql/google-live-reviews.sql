@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS google_review_links (
  sync_lock uuid,
  sync_lock_until timestamptz,
  synced_at timestamptz,
+ initial_import_completed_at timestamptz,
  checked_at timestamptz,
  last_error text,
  ai_consent boolean NOT NULL DEFAULT false,

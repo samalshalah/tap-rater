@@ -25,7 +25,12 @@ export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liv
 }
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,
- b.business_name, l.review_total, (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND (l.sync_run IS NULL OR r.seen_run=l.sync_run)) AS imported_count, (g.owner IS NOT NULL) AS connected,
+ b.business_name, l.review_total,
+ (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
+  (l.review_total IS NOT NULL AND (SELECT count(*) FROM google_live_reviews r WHERE r.business_id=l.business_id)>=l.review_total)) AS initial_import_completed,
+ (l.next_page IS NOT NULL OR l.sync_lock_until>now()) AS sync_in_progress,
+ (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id) AS saved_count,
+ (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND (l.sync_run IS NULL OR r.seen_run=l.sync_run)) AS imported_count, (g.owner IS NOT NULL) AS connected,
  (SELECT ai_monthly_limit FROM customer_marketing_access WHERE customer_id=b.customer_id) AS ai_monthly_limit,
  (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=b.id AND service='ai' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_monthly_used FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
@@ -62,13 +67,20 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
 }
 export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb(),makeClient=clientFor){
  const link=await authorizedLink(actor,businessId,sql);if(!link.enabled)throw new LiveReviewError('Google review access is stopped.');
- const lock=randomUUID();const run=link.sync_run || randomUUID();
+ // Completed runs have a server-enforced cooldown, including stale browser requests.
+ if(!link.next_page&&link.synced_at&&Date.now()-new Date(link.synced_at).getTime()<15*60*1000)return {imported:0,more:false};
+ const lock=randomUUID();
  const claims=await sql`UPDATE google_review_links SET sync_lock=${lock},sync_lock_until=now()+interval '3 minutes',checked_at=now()
  WHERE business_id=${businessId} AND enabled AND (sync_lock_until IS NULL OR sync_lock_until<now())
- AND (checked_at IS NULL OR checked_at<now()-interval '10 seconds') RETURNING business_id`;
+ AND (checked_at IS NULL OR checked_at<now()-interval '10 seconds')
+ AND (next_page IS NOT NULL OR synced_at IS NULL OR synced_at<now()-interval '15 minutes')
+ AND customer_id=${link.customer_id} AND owner=${link.owner} AND parent=${link.parent} AND google_subject=${link.google_subject}
+ RETURNING business_id,next_page,sync_run`;
  if(!claims.length)throw new LiveReviewError('A sync is running or was just requested. Please wait briefly.');
  try{
-  const client=await makeClient(String(link.owner));const page=await client.listReviews(String(link.parent),link.next_page || undefined);
+  // Read the cursor from the atomic claim, never the earlier authorization snapshot.
+  const run=claims[0].sync_run || randomUUID();
+  const client=await makeClient(String(link.owner));const page=await client.listReviews(String(link.parent),claims[0].next_page || undefined);
   for(const review of page.reviews){
    if(!/^[A-Za-z0-9_-]+$/.test(review.reviewId))throw new LiveReviewError('Google returned an invalid review identifier.');
    const name=link.parent+'/reviews/'+review.reviewId;
@@ -81,8 +93,10 @@ export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=li
     ON CONFLICT (resource) DO UPDATE SET data=EXCLUDED.data,fetched_at=now(),seen_run=EXCLUDED.seen_run,
     version=google_live_reviews.version+CASE WHEN google_live_reviews.data IS DISTINCT FROM EXCLUDED.data THEN 1 ELSE 0 END
     WHERE google_live_reviews.business_id=EXCLUDED.business_id AND google_live_reviews.publish_state NOT IN ('publishing','uncertain')`;
-  if(!page.nextPageToken)await sql`DELETE FROM google_live_reviews WHERE business_id=${businessId} AND seen_run IS DISTINCT FROM ${run}::uuid AND publish_state NOT IN ('publishing','uncertain')`;
-  await sql`UPDATE google_review_links SET review_total=${page.totalReviewCount??null},next_page=${page.nextPageToken || null},sync_run=${page.nextPageToken?run:null},synced_at=now(),last_error=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;
+  await sql`UPDATE google_review_links SET review_total=${page.totalReviewCount??null},next_page=${page.nextPageToken || null},sync_run=${page.nextPageToken?run:null},synced_at=now(),last_error=NULL,
+   initial_import_completed_at=CASE WHEN ${!page.nextPageToken} THEN coalesce(initial_import_completed_at,now()) ELSE initial_import_completed_at END,
+   maintenance_due_at=now()+CASE WHEN ${Boolean(page.nextPageToken)} THEN interval '1 minute' ELSE interval '15 minutes' END
+   WHERE business_id=${businessId} AND sync_lock=${lock}`;
   return {imported:page.reviews.length,more:Boolean(page.nextPageToken)};
  }catch(error){await sql`UPDATE google_review_links SET last_error='Sync failed. Reconnect Google or check API access and quota.' WHERE business_id=${businessId} AND sync_lock=${lock}`;throw error;}
  finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}
@@ -241,7 +255,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  UPDATE google_review_links l SET maintenance_due_at=now()+interval '15 minutes' FROM due WHERE l.business_id=due.business_id RETURNING l.business_id,l.profile_ai_enabled`;
  let cursor=0;
  await Promise.all(Array.from({length:4},async()=>{while(cursor<links.length&&Date.now()<importDeadline){const row=links[cursor++],id=String(row.business_id);
- try{const result=await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;await resolveReviewWorkerAlert(sql,id,'import');if(result.more)await sql`UPDATE google_review_links SET maintenance_due_at=now()+interval '1 minute' WHERE business_id=${id}`;}catch{const failures=await reviewWorkerFailure(sql,id,'import');await sql`UPDATE google_review_links SET maintenance_due_at=now()+${Math.min(60,5*2**Math.min(failures-1,4))}*interval '1 minute' WHERE business_id=${id}`;}
+ try{await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;await resolveReviewWorkerAlert(sql,id,'import');}catch{const failures=await reviewWorkerFailure(sql,id,'import');await sql`UPDATE google_review_links SET maintenance_due_at=now()+${Math.min(60,5*2**Math.min(failures-1,4))}*interval '1 minute' WHERE business_id=${id}`;}
 
  if(row.profile_ai_enabled)try{const {prepareProfileAgentDraft}=await import('../profile-ai-agent');await prepareProfileAgentDraft(id,sql);}catch{/* Isolate profiles. */}
  }}));
