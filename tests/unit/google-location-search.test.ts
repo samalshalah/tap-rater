@@ -1,0 +1,20 @@
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {describe,it,expect} from 'vitest';
+import {googleLocationAddress,indexGoogleLocations,useGoogleLocationSearch} from '@/components/account/google-location-search';
+import {GoogleLocationPicker} from '@/components/account/google-location-picker';
+import type {GoogleLocationChoice} from '@/lib/google-business/location-discovery';
+Object.assign(globalThis,{React});
+const locations:GoogleLocationChoice[]=[{name:'locations/north',title:'North Cafe',account:'accounts/one',accountLabel:'Owner',storefrontAddress:{addressLines:['1 Main Street','Suite 2'],locality:'Washington',administrativeArea:'DC',postalCode:'20001'}},{name:'locations/mobile',account:'accounts/two',accountLabel:'Other'}];
+function search(filter='',location='',choices=locations){let result!:ReturnType<typeof useGoogleLocationSearch>;function Probe(){result=useGoogleLocationSearch(choices,filter,location);return null;}renderToStaticMarkup(React.createElement(Probe));return result;}
+describe('Google location picker search',()=>{
+ it('preserves complete address formatting and service-area fallback',()=>{expect(googleLocationAddress(locations[0])).toBe('1 Main Street, Suite 2, Washington, DC, 20001');expect(googleLocationAddress(locations[1])).toBe('Service-area business');});
+ it('matches trimmed case-insensitive name and address searches',()=>{for(const query of [' NORTH ','suite 2','WASHINGTON','20001'])expect(search(query).visibleLocations).toEqual([locations[0]]);});
+ it('searches location resource names when titles are missing and service-area text',()=>{for(const query of ['locations/mobile','service-area'])expect(search(query).visibleLocations).toEqual([locations[1]]);});
+ it('preserves discovery order, original objects and account assignment',()=>{const result=search(' ');expect(result.visibleLocations).toEqual(locations);expect(result.visibleLocations[1]).toBe(locations[1]);expect(indexGoogleLocations(locations)[1].choice.account).toBe('accounts/two');});
+ it('keeps the selected location even when search hides it and handles unknown selections',()=>{expect(search('NORTH','locations/mobile').selected).toBe(locations[1]);expect(search('','unknown').selected).toBeUndefined();expect(search('missing').visibleLocations).toEqual([]);});
+ it('uses refreshed discovery addresses and handles empty discovery',()=>{const updated=[{...locations[0],storefrontAddress:{addressLines:['New Road']}}];expect(search('New Road','',updated).visibleLocations).toEqual(updated);expect(search('Main Street','',updated).visibleLocations).toEqual([]);expect(search('','',[]).visibleLocations).toEqual([]);});
+ const props={picker:{current:null},email:'owner@example.test',businesses:[{id:'workspace',business_name:'Workspace'}],locations,visibleLocations:locations,selected:locations[0],address:googleLocationAddress,filter:'',setFilter:()=>{},location:locations[0].name,setLocation:()=>{},setAccount:()=>{},confirmed:false,setConfirmed:()=>{},business:'workspace',setBusiness:()=>{},compact:false,busy:false,error:'',setPickerOpen:()=>{},run:async()=>{}};
+ it('retains assignment confirmation guard, disclosure and search controls',()=>{const html=renderToStaticMarkup(React.createElement(GoogleLocationPicker,props));expect(html).toContain('Nothing will be published.');expect(html).toContain('Search businesses');expect(html).toContain('disabled=""');expect(html).toContain('Tap Rater location');const allowed=renderToStaticMarkup(React.createElement(GoogleLocationPicker,{...props,confirmed:true}));expect(allowed).not.toContain('disabled=""');});
+ it('retains empty search state, error state, and compact picker behavior',()=>{const html=renderToStaticMarkup(React.createElement(GoogleLocationPicker,{...props,visibleLocations:[],compact:true,error:'Discovery failed',busy:true}));expect(html).toContain('No businesses match your search.');expect(html).toContain('Discovery failed');expect(html).toContain('Loading businesses…');expect(html).not.toContain('Tap Rater location');});
+});
