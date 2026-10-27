@@ -18,7 +18,7 @@ export const localMutation = z.discriminatedUnion('action', [
 const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim().toLowerCase() : '';
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
-  const locations = await sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
+  const locationsQuery = sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
    l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
    (g.owner IS NOT NULL AND l.enabled) AS connected,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
@@ -31,10 +31,13 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
    LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
    WHERE b.status IS DISTINCT FROM 'marketing_removed' AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
    ORDER BY c.email,b.business_name,b.address,b.id`;
-  const listings = await sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
+  const listingsQuery = sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
     WHERE b.status IS DISTINCT FROM 'marketing_removed' AND d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory`;
-  const customers = actor.kind==='admin' ? await sql`SELECT id,email FROM customers WHERE account_status='active' ORDER BY email` : [];
-  const licenses=actor.kind==='customer'?(await sql`SELECT a.location_limit,a.unlimited_locations,(SELECT count(*)::int FROM marketing_location_access m WHERE m.customer_id=c.id AND m.enabled) AS used FROM customers c JOIN customer_marketing_access a ON a.customer_id=c.id WHERE lower(c.email)=${email(actor)} AND a.status IN ('active','testing') AND (a.expires_at IS NULL OR a.expires_at>now())`)[0]:null;
+  const customersQuery = actor.kind==='admin' ? sql`SELECT id,email FROM customers WHERE account_status='active' ORDER BY email` : [];
+  const licensesQuery=actor.kind==='customer'?sql`SELECT a.location_limit,a.unlimited_locations,(SELECT count(*)::int FROM marketing_location_access m WHERE m.customer_id=c.id AND m.enabled) AS used FROM customers c JOIN customer_marketing_access a ON a.customer_id=c.id WHERE lower(c.email)=${email(actor)} AND a.status IN ('active','testing') AND (a.expires_at IS NULL OR a.expires_at>now())`:[];
+  // Independent reads share one network wait; authorization remains in each query.
+  const [locations,listings,customers,licenseRows]=await Promise.all([locationsQuery,listingsQuery,customersQuery,licensesQuery]);
+  const licenses=actor.kind==='customer'?licenseRows[0]:null;
   return {locations,listings,customers,licenses};
 }
 
