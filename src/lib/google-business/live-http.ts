@@ -47,8 +47,10 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
     if(!page.success)return NextResponse.json({error:'Invalid review page.'},{status:400});
     return NextResponse.json(await liveReviewPage(actor,page.data.businessId,page.data.offset),{headers:{'Cache-Control':'no-store'}});
    }
+   const scope=params.has('locations')?z.array(uuid).max(1000).safeParse((params.get('locations') || '').split(',').filter(Boolean)):null;
+   if(scope&&!scope.success)return NextResponse.json({error:'Invalid locations.'},{status:400});
    const businesses=kind==='admin'?await liveDb()`SELECT b.id,b.business_name,c.email FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE c.account_status='active' ORDER BY b.business_name`:undefined;
-   return NextResponse.json({workspaces:await listLiveWorkspaces(actor),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
+   return NextResponse.json({workspaces:await listLiveWorkspaces(actor,undefined,scope?.success?scope.data:null),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
   }
   if(request.headers.get('origin')!==new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://taprater.com').origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
   const raw=await request.text();if(raw.length>12000)return NextResponse.json({error:'Request too large.'},{status:413});

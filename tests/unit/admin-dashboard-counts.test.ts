@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AdminPage from "@/app/admin/page";
+import { AdminStoreOperations } from "@/components/admin/admin-store-operations";
 
 const { getAdminOrders } = vi.hoisted(() => ({ getAdminOrders: vi.fn() }));
 // This unit isolates store counts; the async client-operations panel has its own tests.
@@ -24,7 +24,7 @@ const paid = { status: "paid", payment_status: "paid", production_status: "ready
 beforeEach(() => vi.clearAllMocks());
 async function counts(orders: unknown[]) {
   getAdminOrders.mockResolvedValue({ configured: true, orders });
-  return renderToStaticMarkup(await AdminPage());
+  return renderToStaticMarkup(await AdminStoreOperations());
 }
 
 describe("admin dashboard actionable counts", () => {
