@@ -208,10 +208,9 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     return emptyPortal(true);
   }
 
-  const [{ data: businessRows }, { data: deviceRows }, { data: eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult, accessResult] = await Promise.all([
+  const [{ data: businessRows }, { deviceRows, eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult, accessResult] = await Promise.all([
     client.from("businesses").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
-    client.from("devices").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
-    client.from("tap_events").select("device_id"),
+    loadCustomerDevices(client, customer.id),
     client.from("orders").select("*").eq("email", customer.email).order("created_at", { ascending: false }),
     client.from("hosted_subscriptions").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     loadCustomerInvoices(client, customer),
@@ -257,4 +256,13 @@ async function loadCustomerInvoices(client: CustomerPortalDbClient, customer: Cu
   } catch {
     return { ok: false as const, invoices: [] };
   }
+}
+
+// Keep tap-event transfers proportional to this account, not the whole installation.
+async function loadCustomerDevices(client: CustomerPortalDbClient, customerId: string) {
+  const {data: deviceRows} = await client.from("devices").select("*").eq("customer_id", customerId).order("created_at", {ascending: false});
+  const ids = Array.isArray(deviceRows) ? deviceRows.map(row => readString(readRecord(row).id)).filter(Boolean) : [];
+  if (!ids.length) return {deviceRows, eventRows: []};
+  const {data: eventRows} = await client.from("tap_events").select("device_id").in("device_id", ids);
+  return {deviceRows, eventRows};
 }

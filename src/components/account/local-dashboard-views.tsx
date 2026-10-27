@@ -25,5 +25,6 @@ export function LocalDashboardViews({tab,data,visible,selected,location,customer
   {data&&tab==='heatmap'&&(selected?<LocationHeatmap key={selected.id} businessId={selected.id} admin={admin}/>:<div className="rounded-xl border border-line bg-white p-6"><h2 className="text-lg font-semibold">Choose a location for its heat map</h2><p className="mt-2 text-sm text-muted">Keywords and geographic grids are saved separately for each branch.</p><div className="mt-4 flex flex-wrap gap-3">{visible.map(l=><button key={l.id} className="tr-button-ghost" onClick={()=>choose(l.id)}>{l.business_name}</button>)}</div></div>)}
   {tab==='listings'&&data&&<DirectoryManager key={location+customer} locations={visible} records={data?.listings||[]} save={save} busy={busy}/>}
   {tab==='notifications'&&data&&<LocalIssueCenter key={location||'all'} businessId={location||undefined}/>}
-  {tab==='reviews'&&data&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={businessIds}/>}
+  {/* Customer review reads enforce ownership themselves and can run alongside the workspace read. */}
+  {tab==='reviews'&&(data||!admin)&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={businessIds}/>}
 </>;}

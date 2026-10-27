@@ -354,10 +354,12 @@ function createCustomerPortalDb(seed: Record<TableName, Array<Record<string, unk
   const client = {
     from(table: TableName | "customer_marketing_access") {
       let filters: Array<{ column: string; value: unknown }> = [];
-      const matchRows = () => rows[table].filter((row) => filters.every((filter) => row[filter.column] === filter.value));
+      const memberships: Array<{column:string;values:unknown[]}> = [];
+      const matchRows = () => rows[table].filter((row) => filters.every((filter) => row[filter.column] === filter.value) && memberships.every(filter=>filter.values.includes(row[filter.column])));
 
       const builder = {
         select: vi.fn(() => builder),
+        in: vi.fn((column:string,values:unknown[])=>{memberships.push({column,values});return builder;}),
         eq: vi.fn((column: string, value: unknown) => {
           filters.push({ column, value });
           return builder;
@@ -391,4 +393,18 @@ it('assigns stable unique IDs to every unit and preserves delivery/payment detai
  const first=await getCustomerPortalFromClient(createCustomerPortalDb(seed).client,'owner@example.com');const second=await getCustomerPortalFromClient(createCustomerPortalDb(seed).client,'owner@example.com');
  expect(first.stands).toHaveLength(3);expect(new Set(first.stands.map(s=>s.standId)).size).toBe(3);expect(first.stands.map(s=>s.standId)).toEqual(second.stands.map(s=>s.standId));expect(first.stands.every(s=>s.quantity===1&&s.lineItemIndex===0)).toBe(true);
  expect(first.orders[0]).toMatchObject({paymentMethodLabel:'Visa ending 4242',taxCents:234,deliveryAddress:['Owner','123 Main St','Fairfax, VA, 22030','US']});
+});
+
+
+it("reads only owned device events and preserves per-device counts",async()=>{
+ const db=createCustomerPortalDb({customers:[{id:'a',email:'owner@example.test'}],businesses:[],devices:[{id:'own',customer_id:'a',device_code:'ABC',product_type:'review'},{id:'other',customer_id:'b',device_code:'XYZ'}],tap_events:[{device_id:'own'},{device_id:'own'},...Array.from({length:10000},()=>({device_id:'other'}))],orders:[],hosted_subscriptions:[],billing_invoices:[]});
+ const from=vi.spyOn(db.client,'from');
+ const result=await getCustomerPortalFromClient(db.client,'owner@example.test');
+ expect(result.devices).toHaveLength(1);expect(result.devices[0].tapCount).toBe(2);
+ const eventIndex=from.mock.calls.findIndex(([table])=>table==='tap_events');const query=from.mock.results[eventIndex].value;
+ expect(query.in).toHaveBeenCalledWith('device_id',['own']);expect((await query).data).toHaveLength(2);
+});
+it("skips event reads for an account with no devices",async()=>{
+ const db=createCustomerPortalDb({customers:[{id:'a',email:'owner@example.test'}],businesses:[],devices:[],tap_events:[{device_id:'other'}],orders:[],hosted_subscriptions:[],billing_invoices:[]});
+ const from=vi.spyOn(db.client,'from');expect((await getCustomerPortalFromClient(db.client,'owner@example.test')).devices).toEqual([]);expect(from).not.toHaveBeenCalledWith('tap_events');
 });

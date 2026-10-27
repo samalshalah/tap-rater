@@ -15,8 +15,9 @@ export const metadata = {
 
 export default async function CheckoutPage() {
   const stripePublicConfig = validateStripePublicConfig();
-  const taxSettings = await getTaxSettings();
-  const [offers, shippingSettings] = await Promise.all([getOffersSettings(), getShippingSettings()]);
+  const [taxSettings, offers, shippingSettings] = await Promise.all([
+    getTaxSettings(), getOffersSettings(), getShippingSettings()
+  ]);
 
   return (
     <main className="bg-soft text-ink">
