@@ -1,17 +1,23 @@
 "use client";
-import { WorkspaceDetails } from './workspace-details';
+import {HostedPageEditorToolbar,type EditorStatus} from './hosted-page-editor-toolbar';
+import {HostedPagePreviewPanel} from './hosted-page-preview-panel';
 
 import { hostedPageButtonLimit,supportedHostedPageButtons,type HostedPageEditorButton,type HostedPageEditorDraft,type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
-import { Check,Copy,ExternalLink,Eye,Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect,useMemo,useState,type ChangeEvent } from "react";
+import { memo,useCallback,useEffect,useMemo,useState,type ChangeEvent } from "react";
 
-import { HostedPageBusinessFields } from "./hosted-page-business-fields";
-import { HostedPageLinksFields } from "./hosted-page-links-fields";
-import { HostedPageStyleFields } from "./hosted-page-style-fields";
+import { HostedPageBusinessFields as HostedPageBusinessFieldsComponent } from "./hosted-page-business-fields";
+import { HostedPageLinksFields as HostedPageLinksFieldsComponent } from "./hosted-page-links-fields";
+import { HostedPageStyleFields as HostedPageStyleFieldsComponent } from "./hosted-page-style-fields";
 import { useHostedPagePreview } from "./use-hosted-page-preview";
 
-type EditorStatus = "idle" | "saving" | "saved" | "publishing" | "published" | "error";
+
+
+const HostedPageBusinessFields=memo(HostedPageBusinessFieldsComponent);
+
+const HostedPageLinksFields=memo(HostedPageLinksFieldsComponent);
+
+const HostedPageStyleFields=memo(HostedPageStyleFieldsComponent);
 
 export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { initialPage: HostedPageEditorRecord;onDirtyChange?:(dirty:boolean)=>void;onBusyChange?:(busy:boolean)=>void }) {
   const router=useRouter();
@@ -38,21 +44,21 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
   }, [isDirty]);
 
 
-  function updateDraft(next: HostedPageEditorDraft) {
+  const updateDraft=useCallback((next: HostedPageEditorDraft)=>{
     setDraft(next);
     setIsDirty(true);
     setStatus("idle");
     setMessage("");
-  }
+  },[]);
 
-  function updateButton(id: string, patch: Partial<HostedPageEditorButton>) {
+  const updateButton=useCallback((id: string, patch: Partial<HostedPageEditorButton>)=>{
     updateDraft({
       ...draft,
       buttons: draft.buttons.map((button) => (button.id === id ? { ...button, ...patch } : button))
     });
-  }
+  },[draft,updateDraft]);
 
-  function moveButton(id: string, direction: -1 | 1) {
+  const moveButton=useCallback((id: string, direction: -1 | 1)=>{
     const buttons = [...orderedButtons];
     const index = buttons.findIndex((button) => button.id === id);
     const nextIndex = index + direction;
@@ -63,9 +69,9 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
       ...draft,
       buttons: buttons.map((item, position) => ({ ...item, position }))
     });
-  }
+  },[draft,orderedButtons,updateDraft]);
 
-  function addButton(type: HostedPageEditorButton["type"]) {
+  const addButton=useCallback((type: HostedPageEditorButton["type"])=>{
     if (draft.buttons.length >= hostedPageButtonLimit) {
       setStatus("error");
       setMessage(`Use ${hostedPageButtonLimit} or fewer buttons.`);
@@ -89,14 +95,14 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
       ]
     });
     setShowLinkChoices(false);
-  }
+  },[draft,orderedButtons,updateDraft]);
 
-  function removeButton(id: string) {
+  const removeButton=useCallback((id: string)=>{
     updateDraft({
       ...draft,
       buttons: orderedButtons.filter((button) => button.id !== id).map((button, position) => ({ ...button, position }))
     });
-  }
+  },[draft,orderedButtons,updateDraft]);
 
   async function saveDraft() {
     setStatus("saving");
@@ -158,7 +164,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
     }catch{setStatus("error");setMessage("The request could not be confirmed. Refresh before trying again.");}
   }
 
-  async function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
+  const uploadLogo=useCallback(async (event: ChangeEvent<HTMLInputElement>)=>{
     const file = event.target.files?.[0];
     if (!file) return;
     setStatus("saving");
@@ -176,30 +182,11 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
 
     updateDraft({ ...draft, logoUrl: body.asset?.url ?? "" });
     setStatus("idle");
-  }
+  },[draft,updateDraft]);
 
   return (
     <fieldset disabled={status==="saving"||status==="publishing"} className="grid min-h-0 min-w-0 gap-3">
-      <div className="tr-card grid gap-2 p-2.5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-        <div className="min-w-0"><WorkspaceDetails label="Page URL & publishing" title="Page URL & publishing"><p className="break-all">{permanentUrl}</p><p>{page.publishedAt?`Last published ${new Date(page.publishedAt).toLocaleString()}`:'Not published yet'}</p><p>Save Draft keeps edits private. Publish updates this permanent page address.</p></WorkspaceDetails></div>
-        <div className="flex flex-wrap gap-1.5">
-          <button type="button" onClick={() => navigator.clipboard?.writeText(permanentUrl)} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
-            <Copy size={14} /> Copy
-          </button>
-          <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
-            <ExternalLink size={14} /> Open
-          </a>
-          <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary min-h-9 px-3 py-1 text-xs">
-            <Save size={14} /> {status === "saving" ? "Saving..." : "Save Draft"}
-          </button>
-          <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-9 px-3 py-1 text-xs">
-            <Check size={14} /> {status === "publishing" ? "Publishing..." : "Publish"}
-          </button>
-        </div>
-        <p className="text-xs text-muted lg:col-span-2">
-          {message ? <span className={status === "error" ? "text-red-700" : "text-brand"}>{message}</span> : isDirty ? "Unsaved changes" : page.publishedAt ? `Published ${new Date(page.publishedAt).toLocaleString()}` : "Draft saved"}
-        </p>
-      </div>
+      <HostedPageEditorToolbar permanentUrl={permanentUrl} page={page} status={status} message={message} isDirty={isDirty} saveDraft={saveDraft} publish={publish}/>
 
       <div className="grid min-h-0 min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
         <section className="grid min-h-0 content-start gap-3">
@@ -210,20 +197,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
         <HostedPageStyleFields draft={draft} updateDraft={updateDraft} />
         </section>
 
-        <aside className="grid h-fit gap-3 lg:sticky lg:top-3">
-        <div className="tr-card p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div>
-                <h2 className="tr-card-title mt-1">Preview</h2>
-            </div>
-            <button type="button" onClick={() => refreshPreview()} className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
-              <Eye size={16} /> Refresh
-            </button>
-          </div>
-          {previewMessage ? <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
-          <iframe title="Hosted page draft preview" srcDoc={previewHtml} className="h-[560px] max-h-[68vh] min-h-[430px] w-full rounded-md border border-line bg-white" />
-        </div>
-        </aside>
+        <HostedPagePreviewPanel previewHtml={previewHtml} previewMessage={previewMessage} refreshPreview={refreshPreview}/>
       </div>
     </fieldset>
   );
