@@ -8,3 +8,10 @@ export function matchingScan<T extends ScanMatch>(scans:T[],track:{id:string}&Gr
  return anchor?scans.find(s=>s.methodology==='maps-v2'&&sameAnchor(s.anchor,anchor)&&s.tracks.some(t=>t.id===track.id&&sameGrid(t.settings,track))):undefined;
 }
 export function selectedScan<T extends ScanMatch>(scans:T[],id:string,trackId:string):T|undefined{return scans.find(s=>s.id===id&&s.tracks.some(t=>t.id===trackId));}
+
+// Preserve Array.find's first-result behavior if a snapshot contains duplicate indices.
+export function indexFirstMeasurements<T extends {index:number}>(points:T[]):Map<number,T>{
+ const index=new Map<number,T>();
+ for(const point of points)if(!index.has(point.index))index.set(point.index,point);
+ return index;
+}

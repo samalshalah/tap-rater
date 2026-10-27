@@ -1,21 +1,21 @@
 'use client';
 import {useEffect,useMemo,useState,useRef,type FormEvent} from 'react';
 import {MapPin,Plus,Pencil,RefreshCw} from 'lucide-react';
-import {buildGrid,mapLayout,type GridSettings,type HeatmapAnchor,type HeatmapTrack} from '@/lib/heatmap-data';
+import {buildGrid,mapLayout,type GridSettings,type HeatmapTrack} from '@/lib/heatmap-data';
 
 import {Toggle} from './review-automation-controls';
 import {ModalDialog} from '@/components/ui/modal-dialog';
-import {summarizeKeyword} from '@/lib/heatmap-keyword-summary';
+import {HeatmapKeywordOverview} from './heatmap-keyword-overview';
+import {indexFirstMeasurements} from '@/lib/heatmap-results';
 import {compareCompetitors} from '@/lib/heatmap-competitors';
 import {formatHeatmapDistance,type DistanceUnit} from '@/lib/heatmap-distance';
 import {formatHeatmapScanDate} from '@/lib/heatmap-scan-date';
 import {HeatmapInfo} from './heatmap-info';
 import {HeatmapCompetitors} from './heatmap-competitors';
-import type {RankCompetitor} from '@/lib/dataforseo';
 import {sameGrid,keywordPoints,matchingScan,selectedScan,sameAnchor} from '@/lib/heatmap-results';
 
-type Scan={id:string;methodology?:string;period:string;created_at?:string;submitted_at?:string|null;anchor:HeatmapAnchor;tracks:{id:string;version:number;settings:GridSettings}[];points:{trackId:string;index:number;state:string;rank:number|null;count:number|null;competitors?:RankCompetitor[]|null}[]};
-export type HeatmapSnapshot={anchor:HeatmapAnchor|null;tracks:HeatmapTrack[];provider:{accountPaused?:boolean;cadence?:'weekly'|'four_monthly';monthlyPoints?:number;pointsUsed?:number;pointCost?:number;connected:boolean;status:string;scheduled:boolean;manualEnabled?:boolean;monthlyCap?:number;reserved?:number};scans:Scan[]};
+import type {HeatmapSnapshot} from './location-heatmap-types';
+export type {HeatmapSnapshot} from './location-heatmap-types';
 const initial:GridSettings={keyword:'',size:5,spacingKm:0.5,language:'en'};
 const field='mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm';
 
@@ -35,13 +35,14 @@ function LocationHeatmapWorkspace({businessId,admin=false}:{businessId:string;ad
  const track=data?.tracks.find(t=>t.id===selected);
  const scan=editing?undefined:scanId?selectedScan(data?.scans||[],scanId,selected):track?matchingScan(data?.scans||[],track,data?.anchor||null):undefined;
  const scanTrack=scan?.tracks.find(t=>t.id===selected),settings=editing?form:scanTrack?.settings||track||initial,anchor=scanTrack?scan?.anchor:data?.anchor;
- const measurements=scanTrack?keywordPoints(scan?.points||[],selected):[];
- const comparison=compareCompetitors(measurements,selected,anchor||{placeId:'',title:''},settings.size);
+ const measurements=useMemo(()=>scanTrack?keywordPoints(scan?.points||[],selected):[],[scanTrack,scan,selected]);
+ const comparison=useMemo(()=>compareCompetitors(measurements,selected,anchor||{placeId:'',title:''},settings.size),[measurements,selected,anchor,settings.size]);
  const contextKey=`${businessId}:${selected}:${scan?.id||'none'}:${editing}`;
  const [businessChoice,setBusinessChoice]=useState<{context:string;id:string}|null>(null),[businessDetails,setBusinessDetails]=useState(false),[sort,setSort]=useState('rank');
  const chosenBusiness=comparison.rows.find(r=>r.placeId===(businessChoice?.context===contextKey?businessChoice.id:anchor?.placeId))||comparison.rows[0];
- const displayMeasurements=chosenBusiness.you?measurements:chosenBusiness.ranks.flatMap((rank,index)=>rank===undefined?[]:[{trackId:selected,index,state:'complete',rank,count:20}]);
- const measurement=(index:number)=>displayMeasurements.find(p=>p.index===index);
+ const displayMeasurements=useMemo(()=>chosenBusiness.you?measurements:chosenBusiness.ranks.flatMap((rank,index)=>rank===undefined?[]:[{trackId:selected,index,state:'complete',rank,count:20}]),[chosenBusiness,measurements,selected]);
+ const measurementsByIndex=useMemo(()=>indexFirstMeasurements(displayMeasurements),[displayMeasurements]);
+ const measurement=(index:number)=>measurementsByIndex.get(index);
  const competitorRows=comparison.rows.filter(r=>!r.you).sort((a,b)=>sort==='name'?a.title.localeCompare(b.title):sort==='coverage'?b.found-a.found:(a.average??Infinity)-(b.average??Infinity)||b.found-a.found);
  const missingCompetitors=measurements.some(p=>p.state==='complete'&&!Array.isArray(p.competitors));
  useEffect(()=>{setBusinessDetails(false);setPoint(null);setPointOpen(false);},[contextKey]);
@@ -105,11 +106,7 @@ function LocationHeatmapWorkspace({businessId,admin=false}:{businessId:string;ad
      </div>}
      <div className="space-y-3 p-5"><div className="flex flex-wrap gap-4 text-xs"><span>🟢 1–3</span><span>🟡 4–10</span><span>🟠 11–20</span><span>🔴 Not found</span><span>⚪ Not scanned</span></div>{focused&&<p className="text-sm text-muted">{`Point ${focused.index+1} · ${focused.latitude.toFixed(6)}, ${focused.longitude.toFixed(6)} · ${label(focused.index)}.`}</p>}<HeatmapInfo label="Map and ranking help">Select a point to inspect its rank. Gray means no completed measurement; red means not found among the returned results. Ads are excluded. Center: {data.anchor.latitude.toFixed(6)}, {data.anchor.longitude.toFixed(6)} · {data.anchor.centerSource==='google_api'?'Google profile pin':data.anchor.centerSource==='google_places'?'Google Places pin':'Selected tracking center'} · {new Date(data.anchor.synced_at).toLocaleDateString()}.</HeatmapInfo></div>
     </div></div></div></div>
-   {view==='keywords'&&<div className="tr-keyword-overview"><div className="tr-keyword-toolbar"><span>{data.tracks.length} keywords</span><button className="tr-button-ghost" disabled={busy||dirty||data.tracks.length>=3} onClick={()=>{setView('heatmap');setQuote(null);setScanId('');setSelected('');setForm(initial);setEditing(true);setPoint(null);}}><Plus size={16}/>Add keyword</button></div>{data.tracks.map(t=>{const latest=matchingScan(data.scans,t,data.anchor),summary=summarizeKeyword(latest?.points||[],t.id,latest?.anchor||data.anchor!,t.size),bandLabels=['Top 3','Ranks 4–10','Ranks 11–20','Not found'];return <section key={t.id} className="tr-keyword-card" aria-label={`${t.keyword} summary`}><header><button disabled={busy||dirty} onClick={()=>{choose(t);setView('heatmap');}}>{t.keyword}</button><span>{latest?formatHeatmapScanDate(latest):'New scan required'} · {t.active?'Active':'Paused'}<HeatmapInfo label={t.keyword+' scan details'}>{t.size} × {t.size} grid · {distance(t.spacingKm)} {distanceUnit} spacing · {t.language} · {summary.completed}/{summary.total} points completed. Each keyword uses its latest saved scan matching this location and area.</HeatmapInfo></span></header><div className="tr-rank-metrics">{[
- ['Avg. rank',summary.average?.toFixed(2)??'—','Average rank where this business was found. Not-found and unfinished points are excluded.'],
- ['Share of voice',summary.shareOfVoice===null?'—':summary.shareOfVoice.toFixed(2)+'%',`Tap Rater estimate: 1 ÷ rank visibility weights, divided by all captured businesses’ total weight. Same calculation as Competitors. ${summary.voiceCaptured}/${summary.total} competitor captures. Missing captures are excluded; this is not traffic or market share.`],
- ...bandLabels.map((label,n)=>[label,summary.percentages[n]===null?'—':summary.percentages[n]!.toFixed(0)+'%',`${summary.bands[n]} of ${summary.completed} completed points. Unfinished points are excluded.`])
- ].map(([name,value,help])=><div key={name}><span>{name}<HeatmapInfo label={t.keyword+' '+name+' explanation'}>{help}</HeatmapInfo></span><strong>{value}</strong></div>)}</div><footer><div className="tr-keyword-distribution" role="img" aria-label={`${t.keyword}: ${summary.bands.map((count,n)=>`${bandLabels[n]} ${count}`).join(', ')}, ${summary.total-summary.completed} unfinished`}>{summary.completed?summary.percentages.map((pct,n)=><span key={n} style={{width:`${pct||0}%`,background:['#00a98d','#e8af00','#eb782b','#e63f4b'][n]}}/>):<span style={{width:'100%',background:'#dce5ef'}}/>}</div><span>{summary.completed}/{summary.total} completed{summary.completed>0&&summary.completed<summary.total?' · Partial scan':''}</span><button disabled={busy||dirty} onClick={()=>{choose(t);setView('competitors');}}>Compare competitors →</button></footer></section>})}{!data.tracks.length&&<p className="text-sm">Add a keyword to start tracking this location.</p>}</div>}
+   {view==='keywords'&&<HeatmapKeywordOverview data={data} busy={busy} dirty={dirty} distance={distance} distanceUnit={distanceUnit} choose={choose} setView={setView} onAdd={()=>{setView('heatmap');setQuote(null);setScanId('');setSelected('');setForm(initial);setEditing(true);setPoint(null);}}/>}
 
    {view==='competitors'&&!editing&&<HeatmapCompetitors keyword={settings.keyword} scanDate={scan?formatHeatmapScanDate(scan):undefined} key={`${selected}:${scan?.id||'none'}`} points={measurements} trackId={selected} target={anchor||data.anchor} size={settings.size} busy={busy} hasScan={Boolean(scan)} onRecover={async()=>{if(!scan)return;setBusy(true);setError('');setNotice('');try{const result=await request({action:'competitors',businessId,runId:scan.id,trackId:selected});setData(await request());setNotice(`Loaded competitors for ${result.recovered} points at no additional cost.${result.unavailable?' Some points could not be retrieved; you can retry.':''}`);}catch(e){setError(e instanceof Error?e.message:'Unable to load competitors.');}finally{setBusy(false);}}}/>}
   </>}
