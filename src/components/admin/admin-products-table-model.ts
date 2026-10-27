@@ -86,3 +86,16 @@ export function buildProductTableMetadata(product: MigratedProduct) {
     searchText: [product.title, product.slug, product.sku, product.primaryPlatformSlug, product.destinationType].filter(Boolean).join(" ").toLowerCase()
   };
 }
+
+/** Scoped to one catalog instance; immutable product replacements invalidate their own entry. */
+export function createProductTableMetadataCache() {
+  const cache = new WeakMap<MigratedProduct, ReturnType<typeof buildProductTableMetadata>>();
+  return (product: MigratedProduct) => {
+    let metadata = cache.get(product);
+    if (!metadata) {
+      metadata = buildProductTableMetadata(product);
+      cache.set(product, metadata);
+    }
+    return metadata;
+  };
+}
