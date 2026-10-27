@@ -3,8 +3,9 @@ export type CompetitorPoint={trackId:string;index:number;state:string;competitor
 export function compareCompetitors(points:CompetitorPoint[],trackId:string,target:{placeId:string;title:string},size:number){
  const captured=points.filter(p=>p.trackId===trackId&&p.state==='complete'&&Array.isArray(p.competitors)&&p.index>=0&&p.index<size*size);
  const unique=[...new Map(captured.map(p=>[p.index,p])).values()];
+ const capturedIndices=new Set(unique.map(p=>p.index));
  const rows=new Map<string,{placeId:string;title:string;address:string|null;rating:number|null;reviews:number|null;ranks:(number|null|undefined)[]}>();
- const add=(c:Omit<RankCompetitor,'rank'>)=>{if(!rows.has(c.placeId))rows.set(c.placeId,{...c,ranks:Array.from({length:size*size},(_,i)=>unique.some(p=>p.index===i)?null:undefined)});return rows.get(c.placeId)!;};
+ const add=(c:Omit<RankCompetitor,'rank'>)=>{if(!rows.has(c.placeId))rows.set(c.placeId,{...c,ranks:Array.from({length:size*size},(_,i)=>capturedIndices.has(i)?null:undefined)});return rows.get(c.placeId)!;};
  add({...target,address:null,rating:null,reviews:null});
  for(const p of unique)for(const c of p.competitors||[]){
   if(!Number.isInteger(c.rank)||c.rank<1||c.rank>20)continue;

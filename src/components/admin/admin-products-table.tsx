@@ -1,49 +1,21 @@
 "use client";
+import { ProductFilters, ProductMobileField, ProductStatusControl, ProductThumbnail, ReadinessYesNoBadge } from "./admin-products-table-fields";
+import { buildProductTableMetadata, findTitle, formatBusinessUses, formatPriceRange, getProductStatus } from "./admin-products-table-model";
+import type { AdminProductsTableProps, DeleteStatus, Filters } from "./admin-products-table-types";
 
-import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { MigratedProduct, ProductStatus } from "@/data/migrated-products";
+import { Edit3, ExternalLink, SlidersHorizontal, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Edit3, ExternalLink, Search, SlidersHorizontal, Trash2 } from "lucide-react";
-import type { MigratedProduct, ProductKind, ProductStatus } from "@/data/migrated-products";
-import type { BusinessUse, PlatformDestination, StandType } from "@/lib/catalog-architecture";
-import { getDefaultOptionsForProductKind, getProductAssetReadiness, inferProductKind } from "@/lib/catalog-architecture";
-import { getBrandedProductionTemplateReadiness, type BrandedTemplateReadiness } from "@/lib/admin-product-readiness";
-import { formatPrice } from "@/lib/products";
+import { useEffect, useMemo, useState } from "react";
 import {
   AdminAlert,
-  AdminBadge,
   AdminButton,
   AdminExternalButton,
   AdminIconButton,
-  AdminInput,
   AdminLinkButton,
-  AdminResponsiveTable,
-  AdminSelect
+  AdminResponsiveTable
 } from "./admin-ui";
-
-type AdminProductsTableProps = {
-  products: MigratedProduct[];
-  standTypes: StandType[];
-  businessUses: BusinessUse[];
-  platforms: PlatformDestination[];
-  canDelete: boolean;
-};
-
-type DeleteStatus = {
-  tone: "success" | "error";
-  message: string;
-} | null;
-
-type Filters = {
-  search: string;
-  standType: string;
-  businessUse: string;
-  platform: string;
-  status: string;
-  assetReadiness: string;
-  specialSolution: string;
-};
 
 const defaultFilters: Filters = {
   search: "",
@@ -75,16 +47,12 @@ export function AdminProductsTable({
     setMobileFilters(filters);
   }, [filters]);
 
+  const productMetadata = useMemo(() => new Map(products.map(product => [product, buildProductTableMetadata(product)])), [products]);
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const productStatus = getProductStatus(product);
-      const productKind = getProductKind(product);
-      const assetStatus = getProductAssetReadiness(product, getDefaultOptionsForProductKind(productKind)).status;
+      const {productStatus, assetStatus, searchText} = productMetadata.get(product)!;
       const businessUseSlugs = product.businessUseSlugs ?? [];
-      const searchText = [product.title, product.slug, product.sku, product.primaryPlatformSlug, product.destinationType]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
 
       return (
         (!filters.search || searchText.includes(filters.search.toLowerCase())) &&
@@ -97,7 +65,7 @@ export function AdminProductsTable({
           (filters.specialSolution === "yes" ? product.isSpecialSolution === true : product.isSpecialSolution !== true))
       );
     });
-  }, [filters, products]);
+  }, [filters, products, productMetadata]);
 
   const allSelected = filteredProducts.length > 0 && filteredProducts.every((product) => selectedSlugs.has(product.slug));
   const selectedProductTitles = useMemo(
@@ -349,11 +317,7 @@ export function AdminProductsTable({
           </thead>
           <tbody>
             {filteredProducts.map((product) => {
-              const productKind = getProductKind(product);
-              const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
-              const readiness = getProductAssetReadiness(product, options);
-              const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
-              const productReady = isProductListReady(readiness.status, brandedReadiness, getMediaWarnings(product));
+              const {productKind, options, readiness, brandedReadiness, productReady} = productMetadata.get(product)!;
 
               return (
                 <tr
@@ -444,11 +408,7 @@ export function AdminProductsTable({
             <p className="p-6 text-center text-sm text-muted">No products match these filters.</p>
           ) : (
             filteredProducts.map((product) => {
-              const productKind = getProductKind(product);
-              const options = getDefaultOptionsForProductKind(productKind).filter((option) => option.isActive);
-              const readiness = getProductAssetReadiness(product, options);
-              const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);
-              const productReady = isProductListReady(readiness.status, brandedReadiness, getMediaWarnings(product));
+              const {productKind, options, readiness, brandedReadiness, productReady} = productMetadata.get(product)!;
 
               return (
                 <article key={product.slug} className={selectedSlugs.has(product.slug) ? "rounded-xl border border-brand bg-teal-50/40 p-4" : "rounded-xl border border-line bg-white p-4"}>
@@ -518,225 +478,4 @@ export function AdminProductsTable({
       />
     </div>
   );
-}
-
-function ProductFilters({
-  filters,
-  standTypes,
-  businessUses,
-  platforms,
-  onChange
-}: {
-  filters: Filters;
-  standTypes: StandType[];
-  businessUses: BusinessUse[];
-  platforms: PlatformDestination[];
-  onChange: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
-}) {
-  return (
-    <>
-      <label className="relative block text-xs font-black uppercase text-muted">
-        Search
-        <Search className="pointer-events-none absolute bottom-3 left-3 h-4 w-4 text-muted" aria-hidden="true" />
-        <AdminInput
-          className="mt-2 py-2.5 pl-9 pr-3 font-normal"
-          value={filters.search}
-          placeholder="Name, SKU, slug"
-          onChange={(event) => onChange("search", event.target.value)}
-        />
-      </label>
-      <FilterSelect label="Stand Type" value={filters.standType} onChange={(value) => onChange("standType", value)}>
-        {standTypes.map((standType) => (
-          <option key={standType.slug} value={standType.slug}>
-            {standType.title}
-          </option>
-        ))}
-      </FilterSelect>
-      <FilterSelect label="Business Use" value={filters.businessUse} onChange={(value) => onChange("businessUse", value)}>
-        {businessUses.map((businessUse) => (
-          <option key={businessUse.slug} value={businessUse.slug}>
-            {businessUse.title}
-          </option>
-        ))}
-      </FilterSelect>
-      <FilterSelect label="Platform" value={filters.platform} onChange={(value) => onChange("platform", value)}>
-        {platforms.map((platform) => (
-          <option key={platform.slug} value={platform.slug}>
-            {platform.title}
-          </option>
-        ))}
-      </FilterSelect>
-      <FilterSelect label="Status" value={filters.status} onChange={(value) => onChange("status", value)}>
-        <option value="draft">Draft</option>
-        <option value="active">Active</option>
-        <option value="archived">Archived</option>
-      </FilterSelect>
-      <FilterSelect label="Asset readiness" value={filters.assetReadiness} onChange={(value) => onChange("assetReadiness", value)}>
-        <option value="ready">Ready</option>
-        <option value="draft_missing_assets">Missing</option>
-        <option value="blocked">Blocked</option>
-      </FilterSelect>
-      <FilterSelect label="Special solution" value={filters.specialSolution} onChange={(value) => onChange("specialSolution", value)}>
-        <option value="yes">Special solution</option>
-        <option value="no">Normal product</option>
-      </FilterSelect>
-    </>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  children,
-  onChange
-}: {
-  label: string;
-  value: string;
-  children: ReactNode;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block text-xs font-semibold uppercase tracking-[0.04em] text-muted">
-      {label}
-      <AdminSelect
-        className="mt-2 px-3 py-2.5 font-normal"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">All</option>
-        {children}
-      </AdminSelect>
-    </label>
-  );
-}
-
-function ProductThumbnail({ product }: { product: MigratedProduct }) {
-  const image = product.images[0]?.src ?? product.assetSet?.standardAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl;
-
-  return image ? (
-    <img src={image} alt={product.images[0]?.alt || product.title} className="h-16 w-16 rounded-lg border border-line bg-white object-contain" loading="lazy" />
-  ) : (
-    <div className="grid h-16 w-16 place-items-center rounded-lg border border-dashed border-line bg-white text-[10px] font-bold uppercase text-muted">
-      No image
-    </div>
-  );
-}
-
-function ProductStatusControl({
-  status,
-  disabled,
-  onChange
-}: {
-  status: ProductStatus;
-  disabled: boolean;
-  onChange: (status: ProductStatus) => void;
-}) {
-  return (
-    <label className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.04em] text-muted">
-      Status
-      <AdminSelect
-        className="h-9 min-h-9 w-28 rounded-full px-3 py-1 text-xs font-black uppercase tracking-[0.04em]"
-        value={status}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value as ProductStatus)}
-      >
-        <option value="active">Active</option>
-        <option value="draft">Draft</option>
-        <option value="archived">Archived</option>
-      </AdminSelect>
-    </label>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const tone =
-    status === "active" || status === "DIRECT" || status === "STANDARD"
-      ? "success"
-      : status === "archived" || status === "HOSTED"
-        ? "neutral"
-        : "warning";
-
-  return <AdminBadge tone={tone}>{status}</AdminBadge>;
-}
-
-function ReadinessYesNoBadge({ ready }: { ready: boolean }) {
-  return <AdminBadge tone={ready ? "success" : "warning"}>{ready ? "Yes" : "No"}</AdminBadge>;
-}
-
-function ProductMobileField({ label, value, strong = false }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="grid grid-cols-[96px_1fr] gap-3">
-      <dt className="text-xs font-semibold uppercase tracking-[0.04em] text-muted">{label}</dt>
-      <dd className={strong ? "font-semibold text-ink" : "text-muted"}>{value}</dd>
-    </div>
-  );
-}
-
-function getMediaWarnings(product: MigratedProduct) {
-  const warnings = new Set<string>();
-  const mainImage = product.images[0]?.src ?? "";
-  const standardImage = product.assetSet?.standardAngledImageUrl ?? mainImage;
-  const brandedImage = product.assetSet?.brandedAngledImageUrl ?? "";
-  const brandedTemplate = product.assetSet?.brandedFrontTemplateUrl ?? "";
-  const imageText = product.images.map((image) => `${image.src} ${image.alt}`).join(" ").toLowerCase();
-
-  if (mainImage.includes("no-photo-available")) {
-    warnings.add("placeholder main image");
-  }
-
-  if (mainImage.includes("/draft-product/")) {
-    warnings.add("main image still uses draft media path");
-  }
-
-  if (brandedImage && standardImage && brandedImage === standardImage) {
-    warnings.add("branded angled image matches standard image");
-  }
-
-  if (brandedTemplate.includes("/api/media/product/products/") && !brandedTemplate.includes(`/products/${product.slug}/`)) {
-    warnings.add("front template reused from another product");
-  }
-
-  if (imageText.includes("temporary")) {
-    warnings.add("temporary media label");
-  }
-
-  return Array.from(warnings);
-}
-
-function getProductKind(product: MigratedProduct): ProductKind {
-  return product.productKind ?? inferProductKind(product);
-}
-
-function getProductStatus(product: MigratedProduct) {
-  return product.status ?? (product.isActive ? "active" : "draft");
-}
-
-function findTitle(items: { slug: string; title: string }[], slug?: string) {
-  return slug ? items.find((item) => item.slug === slug)?.title ?? slug : undefined;
-}
-
-function formatBusinessUses(product: MigratedProduct, businessUses: BusinessUse[]) {
-  const slugs = product.businessUseSlugs ?? [];
-  if (slugs.length === 0) return "-";
-
-  const labels = slugs.map((slug) => findTitle(businessUses, slug)).filter(Boolean);
-  return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} +${labels.length - 2}` : labels.join(", ");
-}
-
-function formatPriceRange(options: ReturnType<typeof getDefaultOptionsForProductKind>, product: MigratedProduct) {
-  if (options.length === 0) {
-    return formatPrice(product.salePriceCents ?? product.basePriceCents);
-  }
-
-  if (options.length === 1) {
-    const option = options[0];
-    return option.monthlyPriceCents ? `${formatPrice(option.priceCents)} + ${formatPrice(option.monthlyPriceCents)}/mo` : formatPrice(option.priceCents);
-  }
-
-  const prices = options.map((option) => option.priceCents).sort((first, second) => first - second);
-  return `${formatPrice(prices[0])}-${formatPrice(prices[prices.length - 1])}`;
-}
-
-function isProductListReady(status: string, brandedReadiness: BrandedTemplateReadiness, warnings: string[]) {
-  return status === "ready" && brandedReadiness.status !== "missing" && warnings.length === 0;
 }

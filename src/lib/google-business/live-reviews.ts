@@ -26,7 +26,7 @@ export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liv
  if(!rows[0])throw new LiveReviewError('Business connection is unavailable. Ask Tap Rater to check the connection and business assignment.',404);
  return rows[0];
 }
-export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
+export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null) {
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,
  b.business_name, l.review_total,
  (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
@@ -37,13 +37,25 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb()) {
  (SELECT ai_monthly_limit FROM customer_marketing_access WHERE customer_id=b.customer_id) AS ai_monthly_limit,
  (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=b.id AND service='ai' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_monthly_used FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
- WHERE b.customer_id=l.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) ORDER BY b.business_name`;
- const result=[];
- for(const link of links){
-  const reviews=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at FROM google_live_reviews WHERE business_id=${link.business_id} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101`;
-  result.push({...link,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100});
+ WHERE b.customer_id=l.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) AND (${locationIds===null} OR l.business_id=ANY(${locationIds ?? []}::uuid[])) ORDER BY b.business_name`;
+ // One bounded batch replaces a network round trip for every authorized location.
+ if(!links.length)return [];
+ const rows=await sql`SELECT locations.business_id, page.*
+ FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
+ CROSS JOIN LATERAL (
+  SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at
+  FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
+  ORDER BY data->>'updateTime' DESC,id LIMIT 101
+ ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC,page.id`;
+ const grouped=new Map<string,typeof rows>();
+ for(const {business_id,...review} of rows){
+  const reviews=grouped.get(business_id) || [];
+  reviews.push(review);grouped.set(business_id,reviews);
  }
- return result;
+ return links.map(link=>{
+  const reviews=grouped.get(link.business_id) || [];
+  return {...link,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100};
+ });
 }
 export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
  await authorizedLink(actor,businessId,sql);

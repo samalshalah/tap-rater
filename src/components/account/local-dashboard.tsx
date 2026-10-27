@@ -1,19 +1,29 @@
 "use client";
+import dynamic from "next/dynamic";
+const ProfileAgentControls=dynamic(()=>import('./review-automation-controls').then(m=>m.ProfileAgentControls),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const OverviewLocationInsights=dynamic(()=>import('./overview-location-insights').then(m=>m.OverviewLocationInsights),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const ReviewOverview=dynamic(()=>import('./review-overview').then(m=>m.ReviewOverview),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const DirectoryManager=dynamic(()=>import('./directory-manager').then(m=>m.DirectoryManager),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const LocalIssueCenter=dynamic(()=>import('./local-issue-center').then(m=>m.LocalIssueCenter),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const LocationHeatmap=dynamic(()=>import('./location-heatmap').then(m=>m.LocationHeatmap),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const GoogleProfileManager=dynamic(()=>import('./google-profile-manager').then(m=>m.GoogleProfileManager),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+const GoogleLiveReviews=dynamic(()=>import('./google-live-reviews').then(m=>m.GoogleLiveReviews),{loading:()=> <WorkspaceLoading label="Loading workspace view"/>});
+
 import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {WorkspaceDetails} from './workspace-details';
 import {WorkspacePageHeader,WorkspaceLoading} from './workspace-ui';
-import {ProfileAgentControls} from './review-automation-controls';
-import {OverviewLocationInsights} from './overview-location-insights';
-import {ReviewOverview,type OverviewLocation} from './review-overview';
+
+
+import { type OverviewLocation } from './review-overview';
 import {restoreCustomerLocation} from '@/lib/customer-location-selection';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {useEffect,useState,type FormEvent} from 'react';
 import {Building2,MessageSquare,Plus,ShieldCheck,LockKeyhole,MapPin,Search} from 'lucide-react';
-import {DirectoryManager,type DirectoryLocation,type DirectoryRecord} from './directory-manager';
-import {LocalIssueCenter} from './local-issue-center';
-import {LocationHeatmap} from './location-heatmap';
-import {GoogleProfileManager} from './google-profile-manager';
-import {GoogleLiveReviews} from './google-live-reviews';
+import { type DirectoryLocation,type DirectoryRecord } from './directory-manager';
+
+
+
+
 
 type Location=OverviewLocation&DirectoryLocation&{id:string;customer_id:string;email:string;business_name:string;address:string|null;phone:string|null;website_url:string|null;connected:boolean;google_title:string|null;synced_at:string|null;next_page:string|null;last_error:string|null;review_count:number;unanswered_count:number;draft_count:number};
 type Listing=DirectoryRecord&{id:string;business_id:string;directory:string;status:string;listing_url:string;listed_name:string;listed_address:string;listed_phone:string;notes:string;version:number;updated_at:string};
@@ -25,6 +35,16 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
  const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const clientTab=!admin&&!heatmapFeatureEnabled&&initialTab==='heatmap'?'profile':initialTab;
  const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'|'business'>(clientTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
+ // Start the selected view's code download alongside its data request.
+ useEffect(()=>{
+  const pending=tab==='reviews'?import('./google-live-reviews'):
+   tab==='listings'?import('./directory-manager'):
+   tab==='notifications'?import('./local-issue-center'):
+   tab==='heatmap'?import('./location-heatmap'):
+   tab==='overview'?Promise.all([import('./review-overview'),import('./overview-location-insights')]):
+   Promise.all([import('./google-profile-manager'),...(tab==='profile'?[import('./review-automation-controls')]:[])]);
+  void pending.catch(()=>{/* The rendered view owns loading and error handling. */});
+ },[tab]);
  const location=admin?storedLocation:(requestedLocation??'');
  const [adding,setAdding]=useState(false);
  const endpoint=admin?'/api/admin/local':'/api/account/local';

@@ -1,45 +1,44 @@
 "use client";
+import dynamic from 'next/dynamic';
+import {CheckoutSummary} from './checkout-summary';
+import {CheckoutInput,CheckoutStateSelect,CheckoutError,revealFirstInvalidControl} from './checkout-fields';
 
 import Link from "next/link";
 import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
-import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
+import { quoteOffers, offerShippingSettings, type OffersSettings } from "@/lib/offers";
 import type { ShippingSettingsInput } from "@/lib/validators";
-import { OfferSummary } from "@/components/cart/offer-summary";
+
 import { useAnalytics } from "@/components/analytics/analytics-provider";
 import {
   checkoutAnalyticsHeaders,
   trackCheckoutStep,
 } from "@/lib/analytics-browser";
 import { useSearchParams } from "next/navigation";
-import {
-  CheckoutElementsProvider,
-  PaymentElement,
-  useCheckoutElements,
-} from "@stripe/react-stripe-js/checkout";
 import { loadStripe } from "@stripe/stripe-js";
-import { AlertCircle, ArrowLeft, ChevronDown, LockKeyhole } from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import {
   useEffect,
-  useId,
   useMemo,
   useRef,
   useState,
   type FormEvent,
-  type InvalidEvent,
 } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
 import { resolveShippingRecipientName } from "@/components/checkout/shipping-recipient";
-import { calculateCartTotalCents, getCartRows } from "@/lib/cart";
-import { formatPrice } from "@/lib/products";
+import { getCartRows } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import {
   getCheckoutTaxableAmountCents,
   getCheckoutTaxAmountCents,
 } from "@/lib/tax-rules";
 import type { StripePublicConfig } from "@/lib/stripe-public-config";
-import { US_STATE_OPTIONS } from "@/lib/us-states";
+
 import type { TaxSettingsInput } from "@/lib/validators";
+
+const StripePaymentPanel = dynamic(() => import('./stripe-payment-panel').then(m => m.StripePaymentPanel), {
+  loading: () => <div role="status" className="grid min-h-[360px] place-items-center text-sm font-medium text-muted">Loading secure payment...</div>,
+});
 
 type EmbeddedCheckoutSession = {
   clientSecret: string;
@@ -102,10 +101,10 @@ export function EmbeddedCheckoutClient({
   const [customer, setCustomer] = useState<CustomerForm>(emptyCustomer);
   const [shipping, setShipping] = useState<ShippingForm>(emptyShipping);
   const [differentRecipient, setDifferentRecipient] = useState(false);
-  const rows = getCartRows(items);
-  const promotion = quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers);
+  const rows = useMemo(() => getCartRows(items), [items]);
+  const promotion = useMemo(() => quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers), [rows, offers]);
   const standTotalCents = promotion.subtotalCents;
-  const recurringTotalCents = calculateRecurringTotalCents(rows);
+  const recurringTotalCents = useMemo(() => calculateRecurringTotalCents(rows), [rows]);
   const shippingRule = resolveCheckoutShippingRule(standTotalCents, offerShippingSettings(shippingSettings, offers, shipping.country));
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,
@@ -636,12 +635,7 @@ export function EmbeddedCheckoutClient({
                 taxSettings={taxSettings}
               />
               <section className="tr-card min-h-[420px] p-4 sm:p-5">
-                <CheckoutElementsProvider
-                  stripe={stripePromise}
-                  options={options}
-                >
-                  <StripePaymentForm />
-                </CheckoutElementsProvider>
+                <StripePaymentPanel stripe={stripePromise} options={options} />
               </section>
             </>
           ) : (
@@ -664,365 +658,6 @@ function createCheckoutAttemptId() {
   }
 
   return `attempt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`;
-}
-
-function CheckoutSummary({
-  marketing,
-  promotion, offers,
-  compact = false,
-  dueTodayCents,
-  recurringTotalCents,
-  rows,
-  shippingAmountCents,
-  standTotalCents,
-  taxAmountCents,
-  taxCalculationPending,
-  taxSettings,
-}: {
-  marketing?:MarketingPurchase;
-  promotion: OfferQuote; offers: OffersSettings;
-  compact?: boolean;
-  dueTodayCents: number;
-  recurringTotalCents: number;
-  rows: ReturnType<typeof getCartRows>;
-  shippingAmountCents: number;
-  standTotalCents: number;
-  taxAmountCents: number;
-  taxCalculationPending: boolean;
-  taxSettings: TaxSettingsInput;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const summaryId = useId();
-  return (
-    <aside className="tr-card p-4 sm:p-5 lg:sticky lg:top-24">
-      {compact ? (
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={summaryId}
-          onClick={() => setExpanded((value) => !value)}
-          className="flex min-h-11 w-full items-center justify-between gap-3 text-left md:hidden"
-        >
-          <span>
-            <span className="block text-sm font-semibold">Order summary</span>
-            <span className="text-xs text-muted">
-              {taxCalculationPending ? "Before tax" : "Total today"}
-            </span>
-          </span>
-          <span className="flex items-center gap-2 font-semibold">
-            {formatPrice(dueTodayCents)}
-            <ChevronDown
-              size={18}
-              aria-hidden="true"
-              className={expanded ? "rotate-180" : ""}
-            />
-          </span>
-        </button>
-      ) : null}
-      {compact && recurringTotalCents > 0 ? (
-        <p className="mt-2 text-sm text-muted md:hidden">
-          Then {formatPrice(recurringTotalCents)}/month for Multi-Link
-        </p>
-      ) : null}
-      <p className={`tr-eyebrow ${compact ? "hidden md:block" : ""}`}>
-        Order summary
-      </p>
-      <div
-        id={summaryId}
-        className="tr-checkout-breakdown"
-        data-collapsible={compact}
-        data-expanded={expanded}
-      >
-        <div
-          className={`mt-3 grid gap-3 ${compact ? "max-h-[360px] overflow-auto pr-1" : ""}`}
-        >
-          {rows.length > 0 ? (
-            rows.map((row) => (
-              <div
-                key={`${row.item.productId}-${row.option.id}-${row.item.setup?.destinationUrl ?? row.item.setup?.serviceAddon ?? ""}`}
-                className="rounded-md border border-line bg-white p-3"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium leading-5 text-ink">
-                      {row.product.title}
-                    </p>
-                    <p className="mt-1 text-xs text-brand">
-                      {row.option.label}
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium text-ink">
-                    {formatPrice(row.lineSubtotalCents)}
-                  </p>
-                </div>
-                {row.item.setup?.businessName ? (
-                  <p className="mt-2 truncate text-xs text-muted">
-                    Business: {row.item.setup.businessName}
-                  </p>
-                ) : null}
-                {row.item.setup?.serviceMode === "HOSTED" &&
-                row.item.setup?.serviceAddon === "hosted_multilink" ? (
-                  <p className="mt-1 text-xs text-muted">
-                    Multi-Link:{" "}
-                    {formatPrice(row.item.setup.monthlyPriceCents ?? 0)}/mo
-                  </p>
-                ) : null}
-              </div>
-            ))
-          ) : (
-            <p className="text-sm leading-6 text-muted">
-              Your cart is empty. Return to cart before checkout.
-            </p>
-          )}
-        </div>
-
-        <div className="mt-4 grid gap-2 border-t border-line pt-4 text-sm">
-          <OfferSummary quote={promotion} offers={offers} />
-          <SummaryRow label="Stands after savings" value={formatPrice(standTotalCents)} />
-          {marketing&&<SummaryRow label={`Growth · ${marketing.locations} location(s)`} value={`${formatPrice(marketingAmount(marketing))}/month`}/>}
-          {recurringTotalCents > 0 ? (
-            <SummaryRow
-              label="Monthly"
-              value={`${formatPrice(recurringTotalCents)}/mo`}
-            />
-          ) : null}
-          <SummaryRow
-            label="Shipping"
-            value={
-              shippingAmountCents > 0
-                ? formatPrice(shippingAmountCents)
-                : "Free"
-            }
-          />
-          <SummaryRow
-            label="Tax"
-            value={
-              taxCalculationPending
-                ? "Enter shipping state"
-                : formatPrice(taxAmountCents)
-            }
-          />
-          <SummaryRow
-            label={taxCalculationPending ? "Total before tax" : "Total"}
-            value={formatPrice(dueTodayCents)}
-            strong
-          />
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function StripePaymentForm() {
-  const result = useCheckoutElements();
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (result.type !== "success" || !result.checkout.canConfirm) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrorMessage("");
-
-    try {
-      trackCheckoutStep("add_payment_info");
-      const confirmResult = await result.checkout.confirm();
-
-      if (confirmResult.type === "error") {
-        trackCheckoutStep("payment_error");
-        setErrorMessage(
-          confirmResult.error.message ?? "Payment could not be completed.",
-        );
-      }
-    } catch (error) {
-      trackCheckoutStep("payment_error");
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Payment could not be completed.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  if (result.type === "loading") {
-    return (
-      <div className="grid min-h-[360px] place-items-center text-sm font-medium text-muted">
-        Loading secure payment...
-      </div>
-    );
-  }
-
-  if (result.type === "error") {
-    return <CheckoutError message={result.error.message} />;
-  }
-
-  return (
-    <form className="grid gap-4" onSubmit={onSubmit}>
-      <div>
-        <p className="tr-eyebrow">Payment</p>
-        <h2 className="mt-1 text-xl font-medium text-ink">Pay securely</h2>
-      </div>
-      <PaymentElement
-        options={{
-          layout: {
-            type: "accordion",
-            radios: "always",
-          },
-          fields: {
-            billingDetails: {
-              name: "never",
-              email: "never",
-              phone: "never",
-              address: "never",
-            },
-          },
-        }}
-      />
-      {errorMessage ? (
-        <p className="tr-status-warning" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={!result.checkout.canConfirm || isSubmitting}
-        className="tr-button-primary min-h-12 w-full"
-      >
-        {isSubmitting
-          ? "Processing..."
-          : `Pay ${result.checkout.total.total.amount}`}
-      </button>
-      <p className="text-center text-xs leading-5 text-muted">
-        Payment is processed securely by Stripe.
-      </p>
-    </form>
-  );
-}
-
-function SummaryRow({
-  label,
-  value,
-  strong = false,
-}: {
-  label: string;
-  value: string;
-  strong?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center justify-between gap-4 ${strong ? "pt-2 text-base" : ""}`}
-    >
-      <span className={strong ? "font-medium text-ink" : "text-muted"}>
-        {label}
-      </span>
-      <span className={strong ? "font-medium text-ink" : "text-ink"}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function CheckoutInput({
-  autoComplete,
-  label,
-  onChange,
-  required = false,
-  type = "text",
-  value,
-}: {
-  autoComplete?: string;
-  label: string;
-  onChange: (value: string) => void;
-  required?: boolean;
-  type?: string;
-  value: string;
-}) {
-  return (
-    <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">
-      {label}
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        autoComplete={autoComplete}
-        required={required}
-        onInvalid={revealFirstInvalidControl}
-        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-      />
-    </label>
-  );
-}
-
-function CheckoutStateSelect({
-  onChange,
-  value,
-}: {
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  return (
-    <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">
-      State
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        onInvalid={revealFirstInvalidControl}
-        autoComplete="shipping address-level1"
-        required
-        className="min-h-11 w-full min-w-0 scroll-mt-32 rounded-md border border-line bg-white px-3 text-base font-normal text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15"
-      >
-        <option value="">Select state</option>
-        {US_STATE_OPTIONS.map((option) => (
-          <option key={option.code} value={option.code}>
-            {option.name} ({option.code})
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function revealFirstInvalidControl(
-  event: InvalidEvent<HTMLInputElement | HTMLSelectElement>,
-) {
-  const control = event.currentTarget;
-
-  if (control.form?.querySelector(":invalid") !== control) {
-    return;
-  }
-
-  window.requestAnimationFrame(() => {
-    control.scrollIntoView({ block: "center", inline: "nearest" });
-  });
-}
-
-function CheckoutError({ message }: { message: string }) {
-  return (
-    <div className="grid min-h-[420px] place-items-center p-6 text-center">
-      <div>
-        <AlertCircle className="mx-auto text-amber-600" size={34} />
-        <p className="mt-4 font-medium text-ink">{message}</p>
-        <p className="mt-2 text-sm leading-6 text-muted">
-          Your cart details are still available if the session expired or was
-          opened in another tab.
-        </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Link href="/cart" className="tr-button-primary">
-            Return to cart
-          </Link>
-          <Link href="/shop" className="tr-button-outline">
-            Shop ready stands
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function calculateRecurringTotalCents(rows: ReturnType<typeof getCartRows>) {
