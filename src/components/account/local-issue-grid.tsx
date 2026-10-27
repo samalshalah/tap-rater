@@ -1,0 +1,4 @@
+"use client";
+import {memo,type Dispatch,type SetStateAction} from 'react';
+import type {Issue} from './local-issue-model';
+export const LocalIssueGrid=memo(function LocalIssueGrid({issues,setOpened,setConfirm}:{issues:Issue[];setOpened:Dispatch<SetStateAction<string>>;setConfirm:Dispatch<SetStateAction<string>>}){return <div className="tr-issue-grid">{issues.map(i=><button key={i.id} type="button" className="tr-issue-card" aria-haspopup="dialog" onClick={()=>{setOpened(i.id);setConfirm('');}}><span className="tr-card-heading"><span>{i.business_name} · {i.finding.kind==='heatmap'?'Heat map':i.finding.kind==='system'?'Account status':'Google profile'}</span><span className="tr-card-status">{i.approved_at?'Approved draft':i.draft?'Draft ready':!i.read_at?'New':'Reviewed'}</span></span><span className="tr-card-body"><strong>{i.finding.title}</strong><span className="tr-card-open">View details →</span></span></button>)}</div>;});
