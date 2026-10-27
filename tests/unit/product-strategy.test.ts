@@ -21,7 +21,7 @@ describe("Tap Rater product strategy", () => {
 
   it("positions the homepage around launch-ready ecommerce stand sales", () => {
     const homepage = readFileSync("src/app/page.tsx", "utf8");
-    const websiteContent = readFileSync("src/lib/website-content.ts", "utf8");
+    const websiteContent = readFileSync("src/lib/website-content-defaults.ts", "utf8");
 
     expect(homepage).toContain("Tap Rater NFC Business Stands | Reviews, Menus & More");
     expect(homepage).toContain("getHomepageThemeContent");
