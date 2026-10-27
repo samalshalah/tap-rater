@@ -1,0 +1,21 @@
+"use client";
+import { useState } from 'react';
+import type { Post,Snapshot } from './google-live-review-types';
+export function Discovery({post,refresh,businesses}:{post:Post;refresh:()=>Promise<void>;businesses:NonNullable<Snapshot['businesses']>}){
+ const [accounts,setAccounts]=useState<{name:string;accountName?:string;type?:string}[]>([]),[locations,setLocations]=useState<{name:string;title?:string}[]>([]),[account,setAccount]=useState(''),[location,setLocation]=useState(''),[business,setBusiness]=useState(''),[parent,setParent]=useState(''),[nextAccounts,setNextAccounts]=useState(''),[nextLocations,setNextLocations]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ async function run(kind:'accounts'|'locations'|'bind',more=false,group=''){
+  if(kind==='bind'&&!window.confirm('Assign this Google location to the selected customer? Verify that the customer owns this business and has authorized Tap Rater to manage its reviews.'))return;
+  setBusy(true);setMessage('');try{
+   const data=await post(kind==='accounts'?{action:kind,...(group||parent?{parent:group||parent}:{}),...(more?{pageToken:nextAccounts}:{})}:kind==='locations'?{action:kind,account,...(more?{pageToken:nextLocations}:{})}:{action:kind,businessId:business,account,location,confirmAssignment:true});
+   if(kind==='accounts'){setAccounts(old=>[...(more?old:[]),...(data.accounts as typeof accounts)]);setNextAccounts(String(data.nextPageToken || ''));if(group)setParent(group);}
+   if(kind==='locations'){setLocations(old=>[...(more?old:[]),...(data.locations as typeof locations)]);setNextLocations(String(data.nextPageToken || ''));}
+   if(kind==='bind'){await refresh();setMessage('Location assigned. Open its workspace and sync reviews.');}
+  }catch(e){setMessage(e instanceof Error?e.message:'Google access unavailable.');}finally{setBusy(false);}
+ }
+ return <section className="my-5 rounded-xl border border-line p-5"><h3 className="font-semibold">Assign a managed Google business</h3><p className="mt-2 text-sm">Use the existing managing account. Successful location and review reads are required before assignment. Customers do not need their own Cloud project.</p><fieldset disabled={busy} className="mt-4 space-y-3">
+ <button className="tr-button-ghost" onClick={()=>run('accounts')}>Check Google access / load accounts</button>{parent&&<p className="text-sm">Browsing organization {parent}. <button className="underline" onClick={()=>{setParent('');setAccounts([]);setAccount('');setLocations([]);}}>Back to root accounts</button></p>}
+ {accounts.length>0&&<><label className="block">Google account <select className="ml-2 rounded border p-2" value={account} onChange={e=>{setAccount(e.target.value);setLocations([]);setLocation('');setNextLocations('');}}><option value="">Choose account</option>{accounts.map(a=><option key={a.name} value={a.name}>{a.accountName || a.name} ({a.type})</option>)}</select></label><button className="tr-button-ghost" disabled={!account} onClick={()=>run('accounts',false,account)}>Browse child accounts</button><button className="tr-button-ghost ml-2" disabled={!account} onClick={()=>run('locations')}>Load locations</button></>}
+ {nextAccounts&&<button className="tr-button-ghost" onClick={()=>run('accounts',true)}>More accounts</button>}
+ {locations.length>0&&<><label className="block">Google location <select className="ml-2 rounded border p-2" value={location} onChange={e=>setLocation(e.target.value)}><option value="">Choose location</option>{locations.map(l=><option key={l.name} value={l.name}>{l.title || l.name} · {l.name}</option>)}</select></label><label className="block">Customer business <select className="ml-2 rounded border p-2" value={business} onChange={e=>setBusiness(e.target.value)}><option value="">Choose customer business</option>{businesses.map(b=><option key={b.id} value={b.id}>{b.business_name} · {b.email}</option>)}</select></label><button className="tr-button-primary" disabled={!location||!business} onClick={()=>run('bind')}>Verify and assign location</button></>}
+ {nextLocations&&<button className="tr-button-ghost" onClick={()=>run('locations',true)}>More locations</button>}</fieldset><p role="status" className="mt-3 text-sm">{message}</p></section>;
+}
