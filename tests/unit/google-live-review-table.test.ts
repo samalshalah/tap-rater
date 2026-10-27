@@ -1,0 +1,22 @@
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {describe,it,expect,vi} from 'vitest';
+import {GoogleLiveReviewTable} from '@/components/account/google-live-review-table';
+import {GoogleLiveReviewWorkspace} from '@/components/account/google-live-review-workspace';
+import type {Row,Workspace} from '@/components/account/google-live-review-types';
+Object.assign(globalThis,{React});
+vi.mock('@/components/account/google-live-review-row',()=>({ReviewListRow:({review,aiAllowed,active,canPublish}:{review:Row;aiAllowed:boolean;active:boolean;canPublish:boolean})=>React.createElement('tr',{'data-review':review.id,'data-ai':aiAllowed,'data-active':active,'data-publish':canPublish},React.createElement('td',null,review.draft))}));
+vi.mock('@/components/account/review-automation-controls',()=>({ReviewAutomationControls:()=>null}));
+vi.mock('@/components/account/google-live-review-settings',()=>({LiveSettings:({children}:{children:React.ReactNode})=>children}));
+const row=(id:string,extra:Partial<Row>={}):Row=>({id,data:{starRating:'FIVE'},draft:'',version:1,publish_state:'idle',...extra} as Row);
+const reviews=[row('unanswered'),row('draft',{draft:'Draft text'}),row('approved',{draft:'Approved text',approved_version:1}),row('replied',{data:{starRating:'FIVE',reviewReply:{comment:'Reply'}} as Row['data']}),row('spam',{suspected_spam:true})];
+const base={reviews,reviewFilter:'all',post:async()=>({}),refresh:async()=>{},aiAllowed:true,active:true,canPublish:false};
+describe('live review table and workspace',()=>{
+ it.each([['all',['unanswered','draft','approved','replied','spam']],['unanswered',['unanswered','draft','approved']],['drafts',['draft']],['approved',['approved']],['replied',['replied']],['spam',['spam']]] as const)('keeps %s filter semantics and row order',(filter,ids)=>{const html=renderToStaticMarkup(React.createElement(GoogleLiveReviewTable,{...base,reviewFilter:filter}));expect([...html.matchAll(/data-review="([^"]+)"/g)].map(m=>m[1])).toEqual(ids);});
+ it('distinguishes an empty filter from an empty import',()=>{expect(renderToStaticMarkup(React.createElement(GoogleLiveReviewTable,{...base,reviews:[reviews[0]],reviewFilter:'spam'}))).toContain('No reviews match this filter.');expect(renderToStaticMarkup(React.createElement(GoogleLiveReviewTable,{...base,reviews:[]}))).not.toContain('No reviews match this filter.');});
+ it('reflects new review data after save and pagination',()=>{const html=renderToStaticMarkup(React.createElement(GoogleLiveReviewTable,{...base,reviews:[row('updated',{draft:'New saved text'}),row('older',{draft:'Older text'})],reviewFilter:'drafts'}));expect(html).toContain('New saved text');expect(html).toContain('data-review="older"');expect(html).not.toContain('data-review="draft"');});
+ const workspace={business_id:'business',business_name:'Fixture',enabled:true,connected:true,ai_consent:true,settings_version:1,initial_import_completed:true,reviews,moreReviews:true} as Workspace;
+ const props={w:workspace,admin:false,busy:false,draftOnly:false,publishingEnabled:true,reviewFilter:'all',post:base.post,refresh:base.refresh,businessAction:async()=>{},moreReviews:async()=>{}};
+ it('preserves draft-only and active/AI permission flags',()=>{const html=renderToStaticMarkup(React.createElement(GoogleLiveReviewWorkspace,{...props,draftOnly:true,w:{...workspace,enabled:false,ai_consent:false}}));expect(html).toContain('data-publish="false"');expect(html).toContain('data-active="false"');expect(html).toContain('data-ai="false"');expect(html).not.toContain('Remove stopped assignment');const live=renderToStaticMarkup(React.createElement(GoogleLiveReviewWorkspace,props));expect(live).toContain('data-publish="true"');});
+ it('preserves busy controls, pagination, stopped admin actions and empty import message',()=>{const html=renderToStaticMarkup(React.createElement(GoogleLiveReviewWorkspace,{...props,admin:true,busy:true,w:{...workspace,enabled:false,reviews:[]}}));expect(html).toContain('Remove stopped assignment');expect(html).toContain('Load more Google reviews');expect(html).toContain('No reviews imported yet.');expect(html).toContain('disabled=""');});
+});

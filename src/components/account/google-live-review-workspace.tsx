@@ -1,0 +1,14 @@
+"use client";
+import {RefreshCw} from 'lucide-react';
+import {LiveSettings} from './google-live-review-settings';
+import {ReviewAutomationControls} from './review-automation-controls';
+import {GoogleLiveReviewTable} from './google-live-review-table';
+import type {Post,Workspace} from './google-live-review-types';
+type Props={w:Workspace;businessId?:string;admin:boolean;busy:boolean;draftOnly:boolean;publishingEnabled:boolean;reviewFilter:string;post:Post;refresh:()=>Promise<void>;businessAction:(action:'sync'|'stop'|'remove',businessId:string)=>Promise<void>;moreReviews:(workspace:Workspace)=>Promise<void>};
+export function GoogleLiveReviewWorkspace({w,businessId,admin,busy,draftOnly,publishingEnabled,reviewFilter,post,refresh,businessAction,moreReviews}:Props){return <section key={w.business_id} className="tr-review-workspace"><div className="tr-review-workspace-meta">{!businessId&&<h3>{w.business_name}</h3>}<span>{!w.enabled?'Stopped':!w.connected?'Google reconnection required':''}</span></div>{w.last_error&&<p className="mt-2 text-sm text-red-700">{w.last_error}</p>}
+
+ <div className="my-3 rounded-lg border border-line bg-white p-4"><ReviewAutomationControls key={w.business_id+':'+w.settings_version} location={{...w,id:w.business_id,connected:w.connected&&w.enabled}} onSaved={refresh}/></div><div className="my-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-muted">{w.enabled&&w.connected?'Automatic imports on':'Imports paused'}{w.synced_at?' · Updated '+new Date(w.synced_at).toLocaleString():''}</span><div className="flex gap-2"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}><RefreshCw size={14}/>{busy?(w.initial_import_completed?'Checking…':'Importing…'):w.initial_import_completed?'Check for updates':w.next_page?'Continue import':'Sync reviews'}</button><LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={false}><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Disconnect review imports</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</LiveSettings></div></div>
+ <GoogleLiveReviewTable reviews={w.reviews} reviewFilter={reviewFilter} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&publishingEnabled}/>
+
+ {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No reviews imported yet. Sync reviews to get started.</p>}
+ </section>;}

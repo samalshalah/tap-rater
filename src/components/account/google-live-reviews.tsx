@@ -1,14 +1,11 @@
 "use client";
 import { importReviewPages } from '@/lib/google-business/import-pages';
-import { RefreshCw } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useEffect,useMemo,useRef,useState } from 'react';
+import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import { Discovery } from './google-live-review-discovery';
-import { LiveSettings } from './google-live-review-settings';
-import { ReviewListRow } from './google-live-review-row';
-import { appendUnseenReviews,countReviewFilters,matchesReview,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
+import {GoogleLiveReviewWorkspace} from './google-live-review-workspace';
+import { appendUnseenReviews,countReviewFilters,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
 import type { Post,Row,Snapshot,Workspace } from './google-live-review-types';
-import { ReviewAutomationControls } from './review-automation-controls';
 const GoogleConnectionWizard=dynamic(()=>import('./google-connection-wizard').then(module=>module.GoogleConnectionWizard),{loading:()=> <p role="status">Loading Google connection...</p>});
 export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false}:{admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean}){
  const [manageConnectionOpen,setManageConnectionOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('connection')&&new URLSearchParams(window.location.search).get('location')===businessId);
@@ -22,14 +19,14 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  const [snapshot,setSnapshot]=useState<Snapshot|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const scopedWorkspaces=useMemo(()=>scopeReviewWorkspaces(snapshot?.workspaces||[],businessId,businessIds),[snapshot,businessId,businessIds]);
  const filterCounts=useMemo(()=>countReviewFilters(scopedWorkspaces),[scopedWorkspaces]);
- async function refresh(preserveLoaded=false){const version=++refreshVersion.current;const r=await fetch(readEndpoint,{cache:'no-store'});const data=await r.json();if(!r.ok)throw new Error(data.error || 'Could not load Google reviews.');if(!mounted.current||version!==refreshVersion.current)return;
+ const refresh=useCallback(async(preserveLoaded=false)=>{const version=++refreshVersion.current;const r=await fetch(readEndpoint,{cache:'no-store'});const data=await r.json();if(!r.ok)throw new Error(data.error || 'Could not load Google reviews.');if(!mounted.current||version!==refreshVersion.current)return;
   setSnapshot(old=>mergeReviewSnapshot(data,old,preserveLoaded));
- }
+ },[readEndpoint]);
  useEffect(()=>{let active=true;mounted.current=true;setSnapshot(null);setError('');refresh().catch(e=>{if(active)setError(e.message);});return()=>{active=false;mounted.current=false;refreshVersion.current++;};},[readEndpoint]);
  useEffect(()=>{if(!admin&&!busy&&!error&&!importing.current){const pending=snapshot?.workspaces.find(w=>inScope(w.business_id)&&w.enabled&&w.connected&&!w.initial_import_completed&&(!w.synced_at||w.next_page)&&!w.last_error);if(pending)void businessAction('sync',pending.business_id);}},[snapshot,busy,error,admin]); // Authenticated server routes enforce ownership on every action.
  // After initial import the page only observes status; the scheduled worker owns refreshes.
  useEffect(()=>{if(admin)return;let polling=false;const timer=setInterval(async()=>{if(polling||importing.current||document.hidden)return;polling=true;try{await refresh(true);}catch{/* Keep saved reviews visible when a status poll fails. */}finally{polling=false;}},15000);return()=>clearInterval(timer);},[readEndpoint,admin]);
- const post:Post=async body=>{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error || 'Request failed.'),{status:r.status});return data;};
+ const post:Post=useCallback(async body=>{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw Object.assign(new Error(data.error || 'Request failed.'),{status:r.status});return data;},[endpoint]);
  async function moreReviews(w:Workspace){
   setBusy(true);setError('');try{const response=await fetch(endpoint+'?businessId='+encodeURIComponent(w.business_id)+'&offset='+w.reviews.length,{cache:'no-store'});const page=await response.json();if(!response.ok)throw new Error(page.error);setSnapshot(old=>old?{...old,workspaces:old.workspaces.map(item=>item.business_id===w.business_id?{...item,reviews:appendUnseenReviews(item.reviews,page.reviews as Row[]),moreReviews:page.moreReviews}:item)}:old);}catch(e){setError(e instanceof Error?e.message:'Could not load more reviews.');}finally{setBusy(false);}
  }
@@ -57,13 +54,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  <nav className="tr-review-filters" aria-label="Review filters" title="Counts reflect loaded reviews. Load more below to include older reviews.">{reviewFilters.map(([key,label])=><button key={key} aria-pressed={reviewFilter===key} onClick={()=>setReviewFilter(key)}>{label} ({snapshot?filterCounts[key]:'…'})</button>)}</nav>
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
  {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':'Connect your Google business below to import reviews.'}</p>}
- {scopedWorkspaces.map(w=><section key={w.business_id} className="tr-review-workspace"><div className="tr-review-workspace-meta">{!businessId&&<h3>{w.business_name}</h3>}<span>{!w.enabled?'Stopped':!w.connected?'Google reconnection required':''}</span></div>{w.last_error&&<p className="mt-2 text-sm text-red-700">{w.last_error}</p>}
-
- <div className="my-3 rounded-lg border border-line bg-white p-4"><ReviewAutomationControls key={w.business_id+':'+w.settings_version} location={{...w,id:w.business_id,connected:w.connected&&w.enabled}} onSaved={refresh}/></div><div className="my-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-muted">{w.enabled&&w.connected?'Automatic imports on':'Imports paused'}{w.synced_at?' · Updated '+new Date(w.synced_at).toLocaleString():''}</span><div className="flex gap-2"><button className="tr-button-ghost" disabled={busy||!w.enabled||!w.connected} onClick={()=>businessAction('sync',w.business_id)}><RefreshCw size={14}/>{busy?(w.initial_import_completed?'Checking…':'Importing…'):w.initial_import_completed?'Check for updates':w.next_page?'Continue import':'Sync reviews'}</button><LiveSettings key={w.business_id+':'+w.settings_version} workspace={w} post={post} refresh={refresh} publishing={false}><button className="tr-button-ghost" disabled={busy||!w.enabled} onClick={()=>businessAction('stop',w.business_id)}>Disconnect review imports</button>{admin&&!w.enabled&&<button className="tr-button-ghost" disabled={busy} onClick={()=>businessAction('remove',w.business_id)}>Remove stopped assignment</button>}</LiveSettings></div></div>
- <div className="tr-review-table-wrap"><table className="tr-review-table"><caption className="sr-only">Google reviews and reply drafts. Open a review to read or edit its draft.</caption><thead><tr><th>Reviewer</th><th>Rating</th><th>Review (excerpt)</th><th>Reply status</th><th>Date</th><th>Open</th></tr></thead><tbody>{w.reviews.filter(r=>matchesReview(r,reviewFilter)).map(r=><ReviewListRow key={r.id} review={r} post={post} refresh={refresh} aiAllowed={w.ai_consent} active={w.enabled&&w.connected} canPublish={!draftOnly&&Boolean(snapshot?.publishingEnabled)}/>)}</tbody></table>{w.reviews.length>0&&!w.reviews.some(r=>matchesReview(r,reviewFilter))&&<p className="p-4 text-sm">No reviews match this filter.</p>}</div>
-
- {w.moreReviews&&<button className="tr-button-ghost mt-4" disabled={busy} onClick={()=>moreReviews(w)}>Load more Google reviews</button>}{!w.reviews.length&&<p className="mt-4 text-sm">No reviews imported yet. Sync reviews to get started.</p>}
- </section>)} {!admin&&snapshot&&<details className="tr-review-settings" open={manageConnectionOpen} onToggle={e=>setManageConnectionOpen(e.currentTarget.open)}><summary>Manage Google connection</summary>{manageConnectionOpen&&<GoogleConnectionWizard key={businessId||'all'} onLinked={async()=>{setManageConnectionOpen(false);const url=new URL(window.location.href);url.searchParams.delete('connection');url.searchParams.delete('step');url.searchParams.delete('reason');window.history.replaceState(null,'',url);await refresh();}} businessId={businessId}/>}</details>}
+ {scopedWorkspaces.map(w=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)} {!admin&&snapshot&&<details className="tr-review-settings" open={manageConnectionOpen} onToggle={e=>setManageConnectionOpen(e.currentTarget.open)}><summary>Manage Google connection</summary>{manageConnectionOpen&&<GoogleConnectionWizard key={businessId||'all'} onLinked={async()=>{setManageConnectionOpen(false);const url=new URL(window.location.href);url.searchParams.delete('connection');url.searchParams.delete('step');url.searchParams.delete('reason');window.history.replaceState(null,'',url);await refresh();}} businessId={businessId}/>}</details>}
 
  </section>;
 }
