@@ -1,5 +1,5 @@
 "use client";
-import Link from 'next/link';
+import {WorkspaceLink as Link} from './workspace-link';
 import {LayoutDashboard,MessageSquare,Building2,Map,Tablet,Link2,ShoppingBag,UserRound,BarChart3,Bell,Globe,LogOut,Menu,X} from 'lucide-react';
 import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import {useEffect,useState,useTransition} from 'react';
