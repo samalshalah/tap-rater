@@ -1,0 +1,420 @@
+"use client";
+import { formatPrice } from "@/lib/products";
+import { Search,UploadCloud } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useEffect } from "react";
+import type { ProductSetupDialogProps } from './product-setup-dialog-types';
+import { isHttpUrl,normalizeMultiLinkButtonsForSetup } from "./product-setup-model";
+import { BuilderSummary,ReviewLine } from "./product-setup-summary";
+const MultiLinkSetupStep=dynamic(()=>import("./multilink-setup-step").then(m=>m.MultiLinkSetupStep),{loading:()=> <p role="status">Loading link editor...</p>});
+const ProofControls = dynamic(() => import("./proof-controls").then(m => m.ProofControls));
+const QrPreview = dynamic(() => import("./qr-preview").then(m => m.QrPreview));
+const BrandedProofPreview = dynamic(() => import("./branded-proof-preview").then(m => m.BrandedProofPreview));
+export function ProductSetupDialogContent({
+  stepGridClassName,
+  stepLabels,
+  activeStepIndex,
+  stepOrder,
+  setStep,
+  builderContentRef,
+  step,
+  goToPreviousStep,
+  selectedLinkExperience,
+  businessName,
+  setBusinessName,
+  selectedOption,
+  isGoogleReviewProduct,
+  googleSearchQuery,
+  setGoogleSearchQuery,
+  googlePlaceId,
+  setGooglePlaceId,
+  setGooglePlaceName,
+  setDestinationUrl,
+  googleAutocompleteStatus,
+  googleSearchResults,
+  useGooglePlace,
+  destinationUrl,
+  googlePlaceName,
+  proofQrValue,
+  selectedImage,
+  product,
+  selectedQuantity,
+  standQuote,
+  configuredUnitPriceCents,
+  multiLinkButtons,
+  setMultiLinkButtons,
+  logo,
+  isUploadingLogo,
+  uploadLogo,
+  selectedSize,
+  selectedColor,
+  proofSetup,
+  setReadyProof,
+  logoBackgroundMode,
+  logoFitMode,
+  logoOffsetXPercent,
+  logoOffsetYPercent,
+  proofFontSizePercent,
+  proofLogoSizePercent,
+  setLogoBackgroundMode,
+  setLogoFitMode,
+  setLogoOffsetXPercent,
+  setLogoOffsetYPercent,
+  setProofFontSizePercent,
+  setProofLogoSizePercent,
+  showBusinessNameOnProof,
+  setShowBusinessNameOnProof,
+  proofIsReady,
+  proofIsApproved,
+  setApprovedProofId,
+  readyProof,
+  error,
+  closeBuilder,
+  isReservingDestination,
+  continueFromDestination,
+  hostedReservation,
+  continueFromMultiLinkLinks,
+  continueFromDesign,
+  addConfiguredItemToCart,
+  builderHeadingRef
+}:ProductSetupDialogProps){
+  useEffect(() => {
+    if (!builderContentRef.current) return;
+    builderContentRef.current.scrollTop = 0;
+    builderHeadingRef.current?.focus({ preventScroll: true });
+  }, [step, builderContentRef, builderHeadingRef]);
+  return <><div className="border-b border-line px-4 py-3 sm:px-6">
+              <ol className={`grid gap-2 text-[10px] font-semibold uppercase text-muted sm:text-xs ${stepGridClassName}`}>
+                {stepLabels.map((label, index) => (
+                  <li key={label} className={index < activeStepIndex ? "rounded-lg bg-panel text-brand" : index === activeStepIndex ? "rounded-lg bg-ink text-white" : "rounded-lg border border-line"}>
+                    <button
+                      type="button"
+                      className="flex h-full min-h-12 w-full min-w-0 flex-col items-center justify-center gap-1 px-1 py-2 text-center disabled:cursor-default sm:min-h-0 sm:flex-row sm:justify-start sm:gap-0 sm:px-3 sm:text-left"
+                      disabled={index >= activeStepIndex}
+                      onClick={() => {
+                        const targetStep = stepOrder[index];
+                        if (targetStep) setStep(targetStep);
+                      }}
+                    >
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/80 text-[11px] text-ink sm:mr-2">{index + 1}</span>
+                      <span className="min-w-0 leading-3 sm:leading-normal">{label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div ref={builderContentRef} className="overflow-y-auto px-4 py-3 sm:px-6">
+              {step !== "destination" ? (
+                <button type="button" className="mb-3 text-sm font-semibold text-brand hover:text-ink" onClick={goToPreviousStep}>
+                  Back to previous step
+                </button>
+              ) : null}
+
+              {step === "destination" ? (
+                <div className="grid gap-4">
+                  {selectedLinkExperience === "multilink" ? (
+                    <>
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Multi-Link page</p>
+                        <p className="mt-1 text-sm leading-6 text-muted">
+                          Enter the business or page name for the hosted Tap Rater page. You can add and edit the links after checkout.
+                        </p>
+                      </div>
+
+                      <label className="grid gap-2 text-sm font-semibold text-ink">
+                        Business or page name
+                        <input
+                          className="tr-input"
+                          value={businessName}
+                          onChange={(event) => {
+                            setBusinessName(event.target.value);
+                          }}
+                          placeholder="Your business name"
+                        />
+                      </label>
+
+                      <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
+                        {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page. Standard does not include a printed QR."}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Destination link</p>
+                        <p className="mt-1 text-sm leading-6 text-muted">
+                          {isGoogleReviewProduct
+                            ? "Search for your Google Business Profile or paste your Google review link manually."
+                            : "Paste the URL this stand should open when customers tap."}
+                        </p>
+                      </div>
+
+                      {isGoogleReviewProduct ? (
+                        <div className="tr-panel-muted grid gap-3">
+                          <label className="grid gap-2 text-sm font-semibold text-ink">
+                            Google Business search
+                            <div className="relative">
+                              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                              <input
+                                className="tr-input min-w-0 pl-10 pr-24"
+                                value={googleSearchQuery}
+                                onChange={(event) => {
+                                  setGoogleSearchQuery(event.target.value);
+                                  if (googlePlaceId) {
+                                    setGooglePlaceId("");
+                                    setGooglePlaceName("");
+                                    setDestinationUrl("");
+                                  }
+                                }}
+                                placeholder="Business name and city"
+                                autoComplete="off"
+                              />
+                              {googleAutocompleteStatus === "loading" ? (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted">Loading</span>
+                              ) : null}
+                            </div>
+                          </label>
+
+                          {googleAutocompleteStatus === "fallback" ? (
+                            <p className="text-sm font-semibold text-muted" role="status">Google business search is unavailable. Paste your Google review link manually.</p>
+                          ) : null}
+
+                          {googleAutocompleteStatus === "idle" && !googlePlaceId ? (
+                            <p className="text-sm text-muted" role="status">Enter at least 3 characters to search.</p>
+                          ) : null}
+
+                          {googleAutocompleteStatus === "ready" && googleSearchResults.length === 0 && !googlePlaceId ? (
+                            <p className="text-sm text-muted" role="status">No matching businesses found. Add a city or paste the review URL manually.</p>
+                          ) : null}
+
+                          {googleSearchResults.length > 0 ? (
+                            <div className="grid overflow-hidden rounded-md border border-line bg-white" role="listbox" aria-label="Google Business search results">
+                              {googleSearchResults.map((place) => (
+                                <button
+                                  key={place.placeId}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={false}
+                                  className="border-b border-line px-3 py-3 text-left text-sm transition last:border-b-0 hover:bg-soft"
+                                  onClick={() => useGooglePlace(place)}
+                                >
+                                  <span className="block font-semibold text-ink">{place.name}</span>
+                                  {place.formattedAddress ? <span className="mt-1 block text-muted">{place.formattedAddress}</span> : null}
+                                </button>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      <label className="grid gap-2 text-sm font-semibold text-ink">
+                        {isGoogleReviewProduct ? "Manual Google review link" : "Destination URL"}
+                        <input
+                          className="tr-input"
+                          type="url"
+                          value={destinationUrl}
+                          onChange={(event) => {
+                            setDestinationUrl(event.target.value);
+                            setGooglePlaceId("");
+                            setGooglePlaceName("");
+                          }}
+                          placeholder={isGoogleReviewProduct ? "https://search.google.com/local/writereview?placeid=..." : "https://example.com"}
+                        />
+                      </label>
+
+                      {googlePlaceName ? (
+                        <p className="tr-status-success">
+                          Selected Google business: {googlePlaceName}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
+                  {selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
+                    <div className="flex min-w-0 items-center gap-4 border-t border-line pt-3">
+                      <div className="h-28 w-28 shrink-0"><QrPreview value={proofQrValue} variant="template" /></div>
+                      <div className="min-w-0"><p className="text-sm font-semibold text-ink">QR destination</p><a href={proofQrValue} target="_blank" rel="noopener noreferrer" className="text-sm text-brand [overflow-wrap:anywhere]">{proofQrValue}</a></div>
+                    </div>
+                  ) : null}
+                  <BuilderSummary
+                    className="sm:order-first"
+                    image={selectedImage}
+                    option={selectedOption}
+                    productTitle={product.title}
+                    quantity={selectedQuantity}
+                    unitPriceCents={standQuote ? Math.round(standQuote.subtotalCents / selectedQuantity) : configuredUnitPriceCents}
+                    linkExperience={selectedLinkExperience}
+                  />
+                </div>
+              ) : null}
+
+              {step === "links" && selectedLinkExperience === "multilink" ? (
+                <MultiLinkSetupStep
+                  businessName={businessName}
+                  buttons={multiLinkButtons}
+                  onButtonsChange={setMultiLinkButtons}
+                />
+              ) : null}
+
+              {step === "design" && selectedOption.id === "branded_qr_direct" ? (
+                <div className="grid gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Logo + business name</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      Add your logo and business name for the stand.
+                    </p>
+                  </div>
+
+                  <label className="grid gap-2 text-sm font-semibold text-ink">
+                    Business name
+                    <input
+                      className="tr-input"
+                      value={businessName}
+                      onChange={(event) => {
+                        setBusinessName(event.target.value);
+                      }}
+                      placeholder="Your business name"
+                    />
+                  </label>
+
+                  <div className="tr-panel-muted grid gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-ink">Business logo</p>
+                        <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
+                      </div>
+                      {logo ? <span className="tr-pill-brand">Logo uploaded</span> : null}
+                    </div>
+                    <label className="grid min-h-32 cursor-pointer place-items-center rounded-lg border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted transition hover:border-brand">
+                      <UploadCloud className="mb-2 h-6 w-6" />
+                      {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
+                      <span className="mt-1 block text-xs font-semibold text-brand">{logo ? "Click to replace" : "Choose file"}</span>
+                      <input
+                        className="sr-only"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        disabled={isUploadingLogo}
+                        onChange={(event) => uploadLogo(event.target.files?.[0])}
+                      />
+                    </label>
+                  </div>
+                  <div className="rounded-lg border border-line bg-soft p-3 text-sm leading-6 text-muted">
+                    Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file before ordering.
+                    <a className="ml-2 font-semibold text-brand hover:text-ink" href="/contact-us">Contact Us</a>
+                  </div>
+
+                </div>
+              ) : null}
+
+              {step === "review" ? (
+                <div className="grid gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Confirm setup</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      {selectedLinkExperience === "multilink"
+                        ? "Confirm the hosted Multi-Link setup before adding this stand to cart."
+                        : "Confirm the direct destination link before adding this stand to cart. The NFC tap opens this URL."}
+                    </p>
+                  </div>
+
+                  <div className="tr-panel-muted grid gap-x-4 gap-y-1 text-sm text-muted sm:grid-cols-2">
+                    <ReviewLine label="Product" value={product.title} />
+                    <ReviewLine label="Setup" value={selectedOption.label} />
+                    {selectedSize ? <ReviewLine label="Size" value={selectedSize.label} /> : null}
+                    {selectedColor ? <ReviewLine label="Color" value={selectedColor.label} /> : null}
+                    <ReviewLine label="Qty" value={String(selectedQuantity)} />
+                    <ReviewLine label="Price" value={configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)} />
+                    {selectedLinkExperience !== "multilink" ? <ReviewLine label="Destination link" value={destinationUrl || "-"} /> : null}
+                    {googlePlaceName ? <ReviewLine label="Google business" value={googlePlaceName} /> : null}
+                  </div>
+
+                  <div className="rounded-lg border border-line bg-white p-3 text-sm leading-6 text-muted">
+                    {selectedLinkExperience === "multilink" ? (
+                      <>
+                        <p className="font-semibold text-ink">Multi-Link confirmation</p>
+                        <p>{selectedOption.hasQr ? "QR and NFC will open" : "NFC will open"} your hosted Tap Rater Multi-Link page. {normalizeMultiLinkButtonsForSetup(multiLinkButtons).buttons.length ? "Your draft links will be saved to the page." : "You skipped links for now and can add them from your account after payment."}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold text-ink">Standard Direct confirmation</p>
+                        <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
+                <div className="grid gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Approve your stand</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
+                  </div>
+                  <div className="grid min-w-0 gap-5 md:grid-cols-2">
+                    <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
+                    {logo ? <ProofControls
+                      logo={logo} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}
+                      logoOffsetXPercent={logoOffsetXPercent} logoOffsetYPercent={logoOffsetYPercent}
+                      proofFontSizePercent={proofFontSizePercent} proofLogoSizePercent={proofLogoSizePercent}
+                      onLogoBackgroundModeChange={setLogoBackgroundMode} onLogoFitModeChange={setLogoFitMode}
+                      onLogoOffsetXPercentChange={setLogoOffsetXPercent} onLogoOffsetYPercentChange={setLogoOffsetYPercent}
+                      onProofFontSizePercentChange={setProofFontSizePercent} onProofLogoSizePercentChange={setProofLogoSizePercent}
+                      showBusinessNameOnProof={showBusinessNameOnProof} onShowBusinessNameOnProofChange={setShowBusinessNameOnProof}
+                      isUploadingLogo={isUploadingLogo} onUploadLogo={(file) => uploadLogo(file)}
+                    /> : null}
+                  </div>
+                  <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
+                  <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
+                    <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
+                      checked={proofIsApproved} onChange={(event) => setApprovedProofId(event.target.checked ? readyProof?.proofReceiptId ?? "" : "")} />
+                    I approve this artwork, business name, and QR destination for printing.
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
+              {error ? <p className="tr-status-error mb-3" role="alert">{error}</p> : null}
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  className="tr-button-outline"
+                  onClick={() => {
+                    if (step === "destination") closeBuilder();
+                    else goToPreviousStep();
+                  }}
+                >
+                  {step === "destination" ? "Cancel" : "Back"}
+                </button>
+                {step === "destination" ? (
+                  <button type="button" className="tr-button-primary" disabled={isReservingDestination} onClick={continueFromDestination}>
+                    {isReservingDestination ? "Reserving destination..." : selectedLinkExperience === "multilink" && selectedOption.hasQr && !hostedReservation ? "Generate page QR" : selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                  </button>
+                ) : null}
+                {step === "links" ? (
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                    <button type="button" className="tr-button-outline" onClick={() => continueFromMultiLinkLinks({ skip: true })}>
+                      Skip for later
+                    </button>
+                    <button type="button" className="tr-button-primary" onClick={() => continueFromMultiLinkLinks()}>
+                      {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                    </button>
+                  </div>
+                ) : null}
+                {step === "design" && selectedOption.id === "branded_qr_direct" ? (
+                  <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
+                    Preview stand
+                  </button>
+                ) : null}
+                {step === "review" && selectedOption.id !== "branded_qr_direct" ? (
+                  <button type="button" className="tr-button-primary" onClick={addConfiguredItemToCart}>
+                    Add to cart
+                  </button>
+                ) : null}
+                {step === "confirmation" ? (
+                  <button type="button" className="tr-button-primary" disabled={!proofIsApproved} onClick={addConfiguredItemToCart}>
+                    Add to cart
+                  </button>
+                ) : null}
+              </div>
+            </div></>;
+}

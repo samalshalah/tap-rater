@@ -22,7 +22,8 @@ describe("shopping form input sizing", () => {
     "src/components/checkout/embedded-checkout.tsx",
     "src/components/checkout/checkout-fields.tsx",
     "src/components/checkout/address-autocomplete.tsx",
-    "src/components/product/product-setup-chooser.tsx"
+    "src/components/product/product-setup-chooser.tsx",
+    "src/components/product/product-setup-dialog-content.tsx"
   ])("keeps every editable control in %s large enough in portrait and landscape", (path) => {
     const source = ts.createSourceFile(path, readFileSync(path, "utf8"), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     let checked = 0;
