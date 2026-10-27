@@ -41,9 +41,8 @@ export function getProductPriceCents(product: MigratedProduct): number {
   return product.salePriceCents ?? product.basePriceCents;
 }
 
+const usdFormatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+
 export function formatPrice(cents: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD"
-  }).format(cents / 100);
+  return usdFormatter.format(cents / 100);
 }

@@ -7,11 +7,10 @@ import { OfferSummary } from "@/components/cart/offer-summary";
 import { getCartOfferSuggestion } from "@/lib/cart-offer-suggestion";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { formatPrice, getProductBySlug } from "@/lib/products";
 import {
-  calculateCartTotalCents,
   getCartItemKey,
   getCartRows,
   getCartItemQuantityLimit,
@@ -47,13 +46,13 @@ export function CartTable({
   const usesManualCheckout = !usesStripeCheckout && manualCheckoutEnabled;
   const checkoutAvailable = usesStripeCheckout || usesManualCheckout;
 
-  const rows = getCartRows(items);
-  const offerLines = rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" }));
-  const promotion = quoteOffers(offerLines, offers);
-  const suggestion = getCartOfferSuggestion(offerLines, offers);
+  const rows = useMemo(() => getCartRows(items), [items]);
+  const offerLines = useMemo(() => rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), [rows]);
+  const promotion = useMemo(() => quoteOffers(offerLines, offers), [offerLines, offers]);
+  const suggestion = useMemo(() => getCartOfferSuggestion(offerLines, offers), [offerLines, offers]);
   const suggestedRow = suggestion ? rows.find(row => row.item.productId === suggestion.productId && row.option.id === suggestion.optionId) : undefined;
   const standTotal = promotion.subtotalCents;
-  const recurringTotal = calculateRecurringTotalCents(rows);
+  const recurringTotal = useMemo(() => calculateRecurringTotalCents(rows), [rows]);
   const shippingRule = resolveCheckoutShippingRule(standTotal, offerShippingSettings(shippingSettings, offers));
   const taxAmountCents = getCheckoutTaxAmountCents(
     taxSettings,

@@ -1,4 +1,5 @@
 "use client";
+import {ProductVariantEditor} from "./product-variant-editor";
 
 import type { ProductColorOption,ProductSizeOption } from "@/data/migrated-products";
 import type {
@@ -14,9 +15,9 @@ import { type FormEvent,useMemo,useState } from "react";
 import { AdminAlert,AdminBadge,AdminButton,AdminExternalButton,AdminInput,AdminLinkButton,AdminSelect,AdminSoftPanel } from "./admin-ui";
 import { ProductPhysicalDetailsEditor } from "./product-physical-details-editor";
 
-import { ControlledInput,EditorCard,InfoPill,Input,ReadinessLine,RuleRow,SidebarCard,StructuredPreview,Textarea,VariantBooleanSelect,VariantNumberInput,VariantPriceInput,VariantTextInput } from "./product-editor-fields";
+import { ControlledInput,EditorCard,InfoPill,Input,ReadinessLine,RuleRow,SidebarCard,StructuredPreview,Textarea } from "./product-editor-fields";
 import { ProductMediaGrid,SetupOptionEditor } from "./product-editor-media";
-import { buildInitialOptions,categorySlugForStandType,cleanAssetSet,collectImagesFromMedia,createColorOption,createSizeOption,formatOptionPricing,formatSku,generateProductSku,getAdminMediaWarnings,getOptionMediaRequirements,getOrganizationIssues,getSupportedDestinations,normalizeOperationalProductKind,parseMultiline,readOptionalString,readRequiredText,selectedPlatformDestinationType,slugify } from "./product-editor-model";
+import { buildInitialOptions,categorySlugForStandType,cleanAssetSet,collectImagesFromMedia,formatOptionPricing,formatSku,generateProductSku,getAdminMediaWarnings,getOptionMediaRequirements,getOrganizationIssues,getSupportedDestinations,normalizeOperationalProductKind,parseMultiline,readOptionalString,readRequiredText,selectedPlatformDestinationType,slugify } from "./product-editor-model";
 import type { AssetKey,AssetSetState,MediaItemState,MediaUploadRole,OperationalProductKind,ProductEditorProps,SaveStatus } from "./product-editor-types";
 import { normalOptionCodes } from "./product-editor-types";
 export function ProductEditor({
@@ -68,7 +69,7 @@ export function ProductEditor({
     () => optionStates.filter((option) => normalOptionCodes.includes(option.optionCode)),
     [optionStates]
   );
-  const activeVisibleOptions = visibleOptions.filter((option) => option.isActive);
+  const activeVisibleOptions = useMemo(() => visibleOptions.filter((option) => option.isActive), [visibleOptions]);
   const effectiveAssetSet = useMemo(
     () => ({
       ...assetSet,
@@ -76,7 +77,7 @@ export function ProductEditor({
     }),
     [assetSet, mainImage.src]
   );
-  const readiness = getProductAssetReadiness(
+  const readiness = useMemo(() => getProductAssetReadiness(
     {
       productKind,
       isSpecialSolution,
@@ -92,7 +93,7 @@ export function ProductEditor({
       }
     },
     activeVisibleOptions
-  );
+  ), [productKind, isSpecialSolution, effectiveAssetSet, activeVisibleOptions]);
   const activationIssues = [
     ...readiness.missing,
     ...getOrganizationIssues({
@@ -148,7 +149,7 @@ export function ProductEditor({
     ]
   );
   const productMediaReady = Boolean(readOptionalString(mainImage.src));
-  const mediaWarnings = getAdminMediaWarnings(slug || product.slug, mainImage, galleryImages, effectiveAssetSet);
+  const mediaWarnings = useMemo(() => getAdminMediaWarnings(slug || product.slug, mainImage, galleryImages, effectiveAssetSet), [slug, product.slug, mainImage, galleryImages, effectiveAssetSet]);
   const optionReadinessRows = activeVisibleOptions.flatMap((option) =>
     getOptionMediaRequirements(option.optionCode, effectiveAssetSet)
       .filter((requirement) => requirement.required)
@@ -252,14 +253,6 @@ export function ProductEditor({
 
   function updateOption(optionCode: ProductOptionCode, patch: Partial<ProductOption>) {
     setOptionStates((current) => current.map((option) => (option.optionCode === optionCode ? { ...option, ...patch } : option)));
-  }
-
-  function updateSizeOption(index: number, patch: Partial<ProductSizeOption>) {
-    setSizeOptions((current) => current.map((size, itemIndex) => (itemIndex === index ? { ...size, ...patch } : size)));
-  }
-
-  function updateColorOption(index: number, patch: Partial<ProductColorOption>) {
-    setColorOptions((current) => current.map((color, itemIndex) => (itemIndex === index ? { ...color, ...patch } : color)));
   }
 
   function updateProductKind(nextProductKind: OperationalProductKind) {
@@ -532,90 +525,7 @@ export function ProductEditor({
           <InfoPill label="Fixed Multi-Link plan (read-only)" value={`${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month`} />
         </EditorCard>
 
-        <EditorCard title="Variants" description="Structured size and color options. A price-pending size is visible for QA but blocked from checkout.">
-          <div className="grid gap-4">
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm font-black text-ink">Size options</p>
-                <AdminButton type="button" variant="outline" onClick={() => setSizeOptions((current) => [...current, createSizeOption(current.length)])}>
-                  Add size
-                </AdminButton>
-              </div>
-              <div className="mt-3 grid gap-3">
-                {sizeOptions.map((size, index) => (
-                  <div key={`${size.code}-${index}`} className="grid gap-3 rounded-md border border-line bg-white p-3 text-sm">
-                    <div className="grid gap-3 md:grid-cols-4">
-                      <VariantTextInput label="Label" value={size.label} onChange={(value) => updateSizeOption(index, { label: value })} />
-                      <VariantTextInput label="Code" value={size.code} onChange={(value) => updateSizeOption(index, { code: slugify(value) })} />
-                      <VariantTextInput label="SKU suffix" value={size.skuSuffix} onChange={(value) => updateSizeOption(index, { skuSuffix: formatSku(value) })} />
-                      <VariantPriceInput
-                        label="Price adjustment"
-                        value={size.priceAdjustmentCents}
-                        onChange={(value) => updateSizeOption(index, { priceAdjustmentCents: value })}
-                      />
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-4">
-                      <VariantNumberInput label="Front width mm" value={size.frontWidthMm} onChange={(value) => updateSizeOption(index, { frontWidthMm: value })} />
-                      <VariantNumberInput label="Front height mm" value={size.frontHeightMm} onChange={(value) => updateSizeOption(index, { frontHeightMm: value })} />
-                      <VariantNumberInput label="Front width in" value={size.frontWidthIn} step="0.01" onChange={(value) => updateSizeOption(index, { frontWidthIn: value })} />
-                      <VariantNumberInput label="Front height in" value={size.frontHeightIn} step="0.01" onChange={(value) => updateSizeOption(index, { frontHeightIn: value })} />
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-4">
-                      <VariantNumberInput label="Base depth mm" value={size.baseDepthMm} onChange={(value) => updateSizeOption(index, { baseDepthMm: value })} />
-                      <VariantNumberInput label="Base depth in" value={size.baseDepthIn} step="0.01" onChange={(value) => updateSizeOption(index, { baseDepthIn: value })} />
-                      <VariantBooleanSelect label="Active" value={size.isActive} onChange={(value) => updateSizeOption(index, { isActive: value })} />
-                      <VariantBooleanSelect
-                        label="Default"
-                        value={size.isDefault}
-                        onChange={(value) =>
-                          setSizeOptions((current) => current.map((item, itemIndex) => ({ ...item, isDefault: itemIndex === index ? value : value ? false : item.isDefault })))
-                        }
-                      />
-                    </div>
-                    <div className="flex justify-end">
-                      <AdminButton type="button" variant="danger" onClick={() => setSizeOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
-                        Remove size
-                      </AdminButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm font-black text-ink">Color options</p>
-                <AdminButton type="button" variant="outline" onClick={() => setColorOptions((current) => [...current, createColorOption(current.length)])}>
-                  Add color
-                </AdminButton>
-              </div>
-              <div className="mt-3 grid gap-3">
-                {colorOptions.map((color, index) => (
-                  <div key={`${color.code}-${index}`} className="grid gap-3 rounded-md border border-line bg-white p-3 text-sm">
-                    <div className="grid gap-3 md:grid-cols-5">
-                      <VariantTextInput label="Label" value={color.label} onChange={(value) => updateColorOption(index, { label: value })} />
-                      <VariantTextInput label="Code" value={color.code} onChange={(value) => updateColorOption(index, { code: slugify(value) })} />
-                      <VariantTextInput label="SKU suffix" value={color.skuSuffix} onChange={(value) => updateColorOption(index, { skuSuffix: formatSku(value) })} />
-                      <VariantPriceInput label="Price adjustment" value={color.priceAdjustmentCents ?? 0} onChange={(value) => updateColorOption(index, { priceAdjustmentCents: value ?? 0 })} allowPending={false} />
-                      <VariantBooleanSelect label="Active" value={color.isActive} onChange={(value) => updateColorOption(index, { isActive: value })} />
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <VariantBooleanSelect
-                        label="Default"
-                        value={color.isDefault}
-                        onChange={(value) =>
-                          setColorOptions((current) => current.map((item, itemIndex) => ({ ...item, isDefault: itemIndex === index ? value : value ? false : item.isDefault })))
-                        }
-                      />
-                      <AdminButton type="button" variant="danger" onClick={() => setColorOptions((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
-                        Remove color
-                      </AdminButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </EditorCard>
+        <ProductVariantEditor sizeOptions={sizeOptions} colorOptions={colorOptions} setSizeOptions={setSizeOptions} setColorOptions={setColorOptions} />
 
         <EditorCard title="Product Details" description="Structured product content used by the storefront and JSON-LD.">
           <StructuredPreview title="Key Features" rows={(product.keyFeatures ?? []).map((item) => [item.title, item.body])} />
