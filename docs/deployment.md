@@ -14,19 +14,29 @@ Both Wrangler configs must stay pointed at `tap-rater-app-git`. Do not reintrodu
 
 ## Deployment Path
 
-Cloudflare Workers Git integration is the source-of-truth deployment path for the `nextjs-commerce` branch. The expected build command is:
+Production uses the tested local Worker bundle and an explicitly authorized Wrangler deployment. Cloudflare automatic builds are disabled in Worker Settings > Builds (the `Disable builds` switch is on). Keep them disabled while using this release path.
+
+On 2026-10-27, push-triggered Cloudflare builds finished out of order and replaced newer manually tested releases. The two running builds were cancelled before restoring the tested release. GitHub CI and the manual validation workflow only build and test; neither deploys. Do not enable a second publisher alongside the manual release path.
+
+Validate the release before deployment:
 
 ```bash
-npm ci && npm test && npm run cf:build
+npx tsc --noEmit
+npm test
+npm run cf:build
+node --import tsx scripts/test-public-cache.ts
+npx wrangler deploy -c wrangler.cloudflare-git.jsonc --dry-run
 ```
 
 The Worker deploy command, when explicitly approved, is:
 
 ```bash
-npx wrangler deploy -c wrangler.cloudflare-git.jsonc
+npx wrangler deploy -c wrangler.cloudflare-git.jsonc --keep-vars
 ```
 
 Do not manually deploy, change routing, or enable live Stripe without explicit owner approval.
+
+After deployment and pushing the release commit, verify that the active version still matches the deployed version with `wrangler deployments list`, and that `https://taprater.com/BUILD_ID` matches the tested `.next/BUILD_ID`. Run the public route/authentication smoke checks. A successful upload alone does not prove that the tested version remains live. Keep `src/lib/heatmap-feature.ts` false until the owner explicitly requests reactivation.
 
 ## Manual Validation Workflow
 
