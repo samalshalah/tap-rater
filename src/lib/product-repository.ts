@@ -1,12 +1,18 @@
 import { productDisplayNames } from "@/data/product-display-names";
 import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
+import { publicDataCache, catalogCacheTag } from "@/lib/public-data-cache";
+
 import { migratedProducts, type MigratedProduct, type ProductPurchaseOptionSnapshot } from "@/data/migrated-products";
 import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
 import { productMatchesCategory } from "@/lib/category-products";
 import { correctKnownPurchaseCopy, getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
+
+const readPublicCatalog = publicDataCache(async () => getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient), "public-catalog-list-v1", catalogCacheTag);
+// Cache serializable null for missing products; callers retain the undefined contract.
+const readPublicProduct = publicDataCache(async (slug: string) => (await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug)) ?? null, "public-catalog-product-v1", catalogCacheTag);
 
 type ProductQueryResult = PromiseLike<{ data: unknown[] | null; error: null | { message: string } }>;
 type ProductSingleQueryResult<T = unknown> = PromiseLike<{ data: T | null; error: null | { message: string } }>;
@@ -119,7 +125,7 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
   }
 
   try {
-    const databaseProducts = await getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
+    const databaseProducts = await readPublicCatalog();
     return databaseProducts;
   } catch (error) {
     console.warn("[product-repository] storefront_unavailable", {
@@ -134,6 +140,11 @@ export async function getCheckoutProducts(): Promise<MigratedProduct[]> {
   return getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient);
 }
 
+export async function getCheckoutProductBySlug(slug: string): Promise<MigratedProduct | undefined> {
+  if (!hasSupabaseAdminConfig()) throw new Error("Checkout catalog storage is not configured.");
+  return getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
+}
+
 export const getStorefrontProductBySlug = cache(async (slug: string): Promise<MigratedProduct | undefined> => {
   noStore();
   if (!hasSupabaseAdminConfig()) {
@@ -141,7 +152,7 @@ export const getStorefrontProductBySlug = cache(async (slug: string): Promise<Mi
   }
 
   try {
-    return await getStorefrontProductBySlugFromClient(getSupabaseAdmin() as ProductRepositoryClient, slug);
+    return (await readPublicProduct(slug)) ?? undefined;
   } catch (error) {
     console.warn("[product-repository] storefront_product_unavailable", {
       slug,

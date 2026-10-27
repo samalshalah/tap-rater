@@ -1,4 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
+import { publicDataCache, websiteCacheTag } from "@/lib/public-data-cache";
 import { z } from "zod";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
@@ -412,17 +414,17 @@ export const defaultHomepageContent: HomepageThemeContent = {
   faqs: defaultFaqContent
 };
 
-export async function getHeaderNavigationContent() {
-  return readContent("navigation.header", "section", headerNavigationSchema, defaultHeaderNavigation) as Promise<HeaderNavigationContent>;
+export async function getHeaderNavigationContent(records?: Record<string, unknown>) {
+  return readContent("navigation.header", "section", headerNavigationSchema, defaultHeaderNavigation, records) as Promise<HeaderNavigationContent>;
 }
 
-export async function getFooterContent() {
-  const content = await readContent("navigation.footer", "section", footerContentSchema, defaultFooterContent) as FooterContent;
+export async function getFooterContent(records?: Record<string, unknown>) {
+  const content = await readContent("navigation.footer", "section", footerContentSchema, defaultFooterContent, records) as FooterContent;
   return { ...content, intro: correctKnownWebsiteClaim("navigation.footer.intro", content.intro) };
 }
 
-export async function getFaqContent() {
-  const content = await readContent("faqs.global", "section", faqContentSchema, defaultFaqContent) as FaqContent;
+export async function getFaqContent(records?: Record<string, unknown>) {
+  const content = await readContent("faqs.global", "section", faqContentSchema, defaultFaqContent, records) as FaqContent;
   return { ...content, items: content.items.map((item) => ({
     ...item,
     answer: correctKnownWebsiteClaim("faqs.global.answer", item.answer)
@@ -430,16 +432,18 @@ export async function getFaqContent() {
 }
 
 export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
+  const records = await loadPublicWebsiteContent().catch(() => ({}));
+  const readHomepage = <T,>(key: string, type: "homepage" | "section" | "page" | "seo", schema: z.ZodType<T>, fallback: T) => readContent(key, type, schema, fallback, records);
   const [hero, actions, featuredUses, multilink, howItWorks, customBranding, finalCta, faqs, storedShowcase] = await Promise.all([
-    readContent("homepage.hero", "homepage", homepageHeroSchema, defaultHomepageContent.hero) as Promise<HomepageHeroContent>,
-    readContent("homepage.actions", "homepage", homepageActionsSchema, defaultHomepageContent.actions) as Promise<HomepageActionsContent>,
-    readContent("homepage.featured_uses", "homepage", homepageFeaturedUsesSchema, defaultHomepageContent.featuredUses) as Promise<HomepageFeaturedUsesContent>,
-    readContent("homepage.multilink", "homepage", homepageMarketingBlockSchema, defaultHomepageContent.multilink) as Promise<HomepageMarketingBlockContent>,
-    readContent("homepage.how_it_works", "homepage", homepageHowItWorksSchema, defaultHomepageContent.howItWorks) as Promise<HomepageHowItWorksContent>,
-    readContent("homepage.custom_branding", "homepage", homepageMarketingBlockSchema, defaultHomepageContent.customBranding) as Promise<HomepageMarketingBlockContent>,
-    readContent("homepage.final_cta", "homepage", homepageFinalCtaSchema, defaultHomepageContent.finalCta) as Promise<HomepageFinalCtaContent>,
-    getFaqContent(),
-    readContent("homepage.showcase", "homepage", homepageShowcaseSchema.nullable(), null) as Promise<HomepageShowcaseContent | null>
+    readHomepage("homepage.hero", "homepage", homepageHeroSchema, defaultHomepageContent.hero) as Promise<HomepageHeroContent>,
+    readHomepage("homepage.actions", "homepage", homepageActionsSchema, defaultHomepageContent.actions) as Promise<HomepageActionsContent>,
+    readHomepage("homepage.featured_uses", "homepage", homepageFeaturedUsesSchema, defaultHomepageContent.featuredUses) as Promise<HomepageFeaturedUsesContent>,
+    readHomepage("homepage.multilink", "homepage", homepageMarketingBlockSchema, defaultHomepageContent.multilink) as Promise<HomepageMarketingBlockContent>,
+    readHomepage("homepage.how_it_works", "homepage", homepageHowItWorksSchema, defaultHomepageContent.howItWorks) as Promise<HomepageHowItWorksContent>,
+    readHomepage("homepage.custom_branding", "homepage", homepageMarketingBlockSchema, defaultHomepageContent.customBranding) as Promise<HomepageMarketingBlockContent>,
+    readHomepage("homepage.final_cta", "homepage", homepageFinalCtaSchema, defaultHomepageContent.finalCta) as Promise<HomepageFinalCtaContent>,
+    getFaqContent(records),
+    readHomepage("homepage.showcase", "homepage", homepageShowcaseSchema.nullable(), null) as Promise<HomepageShowcaseContent | null>
   ]);
 
   // Refresh only the old built-in content until the merchant saves the new editor.
@@ -506,21 +510,23 @@ export async function saveWebsiteContentRecord(key: string, type: "homepage" | "
   }
 }
 
-async function readContent<T>(key: string, type: "homepage" | "section" | "page" | "seo", schema: z.ZodType<T>, fallback: T): Promise<T> {
+const publicWebsiteKeys = ["navigation.header", "navigation.footer", "faqs.global", "homepage.hero", "homepage.actions", "homepage.featured_uses", "homepage.multilink", "homepage.how_it_works", "homepage.custom_branding", "homepage.final_cta", "homepage.showcase"];
+
+const readPublicWebsiteContent = publicDataCache(async (): Promise<Record<string, unknown>> => {
+  const { data, error } = await getSupabaseAdmin().from("site_content").select("key,payload").in("key", publicWebsiteKeys);
+  if (error) throw new Error(error.message);
+  return Object.fromEntries((data ?? []).map((row: { key: string; payload: unknown }) => [row.key, row.payload]));
+}, "public-website-records-v1", websiteCacheTag);
+
+export const loadPublicWebsiteContent = cache(async (): Promise<Record<string, unknown>> => {
+  if (!hasSupabaseAdminConfig()) return {};
+  return readPublicWebsiteContent();
+});
+
+async function readContent<T>(key: string, type: "homepage" | "section" | "page" | "seo", schema: z.ZodType<T>, fallback: T, records?: Record<string, unknown>): Promise<T> {
   noStore();
-
-  if (!hasSupabaseAdminConfig()) {
-    return fallback;
-  }
-
   try {
-    const result = await (getSupabaseAdmin() as SiteContentClient)
-      .from("site_content")
-      .select("payload")
-      .eq("key", key)
-      .maybeSingle<{ payload?: unknown }>();
-
-    const parsed = schema.safeParse(result.data?.payload);
+    const parsed = schema.safeParse((records ?? await loadPublicWebsiteContent())[key]);
     return parsed.success ? parsed.data : fallback;
   } catch {
     return fallback;

@@ -10,12 +10,18 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import { maxCartItemQuantity, type CartItem } from "@/lib/cart";
-import { BrandedProofPreview, type ReadyBrandedProof } from "@/components/product/branded-proof-preview";
+import type { ReadyBrandedProof } from "@/components/product/branded-proof-preview";
+import type { UploadedLogo, LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
+import dynamic from "next/dynamic";
+import { QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code-message";
+const ProofControls = dynamic(() => import("./proof-controls").then(m => m.ProofControls));
+const QrPreview = dynamic(() => import("./qr-preview").then(m => m.QrPreview));
+const BrandedProofPreview = dynamic(() => import("./branded-proof-preview").then(m => m.BrandedProofPreview));
 import type { MigratedProduct } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultProductSize, getDefaultPurchasableProductSize, getProductBaseSku } from "@/lib/product-model";
-import { createQrSvg, QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code";
+
 import { buildDirectProductionTargets } from "@/lib/direct-production";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
@@ -63,20 +69,6 @@ type ProductSetupChooserProps = {
   onSelectedPriceChange?: (priceCents: number | null) => void;
   onSelectedMonthlyPriceChange?: (priceCents: number) => void;
 };
-
-type UploadedLogo = {
-  mediaUrl: string;
-  storageKey: string;
-  filename: string;
-  originalMediaUrl?: string;
-  originalStorageKey?: string;
-  originalFilename?: string;
-  trimApplied?: boolean;
-  blankMarginPercent?: number;
-};
-
-type LogoBackgroundMode = "auto_crop" | "original";
-type LogoFitMode = "contain" | "fill";
 
 export function ProductSetupChooser({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
@@ -319,7 +311,7 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
           setHostedReservation(result.reservation);
           return;
         }
-        await createQrSvg(proofQrValue);
+        await (await import("@/lib/qr-code")).createQrSvg(proofQrValue);
       } catch (error) {
         setError(error instanceof Error ? error.message : QR_CODE_ERROR_MESSAGE);
         return;
@@ -354,9 +346,9 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
     setIsUploadingLogo(true);
 
     try {
-      const preparedLogo = await prepareLogoUpload(file);
-      const originalAsset = await uploadLogoAsset(file, product.slug);
-      const processedAsset = preparedLogo.file === file ? originalAsset : await uploadLogoAsset(preparedLogo.file, product.slug);
+      const preparedLogo = await (await import("./logo-upload")).prepareLogoUpload(file);
+      const originalAsset = await (await import("./logo-upload")).uploadLogoAsset(file, product.slug);
+      const processedAsset = preparedLogo.file === file ? originalAsset : await (await import("./logo-upload")).uploadLogoAsset(preparedLogo.file, product.slug);
 
       setLogoBackgroundMode(preparedLogo.trimApplied ? "auto_crop" : "original");
       setLogoFitMode("contain");
@@ -1377,438 +1369,6 @@ function MultiLinkButtonMark({ type }: { type: HostedPageEditorButtonType }) {
     >
       {mark.text}
     </span>
-  );
-}
-
-function ProofRangeControl({
-  label,
-  max,
-  min,
-  onChange,
-  unit = "%",
-  value
-}: {
-  label: string;
-  max: number;
-  min: number;
-  onChange: (value: number) => void;
-  unit?: string;
-  value: number;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-semibold text-ink">
-      <span className="flex items-center justify-between gap-3">
-        <span>{label}</span>
-        <span className="text-xs font-bold text-muted">{value}{unit}</span>
-      </span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={5}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="accent-brand"
-      />
-    </label>
-  );
-}
-
-function ProofControls({
-  isUploadingLogo,
-  logo,
-  logoBackgroundMode,
-  logoFitMode,
-  logoOffsetXPercent,
-  logoOffsetYPercent,
-  onLogoBackgroundModeChange,
-  onLogoFitModeChange,
-  onLogoOffsetXPercentChange,
-  onLogoOffsetYPercentChange,
-  onShowBusinessNameOnProofChange,
-  onUploadLogo,
-  onProofFontSizePercentChange,
-  onProofLogoSizePercentChange,
-  proofFontSizePercent,
-  proofLogoSizePercent,
-  showBusinessNameOnProof
-}: {
-  isUploadingLogo: boolean;
-  logo: UploadedLogo;
-  logoBackgroundMode: LogoBackgroundMode;
-  logoFitMode: LogoFitMode;
-  logoOffsetXPercent: number;
-  logoOffsetYPercent: number;
-  onLogoBackgroundModeChange: (value: LogoBackgroundMode) => void;
-  onLogoFitModeChange: (value: LogoFitMode) => void;
-  onLogoOffsetXPercentChange: (value: number) => void;
-  onLogoOffsetYPercentChange: (value: number) => void;
-  onShowBusinessNameOnProofChange: (value: boolean) => void;
-  onUploadLogo: (file: File | undefined) => void;
-  onProofFontSizePercentChange: (value: number) => void;
-  onProofLogoSizePercentChange: (value: number) => void;
-  proofFontSizePercent: number;
-  proofLogoSizePercent: number;
-  showBusinessNameOnProof: boolean;
-}) {
-  return (
-    <div className="grid content-start gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
-        <div>
-          <p className="text-sm font-black text-ink">Logo</p>
-          <p className="mt-1 text-xs leading-5 text-muted">Recommended: transparent PNG, 1200 px wide or larger.</p>
-        </div>
-        <label className="tr-button-outline w-full cursor-pointer sm:w-fit">
-          <ImageUp size={16} />
-          {isUploadingLogo ? "Uploading..." : "Replace logo"}
-          <input
-            className="sr-only"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            disabled={isUploadingLogo}
-            onChange={(event) => onUploadLogo(event.target.files?.[0])}
-          />
-        </label>
-      </div>
-      <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-        <input
-          className="mt-1 h-4 w-4 accent-brand"
-          type="checkbox"
-          checked={showBusinessNameOnProof}
-          onChange={(event) => onShowBusinessNameOnProofChange(event.target.checked)}
-        />
-        <span>
-          Show business name text on the stand
-          <span className="mt-1 block text-xs font-medium leading-5 text-muted">
-            Turn off when the uploaded logo already includes the business name.
-          </span>
-        </span>
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        <ProofSegmentedControl
-          label="Logo background"
-          value={logoBackgroundMode}
-          options={[
-            { label: "Auto-crop", value: "auto_crop" },
-            { label: "Original", value: "original" }
-          ]}
-          disabled={!logo.trimApplied}
-          onChange={(value) => onLogoBackgroundModeChange(value as LogoBackgroundMode)}
-        />
-        <ProofSegmentedControl
-          label="Logo fit"
-          value={logoFitMode}
-          options={[
-            { label: "Fit", value: "contain" },
-            { label: "Fill", value: "fill" }
-          ]}
-          onChange={(value) => onLogoFitModeChange(value as LogoFitMode)}
-        />
-      </div>
-      {logo.trimApplied ? (
-        <p className="text-xs font-semibold text-brand">Auto-crop prepared the logo and removed white background where possible. Original is still available.</p>
-      ) : null}
-      <div className="grid gap-4">
-        {showBusinessNameOnProof ? (
-          <ProofRangeControl
-            label="Business name size"
-            value={proofFontSizePercent}
-            min={75}
-            max={135}
-            onChange={onProofFontSizePercentChange}
-          />
-        ) : null}
-        <ProofRangeControl
-          label="Logo size"
-          value={proofLogoSizePercent}
-          min={75}
-          max={160}
-          onChange={onProofLogoSizePercentChange}
-        />
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-ink">Logo position</p>
-          <button
-            type="button"
-            className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-line text-ink hover:bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            aria-label="Reset logo to centered position"
-            title="Reset logo to centered position"
-            onClick={() => { onLogoOffsetXPercentChange(0); onLogoOffsetYPercentChange(0); }}
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-          </button>
-        </div>
-        <ProofRangeControl
-          label="Logo left / right"
-          value={logoOffsetXPercent}
-          min={-20}
-          max={20}
-          unit=""
-          onChange={onLogoOffsetXPercentChange}
-        />
-        <ProofRangeControl
-          label="Logo up / down"
-          value={logoOffsetYPercent}
-          min={-20}
-          max={20}
-          unit=""
-          onChange={onLogoOffsetYPercentChange}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ProofSegmentedControl({
-  disabled = false,
-  label,
-  onChange,
-  options,
-  value
-}: {
-  disabled?: boolean;
-  label: string;
-  onChange: (value: string) => void;
-  options: Array<{ label: string; value: string }>;
-  value: string;
-}) {
-  return (
-    <div className={disabled ? "grid gap-2 text-sm font-semibold text-muted opacity-60" : "grid gap-2 text-sm font-semibold text-ink"}>
-      <p>{label}</p>
-      <div className="grid grid-cols-2 rounded-lg border border-line bg-soft p-1">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            disabled={disabled}
-            onClick={() => onChange(option.value)}
-            className={
-              value === option.value
-                ? "rounded-md bg-white px-3 py-2 text-xs font-black text-ink shadow-sm"
-                : "rounded-md px-3 py-2 text-xs font-black text-muted hover:text-ink disabled:hover:text-muted"
-            }
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-async function uploadLogoAsset(file: File, productSlug: string): Promise<UploadedLogo> {
-  const form = new FormData();
-  form.set("file", file);
-  form.set("productSlug", productSlug);
-
-  const response = await fetch("/api/setup/logo-upload", {
-    method: "POST",
-    body: form
-  });
-  const body = await response.json().catch(() => ({}));
-
-  if (!response.ok || !body.asset?.mediaUrl || !body.asset?.storageKey) {
-    throw new Error(body.error ?? "Logo upload failed. Use a PNG, JPG, or WEBP image up to 10 MB.");
-  }
-
-  return {
-    mediaUrl: body.asset.mediaUrl,
-    storageKey: body.asset.storageKey,
-    filename: body.asset.filename ?? file.name
-  };
-}
-
-async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied: boolean; blankMarginPercent: number }> {
-  const image = await loadLogoImage(file);
-  const canvas = document.createElement("canvas");
-  canvas.width = image.naturalWidth;
-  canvas.height = image.naturalHeight;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-
-  if (!context || canvas.width < 2 || canvas.height < 2) {
-    return { file, trimApplied: false, blankMarginPercent: 0 };
-  }
-
-  context.drawImage(image, 0, 0);
-  const data = context.getImageData(0, 0, canvas.width, canvas.height).data;
-  let minX = canvas.width;
-  let minY = canvas.height;
-  let maxX = -1;
-  let maxY = -1;
-
-  for (let y = 0; y < canvas.height; y += 1) {
-    for (let x = 0; x < canvas.width; x += 1) {
-      const index = (y * canvas.width + x) * 4;
-      if (isLogoContentPixel(data[index], data[index + 1], data[index + 2], data[index + 3])) {
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x);
-        maxY = Math.max(maxY, y);
-      }
-    }
-  }
-
-  if (maxX < minX || maxY < minY) {
-    return { file, trimApplied: false, blankMarginPercent: 0 };
-  }
-
-  const contentWidth = maxX - minX + 1;
-  const contentHeight = maxY - minY + 1;
-  const contentAreaRatio = (contentWidth * contentHeight) / (canvas.width * canvas.height);
-  const blankMarginPercent = Math.round((1 - contentAreaRatio) * 100);
-
-  const shouldCrop = blankMarginPercent >= 12;
-  const padding = shouldCrop ? Math.round(Math.max(contentWidth, contentHeight) * 0.04) : 0;
-  const cropX = shouldCrop ? Math.max(0, minX - padding) : 0;
-  const cropY = shouldCrop ? Math.max(0, minY - padding) : 0;
-  const cropWidth = shouldCrop ? Math.min(canvas.width - cropX, contentWidth + padding * 2) : canvas.width;
-  const cropHeight = shouldCrop ? Math.min(canvas.height - cropY, contentHeight + padding * 2) : canvas.height;
-  const output = document.createElement("canvas");
-  output.width = cropWidth;
-  output.height = cropHeight;
-  const outputContext = output.getContext("2d");
-
-  if (!outputContext) {
-    return { file, trimApplied: false, blankMarginPercent };
-  }
-
-  outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-  const backgroundRemoved = removeEdgeConnectedWhiteBackground(outputContext, cropWidth, cropHeight);
-
-  if (!shouldCrop && !backgroundRemoved) {
-    return { file, trimApplied: false, blankMarginPercent };
-  }
-
-  const blob = await new Promise<Blob | null>((resolve) => output.toBlob(resolve, "image/png"));
-
-  if (!blob) {
-    return { file, trimApplied: false, blankMarginPercent };
-  }
-
-  const filename = `${file.name.replace(/\.[^.]+$/, "") || "logo"}-trimmed.png`;
-  return { file: new File([blob], filename, { type: "image/png" }), trimApplied: shouldCrop || backgroundRemoved, blankMarginPercent };
-}
-
-function removeEdgeConnectedWhiteBackground(context: CanvasRenderingContext2D, width: number, height: number) {
-  const imageData = context.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  const visited = new Uint8Array(width * height);
-  const queue: number[] = [];
-  let cursor = 0;
-  let changed = false;
-
-  function enqueue(x: number, y: number) {
-    if (x < 0 || y < 0 || x >= width || y >= height) return;
-    const point = y * width + x;
-    if (visited[point]) return;
-    const index = point * 4;
-    if (!isRemovableWhitePixel(data[index], data[index + 1], data[index + 2], data[index + 3])) return;
-    visited[point] = 1;
-    queue.push(point);
-  }
-
-  for (let x = 0; x < width; x += 1) {
-    enqueue(x, 0);
-    enqueue(x, height - 1);
-  }
-  for (let y = 0; y < height; y += 1) {
-    enqueue(0, y);
-    enqueue(width - 1, y);
-  }
-
-  while (cursor < queue.length) {
-    const point = queue[cursor]!;
-    cursor += 1;
-    const x = point % width;
-    const y = Math.floor(point / width);
-    const index = point * 4;
-    data[index + 3] = 0;
-    changed = true;
-    enqueue(x + 1, y);
-    enqueue(x - 1, y);
-    enqueue(x, y + 1);
-    enqueue(x, y - 1);
-  }
-
-  if (changed) {
-    context.putImageData(imageData, 0, 0);
-  }
-
-  return changed;
-}
-
-function isRemovableWhitePixel(red: number, green: number, blue: number, alpha: number) {
-  return alpha > 16 && red >= 242 && green >= 242 && blue >= 242;
-}
-
-function loadLogoImage(file: File) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Logo image could not be prepared."));
-    };
-    image.src = objectUrl;
-  });
-}
-
-function isLogoContentPixel(red: number, green: number, blue: number, alpha: number) {
-  if (alpha < 16) return false;
-  return !(red >= 245 && green >= 245 && blue >= 245);
-}
-
-
-function QrPreview({ value, variant = "framed" }: { value: string; variant?: "framed" | "template" }) {
-  const [qrSvg, setQrSvg] = useState("");
-  const [qrError, setQrError] = useState("");
-  const className =
-    variant === "template"
-      ? "grid h-full w-full place-items-center bg-white p-px"
-      : "grid h-20 w-20 place-items-center border-4 border-ink bg-white p-px";
-
-  useEffect(() => {
-    let isActive = true;
-
-    setQrSvg("");
-    setQrError("");
-
-    createQrSvg(value)
-      .then((svg) => {
-        if (isActive) setQrSvg(svg);
-      })
-      .catch(() => {
-        if (isActive) setQrError(QR_CODE_ERROR_MESSAGE);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [value]);
-
-  if (qrError) {
-    return (
-      <div className={`${className} text-center text-[6px] font-black leading-tight text-red-700`} role="alert">
-        {QR_CODE_ERROR_MESSAGE}
-      </div>
-    );
-  }
-
-  if (!qrSvg) {
-    return (
-      <div className={`${className} text-center text-[7px] font-black uppercase leading-tight text-muted`} aria-label="Generating QR code">
-        Generating QR
-      </div>
-    );
-  }
-
-  return (
-    <div className={className} aria-label="Generated QR code">
-      <div className="h-full w-full [&_svg]:block [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-    </div>
   );
 }
 

@@ -3,12 +3,16 @@
   "name": "tap-rater-app-git",
   "main": "custom-worker.ts",
   "compatibility_date": "2026-09-05",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "limits": {
     "cpu_ms": 30000,
     "subrequests": 5000
   },
-  "ai": { "binding": "REVIEW_AI" },
+  "ai": {
+    "binding": "REVIEW_AI"
+  },
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -35,39 +39,62 @@
     {
       "binding": "HOSTED_PAGE_SNAPSHOTS",
       "bucket_name": "tap-rater-hosted-page-snapshots"
+    },
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "tap-rater-public-cache"
     }
   ],
   "ratelimits": [
     {
       "name": "SUPPORT_FORM_RATE_LIMITER",
       "namespace_id": "724004",
-      "simple": { "limit": 3, "period": 60 }
+      "simple": {
+        "limit": 3,
+        "period": 60
+      }
     },
     {
       "name": "SUPPORT_FORM_DUPLICATE_LIMITER",
       "namespace_id": "724005",
-      "simple": { "limit": 1, "period": 60 }
+      "simple": {
+        "limit": 1,
+        "period": 60
+      }
     },
     {
       "name": "PUBLIC_FORM_RATE_LIMITER",
       "namespace_id": "724001",
-      "simple": { "limit": 10, "period": 60 }
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
     },
     {
       "name": "PUBLIC_CHECKOUT_RATE_LIMITER",
       "namespace_id": "724002",
-      "simple": { "limit": 10, "period": 60 }
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
     },
     {
       "name": "PUBLIC_EVENT_RATE_LIMITER",
       "namespace_id": "724003",
-      "simple": { "limit": 120, "period": 60 }
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
     }
   ],
   "observability": {
     "enabled": true
   },
-  "triggers": { "crons": ["* * * * *"] },
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
   "vars": {
     "GOOGLE_REVIEWS_PUBLISHING_ENABLED": "true",
     "NEXT_PUBLIC_SITE_URL": "https://taprater.com",
@@ -89,6 +116,36 @@
     "ORDER_FROM_EMAIL": "Tap Rater Orders <orders@taprater.com>",
     "ORDER_REPLY_TO_EMAIL": "orders@taprater.com",
     "TAP_RATER_ENABLE_PRODUCTION_HOSTED_PAGES": "true",
-    "TAP_RATER_ENABLE_HOSTED_PURCHASING": "true"
-  }
+    "TAP_RATER_ENABLE_HOSTED_PURCHASING": "true",
+    "PUBLIC_DATA_CACHE_ENABLED": "true"
+  },
+  "d1_databases": [
+    {
+      "database_id": "4fe4aac0-e0a7-4ffd-a34f-cc4c89b4f1cd",
+      "database_name": "tap-rater-public-cache-tags",
+      "binding": "NEXT_TAG_CACHE_D1"
+    }
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "tap-rater-app-git"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "DOQueueHandler",
+        "name": "NEXT_CACHE_DO_QUEUE"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "new_sqlite_classes": [
+        "DOQueueHandler"
+      ],
+      "tag": "public-cache-v1"
+    }
+  ]
 }

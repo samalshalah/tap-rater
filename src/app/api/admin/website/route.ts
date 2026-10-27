@@ -1,3 +1,4 @@
+import { invalidatePublicData, websiteCacheTag } from "@/lib/public-data-cache";
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdminApi } from "@/lib/admin-auth";
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
       await saveWebsiteContentRecord("homepage.showcase", "homepage", parsed.showcase.data);
     }
 
+    invalidatePublicData(websiteCacheTag);
     ["/", "/shop", "/solutions", "/faqs"].forEach((path) => revalidatePath(path));
     return NextResponse.json({ ok: true });
   } catch {

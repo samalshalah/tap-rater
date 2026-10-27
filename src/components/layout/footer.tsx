@@ -1,5 +1,7 @@
 "use client";
 
+import { loadWebsiteNavigation } from "@/lib/website-content-client";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnalyticsPreferencesButton } from "@/components/analytics/analytics-provider";
@@ -94,8 +96,7 @@ export function Footer() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/site/website-content")
-      .then((response) => (response.ok ? response.json() : null))
+    loadWebsiteNavigation()
       .then((body) => {
         if (active && body?.footer?.columns) {
           setContent(body.footer);

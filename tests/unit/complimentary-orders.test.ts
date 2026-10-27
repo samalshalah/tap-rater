@@ -8,7 +8,7 @@ import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), db: vi.fn(), products: vi.fn(), media: vi.fn() }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdminApi: mocks.auth }));
 vi.mock("@/lib/db", () => ({ getSupabaseAdmin: mocks.db, hasSupabaseAdminConfig: () => true }));
-vi.mock("@/lib/product-repository", () => ({ getStorefrontProducts: mocks.products }));
+vi.mock("@/lib/product-repository", () => ({ getCheckoutProducts: mocks.products }));
 vi.mock("@/lib/admin-media-storage", () => ({ isSafeProductMediaKey: (key: string) => key.startsWith("products/") && !key.includes(".."), getProductMediaObject: mocks.media }));
 import { PATCH } from "@/app/api/admin/orders/[id]/stand/route";
 import { POST } from "@/app/api/admin/orders/complimentary/route";

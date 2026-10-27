@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { complimentaryOrderSchema, buildComplimentaryOrder } from "@/lib/complimentary-orders";
-import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCheckoutProducts } from "@/lib/product-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getProductMediaObject, isSafeProductMediaKey } from "@/lib/admin-media-storage";
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   try {
     const input = parsed.data;
     if (input.logoStorageKey && (!isSafeProductMediaKey(input.logoStorageKey) || !await getProductMediaObject(input.logoStorageKey))) return NextResponse.json({ error: "Upload a valid logo before creating the order." }, { status: 400 });
-    const order = buildComplimentaryOrder(input, await getStorefrontProducts());
+    const order = buildComplimentaryOrder(input, await getCheckoutProducts());
     const db = getSupabaseAdmin();
     const reference = order.stripe_checkout_session_id;
     const existing = await db.from("orders").select("id").eq("stripe_checkout_session_id", reference).maybeSingle();

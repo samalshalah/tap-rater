@@ -6,7 +6,7 @@ import { getStripeModeSafe, validateCheckoutCart } from "@/lib/checkout";
 import { hasSupabaseAdminConfig } from "@/lib/db";
 import { provisionManualCustomerAccountFromOrder } from "@/lib/hosted-subscription-provisioning";
 import { createManualPendingOrderForCheckout } from "@/lib/orders";
-import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCheckoutProducts } from "@/lib/product-repository";
 import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 import { getCheckoutShippingAmountCents, getCheckoutShippingMode, getShippingSettings } from "@/lib/shipping-settings";
 import { checkoutCartSchema } from "@/lib/validators";
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Order details are invalid. Enter a valid email and review the cart." }, { status: 400 });
   }
 
-  const [products, baseShipping, offers] = await Promise.all([getStorefrontProducts(), getShippingSettings(), getOffersSettings()]);
+  const [products, baseShipping, offers] = await Promise.all([getCheckoutProducts(), getShippingSettings(), getOffersSettings()]);
   const shippingSettings = offerShippingSettings(baseShipping, offers);
   const cart = validateCheckoutCart(parsed.data.items, products);
   if (!cart.ok) {

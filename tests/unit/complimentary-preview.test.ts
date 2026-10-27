@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), render: vi.fn(), products: vi.fn() }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdminApi: mocks.auth }));
-vi.mock("@/lib/product-repository", () => ({ getStorefrontProducts: mocks.products }));
+vi.mock("@/lib/product-repository", () => ({ getCheckoutProducts: mocks.products }));
 vi.mock("@/lib/production-artwork", async original => ({ ...await original<typeof import("@/lib/production-artwork")>(), composeProductionArtworkDocument: mocks.render }));
 import { POST } from "@/app/api/admin/orders/complimentary/preview/route";
 const setup = { businessName: "Example", destinationUrl: "https://example.com/review", logoStorageKey: "products/example/logo.png", logoSizePercent: 120, logoOffsetXPercent: 7, frontTemplateUrl: "https://untrusted.example/template.png", logoMediaUrl: "https://untrusted.example/logo.png" };

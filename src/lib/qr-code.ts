@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
+import { QR_CODE_ERROR_MESSAGE } from "./qr-code-message";
 
-export const QR_CODE_ERROR_MESSAGE = "QR code could not be generated. Check the destination link.";
+export { QR_CODE_ERROR_MESSAGE } from "./qr-code-message";
 
 export const QR_CODE_OPTIONS = {
   color: {

@@ -1,5 +1,7 @@
 "use client";
 
+import { loadWebsiteNavigation } from "@/lib/website-content-client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -158,8 +160,7 @@ export function Header() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/site/website-content")
-      .then((response) => (response.ok ? response.json() : null))
+    loadWebsiteNavigation()
       .then((body) => {
         if (active && body?.header?.items) {
           setNavigation(body.header);

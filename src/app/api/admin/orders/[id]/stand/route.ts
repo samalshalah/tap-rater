@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { changeComplimentaryStandSchema, canChangeComplimentaryStand, buildComplimentaryStandChange } from "@/lib/complimentary-orders";
-import { getStorefrontProducts } from "@/lib/product-repository";
+import { getCheckoutProducts } from "@/lib/product-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getProductMediaObject, isSafeProductMediaKey } from "@/lib/admin-media-storage";
 import type { OrderRecord } from "@/lib/orders";
@@ -24,7 +24,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!canChangeComplimentaryStand(order)) return NextResponse.json({ error: "Only complimentary orders awaiting production can change stands." }, { status: 409 });
     if (order.updated_at !== input.expectedUpdatedAt) return NextResponse.json({ error: "This order changed. Reload the page before editing." }, { status: 409 });
     if (input.logoStorageKey && (!isSafeProductMediaKey(input.logoStorageKey) || !await getProductMediaObject(input.logoStorageKey))) return NextResponse.json({ error: "Upload a valid logo." }, { status: 400 });
-    const patch = buildComplimentaryStandChange(order, input, await getStorefrontProducts());
+    const patch = buildComplimentaryStandChange(order, input, await getCheckoutProducts());
     const saved = await db.from("orders").update(patch).eq("id", id).eq("updated_at", input.expectedUpdatedAt)
       .eq("status", "paid").eq("payment_status", "complimentary").eq("production_status", order.production_status)
       .eq("shipping_status", order.shipping_status).select("id").maybeSingle();

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkoutCartSchema } from "@/lib/validators";
-import { getStorefrontProductBySlug } from "@/lib/product-repository";
+import { getCheckoutProductBySlug } from "@/lib/product-repository";
 import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled } from "@/lib/purchase-options";
 import { productSupportsMultiLink } from "@/lib/service-addons";
 import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const parsed = checkoutCartSchema.safeParse({ items: [input.item] });
     if (!parsed.success || parsed.data.items[0]?.optionId !== "branded_qr_direct") throw new Error("A valid Branded stand setup is required.");
     const item = parsed.data.items[0];
-    const product = await getStorefrontProductBySlug(item.productId);
+    const product = await getCheckoutProductBySlug(item.productId);
     if (!product?.isActive || !getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct")) throw new Error("This Branded stand is unavailable.");
     const setup = item.setup ?? {};
     if (setup.serviceAddon === "hosted_multilink" && (!productSupportsMultiLink(product) || !isHostedPurchaseOptionEnabled())) throw new Error("Multi-Link is unavailable for this stand.");

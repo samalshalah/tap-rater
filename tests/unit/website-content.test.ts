@@ -15,13 +15,22 @@ beforeEach(() => {
   storage.configured = false;
   storage.records.clear();
   storage.getClient.mockReset().mockReturnValue({
-    from: () => ({ select: () => ({ eq: (_column: string, key: string) => ({
-      maybeSingle: async () => ({ data: { payload: storage.records.get(key) }, error: null })
+    from: () => ({ select: () => ({ in: async (_column: string, keys: string[]) => ({
+      data: keys.filter(key => storage.records.has(key)).map(key => ({ key, payload: storage.records.get(key) })), error: null
     }) }) })
   });
 });
 
 describe("public website capability copy", () => {
+  it("loads all homepage sections with one database query and preserves per-section fallbacks", async () => {
+    storage.configured = true;
+    storage.records.set("homepage.hero", { invalid: true });
+    storage.records.set("homepage.custom_branding", { ...defaultHomepageContent.customBranding, body: "Merchant custom branding copy" });
+    const content = await getHomepageThemeContent();
+    expect(storage.getClient).toHaveBeenCalledTimes(1);
+    expect(content.hero.headline).toBe(defaultHomepageContent.hero.headline);
+    expect(content.customBranding.body).toBe("Merchant custom branding copy");
+  });
   it("does not keep replacing merchant choices after the redesigned homepage is saved", async () => {
     storage.configured = true;
     const hero = { ...structuredClone(defaultHomepageContent.hero), headline: "Turn Every Tap Into Action.", image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Merchant selected stand" } };

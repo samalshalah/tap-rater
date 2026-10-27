@@ -1,3 +1,4 @@
+import { invalidatePublicData, catalogCacheTag } from "@/lib/public-data-cache";
 import { NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
 
   try {
     await saveProductContent(getSupabaseAdmin() as CmsDbClient, parsed.data);
+    invalidatePublicData(catalogCacheTag);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Product content could not be saved." }, { status: 500 });
@@ -40,6 +42,7 @@ export async function DELETE(request: Request) {
 
   try {
     const deletedSlugs = await deleteProductContentBySlugs(getSupabaseAdmin() as CmsDbClient, parsed.data.slugs);
+    invalidatePublicData(catalogCacheTag);
     return NextResponse.json({ ok: true, deletedSlugs });
   } catch {
     return NextResponse.json({ error: "Products could not be deleted." }, { status: 500 });
@@ -61,6 +64,7 @@ export async function PATCH(request: Request) {
 
   try {
     await updateProductContentStatus(getSupabaseAdmin() as CmsDbClient, parsed.data);
+    invalidatePublicData(catalogCacheTag);
     return NextResponse.json({ ok: true, status: parsed.data.status, isActive: parsed.data.status === "active" });
   } catch {
     return NextResponse.json({ error: "Product status could not be saved." }, { status: 500 });

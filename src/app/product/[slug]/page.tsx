@@ -100,9 +100,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     notFound();
   }
 
-  const [offers, shipping] = await Promise.all([getOffersSettings().catch(() => null), getShippingSettings()]);
+  const [offers, shipping, relatedProducts] = await Promise.all([
+    getOffersSettings().catch(() => null), getShippingSettings(), getRelatedStorefrontProductsForProduct(product)
+  ]);
   const category = getCategoryBySlug(product.categorySlug);
-  const relatedProducts = await getRelatedStorefrontProductsForProduct(product);
   const highlights = getProductPageHighlights(product);
   const howItWorks = getProductHowItWorks(product);
   const specifications = getProductSpecifications(product);
