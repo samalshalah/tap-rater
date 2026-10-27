@@ -1,14 +1,14 @@
 "use client";
 import type { LinkExperienceId,MultiLinkDraftButton,ProductSetupChooserProps,SetupStep } from "./product-setup-chooser-types";
-import { createInitialMultiLinkButtons,formatSizeLabel,getOptionDisplayLabel,getOptionShortSummary,getOptionSummary,getSelectedOptionImage,isGoogleReviewStand,isHttpUrl,normalizeMultiLinkButtonsForSetup } from "./product-setup-model";
+import { createInitialMultiLinkButtons,getSelectedOptionImage,isGoogleReviewStand,isHttpUrl,normalizeMultiLinkButtonsForSetup } from "./product-setup-model";
 export type { ProductSetupChooserProduct } from "./product-setup-chooser-types";
 
 import { useCart } from "@/components/cart/cart-provider";
 import type { ReadyBrandedProof } from "@/components/product/branded-proof-preview";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import { maxCartItemQuantity,type CartItem } from "@/lib/cart";
-import { quoteOffers,singleStandPrice } from "@/lib/offers";
-import { generateProductVariantSku,getConfiguredUnitPriceCents,getDefaultProductColor,getDefaultProductSize,getDefaultPurchasableProductSize,getProductBaseSku } from "@/lib/product-model";
+import { quoteOffers } from "@/lib/offers";
+import {getDefaultProductColor,getDefaultProductSize,getProductBaseSku } from "@/lib/product-model";
 import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions,isHostedPurchaseOptionEnabled,type PurchaseOptionId } from "@/lib/purchase-options";
 import { QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code-message";
@@ -20,9 +20,13 @@ import { useEffect,useId,useMemo,useRef,useState } from "react";
 import type { LogoBackgroundMode,LogoFitMode,UploadedLogo } from "./product-setup-types";
 
 import { buildDirectProductionTargets } from "@/lib/direct-production";
-import { searchGoogleBusinesses,type GoogleBusinessSelection } from "@/lib/google-places-client";
+import {type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { readReviewLinkDraft,reviewLinkDraftKey } from "@/lib/review-link-draft";
 import { hostedMultiLinkServiceAddon,productSupportsMultiLink } from "@/lib/service-addons";
+
+import {ProductSetupOptions} from "./product-setup-options";
+import {useProductSetupVariants} from "./use-product-setup-variants";
+import {useProductGoogleSearch} from "./use-product-google-search";
 
 const ProductSetupDialogContent = dynamic(() => import('./product-setup-dialog-content').then(m => m.ProductSetupDialogContent), {
   loading: () => <p role="status" className="p-6 text-sm text-muted">Loading setup controls...</p>,
@@ -50,9 +54,6 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
       }
     } catch { /* Manual entry remains available when storage is blocked. */ }
   }, [product.slug]);
-  const [googleSearchQuery, setGoogleSearchQuery] = useState("");
-  const [googleAutocompleteStatus, setGoogleAutocompleteStatus] = useState<"idle" | "loading" | "ready" | "fallback">("idle");
-  const [googleSearchResults, setGoogleSearchResults] = useState<GoogleBusinessSelection[]>([]);
   const [googlePlaceId, setGooglePlaceId] = useState("");
   const [googlePlaceName, setGooglePlaceName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -85,20 +86,9 @@ export function ProductSetupChooser({ product, offers, shipping, initialQuantity
   const selectedOptionId = selectedOption?.id;
   const supportsMultiLink = !fixedSelection && productSupportsMultiLink(product);
   const hostedPurchasingEnabled = isHostedPurchaseOptionEnabled();
-  const activeSizes = product.sizeOptions?.filter((size) => size.isActive) ?? [];
-  const purchasableSizes = activeSizes.filter((size) => size.priceAdjustmentCents !== null);
-  const defaultPurchasableSize = getDefaultPurchasableProductSize(product);
-  const selectedSize =
-    purchasableSizes.find((size) => size.code === selectedSizeCode) ?? defaultPurchasableSize;
-  const activeColors = product.colorOptions?.filter((color) => color.isActive) ?? [];
-  const selectedColor = activeColors.find((color) => color.code === selectedColorCode) ?? getDefaultProductColor(product);
-  const configuredUnitPriceCents = selectedOption
-    ? getConfiguredUnitPriceCents(product, selectedOption, { sizeCode: selectedSize?.code, colorCode: selectedColor?.code })
-    : null;
-  const finalSku = selectedOption
-    ? generateProductVariantSku(product, { purchaseOptionId: selectedOption.id, sizeCode: selectedSize?.code, colorCode: selectedColor?.code })
-    : product.sku;
+  const {activeSizes,selectedSize,activeColors,selectedColor,configuredUnitPriceCents,finalSku}=useProductSetupVariants(product,selectedOption,selectedSizeCode,selectedColorCode);
   const isGoogleReviewProduct = isGoogleReviewStand(product);
+  const {googleSearchQuery,setGoogleSearchQuery,googleAutocompleteStatus,setGoogleAutocompleteStatus,googleSearchResults,setGoogleSearchResults}=useProductGoogleSearch(isBuilderOpen && isGoogleReviewProduct && step === "destination",googlePlaceId);
   const selectedImage = selectedOption ? getSelectedOptionImage(product, selectedOption) : undefined;
   const proofFrontTemplateUrl = product.assetSet?.brandedFrontTemplateUrl ?? "";
   const selectedLogoMediaUrl = logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl;
@@ -134,36 +124,7 @@ useEffect(() => {
     onSelectedMonthlyPriceChange?.(selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.monthlyPriceCents : 0);
   }, [selectedLinkExperience, onSelectedMonthlyPriceChange]);
 
-  useEffect(() => {
-    if (!isGoogleReviewProduct || step !== "destination") return;
 
-    const normalizedQuery = googleSearchQuery.trim();
-    if (normalizedQuery.length < 3 || googlePlaceId) {
-      setGoogleSearchResults([]);
-      setGoogleAutocompleteStatus("idle");
-      return;
-    }
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
-      setGoogleAutocompleteStatus("loading");
-      searchGoogleBusinesses(normalizedQuery, controller.signal)
-        .then((result) => {
-          setGoogleSearchResults(result.results);
-          setGoogleAutocompleteStatus(result.configured && !result.message ? "ready" : "fallback");
-        })
-        .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === "AbortError") return;
-          setGoogleSearchResults([]);
-          setGoogleAutocompleteStatus("fallback");
-        });
-    }, 350);
-
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [googlePlaceId, googleSearchQuery, isGoogleReviewProduct, step]);
 
   if (!selectedOption || !selectedImage) {
     return (
@@ -536,125 +497,7 @@ useEffect(() => {
   return (
     <>
       <section className="grid gap-4 border-t border-line pt-4">
-        <div className="grid gap-2">
-          <p className="text-sm font-black text-ink">Design</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-          {setupOptions.map((option) => (
-            <label
-              key={option.id}
-              className={
-                selectedOptionId === option.id
-                  ? "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                  : "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
-              }
-            >
-              <input
-                type="radio"
-                name={`${product.slug}-setup-option`}
-                checked={selectedOptionId === option.id}
-                onChange={() => chooseOption(option.id)}
-                aria-label={`Select ${option.label}`}
-                className="mt-1 h-4 w-4 accent-brand"
-              />
-              <span className="min-w-0">
-                <span className="flex items-start justify-between gap-2">
-                  <span className="text-base font-black leading-5 text-ink">{getOptionDisplayLabel(option)}</span>
-                  <span className="shrink-0 text-sm font-black text-ink">{formatPrice(singleStandPrice(product.slug, option.id, option.priceCents, offers)).replace(".00", "")}</span>
-                </span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{product.slug === "google-review-stand" && option.id === "standard_direct" ? "NFC tap only · No printed QR" : product.slug === "google-review-stand" && option.id === "branded_qr_direct" ? "NFC + QR · Your logo + business name" : getOptionShortSummary(option)}</span>
-                <span className="mt-1 block text-xs leading-5 text-muted">{getOptionSummary(option)}</span>
-                {product.slug === "google-review-stand" && option.id !== "hosted_multilink" ? <span className="mt-1 block text-xs leading-5 text-muted">{option.id === "standard_direct" ? "Ready-made design · No subscription" : "Custom design · No subscription"}</span> : null}
-              </span>
-            </label>
-          ))}
-          </div>
-        </div>
-
-        {activeSizes.length ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-semibold text-ink">Size</p>
-            <div className="grid grid-cols-2 gap-2">
-              {activeSizes.map((size) => {
-                const pending = size.priceAdjustmentCents === null;
-                return (
-                  <label
-                    key={size.code}
-                    className={
-                      pending
-                        ? "flex cursor-not-allowed flex-col items-start gap-1 rounded-md border border-line bg-white px-3 py-2 opacity-55"
-                        : selectedSize?.code === size.code
-                          ? "flex cursor-pointer flex-col items-start gap-1 rounded-md border border-brand bg-panel px-3 py-2"
-                          : "flex cursor-pointer flex-col items-start gap-1 rounded-md border border-line bg-white px-3 py-2 hover:border-brand/50"
-                    }
-                    aria-disabled={pending}
-                  >
-                    <span className="flex w-full min-w-0 items-center gap-2">
-                      <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
-                        <input
-                          type="radio"
-                          name={`${product.slug}-size`}
-                          checked={selectedSize?.code === size.code}
-                          disabled={pending}
-                          onChange={() => {
-                            if (!pending) setSelectedSizeCode(size.code);
-                          }}
-                          className="h-4 w-4 shrink-0 accent-brand"
-                        />
-                        <span className="min-w-0 truncate">{formatSizeLabel(size.label)}</span>
-                      </span>
-                    </span>
-                    <span className="pl-6 text-[11px] leading-4 text-muted">
-                        {size.frontWidthIn.toFixed(2)} x {size.frontHeightIn.toFixed(2)} in
-                        <span className="mx-1 text-line">/</span>
-                        {size.frontWidthMm} x {size.frontHeightMm} mm
-                    </span>
-                    <span className={pending ? "pl-6 text-[11px] font-semibold leading-4 text-muted" : "pl-6 text-[11px] font-semibold leading-4 text-brand"}>
-                      {pending ? "Coming soon" : "Included"}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {activeColors.length ? (
-          <div className="grid gap-2">
-            {activeColors.length === 1 ? (
-              <div className="flex items-center gap-3 text-sm">
-                <span className="font-semibold text-ink">Color</span>
-                <span className="inline-flex h-4 w-4 rounded-full border border-line bg-white shadow-sm" aria-hidden="true" />
-                <span className="font-semibold text-ink">{activeColors[0].label}</span>
-              </div>
-            ) : (
-              <>
-                <p className="text-sm font-semibold text-ink">Color</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-              {activeColors.map((color) => (
-                <label
-                  key={color.code}
-                  className={
-                    selectedColor?.code === color.code
-                      ? "flex cursor-pointer items-center gap-3 rounded-md border border-brand bg-panel p-3"
-                      : "flex cursor-pointer items-center gap-3 rounded-md border border-line bg-white p-3 hover:border-brand/50"
-                  }
-                >
-                  <input
-                    type="radio"
-                    name={`${product.slug}-color`}
-                    checked={selectedColor?.code === color.code}
-                    onChange={() => setSelectedColorCode(color.code)}
-                    className="h-4 w-4 accent-brand"
-                  />
-                  <span className="inline-flex h-5 w-5 rounded-full border border-line bg-white" aria-hidden="true" />
-                  <span className="text-sm font-semibold text-ink">{color.label}</span>
-                </label>
-              ))}
-                </div>
-              </>
-            )}
-          </div>
-        ) : null}
+        <ProductSetupOptions product={product} setupOptions={setupOptions} selectedOptionId={selectedOptionId} chooseOption={chooseOption} offers={offers} activeSizes={activeSizes} selectedSize={selectedSize} setSelectedSizeCode={setSelectedSizeCode} activeColors={activeColors} selectedColor={selectedColor} setSelectedColorCode={setSelectedColorCode}/>
 
         {supportsMultiLink ? (
           <div className="grid gap-2">
