@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, existsSync, readdirSync, readFileSync, unlinkSync } from "node:fs";
+import { resolve, join } from "node:path";
 import { defaultHomepageContent, defaultHeaderNavigation, defaultFooterContent } from "../src/lib/website-content";
 import { createAdminSessionValue } from "../src/lib/admin-auth";
 
@@ -51,6 +52,16 @@ async function main() {
     assert.equal(reads,before+1,"one new batch read after invalidation");
     const result={passed:true,checks:["production cache hits","one batched content read","unauthenticated edit rejected","authenticated save invalidates immediately"],databaseReads:reads};
     writeFileSync("speed-cache-integration.json",JSON.stringify(result,null,2)); console.log(result);
-  } finally { server.kill();database.close();writeFileSync("speed-cache-server.log",log); }
+  } finally {
+    await new Promise<void>(done => { server.once("exit", () => done()); server.kill(); });
+    database.close();writeFileSync("speed-cache-server.log",log);
+    // Do not let the next OpenNext build package this test's fake content.
+    const cacheDirectory = resolve(process.cwd(), ".next/cache/fetch-cache");
+    if (existsSync(cacheDirectory)) for (const file of readdirSync(cacheDirectory, { withFileTypes: true })) {
+      if (!file.isFile()) continue;
+      const path = join(cacheDirectory, file.name);
+      if (/Cache original|Cache updated/.test(readFileSync(path, "utf8"))) unlinkSync(path);
+    }
+  }
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});
