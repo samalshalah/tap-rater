@@ -1,3 +1,5 @@
+import {cache} from "react";
+import {requestRead} from "./server-timing";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
@@ -36,7 +38,7 @@ export function parseCustomerLoginToken(value: string | undefined, now = Date.no
   return payload;
 }
 
-export async function requireCustomer() {
+export const requireCustomer = cache(async () => {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
@@ -45,9 +47,9 @@ export async function requireCustomer() {
   }
 
   return session;
-}
+});
 
-export async function requireCustomerApi() {
+async function readCustomerApi() {
   const cookieStore = await cookies();
   const session = parseCustomerSession(cookieStore.get(customerCookieName)?.value);
 
@@ -95,3 +97,5 @@ function requireCustomerSecret() {
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
+
+export function requireCustomerApi(){return requestRead("customer_auth",readCustomerApi);}

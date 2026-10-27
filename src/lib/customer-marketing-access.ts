@@ -1,4 +1,5 @@
-import {withServerTiming,measureServerStage} from "./server-timing";
+import {cache} from "react";
+import {withServerTiming,measureServerStage,requestRead} from "./server-timing";
 import {neon} from '@neondatabase/serverless';
 import {NextResponse} from 'next/server';
 import {requireCustomerApi} from './customer-auth';
@@ -6,11 +7,12 @@ export type MarketingAccess={status:string;expires_at:string|null};
 export function marketingAccessAllowed(access:MarketingAccess|undefined,now=Date.now()){
  return Boolean(access && ['active','testing'].includes(access.status) && (!access.expires_at || Date.parse(access.expires_at)>now));
 }
-export async function hasCustomerMarketingAccess(email:string){
+export const getCustomerMarketingState=cache(async(email:string)=>requestRead(`marketing:${email.trim().toLowerCase()}`,async()=>{
  const sql=neon(process.env.DATABASE_URL||process.env.NEON_DATABASE_URL!);
- const rows=await sql`SELECT a.status,a.expires_at FROM customer_marketing_access a JOIN customers c ON c.id=a.customer_id WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active'`;
- return marketingAccessAllowed(rows[0] as MarketingAccess|undefined);
-}
+ const rows=await sql`SELECT a.status,a.expires_at,c.marketing_onboarding_completed_at FROM customer_marketing_access a JOIN customers c ON c.id=a.customer_id WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active'`;
+ return {allowed:marketingAccessAllowed(rows[0] as MarketingAccess|undefined),onboardingCompleted:Boolean(rows[0]?.marketing_onboarding_completed_at)};
+}));
+export async function hasCustomerMarketingAccess(email:string){return (await getCustomerMarketingState(email)).allowed;}
 async function marketingResponse(request:Request,handler:(request:Request)=>Promise<Response>){
  const auth=await measureServerStage("authentication",()=>requireCustomerApi());if(auth.response)return auth.response;
  try{

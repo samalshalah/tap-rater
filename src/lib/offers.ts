@@ -28,6 +28,7 @@ export const offersSchema = z
     shipping: z.object({
       enabled: z.boolean(),
       thresholdCents: price,
+      freeCountryCodes: z.array(z.string().regex(/^[A-Z]{2}$/)).max(50).optional(),
       countryCodes: z
         .array(z.string().regex(/^[A-Z]{2}$/))
         .min(1)
@@ -54,7 +55,7 @@ export const defaultOffers: OffersSettings = {
   bundle3: { ...active, standardCents: 10500, brandedCents: 13200 },
   bundle5: { ...active, standardCents: 16600, brandedCents: 20800 },
   upgrade: { ...active, savingCents: 300 },
-  shipping: { enabled: true, thresholdCents: 6000, countryCodes: ["US"] },
+  shipping: { enabled: true, thresholdCents: 6000, countryCodes: ["US"], freeCountryCodes: ["US"] },
 };
 export type OfferLine = {
   productId: string;
@@ -185,6 +186,7 @@ export function offerShippingSettings<
 >(settings: T, offers: OffersSettings, country = "US") {
   return {
     ...settings,
+    shippingMode: freeShippingCountries(offers).includes(country) ? "free" as const : settings.shippingMode,
     freeShippingThresholdCents:
       offers.shipping.enabled && offers.shipping.countryCodes.includes(country)
         ? offers.shipping.thresholdCents
@@ -195,3 +197,7 @@ export function offerShippingSettings<
 export function singleStandPrice(productId: string, optionId: string, priceCents: number, settings?: OffersSettings | null, now = Date.now()) {
   return settings ? quoteOffers([{ productId, optionId, quantity: 1, unitAmountCents: priceCents }], settings, now).subtotalCents : priceCents;
 }
+
+// Existing configurations inherit the owner-approved US policy; an explicit list is editable in Offers.
+export function freeShippingCountries(offers?:OffersSettings|null){return offers?.shipping.freeCountryCodes ?? ["US"];}
+export function thresholdShippingCountries(offers:OffersSettings){return offers.shipping.countryCodes.filter(country=>!freeShippingCountries(offers).includes(country));}

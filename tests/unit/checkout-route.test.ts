@@ -251,15 +251,15 @@ describe("checkout route reliability", () => {
       expect.objectContaining({
         idempotencyKey: "checkout-checkout-attempt-unit-001",
         stripeMode: "test",
-        shippingSettings: expect.objectContaining({ shippingMode: "flat" }),
+        shippingSettings: expect.objectContaining({ shippingMode: "free" }),
         taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        totalCents: 5334,
-        shippingAmountCents: 1200,
-        shippingMode: "flat",
+        totalCents: 4134,
+        shippingAmountCents: 0,
+        shippingMode: "free",
         taxAmountCents: 234,
         taxSettings: expect.objectContaining({ taxLabel: "Virginia sales tax" })
       })
@@ -287,10 +287,11 @@ describe("checkout route reliability", () => {
     );
   });
 
-  it("adds standard shipping under the free-shipping threshold", async () => {
+  it("retains configurable flat shipping when unconditional country shipping is explicitly disabled", async () => {
     process.env.STRIPE_SECRET_KEY = "sk_test_unit";
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_unit";
     const dependencies = createDependencies({
+      getOffersSettings:async()=>({...defaultOffers,enabled:false,shipping:{...defaultOffers.shipping,freeCountryCodes:[]}}),
       getShippingSettings: vi.fn().mockResolvedValue({
         shippingMode: "flat",
         flatShippingAmountCents: 795,
@@ -383,7 +384,7 @@ describe("checkout route reliability", () => {
     expect(dependencies.createStripeSession).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeMode: "live",
-        shippingSettings: expect.objectContaining({ shippingMode: "flat" }),
+        shippingSettings: expect.objectContaining({ shippingMode: "free" }),
         taxSettings: expect.objectContaining({ manualTaxRateBps: 600 })
       })
     );

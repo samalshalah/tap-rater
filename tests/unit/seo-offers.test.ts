@@ -28,7 +28,7 @@ describe("SEO offer accuracy", () => {
     ]);
     expect(
       schema().hasVariant[1].offers.shippingDetails[0].shippingRate.value,
-    ).toBe("12.00");
+    ).toBe("0.00");
   });
   it("respects exclusions, disabled and scheduled promotions", () => {
     const offers = structuredClone(defaultOffers);
@@ -56,7 +56,7 @@ describe("SEO offer accuracy", () => {
     ).toBe("0.00");
     expect(
       schema(offers).hasVariant[0].offers.shippingDetails[0].shippingRate.value,
-    ).toBe("12.00");
+    ).toBe("0.00");
     expect(
       schema(offers, {
         ...getDefaultShippingSettings(),

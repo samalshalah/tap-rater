@@ -1,4 +1,4 @@
-import { offerIsActive, type OffersSettings } from "@/lib/offers";
+import { freeShippingCountries,thresholdShippingCountries,offerIsActive, type OffersSettings } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 export function ProductOffers({
   productId = "",
@@ -38,10 +38,11 @@ export function ProductOffers({
             per stand when it is your best offer.
           </p>
         )}
-        {settings.shipping.enabled && (
+        {freeShippingCountries(settings).length>0&&<p>Free shipping on {freeShippingCountries(settings).join(", ")} orders. No minimum.</p>}
+        {settings.shipping.enabled && thresholdShippingCountries(settings).length>0 && (
           <p>
             Free shipping at {formatPrice(settings.shipping.thresholdCents)}{" "}
-            after discounts ({settings.shipping.countryCodes.join(", ")}).
+            after discounts ({thresholdShippingCountries(settings).join(", ")}).
           </p>
         )}
         <p className="text-muted">

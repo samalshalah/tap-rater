@@ -80,7 +80,7 @@ describe("automatic offers", () => {
   it("uses the configurable after-discount shipping threshold and country restrictions", () => {
     const shipping = offerShippingSettings(
       { shippingMode: "flat" as const },
-      defaultOffers,
+      {...defaultOffers,shipping:{...defaultOffers.shipping,freeCountryCodes:[]}},
     );
     expect(resolveCheckoutShippingRule(5999, shipping).amountCents).toBe(1200);
     expect(resolveCheckoutShippingRule(6000, shipping).amountCents).toBe(0);

@@ -1,3 +1,4 @@
+import {freeShippingCountries,thresholdShippingCountries} from "@/lib/offers";
 import { getOffersSettings } from "@/lib/offer-settings";
 import { formatPrice } from "@/lib/products";
 import Link from "next/link";
@@ -19,7 +20,7 @@ export default async function ShippingPage() {
     ["Prepared after checkout", "Tap Rater stands are prepared after checkout based on the selected stand and approved destination link."],
     ["Standard preparation", "Standard stands are prepared after payment and destination setup are complete."],
     ["Branded preparation", "Branded stands are prepared using the artwork approved at checkout. Final production artwork is generated after confirmed payment."],
-    ["Shipping costs", settings.shippingMode === "free" ? "Free shipping on supported orders." : settings.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Standard shipping is ${formatPrice(settings.flatShippingAmountCents)}. ${offers.shipping.enabled ? `Free shipping on merchandise totals of ${formatPrice(offers.shipping.thresholdCents)} or more after discounts in ${offers.shipping.countryCodes.join(", ")}. Tax and recurring fees do not count toward the threshold.` : ""}`],
+    ["Shipping costs", (freeShippingCountries(offers).length ? `Free shipping on ${freeShippingCountries(offers).join(", ")} orders. No minimum. ` : "") + (settings.allowedCountryCodes.some(country=>!freeShippingCountries(offers).includes(country)) ? (settings.shippingMode === "free" ? "Free shipping on supported orders." : settings.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Standard shipping is ${formatPrice(settings.flatShippingAmountCents)}. ${offers.shipping.enabled && thresholdShippingCountries(offers).length ? `Free shipping on merchandise totals of ${formatPrice(offers.shipping.thresholdCents)} or more after discounts in ${thresholdShippingCountries(offers).join(", ")}. Tax and recurring fees do not count toward the threshold.` : ""}`) : "")],
     ["Supported regions", settings.supportedRegionsText || "United States"],
     ["Preparation time", settings.handlingTimeText.trim() || usDeliveryEstimate.preparationText],
     ["US delivery estimate", usDeliveryEstimate.transitText],

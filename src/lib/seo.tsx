@@ -1,4 +1,4 @@
-import { singleStandPrice, offerShippingSettings, type OffersSettings } from "@/lib/offers";
+import { singleStandPrice, offerShippingSettings, defaultOffers, type OffersSettings } from "@/lib/offers";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import type { ShippingSettingsInput } from "@/lib/shipping-settings";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -46,7 +46,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
           "@type": "OfferShippingDetails",
           shippingDestination: { "@type": "DefinedRegion", addressCountry: country },
           ...(country === "US" ? { deliveryTime: usDeliveryEstimate.structuredData } : {}),
-          shippingRate: { "@type": "MonetaryAmount", currency: "USD", value: (resolveCheckoutShippingRule(effectivePrice, context.offers ? offerShippingSettings(context.shipping!, context.offers, country) : { ...context.shipping!, freeShippingThresholdCents: null }).amountCents / 100).toFixed(2) }
+          shippingRate: { "@type": "MonetaryAmount", currency: "USD", value: (resolveCheckoutShippingRule(effectivePrice, offerShippingSettings(context.shipping!, context.offers ?? defaultOffers, country)).amountCents / 100).toFixed(2) }
         })) : undefined;
     const branded = option.id === "branded_qr_direct";
     const variantUrl = `${url}?design=${branded ? "branded" : "standard"}`;

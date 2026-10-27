@@ -3,7 +3,7 @@
 import type { ProductSetupChooserProps, SetupStep } from "./product-setup-chooser-types";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 import { maxCartItemQuantity } from "@/lib/cart";
-import { quoteOffers } from "@/lib/offers";
+import { freeShippingCountries,quoteOffers } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 import { Minus, Plus, X } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -248,12 +248,12 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
         </div>
 
         {shipping ? <p className="text-sm leading-6 text-muted">
-          {shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
-          {shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}{" "}
+          {freeShippingCountries(offers).includes("US") ? "Free shipping on US orders. No minimum." : shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
+          {!freeShippingCountries(offers).includes("US") && shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}{" "}
           <Link href="/shipping" className="font-semibold text-brand underline">Delivery estimates</Link>
         </p> : null}
         <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
-        {shipping?.shippingMode === "flat" ? <p className="mb-1 text-center text-xs text-muted">{formatPrice(shipping.flatShippingAmountCents)} US shipping{offers?.shipping.enabled ? ` · Free at ${formatPrice(offers.shipping.thresholdCents)} after discounts` : ""}</p> : shipping?.shippingMode === "free" ? <p className="mb-1 text-center text-xs text-muted">Free shipping on supported orders</p> : null}
+        {shipping && freeShippingCountries(offers).includes("US") ? <p className="mb-1 text-center text-xs text-muted">Free US shipping · No minimum</p> : shipping?.shippingMode === "flat" ? <p className="mb-1 text-center text-xs text-muted">{formatPrice(shipping.flatShippingAmountCents)} US shipping{offers?.shipping.enabled ? ` · Free at ${formatPrice(offers.shipping.thresholdCents)} after discounts` : ""}</p> : shipping?.shippingMode === "free" ? <p className="mb-1 text-center text-xs text-muted">Free shipping on supported orders</p> : null}
         <button
           type="button"
           className="tr-button-primary w-full"

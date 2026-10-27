@@ -71,7 +71,7 @@ export type ProductSetupDialogProps = {
   isReservingDestination: boolean;
   continueFromDestination: () => Promise<void>;
   hostedReservation: { id: string; url: string; } | null;
-  continueFromMultiLinkLinks: ({ skip }?: { skip?: boolean; }) => void;
+  continueFromMultiLinkLinks: (options?: { skip?: boolean; }) => void;
   continueFromDesign: () => void;
   addConfiguredItemToCart: () => void;
   builderHeadingRef: RefObject<HTMLHeadingElement | null>;

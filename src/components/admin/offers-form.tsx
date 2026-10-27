@@ -127,6 +127,7 @@ export function OffersForm({
             <td><p className="max-w-sm text-xs text-muted">Based on merchandise after discounts. Tax and recurring fees excluded.</p></td>
         </tr>
       </AdminDataTable>
+      <label className="block text-sm font-semibold">Always-free shipping countries (no minimum)<input className="mt-2 block rounded border border-line p-2" value={(value.shipping.freeCountryCodes ?? ["US"]).join(", ")} onChange={e=>set("shipping","freeCountryCodes",e.target.value.toUpperCase().split(",").map(v=>v.trim()).filter(Boolean))}/><span className="text-xs font-normal text-muted">Only applies to supported destinations. Other countries keep the existing shipping rules.</span></label>
       <details className="text-xs text-muted">
         <summary className="min-h-10 cursor-pointer content-center">How bundle pricing and shipping eligibility work</summary>
         <p className="mt-2 max-w-3xl leading-5">Bundle prices are based on $39 Standard / $49 Branded stands. Mixed bundles combine per-design prices; differently priced variants receive the same proportional savings. The tier applies to every eligible stand once the quantity is reached. Shipping eligibility does not enable checkout in unsupported countries. An unconditional Free shipping mode in Shipping settings overrides this threshold.</p>
