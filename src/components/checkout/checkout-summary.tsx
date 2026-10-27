@@ -1,5 +1,5 @@
 "use client";
-import {useState,useId} from 'react';
+import {memo,useState,useId} from 'react';
 import {ChevronDown} from 'lucide-react';
 import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
 import type {OffersSettings,OfferQuote} from '@/lib/offers';
@@ -7,7 +7,7 @@ import type {TaxSettingsInput} from '@/lib/validators';
 import type {getCartRows} from '@/lib/cart';
 import {formatPrice} from '@/lib/products';
 import {OfferSummary} from '@/components/cart/offer-summary';
-export function CheckoutSummary({
+export const CheckoutSummary = memo(function CheckoutSummary({
   marketing,
   promotion, offers,
   compact = false,
@@ -152,7 +152,7 @@ export function CheckoutSummary({
       </div>
     </aside>
   );
-}
+});
 
 export function SummaryRow({
   label,

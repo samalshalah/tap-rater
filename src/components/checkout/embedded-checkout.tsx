@@ -1,7 +1,7 @@
 "use client";
 import dynamic from 'next/dynamic';
 import {CheckoutSummary} from './checkout-summary';
-import {CheckoutInput,CheckoutStateSelect,CheckoutError,revealFirstInvalidControl} from './checkout-fields';
+import {CheckoutError} from './checkout-fields';
 
 import Link from "next/link";
 import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
@@ -24,8 +24,6 @@ import {
   type FormEvent,
 } from "react";
 import { useCart } from "@/components/cart/cart-provider";
-import { AddressAutocomplete } from "@/components/checkout/address-autocomplete";
-import { resolveShippingRecipientName } from "@/components/checkout/shipping-recipient";
 import { getCartRows } from "@/lib/cart";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import {
@@ -40,28 +38,13 @@ const StripePaymentPanel = dynamic(() => import('./stripe-payment-panel').then(m
   loading: () => <div role="status" className="grid min-h-[360px] place-items-center text-sm font-medium text-muted">Loading secure payment...</div>,
 });
 
+import {CheckoutDetailsForm} from './checkout-details-form';
+import type {CustomerForm,ShippingForm} from './checkout-details-types';
+
 type EmbeddedCheckoutSession = {
   clientSecret: string;
   sessionId: string;
   createdAt?: number;
-};
-
-type CustomerForm = {
-  email: string;
-  name: string;
-  phone: string;
-  createAccount: boolean;
-};
-
-type ShippingForm = {
-  name: string;
-  line1: string;
-  line2: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: "US";
-  phone: string;
 };
 
 const emptyCustomer: CustomerForm = {
@@ -105,8 +88,8 @@ export function EmbeddedCheckoutClient({
   const promotion = useMemo(() => quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers), [rows, offers]);
   const standTotalCents = promotion.subtotalCents;
   const recurringTotalCents = useMemo(() => calculateRecurringTotalCents(rows), [rows]);
-  const shippingRule = resolveCheckoutShippingRule(standTotalCents, offerShippingSettings(shippingSettings, offers, shipping.country));
-  const taxAmountCents = getCheckoutTaxAmountCents(
+  const shippingRule = useMemo(() => resolveCheckoutShippingRule(standTotalCents, offerShippingSettings(shippingSettings, offers, shipping.country)), [standTotalCents, shippingSettings, offers, shipping.country]);
+  const taxAmountCents = useMemo(() => getCheckoutTaxAmountCents(
     taxSettings,
     getCheckoutTaxableAmountCents({
       recurringTotalCents,
@@ -115,7 +98,7 @@ export function EmbeddedCheckoutClient({
       standTotalCents,
       taxSettings,
     }),
-  );
+  ), [taxSettings, recurringTotalCents, shipping.state, shippingRule.amountCents, standTotalCents]);
   const dueTodayCents =
     standTotalCents +
     recurringTotalCents +
@@ -450,172 +433,7 @@ export function EmbeddedCheckoutClient({
           }
         >
           {step === "details" ? (
-            <form className="grid gap-4" onSubmit={startPayment}>
-              <div>
-                <p className="tr-eyebrow">Customer</p>
-                <h2 className="mt-1 text-xl font-medium text-ink">
-                  Contact and shipping
-                </h2>
-                <p className="mt-1 text-sm leading-6 text-muted">
-                  {hasHostedMultiLink ? "Payment comes next. Your Multi-Link account is included." : "Guest checkout. No account or subscription needed."}
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <CheckoutInput
-                  label="Email"
-                  type="email"
-                  value={customer.email}
-                  autoComplete="email"
-                  onChange={(value) =>
-                    setCustomer((current) => ({ ...current, email: value }))
-                  }
-                  required
-                />
-                <CheckoutInput
-                  label="Full name"
-                  value={customer.name}
-                  autoComplete="name"
-                  onChange={(value) => {
-                    setCustomer((current) => ({ ...current, name: value }));
-                    setShipping((current) => ({
-                      ...current,
-                      name: resolveShippingRecipientName(
-                        current.name,
-                        customer.name,
-                        value,
-                      ),
-                    }));
-                  }}
-                  required
-                />
-                <CheckoutInput
-                  label="Phone (optional)"
-                  type="tel"
-                  value={customer.phone}
-                  autoComplete="tel"
-                  onChange={(value) =>
-                    setCustomer((current) => ({ ...current, phone: value }))
-                  }
-                />
-                <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                  <input type="checkbox" checked={differentRecipient || Boolean(shipping.name && shipping.name !== customer.name)} onChange={(event) => {
-                    setDifferentRecipient(event.target.checked);
-                    if (!event.target.checked) setShipping(current => ({ ...current, name: customer.name }));
-                  }} /> Ship to someone else
-                </label>
-                {differentRecipient || Boolean(shipping.name && shipping.name !== customer.name) ? <CheckoutInput
-                  label="Recipient name"
-                  value={shipping.name}
-                  autoComplete="shipping name"
-                  onChange={(value) =>
-                    setShipping((current) => ({ ...current, name: value }))
-                  }
-                  required
-                /> : null}
-              </div>
-
-              <div className="grid gap-3">
-                <AddressAutocomplete
-                  value={shipping.line1}
-                  onChange={(value) =>
-                    setShipping((current) => ({ ...current, line1: value }))
-                  }
-                  onSelect={(address) =>
-                    setShipping((current) => ({
-                      ...current,
-                      ...address,
-                      line2: address.line2 || current.line2,
-                    }))
-                  }
-                  onBusyChange={setIsFillingAddress}
-                  onInvalid={revealFirstInvalidControl}
-                />
-                <CheckoutInput
-                  label="Apartment, suite, unit (optional)"
-                  value={shipping.line2}
-                  autoComplete="shipping address-line2"
-                  onChange={(value) =>
-                    setShipping((current) => ({ ...current, line2: value }))
-                  }
-                />
-                <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_180px_128px]">
-                  <CheckoutInput
-                    label="City"
-                    value={shipping.city}
-                    autoComplete="shipping address-level2"
-                    onChange={(value) =>
-                      setShipping((current) => ({ ...current, city: value }))
-                    }
-                    required
-                  />
-                  <CheckoutStateSelect
-                    value={shipping.state}
-                    onChange={(value) =>
-                      setShipping((current) => ({ ...current, state: value }))
-                    }
-                  />
-                  <CheckoutInput
-                    label="ZIP code"
-                    value={shipping.postalCode}
-                    autoComplete="shipping postal-code"
-                    onChange={(value) =>
-                      setShipping((current) => ({
-                        ...current,
-                        postalCode: value,
-                      }))
-                    }
-                    required
-                  />
-                </div>
-              </div>
-
-              <label className="flex items-start gap-3 rounded-md border border-line bg-soft p-3 text-sm text-ink">
-                <input
-                  type="checkbox"
-                  checked={hasHostedMultiLink || customer.createAccount}
-                  disabled={hasHostedMultiLink}
-                  onChange={(event) =>
-                    setCustomer((current) => ({
-                      ...current,
-                      createAccount: event.target.checked,
-                    }))
-                  }
-                  className="mt-1 h-4 w-4 accent-brand"
-                />
-                <span>
-                  <span className="block font-medium">
-                    {hasHostedMultiLink
-                      ? "Account included for Multi-Link"
-                      : "Create an account for order access"}
-                  </span>
-                  <span className="mt-1 block text-xs leading-5 text-muted">
-                    {hasHostedMultiLink
-                      ? "After payment, sign in to manage your Multi-Link page. New customers receive an activation email; existing customers keep their password."
-                      : "Optional. The customer can track orders and access billing after payment."}
-                  </span>
-                </span>
-              </label>
-
-              {error ? (
-                <p className="tr-status-warning" role="alert">
-                  {error}
-                </p>
-              ) : null}
-
-              <label className="flex items-start gap-3 text-sm text-muted"><input type="checkbox" checked={reminderConsent} onChange={event => setReminderConsent(event.target.checked)} className="mt-1" />Email me reminders if I leave this order unfinished. Optional; unsubscribe anytime.</label>
-              <button
-                type="submit"
-                disabled={
-                  isStartingPayment || isFillingAddress || rows.length === 0
-                }
-                className="tr-button-primary min-h-12 w-full"
-              >
-                {isStartingPayment
-                  ? "Preparing payment..."
-                  : "Continue to payment"}
-              </button>
-            </form>
+            <CheckoutDetailsForm startPayment={startPayment} hasHostedMultiLink={hasHostedMultiLink} customer={customer} setCustomer={setCustomer} shipping={shipping} setShipping={setShipping} differentRecipient={differentRecipient} setDifferentRecipient={setDifferentRecipient} setIsFillingAddress={setIsFillingAddress} error={error} reminderConsent={reminderConsent} setReminderConsent={setReminderConsent} isStartingPayment={isStartingPayment} isFillingAddress={isFillingAddress} rows={rows}/>
           ) : !stripePublicConfig.ok ? (
             <CheckoutError message={stripePublicConfig.error} />
           ) : !stripePromise ? (

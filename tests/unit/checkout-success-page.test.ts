@@ -28,7 +28,7 @@ beforeEach(() => {
 
 describe("checkout success account guidance", () => {
   it("keeps setup and shipping guidance accurate for existing customers", () => {
-    const shipping = readFileSync("src/components/checkout/embedded-checkout.tsx", "utf8");
+    const shipping = readFileSync("src/components/checkout/checkout-details-form.tsx", "utf8");
     const setup = readFileSync("src/components/product/product-setup-chooser.tsx", "utf8") + readFileSync("src/components/product/product-setup-dialog-content.tsx", "utf8");
     expect(shipping).toContain("existing customers keep their password.");
     expect(shipping).not.toContain("the customer receives an activation email");
