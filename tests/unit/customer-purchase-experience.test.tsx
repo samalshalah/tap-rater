@@ -1,3 +1,4 @@
+vi.mock('@/lib/initial-dashboard-snapshot',()=>({getInitialDashboardSnapshot:async()=>null}));
 import {createElement,type ReactNode} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {beforeEach,it,expect,vi} from 'vitest';

@@ -16,10 +16,10 @@ import {LocalLocationControls,LocalLocationForm} from './local-location-controls
 
 
 
-export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}:{admin?:boolean;initialTab?:'overview'|'heatmap'|'performance'|'reviews'|'profile'|'listings'|'notifications'|'business';preferenceKey?:string}) {
+export function LocalDashboard({admin=false,initialTab='overview',preferenceKey,initialSnapshot=null}:{admin?:boolean;initialTab?:'overview'|'heatmap'|'performance'|'reviews'|'profile'|'listings'|'notifications'|'business';preferenceKey?:string;initialSnapshot?:Snapshot|null}) {
  const router=useRouter();
  const requestedLocation=useSearchParams().get('location');
- const [data,setData]=useState<Snapshot|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const [data,setData]=useState<Snapshot|null>(admin?null:initialSnapshot),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const clientTab=!admin&&!heatmapFeatureEnabled&&initialTab==='heatmap'?'profile':initialTab;
  const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'|'business'>(clientTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
  // Start the selected view's code download alongside its data request.
@@ -36,14 +36,19 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey}
  const [adding,setAdding]=useState(false);
  const endpoint=admin?'/api/admin/local':'/api/account/local';
  const storageKey=!admin&&preferenceKey?`taprater:local-location:${preferenceKey}`:null;
- async function refresh(restore=false){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);
-  if(restore&&storageKey){
+ async function refresh(restore=false){const r=await fetch(endpoint,{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error);setData(d);if(restore)restorePreference(d);
+ }
+ function restorePreference(d:Snapshot){
+  if(storageKey){
    let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(!heatmapFeatureEnabled&&view==='heatmap'?'profile':view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
    // A saved preference never grants access; accept only locations returned for this account.
    const restored=restoreCustomerLocation(saved,d.locations);setLocation(restored);try{window.localStorage.setItem(storageKey,restored);}catch{}
   }
  }
- useEffect(()=>{refresh(true).catch(e=>setError(e.message));},[endpoint,storageKey]);
+ useEffect(()=>{
+  if(!admin&&initialSnapshot){setData(initialSnapshot);restorePreference(initialSnapshot);}
+  else refresh(true).catch(e=>setError(e.message));
+ },[endpoint,storageKey,initialSnapshot]);
  async function save(body:unknown){setBusy(true);setError('');setNotice('');try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(d.error);await refresh();setNotice('Saved in Tap Rater. Nothing was published.');return d;}catch(e){setError(e instanceof Error?e.message:'Unable to save.');return null;}finally{setBusy(false);}}
  const {accountLocations,visible,selected,listingStatus,businessIds}=useLocalDashboardData(data,customer,location,query);
  const canAdd=admin||Boolean(data?.licenses&&(data.licenses.unlimited_locations||data.licenses.used<data.licenses.location_limit));
