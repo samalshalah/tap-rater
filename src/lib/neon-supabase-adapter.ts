@@ -1,3 +1,4 @@
+import {measureServerStage} from "./server-timing";
 import { assertTable, assertColumns, jsonbColumns, textArrayColumns, defaultConflictTargets, type TableName } from "./neon-supabase-schema";
 import { neon } from "@neondatabase/serverless";
 
@@ -131,7 +132,7 @@ class NeonQueryBuilder implements PromiseLike<SupabaseResult> {
     try {
       const table = assertTable(this.table);
       const sql = this.buildSql(table);
-      const rows = await this.executor(sql.query, sql.params);
+      const rows = await measureServerStage(`db_${table}_${this.action ?? "select"}`,()=>this.executor(sql.query, sql.params));
 
       return {
         data: sql.returnsRows ? rows.map(normalizeDatabaseValue) : null,

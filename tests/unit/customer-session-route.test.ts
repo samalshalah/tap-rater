@@ -36,14 +36,14 @@ describe("customer session route", () => {
   it("reports a disabled or pending customer session as unauthenticated", async () => {
     mocks.isActiveCustomerSession.mockResolvedValue(false);
 
-    const response = await GET();
+    const response = await GET(new Request("https://taprater.com/api/account/session"));
 
     await expect(response.json()).resolves.toEqual({ authenticated: false });
     expect(mocks.getCustomerPortal).not.toHaveBeenCalled();
   });
 
   it("loads account details only for an active customer session", async () => {
-    const response = await GET();
+    const response = await GET(new Request("https://taprater.com/api/account/session"));
 
     await expect(response.json()).resolves.toEqual({
       authenticated: true,service:false,stands:false,multilink:false,
