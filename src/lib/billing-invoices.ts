@@ -1,3 +1,5 @@
+import { findBillingInvoiceId, findBillingInvoiceByStripeId, findCustomerIdByEmail, findHostedSubscriptionsByStripeId, findHostedSubscriptionsByOrderId, findCustomerByStripeCustomerId, findCustomerById } from "./billing-invoice-lookups";
+import { readInvoiceTaxCents, readStripeInvoiceSubscriptionId, readPaymentMethodLabel, readRecord, readString, readNumber, readStripeId, readStripeCustomerEmail, toIso } from "./billing-invoice-values";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import type { OrderLineItem, OrdersDbClient, OrderRecord, StripeCheckoutSessionLike } from "@/lib/orders";
 import { withStripePaymentLock } from "@/lib/stripe-processing";
@@ -248,19 +250,6 @@ async function upsertBillingInvoice(client: OrdersDbClient, record: BillingInvoi
   return { ok: true as const, skipped: false as const, billingInvoiceId: invoiceId };
 }
 
-async function findBillingInvoiceId(client: OrdersDbClient, stripeInvoiceId?: string | null) {
-  if (!stripeInvoiceId) return null;
-  const result = await client.from("billing_invoices").select("id").eq("stripe_invoice_id", stripeInvoiceId).maybeSingle();
-  if (result.error) throw new Error("Invoice identity lookup failed.");
-  return readString(readRecord(result.data).id) ?? null;
-}
-
-async function findBillingInvoiceByStripeId(client: OrdersDbClient, stripeInvoiceId: string) {
-  const result = await client.from("billing_invoices").select("*").eq("stripe_invoice_id", stripeInvoiceId).maybeSingle();
-  if (result.error) throw new Error("Invoice lookup failed.");
-  return readRecord(result.data);
-}
-
 async function upsertBillingInvoiceItemsForOrder(
   client: OrdersDbClient,
   billingInvoiceId: string,
@@ -341,148 +330,4 @@ function buildInvoiceItemFromOrderLine(
 function isHostedOrderLine(item: OrderLineItem) {
   const setup = readRecord(item.setup);
   return item.destinationMode === "HOSTED" || setup.serviceMode === "HOSTED" || setup.serviceAddon === "hosted_multilink";
-}
-
-async function findCustomerIdByEmail(client: OrdersDbClient, email: string) {
-  const result = await client.from("customers").select("id").eq("email", email).maybeSingle();
-  if (result.error) throw new Error("Invoice customer lookup failed.");
-  return readString(readRecord(result.data).id) ?? null;
-}
-
-async function findHostedSubscriptionsByStripeId(client: OrdersDbClient, stripeSubscriptionId: string) {
-  const result = await client
-    .from("hosted_subscriptions")
-    .select("id,customer_id,order_id,hosted_page_url,stripe_subscription_id")
-    .eq("stripe_subscription_id", stripeSubscriptionId)
-    .order("created_at", { ascending: false });
-  if (result.error) throw new Error("Invoice subscription lookup failed.");
-  if (!Array.isArray(result.data)) return [];
-  return result.data.map((value: unknown) => {
-    const row = readRecord(value);
-    return {
-      id: readString(row.id) ?? null,
-      customer_id: readString(row.customer_id) ?? null,
-      order_id: readString(row.order_id) ?? null,
-      hosted_page_url: readString(row.hosted_page_url) ?? null,
-      stripe_subscription_id: readString(row.stripe_subscription_id) ?? null
-    };
-  });
-}
-
-async function findHostedSubscriptionsByOrderId(client: OrdersDbClient, orderId: string) {
-  const result = await client
-    .from("hosted_subscriptions")
-    .select("id,customer_id,order_id,hosted_page_url,stripe_subscription_id")
-    .eq("order_id", orderId)
-    .order("created_at", { ascending: true });
-  if (result.error) throw new Error("Invoice order subscription lookup failed.");
-  if (!Array.isArray(result.data)) return [];
-  return result.data.map((value: unknown) => {
-    const row = readRecord(value);
-    return {
-      id: readString(row.id) ?? null,
-      customer_id: readString(row.customer_id) ?? null,
-      order_id: readString(row.order_id) ?? null,
-      hosted_page_url: readString(row.hosted_page_url) ?? null,
-      stripe_subscription_id: readString(row.stripe_subscription_id) ?? null
-    };
-  });
-}
-
-async function findCustomerByStripeCustomerId(client: OrdersDbClient, stripeCustomerId: string) {
-  const subscriptionResult = await client
-    .from("hosted_subscriptions")
-    .select("customer_id")
-    .eq("stripe_customer_id", stripeCustomerId)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  if (subscriptionResult.error) throw new Error("Invoice Stripe customer lookup failed.");
-  const subscriptionCustomerId = Array.isArray(subscriptionResult.data)
-    ? readString(readRecord(subscriptionResult.data[0]).customer_id)
-    : undefined;
-  if (subscriptionCustomerId) {
-    const customer = await findCustomerById(client, subscriptionCustomerId);
-    if (customer) return customer;
-  }
-
-  const orderResult = await client
-    .from("orders")
-    .select("email,customer_details_json")
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (orderResult.error) throw new Error("Invoice customer order lookup failed.");
-  if (Array.isArray(orderResult.data)) {
-    for (const row of orderResult.data) {
-      const value = readRecord(row);
-      const details = readRecord(value.customer_details_json);
-      if (readString(details.stripe_customer_id) === stripeCustomerId) {
-        const email = readString(value.email);
-        const id = email ? await findCustomerIdByEmail(client, email.toLowerCase()) : null;
-        return email ? { id, email } : null;
-      }
-    }
-  }
-
-  return null;
-}
-
-async function findCustomerById(client: OrdersDbClient, customerId: string) {
-  const result = await client.from("customers").select("id,email").eq("id", customerId).maybeSingle();
-  if (result.error) throw new Error("Invoice customer lookup failed.");
-  if (!result.data) return null;
-  const row = readRecord(result.data);
-  const id = readString(row.id);
-  const email = readString(row.email);
-  return id && email ? { id, email } : null;
-}
-
-function readInvoiceTaxCents(invoice: StripeInvoiceLike) {
-  if (typeof invoice.tax === "number" && Number.isFinite(invoice.tax)) return invoice.tax;
-  const taxes = Array.isArray(invoice.total_taxes) ? invoice.total_taxes : invoice.total_tax_amounts;
-  return Array.isArray(taxes) ? taxes.reduce((total, row) => total + (readNumber(row.amount) ?? 0), 0) : 0;
-}
-
-function readStripeInvoiceSubscriptionId(invoice: StripeInvoiceLike) {
-  return readStripeId(invoice.subscription) ?? readStripeId(invoice.parent?.subscription_details?.subscription);
-}
-
-function readPaymentMethodLabel(details: Record<string, unknown>) {
-  const method = readRecord(details.payment_method_details);
-  const type = readString(method.type);
-  const brand = readString(method.brand);
-  const last4 = readString(method.last4);
-  if (type === "card" || brand || last4) return [brand ? capitalize(brand) : "Card", last4 ? `ending ${last4}` : undefined].filter(Boolean).join(" ");
-  if (type === "paypal") return "PayPal";
-  return type ? capitalize(type.replaceAll("_", " ")) : null;
-}
-
-function readRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function readNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function readStripeId(value: unknown) {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (value && typeof value === "object") return readString((value as Record<string, unknown>).id);
-  return undefined;
-}
-
-function readStripeCustomerEmail(value: unknown) {
-  if (!value || typeof value !== "object") return undefined;
-  return readString((value as Record<string, unknown>).email);
-}
-
-function toIso(epochSeconds: unknown) {
-  return typeof epochSeconds === "number" && Number.isFinite(epochSeconds) ? new Date(epochSeconds * 1000).toISOString() : null;
-}
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }
