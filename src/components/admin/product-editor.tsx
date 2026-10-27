@@ -13,13 +13,15 @@ import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { CheckCircle2,ExternalLink,Save } from "lucide-react";
 import { type FormEvent,useMemo,useState } from "react";
 import { AdminAlert,AdminBadge,AdminButton,AdminExternalButton,AdminInput,AdminLinkButton,AdminSelect,AdminSoftPanel } from "./admin-ui";
-import { ProductPhysicalDetailsEditor } from "./product-physical-details-editor";
 
-import { ControlledInput,EditorCard,InfoPill,Input,ReadinessLine,RuleRow,SidebarCard,StructuredPreview,Textarea } from "./product-editor-fields";
+import { ControlledInput,EditorCard,InfoPill,RuleRow,SidebarCard,Textarea } from "./product-editor-fields";
 import { ProductMediaGrid,SetupOptionEditor } from "./product-editor-media";
 import { buildInitialOptions,categorySlugForStandType,cleanAssetSet,collectImagesFromMedia,formatOptionPricing,formatSku,generateProductSku,getAdminMediaWarnings,getOptionMediaRequirements,getOrganizationIssues,getSupportedDestinations,normalizeOperationalProductKind,parseMultiline,readOptionalString,readRequiredText,selectedPlatformDestinationType,slugify } from "./product-editor-model";
 import type { AssetKey,AssetSetState,MediaItemState,MediaUploadRole,OperationalProductKind,ProductEditorProps,SaveStatus } from "./product-editor-types";
 import { normalOptionCodes } from "./product-editor-types";
+import {ProductSeoEditor} from "./product-seo-editor";
+import {ProductDetailsEditor} from "./product-details-editor";
+import {ProductReadinessPanel} from "./product-readiness-panel";
 export function ProductEditor({
   product,
   standTypes,
@@ -59,7 +61,6 @@ export function ProductEditor({
   const [optionStates, setOptionStates] = useState<ProductOption[]>(() =>
     buildInitialOptions(productKind, productOptions, optionTemplates, mode)
   );
-  const [searchTermsText, setSearchTermsText] = useState((product.searchKeywords ?? []).join("\n"));
   const [sizeOptions, setSizeOptions] = useState<ProductSizeOption[]>(() => product.sizeOptions ?? []);
   const [colorOptions, setColorOptions] = useState<ProductColorOption[]>(() => product.colorOptions ?? []);
   const [specifications, setSpecifications] = useState(() => product.specifications ?? []);
@@ -150,7 +151,7 @@ export function ProductEditor({
   );
   const productMediaReady = Boolean(readOptionalString(mainImage.src));
   const mediaWarnings = useMemo(() => getAdminMediaWarnings(slug || product.slug, mainImage, galleryImages, effectiveAssetSet), [slug, product.slug, mainImage, galleryImages, effectiveAssetSet]);
-  const optionReadinessRows = activeVisibleOptions.flatMap((option) =>
+  const optionReadinessRows = useMemo(() => activeVisibleOptions.flatMap((option) =>
     getOptionMediaRequirements(option.optionCode, effectiveAssetSet)
       .filter((requirement) => requirement.required)
       .map((requirement) => ({
@@ -158,8 +159,8 @@ export function ProductEditor({
         label: requirement.label,
         ready: Boolean(requirement.value)
       }))
-  );
-  const missingOptionMedia = optionReadinessRows.filter((row) => !row.ready);
+  ), [activeVisibleOptions, effectiveAssetSet]);
+  const missingOptionMedia = useMemo(() => optionReadinessRows.filter((row) => !row.ready), [optionReadinessRows]);
   const brandedProductionTemplateMissing = activeVisibleOptions.some((option) => option.optionCode === "branded_qr_direct") && !readOptionalString(effectiveAssetSet.brandedFrontTemplateUrl);
 
   function updateAsset(key: AssetKey, value: string) {
@@ -327,7 +328,7 @@ export function ProductEditor({
           images: collectImagesFromMedia(mainImage, galleryImages, assetSet, finalTitle),
           seoTitle: readOptionalString(String(form.get("seoTitle") ?? "")),
           seoDescription: readOptionalString(String(form.get("seoDescription") ?? "")),
-          searchKeywords: parseMultiline(searchTermsText),
+          searchKeywords: parseMultiline(String(form.get("searchTerms") ?? "")),
           sizeOptions,
           colorOptions,
           keyFeatures: product.keyFeatures ?? [],
@@ -527,54 +528,9 @@ export function ProductEditor({
 
         <ProductVariantEditor sizeOptions={sizeOptions} colorOptions={colorOptions} setSizeOptions={setSizeOptions} setColorOptions={setColorOptions} />
 
-        <EditorCard title="Product Details" description="Structured product content used by the storefront and JSON-LD.">
-          <StructuredPreview title="Key Features" rows={(product.keyFeatures ?? []).map((item) => [item.title, item.body])} />
-          <StructuredPreview title="How It Works" rows={(product.howItWorks ?? []).map((item) => [String(item.step), `${item.title}: ${item.body}`])} />
-          <ProductPhysicalDetailsEditor specifications={specifications} includedItems={includedItems}
-            onSpecificationsChange={setSpecifications} onIncludedItemsChange={setIncludedItems} />
-          <StructuredPreview title="Product FAQ" rows={(product.productFaqs ?? []).map((item) => [item.question, item.answer])} />
-        </EditorCard>
+        <ProductDetailsEditor product={product} specifications={specifications} includedItems={includedItems} setSpecifications={setSpecifications} setIncludedItems={setIncludedItems}/>
 
-        <EditorCard title="SEO" description="Metadata, internal search terms, canonical preview, and Google-style search preview.">
-          <Input
-            name="seoTitle"
-            label="SEO title override"
-            defaultValue={product.seoTitle ?? ""}
-            placeholder={seoPreview.generatedTitle}
-            required={false}
-          />
-          <Textarea
-            name="seoDescription"
-            label="Meta description override"
-            defaultValue={product.seoDescription ?? ""}
-            placeholder={seoPreview.generatedDescription}
-            required={false}
-          />
-          <Textarea
-            name="searchTerms"
-            label="Search terms"
-            defaultValue={searchTermsText}
-            placeholder="One internal search term per line"
-            required={false}
-            onChange={(event) => setSearchTermsText(event.currentTarget.value)}
-          />
-          <div className="grid gap-2 rounded-md border border-line bg-[#f7f8fa] px-3 py-3 text-xs text-muted">
-            <p>
-              <span className="font-black text-ink">URL:</span> /product/{slug || "product-handle"}
-            </p>
-            <p>
-              <span className="font-black text-ink">Generated title:</span> {seoPreview.generatedTitle}
-            </p>
-            <p>
-              <span className="font-black text-ink">Generated meta:</span> {seoPreview.generatedDescription}
-            </p>
-          </div>
-          <div className="rounded-md border border-line bg-white p-4">
-            <p className="text-lg font-semibold leading-6 text-[#1a0dab]">{readOptionalString(String(product.seoTitle ?? "")) ?? seoPreview.generatedTitle}</p>
-            <p className="mt-1 text-sm text-[#006621]">taprater.com/product/{slug || "product-handle"}</p>
-            <p className="mt-1 text-sm leading-5 text-[#545454]">{readOptionalString(String(product.seoDescription ?? "")) ?? seoPreview.generatedDescription}</p>
-          </div>
-        </EditorCard>
+        <ProductSeoEditor product={product} seoPreview={seoPreview} slug={slug}/>
       </div>
 
       <aside className="grid content-start gap-4">
@@ -691,49 +647,7 @@ export function ProductEditor({
           </div>
         </SidebarCard>
 
-        <SidebarCard title="Asset Readiness">
-          <div className="grid gap-3">
-            <AdminSoftPanel className="p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">Product media</p>
-              <ReadinessLine label="Primary product image" ready={productMediaReady} />
-            </AdminSoftPanel>
-            <AdminSoftPanel className="p-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-muted">Setup option media</p>
-                <AdminBadge tone={missingOptionMedia.length === 0 ? "success" : "danger"}>
-                  {missingOptionMedia.length === 0 ? "Ready" : `${missingOptionMedia.length} missing`}
-                </AdminBadge>
-              </div>
-              <div className="mt-2 grid gap-2">
-                {optionReadinessRows.length > 0 ? (
-                  optionReadinessRows.map((row) => (
-                    <ReadinessLine key={`${row.optionTitle}-${row.label}`} label={`${row.optionTitle}: ${row.label}`} ready={row.ready} />
-                  ))
-                ) : (
-                  <ReadinessLine label="Active product option" ready={false} />
-                )}
-              </div>
-            </AdminSoftPanel>
-          </div>
-          <div className="mt-2 rounded-md bg-[#f7f8fa] px-3 py-2 text-xs font-bold text-ink">
-            Can publish: {canActivate ? "Yes" : "No"}
-            {brandedProductionTemplateMissing ? (
-              <span className="mt-1 block text-red-700">
-                Branded unavailable: missing production front template.
-              </span>
-            ) : null}
-          </div>
-          {mediaWarnings.length > 0 ? (
-            <AdminAlert tone="warning" className="mt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-amber-800">Media warnings</p>
-              <ul className="mt-2 grid gap-1 text-xs leading-5 text-amber-800">
-                {mediaWarnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            </AdminAlert>
-          ) : null}
-        </SidebarCard>
+        <ProductReadinessPanel productMediaReady={productMediaReady} missingOptionMedia={missingOptionMedia} optionReadinessRows={optionReadinessRows} canActivate={canActivate} brandedProductionTemplateMissing={brandedProductionTemplateMissing} mediaWarnings={mediaWarnings}/>
 
         <SidebarCard title="Production Notes">
           <ul className="grid gap-2 text-xs leading-5 text-muted">
