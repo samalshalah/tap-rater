@@ -7,7 +7,7 @@ import {BusinessAttributesEditor} from './business-attributes-editor';
 import {BusinessHoursPopup} from './business-hours-popup';
 import {BusinessFieldsPopup} from './business-fields-popup';
 import {profilePublishPlan} from '@/lib/google-business/profile-publish-plan';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {ImageIcon,Info} from 'lucide-react';
 import type {ProfileFields} from '@/lib/google-business/profile-data';
 import type {BusinessDetails} from '@/lib/google-business/business-details';
@@ -15,8 +15,9 @@ import type {BusinessDetails} from '@/lib/google-business/business-details';
 const sections=['About','Contact','Placement','Hours','More'] as const;
 type CoreKey=Exclude<keyof ProfileFields,'details'>;
 type DetailKey='brand'|'street'|'city'|'region'|'postalCode'|'country'|'additionalPhones'|'socialLinks'|'serviceAreas'|'moreHours'|'services'|'paymentMethods'|'attributes'|'featuredMessage'|'featuredUrl'|'logo'|'cover';
-export function BusinessProfileEditor({businessId,draft,observed,onChange,onSave,onPublish,onCheckPublish,publishState,busy,dirty,syncedAt}:{businessId:string;draft:ProfileFields;observed:ProfileFields;onChange:(value:ProfileFields)=>void;onSave:()=>void;onPublish?:()=>void;onCheckPublish?:()=>void;publishState?:string;busy:boolean;dirty:boolean;syncedAt:string}){
+export function BusinessProfileEditor({businessId,draft,observed,onChange,onSave,onPublish,onCheckPublish,publishState,busy,dirty,syncedAt,requestedSection}:{requestedSection?:{section:typeof sections[number]};businessId:string;draft:ProfileFields;observed:ProfileFields;onChange:(value:ProfileFields)=>void;onSave:()=>void;onPublish?:()=>void;onCheckPublish?:()=>void;publishState?:string;busy:boolean;dirty:boolean;syncedAt:string}){
  const [section,setSection]=useState<typeof sections[number]>('About');
+ useEffect(()=>{if(requestedSection)setSection(requestedSection.section);},[requestedSection]);
  const [socialValidation,setSocialValidation]=useState('');
  const details=draft.details||{};
  let publishLabels:string[]=[],remaining:string[]=[],publishError='';
