@@ -427,7 +427,7 @@ const entries: Record<string, [string, string, string, string, string]> = {
     "Place it in a social engagement area or beside event merchandise, with your business identity clearly visible. Keep the destination relevant to the audience using that location. A stable account link helps returning visitors recognize the same business beyond a single event.",
     "Supply the public Snapchat destination you want visitors to open and test it on a phone. Confirm the account name and any app handoff before ordering. Do not use a private conversation or a temporary invitation that is unsuitable for ongoing public use.",
     "Does this product include a printed Snapcode?",
-    "The Standard design uses NFC only. Branded adds a destination-generated QR code alongside your business details; do not assume that QR is a Snapchat Snapcode. Review the actual artwork option before checkout."
+    "Your custom stand includes NFC and a destination-generated QR code alongside your business details; do not assume that QR is a Snapchat Snapcode. Review the actual artwork option before checkout."
   ],
   "pinterest-follow-stand": [
     "Connect your showroom inspiration to your Pinterest destination with an NFC Pinterest Follow Stand. Customers can find the boards or profile you choose while browsing your products or creative work.",

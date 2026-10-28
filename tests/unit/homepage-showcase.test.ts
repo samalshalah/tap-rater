@@ -18,7 +18,7 @@ describe("homepage shopping flow", () => {
   it("renders the nine sections in the agreed order without a second mobile catalog", () => {
     const html = render();
     expect([...html.matchAll(/data-home-section="([^"]+)"/g)].map((match) => match[1]))
-      .toEqual(["hero", "actions", "featured", "comparison", "tap", "multilink", "business", "quality", "questions"]);
+      .toEqual(["hero", "actions", "featured", "custom", "tap", "multilink", "business", "quality", "questions"]);
     expect(html.match(/data-home-featured-products/g)).toHaveLength(1);
     expect(html).not.toContain("Best Sellers");
   });
@@ -28,7 +28,7 @@ describe("homepage shopping flow", () => {
     expect(defaultHomepageContent.actions.items.every((item) => item.image.src.includes("/uploads/products/"))).toBe(true);
     const html = render();
     expect(html).toContain('href="/product/google-review-stand?design=branded"');
-    expect(html).toContain("NFC-only. No printed QR.");
+    expect(html).not.toContain("NFC-only. No printed QR.");
     expect(html).toContain("Approve the preview before payment");
   });
 
@@ -79,7 +79,7 @@ describe("homepage shopping flow", () => {
       requiresFrontProof: option.requiresFinalProof, isActive: true, sortOrder: index
     })) };
     const html = render(structuredClone(defaultHomepageContent), [product]);
-    expect(html).toContain("$43");
+    expect(html).not.toContain("$43");
     expect(html).toContain("$57");
     expect(html).not.toContain("$39");
   });

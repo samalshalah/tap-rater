@@ -9,11 +9,11 @@ import { defaultSocialImage } from "@/lib/social-metadata";
 
 export const metadata: Metadata = {
   title: "Tap Rater NFC Business Stands | Reviews, Menus & More",
-  description: "Shop Tap Rater NFC stands for reviews, menus, bookings and social follows. Standard is NFC-only. Branded adds your logo, business name and a destination QR code.",
+  description: "Shop Tap Rater NFC stands for reviews, menus, bookings and social follows. Every stand includes your logo, business name, NFC and a destination QR code.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Tap Rater NFC Business Stands",
-    description: "One tap to your business link. Explore Standard and Branded stands, with optional Multi-Link pages.",
+    description: "One tap to your business link. Explore custom logo and QR stands, with optional Multi-Link pages.",
     url: "/",
     images: [defaultSocialImage]
   }

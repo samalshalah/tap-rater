@@ -116,7 +116,7 @@ const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
 ].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
-  return migratedProducts.filter(isPublicLaunchStorefrontProduct).sort(compareStorefrontProducts);
+  return migratedProducts.filter(isPublicLaunchStorefrontProduct).map(sanitizePublicStorefrontProduct).sort(compareStorefrontProducts);
 }
 
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
@@ -315,7 +315,7 @@ async function getActiveProductOptionsFromClient(client: ProductRepositoryClient
 function getStaticStorefrontProductBySlug(slug: string) {
   const product = getProductBySlug(slug);
 
-  return product && isPublicLaunchStorefrontProduct(product) ? product : undefined;
+  return product && isPublicLaunchStorefrontProduct(product) ? sanitizePublicStorefrontProduct(product) : undefined;
 }
 
 function withAttachedOptions(product: MigratedProduct, optionsByProduct: Map<string, ProductPurchaseOptionSnapshot[]>): MigratedProduct {
@@ -347,7 +347,7 @@ export function isPublicLaunchStorefrontProduct(product: MigratedProduct): boole
     return false;
   }
 
-  return getProductPurchaseOptions(product).some((option) => option.id === "standard_direct" || option.id === "branded_qr_direct");
+  return getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct");
 }
 
 function isNonProductionStorefrontSlug(slug: string): boolean {

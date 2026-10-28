@@ -29,7 +29,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
       "@type": "Brand",
       name: "Tap Rater"
     },
-    image: product.images.map((image) => absoluteUrl(image.src))
+    image: [absoluteUrl(getProductVisual(product).src)]
   };
 
   if (product.checkoutMode !== "buy_now") return data;
@@ -49,7 +49,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
           shippingRate: { "@type": "MonetaryAmount", currency: "USD", value: (resolveCheckoutShippingRule(effectivePrice, offerShippingSettings(context.shipping!, context.offers ?? defaultOffers, country)).amountCents / 100).toFixed(2) }
         })) : undefined;
     const branded = option.id === "branded_qr_direct";
-    const variantUrl = `${url}?design=${branded ? "branded" : "standard"}`;
+    const variantUrl = `${url}?design=branded`;
     const image = (branded ? product.assetSet?.brandedAngledImageUrl : undefined) ?? getProductVisual(product).src;
     return [{
       "@type": "Product",
@@ -60,7 +60,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
       url: variantUrl,
       image: image ? [absoluteUrl(image)] : product.images.map((item) => absoluteUrl(item.src)),
       brand: data.brand,
-      additionalProperty: [{ "@type": "PropertyValue", name: "Design", value: branded ? "Branded + QR" : "Standard NFC-only" }],
+      additionalProperty: [{ "@type": "PropertyValue", name: "Design", value: "Custom Logo + QR" }],
       offers: {
         "@type": "Offer",
         url: variantUrl,

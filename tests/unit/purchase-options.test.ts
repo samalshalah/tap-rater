@@ -4,26 +4,12 @@ import { correctKnownPurchaseCopy, getProductPurchaseOptions, hasBrandedDirectPr
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 
 describe("purchase option readiness", () => {
-  it("keeps Standard NFC-only with stale backend flags, preserving prices and active options", () => {
-    const product = structuredClone(migratedProducts.find((item) => item.slug === "google-review-stand")!);
-    const standard = product.purchaseOptions![0];
-    standard.hasQr = true;
-    standard.priceCents = 5700;
-    standard.title = "Reception stand";
-    standard.description = "Made for our reception desk.";
+  it("excludes retired standard options even with stale enabled flags", () => {
+    const product = structuredClone(migratedProducts.find(p => p.slug === "google-review-stand")!);
+    product.purchaseOptions![0].isActive = true;
     const before = structuredClone(product);
-
-    expect(getProductPurchaseOptions(product)[0]).toMatchObject({
-      id: "standard_direct", hasQr: false, priceCents: 5700,
-      label: "Reception stand", summary: "Made for our reception desk."
-    });
-    expect(getProductPurchaseOptions(product)[1]).toMatchObject({
-      id: "branded_qr_direct", hasQr: true, requiresLogo: true,
-      requiresBusinessName: true, requiresFinalProof: true
-    });
+    expect(getProductPurchaseOptions(product).map(o => o.id)).toEqual(["branded_qr_direct"]);
     expect(product).toEqual(before);
-    standard.isActive = false;
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["branded_qr_direct"]);
     product.purchaseOptions = [];
     expect(getProductPurchaseOptions(product)).toEqual([]);
   });
@@ -31,14 +17,14 @@ describe("purchase option readiness", () => {
   it("does not add QR to Standard when Multi-Link is compatible", () => {
     const product = migratedProducts.find((item) => item.slug === "rate-your-experience-stand")!;
     expect(productSupportsMultiLink(product)).toBe(true);
-    expect(getProductPurchaseOptions(product).find((option) => option.id === "standard_direct")?.hasQr).toBe(false);
-    expect(getProductPurchaseOptions({ ...product, purchaseOptions: undefined })[0].hasQr).toBe(false);
+    expect(getProductPurchaseOptions(product).find((option) => option.id === "standard_direct")?.hasQr).toBeUndefined();
+    expect(getProductPurchaseOptions({ ...product, purchaseOptions: undefined })[0].hasQr).toBe(true);
   });
 
   it("corrects known claims idempotently without removing adjacent custom copy", () => {
     const copy = "Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide. Includes our reception instructions.";
     const corrected = correctKnownPurchaseCopy(copy);
-    expect(corrected).toContain("Standard is NFC-only, with no printed QR.");
+    expect(corrected).toContain("Every new stand includes your logo, business name, NFC and a printed QR code.");
     expect(corrected).toContain("Includes our reception instructions.");
     expect(correctKnownPurchaseCopy(corrected)).toBe(corrected);
     const custom = "Branded printed QR artwork: keep  two spaces and production notes.";
@@ -49,11 +35,11 @@ describe("purchase option readiness", () => {
     delete process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING;
   });
 
-  it("offers only Standard Direct when a direct product has no branded production template", () => {
+  it("offers nothing when a direct product has no branded production template", () => {
     const product = migratedProducts.find((item) => item.slug === "google-review-stand");
 
     expect(product).toBeDefined();
-    expect(getProductPurchaseOptions({ ...product!, assetSet: {} }).map((option) => option.id)).toEqual(["standard_direct"]);
+    expect(getProductPurchaseOptions({ ...product!, assetSet: {} }).map((option) => option.id)).toEqual([]);
   });
 
   it("offers Branded Direct when the front template is configured and center asset is null", () => {
@@ -65,7 +51,7 @@ describe("purchase option readiness", () => {
     } satisfies MigratedProduct;
 
     expect(hasBrandedDirectProductionTemplate(product)).toBe(true);
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct", "branded_qr_direct"]);
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["branded_qr_direct"]);
   });
 
   it("does not offer Branded Direct when only a center asset is configured", () => {
@@ -77,7 +63,7 @@ describe("purchase option readiness", () => {
     } satisfies MigratedProduct;
 
     expect(hasBrandedDirectProductionTemplate(product)).toBe(false);
-    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual(["standard_direct"]);
+    expect(getProductPurchaseOptions(product).map((option) => option.id)).toEqual([]);
   });
 
   it("keeps Multi-Link out of physical purchase options", () => {

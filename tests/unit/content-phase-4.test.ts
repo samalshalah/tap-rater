@@ -34,28 +34,28 @@ describe("final content and shopping continuity", () => {
 
   it("starts the Branded price, radio control, and gallery together", () => {
     const html = renderHero("branded_qr_direct");
-    expect(selectedInput(html, "Select Branded")).toContain('checked=""');
-    expect(selectedInput(html, "Select Standard")).not.toContain('checked=""');
+    expect(html).toContain("Custom stand");
+    expect(html).not.toContain("Select Standard");
     expect(html).toContain("Set Up My Stand - $49");
     expect(html).toContain("Custom Google Review stand with red logo, company name and QR placeholders");
     expect(html).toContain("tap-rater-custom-google-review-stand-01-white-background-angled");
   });
 
-  it("keeps Standard as the ordinary entry point", () => {
+  it("defaults to custom without a redundant design selector", () => {
     const html = renderHero();
-    expect(selectedInput(html, "Select Standard")).toContain('checked=""');
-    expect(html).toContain("Set Up My Stand - $39");
+    expect(html).not.toContain("Select Standard");
+    expect(html).toContain("Set Up My Stand - $49");
   });
 
-  it("never selects an unavailable Branded option from a query", () => {
+  it("never restores a standard option when custom artwork is unavailable", () => {
     const html = renderHero("branded_qr_direct", { ...product, assetSet: undefined });
-    expect(html).toContain("Set Up My Stand - $39");
-    expect(html).not.toContain("Set Up My Stand - $49");
+    expect(html).not.toContain("Set Up My Stand -");
+    expect(html).not.toContain("Select Standard");
   });
 
   it.each([undefined, "unknown", ["branded", "standard"]])("ignores an invalid or ambiguous design query: %j", async design => {
     const html = renderToStaticMarkup(await ProductPage({ params: Promise.resolve({ slug: product.slug }), searchParams: Promise.resolve({ design }) }));
-    expect(html).toContain("Set Up My Stand - $39");
+    expect(html).toContain("Set Up My Stand - $46");
   });
 
   it("passes a Branded query from the server and retains a query-free canonical", async () => {
@@ -66,7 +66,7 @@ describe("final content and shopping continuity", () => {
 
   it.each([undefined, "branded", "unknown"])("preserves only the supported design through an old product link: %j", async design => {
     await expect(ProductPage({ params: Promise.resolve({ slug: "follow-us-stand" }), searchParams: Promise.resolve({ design }) }))
-      .rejects.toThrow(`redirect:/product/follow-us-social-media-stand${design === "branded" ? "?design=branded" : ""}`);
+      .rejects.toThrow(`redirect:/product/follow-us-social-media-stand${design ? `?design=${design}` : ""}`);
   });
 
   it("advertises the configured recurring price and link limit beside the hosted-page offer", () => {

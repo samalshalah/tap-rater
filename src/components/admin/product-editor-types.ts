@@ -42,6 +42,6 @@ export type MediaUploadRole =
   | "branded_angled"
   | "branded_front_template";
 
-export const normalOptionCodes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
+export const normalOptionCodes: ProductOptionCode[] = ["branded_qr_direct"];
 export type OperationalProductKind = Exclude<ProductKind, "hosted_multilink">;
 

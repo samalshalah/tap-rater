@@ -135,9 +135,8 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
       </div></SectionShell> : null}
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <SectionHeader eyebrow="Make it yours" title="Choose Standard or Branded + QR" body="Select your design on the product page. Available options and current prices appear before you buy." />
+          <SectionHeader eyebrow="Make it yours" title="Personalize your stand" body="Select your design on the product page. Available options and current prices appear before you buy." />
           <div className="mt-7 grid gap-5 md:grid-cols-3">
-            <div className="rounded-xl border border-line p-6"><h3 className="text-xl font-semibold">Standard</h3><p className="tr-body-sm mt-3">A ready-made design with NFC. Visitors tap a compatible phone to open your destination. No printed QR code.</p></div>
             <div className="rounded-xl border border-line p-6"><h3 className="text-xl font-semibold">Branded + QR</h3><p className="tr-body-sm mt-3">Your business name and logo, with NFC and a printed QR code. Visitors can tap or scan. Approve your design before payment.</p></div>
             <div className="rounded-xl border border-line p-6"><h3 className="text-xl font-semibold">Need several links?</h3><p className="tr-body-sm mt-3">Optional hosted Multi-Link puts your website, social profiles, and other links on one editable page. A separate monthly charge applies.</p><Link href="/multi-link" className="tr-editorial-link mt-4">Explore Multi-Link →</Link></div>
           </div>

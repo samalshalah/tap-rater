@@ -6,29 +6,18 @@ import { buildMerchantFeed } from "@/lib/merchant-feed";
 const product = migratedProducts.find((p) => p.slug === "google-review-stand")!;
 
 describe("Google Merchant feed", () => {
-  it("maps the campaign only to eligible Standard designs while its checkout discount and dates match", () => {
-    const now = Date.parse("2026-10-12T12:00:00Z");
-    const feed = buildMerchantFeed([product], defaultOffers, now);
-    const items = feed.split("<item>").slice(1);
-    expect(items.find((item) => item.includes("?design=standard"))).toContain("<g:promotion_id>SECOND-STANDARD-15-OCT2026</g:promotion_id>");
-    expect(items.find((item) => item.includes("?design=branded"))).not.toContain("g:promotion_id");
-    for (const settings of [
-      { ...defaultOffers, enabled: false },
-      { ...defaultOffers, excludedProducts: [product.slug] },
-      { ...defaultOffers, second: { ...defaultOffers.second, enabled: false } },
-      { ...defaultOffers, second: { ...defaultOffers.second, percent: 10 } },
-      { ...defaultOffers, second: { ...defaultOffers.second, startsAt: "2026-10-13T00:00:00Z" } },
-      { ...defaultOffers, second: { ...defaultOffers.second, endsAt: "2026-10-11T00:00:00Z" } },
-    ]) expect(buildMerchantFeed([product], settings, now)).not.toContain("g:promotion_id");
-    for (const date of ["2026-10-10T03:59:59Z", "2026-11-09T05:00:00Z"])
-      expect(buildMerchantFeed([product], defaultOffers, Date.parse(date))).not.toContain("g:promotion_id");
-    for (const date of ["2026-10-10T04:00:00Z", "2026-11-09T04:59:59Z"])
-      expect(buildMerchantFeed([product], defaultOffers, Date.parse(date))).toContain("g:promotion_id");
+  it("removes the retired standard campaign and feed entries", () => {
+    for (const date of ["2026-10-12", "2026-11-10"]) {
+      const feed = buildMerchantFeed([product], defaultOffers, Date.parse(date));
+      expect(feed).not.toContain("design=standard");
+      expect(feed).not.toContain("g:promotion_id");
+      expect(feed.match(/<item>/g)).toHaveLength(1);
+    }
   });
   it("preserves existing IDs, design landing links, live discounts and branded return labels", () => {
     const feed = buildMerchantFeed([product], defaultOffers);
-    expect(feed).toContain("<g:id>TR-GOOGLE-REV-ST_tr-google-rev-st-std</g:id>");
-    expect(feed).toContain("?design=standard</g:link>");
+    expect(feed).toContain("<g:id>TR-GOOGLE-REV-ST_tr-google-rev-st-brd</g:id>");
+    expect(feed).not.toContain("?design=standard</g:link>");
     expect(feed).toContain("?design=branded</g:link>");
     expect(feed).toContain("<g:price>49.00 USD</g:price>");
     expect(feed).toContain("<g:sale_price>46.00 USD</g:sale_price>");
@@ -45,9 +34,9 @@ describe("Google Merchant feed", () => {
       { ...product, slug: "inactive", isActive: false },
       { ...product, slug: "hosted", requiresSubscription: true },
     ], defaultOffers);
-    expect(feed.match(/<item>/g)).toHaveLength(2);
+    expect(feed.match(/<item>/g)).toHaveLength(1);
     const standardOnly = { ...product, purchaseOptions: product.purchaseOptions!.map((o) => ({ ...o, isActive: o.optionCode === "standard_direct" })) };
-    expect(buildMerchantFeed([standardOnly], defaultOffers).match(/<item>/g)).toHaveLength(1);
+    expect(() => buildMerchantFeed([standardOnly], defaultOffers)).toThrow("empty");
   });
 
   it("escapes XML, follows disabled offers and refuses destructive empty or duplicate snapshots", () => {

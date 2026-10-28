@@ -1,3 +1,4 @@
+import { customStandItem } from "../helpers/custom-stand";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import { handleCheckoutPost, type CheckoutRouteDependencies } from "@/lib/checkout-route";
@@ -5,17 +6,7 @@ import { defaultOffers } from "@/lib/offers";
 
 const configuredStandardPayload = {
   checkoutAttemptId: "checkout-attempt-unit-001",
-  items: [
-    {
-      productId: "google-review-stand",
-      optionId: "standard_direct",
-      quantity: 1,
-      setup: {
-        destinationUrl: "https://g.page/example/review",
-        proofApproved: true
-      }
-    }
-  ],
+  items: [customStandItem()],
   customer: {
     email: "buyer@example.com",
     name: "Buyer Name",
@@ -44,6 +35,7 @@ function createCheckoutRequest(payload: unknown) {
 
 function createDependencies(overrides: Partial<CheckoutRouteDependencies> = {}) {
   return {
+    verifyBrandedProofs: vi.fn().mockResolvedValue(undefined),
     createPendingOrder: vi.fn().mockResolvedValue({ ok: true }),
     createRequestId: () => "checkout_test_request",
     createStripeSession: vi.fn().mockResolvedValue({ id: "cs_test_123", client_secret: "cs_test_123_secret_unit" }),
@@ -91,11 +83,11 @@ describe("checkout route reliability", () => {
     expect(response.status).toBe(200);
     const stripe = vi.mocked(dependencies.createStripeSession).mock.calls[0][0];
     const order = vi.mocked(dependencies.createPendingOrder).mock.calls[0][0];
-    expect(stripe.cart.totalCents).toBe(7215);
-    expect(order.subtotalCents).toBe(7215);
+    expect(stripe.cart.totalCents).toBe(9065);
+    expect(order.subtotalCents).toBe(9065);
     expect(order.shippingAmountCents).toBe(0);
-    expect(order.totalCents).toBe(7648);
-    expect(order.rows[0].discountCents).toBe(585);
+    expect(order.totalCents).toBe(9609);
+    expect(order.rows[0].discountCents).toBe(735);
     expect(order.rows[0].quantity).toBe(2);
   });
   it("requires review instead of charging when the displayed offer total is stale", async () => {
@@ -257,10 +249,10 @@ describe("checkout route reliability", () => {
     );
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        totalCents: 4134,
+        totalCents: 5194,
         shippingAmountCents: 0,
         shippingMode: "free",
-        taxAmountCents: 234,
+        taxAmountCents: 294,
         taxSettings: expect.objectContaining({ taxLabel: "Virginia sales tax" })
       })
     );
@@ -308,8 +300,8 @@ describe("checkout route reliability", () => {
     expect(response.status).toBe(200);
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        subtotalCents: 3900,
-        totalCents: 4929,
+        subtotalCents: 4900,
+        totalCents: 5989,
         shippingAmountCents: 795,
         shippingMode: "flat"
       })
@@ -339,11 +331,11 @@ describe("checkout route reliability", () => {
     expect(response.status).toBe(200);
     expect(dependencies.createPendingOrder).toHaveBeenCalledWith(
       expect.objectContaining({
-        subtotalCents: 7800,
-        totalCents: 8268,
+        subtotalCents: 9800,
+        totalCents: 10388,
         shippingAmountCents: 0,
         shippingMode: "free",
-        taxAmountCents: 468
+        taxAmountCents: 588
       })
     );
   });

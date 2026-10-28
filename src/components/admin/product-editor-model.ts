@@ -46,7 +46,8 @@ export function buildInitialOptions(productKind: ProductKind, productOptions: Pr
   return codes.map((code) => ({
     ...(templateMap.get(code) ?? getDefaultOptionsForProductKind("normal_direct").find((option) => option.optionCode === code)!),
     ...(mode === "create" && code === "branded_qr_direct" ? { isActive: false } : {}),
-    ...(savedOptionMap.get(code) ?? {})
+    ...(savedOptionMap.get(code) ?? {}),
+    ...(code === "standard_direct" ? { isActive: false } : {})
   }));
 }
 

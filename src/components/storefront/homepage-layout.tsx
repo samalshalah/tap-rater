@@ -24,12 +24,11 @@ const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 export function HomepageLayout({ content, products, businessUses = [], offers }: { offers?: OffersSettings; content: HomepageThemeContent; products: MigratedProduct[]; businessUses?: BusinessUse[] }) {
   const { showcase } = content;
   const featured = selectFeaturedHomepageProducts(products, showcase.featuredProductSlugs);
-  const standardPrices = products.filter((product) => product.isActive).flatMap((product) =>
-    getProductPurchaseOptions(product).filter((option) => option.id === "standard_direct").map((option) => option.priceCents)
+  const customPrices = products.filter((product) => product.isActive).flatMap((product) =>
+    getProductPurchaseOptions(product).filter((option) => option.id === "branded_qr_direct").map((option) => option.priceCents)
   );
   const comparisonProduct = products.find((product) => product.slug === showcase.comparisonProductSlug && product.isActive);
   const comparisonOptions = comparisonProduct ? getProductPurchaseOptions(comparisonProduct) : [];
-  const standard = comparisonOptions.find((option) => option.id === "standard_direct");
   const branded = comparisonOptions.find((option) => option.id === "branded_qr_direct");
   const specifications = comparisonProduct ? getProductSpecifications(comparisonProduct) : [];
   const faqs = orderedEnabledFaqs(content.faqs, "global").slice(0, 8);
@@ -48,7 +47,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           <p className={styles.eyebrow}>{content.hero.eyebrow}</p>
           <p id="home-title" className={styles.heroHeadline}>{content.hero.headline}</p>
           <p className={styles.heroBody}>{content.hero.body}</p>
-          {standardPrices.length ? <p className={styles.heroPrice}>From <strong>{compactPrice(Math.min(...standardPrices))}</strong><span>per stand</span></p> : null}
+          {customPrices.length ? <p className={styles.heroPrice}>From <strong>{compactPrice(Math.min(...customPrices))}</strong><span>per stand</span></p> : null}
           <div className={styles.ctas}>
             <Link className="tr-button-primary" href={content.hero.primaryCta.href}>{content.hero.primaryCta.label}<ArrowRight size={17} aria-hidden="true" /></Link>
             {content.hero.secondaryCta ? <Link className={styles.textLink} href={content.hero.secondaryCta.href}>{content.hero.secondaryCta.label}<ArrowRight size={16} aria-hidden="true" /></Link> : null}
@@ -74,13 +73,12 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
       </div>
     </section> : null}
 
-    {content.customBranding.enabled && comparisonProduct && standard && branded ? <section className={styles.section} aria-labelledby="home-designs" data-home-section="comparison">
+    {content.customBranding.enabled && comparisonProduct && branded ? <section className={styles.section} aria-labelledby="home-designs" data-home-section="custom">
       <div className={styles.container}>
-        <Heading id="home-designs" eyebrow={content.customBranding.eyebrow} title={content.customBranding.headline} />
+        <Heading id="home-designs" eyebrow={content.customBranding.eyebrow} title="Made for your business" />
         <div className={styles.comparison}>
           {[
-            { name: "Standard", option: standard, image: showcase.comparisonStandard, detail: "NFC-only. No printed QR.", points: ["Ready-made Tap Rater design", "One destination link", "No subscription for Direct"], href: `/product/${comparisonProduct.slug}`, cta: "Shop Standard" },
-            { name: "Branded", option: branded, image: showcase.comparisonBranded, detail: "Your logo, business name, NFC + QR.", points: ["Your logo and business name", "QR generated from your destination", "Approve the preview before payment"], href: `/product/${comparisonProduct.slug}?design=branded`, cta: "Customize Yours" }
+            { name: "Custom", option: branded, image: showcase.comparisonBranded, detail: "Your logo, business name, NFC + QR.", points: ["Your logo and business name", "QR generated from your destination", "Approve the preview before payment"], href: `/product/${comparisonProduct.slug}?design=branded`, cta: "Customize Yours" }
           ].map((design) => <article key={design.name} className={styles.design}>
             <figure>
               <div className={styles.designImage}><Photo src={design.image.src} alt={design.image.alt} sizes="(max-width: 767px) calc(50vw - 43px), 320px" /></div>
@@ -94,7 +92,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
             </div>
           </article>)}
         </div>
-        <p className={styles.comparisonNote}>{content.customBranding.body}</p>
+        <p className={styles.comparisonNote}>Your logo, business name and QR code are included. Approve your artwork preview before payment.</p>
       </div>
     </section> : null}
 
@@ -156,7 +154,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
 
     {showcase.qualityEnabled && comparisonProduct ? <section className={styles.section} aria-labelledby="home-quality" data-home-section="quality">
       <div className={`${styles.container} ${styles.quality}`}>
-        <figure><div className={styles.qualityImage}><Photo src={showcase.qualityImage.src || getProductVisual(comparisonProduct).src} alt={showcase.qualityImage.alt} /></div>{showcase.qualityImage.caption ? <figcaption>{showcase.qualityImage.caption}</figcaption> : null}</figure>
+        <figure><div className={styles.qualityImage}><Photo src={getProductVisual(comparisonProduct).src} alt={showcase.qualityImage.alt} /></div>{showcase.qualityImage.caption ? <figcaption>{showcase.qualityImage.caption}</figcaption> : null}</figure>
         <div><Heading id="home-quality" eyebrow="Product details" title={showcase.qualityHeadline} />
           <p className={styles.body}>Acrylic. A compact countertop base. A clear invitation to connect.</p>
           <dl className={styles.specifications}>{specifications.map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}</dl>

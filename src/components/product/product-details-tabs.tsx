@@ -1,8 +1,6 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
-import { formatPrice } from "@/lib/products";
-import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 
 type Highlight = {
   title: string;
@@ -28,21 +26,17 @@ type ProductDetailsTabsProps = {
   howItWorks: HowStep[];
   specifications: Specification[];
   includedItems: IncludedItem[];
-  standardPrice: string;
-  brandedPrice: string;
-  supportsMultiLink?: boolean;
 };
 
-type TabId = "details" | "specifications" | "compare" | "how";
+type TabId = "details" | "specifications" | "how";
 
 const allTabs: Array<{ id: TabId; label: string }> = [
   { id: "details", label: "Product details" },
   { id: "specifications", label: "Specifications" },
-  { id: "compare", label: "Standard vs. Branded" },
   { id: "how", label: "How it works" }
 ];
 
-export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems, standardPrice, brandedPrice, supportsMultiLink = false }: ProductDetailsTabsProps) {
+export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems }: ProductDetailsTabsProps) {
   const [selectedTab, setActiveTab] = useState<TabId>("details");
   const tabs = allTabs.filter((tab) => tab.id !== "specifications" || specifications.length > 0 || includedItems.length > 0);
   const activeTab = tabs.some((tab) => tab.id === selectedTab) ? selectedTab : tabs[0].id;
@@ -164,29 +158,6 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
             </div>
           ) : null}
 
-          {tab.id === "compare" ? (
-            <div>
-              <h2 className="text-2xl font-black text-ink">Standard vs. Branded</h2>
-              <div className="tr-card mt-4 overflow-hidden p-0">
-                <ComparisonRow label="" standard="Standard" branded="Branded" header />
-                <ComparisonRow label="NFC Tap" standard="Yes" branded="Yes" />
-                <ComparisonRow label="Printed QR" standard="No" branded="Yes" />
-                <ComparisonRow label="Direct destination" standard="Yes" branded="Yes" />
-                <ComparisonRow label="Ready-made design" standard="Yes" branded="No" />
-                <ComparisonRow label="Your logo" standard="No" branded="Yes" />
-                <ComparisonRow label="Business name" standard="No" branded="Yes" />
-                <ComparisonRow label="Artwork review" standard="No" branded="Yes" />
-                <ComparisonRow label="Monthly subscription" standard="None with Direct" branded="None with Direct" />
-                <ComparisonRow label="Stand price" standard={standardPrice} branded={brandedPrice} />
-              </div>
-              {supportsMultiLink ? (
-                <p className="mt-4 text-sm leading-6 text-muted">
-                  Direct is included in the stand price. Optional hosted Multi-Link adds {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page to either design and supports up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
-
           {tab.id === "how" ? (
             <div className="max-w-4xl">
               <h2 className="text-2xl font-black text-ink">How it works</h2>
@@ -208,17 +179,6 @@ function InfoCard({ eyebrow, title, body }: { eyebrow: string; title: string; bo
       <h3 className="mt-3 max-w-[18rem] text-[1.35rem] font-semibold leading-[1.12] text-ink sm:text-[1.45rem]">{title}</h3>
       <p className="mt-4 text-[0.95rem] leading-7 text-muted">{body}</p>
     </article>
-  );
-}
-
-function ComparisonRow({ label, standard, branded, header = false }: { label: string; standard: string; branded: string; header?: boolean }) {
-  const className = header ? "font-black text-ink" : "text-muted";
-  return (
-    <div className="grid grid-cols-[1.2fr_0.7fr_0.7fr] border-b border-line px-4 py-3 text-sm last:border-b-0">
-      <div className={header ? "font-black text-ink" : "font-semibold text-ink"}>{label}</div>
-      <div className={className}>{standard}</div>
-      <div className={className}>{branded}</div>
-    </div>
   );
 }
 

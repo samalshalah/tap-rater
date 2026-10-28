@@ -35,7 +35,7 @@ const faqs = [
   },
   {
     question: "Can customers scan a QR code instead of tapping?",
-    answer: "Choose a compatible Branded + QR stand for both NFC and a printed QR code pointing to the same Multi-Link page. Standard stands are NFC-only and have no printed QR code."
+    answer: "Choose a compatible Branded + QR stand for both NFC and a printed QR code pointing to the same Multi-Link page. Every new stand includes your logo and QR code."
   },
   {
     question: "How much does a multi-link stand cost?",
@@ -80,7 +80,7 @@ export default async function MultiLinkPage() {
       <PageHero
         eyebrow="One stand. More ways to connect."
         title="Multi-Link NFC Stands for Business"
-        body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Standard remains NFC-only, with no printed QR. Branded adds a QR code pointing to the same page.`}
+        body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Your custom stand includes NFC and a QR code pointing to the same page.`}
         cta={{ href: "#compatible-stands", label: "Shop Compatible Stands" }}
         image={{
           ...multiLinkDemoImage,
@@ -143,7 +143,7 @@ export default async function MultiLinkPage() {
               <p className="tr-body mt-3">Open an editable Tap Rater page with up to {maxLinks} links. The service is {monthlyPrice}/month per page, plus the compatible physical stand.</p>
             </article>
           </div>
-          <p className="tr-body mt-6">For a multi-link QR code stand, choose Branded + QR. Both its printed QR code and NFC tap open the same page. Standard uses NFC only. The destination you link to may require its own app or sign-in.</p>
+          <p className="tr-body mt-6">For a multi-link QR code stand, choose Branded + QR. Both its printed QR code and NFC tap open the same page. The destination you link to may require its own app or sign-in.</p>
           <Link href="/pricing" className="tr-editorial-link mt-5">Compare stand and Multi-Link pricing</Link>
         </div>
       </SectionShell>

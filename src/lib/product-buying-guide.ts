@@ -18,12 +18,12 @@ export function getProductBuyingFaqs(product: MigratedProduct) {
     {
       question: "Which design includes a printed QR code?",
       answer: brandedAvailable
-        ? "Standard uses NFC only, with no printed QR. Choose Branded for NFC plus a destination-generated QR code, your logo, and business name. Review the artwork preview before payment so the design and destination match your business."
-        : "The available Standard option uses NFC only and has no printed QR code. Check the purchase options shown on this page before ordering; only select a QR design when it is offered for this product."
+        ? "Every custom stand includes NFC, a destination-generated QR code, your logo, and business name. Review the artwork preview before payment so the design and destination match your business."
+        : "This custom design is currently unavailable. Browse available custom stands for your logo and QR code."
     },
     {
       question: "How should I test the stand when it arrives?",
-      answer: "Tap the NFC area with a compatible phone, then check the destination as a customer would see it. If you chose Branded, also scan the printed QR with a phone camera. Confirm the business identity and complete any relevant sign-in steps before putting the stand on display."
+      answer: "Tap the NFC area with a compatible phone, then check the destination as a customer would see it. Also scan the printed QR with a phone camera. Confirm the business identity and complete any relevant sign-in steps before putting the stand on display."
     }
   ];
   const questions = new Set(existing.map((faq) => faq.question.trim().toLowerCase()));

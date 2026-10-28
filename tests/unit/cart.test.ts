@@ -7,31 +7,31 @@ describe("cart utilities", () => {
   });
 
   it("merges matching products and counts only positive quantities", () => {
-    const items = mergeCartItem([{ productId: "google-review-stand", quantity: 1 }], {
+    const items = mergeCartItem([{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 1 }], {
       productId: "google-review-stand",
-      quantity: 2
+      optionId: "branded_qr_direct", quantity: 2
     });
 
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 3 });
+    expect(items[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 3 });
   });
 
   it("prevents quantity updates from going below one", () => {
-    const item = normalizeCartItems([{ productId: "google-review-stand", quantity: 1 }])[0];
+    const item = normalizeCartItems([{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 1 }])[0];
     const items = updateCartQuantity([item], getCartItemKey(item), -4);
 
-    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 1 });
+    expect(items[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 1 });
   });
 
   it("caps merged and updated quantities at the checkout limit", () => {
-    const merged = mergeCartItem([{ productId: "google-review-stand", quantity: 98 }], {
+    const merged = mergeCartItem([{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 98 }], {
       productId: "google-review-stand",
-      quantity: 3
+      optionId: "branded_qr_direct", quantity: 3
     });
     const updated = updateCartQuantity(merged, getCartItemKey(merged[0]), 5);
 
-    expect(merged[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 99 });
-    expect(updated[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 99 });
+    expect(merged[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 99 });
+    expect(updated[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 99 });
   });
 
   it("keeps a branded hosted-page reservation at one when restored, merged, or incremented", () => {
@@ -57,14 +57,14 @@ describe("cart utilities", () => {
 
   it("removes stale product ids and invalid quantities from stored carts", () => {
     const items = normalizeCartItems([
-      { productId: "google-review-stand", quantity: 2 },
+      { productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 2 },
       { productId: "old-product", quantity: 4 },
       { productId: "google-review-plate", quantity: 0 },
       { productId: "", quantity: 3 }
     ]);
 
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 2 });
+    expect(items[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 2 });
   });
 
   it("keeps database-created product items when a product snapshot is present", () => {
@@ -115,7 +115,7 @@ describe("cart utilities", () => {
     const items = normalizeCartItems([
       {
         productId: "follow-us-social-media-stand",
-        optionId: "standard_direct",
+        optionId: "branded_qr_direct",
         quantity: 1,
         setup: {
           serviceMode: "HOSTED",
@@ -137,13 +137,13 @@ describe("cart utilities", () => {
   it("restores only valid items from localStorage JSON", () => {
     const items = parseStoredCart(
       JSON.stringify([
-        { productId: "google-review-stand", quantity: 1 },
+        { productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 1 },
         { productId: "old-product", quantity: 3 }
       ])
     );
 
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ productId: "google-review-stand", optionId: "standard_direct", quantity: 1 });
+    expect(items[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 1 });
   });
 
   it("returns an empty cart when stored JSON is corrupted", () => {
@@ -152,10 +152,10 @@ describe("cart utilities", () => {
 
   it("calculates total using active catalog prices", () => {
     const total = calculateCartTotalCents([
-      { productId: "google-review-stand", quantity: 2 },
+      { productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 2 },
       { productId: "stale-bundle-product", quantity: 1 }
     ]);
 
-    expect(total).toBe(7800);
+    expect(total).toBe(9800);
   });
 });

@@ -1,12 +1,13 @@
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { type PurchaseOption } from "@/lib/purchase-options";
+import { getProductVisual } from "@/lib/storefront-visuals";
 import type { MultiLinkDraftButton, ProductSetupChooserProduct } from "./product-setup-chooser-types";
 export function getSelectedOptionImage(product: ProductSetupChooserProduct, option: PurchaseOption): { src: string; alt: string } {
   if (option.id === "branded_qr_direct" && product.assetSet?.brandedAngledImageUrl) {
     return { src: product.assetSet.brandedAngledImageUrl, alt: `${product.title} branded option` };
   }
 
-  return product.images[0] ?? { src: "/uploads/products/no-photo-available.png", alt: product.title };
+  return option.id === "branded_qr_direct" ? getProductVisual(product) : product.images[0] ?? { src: "/uploads/products/no-photo-available.png", alt: product.title };
 }
 
 export function isGoogleReviewStand(product: ProductSetupChooserProduct) {

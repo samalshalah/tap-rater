@@ -108,7 +108,7 @@ export function getProductPageHighlights(product: MigratedProduct): ProductPageC
     },
     {
       title: "Connects to one destination URL",
-      body: `Use the ${destination.linkType} you approve for this stand. Standard Direct points the NFC tap to that same destination.`
+      body: `Use the ${destination.linkType} you approve for this stand. NFC and the printed QR code open that same destination.`
     },
     {
       title: "Countertop physical product",
@@ -200,7 +200,7 @@ export function getProductHowItWorks(product: MigratedProduct): Array<ProductPag
 export function getProductSpecifications(product: MigratedProduct) {
   return (product.specifications ?? []).map((specification) =>
     ["Connectivity", "Connection", "Technology"].includes(specification.label) && ["NFC + QR", "NFC and QR", "NFC & QR"].includes(specification.value)
-      ? { ...specification, value: "Standard: NFC only, no printed QR. Branded: NFC and printed QR." }
+      ? { ...specification, value: "NFC and printed QR, personalized with your logo and business name." }
       : specification);
 }
 
@@ -252,7 +252,7 @@ export function getProductSubscriptionAnswer(product: MigratedProduct): string {
 function getProductConnectionCopy(product: MigratedProduct): string {
   const destination = getProductDestinationCopy(product);
   const brandedAvailable = getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct");
-  return `Customers tap NFC to open your ${destination.highlightTarget} without searching. Standard is NFC-only, with no printed QR.${brandedAvailable ? " Branded adds a QR code generated from the same destination." : ""}`;
+  return `Customers tap NFC to open your ${destination.highlightTarget} without searching. Your custom stand includes a printed QR code generated from the same destination.`;
 }
 
 function correctKnownProductDetailCopy(product: MigratedProduct, value: string): string {

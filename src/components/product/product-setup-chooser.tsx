@@ -112,7 +112,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
       ? "Set up your Multi-Link stand"
       : selectedOption.id === "branded_qr_direct"
         ? "Build your Branded QR stand"
-        : "Set up your Standard Direct stand";
+        : "Set up your custom stand";
 
   const standQuote = !fixedSelection && configuredUnitPriceCents !== null && selectedOptionId && offers
     ? quoteOffers([{ productId: product.slug, optionId: selectedOptionId, quantity: selectedQuantity, unitAmountCents: configuredUnitPriceCents }], offers) : null;

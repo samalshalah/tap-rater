@@ -30,7 +30,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     faqs: [
       { question: "Does a review stand automatically post a review?", answer: "No. It opens the destination on the customer's phone. The customer decides whether to sign in, write feedback, choose a rating, and submit it through the platform's own process." },
       { question: "Which review stand should I choose for several locations?", answer: "Choose the platform your business uses, then supply the correct URL for each location. Identical designs can use different destinations. Test each branch's link rather than assuming a company-wide page will direct customers to the right office." },
-      { question: "Do all review stands include a printed QR code?", answer: "Standard is NFC-only and has no printed QR. Where offered, Branded adds your logo, business name, and a QR code generated from the destination. Check the purchase options on the individual product page." },
+      { question: "Do all review stands include a printed QR code?", answer: "Every custom stand includes NFC, your logo, business name, and a QR code generated from the destination. Review the artwork preview before payment." },
       { question: "Can the stand guarantee five-star reviews?", answer: "No. It makes a destination easier to access. Customers control their feedback, and the platform controls publication. Choose this product for convenient access, not a promised rating or search position." },
       { question: "Should I use a public review page or a private survey?", answer: "Choose a review stand when your purpose is access to a public platform. For comments sent through your own survey, compare Feedback Stands. The destination and printed invitation should clearly explain what customers are opening." }
     ]
@@ -61,7 +61,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     introduction: "An appointment stand makes your existing scheduling destination easier to reach at reception or checkout. Start with the service your customer needs next, then choose whether the destination should show a provider, a branch, or a general booking menu. A useful booking page explains the available services before asking someone to select a time.",
     decision: "For a practice with several clinicians or a salon with independent professionals, avoid sending everyone to the wrong calendar. A direct booking URL works well for one clear next step. If visitors need to compare services first, a service-information destination may be a better starting point than an immediate time-slot picker.",
     options: [
-      { slug: "book-your-next-visit-stand", purpose: "Open an existing appointment or scheduling page.", consideration: "Match the destination to the correct provider and location." },
+      { slug: "connect-with-us-stand", purpose: "Open an existing appointment or scheduling page.", consideration: "Match the destination to the correct provider and location." },
       { slug: "explore-our-services-stand", purpose: "Explain options before customers choose a service.", consideration: "Useful when price, duration, or preparation needs explaining first." }
     ],
     setupHeading: "Test the customer booking journey",
@@ -81,8 +81,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     introduction: "Menu stands connect tables, counters, and waiting areas to a menu guests can read on their phones. Decide whether you want people to browse food and drinks or complete an order. A readable menu page suits table service, while a customer-facing ordering page needs the right branch, collection method, and payment flow.",
     decision: "Use a stable URL when dishes, prices, or opening hours change frequently. Updating content at that address can keep the stand useful across seasonal menus. For several restaurants or table-specific ordering, check how your existing system identifies the location. A general NFC link does not automatically know which table a guest is sitting at.",
     options: [
-      { slug: "menu-and-order-stand", purpose: "Connect guests to a menu or online ordering journey.", consideration: "Check branch selection, pickup choices, and checkout before launch." },
-      { slug: "view-our-menu-stand", purpose: "Give guests a straightforward menu-browsing destination.", consideration: "Prioritize mobile readability and current menu information." }
+      { slug: "menu-and-order-stand", purpose: "Connect guests to a menu or online ordering journey.", consideration: "Check branch selection, pickup choices, and checkout before launch." }
     ],
     setupHeading: "Prepare a menu guests can use on a phone",
     setup: "Open the supplied menu URL on a small screen and check headings, prices, and navigation. A website menu should be easy to browse without zooming; a document should remain readable and publicly accessible. For ordering, test the customer journey through selecting items and confirming the restaurant, without using a private basket or staff dashboard link.",
@@ -92,7 +91,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
       { question: "Does a menu stand include online ordering software?", answer: "No. It opens your existing menu or ordering destination. Your website or provider handles items, payments, order routing, and kitchen notifications. Check that those features work before connecting the stand." },
       { question: "Can I update prices without replacing the stand?", answer: "Yes, if you update the menu content at the same URL. Keep the public address stable when replacing documents or publishing seasonal menus. If the address changes, check the stand's destination setup before relying on the new page." },
       { question: "Can the stand tell our system which table ordered?", answer: "A direct stand opens its configured URL. Table identification must come from your ordering system, such as a table-specific URL or a customer selection. Test that workflow rather than assuming a tap supplies the table number." },
-      { question: "Should I choose NFC only or NFC plus QR?", answer: "Standard uses NFC only. Where available, Branded adds a printed QR alongside your logo and business name, giving guests a camera-scanning option. Choose the available design that suits how your guests use their phones." },
+      { question: "Can customers tap or scan?", answer: "Every custom stand includes NFC and a printed QR alongside your logo and business name, giving guests a camera-scanning option. Both open your approved destination." },
       { question: "Can I show breakfast and dinner menus on one stand?", answer: "Yes. Link to one page that clearly presents both menus and their service times. The stand opens that page; your website determines which menu information is shown and how guests move between sections." }
     ]
   },
@@ -102,7 +101,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     decision: "Decide whether responses should go privately to your team or be submitted to a public review platform. Those are different destinations and should have different invitations. For private feedback, check who receives submissions and how your team follows up. A physical stand makes the form accessible; it does not replace your response process.",
     options: [
       { slug: "rate-your-experience-stand", purpose: "Invite customers to an existing feedback form or survey.", consideration: "Choose a general form that works for every visitor." },
-      { slug: "custom-direct-stand", purpose: "Match a particular feedback campaign with custom wording.", consideration: "Keep the invitation consistent with the questions on your form." }
+      { slug: "connect-with-us-stand", purpose: "Match a particular feedback campaign with custom wording.", consideration: "Keep the invitation consistent with the questions on your form." }
     ],
     setupHeading: "Check the form before displaying the invitation",
     setup: "Test the form on a phone, including required fields and the confirmation shown after submission. Use your form provider's test process to check where responses arrive. Avoid a URL tied to one respondent or a signed-in administrator session. Ask only for information your team needs, and make any follow-up contact choice clear within the form.",
@@ -142,8 +141,8 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     introduction: "A custom stand connects your business identity with a useful digital destination. Start with what visitors should do: explore a service, open a menu, find a profile, or contact your team. Then choose the available design and destination options that support that action. A clear invitation is more useful than filling the display with competing messages.",
     decision: "Branded options add your logo, business name, and a destination-generated QR code alongside NFC. The exact editable fields depend on the product and template shown in the configurator. For a platform-specific purpose, a branded platform stand may be the clearest choice. A Custom Stand suits a broader business message or destination that needs its own visual identity.",
     options: [
-      { slug: "custom-direct-stand", purpose: "Build a display around your own business and message.", consideration: "Review the available editable fields in the configurator." },
-      { slug: "google-review-stand", purpose: "Combine business branding with a recognizable review platform.", consideration: "Select Branded on the product page for logo, name, and QR." },
+      { slug: "connect-with-us-stand", purpose: "Build a display around your own business and message.", consideration: "Review the available editable fields in the configurator." },
+      { slug: "google-review-stand", purpose: "Combine business branding with a recognizable review platform.", consideration: "Your logo, business name and QR code are included." },
       { slug: "menu-and-order-stand", purpose: "Match a menu or ordering display to your restaurant.", consideration: "Prepare a public menu link for the correct branch." }
     ],
     setupHeading: "Prepare your logo, business name, and destination",

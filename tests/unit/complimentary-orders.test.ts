@@ -13,7 +13,7 @@ vi.mock("@/lib/admin-media-storage", () => ({ isSafeProductMediaKey: (key: strin
 import { PATCH } from "@/app/api/admin/orders/[id]/stand/route";
 import { POST } from "@/app/api/admin/orders/complimentary/route";
 
-const input = { requestId: "11111111-1111-4111-8111-111111111111", customer: { name: "Test Client", email: "client@example.com" }, productId: "google-review-stand", optionId: "standard_direct", quantity: 2, businessName: "Test Business", destinationUrl: "https://example.com/review", reason: "Client gift", delivery: "pickup" };
+const input = { requestId: "11111111-1111-4111-8111-111111111111", customer: { name: "Test Client", email: "client@example.com" }, productId: "google-review-stand", optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png", quantity: 2, businessName: "Test Business", destinationUrl: "https://example.com/review", reason: "Client gift", delivery: "pickup" };
 const request = (body: unknown = input, origin = "https://taprater.com") => new Request("https://taprater.com/api/admin/orders/complimentary", { method: "POST", headers: { "content-type": "application/json", origin }, body: JSON.stringify(body) });
 
 describe("complimentary orders", () => {
@@ -48,7 +48,7 @@ describe("complimentary orders", () => {
     expect((await POST(request({ ...input, delivery: "free_shipping" }))).status).toBe(400);
     expect((await POST(request({ ...input, quantity: 0 }))).status).toBe(400);
     expect((await POST(request({ ...input, design: { logoSizePercent: 999 } }))).status).toBe(400);
-    expect((await POST(request({ ...input, optionId: "branded_qr_direct" }))).status).toBe(400);
+    expect((await POST(request({ ...input, optionId: "branded_qr_direct", logoStorageKey: undefined }))).status).toBe(400);
     mocks.media.mockResolvedValue(null);
     expect((await POST(request({ ...input, optionId: "branded_qr_direct", logoStorageKey: "products/test/logo.png" }))).status).toBe(400);
   });

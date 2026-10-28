@@ -39,15 +39,15 @@ describe("product page content", () => {
       "Ready to Use",
       "Standard or Branded"
     ]);
-    expect(getProductPageHighlights(product)[0].body).toContain("Standard is NFC-only, with no printed QR.");
+    expect(getProductPageHighlights(product)[0].body).toContain("QR code");
     expect(product.keyFeatures?.[0].body).toBe("Customers can tap with NFC or scan the printed QR code.");
   });
 
   it("qualifies fallback connections for Standard and Branded, including Multi-Link-compatible products", () => {
     const product = productFixture({ supportsMultiLink: true, assetSet: { brandedFrontTemplateUrl: "/branded.png" } });
     const answer = getProductFaqs(product)[0].answer;
-    expect(answer).toContain("Standard is NFC-only, with no printed QR.");
-    expect(answer).toContain("Branded adds a QR code generated from the same destination.");
+    expect(answer).toContain("QR code");
+    expect(answer).toContain("printed QR code generated from the same destination.");
     expect(getProductPageHighlights(product)[0].body).toBe(answer);
     expect(getProductFaqs({ ...product, assetSet: {} })[0].answer).not.toContain("Branded adds");
   });
@@ -62,7 +62,7 @@ describe("product page content", () => {
       howItWorks: [{ step: 1, title: "Our production notes", body: "Our custom production notes remain unchanged." }],
       keyFeatures: [{ title: "Tap + Scan", body: "Our custom Branded printed QR connects to the front desk." }]
     });
-    expect(getProductFaqs(product)[0].answer).toContain("Standard is NFC-only");
+    expect(getProductFaqs(product)[0].answer).toContain("QR");
     expect(getProductFaqs(product)[1]).toEqual(product.productFaqs![1]);
     expect(getProductHowItWorks(product)).toEqual(product.howItWorks);
     expect(getProductPageHighlights(product)).toEqual(product.keyFeatures);
@@ -73,7 +73,7 @@ describe("product page content", () => {
       specifications: [{ label: "Connectivity", value: "NFC + QR" }, { label: "Finish", value: "Our printed finish" }],
       includedItems: [{ label: "Printed QR code", appliesTo: "all" }, { label: "Printed setup instructions", appliesTo: "all" }]
     });
-    expect(getProductSpecifications(product)[0].value).toBe("Standard: NFC only, no printed QR. Branded: NFC and printed QR.");
+    expect(getProductSpecifications(product)[0].value).toBe("NFC and printed QR, personalized with your logo and business name.");
     expect(getProductSpecifications(product)[1]).toEqual(product.specifications![1]);
     expect(getProductIncludedItems(product)[0]).toEqual({ label: "Printed QR code", appliesTo: "branded" });
     expect(getProductIncludedItems(product)[1]).toEqual(product.includedItems![1]);

@@ -1,3 +1,4 @@
+import { customOnlyPublicContent } from "@/lib/custom-only-public-content";
 import { defaultHeaderNavigation, defaultFooterContent, defaultFaqContent, defaultHomepageContent } from "./website-content-defaults";
 export { defaultHeaderNavigation, defaultFooterContent, defaultFaqContent, defaultHomepageContent } from "./website-content-defaults";
 import { unstable_noStore as noStore } from "next/cache";
@@ -36,7 +37,7 @@ export const headerNavigationSchema = z.object({
 });
 
 export const footerContentSchema = z.object({
-  intro: z.string().trim().max(500).default("NFC tabletop stands for local businesses. Standard is NFC-only; Branded adds printed QR, your logo, and business name."),
+  intro: z.string().trim().max(500).default("NFC tabletop stands for local businesses. Every stand includes your logo, business name, NFC and a printed QR code."),
   columns: z
     .array(
       z.object({
@@ -316,7 +317,7 @@ async function readContent<T>(key: string, type: "homepage" | "section" | "page"
   noStore();
   try {
     const parsed = schema.safeParse((records ?? await loadPublicWebsiteContent())[key]);
-    return parsed.success ? parsed.data : fallback;
+    return customOnlyPublicContent(parsed.success ? parsed.data : fallback);
   } catch {
     return fallback;
   }

@@ -171,7 +171,7 @@ export function quoteOffers(
   if (offerIsActive(settings.upgrade, now))
     candidate(
       "upgrade",
-      "Branded upgrade savings",
+      "Custom stand savings",
       lines.map((r, i) =>
         eligible[i] && r.optionId === "branded_qr_direct"
           ? Math.min(settings.upgrade.savingCents, r.unitAmountCents) *

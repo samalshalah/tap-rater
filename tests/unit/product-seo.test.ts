@@ -33,7 +33,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("Tap Rater Review Stand for Google Reviews");
     expect(seo.generatedDescription).toBe(
-      "Get more Google reviews with a Tap Rater NFC review stand. Choose NFC-only Standard or Branded + QR with your logo and name. Starts at $39."
+      "Get more Google reviews with a Tap Rater NFC review stand. Includes your logo, business name, NFC and QR. Starts at $49."
     );
     expect(seo.generatedTitle.length).toBeLessThanOrEqual(64);
     expect(seo.generatedDescription.length).toBeLessThanOrEqual(158);
@@ -53,9 +53,9 @@ describe("product SEO generation", () => {
       })
     );
 
-    expect(seo.generatedTitle).toBe("Book Appointment Stand | NFC Booking Stand from $39");
+    expect(seo.generatedTitle).toBe("Book Appointment Stand | NFC Booking Stand from $49");
     expect(seo.generatedDescription).toBe(
-      "Let customers book appointments with one tap. Works with booking links like Vagaro, Booksy, Fresha, Calendly, Zocdoc, or any booking URL. Starts at $39."
+      "Let customers book appointments with one tap. Works with booking links like Vagaro, Booksy, Fresha, Calendly, Zocdoc, or any booking URL. Starts at $49."
     );
     expect(seo.generatedDescription).not.toContain("Vagaro Stand");
   });
@@ -75,7 +75,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("View Menu Stand | NFC Menu Stand from $39");
     expect(seo.generatedDescription).toBe(
-      "Let customers open your menu with one tap. Order an NFC-only Standard stand with no printed QR. Starts at $39."
+      "Let customers open your menu with one tap. Custom design availability is shown on the product page. Starts at $39."
     );
     expect(seo.generatedDescription.length).toBeLessThanOrEqual(158);
   });
@@ -125,9 +125,9 @@ describe("product SEO generation", () => {
       seoTitle: "Google Review Stand with NFC & QR",
       seoDescription: "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
     }));
-    expect(corrected.title).toBe("Google Review Stand | NFC Standard or Branded + QR");
-    expect(corrected.description).toContain("Standard uses NFC only, with no printed QR.");
-    expect(corrected.description).toContain("Branded adds QR, your logo, and business name.");
+    expect(corrected.title).toBe("Custom Google Review Stand | Logo + NFC + QR");
+    expect(corrected.description).toContain("your logo, business name, NFC and QR");
+    expect(corrected.description).toContain("Custom Google Review Stand");
     expect(corrected.description.length).toBeLessThanOrEqual(158);
     const custom = resolveProductSeo(productFixture({
       seoTitle: "Branded NFC and QR for reception",

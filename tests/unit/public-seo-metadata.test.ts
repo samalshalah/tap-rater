@@ -45,9 +45,9 @@ beforeEach(() => {
 });
 
 describe("canonical public category URLs", () => {
-  it.each(["standard", "branded"])("preserves the %s variant when redirecting an old product slug", async (design) => {
+  it.each(["standard", "branded"])("routes the %s variant to custom when redirecting an old product slug", async (design) => {
     await expect(ProductPage({ ...params("follow-us-stand"), searchParams: Promise.resolve({ design }) }))
-      .rejects.toThrow(`REDIRECT:/product/follow-us-social-media-stand?design=${design}`);
+      .rejects.toThrow(`REDIRECT:/product/follow-us-social-media-stand?design=branded`);
     expect(mocks.product).not.toHaveBeenCalled();
   });
 
@@ -159,13 +159,13 @@ describe("social preview image coverage", () => {
     const metadata = await productMetadata(params("google-review-stand"));
     const images = metadata.openGraph?.images as Array<{ url: string }>;
     expect(images).toHaveLength(1);
-    expect(new URL(images[0].url).pathname).toBe(googleStand.images[0].src);
+    expect(new URL(images[0].url).pathname).toBe(googleStand.assetSet!.brandedAngledImageUrl);
   });
 
   it("shares the branded stand when the link selects the branded design", async () => {
     const metadata = await productMetadata({ ...params("google-review-stand"), searchParams: Promise.resolve({ design: "branded" }) });
     expect(metadata.openGraph).toMatchObject({
-      url: "/product/google-review-stand?design=branded",
+      url: "/product/google-review-stand",
       images: [{ url: expect.stringContaining(googleStand.assetSet!.brandedAngledImageUrl!) }]
     });
     expect(metadata.twitter).toMatchObject({ images: metadata.openGraph?.images });
@@ -173,7 +173,7 @@ describe("social preview image coverage", () => {
 
   it("provides a fallback for a product without gallery media", async () => {
     mocks.product.mockResolvedValue({ ...googleStand, images: [] });
-    expect((await productMetadata(params("google-review-stand"))).openGraph).toMatchObject({ images: [defaultSocialImage] });
+    expect((await productMetadata(params("google-review-stand"))).openGraph).toMatchObject({ images: [{ url: expect.stringContaining(googleStand.assetSet!.brandedAngledImageUrl!) }] });
   });
 
   it("preserves not-found metadata for absent records", async () => {

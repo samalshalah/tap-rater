@@ -1,3 +1,4 @@
+import { customOnlyPublicText } from "@/lib/custom-only-public-content";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 
@@ -21,6 +22,7 @@ export type PurchaseOption = {
   accountRequired: boolean;
 };
 
+// Historical definition: retained for saved orders and fulfillment, never offered for new sales.
 export const standardDirectOption: PurchaseOption = {
   id: "standard_direct",
   label: "Standard Direct Stand",
@@ -40,7 +42,7 @@ export const standardDirectOption: PurchaseOption = {
 
 export const brandedQrDirectOption: PurchaseOption = {
   id: "branded_qr_direct",
-  label: "Branded + QR Direct Stand",
+  label: "Custom Stand · Logo + QR",
   priceCents: 4900,
   summary: "Add your logo, business name, and a QR code generated from your destination. Approve the artwork preview before payment. Final print artwork is generated after payment.",
   requiresDestinationUrl: true,
@@ -114,7 +116,7 @@ export function isPurchaseOptionSellableForProduct(product: ProductForPurchaseOp
     return hasBrandedDirectProductionTemplate(product);
   }
 
-  return optionId === "standard_direct";
+  return false;
 }
 
 export function getProductPurchaseOptions(
@@ -127,18 +129,18 @@ export function getProductPurchaseOptions(
       .map((option) => {
         return {
           id: option.optionCode,
-          label: option.title,
+          label: brandedQrDirectOption.label,
           priceCents: option.priceCents,
           monthlyPriceCents: option.monthlyPriceCents,
-          summary: correctKnownPurchaseCopy(option.description),
-          requiresDestinationUrl: option.requiresDestinationUrl,
-          hasQr: option.optionCode === "standard_direct" ? false : option.hasQr,
-          requiresBusinessName: option.requiresBusinessName,
-          requiresLogo: option.requiresLogo,
-          requiresDesignStep: option.requiresDesignStep,
+          summary: brandedQrDirectOption.summary,
+          requiresDestinationUrl: true,
+          hasQr: true,
+          requiresBusinessName: true,
+          requiresLogo: true,
+          requiresDesignStep: true,
           requiresCustomText: false,
           requiresManualCollection: false,
-          requiresFinalProof: option.requiresFrontProof,
+          requiresFinalProof: true,
           requiresSubscription: option.requiresSubscription,
           accountRequired: option.accountRequired
         };
@@ -149,7 +151,7 @@ export function getProductPurchaseOptions(
     return [];
   }
 
-  return hasBrandedDirectProductionTemplate(product) ? [standardDirectOption, brandedQrDirectOption] : [standardDirectOption];
+  return hasBrandedDirectProductionTemplate(product) ? [brandedQrDirectOption] : [];
 }
 
 export function getPurchaseOption(optionId: string): PurchaseOption | undefined {
@@ -175,7 +177,7 @@ export function correctKnownPurchaseCopy(value: string): string {
   for (const [claim, replacement] of knownPurchaseClaims) {
     corrected = corrected.replaceAll(claim, replacement);
   }
-  return corrected;
+  return customOnlyPublicText(corrected);
 }
 
 export function getLowestPurchasePriceCents(

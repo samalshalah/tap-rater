@@ -1,3 +1,4 @@
+import customGalleries from "@/data/custom-product-galleries.json";
 import type { CatalogCategory, CatalogCategorySlug, MigratedProduct } from "@/data/migrated-products";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 
@@ -30,37 +31,37 @@ export type CustomerActionCard = {
 };
 
 export const productImageFallback: StorefrontVisual = {
-  src: "/uploads/products/rate-your-experience-stand.png",
+  src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png",
   alt: "Tap Rater tabletop stand"
 };
 
 const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
   reviews: {
-    src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
+    src: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png",
     alt: "Yelp Review Stand"
   },
   "social-media": {
-    src: "/uploads/products/taprater-stands/social-media/social-media-standard-angled.png",
+    src: "/uploads/products/taprater-stands/social-media/social-media-custom-angled.png",
     alt: "Social Media Stand"
   },
   appointments: {
-    src: "/uploads/products/book-next-visit-stand.png",
+    src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png",
     alt: "Book Your Next Visit Stand"
   },
   menu: {
-    src: "/uploads/products/view-menu-stand.png",
+    src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png",
     alt: "View Menu Stand"
   },
   feedback: {
-    src: "/uploads/products/rate-your-experience-stand.png",
+    src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png",
     alt: "Rate Your Experience Stand"
   },
   "website-links": {
-    src: "/uploads/products/visit-website-stand.png",
+    src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png",
     alt: "Website Link Stand"
   },
   "custom-stands": {
-    src: "/uploads/products/business-google-white-stands-bundle.jpg",
+    src: "/uploads/products/taprater-stands/google/google-custom-angled.png",
     alt: "Custom Tap Rater Stands"
   }
 };
@@ -127,31 +128,31 @@ export const customerActionCards: CustomerActionCard[] = [
     title: "Get Reviews",
     description: "Send customers to Google, Yelp, Tripadvisor, or another review page.",
     href: "/category/reviews",
-    image: { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Yelp Review Stand" }
+    image: { src: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png", alt: "Yelp Review Stand" }
   },
   {
     title: "Book Appointments",
     description: "Open booking, scheduling, reservation, or service links.",
     href: "/category/appointments",
-    image: { src: "/uploads/products/book-next-visit-stand.png", alt: "Book appointment stand" }
+    image: { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png", alt: "Book appointment stand" }
   },
   {
     title: "View Menu",
     description: "Put menus, specials, services, or info one tap away.",
     href: "/category/menu",
-    image: { src: "/uploads/products/view-menu-stand.png", alt: "View Menu Stand" }
+    image: { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png", alt: "View Menu Stand" }
   },
   {
     title: "Follow Us",
     description: "Grow Instagram, Facebook, TikTok, LinkedIn, and social profiles.",
     href: "/category/social-media",
-    image: { src: "/uploads/products/taprater-stands/social-media/social-media-standard-angled.png", alt: "Social Media Stand" }
+    image: { src: "/uploads/products/taprater-stands/social-media/social-media-custom-angled.png", alt: "Social Media Stand" }
   },
   {
     title: "Collect Feedback",
     description: "Open surveys, private feedback forms, and experience rating links.",
     href: "/category/feedback",
-    image: { src: "/uploads/products/rate-your-experience-stand.png", alt: "Rate Your Experience Stand" }
+    image: { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png", alt: "Rate Your Experience Stand" }
   },
   {
     title: "Multi-Link Stand",
@@ -168,7 +169,7 @@ export function getCategoryVisual(category: Pick<CatalogCategory, "slug" | "titl
   };
 }
 
-export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title" | "images">): StorefrontVisual {
+export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title" | "images" | "assetSet">): StorefrontVisual {
   if (product.slug === "custom-direct-stand") {
     return {
       src: "/uploads/products/business-google-white-stands-bundle.jpg",
@@ -176,5 +177,7 @@ export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title"
     };
   }
 
-  return product.images.find((item) => item.src) ?? { ...productImageFallback, alt: product.title };
+  const gallery = (customGalleries as Record<string, { src: string }[]>)[product.slug];
+  const src = gallery?.[0]?.src ?? product.assetSet?.brandedAngledImageUrl ?? product.assetSet?.brandedFrontTemplateUrl;
+  return src ? { src, alt: `${product.title} custom design with logo and QR` } : { ...productImageFallback, alt: "Custom artwork preview pending" };
 }

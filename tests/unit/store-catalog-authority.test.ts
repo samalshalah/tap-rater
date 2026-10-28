@@ -1,3 +1,4 @@
+import { customStandItem } from "../helpers/custom-stand";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PaymentMemoryDb } from "../helpers/payment-memory-db";
 
@@ -11,7 +12,7 @@ import { validateCheckoutCart } from "@/lib/checkout";
 let db: PaymentMemoryDb;
 beforeEach(() => {
   db = new PaymentMemoryDb({ products: [{ slug: "google-review-stand", title: "Google Review Stand", status: "active", is_active: true, stock_status: "instock" }],
-    product_options: [{ product_slug: "google-review-stand", option_code: "standard_direct", title: "Standard Direct", price_cents: 4200,
+    product_options: [{ product_slug: "google-review-stand", option_code: "branded_qr_direct", title: "Standard Direct", price_cents: 4200,
       is_active: true, requires_destination_url: true, has_qr: false, sort_order: 1 }] });
   mocks.configured.mockReturnValue(true);
   mocks.client.mockReturnValue(db);
@@ -26,8 +27,7 @@ describe("authoritative store catalog", () => {
     db.table("product_options")[0].price_cents = 4600;
     const updated = await getStorefrontProductBySlug("google-review-stand");
     expect(getProductPurchaseOptions(updated!)[0].priceCents).toBe(4600);
-    const cart = validateCheckoutCart([{ productId: "google-review-stand", optionId: "standard_direct", quantity: 2,
-      setup: { destinationUrl: "https://example.com/review", priceCents: 1 } }], await getCheckoutProducts());
+    const cart = validateCheckoutCart([{ ...customStandItem(), quantity: 2, setup: { ...customStandItem().setup, priceCents: 1 } }], await getCheckoutProducts());
     expect(cart).toMatchObject({ ok: true, totalCents: 9200 });
   });
 

@@ -11,7 +11,7 @@ const schema = (
 ) => productJsonLd(product, { offers, shipping }) as any;
 describe("SEO offer accuracy", () => {
   it("publishes the approved preparation and transit ranges for both US designs only", () => {
-    const variants = schema(defaultOffers, { ...getDefaultShippingSettings(), allowedCountryCodes: ["US", "CA"] }).hasVariant;
+    const variants = [schema(defaultOffers, { ...getDefaultShippingSettings(), allowedCountryCodes: ["US", "CA"] })];
     for (const variant of variants) {
       expect(variant.offers.shippingDetails[0].deliveryTime).toMatchObject({
         "@type": "ShippingDeliveryTime",
@@ -22,18 +22,17 @@ describe("SEO offer accuracy", () => {
     }
   });
   it("uses eligible single-unit discounts without advertising bulk discounts", () => {
-    expect(schema().hasVariant.map((v: any) => v.offers.price)).toEqual([
-      "39.00",
+    expect([schema().offers.price]).toEqual([
       "46.00",
     ]);
     expect(
-      schema().hasVariant[1].offers.shippingDetails[0].shippingRate.value,
+      schema().offers.shippingDetails[0].shippingRate.value,
     ).toBe("0.00");
   });
   it("respects exclusions, disabled and scheduled promotions", () => {
     const offers = structuredClone(defaultOffers);
     offers.excludedProducts = [product.slug];
-    expect(schema(offers).hasVariant[1].offers.price).toBe("49.00");
+    expect(schema(offers).offers.price).toBe("49.00");
     offers.excludedProducts = [];
     offers.upgrade.startsAt = "2035-01-01T00:00:00Z";
     expect(
@@ -46,36 +45,29 @@ describe("SEO offer accuracy", () => {
       ),
     ).toBe(4900);
     offers.enabled = false;
-    expect(schema(offers).hasVariant[1].offers.price).toBe("49.00");
+    expect(schema(offers).offers.price).toBe("49.00");
   });
   it("uses destination-specific shipping and never invents manually quoted rates", () => {
     const offers = structuredClone(defaultOffers);
     offers.shipping.thresholdCents = 4500;
     expect(
-      schema(offers).hasVariant[1].offers.shippingDetails[0].shippingRate.value,
+      schema(offers).offers.shippingDetails[0].shippingRate.value,
     ).toBe("0.00");
     expect(
-      schema(offers).hasVariant[0].offers.shippingDetails[0].shippingRate.value,
+      schema(offers).offers.shippingDetails[0].shippingRate.value,
     ).toBe("0.00");
     expect(
       schema(offers, {
         ...getDefaultShippingSettings(),
         shippingMode: "manual",
-      }).hasVariant[0].offers.shippingDetails,
+      }).offers.shippingDetails,
     ).toBeUndefined();
   });
-  it("distinguishes standard returns from custom artwork exclusions", () => {
-    const variants = schema().hasVariant;
-    expect(variants[0].offers.hasMerchantReturnPolicy).toMatchObject({
-      applicableCountry: ["US"],
-      returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
-      merchantReturnDays: 30,
-      returnMethod: "https://schema.org/ReturnByMail",
-      returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
-    });
-    expect(variants[0].offers.hasMerchantReturnPolicy.returnShippingFeesAmount).toBeUndefined();
-    expect(variants[1].offers.hasMerchantReturnPolicy.returnPolicyCategory).toBe("https://schema.org/MerchantReturnNotPermitted");
-    expect(variants[1].offers.hasMerchantReturnPolicy.merchantReturnDays).toBeUndefined();
+  it("advertises the custom return policy without a standard offer", () => {
+    const data = schema();
+    expect(data.hasVariant).toBeUndefined();
+    expect(data.offers.hasMerchantReturnPolicy.returnPolicyCategory).toBe("https://schema.org/MerchantReturnNotPermitted");
+    expect(data.offers.hasMerchantReturnPolicy.merchantReturnDays).toBeUndefined();
   });
   it("repairs legacy Standard QR promises without erasing merchant copy", () => {
     const edited = {
@@ -89,7 +81,7 @@ describe("SEO offer accuracy", () => {
       })),
     };
     expect(getProductPurchaseOptions(edited)[0].summary).toContain(
-      "Standard is NFC-only, with no printed QR",
+      "logo, business name, and a QR code",
     );
   });
 });

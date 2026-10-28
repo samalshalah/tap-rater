@@ -26,6 +26,7 @@ import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/pu
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { productSupportsMultiLink } from "@/lib/service-addons";
+import { getProductVisual } from "@/lib/storefront-visuals";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -33,7 +34,7 @@ export const revalidate = 0;
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ design?: string | string[] }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ params, searchParams }: ProductPageProps): Promise<Metadata> {
@@ -51,10 +52,7 @@ export async function generateMetadata({ params, searchParams }: ProductPageProp
   }
 
   const seo = resolveProductPageSeo(product);
-  const design = (await searchParams)?.design;
-  const selectedImage = design === "branded" && product.assetSet?.brandedAngledImageUrl
-    ? { src: product.assetSet.brandedAngledImageUrl, alt: `${product.title} Branded + QR layout example` }
-    : product.images.find((image) => image.src);
+  const selectedImage = getProductVisual(product);
   const images = selectedImage
     ? [{ url: absoluteUrl(selectedImage.src), alt: selectedImage.alt || product.title }]
     : [defaultSocialImage];
@@ -67,7 +65,7 @@ export async function generateMetadata({ params, searchParams }: ProductPageProp
     openGraph: {
       title: seo.title,
       description: seo.description,
-      url: `/product/${product.slug}${design === "branded" || design === "standard" ? `?design=${design}` : ""}`,
+      url: `/product/${product.slug}`,
       images
     },
     twitter: {
@@ -81,8 +79,9 @@ export async function generateMetadata({ params, searchParams }: ProductPageProp
 
 export default async function ProductPage({ params, searchParams }: ProductPageProps) {
   const { slug } = await params;
-  const design = (await searchParams)?.design;
-  const initialOptionId = design === "branded" ? "branded_qr_direct" : design === "standard" ? "standard_direct" : undefined;
+  const query = await searchParams;
+  const design = Array.isArray(query?.design) ? query.design[0] : query?.design;
+  const initialOptionId = "branded_qr_direct";
 
   if (slug === "multi-link-stand") {
     permanentRedirect("/multi-link");
@@ -90,8 +89,13 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
   const canonicalSlug = getCanonicalProductSlug(slug);
 
-  if (canonicalSlug !== slug) {
-    permanentRedirect(`/product/${canonicalSlug}${initialOptionId ? `?design=${design}` : ""}`);
+  if (canonicalSlug !== slug || design === "standard") {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query ?? {})) {
+      for (const item of Array.isArray(value) ? value : value ? [value] : []) params.append(key, item);
+    }
+    if (design === "standard") params.set("design", "branded");
+    permanentRedirect(`/product/${canonicalSlug}${params.size ? `?${params}` : ""}`);
   }
 
   const product = await getStorefrontProductBySlug(canonicalSlug);
@@ -113,8 +117,6 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
   const productFaqs = getProductBuyingFaqs(product);
   const buyingGuide = getProductBuyingGuide(product);
-  const standardPrice = formatPrice(singleStandPrice(product.slug, "standard_direct", purchaseOptions.find((option) => option.id === "standard_direct")?.priceCents ?? product.basePriceCents, offers)).replace(".00", "");
-  const brandedPrice = formatPrice(singleStandPrice(product.slug, "branded_qr_direct", purchaseOptions.find((option) => option.id === "branded_qr_direct")?.priceCents ?? product.basePriceCents, offers)).replace(".00", "");
 
   return (
     <main className="tr-public-shell text-ink">
@@ -136,9 +138,6 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           howItWorks={howItWorks}
           specifications={specifications}
           includedItems={includedItems}
-          standardPrice={standardPrice}
-          brandedPrice={brandedPrice}
-          supportsMultiLink={productSupportsMultiLink(product)}
         />
       </SectionShell>
 

@@ -80,7 +80,7 @@ export function ProductSetupDestinationStep({
                       </label>
 
                       <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
-                        {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page. Standard does not include a printed QR."}
+                        {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page."}
                       </p>
                     </>
                   ) : (

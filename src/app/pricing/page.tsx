@@ -9,9 +9,9 @@ import { formatPrice } from "@/lib/products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { ProductOffers } from "@/components/product/product-offers";
 export const metadata: Metadata = {
-  title: "NFC Stand Pricing | Standard, Branded & Bundles",
+  title: "NFC Stand Pricing | Custom Logo + QR & Bundles",
   description:
-    "Compare Tap Rater Standard NFC-only and Branded + QR stands, current automatic offers, optional Multi-Link hosting and shipping.",
+    "Compare Tap Rater custom NFC + QR stands, current automatic offers, optional Multi-Link hosting and shipping.",
   alternates: { canonical: "/pricing" },
 };
 export default async function PricingPage() {
@@ -34,13 +34,7 @@ export default async function PricingPage() {
   const prices = [
     ['Tap Rater Growth','$29/month per location','300 AI reply drafts, 10 GBP improvement drafts, and 3 heat-map keywords updated four times per month. Buy independently or add to your Google stand order.','/growth'],
     [
-      "Standard Direct",
-      minimum("standard_direct"),
-      "Ready-made design with NFC opening one destination. No printed QR. One-time stand purchase; no hosted subscription required.",
-      "/shop",
-    ],
-    [
-      "Branded + QR",
+      "Custom Logo + QR",
       minimum("branded_qr_direct"),
       "Your logo, business name and a printed QR code alongside NFC. Review and approve your artwork preview before payment. Current eligible single-stand savings are included in the price above.",
       "/custom-stands",
@@ -57,7 +51,7 @@ export default async function PricingPage() {
       <PageHero
         eyebrow="Pricing"
         title="Choose the design and service you need."
-        body="Direct stands are a one-time purchase. Compare NFC-only Standard, Branded with QR, and optional hosted Multi-Link. Final prices depend on your selected product and configuration."
+        body="Direct stands are a one-time purchase. Every stand includes your logo and QR code, with optional hosted Multi-Link. Final prices depend on your selected product and configuration."
       />
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container grid gap-4 md:grid-cols-3">
@@ -94,8 +88,7 @@ export default async function PricingPage() {
           </h2>
           <p className="tr-body mt-4">
             A physical stand configured with the destination supplied during
-            checkout. Standard uses NFC only; Branded adds a QR code from the
-            same destination. Website, booking and social services at that
+            checkout. Your logo, business name, NFC and a QR code are included. Both NFC and QR open the same destination. Website, booking and social services at that
             destination remain managed by their own provider. US shipping is free
             with no minimum. Applicable taxes and any available international
             shipping charges appear at checkout.

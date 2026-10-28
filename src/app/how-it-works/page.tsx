@@ -11,13 +11,12 @@ export const metadata: Metadata = {
 
 const steps = [
   ["Choose your stand", "Pick a review, menu, booking, social, feedback, or website stand from the active shop catalog."],
-  ["Add your link", "Standard Direct needs one destination URL and goes straight to setup review."],
+  ["Add your link", "Add your destination URL, business name and logo, then approve the artwork preview."],
   ["Confirm NFC setup", "The NFC tap target uses the customer-provided URL. Branded + QR stands also generate a matching QR code."],
   ["Checkout", "Tap Rater collects the order and shipping details before preparing your stand."]
 ];
 
 const flows = [
-  ["Standard Direct", "Choose stand → add link → cart → checkout", "NFC direct to your destination."],
   ["No hosted activation", "No account → no hosted page → no subscription", "DIRECT products do not require a Tap Rater account or activation workflow."]
 ];
 
@@ -29,7 +28,7 @@ export default function HowItWorksPage() {
         title="From product page to counter-ready stand."
         body="Direct stands are built for fast checkout: choose the stand, add one destination URL, and complete checkout."
         image={{
-          src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
+          src: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png",
           alt: "Tap Rater review stand"
         }}
       />
@@ -39,7 +38,7 @@ export default function HowItWorksPage() {
           <SectionHeader
             eyebrow="Four steps"
             title="Choose, connect, confirm, and receive."
-            body="The buying path stays simple for Standard Direct NFC stands."
+            body="Personalize your custom stand with your logo, business name and QR code."
           />
           <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {steps.map(([title, body], index) => (

@@ -1,7 +1,7 @@
 import type { MigratedProduct } from "@/data/migrated-products";
 import { lockedBusinessUses, lockedPlatforms, lockedStandTypes } from "@/lib/catalog-architecture";
-import { formatPrice, getCategoryBySlug, getProductPriceCents } from "@/lib/products";
-import { getProductPurchaseOptions } from "@/lib/purchase-options";
+import { formatPrice, getCategoryBySlug } from "@/lib/products";
+import { getProductPurchaseOptions, getLowestPurchasePriceCents } from "@/lib/purchase-options";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 
 export type ProductSeo = {
@@ -21,7 +21,7 @@ export function generateProductSeo(product: MigratedProduct): Pick<ProductSeo, "
   const standType = getStandTypeTitle(product);
   const platform = getPlatformTitle(product);
   const useCase = getPrimaryBusinessUseTitle(product);
-  const price = formatPrice(getProductPriceCents(product)).replace(".00", "");
+  const price = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
   const isHosted = product.productKind === "hosted_multilink" || product.isSpecialSolution || product.requiresSubscription || product.requiresLandingPage;
 
   if (isHosted) {
@@ -47,10 +47,10 @@ export function generateProductSeo(product: MigratedProduct): Pick<ProductSeo, "
 export function resolveProductSeo(product: MigratedProduct): ProductSeo {
   const generated = generateProductSeo(product);
   const customTitle = normalizeCustomSeo(product.seoTitle === "Google Review Stand with NFC & QR"
-    ? "Google Review Stand | NFC Standard or Branded + QR"
+    ? "Custom Google Review Stand | Logo + NFC + QR"
     : product.seoTitle);
   const customDescription = normalizeCustomSeo(product.seoDescription === "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
-    ? "Google Review Stand for counters and reception desks. Standard uses NFC only, with no printed QR. Branded adds QR, your logo, and business name."
+    ? "Custom Google Review Stand with your logo, business name, NFC and QR for counters and reception desks."
     : product.seoDescription);
   const description = customDescription ? sanitizeRetiredPublicCopy(customDescription) : generated.generatedDescription;
 
@@ -76,7 +76,7 @@ function buildDescription({
 }) {
   const options = getProductPurchaseOptions(product);
   const supportsBranded = options.some((option) => option.id === "branded_qr_direct");
-  const optionCopy = supportsBranded ? "Choose NFC-only Standard or Branded + QR with your logo and name." : "Order an NFC-only Standard stand with no printed QR.";
+  const optionCopy = supportsBranded ? "Includes your logo, business name, NFC and QR." : "Custom design availability is shown on the product page.";
   const actionCopy = getDescriptionAction({ product, platform, useCase });
 
   if ((product.destinationType ?? "").includes("booking")) {
@@ -163,7 +163,7 @@ function cleanProductTitle(title: string) {
 }
 
 function normalizeCustomSeo(value?: string) {
-  return value?.replace(/\s+/g, " ").trim();
+  return value && /\bstandard\b|NFC.only/i.test(value) ? undefined : value?.replace(/\s+/g, " ").trim();
 }
 
 function sanitizeRetiredPublicCopy(value: string) {

@@ -151,7 +151,7 @@ export function CartTable({
           <aside className="rounded-xl border border-brand/20 bg-brand/5 p-4 text-sm">
             <p className="font-semibold text-ink">Need another stand?</p>
             <p className="mt-2">Add one more {suggestedRow.product.title} with the same design and size for {formatPrice(suggestion.additionalCostCents)} more before shipping and tax. Your cart savings increase by {formatPrice(suggestion.extraSavingsCents)}.</p>
-            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4" href={`/product/${suggestion.productId}?design=${suggestion.optionId === "branded_qr_direct" ? "branded" : "standard"}`}>Set up another stand</Link>
+            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4" href={`/product/${suggestion.productId}?design=branded`}>Set up another stand</Link>
           </aside>
         ) : null}
       </div>

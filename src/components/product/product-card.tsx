@@ -27,7 +27,6 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
         />
       </div>
       <div className="flex flex-1 flex-col pt-2 [overflow-wrap:anywhere]">
-        {design === "branded" && image.src === product.assetSet?.standardAngledImageUrl ? <p className="mb-2 text-xs text-muted">Standard design shown</p> : null}
         <p className="text-xs font-semibold text-accent">{category?.title ?? destination}</p>
         <p className="mb-2 mt-1.5 text-sm font-semibold leading-5 text-ink sm:text-base">{product.title}</p>
         <p className="mt-auto text-sm font-normal text-ink">{purchaseLabel}</p>
@@ -44,7 +43,7 @@ function getPurchaseLabel(product: MigratedProduct, design?: "branded") {
 
   if (design === "branded") {
     const option = options.find((item) => item.id === "branded_qr_direct");
-    return option ? `Branded + QR: ${formatCompactPrice(option.priceCents)}` : "Branded unavailable";
+    return option ? `Custom + QR: ${formatCompactPrice(option.priceCents)}` : "Custom unavailable";
   }
 
   if (product.checkoutMode === "request_quote") {

@@ -6,12 +6,12 @@ export function sanitizePublicStorefrontProduct(product: MigratedProduct): Migra
     return product;
   }
 
-  const cleanDescription = `${product.title} connects NFC taps directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
+  const cleanDescription = `${product.title} includes your logo, business name and QR code, connecting NFC taps and QR scans directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
   return {
     ...product,
     shortDescription: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription)),
     description: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.description) ? cleanDescription : product.description)),
-    seoDescription: product.seoDescription ? sanitizeRetiredPublicCopy(product.seoDescription) : product.seoDescription,
+    seoDescription: product.seoDescription ? correctKnownPurchaseCopy(sanitizeRetiredPublicCopy(product.seoDescription)) : product.seoDescription,
     requiresAccount: false,
     requiresSubscription: false,
     requiresLandingPage: false,

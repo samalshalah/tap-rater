@@ -29,12 +29,12 @@ export function ProductOffers({
             <p>
               Bundle savings on{" "}
               {offerIsActive(settings.bundle3, now) ? "3+" : "5+"} eligible
-              stands. Standard and Branded designs can be mixed.
+              stands. Mix custom designs for different destinations.
             </p>
           )}
         {eligible && branded && offerIsActive(settings.upgrade, now) && (
           <p>
-            Choose Branded and save {formatPrice(settings.upgrade.savingCents)}{" "}
+            Save {formatPrice(settings.upgrade.savingCents)} on your custom stand{" "}
             per stand when it is your best offer.
           </p>
         )}

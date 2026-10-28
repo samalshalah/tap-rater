@@ -44,7 +44,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
       <div style={image.panel ? { height: "auto", aspectRatio: "1 / 1" } : undefined} className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-square w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
         <GallerySlide image={image} />
       </div>
-      <p className="text-center text-sm font-semibold">{activeOptionId === "branded_qr_direct" ? "Custom design · Logo + name + QR" : activeOptionId === "hosted_multilink" ? "Multi-Link design" : "Standard design"}</p>
+      <p className="text-center text-sm font-semibold">{activeOptionId === "branded_qr_direct" ? "Custom design · Logo + name + QR" : activeOptionId === "hosted_multilink" ? "Multi-Link design" : "Custom design"}</p>
       {activeOptionId === "branded_qr_direct" ? <p className="text-center text-xs text-muted">The placeholders mark your customization areas. We replace them with your logo, business name and QR code.</p> : null}
       <p className="tr-product-gallery-caption min-h-5 text-center text-xs text-muted">{image.caption ?? ""}</p>
       <a href={image.src} target="_blank" rel="noopener noreferrer" className="text-center text-sm text-brand underline">{image.panel ? "View stand artwork" : "View full-size image"}</a>

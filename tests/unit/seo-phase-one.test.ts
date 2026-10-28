@@ -42,23 +42,13 @@ describe("category membership", () => {
 });
 
 describe("product variant structured data", () => {
-  it("advertises the actual Standard and Branded prices with selectable URLs and distinct SKUs", () => {
+  it("advertises one custom offer with its existing SKU and landing URL", () => {
     const data = schema(google);
-    expect(data["@type"]).toBe("ProductGroup");
-    expect(data.productGroupID).toBeTruthy();
-    expect(data.offers).toBeUndefined();
-    expect(data.hasVariant).toHaveLength(2);
-    expect(data.hasVariant.map((variant: any) => variant.offers.price)).toEqual(["39.00", "49.00"]);
-    expect(new Set(data.hasVariant.map((variant: any) => variant.sku)).size).toBe(2);
-    for (const [index, variant] of data.hasVariant.entries()) {
-      expect(new URL(variant.url).searchParams.get("design")).toBe(index ? "branded" : "standard");
-      expect(variant.offers.url).toBe(variant.url);
-      expect(variant.offers.priceCurrency).toBe("USD");
-      expect(variant.offers.availability).toBe("https://schema.org/InStock");
-      expect(variant.image.length).toBeGreaterThan(0);
-      expect(variant.aggregateRating).toBeUndefined();
-    }
-    expect(data.hasVariant[1].image[0]).toContain(google.assetSet!.brandedAngledImageUrl);
+    expect(data["@type"]).toBe("Product"); expect(data.hasVariant).toBeUndefined();
+    expect(data.offers).toMatchObject({ price: "49.00", priceCurrency: "USD", availability: "https://schema.org/InStock" });
+    expect(data.sku).toContain("BRD"); expect(data.url).toContain("?design=branded");
+    expect(data.image[0]).toContain(google.assetSet!.brandedAngledImageUrl);
+    expect(data.aggregateRating).toBeUndefined();
   });
 
   it("uses admin prices and never restores disabled options", () => {
@@ -81,10 +71,10 @@ describe("product variant structured data", () => {
       { ...size, code: "quote", skuSuffix: "Q", isDefault: true, priceAdjustmentCents: null }, size
     ], colorOptions: [{ code: "white", label: "White", skuSuffix: "W", priceAdjustmentCents: 200, isDefault: true, isActive: true }] };
     expect(getDefaultPurchasableProductSize(product)?.code).toBe("small");
-    expect(schema(product).hasVariant[0]).toMatchObject({ offers: { price: "46.00" } });
-    expect(schema(product).hasVariant[0].sku).toMatch(/-S-W$/);
+    expect(schema(product)).toMatchObject({ offers: { price: "56.00" } });
+    expect(schema(product).sku).toMatch(/-S-W$/);
     const html = renderToStaticMarkup(createElement(ProductHero, { product, destination: "Google", fromPrice: "$39", initialOptionId: "standard_direct" }));
-    expect(html).toContain("$46");
+    expect(html).toContain("$56");
     expect(html).not.toContain("$39");
     expect(schema({ ...product, sizeOptions: [product.sizeOptions[0]] })).not.toHaveProperty("hasVariant");
   });
@@ -98,7 +88,7 @@ describe("product variant structured data", () => {
   });
 
   it("marks unavailable variants out of stock", () => {
-    expect(schema({ ...google, stockStatus: "outofstock" }).hasVariant[0].offers.availability).toBe("https://schema.org/OutOfStock");
+    expect(schema({ ...google, stockStatus: "outofstock" }).offers.availability).toBe("https://schema.org/OutOfStock");
   });
 
   it("creates ordered canonical breadcrumbs and escapes script markup", () => {

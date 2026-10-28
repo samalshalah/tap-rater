@@ -1,7 +1,7 @@
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { OffersSettings } from "@/lib/offers";
-import { singleStandPrice, offerIsActive } from "@/lib/offers";
-import { getProductPurchaseOptions } from "@/lib/purchase-options";
+import { singleStandPrice } from "@/lib/offers";
+import { correctKnownPurchaseCopy, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 import { isPublicLaunchStorefrontProduct } from "@/lib/product-repository";
 import { getProductVisual } from "@/lib/storefront-visuals";
@@ -38,19 +38,12 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       if (id.length > 50 || ids.has(id)) throw new Error("Invalid or duplicate merchant product ID");
       ids.add(id);
       const price = singleStandPrice(product.slug, option.id, basePrice, offers, now);
-      // Match the existing US/English Merchant Center campaign, in America/New_York.
-      // Stop advertising it if the checkout offer changes, is disabled, or expires.
-      const standardPromotion = option.id === "standard_direct" && offers.enabled &&
-        !offers.excludedProducts.includes(product.slug) && offers.second.percent === 15 &&
-        offerIsActive(offers.second, now) &&
-        now >= Date.parse("2026-10-10T00:00:00-04:00") &&
-        now < Date.parse("2026-11-09T00:00:00-05:00");
       if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid merchant price");
       const fields = [
         tag("id", id),
-        tag("title", `${product.title} - ${branded ? "Branded" : "Standard"}`.slice(0, 150)),
-        tag("description", `${product.shortDescription} ${option.summary}`.trim().slice(0, 5000)),
-        tag("link", absolute(`/product/${product.slug}?design=${branded ? "branded" : "standard"}`)),
+        tag("title", `${product.title} - Custom Logo + QR`.slice(0, 150)),
+        tag("description", `${correctKnownPurchaseCopy(product.shortDescription)} ${option.summary}`.trim().slice(0, 5000)),
+        tag("link", absolute(`/product/${product.slug}?design=branded`)),
         tag("image_link", absolute(image)),
         tag("availability", "in_stock"),
         tag("condition", "new"),
@@ -59,7 +52,6 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
         tag("brand", "Tap Rater"),
         tag("mpn", sku),
         tag("product_type", "Business Supplies > NFC Countertop Stands"),
-        ...(standardPromotion ? [tag("promotion_id", "SECOND-STANDARD-15-OCT2026")] : []),
         ...(branded ? [tag("return_policy_label", "custom-branded")] : []),
       ];
       // Design customization is not a supported item_group_id variant attribute.
@@ -67,5 +59,5 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
     });
   });
   if (!items.length) throw new Error("Merchant catalog is empty; retain Google's last successful snapshot");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>\n<title>Tap Rater products</title><link>${xml(origin)}</link><description>Tap Rater Standard and Branded NFC stands</description>\n${items.join("\n")}\n</channel></rss>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>\n<title>Tap Rater products</title><link>${xml(origin)}</link><description>Tap Rater custom NFC and QR stands</description>\n${items.join("\n")}\n</channel></rss>`;
 }

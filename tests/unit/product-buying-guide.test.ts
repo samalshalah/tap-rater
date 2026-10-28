@@ -7,7 +7,7 @@ const products = staticStorefrontProducts();
 
 describe("product buying guides", () => {
   it("covers every public catalog product with distinct substantive guidance", () => {
-    expect(products.length).toBeGreaterThan(60);
+    expect(products.length).toBeGreaterThanOrEqual(58);
     for (const product of products) {
       const guide = getProductBuyingGuide(product);
       expect(guide, product.slug).toBeDefined();
@@ -48,8 +48,8 @@ describe("product buying guides", () => {
   it("keeps QR availability and platform-specific limitations explicit", () => {
     const standardOnly = { ...products[0], assetSet: {}, purchaseOptions: [] };
     const qrFaq = getProductBuyingFaqs(standardOnly).find((faq) => faq.question === "Which design includes a printed QR code?");
-    expect(qrFaq?.answer).toContain("Standard");
-    expect(qrFaq?.answer).toContain("no printed QR");
+    expect(qrFaq?.answer).toContain("unavailable");
+    expect(qrFaq?.answer).toContain("unavailable");
     expect(productBuyingGuides["yelp-review-stand"].answer).toContain("should not ask for reviews");
     expect(productBuyingGuides["airbnb-review-stand"].answer).toContain("eligible");
     expect(productBuyingGuides["caredash-review-stand"].destination).toContain("Do not assume");

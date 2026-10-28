@@ -27,7 +27,7 @@ type ProductHeroProps = {
 export function ProductHero({ product, category, fromPrice, initialOptionId, offers, introduction, shipping }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
-  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "standard_direct");
+  const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "branded_qr_direct");
   const [selectedPriceCents, setSelectedPriceCents] = useState<number | null>(() => initialOption
     ? getConfiguredUnitPriceCents(product, initialOption, {
       sizeCode: getDefaultPurchasableProductSize(product)?.code,

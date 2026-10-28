@@ -33,7 +33,7 @@ export function getDefaultHomepageContent(): HomepageContentInput {
     eyebrow: "Tap Rater for local businesses",
     heroTitle: "NFC & QR stands for reviews, menus, booking, social media and more.",
     heroDescription:
-      "Sell today with tabletop stands that open one direct link by tap or scan. Standard Direct is ready for checkout.",
+      "Sell today with tabletop stands that open one direct link by tap or scan. Custom logo and QR stands are ready for setup.",
     primaryButtonLabel: "Shop Stands",
     primaryButtonHref: "/shop",
     secondaryButtonLabel: "Create Custom Stand",

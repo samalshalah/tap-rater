@@ -237,73 +237,10 @@ describe("product repository", () => {
     });
   });
 
-  it("corrects stale backend Standard QR flags without replacing custom copy or commercial fields", async () => {
-    const products = await getStorefrontProductsFromClient(mockProductsClient(
-      [
-        {
-          slug: "database-only-google-review-stand",
-          title: "Database Only Google Review Stand",
-          sku: "DB-GOOGLE-1",
-          category_slug: "reviews",
-          format: "stand",
-          base_price_cents: 3900,
-          stock_status: "instock",
-          short_description: "Database-only Google review stand",
-          description: "A Google review stand managed only from the products table.",
-          product_type: "physical_redirect",
-          service_mode: "basic_redirect",
-          checkout_mode: "buy_now",
-          requires_account: false,
-          requires_subscription: false,
-          requires_landing_page: false,
-          supported_destinations: ["google"],
-          activation_type: "free_basic_activation",
-          included_service_label: "Free basic activation",
-          customization_options: ["standard_design", "add_logo"],
-          allows_logo_upload: true,
-          allows_custom_design: false,
-          design_mode: "standard",
-          images: [{ src: "/uploads/products/google-review-stand.png", alt: "Database-only Google review stand" }],
-          variants: [],
-          is_active: true
-        }
-      ],
-      null,
-      createQueryCalls(),
-      [
-        {
-          product_slug: "database-only-google-review-stand",
-          option_code: "standard_direct",
-          title: "Reception Standard",
-          description: "Ready-made Google Review Stand with QR and NFC programmed to the Google review link you provide. Reception edition.",
-          price_cents: 4200,
-          requires_destination_url: true,
-          has_qr: true,
-          requires_logo: false,
-          requires_business_name: false,
-          requires_design_step: false,
-          requires_front_proof: false,
-          requires_subscription: false,
-          account_required: false,
-          footer_label: "Reception edition",
-          is_active: true,
-          sort_order: 1
-        }
-      ]
-    ));
-
-    expect(products[0].purchaseOptions).toEqual([
-      expect.objectContaining({
-        optionCode: "standard_direct",
-        title: "Reception Standard",
-        description: "Ready-made Google Review Stand with NFC programmed to your Google review link. Standard is NFC-only, with no printed QR. Reception edition.",
-        priceCents: 4200,
-        hasQr: false,
-        footerLabel: "Reception edition",
-        isActive: true
-      })
-    ]);
-    expect(products[0]).toMatchObject({ sku: "DB-GOOGLE-1", basePriceCents: 3900, stockStatus: "instock" });
+  it("hides a product whose only database option is retired standard", () => {
+    const rows = [{ slug: "google-review-stand", is_active: true, stock_status: "instock" }];
+    const options = [{ product_slug: "google-review-stand", option_code: "standard_direct", title: "Old standard", price_cents: 5700, is_active: true, has_qr: true }];
+    return expect(getStorefrontProductsFromClient(mockProductsClient(rows, null, createQueryCalls(), options))).resolves.toEqual([]);
   });
 
   it("preserves accurate NFC-only copy while correcting retired fee wording", () => {
@@ -347,8 +284,8 @@ describe("product repository", () => {
       description: "Reception edition. The Google Review Stand uses both NFC and a printed QR code, and both open the same Google review link you provide. Includes desk instructions."
     };
     const product = normalizeStorefrontProductRow(row)!;
-    expect(product.shortDescription).toContain("Standard is NFC-only, with no printed QR.");
-    expect(product.description).toBe("Reception edition. Standard uses NFC only, with no printed QR. Branded adds a QR code generated from the same Google review link. Includes desk instructions.");
+    expect(product.shortDescription).toContain("QR");
+    expect(product.description).toBe("Reception edition. NFC and the printed QR code open the same Google review link. Includes desk instructions.");
     expect(normalizeStorefrontProductRow(row, { sanitizePublicCopy: false })?.description).toBe(row.description);
   });
 
@@ -895,7 +832,7 @@ function mockProductsClient(
   error: null | { message: string } = null,
   calls = createQueryCalls(),
   productOptions: unknown[] = (data ?? []).map(row => ({
-    product_slug: (row as { slug: string }).slug, option_code: "standard_direct", title: "Standard Direct",
+    product_slug: (row as { slug: string }).slug, option_code: "branded_qr_direct", title: "Custom",
     price_cents: 3900, requires_destination_url: true, is_active: true, sort_order: 1
   }))
 ): ProductRepositoryClient {
@@ -924,13 +861,14 @@ function mockProductsClient(
             },
             maybeSingle<T = unknown>() {
               calls.maybeSingleCalls += 1;
-              return Promise.resolve({ data: (data?.[0] as T | undefined) ?? null, error });
+              return Promise.resolve({ data: (data?.[0] ? { branded_front_template_url: "/uploads/templates/custom-front.png", ...(data[0] as object) } as T : null), error });
             },
             then<TResult1 = { data: unknown[] | null; error: null | { message: string } }, TResult2 = never>(
               onfulfilled?: ((value: { data: unknown[] | null; error: null | { message: string } }) => TResult1 | PromiseLike<TResult1>) | null,
               onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
             ) {
-              const tableData = table === "product_options" ? productOptions : data;
+              const completeRows = data?.map(row => ({ branded_front_template_url: "/uploads/templates/custom-front.png", ...(row as object) })) ?? data;
+              const tableData = table === "product_options" ? productOptions : completeRows;
               const tableError = table === "products" ? error : null;
               return Promise.resolve({ data: tableData, error: tableError }).then(onfulfilled, onrejected);
             }

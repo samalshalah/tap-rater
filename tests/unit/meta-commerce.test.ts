@@ -13,26 +13,26 @@ afterEach(() => { vi.unstubAllGlobals(); vi.resetModules(); });
 
 describe("Meta checkout and catalog matching", () => {
   it("quotes Meta's three-stand selection together instead of quoting only the active setup", () => {
-    const entries = parseMetaCheckout("TR-YELP-STAND_tr-yelp-stand-std:2,TR-CHECK-INFORMATION-STAND-STD:1", migratedProducts);
+    const entries = parseMetaCheckout("TR-YELP-STAND_tr-yelp-stand-brd:2,TR-CHECK-INFORMATION-STAND-BRD:1", migratedProducts);
     const quote = quoteMetaCheckout(entries, defaultOffers);
-    expect(entries.map(e => [e.quantity, e.unitAmountCents])).toEqual([[2, 3900], [1, 3900]]);
-    expect(quote.originalCents).toBe(11700);
-    expect(quote.discountCents).toBe(1200);
-    expect(quote.subtotalCents).toBe(10500);
-    expect(quote.lineDiscounts).toEqual([800, 400]);
+    expect(entries.map(e => [e.quantity, e.unitAmountCents])).toEqual([[2, 4900], [1, 4900]]);
+    expect(quote.originalCents).toBe(14700);
+    expect(quote.discountCents).toBe(1500);
+    expect(quote.subtotalCents).toBe(13200);
+    expect(quote.lineDiscounts).toEqual([1000, 500]);
   });
   it("uses configured catalog prices and applies the same mixed-design and disabled-offer rules as checkout", () => {
-    const entries = parseMetaCheckout(`${standard}:2,${branded}:1`, [product]);
+    const entries = parseMetaCheckout(`${branded}:2,${branded}:1`, [product]);
     const quote = quoteMetaCheckout(entries, defaultOffers);
-    expect(quote.originalCents).toBe(12700);
-    expect(quote.subtotalCents).toBe(11400);
-    expect(quoteMetaCheckout(entries, { ...defaultOffers, enabled: false }).subtotalCents).toBe(12700);
+    expect(quote.originalCents).toBe(14700);
+    expect(quote.subtotalCents).toBe(13200);
+    expect(quoteMetaCheckout(entries, { ...defaultOffers, enabled: false }).subtotalCents).toBe(14700);
     const changed = entries.map(e => ({ ...e, unitAmountCents: e.unitAmountCents + 100 }));
-    expect(quoteMetaCheckout(changed, { ...defaultOffers, enabled: false }).subtotalCents).toBe(13000);
+    expect(quoteMetaCheckout(changed, { ...defaultOffers, enabled: false }).subtotalCents).toBe(15000);
   });
   it("preserves mixed design selections and aggregates repeated quantities using exported IDs", () => {
-    const result = parseMetaCheckout(`${standard}:2,${branded}:1,${standard}:3`, [product]);
-    expect(result.map(({optionId, quantity}) => [optionId, quantity])).toEqual([["standard_direct",5],["branded_qr_direct",1]]);
+    const result = parseMetaCheckout(`${branded}:2,${branded}:1,${branded}:3`, [product]);
+    expect(result.map(({optionId, quantity}) => [optionId, quantity])).toEqual([["branded_qr_direct",6]]);
     const feed = buildMerchantFeed([product], defaultOffers);
     for (const entry of metaCatalog([product])) expect(feed).toContain(`<g:id>${entry.id}</g:id>`);
   });

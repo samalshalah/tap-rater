@@ -24,7 +24,7 @@ describe("content phase 3 presentation standard", () => {
   });
 
   it("corrects the observed legacy Yelp claim without rewriting merchant-authored text", () => {
-    expect(correctKnownPurchaseCopy("Countertop NFC and QR stand that opens your Yelp review destination.")).toContain("Standard is NFC-only; Branded adds a printed QR code.");
+    expect(correctKnownPurchaseCopy("Countertop NFC and QR stand that opens your Yelp review destination.")).toContain("Every custom stand includes NFC");
     const custom = "Our Branded NFC and QR stand supports this business.";
     expect(correctKnownPurchaseCopy(custom)).toBe(custom);
   });
@@ -38,13 +38,13 @@ describe("content phase 3 presentation standard", () => {
     expect(html).toContain("mt-auto text-sm");
     expect(html).not.toContain("aspect-[4/5]");
     expect(html).not.toContain("line-clamp");
-    expect(html).toContain("From $39");
+    expect(html).toContain("From $49");
   });
 
   it("identifies a Standard photo when advertising the available Branded price", () => {
     const html = renderToStaticMarkup(createElement(ProductCard, { product, design: "branded" }));
-    expect(html).toContain("Standard design shown");
-    expect(html).toContain("Branded + QR: $49");
+    expect(html).not.toContain("Standard design shown");
+    expect(html).toContain("Custom + QR: $49");
     const merchantPhoto = { ...product, images: [{ src: "/uploads/custom-scene.png", alt: "Custom scene" }] };
     expect(renderToStaticMarkup(createElement(ProductCard, { product: merchantPhoto, design: "branded" }))).not.toContain("Standard design shown");
   });
@@ -83,7 +83,7 @@ describe("content phase 3 presentation standard", () => {
       { src: "/uploads/gallery/detail.png", alt: "Stand detail" },
       { src: "/uploads/gallery/detail.png", alt: "Duplicate" },
       { src: "/uploads/gallery/scale.png", alt: "" }
-    ] });
+    ] }, "standard_direct");
     expect(images.filter(item => item.src === "/uploads/gallery/detail.png")).toHaveLength(1);
     expect(images.find(item => item.src === "/uploads/gallery/detail.png")?.alt).toBe("Stand detail");
     expect(images.find(item => item.src === "/uploads/gallery/scale.png")?.alt).toContain("gallery view");

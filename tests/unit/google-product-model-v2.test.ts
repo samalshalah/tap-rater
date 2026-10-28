@@ -122,8 +122,8 @@ describe("Google Product Model V2", () => {
 
     const faqs = getProductFaqs(googleProduct);
     expect(faqs).toHaveLength(googleProduct.productFaqs!.length);
-    expect(faqs[0].answer).toContain("Standard is NFC-only, with no printed QR.");
-    expect(faqs[0].answer).toContain("Branded adds a QR code generated from the same destination.");
+    expect(faqs[0].answer).toContain("QR code");
+    expect(faqs[0].answer).toContain("Your custom stand includes a printed QR code generated from the same destination.");
     expect(googleProduct.productFaqs![0].answer).toContain("scan the QR code");
     expect(faqs[0]).toMatchObject({ question: "How does the Google Review Stand work?" });
   });

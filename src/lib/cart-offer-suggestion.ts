@@ -4,7 +4,7 @@ import { quoteOffers, type OfferLine, type OffersSettings } from "@/lib/offers";
 export function getCartOfferSuggestion(lines: OfferLine[], settings: OffersSettings, now = Date.now()) {
   if (!settings.enabled) return null;
   const eligible = lines.filter(line => !line.recurring && line.quantity > 0 &&
-    ["standard_direct", "branded_qr_direct"].includes(line.optionId) &&
+    line.optionId === "branded_qr_direct" &&
     !settings.excludedProducts.includes(line.productId));
   const quantity = eligible.reduce((sum, line) => sum + line.quantity, 0);
   if (![1, 2, 4].includes(quantity)) return null;

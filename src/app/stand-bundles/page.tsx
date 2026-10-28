@@ -7,7 +7,7 @@ import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 export const metadata: Metadata = {
   title: "NFC Stand Bundles for Multiple Counters",
   description:
-    "Mix Tap Rater review, menu and social stands for multiple counters. Compare automatic bundle offers, Standard NFC-only and Branded + QR designs.",
+    "Mix Tap Rater review, menu and social stands for multiple counters. Compare automatic bundle offers, custom logo and QR designs.",
   alternates: { canonical: "/stand-bundles" },
 };
 export default async function StandBundlesPage() {
@@ -30,8 +30,7 @@ export default async function StandBundlesPage() {
           <h2 className="tr-section-title">Build your own mix</h2>
           <p className="tr-body mt-4">
             Combine review stands for checkout, menu stands for ordering areas
-            and social stands for reception. Choose Standard for NFC-only or
-            Branded to add your logo, business name and a printed QR code. Each
+            and social stands for reception. Every custom stand includes your logo, business name and a printed QR code. Each
             setup connects to the destination you provide.
           </p>
           <p className="tr-body mt-4">

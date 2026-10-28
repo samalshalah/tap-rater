@@ -45,7 +45,7 @@ export default function ReviewLinksGeneratorPage() {
               <h2 id="review-stand-next-step" className="mt-5 text-2xl font-semibold">Your link. Your logo. Your counter.</h2>
               <p className="tr-body-sm mt-3">Put your link on a <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">review stand for Google Reviews</Link>. Customers can tap with NFC—or scan the printed QR code on the custom design—to open your review form.</p>
               <Link href="/product/google-review-stand?design=branded" className="tr-button-primary mt-5">Personalize my review stand</Link>
-              <Link href="/product/google-review-stand" className="mt-4 block text-sm font-semibold text-brand underline underline-offset-4">Compare Standard and Branded + QR</Link>
+              <Link href="/product/google-review-stand" className="mt-4 block text-sm font-semibold text-brand underline underline-offset-4">Explore custom logo and QR</Link>
             </aside>
           </div>
         </div>

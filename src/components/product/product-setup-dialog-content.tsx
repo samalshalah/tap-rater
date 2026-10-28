@@ -224,7 +224,7 @@ export function ProductSetupDialogContent({
                       </>
                     ) : (
                       <>
-                        <p className="font-semibold text-ink">Standard Direct confirmation</p>
+                        <p className="font-semibold text-ink">Stand setup confirmation</p>
                         <p>The NFC tap opens the destination link above. No Tap Rater account, hosted page, or activation is required.</p>
                       </>
                     )}

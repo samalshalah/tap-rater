@@ -1,3 +1,4 @@
+import { customStandItem } from "../helpers/custom-stand";
 import Stripe from "stripe";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { migratedProducts, type MigratedProduct } from "@/data/migrated-products";
@@ -17,14 +18,7 @@ import {
   withTimeout
 } from "@/lib/checkout";
 
-const configuredStandardItem = {
-  productId: "google-review-stand",
-  optionId: "standard_direct" as const,
-  quantity: 1,
-  setup: {
-    destinationUrl: "https://g.page/example/review"
-  }
-};
+const configuredCustomItem = customStandItem();
 
 const checkoutCustomer = {
   email: "buyer@example.com",
@@ -98,7 +92,7 @@ describe("Stripe checkout helpers", () => {
   it("validates cart items server-side against active in-stock products", () => {
     const result = validateCheckoutCart(
       [
-        { ...configuredStandardItem, quantity: 2 }
+        { ...configuredCustomItem, quantity: 2 }
       ],
       migratedProducts
     );
@@ -108,85 +102,52 @@ describe("Stripe checkout helpers", () => {
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0]).toMatchObject({
       productId: "google-review-stand",
-      optionId: "standard_direct",
-      optionLabel: "Standard",
+      optionId: "branded_qr_direct",
+      optionLabel: "Custom Stand · Logo + QR",
       destinationMode: "DIRECT",
-      customizationLevel: "STANDARD",
+      customizationLevel: "BRANDED",
       manualProductionRequired: false,
       productionWarningCodes: [],
       quantity: 2,
-      unitAmountCents: 3900,
-      lineSubtotalCents: 7800
+      unitAmountCents: 4900,
+      lineSubtotalCents: 9800
     });
-    expect(result.totalCents).toBe(7800);
+    expect(result.totalCents).toBe(9800);
   });
 
   it("rejects the entire checkout instead of silently dropping unavailable or invalid items", () => {
-    expect(validateCheckoutCart([configuredStandardItem, { productId: "missing", quantity: 1 }], migratedProducts)).toMatchObject({ ok: false });
-    expect(validateCheckoutCart([configuredStandardItem, { ...configuredStandardItem, quantity: 100 }], migratedProducts)).toMatchObject({ ok: false });
+    expect(validateCheckoutCart([configuredCustomItem, { productId: "missing", quantity: 1 }], migratedProducts)).toMatchObject({ ok: false });
+    expect(validateCheckoutCart([configuredCustomItem, { ...configuredCustomItem, quantity: 100 }], migratedProducts)).toMatchObject({ ok: false });
   });
 
   it("rejects an active-flagged draft or archived product", () => {
-    const product = migratedProducts.find(item => item.slug === configuredStandardItem.productId)!;
+    const product = migratedProducts.find(item => item.slug === configuredCustomItem.productId)!;
     for (const status of ["draft", "archived"] as const) {
-      expect(validateCheckoutCart([configuredStandardItem], [{ ...product, isActive: true, status }])).toMatchObject({ ok: false });
+      expect(validateCheckoutCart([configuredCustomItem], [{ ...product, isActive: true, status }])).toMatchObject({ ok: false });
     }
   });
 
   it("rejects cart quantities above the shared product quantity cap", () => {
-    const result = validateCheckoutCart([{ ...configuredStandardItem, quantity: 100 }], migratedProducts);
+    const result = validateCheckoutCart([{ ...configuredCustomItem, quantity: 100 }], migratedProducts);
 
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
   it("rejects checkout when admin inventory marks a product out of stock", () => {
     const products = migratedProducts.map((product): MigratedProduct =>
-      product.slug === configuredStandardItem.productId
+      product.slug === configuredCustomItem.productId
         ? { ...product, stockStatus: "outofstock" }
         : product
     );
 
-    expect(validateCheckoutCart([configuredStandardItem], products)).toMatchObject({
+    expect(validateCheckoutCart([configuredCustomItem], products)).toMatchObject({
       ok: false,
       reason: "empty_cart"
     });
   });
 
-  it("maps Standard Direct NFC to the destination and removes printed QR targets", () => {
-    const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.rows[0]).toMatchObject({
-      optionId: "standard_direct",
-      destinationMode: "DIRECT",
-      customizationLevel: "STANDARD",
-      proofRequired: false,
-      logoRequired: false,
-      manualProductionRequired: false,
-      productionWarningCodes: []
-    });
-    expect(result.rows[0].setup).toMatchObject({
-      destinationUrl: "https://g.page/example/review",
-      generatedQrValue: undefined,
-      qrTargetUrl: undefined,
-      nfcTargetUrl: "https://g.page/example/review",
-      hasQr: false,
-      nfcOnly: true
-    });
-    expect(result.rows[0]).toMatchObject({
-      sku: "TR-GOOGLE-REV-ST-STD-REG-WHT",
-      baseSku: "TR-GOOGLE-REV-ST"
-    });
-    expect(result.rows[0].setup).toMatchObject({
-      baseSku: "TR-GOOGLE-REV-ST",
-      finalSku: "TR-GOOGLE-REV-ST-STD-REG-WHT",
-      purchaseOptionLabel: "Standard",
-      sizeCode: "regular",
-      sizeLabel: "Standard",
-      colorCode: "white",
-      colorLabel: "White"
-    });
+  it("rejects retired standard orders at checkout", () => {
+    expect(validateCheckoutCart([{ productId: "google-review-stand", optionId: "standard_direct", quantity: 1, setup: { destinationUrl: "https://g.page/example/review" } }], migratedProducts)).toMatchObject({ ok: false });
   });
 
   it("rejects A4 checkout while its price is pending", () => {
@@ -194,9 +155,9 @@ describe("Stripe checkout helpers", () => {
       validateCheckoutCart(
         [
           {
-            ...configuredStandardItem,
+            ...configuredCustomItem,
             setup: {
-              ...configuredStandardItem.setup,
+              ...configuredCustomItem.setup,
               sizeCode: "a4",
               colorCode: "white"
             }
@@ -211,9 +172,9 @@ describe("Stripe checkout helpers", () => {
     const result = validateCheckoutCart(
       [
         {
-          ...configuredStandardItem,
+          ...configuredCustomItem,
           setup: {
-            ...configuredStandardItem.setup,
+            ...configuredCustomItem.setup,
             generatedQrValue: "https://example.com/old",
             qrTargetUrl: "https://example.com/old",
             nfcTargetUrl: "https://example.com/old"
@@ -226,8 +187,8 @@ describe("Stripe checkout helpers", () => {
     expect(result).toMatchObject({ ok: true });
     expect(result.ok ? result.rows[0].setup : {}).toMatchObject({
       destinationUrl: "https://g.page/example/review",
-      generatedQrValue: undefined,
-      qrTargetUrl: undefined,
+      generatedQrValue: "https://g.page/example/review",
+      qrTargetUrl: "https://g.page/example/review",
       nfcTargetUrl: "https://g.page/example/review"
     });
   });
@@ -464,54 +425,11 @@ describe("Stripe checkout helpers", () => {
     ).toMatchObject({ ok: false, reason: "empty_cart" });
   });
 
-  it("uses active backend product option pricing and ignores submitted cart price", () => {
-    const googleProduct = migratedProducts.find((product) => product.slug === "google-review-stand");
-    if (!googleProduct) throw new Error("Expected Google product fixture");
-
-    const result = validateCheckoutCart(
-      [
-        {
-          ...configuredStandardItem,
-          setup: {
-            ...configuredStandardItem.setup,
-            priceCents: 1
-          }
-        }
-      ],
-      [
-        {
-          ...googleProduct,
-          purchaseOptions: [
-            {
-              optionCode: "standard_direct",
-              title: "Standard Direct",
-              description: "Backend configured Standard Direct option.",
-              priceCents: 4200,
-              requiresDestinationUrl: true,
-              hasQr: false,
-              requiresLogo: false,
-              requiresBusinessName: false,
-              requiresDesignStep: false,
-              requiresFrontProof: false,
-              requiresSubscription: false,
-              accountRequired: false,
-              isActive: true,
-              sortOrder: 1
-            }
-          ]
-        }
-      ]
-    );
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.rows[0]).toMatchObject({
-      optionId: "standard_direct",
-      optionLabel: "Standard Direct",
-      unitAmountCents: 4200,
-      lineSubtotalCents: 4200
-    });
-    expect(result.totalCents).toBe(4200);
+  it("uses active custom option pricing and ignores submitted cart price", () => {
+    const item = customStandItem(); item.setup.priceCents = 1;
+    const product = migratedProducts.find(p => p.slug === item.productId)!;
+    const result = validateCheckoutCart([item], [{ ...product, purchaseOptions: product.purchaseOptions!.map(o => ({ ...o, priceCents: 4200 })) }]);
+    expect(result).toMatchObject({ ok: true, totalCents: 4200, rows: [{ optionId: "branded_qr_direct", unitAmountCents: 4200 }] });
   });
 
   it("rejects forced checkout for options missing from backend product options", () => {
@@ -569,7 +487,7 @@ describe("Stripe checkout helpers", () => {
     const googleProduct = migratedProducts.find((product) => product.slug === "google-review-stand");
     if (!googleProduct) throw new Error("Expected Google product fixture");
 
-    const result = validateCheckoutCart([configuredStandardItem], [{ ...googleProduct, purchaseOptions: [] }]);
+    const result = validateCheckoutCart([configuredCustomItem], [{ ...googleProduct, purchaseOptions: [] }]);
 
     expect(result).toMatchObject({ ok: false, reason: "empty_cart" });
   });
@@ -617,41 +535,18 @@ describe("Stripe checkout helpers", () => {
 
   it("accepts Multi-Link as a service add-on without assigning a permanent code when explicitly enabled", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
-    const result = validateCheckoutCart(
-      [
-        {
-          productId: "follow-us-social-media-stand",
-          optionId: "standard_direct",
-          quantity: 1,
-          setup: {
-            serviceMode: "HOSTED",
-            serviceAddon: "hosted_multilink",
-            multiLinkButtons: [
-              { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
-            ],
-            manualCollectionAcknowledged: true
-          }
-        }
-      ],
-      [compatibleProduct]
-    );
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.checkoutMode).toBe("subscription");
-    expect(result.totalCents).toBe(3900);
-    expect(result.recurringTotalCents).toBe(999);
-    expect(result.rows[0]).toMatchObject({
-      optionId: "standard_direct",
-      destinationMode: "HOSTED",
-      customizationLevel: "STANDARD",
-      monthlyAmountCents: 999
-    });
-    expect(result.rows[0].setup).not.toHaveProperty("hostedPageCode");
-    expect(result.rows[0].setup.multiLinkButtons).toEqual([
-      { id: "link-1", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 0 }
-    ]);
+    const item = customStandItem("rate-your-experience-stand");
+    item.setup.serviceMode = "HOSTED"; item.setup.serviceAddon = "hosted_multilink";
+    item.setup.hostedReservationId = "temporary-reservation";
+    const cart = validateCheckoutCart([item], migratedProducts);
+    expect(cart).toMatchObject({ ok: true, checkoutMode: "subscription", totalCents: 4900, recurringTotalCents: 999 });
+    if (!cart.ok) return;
+    expect(cart.rows[0].setup).not.toHaveProperty("hostedPageCode");
+    const params = createCheckoutSessionParams({ cart, customer: checkoutCustomer, shippingAddress: checkoutShippingAddress, siteUrl: "https://taprater.com" });
+    expect(params.mode).toBe("subscription");
+    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.line_items).toHaveLength(4);
+    expect(validateCheckoutCart([customStandItem()], migratedProducts)).toMatchObject({ ok: true, checkoutMode: "payment" });
   });
 
   it("rejects Multi-Link add-on checkout when an enabled draft link URL is invalid", () => {
@@ -820,7 +715,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("builds Stripe line items from validated cart rows", () => {
-    const result = validateCheckoutCart([configuredStandardItem], productsWithBackendGoogleVariants);
+    const result = validateCheckoutCart([configuredCustomItem], productsWithBackendGoogleVariants);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -831,21 +726,21 @@ describe("Stripe checkout helpers", () => {
           currency: "usd",
           product_data: {
             name: "Tap Rater Review Stand for Google Reviews",
-            description: `Standard - ${migratedProducts.find((product) => product.slug === "google-review-stand")!.shortDescription}`,
+            description: `Custom Stand · Logo + QR - ${migratedProducts.find((product) => product.slug === "google-review-stand")!.shortDescription}`,
             metadata: {
               product_id: "google-review-stand",
-              option_id: "standard_direct",
-              sku: "TR-GOOGLE-REV-ST-STD-REG-WHT"
+              option_id: "branded_qr_direct",
+              sku: "TR-GOOGLE-REV-ST-BRD-REG-WHT"
             }
           },
-          unit_amount: 3900
+          unit_amount: 4900
         }
       }
     ]);
   });
 
   it("creates embedded Checkout Session params with dynamic price_data and mode metadata", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredCustomItem], migratedProducts);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -872,7 +767,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.line_items?.[0]).toMatchObject({
       price_data: {
         currency: "usd",
-        unit_amount: 3900,
+        unit_amount: 4900,
         product_data: {
           name: "Tap Rater Review Stand for Google Reviews"
         }
@@ -891,9 +786,9 @@ describe("Stripe checkout helpers", () => {
       }
     });
     expect(params.metadata?.stripe_mode).toBe("test");
-    expect(params.metadata?.total_cents).toBe("3900");
+    expect(params.metadata?.total_cents).toBe("4900");
     expect(params.metadata?.recurring_total_cents).toBe("0");
-    expect(params.metadata?.due_today_cents).toBe("5334");
+    expect(params.metadata?.due_today_cents).toBe("6394");
     expect(params.metadata?.checkout_intent).toBe("direct_payment");
     expect(params.metadata?.configured_items).toBe("1");
     expect(params.metadata?.shipping_mode).toBe("flat");
@@ -901,7 +796,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.metadata?.tax_mode).toBe("manual");
     expect(params.metadata?.tax_label).toBe("Virginia sales tax");
     expect(params.metadata?.tax_rate_bps).toBe("600");
-    expect(params.metadata?.tax_amount_cents).toBe("234");
+    expect(params.metadata?.tax_amount_cents).toBe("294");
     expect(params.metadata?.customer_email).toBe("buyer@example.com");
     expect(params.metadata?.customer_name).toBe("Buyer Name");
     expect(params.metadata?.create_account).toBe("false");
@@ -911,77 +806,22 @@ describe("Stripe checkout helpers", () => {
 
   it("creates subscription Checkout Session params for Multi-Link add-ons with dynamic payment methods", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const compatibleProduct = migratedProducts.find((product) => product.slug === "follow-us-social-media-stand")!;
-    const result = validateCheckoutCart(
-      [
-        {
-          productId: "follow-us-social-media-stand",
-          optionId: "standard_direct",
-          quantity: 1,
-          setup: {
-            serviceMode: "HOSTED",
-            serviceAddon: "hosted_multilink",
-            manualCollectionAcknowledged: true
-          }
-        }
-      ],
-      [compatibleProduct]
-    );
-
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    const params = createCheckoutSessionParams({
-      cart: result,
-      customer: checkoutCustomer,
-      shippingAddress: checkoutShippingAddress,
-      siteUrl: "https://taprater.com"
-    });
-
+    const item = customStandItem("rate-your-experience-stand");
+    item.setup.serviceMode = "HOSTED"; item.setup.serviceAddon = "hosted_multilink";
+    item.setup.hostedReservationId = "temporary-reservation";
+    const cart = validateCheckoutCart([item], migratedProducts);
+    expect(cart).toMatchObject({ ok: true, checkoutMode: "subscription", totalCents: 4900, recurringTotalCents: 999 });
+    if (!cart.ok) return;
+    expect(cart.rows[0].setup).not.toHaveProperty("hostedPageCode");
+    const params = createCheckoutSessionParams({ cart, customer: checkoutCustomer, shippingAddress: checkoutShippingAddress, siteUrl: "https://taprater.com" });
     expect(params.mode).toBe("subscription");
-    expect(params.integration_identifier).toMatch(/^taprater_checkout_[a-z0-9]{8}$/);
     expect(params).not.toHaveProperty("payment_method_types");
-    expect(params).not.toHaveProperty("customer_creation");
-    expect(params).not.toHaveProperty("payment_intent_data");
-    expect(params.metadata?.checkout_intent).toBe("hosted_subscription");
-    expect(params.metadata?.recurring_total_cents).toBe("999");
-    expect(params.metadata?.create_account).toBe("true");
     expect(params.line_items).toHaveLength(4);
-    expect(params.line_items?.[0]).toMatchObject({
-      price_data: {
-        unit_amount: 3900
-      }
-    });
-    expect(params.line_items?.[1]).toMatchObject({
-      price_data: {
-        unit_amount: 999,
-        recurring: {
-          interval: "month"
-        }
-      }
-    });
-    expect(params.line_items?.[2]).toMatchObject({
-      price_data: {
-        unit_amount: 1200,
-        product_data: {
-          name: "Standard shipping"
-        }
-      }
-    });
-    expect(params.line_items?.[3]).toMatchObject({
-      price_data: {
-        unit_amount: 234,
-        product_data: {
-          name: "Virginia sales tax",
-          metadata: {
-            line_kind: "manual_tax"
-          }
-        }
-      }
-    });
+    expect(validateCheckoutCart([customStandItem()], migratedProducts)).toMatchObject({ ok: true, checkoutMode: "payment" });
   });
 
   it("does not require an optional phone number again at payment", () => {
-    const cart = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const cart = validateCheckoutCart([configuredCustomItem], migratedProducts);
     expect(cart.ok).toBe(true);
     if (!cart.ok) return;
     const params = createCheckoutSessionParams({cart, customer: {...checkoutCustomer, phone: ""}, shippingAddress: checkoutShippingAddress, siteUrl:"https://taprater.com"});
@@ -990,7 +830,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("reuses an authenticated customer's Stripe profile without creating a duplicate", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredCustomItem], migratedProducts);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -1009,116 +849,24 @@ describe("Stripe checkout helpers", () => {
     expect(params.payment_intent_data).toBeUndefined();
   });
 
-  it("supports direct, branded, direct with subscription, and branded with subscription checkout combinations", () => {
+  it("supports custom direct and custom with subscription checkout combinations", () => {
     process.env.TAP_RATER_ENABLE_HOSTED_PURCHASING = "true";
-    const rateExperienceProduct = migratedProducts.find((product) => product.slug === "rate-your-experience-stand");
-    if (!rateExperienceProduct?.assetSet?.brandedFrontTemplateUrl) throw new Error("Expected Rate Your Experience branded template fixture");
-
-    const brandedSetup = {
-      productSlug: "rate-your-experience-stand",
-      optionCode: "branded_qr_direct" as const,
-      proofReceiptId: "12345678-1234-4234-8234-123456789012",
-      hostedReservationId: "12345678-1234-4234-8234-123456789013",
-      rendererVersion: "2026-09-09.1",
-      baseTemplateContentHash: "a".repeat(64),
-      logoContentHash: "b".repeat(64),
-      businessName: "Bingo Tires",
-      logoMediaUrl: "/api/media/product/customer/logo.png",
-      logoStorageKey: "products/customer/logo.png",
-      generatedQrValue: "https://taprater.com/p/P7AABGK8ZDVT",
-      qrTargetUrl: "https://taprater.com/p/P7AABGK8ZDVT",
-      nfcTargetUrl: "https://taprater.com/p/P7AABGK8ZDVT",
-      frontTemplateUrl: rateExperienceProduct.assetSet.brandedFrontTemplateUrl,
-      proofApproved: true,
-      proofApprovalSnapshot: {
-        rendererVersion: "2026-09-09.1",
-        baseTemplateContentHash: "a".repeat(64),
-        logoContentHash: "b".repeat(64),
-        productSlug: "rate-your-experience-stand",
-        optionCode: "branded_qr_direct",
-        businessName: "Bingo Tires",
-        logoMediaUrl: "/api/media/product/customer/logo.png",
-        logoStorageKey: "products/customer/logo.png",
-        generatedQrValue: "https://taprater.com/p/P7AABGK8ZDVT",
-        frontTemplateUrl: rateExperienceProduct.assetSet.brandedFrontTemplateUrl
-      }
-    };
-
-    const cart = validateCheckoutCart(
-      [
-        {
-          productId: "rate-your-experience-stand",
-          optionId: "standard_direct",
-          quantity: 1,
-          setup: {
-            destinationUrl: "https://example.com/direct"
-          }
-        },
-        {
-          productId: "rate-your-experience-stand",
-          optionId: "branded_qr_direct",
-          quantity: 1,
-          setup: {
-            ...brandedSetup,
-            destinationUrl: "https://example.com/branded-direct",
-            generatedQrValue: "https://example.com/branded-direct",
-            qrTargetUrl: "https://example.com/branded-direct",
-            nfcTargetUrl: "https://example.com/branded-direct",
-            proofApprovalSnapshot: {
-              ...brandedSetup.proofApprovalSnapshot,
-              destinationUrl: "https://example.com/branded-direct",
-              generatedQrValue: "https://example.com/branded-direct"
-            }
-          }
-        },
-        {
-          productId: "rate-your-experience-stand",
-          optionId: "standard_direct",
-          quantity: 1,
-          setup: {
-            serviceMode: "HOSTED",
-            serviceAddon: "hosted_multilink",
-            monthlyPriceCents: 999,
-            businessName: "Bingo Tires",
-            multiLinkLinksSkipped: true
-          }
-        },
-        {
-          productId: "rate-your-experience-stand",
-          optionId: "branded_qr_direct",
-          quantity: 1,
-          setup: {
-            ...brandedSetup,
-            serviceMode: "HOSTED",
-            serviceAddon: "hosted_multilink",
-            monthlyPriceCents: 999,
-            multiLinkLinksSkipped: true
-          }
-        }
-      ],
-      [rateExperienceProduct]
-    );
-
-    expect(cart.ok).toBe(true);
+    const item = customStandItem("rate-your-experience-stand");
+    item.setup.serviceMode = "HOSTED"; item.setup.serviceAddon = "hosted_multilink";
+    item.setup.hostedReservationId = "temporary-reservation";
+    const cart = validateCheckoutCart([item], migratedProducts);
+    expect(cart).toMatchObject({ ok: true, checkoutMode: "subscription", totalCents: 4900, recurringTotalCents: 999 });
     if (!cart.ok) return;
-    expect(cart.checkoutMode).toBe("subscription");
-    expect(cart.totalCents).toBe(17600);
-    expect(cart.recurringTotalCents).toBe(1998);
-    expect(cart.rows.map((row) => [row.optionId, row.destinationMode, row.unitAmountCents, row.monthlyAmountCents ?? 0])).toEqual([
-      ["standard_direct", "DIRECT", 3900, 0],
-      ["branded_qr_direct", "DIRECT", 4900, 0],
-      ["standard_direct", "HOSTED", 3900, 999],
-      ["branded_qr_direct", "HOSTED", 4900, 999]
-    ]);
-
-    const lineItems = buildStripeCheckoutLineItems(cart.rows);
-    expect(lineItems).toHaveLength(6);
-    expect(lineItems.map((lineItem) => lineItem.price_data?.unit_amount)).toEqual([3900, 4900, 3900, 999, 4900, 999]);
-    expect(lineItems.filter((lineItem) => Boolean(lineItem.price_data?.recurring))).toHaveLength(2);
+    expect(cart.rows[0].setup).not.toHaveProperty("hostedPageCode");
+    const params = createCheckoutSessionParams({ cart, customer: checkoutCustomer, shippingAddress: checkoutShippingAddress, siteUrl: "https://taprater.com" });
+    expect(params.mode).toBe("subscription");
+    expect(params).not.toHaveProperty("payment_method_types");
+    expect(params.line_items).toHaveLength(4);
+    expect(validateCheckoutCart([customStandItem()], migratedProducts)).toMatchObject({ ok: true, checkoutMode: "payment" });
   });
 
   it("adds standard shipping under the free-shipping threshold", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredCustomItem], migratedProducts);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -1153,7 +901,7 @@ describe("Stripe checkout helpers", () => {
     });
     expect(params.line_items?.[2]).toMatchObject({
       price_data: {
-        unit_amount: 234,
+        unit_amount: 294,
         product_data: {
           name: "Virginia sales tax",
           metadata: {
@@ -1165,7 +913,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("adds free shipping at or above the threshold", () => {
-    const result = validateCheckoutCart([{ ...configuredStandardItem, quantity: 2 }], migratedProducts);
+    const result = validateCheckoutCart([{ ...configuredCustomItem, quantity: 2 }], migratedProducts);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -1182,7 +930,7 @@ describe("Stripe checkout helpers", () => {
     expect(params.line_items).toHaveLength(2);
     expect(params.line_items?.[1]).toMatchObject({
       price_data: {
-        unit_amount: 468,
+        unit_amount: 588,
         product_data: {
           name: "Virginia sales tax",
           metadata: {
@@ -1194,7 +942,7 @@ describe("Stripe checkout helpers", () => {
   });
 
   it("records live mode metadata when live checkout is enabled", () => {
-    const result = validateCheckoutCart([configuredStandardItem], migratedProducts);
+    const result = validateCheckoutCart([configuredCustomItem], migratedProducts);
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;

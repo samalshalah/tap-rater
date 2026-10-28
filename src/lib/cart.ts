@@ -133,6 +133,9 @@ export function normalizeCartItems(value: unknown): CartItem[] {
       continue;
     }
 
+    // Do not silently convert a saved standard cart into a more expensive custom order.
+    const requestedId = entry?.optionId ?? entry?.setup?.optionCode;
+    if (requestedId !== "branded_qr_direct") continue;
     const requestedOption = typeof entry?.optionId === "string" ? getPurchaseOption(entry.optionId) : undefined;
     const productOptions = product ? getProductPurchaseOptions(product) : [];
     if (product && productOptions.length === 0) {
@@ -306,7 +309,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
 }
 
 function isCartOptionAccepted(option: PurchaseOption, productOptions: PurchaseOption[], hasCatalogProduct: boolean) {
-  if (option.id === "hosted_multilink" && !isHostedPurchaseOptionEnabled()) {
+  if (option.id !== "branded_qr_direct") {
     return false;
   }
 
@@ -314,7 +317,7 @@ function isCartOptionAccepted(option: PurchaseOption, productOptions: PurchaseOp
     return productOptions.some((item) => item.id === option.id);
   }
 
-  return option.id !== "hosted_multilink" || isHostedPurchaseOptionEnabled();
+  return true;
 }
 
 function normalizeSetup(value: unknown): CartItem["setup"] {

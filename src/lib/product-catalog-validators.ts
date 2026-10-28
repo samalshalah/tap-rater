@@ -131,7 +131,7 @@ const productOptionSchema = z.object({
   footerLabel: z.string().trim().max(120).optional(),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().min(0).default(0)
-});
+}).transform((option) => option.optionCode === "standard_direct" ? { ...option, isActive: false } : option);
 
 const productAssetSetSchema = z.object({
   standardAngledImageUrl: z.string().trim().max(2048).optional(),

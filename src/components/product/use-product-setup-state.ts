@@ -19,7 +19,7 @@ import { useProductGoogleSearch } from "./use-product-google-search";
 export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
 
-  const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "standard_direct");
+  const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "branded_qr_direct");
 
   const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
 
@@ -37,7 +37,7 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
         setGooglePlaceName((current) => current || saved.businessName);
         const params = new URLSearchParams(window.location.search);
         if (params.get("setup") === "review" && ["standard", "branded"].includes(params.get("design") || "")) {
-          setStep(params.get("design") === "standard" ? "review" : "destination");
+          setStep("destination");
           setIsBuilderOpen(true);
         }
       }

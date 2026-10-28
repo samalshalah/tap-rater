@@ -19,40 +19,10 @@ type Props = {
  setSelectedColorCode: (code: string) => void;
 };
 export function ProductSetupOptions({product, setupOptions, selectedOptionId, chooseOption, offers, activeSizes, selectedSize, setSelectedSizeCode, activeColors, selectedColor, setSelectedColorCode}: Props) {
- return <><div className="grid gap-2">
-          <p className="text-sm font-black text-ink">Design</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-          {setupOptions.map((option) => (
-            <label
-              key={option.id}
-              className={
-                selectedOptionId === option.id
-                  ? "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-brand bg-panel p-3 transition"
-                  : "tr-design-option grid min-h-[96px] cursor-pointer grid-cols-[auto_1fr] gap-3 rounded-md border border-line bg-white p-3 transition hover:border-brand/50 hover:bg-soft"
-              }
-            >
-              <input
-                type="radio"
-                name={`${product.slug}-setup-option`}
-                checked={selectedOptionId === option.id}
-                onChange={() => chooseOption(option.id)}
-                aria-label={`Select ${option.label}`}
-                className="mt-1 h-4 w-4 accent-brand"
-              />
-              <span className="min-w-0">
-                <span className="flex items-start justify-between gap-2">
-                  <span className="text-base font-black leading-5 text-ink">{getOptionDisplayLabel(option)}</span>
-                  <span className="shrink-0 text-sm font-black text-ink">{formatPrice(singleStandPrice(product.slug, option.id, option.priceCents, offers)).replace(".00", "")}</span>
-                </span>
-                <span className="mt-1 block text-sm font-semibold leading-5 text-ink">{product.slug === "google-review-stand" && option.id === "standard_direct" ? "NFC tap only · No printed QR" : product.slug === "google-review-stand" && option.id === "branded_qr_direct" ? "NFC + QR · Your logo + business name" : getOptionShortSummary(option)}</span>
-                <span className="mt-1 block text-xs leading-5 text-muted">{getOptionSummary(option)}</span>
-                {product.slug === "google-review-stand" && option.id !== "hosted_multilink" ? <span className="mt-1 block text-xs leading-5 text-muted">{option.id === "standard_direct" ? "Ready-made design · No subscription" : "Custom design · No subscription"}</span> : null}
-              </span>
-            </label>
-          ))}
-          </div>
+ return <><div className="rounded-md border border-line bg-panel p-3">
+          <p className="text-sm font-semibold text-ink">Custom stand · Your logo + business name + QR</p>
+          <p className="mt-1 text-sm text-muted">NFC and a printed QR code open your link. Approve your artwork before payment.</p>
         </div>
-
         {activeSizes.length ? (
           <div className="grid gap-2">
             <p className="text-sm font-semibold text-ink">Size</p>

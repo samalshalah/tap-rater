@@ -11,7 +11,7 @@ vi.mock("@/components/cart/cart-provider", () => ({ useCart: cart }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 beforeEach(() => {
-  cart.mockReturnValue({ items: [{ productId: "google-review-stand", quantity: 2 }] });
+  cart.mockReturnValue({ items: [{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 2 }] });
 });
 const render = () => renderToStaticMarkup(createElement(CartTable, { taxSettings: getDefaultTaxSettings(), offers: { ...defaultOffers, enabled: false }, shippingSettings: getDefaultShippingSettings() }));
 
@@ -29,18 +29,18 @@ describe("cart thumbnail delivery", () => {
 
   it("renders a 160px variant with stable dimensions and preserves totals and controls", () => {
     const html = render();
-    expect(html).toContain('src="/uploads-optimized/products/taprater-stands/google/google-standard-angled-w160.webp"');
+    expect(html).toContain('src="/uploads-optimized/products/taprater-stands/google/google-custom-angled-w160.webp"');
     expect(html).not.toContain('src="/uploads/products/taprater-stands/google/google-standard-angled.png"');
     expect(html).toContain('width="96" height="96" decoding="async"');
     expect(html).toContain("Increase Tap Rater Review Stand for Google Reviews quantity");
     expect(html).toContain("Remove Tap Rater Review Stand for Google Reviews");
-    expect(html).toContain("$78.00");
+    expect(html).toContain("$98.00");
     expect(html).toContain("Secure checkout");
   });
 
   it.each(["https://cdn.example.com/proof.png", "/api/media/proof-123"])("preserves dynamic or external proof source %s", (src) => {
     cart.mockReturnValue({ items: [{
-      productId: "new-database-stand", optionId: "standard_direct", quantity: 1,
+      productId: "new-database-stand", optionId: "branded_qr_direct", quantity: 1,
       productSnapshot: { title: "New database stand", sku: "QA-STAND", shortDescription: "Test" },
       setup: { proofPreviewData: { previewImageUrl: src } }
     }] });
@@ -49,9 +49,9 @@ describe("cart thumbnail delivery", () => {
 
   it("optimizes the catalog fallback for a stand without a preview", () => {
     cart.mockReturnValue({ items: [{
-      productId: "new-database-stand", optionId: "standard_direct", quantity: 1,
+      productId: "new-database-stand", optionId: "branded_qr_direct", quantity: 1,
       productSnapshot: { title: "New database stand", sku: "QA-STAND", shortDescription: "Test" }
     }] });
-    expect(render()).toContain('src="/uploads-optimized/products/rate-your-experience-stand-w160.webp"');
+    expect(render()).toContain('src="/uploads-optimized/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled-w160.webp"');
   });
 });

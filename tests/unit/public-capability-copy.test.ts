@@ -31,13 +31,13 @@ describe("public capability copy", () => {
 
   it("renders the footer fallback with an explicit physical-design distinction", () => {
     const html = renderToStaticMarkup(createElement(Footer));
-    expect(html).toContain("Standard is NFC-only; Branded adds printed QR");
+    expect(html).toContain("Every stand includes your logo");
   });
 
   it("keeps Standard NFC-only when describing the hosted Multi-Link add-on", async () => {
     const html = renderToStaticMarkup(await MultiLinkPage());
-    expect(html).toContain("Standard remains NFC-only, with no printed QR.");
-    expect(html).toContain("Branded adds a QR code pointing to the same page.");
+    expect(html).toContain("Your custom stand includes NFC");
+    expect(html).toContain("a QR code pointing to the same page.");
     expect(html).toContain("$9.99/month");
     expect(html).not.toContain("QR and NFC point to one permanent");
   });

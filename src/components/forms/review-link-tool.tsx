@@ -54,9 +54,9 @@ export function ReviewLinkTool() {
       {link ? (
         <section className="rounded-xl border border-line bg-soft p-5" aria-labelledby="ready-review-link">
           <h2 id="ready-review-link" className="text-xl font-semibold">Your link is ready. Put it on your counter.</h2>
-          <p className="mt-3 text-sm leading-6 text-muted">A Tap Rater Review Stand for Google Reviews opens this link with an NFC tap. Standard is NFC-only; Branded adds your logo and a printed QR code. Direct stands need no subscription.</p>
+          <p className="mt-3 text-sm leading-6 text-muted">A Tap Rater Review Stand for Google Reviews opens this link with an NFC tap. Your logo and a printed QR code are included alongside NFC. Direct stands need no subscription.</p>
           <div className="mt-4 grid gap-3">
-            <Link href="/product/google-review-stand?design=standard&setup=review" className="tr-button-primary text-center" onClick={saveStandDraft}>Use this link on a standard stand</Link>
+            <Link href="/product/google-review-stand?design=branded&setup=review" className="tr-button-primary text-center" onClick={saveStandDraft}>Customize a stand with this link</Link>
             <Link href="/product/google-review-stand?design=branded&setup=review" className="tr-button-outline text-center" onClick={saveStandDraft}>Add my logo + QR</Link>
           </div>
           <p className="mt-3 text-sm text-muted">Your link and business name carry over. Check your setup and price before adding to cart. Keep a copy of your link if your browser blocks storage.</p>

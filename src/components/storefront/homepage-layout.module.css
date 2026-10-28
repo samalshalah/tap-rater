@@ -91,7 +91,7 @@
   .home .heroCopy .heroHeadline { font-size: 44px; }
   .heroBody { font-size: 17px; }
   .heroProof { font-size: 12px; }
-  .comparison { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px; }
+  .comparison { grid-template-columns: minmax(0, 1fr); gap: 36px; }
   .design { grid-template-columns: minmax(0, 1fr); gap: 16px; }
   .design + .design { border-top: 0; padding-top: 0; }
   .designImage { max-width: 320px; margin-inline: auto; }

@@ -39,18 +39,18 @@ describe("public website capability copy", () => {
     storage.records.set("faqs.global", { items: defaultFaqContent.items.slice(0, 4) });
     const content = await getHomepageThemeContent();
     expect(content.hero.headline).toBe(hero.headline);
-    expect(content.hero.image).toEqual(hero.image);
+    expect(content.hero.image).toEqual({ ...hero.image, src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png" });
     expect(content.faqs.items).toHaveLength(4);
   });
 
   it("uses accurate fallback copy without requesting a database client", async () => {
     const content = await getHomepageThemeContent();
     expect(content.hero.headline).toBe("Tap Rater NFC Business Stands.");
-    expect(content.showcase.comparisonStandard.alt).toContain("NFC only");
-    expect(content.faqs.items[0].answer).toContain("Standard Direct stand");
+    expect(content.showcase.comparisonStandard.alt).toContain("logo and QR");
+    expect(content.faqs.items[0].answer).toContain("custom Direct stand");
     expect(content.customBranding.body).toContain("Approve the artwork preview before payment.");
     expect(content.customBranding.body).toContain("Final print artwork is generated after payment.");
-    expect((await getFooterContent()).intro).toContain("Standard is NFC-only");
+    expect((await getFooterContent()).intro).toContain("QR");
     expect(storage.getClient).not.toHaveBeenCalled();
   });
 
@@ -67,7 +67,7 @@ describe("public website capability copy", () => {
     const content = await getFaqContent();
 
     expect(content.items[0]).toMatchObject({ order: 70, enabled: false, question: record.items[0].question });
-    expect(content.items[0].answer).toContain("by NFC tap, with no printed QR.");
+    expect(content.items[0].answer).toContain("QR");
     expect(content.items[1].answer).not.toContain("QR and NFC");
     expect(content.items[2].answer).toContain("Approve the artwork preview before payment.");
     expect(content.items[2].answer).toContain("Final print artwork is generated after payment.");
@@ -102,7 +102,7 @@ describe("public website capability copy", () => {
     expect(content.customBranding.body).toContain("Final print artwork is generated after payment.");
     expect(content.customBranding.bullets).toEqual(["Your logo", "Approve preview before payment", "Custom production instructions"]);
     expect(content.customBranding.cta).toEqual(branding.cta);
-    expect((await getFooterContent()).intro).toContain("Standard is NFC-only");
+    expect((await getFooterContent()).intro).toContain("QR");
     expect(hero.eyebrow).toBe("NFC + QR Business Stands");
   });
 

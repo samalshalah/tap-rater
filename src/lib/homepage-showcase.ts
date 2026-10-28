@@ -34,8 +34,8 @@ export const homepageShowcaseSchema = z.object({
 
 export type HomepageShowcaseContent = z.infer<typeof homepageShowcaseSchema>;
 
-export const googleStandardImage = "/uploads/products/taprater-stands/google/google-standard-angled.png";
-export const cafeHeroImage = "/uploads/marketing/homepage-cafe-review-illustration.png";
+export const googleCustomImage = "/uploads/products/taprater-stands/google/google-custom-angled.png";
+export const cafeHeroImage = "/product-galleries/google-custom/tap-rater-custom-google-review-stand-05-countertop-scene.webp";
 
 export const defaultHomepageShowcase: HomepageShowcaseContent = {
   featuredEnabled: true,
@@ -43,7 +43,7 @@ export const defaultHomepageShowcase: HomepageShowcaseContent = {
   featuredProductSlugs: ["google-review-stand", "yelp-review-stand", "facebook-review-stand", "rate-your-experience-stand", "follow-us-social-media-stand"],
   heroCaption: "AI-edited product illustration",
   comparisonProductSlug: "google-review-stand",
-  comparisonStandard: { src: googleStandardImage, alt: "Standard Google Review stand, NFC only", caption: "Standard design" },
+  comparisonStandard: { src: googleCustomImage, alt: "Custom Google Review stand, logo and QR", caption: "Custom design" },
   comparisonBranded: { src: "/uploads/products/taprater-stands/google/google-custom-angled.png", alt: "Branded Google Review stand template with logo, business name and QR positions", caption: "Branded template; your artwork replaces the marked areas" },
   tapVideoUrl: "",
   tapPosterUrl: "",
@@ -58,7 +58,7 @@ export const defaultHomepageShowcase: HomepageShowcaseContent = {
   ],
   qualityEnabled: true,
   qualityHeadline: "A small stand. A useful detail.",
-  qualityImage: { src: googleStandardImage, alt: "Google Review acrylic stand and its countertop base", caption: "Product design shown" }
+  qualityImage: { src: googleCustomImage, alt: "Google Review acrylic stand and its countertop base", caption: "Product design shown" }
 };
 
 export function selectFeaturedHomepageProducts(products: MigratedProduct[], slugs: string[]) {

@@ -2,7 +2,7 @@ import type { HeaderNavigationContent, FooterContent, FaqContent, HomepageThemeC
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
-import { cafeHeroImage, defaultHomepageShowcase, googleStandardImage } from "@/lib/homepage-showcase";
+import { cafeHeroImage, defaultHomepageShowcase, googleCustomImage } from "@/lib/homepage-showcase";
 
 export const defaultHeaderNavigation: HeaderNavigationContent = {
   items: [
@@ -17,7 +17,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
 };
 
 export const defaultFooterContent: FooterContent = {
-  intro: "NFC tabletop stands for reviews, menus, booking, social media, feedback, and custom business links. Standard is NFC-only; Branded adds printed QR, your logo, and business name.",
+  intro: "NFC tabletop stands for reviews, menus, booking, social media, feedback, and custom business links. Every stand includes your logo, business name, NFC and a printed QR code.",
   columns: [
     {
       label: "Shop",
@@ -67,14 +67,14 @@ export const defaultFaqContent: FaqContent = {
   items: [
     {
       question: "What can a Tap Rater stand open?",
-      answer: "A Standard Direct stand opens one customer-provided destination URL by NFC tap, with no printed QR. That can be a review page, menu, booking page, survey, social profile, website, or custom URL. Branded adds a QR code generated from your destination, your logo, and business name.",
+      answer: "A custom Direct stand opens one customer-provided destination URL by NFC tap or printed QR. That can be a review page, menu, booking page, survey, social profile, website, or custom URL. Your logo, business name and QR code are included.",
       area: "global",
       order: 10,
       enabled: true
     },
     {
-      question: "Do Standard Direct stands require an account or subscription?",
-      answer: "No. Standard Direct sends NFC taps directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.",
+      question: "Do custom Direct stands require an account or subscription?",
+      answer: "No. Custom Direct sends NFC taps and QR scans directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.",
       area: "global",
       order: 20,
       enabled: true
@@ -121,7 +121,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     primaryCta: { label: "Shop Stands", href: "/shop" },
     secondaryCta: { label: "Customize Yours", href: "/custom-stands" },
     proofPoints: ["Direct stands: no subscription", "Branded: preview before payment"],
-    image: { src: cafeHeroImage, alt: "Illustrative cafe scene with a Tap Rater Google Review stand and a phone showing a review form" }
+    image: { src: cafeHeroImage, alt: "Custom Google Review stand with a business logo and QR code on a countertop" }
   },
   actions: {
     enabled: true,
@@ -132,7 +132,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "Leave a review",
         description: "Open your review page.",
         href: "/category/reviews",
-        image: { src: googleStandardImage, alt: "Google Review stand" },
+        image: { src: googleCustomImage, alt: "Google Review stand" },
         order: 10,
         enabled: true
       },
@@ -140,7 +140,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "View a menu",
         description: "Share your menu or ordering link.",
         href: "/category/menu",
-        image: { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png", alt: "Menu and Order stand" },
+        image: { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png", alt: "Menu and Order stand" },
         order: 20,
         enabled: true
       },
@@ -148,7 +148,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "Book an appointment",
         description: "Connect to your booking page.",
         href: "/product/connect-with-us-stand",
-        image: { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-standard-angled.png", alt: "Connect With Us stand for a booking link" },
+        image: { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png", alt: "Connect With Us stand for a booking link" },
         order: 30,
         enabled: true
       },
@@ -156,7 +156,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "Follow on social",
         description: "Make your social profile easy to find.",
         href: "/category/social-media",
-        image: { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png", alt: "Follow Us on Social Media stand" },
+        image: { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-custom-angled.png", alt: "Follow Us on Social Media stand" },
         order: 40,
         enabled: true
       },
@@ -164,7 +164,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
         title: "Share feedback",
         description: "Hear about the customer experience.",
         href: "/product/rate-your-experience-stand",
-        image: { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png", alt: "Rate Your Experience stand" },
+        image: { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png", alt: "Rate Your Experience stand" },
         order: 50,
         enabled: true
       }
@@ -180,7 +180,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     enabled: true,
     eyebrow: "Optional Multi-Link",
     headline: `One stand. Up to ${hostedMultiLinkServiceAddon.maxLinks} links.`,
-    body: `Add an editable hosted page to a compatible stand for ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, plus the physical stand price. Standard is NFC-only; Branded adds printed QR.`,
+    body: `Add an editable hosted page to a compatible stand for ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, plus the physical stand price. Every stand includes NFC and printed QR.`,
     cta: { label: "Explore Multi-Link", href: "/multi-link" },
     image: multiLinkDemoImage,
     bullets: ["Reviews", "Appointments", "Menu", "Social Media", "Website", "Contact"]
@@ -198,7 +198,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
   customBranding: {
     enabled: true,
     eyebrow: "Custom Branding",
-    headline: "Standard or Branded?",
+    headline: "Made for your business",
     body: "Add your business name, logo, and destination-generated QR with Branded. Approve the artwork preview before payment. Final print artwork is generated after payment.",
     cta: { label: "Shop Branded Stands", href: "/custom-stands" },
     image: { src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "Finished River Cafe branded Tap Rater stand demo with logo and QR code" },
