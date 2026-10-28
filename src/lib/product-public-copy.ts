@@ -1,6 +1,6 @@
 import type {MigratedProduct,ProductPurchaseOptionSnapshot} from '@/data/migrated-products';
 import {correctKnownPurchaseCopy} from '@/lib/purchase-options';
-import { brandedProductTitle } from '@/lib/branded-product-title';
+import { brandedProductTitle, brandedProductSeoTitle } from '@/lib/branded-product-title';
 import { brandedProductDescription } from '@/lib/branded-product-description';
 
 export function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {
@@ -12,7 +12,7 @@ export function sanitizePublicStorefrontProduct(product: MigratedProduct): Migra
   return {
     ...product,
     title: brandedProductTitle(product.title),
-    seoTitle: product.seoTitle ? brandedProductTitle(product.seoTitle) : product.seoTitle,
+    seoTitle: brandedProductSeoTitle(product.title),
     ...copy,
     requiresAccount: false,
     requiresSubscription: false,

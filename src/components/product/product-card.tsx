@@ -1,5 +1,6 @@
 import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import Link from "next/link";
+import { shortProductTitle } from "@/lib/branded-product-title";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getReviewDestination } from "@/lib/product-page-content";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
@@ -28,7 +29,7 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
       </div>
       <div className="flex flex-1 flex-col pt-2 [overflow-wrap:anywhere]">
         <p className="text-xs font-semibold text-accent">{category?.title ?? destination}</p>
-        <p className="mb-2 mt-1.5 text-sm font-semibold leading-5 text-ink sm:text-base">{product.title}</p>
+        <p className="mb-2 mt-1.5 text-sm font-semibold leading-5 text-ink sm:text-base">{shortProductTitle(product.title)}</p>
         <p className="mt-auto text-sm font-normal text-ink">{purchaseLabel}</p>
       </div>
     </Link>

@@ -1,3 +1,4 @@
+import { shortProductTitle } from "@/lib/branded-product-title";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getProductDestinationCopy } from "@/lib/product-destination-copy";
 
@@ -14,7 +15,7 @@ export const nfcProductFaqs = [
 
 export function brandedProductDescription(product: MigratedProduct) {
   const destination = getProductDestinationCopy(product);
-  const name = product.title.replace(/^Tap Rater\s+/i, "").replace(/\b(?:Branded|QR|Custom)\s+/gi, "");
+  const name = shortProductTitle(product.title).replace(/^Custom /, "");
   const shortDescription = `Personalize your ${name} with a custom design featuring your business logo, name and QR code. Customers tap with an NFC-enabled phone or scan the QR code to open your ${destination.linkType}.`;
   const seoDescription = `Custom ${name} with your business logo and name. NFC tap and QR code. Personalize your design and preview before payment.`;
   return {
