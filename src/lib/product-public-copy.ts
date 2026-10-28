@@ -1,5 +1,6 @@
 import type {MigratedProduct,ProductPurchaseOptionSnapshot} from '@/data/migrated-products';
 import {correctKnownPurchaseCopy} from '@/lib/purchase-options';
+import { brandedProductTitle } from '@/lib/branded-product-title';
 
 export function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {
   if (isHostedProduct(product)) {
@@ -9,6 +10,8 @@ export function sanitizePublicStorefrontProduct(product: MigratedProduct): Migra
   const cleanDescription = `${product.title} includes your logo, business name and QR code, connecting NFC taps and QR scans directly to one customer-provided destination link. No subscription, account, hosted page, or activation is required.`;
   return {
     ...product,
+    title: brandedProductTitle(product.title),
+    seoTitle: product.seoTitle ? brandedProductTitle(product.seoTitle) : product.seoTitle,
     shortDescription: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.shortDescription) ? cleanDescription : product.shortDescription)),
     description: sanitizeRetiredPublicCopy(correctKnownPurchaseCopy(containsLegacyDirectCopy(product.description) ? cleanDescription : product.description)),
     seoDescription: product.seoDescription ? correctKnownPurchaseCopy(sanitizeRetiredPublicCopy(product.seoDescription)) : product.seoDescription,

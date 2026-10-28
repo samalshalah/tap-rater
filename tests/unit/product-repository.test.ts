@@ -47,7 +47,7 @@ describe("product repository", () => {
 
     expect(product).toMatchObject({
       slug: "google-review-stand",
-      title: "Tap Rater Review Stand for Google Reviews",
+      title: "Tap Rater Branded QR Review Stand for Google Reviews",
       sku: "SUP-1",
       categorySlug: "reviews",
       basePriceCents: 5900,
@@ -69,7 +69,7 @@ describe("product repository", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "logo",
-      seoTitle: "Review Stand for Google Reviews",
+      seoTitle: "Branded QR Review Stand for Google Reviews",
       seoDescription: "Supabase description",
       searchKeywords: ["supabase", "google"],
       isActive: true
@@ -130,7 +130,7 @@ describe("product repository", () => {
     ]));
 
     expect(products).toHaveLength(1);
-    expect(products[0].title).toBe("Tap Rater Review Stand for Google Reviews");
+    expect(products[0].title).toBe("Tap Rater Branded QR Review Stand for Google Reviews");
     expect(products[0].salePriceCents).toBe(4900);
     expect(products.map((product) => product.title)).not.toContain("Old active tag");
   });
@@ -230,7 +230,7 @@ describe("product repository", () => {
     expect(products).toHaveLength(1);
     expect(products[0]).toMatchObject({
       slug: "database-only-google-review-stand",
-      title: "Database Only Google Review Stand",
+      title: "Branded QR Database Only Google Review Stand",
       categorySlug: "reviews",
       basePriceCents: 3900,
       images: [{ src: "/uploads/products/v5/google-review-stand.png", alt: "Database-only Google review stand" }]
@@ -482,7 +482,7 @@ describe("product repository", () => {
     expect(products).toHaveLength(1);
     expect(products[0]).toMatchObject({
       slug: "book-appointment-stand",
-      title: "Book Appointment Stand",
+      title: "Branded QR Book Appointment Stand",
       sku: "BOOK-APPOINTMENT-STAND",
       categorySlug: "appointments",
       serviceMode: "basic_redirect",
