@@ -6,6 +6,14 @@ import { buildMerchantFeed } from "@/lib/merchant-feed";
 const product = migratedProducts.find((p) => p.slug === "google-review-stand")!;
 
 describe("Google Merchant feed", () => {
+  it("uses the exact storefront title without an additional customization suffix", () => {
+    const title = "Custom Google Review Stand with Your Logo — NFC + QR";
+    for (const input of [product, { ...product, title }]) {
+      const feed = buildMerchantFeed([input], defaultOffers);
+      expect(feed).toContain(`<g:title>${title}</g:title>`);
+      expect(feed).not.toContain(" - Custom Logo + QR");
+    }
+  });
   it("removes the retired standard campaign and feed entries", () => {
     for (const date of ["2026-10-12", "2026-11-10"]) {
       const feed = buildMerchantFeed([product], defaultOffers, Date.parse(date));

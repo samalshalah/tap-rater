@@ -7,6 +7,7 @@ import { isPublicLaunchStorefrontProduct } from "@/lib/product-repository";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { merchantProductId } from "@/lib/merchant-product-id";
+import { brandedProductTitle } from "@/lib/branded-product-title";
 
 function xml(value: string) {
   return value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
@@ -41,7 +42,7 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid merchant price");
       const fields = [
         tag("id", id),
-        tag("title", `${product.title} - Custom Logo + QR`.slice(0, 150)),
+        tag("title", brandedProductTitle(product.title).slice(0, 150)),
         tag("description", `${correctKnownPurchaseCopy(product.shortDescription)} ${option.summary}`.trim().slice(0, 5000)),
         tag("link", absolute(`/product/${product.slug}?design=branded`)),
         tag("image_link", absolute(image)),
