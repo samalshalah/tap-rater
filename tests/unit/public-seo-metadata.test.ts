@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { catalogCategories, migratedProducts } from "@/data/migrated-products";
 import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
+import { getProductVisual } from "@/lib/storefront-visuals";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import sitemap from "@/app/sitemap";
 import { metadata as rootMetadata } from "@/app/layout";
@@ -66,6 +67,7 @@ describe("canonical public category URLs", () => {
     expect(paths).toContain("/solutions/restaurants");
     expect(paths).toContain("/multi-link");
     expect(entries.every((entry) => entry.lastModified === undefined)).toBe(true);
+    expect(entries.find((entry) => entry.url.endsWith("/product/google-review-stand"))?.images).toEqual([new URL(getProductVisual(googleStand).src, "https://taprater.com").toString()]);
   });
 
   it("excludes empty and disabled categories and consolidates custom stands", async () => {

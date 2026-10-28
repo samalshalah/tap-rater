@@ -5,6 +5,7 @@ import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
+import { getProductVisual } from "@/lib/storefront-visuals";
 import { productMatchesCategory } from "@/lib/category-products";
 
 const siteUrl = getPublicSiteUrl();
@@ -44,5 +45,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const businessUseRoutes = businessUses.map((businessUse) => `/solutions/${businessUse.slug}`);
   const paths = Array.from(new Set([...staticRoutes, ...categoryRoutes, ...businessUseRoutes, ...productRoutes]));
 
-  return paths.map(route);
+  const productImages = new Map(products.map((product) => [
+    `/product/${product.slug}`,
+    new URL(getProductVisual(product).src, siteUrl).toString()
+  ]));
+  return paths.map((path) => ({
+    ...route(path),
+    ...(productImages.has(path) ? { images: [productImages.get(path)!] } : {})
+  }));
 }

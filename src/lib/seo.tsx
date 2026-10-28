@@ -50,7 +50,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
         })) : undefined;
     const branded = option.id === "branded_qr_direct";
     const variantUrl = `${url}?design=branded`;
-    const image = (branded ? product.assetSet?.brandedAngledImageUrl : undefined) ?? getProductVisual(product).src;
+    const image = getProductVisual(product).src;
     return [{
       "@type": "Product",
       "@id": `${url}#${option.id}`,
