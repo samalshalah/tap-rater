@@ -4,6 +4,8 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {beforeEach,it,expect,vi} from 'vitest';
 const m=vi.hoisted(()=>({experience:vi.fn()}));
 vi.mock('@/lib/customer-auth',()=>({requireCustomer:async()=>({email:'client@example.test'})}));
+vi.mock('@/lib/customer-workspace-experience',()=>({getCustomerWorkspaceExperience:async(...args:unknown[])=>({...await m.experience(...args),configured:true})}));
+vi.mock('@/lib/customer-portal',async original=>({...await original<typeof import('@/lib/customer-portal')>(),getCustomerPortal:async()=>portal}));
 vi.mock('@/lib/customer-experience',()=>({getCustomerExperience:m.experience}));
 vi.mock('@/components/account/account-shell',()=>({AccountShell:({children}:{children:ReactNode})=>children}));
 vi.mock('@/components/account/marketing-gate',()=>({MarketingGate:({children}:{children:ReactNode})=>createElement('section',{'data-testid':'service-setup'},children)}));
