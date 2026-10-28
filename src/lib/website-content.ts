@@ -341,6 +341,7 @@ const knownWebsiteClaims: Record<string, ReadonlyMap<string, string>> = {
     ["Custom NFC and QR tabletop stands for reviews, menus, booking, social media, feedback, and business links.", defaultFooterContent.intro]
   ].map(([from, to]) => [from.toLowerCase(), to])),
   "faqs.global.answer": new Map([
+    ["Current shipping rates and free-shipping eligibility are shown in your cart and at checkout. Shipping and applicable tax are shown before payment. Preparation and delivery estimates are not yet confirmed; contact us before ordering for a deadline.", defaultFaqContent.items.find(item => item.question === "How much is shipping?")!.answer],
     ["A Standard Direct stand opens one customer-provided destination URL by QR code and NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.", defaultFaqContent.items[0].answer],
     ["A Standard Direct stand opens one customer-provided destination URL by NFC tap. That can be a review page, menu, booking page, survey, social profile, website, or custom URL.", defaultFaqContent.items[0].answer],
     ["No. Standard Direct sends QR and NFC directly to your provided URL and does not require a Tap Rater account, hosted redirect, activation, or subscription.", defaultFaqContent.items[1].answer],

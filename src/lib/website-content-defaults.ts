@@ -100,7 +100,7 @@ export const defaultFaqContent: FaqContent = {
     },
     {
       question: "How much is shipping?",
-      answer: "Current shipping rates and free-shipping eligibility are shown in your cart and at checkout. Shipping and applicable tax are shown before payment. Preparation and delivery estimates are not yet confirmed; contact us before ordering for a deadline.",
+      answer: "Free shipping on US orders. No minimum. Any available international shipping rates and applicable tax are shown at checkout before payment. See our shipping page for current preparation and delivery estimates; contact us before ordering for a deadline.",
       area: "global", order: 60, enabled: true
     },
     {

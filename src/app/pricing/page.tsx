@@ -79,7 +79,7 @@ export default async function PricingPage() {
           <p className="tr-body mt-4">
             Mix products for different counters or business locations. The cart
             applies the best eligible discount automatically. Offers do not
-            combine, and shipping eligibility uses the subtotal after discounts.
+            combine. US orders ship free with no minimum purchase.
           </p>
           <div className="mt-5">
             <ProductOffers settings={offers} />
@@ -96,7 +96,8 @@ export default async function PricingPage() {
             A physical stand configured with the destination supplied during
             checkout. Standard uses NFC only; Branded adds a QR code from the
             same destination. Website, booking and social services at that
-            destination remain managed by their own provider. Taxes and any
+            destination remain managed by their own provider. US shipping is free
+            with no minimum. Applicable taxes and any available international
             shipping charges appear at checkout.
           </p>
           <p className="tr-body mt-4">

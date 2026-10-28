@@ -269,7 +269,7 @@ export const shippingSettingsSchema = z.object({
     .string()
     .trim()
     .max(1000)
-    .default("Shipping is $12 under $60 and free at $60 or more.")
+    .default("Free shipping on US orders. No minimum.")
 });
 
 export const taxSettingsSchema = z.object({
