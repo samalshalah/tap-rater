@@ -34,7 +34,7 @@ describe("final content and shopping continuity", () => {
 
   it("starts the Branded price, radio control, and gallery together", () => {
     const html = renderHero("branded_qr_direct");
-    expect(html).toContain("Your logo, business name, NFC and QR included.");
+    expect(html).toContain("Approve your design before payment.");
     expect(html).not.toContain("Select Standard");
     expect(html).toContain("Set Up My Stand - $49");
     expect(html).toContain("Custom Google Review stand with red logo, company name and QR placeholders");

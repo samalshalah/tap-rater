@@ -20,7 +20,6 @@ type Props = {
 };
 export function ProductSetupOptions({product, setupOptions, selectedOptionId, chooseOption, offers, activeSizes, selectedSize, setSelectedSizeCode, activeColors, selectedColor, setSelectedColorCode}: Props) {
  return <><div className="text-sm leading-6 text-muted">
-          <p>Your logo, business name, NFC and QR included.</p>
           <p>Approve your design before payment.</p>
         </div>
         {activeSizes.length ? (

@@ -57,7 +57,7 @@ export function ProductHero({ product, category, initialOptionId, offers, introd
 
         <div>
           <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
-          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base">{(introduction ?? product.shortDescription).split(/(?<=\.)\s+/)[0]}</p>
+          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base">{product.shortDescription}</p>
         </div>
 
         <ProductSetupChooser

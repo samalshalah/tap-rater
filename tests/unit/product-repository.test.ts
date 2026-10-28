@@ -53,8 +53,8 @@ describe("product repository", () => {
       basePriceCents: 5900,
       salePriceCents: undefined,
       stockStatus: "instock",
-      shortDescription: "Supabase short description",
-      description: "Supabase full description",
+      shortDescription: expect.stringContaining("custom design featuring your business logo"),
+      description: expect.stringContaining("Near Field Communication"),
       productType: "physical_managed",
       serviceMode: "managed_redirect",
       checkoutMode: "buy_now",
@@ -70,7 +70,7 @@ describe("product repository", () => {
       allowsCustomDesign: true,
       designMode: "logo",
       seoTitle: "Branded QR Review Stand for Google Reviews",
-      seoDescription: "Supabase description",
+      seoDescription: expect.stringContaining("NFC tap and QR code"),
       searchKeywords: ["supabase", "google"],
       isActive: true
     });
@@ -271,13 +271,13 @@ describe("product repository", () => {
       is_active: true
     });
 
-    expect(product?.shortDescription).toBe("Countertop NFC-only stand.");
-    expect(product?.description).toBe("Standard Direct is NFC only. No printed QR.");
-    expect(product?.seoDescription).toContain("One-time physical product purchase");
+    expect(product?.shortDescription).toContain("custom design featuring your business logo");
+    expect(product?.description).toContain("NFC (Near Field Communication)");
+    expect(product?.seoDescription).toContain("QR code");
     expect(product?.seoDescription).not.toMatch(/monthly fee/i);
   });
 
-  it("corrects known Google copy without replacing a merchant's surrounding description", () => {
+  it("publishes personalized NFC and QR copy while preserving the raw admin description", () => {
     const row = {
       slug: "google-review-stand",
       short_description: "Countertop Google Review Stand with NFC and QR. Customers tap or scan to open your Google review link directly-no app or subscription required.",
@@ -285,7 +285,8 @@ describe("product repository", () => {
     };
     const product = normalizeStorefrontProductRow(row)!;
     expect(product.shortDescription).toContain("QR");
-    expect(product.description).toBe("Reception edition. NFC and the printed QR code open the same Google review link. Includes desk instructions.");
+    expect(product.description).toContain("Google review link");
+    expect(product.description).toContain("approve your artwork before payment");
     expect(normalizeStorefrontProductRow(row, { sanitizePublicCopy: false })?.description).toBe(row.description);
   });
 

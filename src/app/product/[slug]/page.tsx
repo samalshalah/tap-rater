@@ -27,6 +27,7 @@ import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { productSupportsMultiLink } from "@/lib/service-addons";
 import { getProductVisual } from "@/lib/storefront-visuals";
+import { nfcProductFaqs } from "@/lib/branded-product-description";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -116,11 +117,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const destination = getReviewDestination(product);
   const purchaseOptions = getProductPurchaseOptions(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
-  const productFaqs = getProductBuyingFaqs(product).filter(({ question }) =>
+  const productFaqs = [...getProductBuyingFaqs(product).filter(({ question }) =>
     !question.startsWith("How does ") &&
     question !== "Does this require a subscription?" &&
     question !== "Which design includes a printed QR code?"
-  );
+  ), ...nfcProductFaqs];
   const buyingGuide = getProductBuyingGuide(product);
 
   return (
