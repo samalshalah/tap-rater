@@ -2,10 +2,25 @@ import { describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import { defaultOffers } from "@/lib/offers";
 import { buildMerchantFeed } from "@/lib/merchant-feed";
+import { getGalleryImages } from "@/lib/product-gallery";
 
 const product = migratedProducts.find((p) => p.slug === "google-review-stand")!;
 
 describe("Google Merchant feed", () => {
+  it("exports each stand's own complete gallery with no duplicated main image", () => {
+    const feed = buildMerchantFeed(migratedProducts, defaultOffers);
+    const items = feed.match(/<item>[\s\S]*?<\/item>/g)!;
+    expect(items).toHaveLength(58);
+    for (const item of items) {
+      const slug = item.match(/\/product\/([^?]+)\?design=branded/)![1];
+      const source = migratedProducts.find((p) => p.slug === slug)!;
+      const images = [...new Set(getGalleryImages(source).filter((image) => !image.panel).map((image) => image.src))];
+      expect(images.length).toBeGreaterThan(1);
+      expect(item.match(/<g:additional_image_link>/g), slug).toHaveLength(images.length - 1);
+      for (const image of images) expect(item.split(image)).toHaveLength(2);
+      expect(item).not.toContain("standard-angled");
+    }
+  });
   it("uses the exact storefront title without an additional customization suffix", () => {
     const title = "Custom Google Review Stand with Your Logo — NFC + QR";
     for (const input of [product, { ...product, title }]) {

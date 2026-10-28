@@ -8,6 +8,7 @@ import { getProductVisual } from "@/lib/storefront-visuals";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { merchantProductId } from "@/lib/merchant-product-id";
 import { brandedProductTitle } from "@/lib/branded-product-title";
+import { getGalleryImages } from "@/lib/product-gallery";
 
 function xml(value: string) {
   return value.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
@@ -31,8 +32,10 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       const basePrice = getConfiguredUnitPriceCents(product, option, selection);
       if (option.requiresSubscription || basePrice === null || !Number.isFinite(basePrice) || basePrice <= 0) return [];
       const branded = option.id === "branded_qr_direct";
-      const image = (branded ? product.assetSet?.brandedAngledImageUrl : undefined) ?? getProductVisual(product).src;
+      const gallery = getGalleryImages(product, option.id).filter((image) => !image.panel);
+      const image = gallery[0]?.src ?? (branded ? product.assetSet?.brandedAngledImageUrl : undefined) ?? getProductVisual(product).src;
       if (!image) throw new Error(`Missing merchant image for ${product.slug}`);
+      const additionalImages = [...new Set(gallery.map((item) => absolute(item.src)))].filter((src) => src !== absolute(image)).slice(0, 10);
       const sku = generateProductVariantSku(product, { ...selection, purchaseOptionId: option.id });
       // Preserve IDs already discovered by Google's ProductGroup crawler.
       const id = merchantProductId(product, option.id);
@@ -46,6 +49,7 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
         tag("description", `${correctKnownPurchaseCopy(product.shortDescription)} ${option.summary}`.trim().slice(0, 5000)),
         tag("link", absolute(`/product/${product.slug}?design=branded`)),
         tag("image_link", absolute(image)),
+        ...additionalImages.map((src) => tag("additional_image_link", src)),
         tag("availability", "in_stock"),
         tag("condition", "new"),
         tag("price", `${(basePrice / 100).toFixed(2)} USD`),
