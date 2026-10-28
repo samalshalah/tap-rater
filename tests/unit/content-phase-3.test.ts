@@ -49,7 +49,7 @@ describe("content phase 3 presentation standard", () => {
     expect(renderToStaticMarkup(createElement(ProductCard, { product: merchantPhoto, design: "branded" }))).not.toContain("Standard design shown");
   });
 
-  it.each(["category/[slug]", "solutions/[slug]", "product/[slug]", "multi-link"])("uses shared listing tracks on %s", route => {
+  it.each(["category/[slug]", "solutions/[slug]", "multi-link"])("uses shared listing tracks on %s", route => {
     const source = readFileSync(`src/app/${route}/page.tsx`, "utf8");
     expect(source).toContain("tr-product-grid");
     expect(source).not.toContain("[&_>_a>div:first-child]");
@@ -92,11 +92,12 @@ describe("content phase 3 presentation standard", () => {
     expect(images.some(item => item.src === product.assetSet!.brandedAngledImageUrl)).toBe(false);
   });
 
-  it("announces the selected thumbnail and labels a Branded layout without shifting the image frame", () => {
+  it("announces the selected thumbnail without redundant gallery copy", () => {
     const html = renderToStaticMarkup(createElement(ProductGallery, { product, selectedOptionId: "branded_qr_direct" }));
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("min-w-full");
-    expect(html).toContain("Example design. Your details are added during setup.");
+    expect(html).not.toContain("Example design. Your details are added during setup.");
+    expect(html).not.toContain("View full-size image");
     expect(html).not.toContain("Custom design · Logo + name + QR");
   });
 });

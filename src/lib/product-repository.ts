@@ -208,14 +208,21 @@ export async function getStorefrontProductBySlugFromClient(
 
 export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3): Promise<MigratedProduct[]> {
   if (!hasSupabaseAdminConfig()) {
-    return getStorefrontRelatedProducts(product, staticStorefrontProducts(), limit);
+    const catalog = staticStorefrontProducts();
+    const related = getStorefrontRelatedProducts(product, catalog, limit);
+    const seen = new Set([product.slug, ...related.map((item) => item.slug)]);
+    return [...related, ...catalog.filter((item) => !seen.has(item.slug) && item.isActive && item.stockStatus === "instock")].slice(0, limit);
   }
 
   try {
     const fetchLimit = Math.max(limit + 4, 8);
     const categoryProducts = await getStorefrontProductsByCategoryFromClient(getSupabaseAdmin() as ProductRepositoryClient, product.categorySlug, fetchLimit);
 
-    return getStorefrontRelatedProducts(product, categoryProducts, limit);
+    const related = getStorefrontRelatedProducts(product, categoryProducts, limit);
+    if (related.length >= limit) return related;
+    const catalog = await getStorefrontProducts();
+    const seen = new Set([product.slug, ...related.map((item) => item.slug)]);
+    return [...related, ...catalog.filter((item) => !seen.has(item.slug) && item.isActive && item.stockStatus === "instock")].slice(0, limit);
   } catch {
     return [];
   }

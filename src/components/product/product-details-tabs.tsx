@@ -16,16 +16,10 @@ type Specification = {
   value: string;
 };
 
-type IncludedItem = {
-  label: string;
-  appliesTo?: "all" | "branded";
-};
-
 type ProductDetailsTabsProps = {
   highlights: Highlight[];
   howItWorks: HowStep[];
   specifications: Specification[];
-  includedItems: IncludedItem[];
 };
 
 type TabId = "details" | "specifications" | "how";
@@ -36,9 +30,9 @@ const allTabs: Array<{ id: TabId; label: string }> = [
   { id: "how", label: "How it works" }
 ];
 
-export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems }: ProductDetailsTabsProps) {
+export function ProductDetailsTabs({ highlights, howItWorks, specifications }: ProductDetailsTabsProps) {
   const [selectedTab, setActiveTab] = useState<TabId>("details");
-  const tabs = allTabs.filter((tab) => (tab.id !== "details" || highlights.length > 0) && (tab.id !== "specifications" || specifications.length > 0 || includedItems.length > 0));
+  const tabs = allTabs.filter((tab) => (tab.id !== "details" || highlights.length > 0) && (tab.id !== "specifications" || specifications.length > 0));
   const activeTab = tabs.some((tab) => tab.id === selectedTab) ? selectedTab : tabs[0].id;
   const id = useId();
   const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
@@ -138,21 +132,6 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
                 </dl>
               ) : null}
 
-              {includedItems.length > 0 ? (
-                <div className="mt-8">
-                  <h3 className="text-lg font-black text-ink">Included</h3>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {includedItems.map((item, index) => (
-                      <InfoCard
-                        key={item.label}
-                        eyebrow={item.appliesTo === "branded" ? "Branded" : String(index + 1).padStart(2, "0")}
-                        title={item.label}
-                        body={item.appliesTo === "branded" ? "Included with Branded + QR." : "Included with this stand."}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ) : null}
             </div>
           ) : null}
 

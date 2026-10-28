@@ -47,13 +47,13 @@ describe("product information navigation", () => {
   it("keeps product content and prices available in the corresponding panels", () => {
     const html = renderToStaticMarkup(createElement(ProductDetailsTabs, props));
 
-    for (const content of ["Tap or scan", "Opens your destination.", "5 x 7 inches", "Programmed NFC", "Tap: Hold your phone near the stand."]) {
+    for (const content of ["Tap or scan", "Opens your destination.", "5 x 7 inches", "Tap: Hold your phone near the stand."]) {
       expect(html).toContain(content);
     }
   });
 
-  it("omits the specifications section when no specifications or included items exist", () => {
-    const html = renderToStaticMarkup(createElement(ProductDetailsTabs, { ...props, specifications: [], includedItems: [] }));
+  it("omits the specifications section when no specifications exist", () => {
+    const html = renderToStaticMarkup(createElement(ProductDetailsTabs, { ...props, specifications: [] }));
 
     expect(html).not.toContain('<option value="specifications">');
     expect(html).not.toContain('-tab-specifications');
@@ -72,16 +72,6 @@ describe("product information navigation", () => {
   it("does not offer hosting in the comparison for an incompatible product", () => {
     const html = renderToStaticMarkup(createElement(ProductDetailsTabs, props));
     expect(html).not.toContain("Optional hosted Multi-Link adds");
-  });
-
-  it.each([
-    { specifications: props.specifications, includedItems: [] },
-    { specifications: [], includedItems: props.includedItems }
-  ])("keeps specifications available when either type of content exists", (content) => {
-    const html = renderToStaticMarkup(createElement(ProductDetailsTabs, { ...props, ...content }));
-
-    expect(html).toContain('<option value="specifications">Specifications</option>');
-    expect(html).toContain('-panel-specifications');
   });
 
   it("does not share control or panel IDs between component instances", () => {

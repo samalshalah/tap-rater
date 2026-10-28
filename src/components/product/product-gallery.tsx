@@ -44,8 +44,6 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
       <div style={image.panel ? { height: "auto", aspectRatio: "1 / 1" } : undefined} className="tr-product-gallery-main tr-premium-surface relative mx-auto aspect-square w-full max-w-[292px] bg-white sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
         <GallerySlide image={image} />
       </div>
-      <p className="tr-product-gallery-caption text-center text-xs text-muted">{activeOptionId === "branded_qr_direct" ? "Example design. Your details are added during setup." : image.caption}</p>
-      <a href={image.src} target="_blank" rel="noopener noreferrer" className="text-center text-sm text-brand underline">{image.panel ? "View stand artwork" : "View full-size image"}</a>
       {galleryImages.length > 1 ? (
         <div className="mx-auto w-full max-w-[292px] overflow-x-auto sm:max-w-[390px] md:max-w-[430px] lg:max-w-[500px]">
           <div className="flex w-max min-w-full justify-center gap-2 p-1">

@@ -15,7 +15,6 @@ import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } fr
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import {
   getProductHowItWorks,
-  getProductIncludedItems,
   getProductPageHighlights,
   getProductSpecifications,
   getReviewDestination
@@ -106,14 +105,13 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   }
 
   const [offers, shipping, relatedProducts] = await Promise.all([
-    getOffersSettings().catch(() => null), getShippingSettings(), getRelatedStorefrontProductsForProduct(product)
+    getOffersSettings().catch(() => null), getShippingSettings(), getRelatedStorefrontProductsForProduct(product, 5)
   ]);
   const category = getCategoryBySlug(product.categorySlug);
   // Keep merchant-authored details; the generic feature cards repeat the hero and setup guide.
   const highlights = product.keyFeatures?.length ? getProductPageHighlights(product) : [];
   const howItWorks = getProductHowItWorks(product);
   const specifications = getProductSpecifications(product);
-  const includedItems = getProductIncludedItems(product);
   const destination = getReviewDestination(product);
   const purchaseOptions = getProductPurchaseOptions(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
@@ -140,12 +138,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
-      {highlights.length > 0 || specifications.length > 0 || includedItems.length > 0 || !buyingGuide ? <SectionShell tone="soft" spacing="compact">
+      {highlights.length > 0 || specifications.length > 0 || !buyingGuide ? <SectionShell tone="soft" spacing="compact">
         <ProductDetailsTabs
           highlights={highlights}
           howItWorks={howItWorks}
           specifications={specifications}
-          includedItems={includedItems}
         />
       </SectionShell> : null}
 
@@ -167,7 +164,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
               title="Related Tap Rater stands"
               cta={{ href: "/shop", label: "View all stands" }}
             />
-            <div className="tr-product-grid mt-8">
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-5">
               {relatedProducts.slice(0, 5).map((relatedProduct) => (
                 <ProductCard key={relatedProduct.slug} product={relatedProduct} />
               ))}
