@@ -137,14 +137,14 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
-      <SectionShell tone="soft" spacing="compact">
+      {highlights.length > 0 || specifications.length > 0 || includedItems.length > 0 || !buyingGuide ? <SectionShell tone="soft" spacing="compact">
         <ProductDetailsTabs
           highlights={highlights}
           howItWorks={howItWorks}
           specifications={specifications}
           includedItems={includedItems}
         />
-      </SectionShell>
+      </SectionShell> : null}
 
       {buyingGuide ? <ProductBuyingGuide title={product.title} slug={product.slug} guide={buyingGuide} /> : null}
 
