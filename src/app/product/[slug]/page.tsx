@@ -119,6 +119,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
   const productFaqs = [...getProductBuyingFaqs(product).filter(({ question }) =>
     !question.startsWith("How does ") &&
+    !/\bstandard\b/i.test(question) &&
+    question !== "Do customers need a special app to tap the stand?" &&
     question !== "Does this require a subscription?" &&
     question !== "Which design includes a printed QR code?"
   ), ...nfcProductFaqs];

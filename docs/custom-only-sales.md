@@ -8,7 +8,9 @@ Public catalog copy, CMS legacy claims, product images, pricing, buying guides, 
 
 ## Release
 
-Deploy the application change, then apply `supabase/2026-10-28-retire-standard-sales.sql` to deactivate old standard sales options. The migration updates only option availability and does not delete orders or products. It has not been applied to the live database during this task.
+Released to production on 2026-10-28. Applied `supabase/2026-10-28-retire-standard-sales.sql` to deactivate six old standard sales options. The migration updates only option availability and does not delete orders or products. All six custom options remain active.
+
+Before/after database fingerprints matched for all 40 orders (including 34 containing standard items) and all four devices. Historical Google standard artwork remains accessible. Account and admin order pages retain their authentication redirects. The separate layout preview files were checked by SHA-256 and none changed.
 
 ## Verification
 
