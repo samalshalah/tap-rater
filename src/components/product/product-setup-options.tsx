@@ -19,9 +19,9 @@ type Props = {
  setSelectedColorCode: (code: string) => void;
 };
 export function ProductSetupOptions({product, setupOptions, selectedOptionId, chooseOption, offers, activeSizes, selectedSize, setSelectedSizeCode, activeColors, selectedColor, setSelectedColorCode}: Props) {
- return <><div className="rounded-md border border-line bg-panel p-3">
-          <p className="text-sm font-semibold text-ink">Custom stand · Your logo + business name + QR</p>
-          <p className="mt-1 text-sm text-muted">NFC and a printed QR code open your link. Approve your artwork before payment.</p>
+ return <><div className="text-sm leading-6 text-muted">
+          <p>Your logo, business name, NFC and QR included.</p>
+          <p>Approve your design before payment.</p>
         </div>
         {activeSizes.length ? (
           <div className="grid gap-2">

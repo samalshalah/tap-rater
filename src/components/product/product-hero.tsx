@@ -1,6 +1,6 @@
 "use client";
 
-import { singleStandPrice, type OffersSettings } from "@/lib/offers";
+import { type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { CatalogCategory, MigratedProduct } from "@/data/migrated-products";
@@ -8,7 +8,6 @@ import { ProductGallery } from "@/components/product/product-gallery";
 import { ProductAnalyticsEvent } from "@/components/analytics/ecommerce-events";
 import { ProductSetupChooser } from "@/components/product/product-setup-chooser";
 import { getProductPurchaseOptions, type PurchaseOptionId } from "@/lib/purchase-options";
-import { formatPrice } from "@/lib/products";
 import { getCategoryHref } from "@/lib/category-routes";
 import { getConfiguredUnitPriceCents, getDefaultProductColor, getDefaultPurchasableProductSize } from "@/lib/product-model";
 import type { ShippingSettingsInput } from "@/lib/validators";
@@ -24,7 +23,7 @@ type ProductHeroProps = {
   shipping?: ShippingSettingsInput;
 };
 
-export function ProductHero({ product, category, fromPrice, initialOptionId, offers, introduction, shipping }: ProductHeroProps) {
+export function ProductHero({ product, category, initialOptionId, offers, introduction, shipping }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "branded_qr_direct");
@@ -34,10 +33,7 @@ export function ProductHero({ product, category, fromPrice, initialOptionId, off
       colorCode: getDefaultProductColor(product)?.code
     })
     : product.basePriceCents);
-  const [selectedMonthlyPriceCents, setSelectedMonthlyPriceCents] = useState(0);
   const effectiveSelectedOptionId = options.some((option) => option.id === selectedOptionId) ? selectedOptionId : options[0]?.id;
-  const displayPrice = selectedPriceCents === null ? fromPrice : formatPrice(singleStandPrice(product.slug, effectiveSelectedOptionId ?? "", selectedPriceCents, offers)).replace(".00", "");
-  const pricePrefix = selectedPriceCents === null ? "From " : "";
 
   return (
     <div className="tr-product-hero tr-container grid gap-5 sm:gap-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
@@ -60,13 +56,8 @@ export function ProductHero({ product, category, fromPrice, initialOptionId, off
         </div>
 
         <div>
-          <p className="tr-eyebrow hidden md:block">{category?.title ?? "Tap Rater stand"}</p>
           <h1 className="tr-product-title mt-2 max-w-3xl text-ink">{product.title}</h1>
-          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base">{introduction ?? product.shortDescription}</p>
-          <p className="mt-3 hidden text-xl font-semibold text-ink md:block">
-            {pricePrefix}{displayPrice}
-            {selectedMonthlyPriceCents > 0 ? ` + ${formatPrice(selectedMonthlyPriceCents)}/month` : ""}
-          </p>
+          <p className="tr-product-description tr-body mt-3 max-w-2xl text-base">{(introduction ?? product.shortDescription).split(/(?<=\.)\s+/)[0]}</p>
         </div>
 
         <ProductSetupChooser
@@ -76,7 +67,6 @@ export function ProductHero({ product, category, fromPrice, initialOptionId, off
           selectedOptionId={effectiveSelectedOptionId}
           onSelectedOptionChange={setSelectedOptionId}
           onSelectedPriceChange={setSelectedPriceCents}
-          onSelectedMonthlyPriceChange={setSelectedMonthlyPriceCents}
         />
       </div>
     </div>

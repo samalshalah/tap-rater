@@ -108,14 +108,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     getOffersSettings().catch(() => null), getShippingSettings(), getRelatedStorefrontProductsForProduct(product)
   ]);
   const category = getCategoryBySlug(product.categorySlug);
-  const highlights = getProductPageHighlights(product);
+  // Keep merchant-authored details; the generic feature cards repeat the hero and setup guide.
+  const highlights = product.keyFeatures?.length ? getProductPageHighlights(product) : [];
   const howItWorks = getProductHowItWorks(product);
   const specifications = getProductSpecifications(product);
   const includedItems = getProductIncludedItems(product);
   const destination = getReviewDestination(product);
   const purchaseOptions = getProductPurchaseOptions(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
-  const productFaqs = getProductBuyingFaqs(product);
+  const productFaqs = getProductBuyingFaqs(product).filter(({ question }) =>
+    !question.startsWith("How does ") &&
+    question !== "Does this require a subscription?" &&
+    question !== "Which design includes a printed QR code?"
+  );
   const buyingGuide = getProductBuyingGuide(product);
 
   return (
@@ -145,7 +150,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <SectionShell spacing="default">
         <div className="tr-container">
-          <SectionHeader align="left" eyebrow="Product questions" title={`${product.title} FAQs`} />
+          <SectionHeader align="left" title="Questions & answers" />
           <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
           {product.slug === "google-review-stand" ? <Link href="/review-links-generator" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">Find your Google review link</Link> : null}
         </div>

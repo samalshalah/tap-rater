@@ -96,7 +96,7 @@ describe("content phase 3 presentation standard", () => {
     const html = renderToStaticMarkup(createElement(ProductGallery, { product, selectedOptionId: "branded_qr_direct" }));
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain("min-w-full");
-    expect(html).toContain("Custom design");
-    expect(html).toContain("min-h-5");
+    expect(html).toContain("Example design. Your details are added during setup.");
+    expect(html).not.toContain("Custom design · Logo + name + QR");
   });
 });

@@ -38,7 +38,7 @@ const allTabs: Array<{ id: TabId; label: string }> = [
 
 export function ProductDetailsTabs({ highlights, howItWorks, specifications, includedItems }: ProductDetailsTabsProps) {
   const [selectedTab, setActiveTab] = useState<TabId>("details");
-  const tabs = allTabs.filter((tab) => tab.id !== "specifications" || specifications.length > 0 || includedItems.length > 0);
+  const tabs = allTabs.filter((tab) => (tab.id !== "details" || highlights.length > 0) && (tab.id !== "specifications" || specifications.length > 0 || includedItems.length > 0));
   const activeTab = tabs.some((tab) => tab.id === selectedTab) ? selectedTab : tabs[0].id;
   const id = useId();
   const tabRefs = useRef<Partial<Record<TabId, HTMLButtonElement | null>>>({});
@@ -112,7 +112,6 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
         >
           {tab.id === "details" ? (
             <div>
-              <h2 className="text-2xl font-black text-ink">Product details</h2>
               <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {highlights.map((highlight, index) => (
                   <InfoCard
@@ -128,7 +127,6 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
 
           {tab.id === "specifications" ? (
             <div>
-              <h2 className="text-2xl font-black text-ink">Specifications</h2>
               {specifications.length > 0 ? (
                 <dl className="tr-card mt-5 overflow-hidden p-0">
                   {specifications.map((specification) => (
@@ -160,7 +158,6 @@ export function ProductDetailsTabs({ highlights, howItWorks, specifications, inc
 
           {tab.id === "how" ? (
             <div className="max-w-4xl">
-              <h2 className="text-2xl font-black text-ink">How it works</h2>
               <article className="tr-card mt-4 p-5 sm:p-6">
                 <p className="tr-body">{formatHowItWorksParagraph(howItWorks)}</p>
               </article>

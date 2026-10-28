@@ -74,7 +74,8 @@ describe("product variant structured data", () => {
     expect(schema(product)).toMatchObject({ offers: { price: "56.00" } });
     expect(schema(product).sku).toMatch(/-S-W$/);
     const html = renderToStaticMarkup(createElement(ProductHero, { product, destination: "Google", fromPrice: "$39", initialOptionId: "standard_direct" }));
-    expect(html).toContain("$56");
+    // The chooser owns the visible price; the hero must not repeat it.
+    expect(html).not.toContain("$56");
     expect(html).not.toContain("$39");
     expect(schema({ ...product, sizeOptions: [product.sizeOptions[0]] })).not.toHaveProperty("hasVariant");
   });

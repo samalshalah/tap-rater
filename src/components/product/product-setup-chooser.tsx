@@ -206,13 +206,13 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-3">
           <div>
             <p className="text-sm font-black text-ink">Qty</p>
-            <p className="text-xs font-semibold leading-5 text-muted">
+            {(!quantityEnabled || configuredUnitPriceCents === null || selectedQuantity > 1) ? <p className="text-xs font-semibold leading-5 text-muted">
               {quantityEnabled
                 ? configuredUnitPriceCents === null
                   ? "Select an available size"
                   : `${selectedPrice} each`
                 : "One Multi-Link page per setup"}
-            </p>
+            </p> : null}
           </div>
           <div className="flex h-11 items-center overflow-hidden rounded-lg border border-line bg-white">
             <button
@@ -253,7 +253,6 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
           <Link href="/shipping" className="font-semibold text-brand underline">Delivery estimates</Link>
         </p> : null}
         <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
-        {shipping && freeShippingCountries(offers).includes("US") ? <p className="mb-1 text-center text-xs text-muted">Free US shipping · No minimum</p> : shipping?.shippingMode === "flat" ? <p className="mb-1 text-center text-xs text-muted">{formatPrice(shipping.flatShippingAmountCents)} US shipping{offers?.shipping.enabled ? ` · Free at ${formatPrice(offers.shipping.thresholdCents)} after discounts` : ""}</p> : shipping?.shippingMode === "free" ? <p className="mb-1 text-center text-xs text-muted">Free shipping on supported orders</p> : null}
         <button
           type="button"
           className="tr-button-primary w-full"
@@ -266,7 +265,6 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
         </button>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
-          <span>{selectedOption.hasQr ? "QR + NFC" : "NFC only · No printed QR"}</span>
           {selectedLinkExperience === "multilink" ? (
             <>
               <span>Hosted Multi-Link</span>
