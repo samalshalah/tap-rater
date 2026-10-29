@@ -186,10 +186,6 @@ export function ProductSetupDialogContent({
                       />
                     </label>
                   </div>
-                  <div className="rounded-lg border border-line bg-soft p-3 text-sm leading-6 text-muted">
-                    Need Tap Rater to prepare or fix your logo? Use Contact Us and upload your file before ordering.
-                    <a className="ml-2 font-semibold text-brand hover:text-ink" href="/contact-us">Contact Us</a>
-                  </div>
 
                 </div>
               ) : null}
