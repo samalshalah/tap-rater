@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { ExternalLink, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { ProductSetupDialogProps } from "./product-setup-dialog-types";
 import { isHttpUrl } from "./product-setup-model";
@@ -176,8 +176,14 @@ export function ProductSetupDestinationStep({
                   )}
                   {selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
                     <div className="flex min-w-0 items-center gap-4 border-t border-line pt-3">
-                      <div className="h-28 w-28 shrink-0"><QrPreview value={proofQrValue} variant="template" /></div>
-                      <div className="min-w-0"><p className="text-sm font-semibold text-ink">QR destination</p><a href={proofQrValue} target="_blank" rel="noopener noreferrer" className="text-sm text-brand [overflow-wrap:anywhere]">{proofQrValue}</a></div>
+                      <div className="h-24 w-24 shrink-0 sm:h-28 sm:w-28"><QrPreview value={proofQrValue} variant="template" /></div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-ink">{isGoogleReviewProduct ? "Check your review link" : "Check your link"}</p>
+                        <p className="mt-1 text-xs leading-5 text-muted">{isGoogleReviewProduct ? "Open the link or scan the QR code to confirm your business." : "Open the link or scan the QR code to confirm the destination."}</p>
+                        <a href={proofQrValue} target="_blank" rel="noopener noreferrer" aria-label="Test link (opens in a new tab)" className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-line bg-white px-3 text-xs font-semibold text-brand transition hover:bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                          Test link <ExternalLink size={14} aria-hidden="true" />
+                        </a>
+                      </div>
                     </div>
                   ) : null}
                   <BuilderSummary
