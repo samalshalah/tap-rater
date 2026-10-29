@@ -1,4 +1,6 @@
 "use client";
+
+import { shortProductTitle } from "@/lib/branded-product-title";
 import {memo,useState,useId} from 'react';
 import {ChevronDown} from 'lucide-react';
 import {marketingAmount,type MarketingPurchase} from '@/lib/marketing-plan';
@@ -86,7 +88,7 @@ export const CheckoutSummary = memo(function CheckoutSummary({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium leading-5 text-ink">
-                      {row.product.title}
+                      {row.option.id === "branded_qr_direct" ? shortProductTitle(row.product.title) : row.product.title}
                     </p>
                     <p className="mt-1 text-xs text-brand">
                       {row.option.label}

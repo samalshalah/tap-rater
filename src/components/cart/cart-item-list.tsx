@@ -1,5 +1,7 @@
 "use client";
 
+import { shortProductTitle } from "@/lib/branded-product-title";
+
 import { memo } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { formatPrice, getProductBySlug } from "@/lib/products";
@@ -53,7 +55,7 @@ export const CartItemList = memo(function CartItemList({ rows, decreaseItem, inc
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-base font-medium leading-6 text-ink">{row.product.title}</p>
+                <p className="text-base font-medium leading-6 text-ink">{row.option.id === "branded_qr_direct" ? shortProductTitle(row.product.title) : row.product.title}</p>
                 <p className="mt-1 text-sm font-medium text-brand">
                   {row.option.label}
                 </p>
@@ -107,7 +109,7 @@ export const CartItemList = memo(function CartItemList({ rows, decreaseItem, inc
                 <div className="flex h-10 w-fit items-center overflow-hidden rounded-lg border border-line bg-white">
                   <button
                     type="button"
-                    aria-label={`Decrease ${row.product.title} quantity`}
+                    aria-label={`Decrease ${row.option.id === "branded_qr_direct" ? shortProductTitle(row.product.title) : row.product.title} quantity`}
                     className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
                     disabled={row.item.quantity <= 1}
                     onClick={() => decreaseItem(cartKey)}
@@ -119,7 +121,7 @@ export const CartItemList = memo(function CartItemList({ rows, decreaseItem, inc
                   </span>
                   <button
                     type="button"
-                    aria-label={`Increase ${row.product.title} quantity`}
+                    aria-label={`Increase ${row.option.id === "branded_qr_direct" ? shortProductTitle(row.product.title) : row.product.title} quantity`}
                     className="grid h-10 w-10 place-items-center text-ink hover:bg-soft disabled:cursor-not-allowed disabled:text-muted"
                     disabled={row.item.quantity >= getCartItemQuantityLimit(row.item)}
                     onClick={() => increaseItem(cartKey)}
@@ -136,7 +138,7 @@ export const CartItemList = memo(function CartItemList({ rows, decreaseItem, inc
                 </div>
                 <button
                   type="button"
-                  aria-label={`Remove ${row.product.title}`}
+                  aria-label={`Remove ${row.option.id === "branded_qr_direct" ? shortProductTitle(row.product.title) : row.product.title}`}
                   className="tr-icon-button text-brand"
                   onClick={() => removeItem(cartKey)}
                 >
