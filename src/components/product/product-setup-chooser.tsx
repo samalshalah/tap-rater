@@ -7,7 +7,6 @@ import { freeShippingCountries,quoteOffers } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 import { Minus, Plus, X } from "lucide-react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { ProductSetupOptions } from "./product-setup-options";
 import { useProductSetupState } from "./use-product-setup-state";
@@ -203,7 +202,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-white p-3">
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-3">
           <div>
             <p className="text-sm font-black text-ink">Qty</p>
             {(!quantityEnabled || configuredUnitPriceCents === null || selectedQuantity > 1) ? <p className="text-xs font-semibold leading-5 text-muted">
@@ -247,11 +246,6 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
           </div>
         </div>
 
-        {shipping ? <p className="text-sm leading-6 text-muted">
-          {freeShippingCountries(offers).includes("US") ? "Free shipping on US orders. No minimum." : shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
-          {!freeShippingCountries(offers).includes("US") && shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}{" "}
-          <Link href="/shipping" className="font-semibold text-brand underline">Delivery estimates</Link>
-        </p> : null}
         <div className="tr-purchase-action" data-builder-open={isBuilderOpen}>
         <button
           type="button"
@@ -276,6 +270,10 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
               <span>Arrives ready to use</span>
             </>
           )}
+        {shipping ? <span>
+          {freeShippingCountries(offers).includes("US") ? "Free shipping on US orders. No minimum." : shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
+          {!freeShippingCountries(offers).includes("US") && shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}
+        </span> : null}
         </div>
 
         {error && !isBuilderOpen ? <p className="tr-status-error mt-4" role="alert">{error}</p> : null}
