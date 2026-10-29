@@ -22,7 +22,7 @@ type Props={
  isFillingAddress:boolean;
  rows:ReturnType<typeof getCartRows>;
 };
-export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer, setCustomer, shipping, setShipping, differentRecipient, setDifferentRecipient, setIsFillingAddress, error, reminderConsent, setReminderConsent, isStartingPayment, isFillingAddress, rows}:Props){
+export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer, setCustomer, shipping, setShipping, differentRecipient, setDifferentRecipient, setIsFillingAddress, error, isStartingPayment, isFillingAddress, rows}:Props){
  return (<form className="grid gap-4" onSubmit={startPayment}>
               <div>
                 <p className="tr-eyebrow">Customer</p>
@@ -176,7 +176,6 @@ export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer,
                 </p>
               ) : null}
 
-              <label className="flex items-start gap-3 text-sm text-muted"><input type="checkbox" checked={reminderConsent} onChange={event => setReminderConsent(event.target.checked)} className="mt-1" />Email me reminders if I leave this order unfinished. Optional; unsubscribe anytime.</label>
               <button
                 type="submit"
                 disabled={

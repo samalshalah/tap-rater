@@ -16,7 +16,7 @@ it('starts all pricing settings reads before any resolves and preserves their va
  expect(m.tax).toHaveBeenCalledTimes(1);expect(m.offers).toHaveBeenCalledTimes(1);expect(m.shipping).toHaveBeenCalledTimes(1);
  const tax={manualTaxRateBps:600},offers={enabled:true},shipping={flatRateCents:500};resolveTax(tax);resolveOffers(offers);resolveShipping(shipping);
  const page=await pending;const props=page.props.children.props.children.props.children.props;
- expect(props).toMatchObject({taxSettings:tax,offers,shippingSettings:shipping,marketingAvailable:true});
+ expect(props).toMatchObject({taxSettings:tax,offers,shippingSettings:shipping,marketingAvailable:false});
 });
 it('still rejects a settings outage instead of rendering stale checkout prices',async()=>{
  m.tax.mockResolvedValue({});m.shipping.mockResolvedValue({});m.offers.mockRejectedValue(Error('Offers unavailable'));

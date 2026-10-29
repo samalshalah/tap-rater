@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { quoteOffers, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
+import { Info } from "lucide-react";
+import { quoteOffers, offerIsActive, offerShippingSettings, type OffersSettings, type OfferQuote } from "@/lib/offers";
 import type { ShippingSettingsInput } from "@/lib/validators";
 import { OfferSummary } from "@/components/cart/offer-summary";
 import { getCartOfferSuggestion } from "@/lib/cart-offer-suggestion";
@@ -147,11 +148,29 @@ export function CartTable({
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="tr-card grid gap-0 p-4 sm:p-6">
         <CartItemList rows={rows} decreaseItem={decreaseItem} increaseItem={increaseItem} removeItem={removeItem} />
-        {suggestion && suggestedRow ? (
+        {offers.enabled ? (
           <aside className="rounded-xl border border-brand/20 bg-brand/5 p-4 text-sm">
-            <p className="font-semibold text-ink">Need another stand?</p>
-            <p className="mt-2">Add one more {suggestedRow.product.title} with the same design and size for {formatPrice(suggestion.additionalCostCents)} more before shipping and tax. Your cart savings increase by {formatPrice(suggestion.extraSavingsCents)}.</p>
-            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4" href={`/product/${suggestion.productId}?design=branded`}>Set up another stand</Link>
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-semibold text-ink">Stand offers</p>
+              <details className="group relative">
+                <summary aria-label="Offer details" className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-md text-brand hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand [&::-webkit-details-marker]:hidden">
+                  <Info size={18} aria-hidden="true" />
+                </summary>
+                <div className="absolute right-0 top-full z-10 w-60 max-w-[calc(100vw-4rem)] rounded-lg border border-line bg-white p-3 text-xs leading-5 text-muted shadow-lg">
+                  Offers apply to eligible one-time stands. The best available offer is applied automatically; offers do not stack. Bundle savings depend on design and size. Shipping and tax are calculated separately.
+                  {suggestion && suggestedRow ? <p className="mt-2">Add the same design and size for {formatPrice(suggestion.additionalCostCents)} more and increase your savings by {formatPrice(suggestion.extraSavingsCents)}.</p> : null}
+                </div>
+              </details>
+            </div>
+            <ul className="grid gap-2 text-sm text-ink sm:grid-cols-2">
+              {offerIsActive(offers.second, Date.now()) ? <li>Second stand: {offers.second.percent}% off</li> : null}
+              {offerIsActive(offers.bundle3, Date.now()) ? <li>3+ stands: bundle savings</li> : null}
+              {offerIsActive(offers.bundle5, Date.now()) ? <li>5+ stands: bundle savings</li> : null}
+              {offerIsActive(offers.upgrade, Date.now()) ? <li>Custom stands: save {formatPrice(offers.upgrade.savingCents)} each</li> : null}
+            </ul>
+            <Link className="mt-3 inline-flex min-h-11 items-center font-semibold text-brand underline underline-offset-4" href={suggestion ? `/product/${suggestion.productId}?design=branded` : "/shop"}>
+              {suggestion ? `Add another · +${formatPrice(suggestion.additionalCostCents)}` : "Shop stands"}
+            </Link>
           </aside>
         ) : null}
       </div>

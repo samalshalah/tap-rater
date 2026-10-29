@@ -1,5 +1,4 @@
 import { getOffersSettings } from "@/lib/offer-settings";
-import {marketingCheckoutEnabled} from '@/lib/marketing-subscriptions';
 import { getShippingSettings } from "@/lib/shipping-settings";
 import { Suspense } from "react";
 import { EmbeddedCheckoutClient } from "@/components/checkout/embedded-checkout";
@@ -23,7 +22,7 @@ export default async function CheckoutPage() {
     <main className="bg-soft text-ink">
       <section className="tr-container tr-section">
         <Suspense fallback={<div className="tr-card p-8 text-sm font-semibold text-muted">Loading checkout...</div>}>
-          <EmbeddedCheckoutClient marketingAvailable={marketingCheckoutEnabled()} offers={offers} shippingSettings={shippingSettings} stripePublicConfig={stripePublicConfig} taxSettings={taxSettings} />
+          <EmbeddedCheckoutClient marketingAvailable={false} offers={offers} shippingSettings={shippingSettings} stripePublicConfig={stripePublicConfig} taxSettings={taxSettings} />
         </Suspense>
       </section>
     </main>
