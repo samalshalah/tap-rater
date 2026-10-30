@@ -1,3 +1,4 @@
+import styles from "@/components/storefront/type-pages.module.css";
 import type { Metadata } from "next";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getHomepageThemeContent } from "@/lib/website-content";
@@ -21,14 +22,14 @@ export default async function CustomStandsPage() {
   ];
 
   return (
-    <main className="tr-public-shell text-ink">
+    <main className={`tr-public-shell text-ink ${styles.page}`}>
       <JsonLd data={breadcrumbJsonLd([{ name: "Shop all stands", href: "/shop" }, { name: "Custom stands", href: "/custom-stands" }])} />
-      <PageHero
+      <PageHero className={styles.hero}
         eyebrow={customBranding.eyebrow || "Custom Branding"}
         title="Branded + QR stands"
         body={customBranding.body}
         cta={{ href: "/shop?design=branded", label: "Shop Branded + QR stands" }}
-        image={customBranding.image}
+        image={{ ...customBranding.image, priority: true }}
       />
       <SectionShell tone="soft">
         <div className="tr-container">

@@ -1,3 +1,4 @@
+import styles from "@/components/storefront/type-pages.module.css";
 import type { Metadata } from "next";
 import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
@@ -11,8 +12,6 @@ import { getStorefrontProducts } from "@/lib/product-repository";
 import { getShopResultWindow, searchAndSortShopProducts } from "@/lib/shop-catalog";
 import { buildShopHref, normalizeShopQuery, type ShopQuery, type ShopSearchParams } from "@/lib/shop-query";
 import { productMatchesCategory } from "@/lib/category-products";
-import { catalogCategories } from "@/data/migrated-products";
-import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
 
 export const metadata: Metadata = {
   title: "Shop NFC and QR Tabletop Stands",
@@ -54,9 +53,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const { visibleCount, nextPage } = getShopResultWindow(filteredProducts.length, query.page);
   const visibleProducts = filteredProducts.slice(0, visibleCount);
   const hasFilters = Boolean(selectedType || selectedUse || query.design || query.q);
-  const collections = catalogCategories.filter((category) => category.slug !== "custom-stands"
-    && standTypes.some((type) => type.slug === categoryToStandTypeSlug(category.slug))
-    && products.some((product) => productMatchesCategory(product, category.slug)));
+
 
   return (
     <main className="tr-public-shell text-ink">
@@ -69,24 +66,22 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <PrismaticWave variant="banner" />
             <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
-            <nav aria-label="Stand collections" className="mt-4 flex flex-wrap gap-x-5 gap-y-1">
-              {collections.map((category) => <Link key={category.slug} href={getCategoryHref(category.slug)} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">{category.title}</Link>)}
-            </nav>
+
           </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <div className="lg:hidden">
-                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className="tr-card-compact group p-0">
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink">
+                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className={`${styles.filterPanel} group p-0`}>
+                  <summary className={styles.filterSummary}>
                     <span className="flex min-h-12 items-center gap-2 px-4">
                       <SlidersHorizontal size={17} aria-hidden="true" />
                       Filters
                     </span>
-                    <span className="px-4 text-brand">
+                    <span className="px-4">
                       {selectedType || selectedUse || query.design ? "Active" : "Type and use"}
                     </span>
                   </summary>
-                  <div className="border-t border-line p-4">
+                  <div>
                     <FilterPanelContent
                       businessUses={businessUses}
                       filteredProductCount={filteredProducts.length}
@@ -100,7 +95,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </details>
               </div>
 
-              <aside className="tr-card-compact hidden h-fit p-5 lg:block">
+              <aside className={`${styles.filterPanel} hidden h-fit lg:block`}>
                 <FilterPanelContent
                   businessUses={businessUses}
                   filteredProductCount={filteredProducts.length}
@@ -263,15 +258,15 @@ function FilterPanelContent({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between gap-3 border-b border-line pb-4">
+      <div className={styles.filterHeader}>
         <div>
-          <p className="text-sm font-semibold text-ink">Filters</p>
-          <p className="mt-1 text-xs font-medium text-muted">
+          <p className={styles.filterHeading}>Filters</p>
+          <p className={styles.filterTotal}>
             {filteredProductCount} of {products.length} products
           </p>
         </div>
         {selectedType || selectedUse || query.design ? (
-          <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className="text-sm font-semibold text-brand">
+          <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className={styles.filterClear}>
             Clear all
           </Link>
         ) : null}
@@ -343,8 +338,8 @@ function FilterGroup({
   title: string;
 }) {
   return (
-    <div className="border-b border-line py-5 last:border-b-0 last:pb-0">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-ink">
+    <div className={styles.filterGroup}>
+      <p className={styles.filterLabel}>
         {title}
       </p>
       <div className="grid gap-1">{children}</div>
@@ -368,22 +363,10 @@ function FilterLink({
       href={href}
       prefetch={false}
       aria-current={active ? "true" : undefined}
-      className={
-        active
-          ? "flex min-h-11 items-center justify-between gap-3 rounded-lg bg-panel px-3 py-2 text-sm font-semibold text-ink ring-1 ring-brand/20"
-          : "flex min-h-11 items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:bg-soft hover:text-ink"
-      }
+      className={styles.filterLink}
     >
       <span className="min-w-0">{label}</span>
-      <span
-        className={
-          active
-            ? "rounded-full bg-white px-2 py-0.5 text-xs text-brand ring-1 ring-line"
-            : "rounded-full bg-soft px-2 py-0.5 text-xs text-muted"
-        }
-      >
-        {count}
-      </span>
+      <span className={styles.filterCount}>{count}</span>
     </Link>
   );
 }

@@ -1,3 +1,5 @@
+import { getStandTypeHeroImage } from "@/lib/stand-type-image";
+import styles from "@/components/storefront/type-pages.module.css";
 import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -76,16 +78,16 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
   const visual = getCategoryVisual(category);
-  const heroImage = activeStandType.bannerImageUrl || activeStandType.imageUrl || visual.src;
+  const heroImage = getStandTypeHeroImage(category, activeStandType, products);
   const title = activeStandType.title || category.title;
   const description = activeStandType.shortDescription || activeStandType.description || category.description;
   const copy = getBusinessUsePageCopy({ description, longContent: activeStandType.longContent });
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
 
   return (
-    <main className="tr-public-shell text-ink">
+    <main className={`tr-public-shell text-ink ${styles.page}`}>
       <JsonLd data={breadcrumbJsonLd([{ name: "Shop all stands", href: "/shop" }, { name: title, href: getCategoryHref(category.slug) }])} />
-      <PageHero
+      <PageHero className={styles.hero}
         spacing="compact"
         backLink={{ href: "/shop", label: "Shop all stands" }}
         eyebrow={category.eyebrow}
@@ -104,7 +106,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </>
         }
         image={{
-          src: heroImage,
+          src: heroImage, priority: true,
           alt: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.alt : activeStandType.title || visual.alt,
           caption: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.caption : undefined
         }}
