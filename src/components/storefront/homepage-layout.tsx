@@ -3,7 +3,7 @@ import { singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
 import { ArrowRight, Bell, Check, ExternalLink, Smartphone } from "lucide-react";
 import type { MigratedProduct } from "@/data/migrated-products";
-import type { BusinessUse } from "@/lib/catalog-architecture";
+import { lockedBusinessUses, type BusinessUse } from "@/lib/catalog-architecture";
 import { ProductCard } from "@/components/product/product-card";
 import { FaqList } from "@/components/storefront/faq-list";
 import { HomepageBrowseCard } from "@/components/storefront/homepage-browse-card";
@@ -18,6 +18,7 @@ import { getProductVisual } from "@/lib/storefront-visuals";
 import { type HomepageThemeContent, orderedEnabledFaqs, defaultHomepageContent } from "@/lib/website-content";
 import styles from "./homepage-layout.module.css";
 import { PrismaticWave } from "@/components/prismatic/motion";
+import { BusinessShowcase, type BusinessScene } from "./business-showcase";
 
 const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 
@@ -141,24 +142,18 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
       </div>
     </section> : null}
 
-    {content.featuredUses.enabled && showcase.scenes.length ? <section className={`${styles.section} ${styles.soft}`} aria-labelledby="home-business" data-home-section="business">
+    {content.featuredUses.enabled && showcase.scenes.length ? <section className={`${styles.section} ${styles.soft}`} id="shop-by-use" aria-labelledby="home-business" data-home-section="business">
       <div className={styles.container}>
         <Heading id="home-business" eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} href="/solutions" link="Shop by business" />
-        <div className={`${styles.cards} ${styles.businessCards} grid divide-y divide-line lg:grid-cols-2 lg:gap-5 lg:divide-y-0 xl:grid-cols-5`} data-home-business-cards>{showcase.scenes.map((scene) => {
-          const product = products.find((item) => item.slug === scene.productSlug && item.isActive);
-          const businessUse = businessUses.find((item) => item.slug === scene.slug && item.isActive);
-          const businessImage = businessUse?.bannerImageUrl || businessUse?.imageUrl;
-          const productVisual = product ? getProductVisual(product) : undefined;
-          const src = scene.image.src || productVisual?.src || businessImage || "";
-          const alt = scene.image.src ? scene.image.alt : productVisual?.alt || `${businessUse?.title ?? scene.title} business-use image`;
-          const caption = !scene.image.src && businessImage ? "" : scene.image.caption;
-          if (!src) return null;
-          return <details key={scene.slug} className={styles.businessScene} name="business-scenes" open={scene === showcase.scenes[0]}>
-            <summary>{scene.title}<span aria-hidden="true">+</span></summary>
-            <HomepageBrowseCard href={`/solutions/${scene.slug}`} title={scene.title} description={scene.body} image={{ src, alt }} variant="use-case" />
-            {caption ? <p className={styles.caption}>{caption}</p> : null}
-          </details>;
-        })}</div>
+        <BusinessShowcase scenes={showcase.scenes.flatMap((scene): BusinessScene[] => {
+          const businessUse = businessUses.find((item) => item.slug === scene.slug);
+          if (businessUse && !businessUse.isActive) return [];
+          const fallback = lockedBusinessUses.find((item) => item.slug === scene.slug);
+          const src = businessUse?.bannerImageUrl || businessUse?.imageUrl || scene.image.src || fallback?.imageUrl;
+          if (!src) return [];
+          return [{ slug: scene.slug, title: scene.title, body: scene.body,
+            image: { src, alt: src === scene.image.src ? scene.image.alt : `Tap Rater in ${scene.title.toLowerCase()}` } }];
+        })} />
       </div>
     </section> : null}
 

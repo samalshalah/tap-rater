@@ -1,0 +1,20 @@
+.showcase{display:grid;grid-template-columns:1.65fr 1fr;gap:16px;min-height:440px}
+.featured,.businessCard{position:relative;isolation:isolate;overflow:hidden;background:#090e36;border-radius:16px}
+.featured{min-height:440px;display:flex;align-items:flex-end}
+.featured img,.businessCard img{object-fit:cover;transition:transform .65s cubic-bezier(.2,.7,.3,1)}
+.featured::after,.businessCard::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:linear-gradient(0deg,#090e36ed,transparent 85%)}
+.featuredCopy{position:relative;z-index:1;padding:30px;color:white;width:100%}
+.featuredCopy .label{color:#e0d7ff;font-size:10px;font-weight:650;letter-spacing:.12em;text-transform:uppercase;margin:0}
+.featuredCopy .headline{font-size:32px;line-height:1.2;letter-spacing:-.035em;max-width:420px;margin:12px 0 20px;color:white;font-weight:700}
+.featuredCopy .explore{display:inline-flex;align-items:center;gap:20px;font-size:12px;font-weight:650;padding:12px 16px;background:white;border-radius:5px;color:#6035ff;min-height:44px}
+.businessGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.businessCard{min-height:210px;border-radius:12px;display:flex;align-items:flex-end}
+.businessCard::after{background:linear-gradient(0deg,#090e36e8,transparent 75%)}
+.businessCard .cardTitle{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:18px;font-size:14px;font-weight:650;line-height:1.4;color:white;margin:0;letter-spacing:-.02em}
+.cardTitle svg{flex:none}.explore svg,.cardTitle svg{transition:transform .2s}
+.featured:focus-within img,.businessCard:focus-visible img{transform:scale(1.035)}
+.explore:focus-visible,.businessCard:focus-visible{outline:3px solid #a994ff;outline-offset:-3px}
+@media(hover:hover){.featured:hover img,.businessCard:hover img{transform:scale(1.045)}.explore:hover svg,.businessCard:hover svg{transform:translate(2px,-2px)}}
+@media(max-width:1023px){.showcase{grid-template-columns:1.3fr 1fr}.featuredCopy{padding:24px}.featuredCopy .headline{font-size:29px}.businessCard .cardTitle{font-size:13px;padding:15px}}
+@media(max-width:767px){.showcase{grid-template-columns:1fr;min-height:0}.featured{min-height:390px}.featuredCopy{padding:24px 22px}.featuredCopy .headline{font-size:29px}.businessGrid{gap:12px;grid-auto-rows:185px}.businessCard{min-height:185px}.businessCard .cardTitle{font-size:13px;padding:14px;gap:6px}}
+@media(prefers-reduced-motion:reduce){.showcase *{transition:none!important;transform:none!important}}

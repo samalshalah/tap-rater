@@ -32,7 +32,7 @@ describe("homepage shopping flow", () => {
     expect(html).toContain("Approve the preview before payment");
   });
 
-  it("reuses the original category, business-use and product cards", () => {
+  it("preserves category and product cards and business destinations", () => {
     const html = render();
     for (const item of defaultHomepageContent.actions.items) {
       expect(html).toContain(renderToStaticMarkup(createElement(HomepageBrowseCard, {
@@ -40,11 +40,8 @@ describe("homepage shopping flow", () => {
       })));
     }
     for (const scene of defaultHomepageShowcase.scenes) {
-      const product = migratedProducts.find((item) => item.slug === scene.productSlug)!;
-      expect(html).toContain(renderToStaticMarkup(createElement(HomepageBrowseCard, {
-        href: `/solutions/${scene.slug}`, title: scene.title, description: scene.body,
-        image: { src: scene.image.src || getProductVisual(product).src, alt: scene.image.src ? scene.image.alt : getProductVisual(product).alt }, variant: "use-case"
-      })));
+      expect(html).toContain(`href="/solutions/${scene.slug}"`);
+      expect(html).toContain(scene.title.replaceAll("&", "&amp;"));
     }
     for (const product of selectFeaturedHomepageProducts(migratedProducts, defaultHomepageShowcase.featuredProductSlugs)) {
       expect(html).toContain(renderToStaticMarkup(createElement(ProductCard, { product })));
