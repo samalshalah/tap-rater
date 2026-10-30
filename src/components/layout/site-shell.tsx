@@ -9,6 +9,10 @@ import { PrismaticMotionProvider } from "@/components/prismatic/motion";
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
+  if (pathname.startsWith("/admin")) {
+    return <PrismaticMotionProvider><div className="tr-prismatic-admin min-h-screen bg-soft">{children}</div></PrismaticMotionProvider>;
+  }
+
   if (pathname.startsWith("/admin") || (pathname.startsWith("/account") && !["/account/login", "/account/activate", "/account/forgot-password", "/account/reset-password"].includes(pathname))) {
     return <div className={`min-h-screen bg-soft ${pathname.startsWith("/account") ? "tr-prismatic-account" : ""}`}>{children}</div>;
   }

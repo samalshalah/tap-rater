@@ -1,0 +1,94 @@
+/* Approved Prismatic admin presentation. Existing content, routes and actions remain intact. */
+.tr-prismatic-admin{font-family:TapRaterJakarta,sans-serif;color:#090e36;background:#f6f8ff}
+.tr-prismatic-admin,.tr-prismatic-admin :is(h1,h2,h3,h4,p,a,span,strong,label,button,input,select,textarea,th,td,summary,legend){font-family:TapRaterJakarta,sans-serif!important}
+.tr-prismatic-admin>.tr-container-narrow>.tr-eyebrow{color:#5364b5;font-size:10px;letter-spacing:.12em}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact{--app-title:30px;--app-body:13px;--app-section:16px;--app-dialog-title:20px;--app-metric:28px;--app-gap:18px;--app-border:#e6e7f0;--app-muted:#4b536f;--app-ink:#090e36;--app-accent:#6035ff;font-family:inherit;background:#f6f8ff;line-height:1.6}
+.tr-prismatic-admin :is(button,input,select,textarea){font-family:inherit}
+.tr-prismatic-admin .tr-admin-context{min-height:76px;height:auto;padding:18px 32px;gap:12px;font-size:14px;border-color:#e6e7f0}
+.tr-prismatic-admin .tr-admin-context-caption{font-size:12px}
+.tr-prismatic-admin .tr-admin-brand{padding:24px 24px 20px}
+.tr-prismatic-admin .tr-admin-brand img{width:104px;height:68px;object-fit:contain}
+.tr-prismatic-admin .tr-admin-sidebar{border-color:#e6e7f0}
+.tr-prismatic-admin .tr-admin-sidebar nav{padding:0 14px 18px}
+.tr-prismatic-admin .tr-admin-sidebar nav a{min-height:40px;padding:10px 12px;border-radius:7px;font-size:12px;gap:12px;color:#4b536f;transition:background .18s,color .18s}
+.tr-prismatic-admin .tr-admin-sidebar nav a[aria-current=page]{background:#eee8ff;color:#6035ff}
+.tr-prismatic-admin .tr-admin-sidebar nav a:hover{background:#f5f2ff;color:#6035ff}
+.tr-prismatic-admin .tr-admin-sidebar nav svg{width:18px;height:18px}
+.tr-prismatic-admin .tr-admin-sidebar nav>div>p{padding:0 12px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.tr-prismatic-admin .tr-admin-sidebar nav>div+div{margin-top:18px;padding-top:18px}
+.tr-prismatic-admin .tr-admin-sidebar>div:last-child{padding:16px}
+.tr-prismatic-admin .tr-admin-content{min-width:0;padding:8px 12px 32px}
+.tr-prismatic-admin .tr-admin-content :is(.grid>*,fieldset){min-width:0}
+.tr-prismatic-admin .tr-admin-content label{min-width:0;max-width:100%}
+.tr-prismatic-admin .tr-admin-content label>select.ml-1{max-width:calc(100% - 4px)}
+.tr-prismatic-admin .tr-admin-content :is(input,select,textarea){max-width:100%}
+.tr-prismatic-admin .tr-admin-content .tr-admin-table-viewport{min-width:0;max-width:100%;overflow-x:auto}
+.tr-prismatic-admin .tr-admin-shell .tr-admin-content :is(.tr-admin-section,.tr-local-workspace){padding:24px 20px!important}
+.tr-prismatic-admin .tr-admin-content>main{padding:24px 20px}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content :is(h1,h1[class],.tr-admin-title,.tr-local-workspace h1[class]){font-weight:720!important;letter-spacing:-.045em;line-height:1.2!important}
+.tr-prismatic-admin .tr-admin-content :is(h2,h3,h4,.tr-admin-card-title){letter-spacing:-.025em}
+.tr-prismatic-admin .tr-admin-content :is(.text-sm,.text-base,.text-lg,.text-xs){line-height:1.65!important}
+.tr-prismatic-admin .tr-admin-content .text-xs{font-size:11px!important}
+.tr-prismatic-admin .tr-admin-content .tr-eyebrow{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#5364b5;margin-bottom:10px}
+.tr-prismatic-admin .tr-admin-content :is(.tr-admin-card,.tr-admin-table-shell,.tr-admin-soft-panel,.rounded-xl,.rounded-2xl,.rounded-lg){border-radius:12px;border-color:#e6e7f0;box-shadow:0 3px 14px #25204703}
+.tr-prismatic-admin .tr-admin-soft-panel{background:#f6f8ff}
+.tr-prismatic-admin .tr-admin-content :is(.gap-3,.gap-4,.gap-5,.gap-6,.gap-7,.gap-8){gap:18px}
+.tr-prismatic-admin .tr-admin-content :is(.space-y-3,.space-y-4,.space-y-5,.space-y-6,.space-y-8)>:not([hidden])~:not([hidden]){margin-top:18px}
+.tr-prismatic-admin .tr-admin-content :is(.mt-3,.mt-4,.mt-5,.mt-6,.mt-7,.mt-8,.mt-10,.mt-12){margin-top:20px}
+.tr-prismatic-admin .tr-admin-content :is(.mb-3,.mb-4,.mb-5,.mb-6,.mb-8){margin-bottom:18px}
+.tr-prismatic-admin .tr-admin-content :is(.my-3,.my-4,.my-5,.my-6){margin-block:20px}
+.tr-prismatic-admin .tr-admin-content :is(.p-3,.p-4,.p-5,.p-6,.p-8){padding:20px}
+.tr-prismatic-admin .tr-admin-content :is(.px-4,.px-5,.px-6){padding-inline:20px}
+.tr-prismatic-admin .tr-admin-content :is(.py-3,.py-4,.py-5,.py-6){padding-block:14px}
+.tr-prismatic-admin :is(button[class],a[class*="tr-button"],a.inline-flex){font-size:12px;line-height:1.5;min-height:40px;padding:10px 16px;border-radius:6px}
+.tr-prismatic-admin :is(.tr-button-primary,.tr-button-secondary,button.bg-ink,a.bg-ink,button.bg-brand,a.bg-brand){background:#6035ff;border-color:#6035ff;color:white}
+.tr-prismatic-admin :is(.tr-button-primary,.tr-button-secondary,button.bg-ink,a.bg-ink,button.bg-brand,a.bg-brand):hover{background:#4c20e2;border-color:#4c20e2}
+.tr-prismatic-admin :is(.tr-button-outline,.tr-button-ghost){border-color:#d8cff2;color:#6035ff;background:white}
+.tr-prismatic-admin button.h-10{height:40px;min-width:40px}
+.tr-prismatic-admin :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=hidden]),select,textarea){font-size:13px;line-height:1.5;min-height:42px;padding:10px 12px;border-radius:7px;border-color:#dcdde9;background:#fff;color:#090e36}
+.tr-prismatic-admin input:is([type=checkbox],[type=radio]){accent-color:#6035ff}
+.tr-prismatic-admin textarea{min-height:110px}
+.tr-prismatic-admin :is(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #845cff;outline-offset:3px}
+.tr-prismatic-admin :is(button,input,select,textarea):disabled{cursor:not-allowed;opacity:.5}
+.tr-prismatic-admin .tr-admin-content table{font-size:12px!important}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table :is(th,td:not([colspan])){height:48px;padding:12px 16px!important}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table th{font-size:11px!important;background:#f8f9ff;font-weight:600!important;color:#4b536f}
+.tr-prismatic-admin .tr-admin-content table td{font-size:12px!important;border-color:#e6e7f0}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) :is(button,select){height:auto;min-height:36px}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table td:not([colspan]) img{width:44px;height:44px}
+.tr-prismatic-admin .tr-admin-content tr[data-admin-row]:hover{background:#f5f2ff}
+.tr-prismatic-admin .tr-admin-row-identity svg{width:30px;height:30px;padding:6px;border-color:#e6e7f0;background:#f6f8ff;color:#6035ff;border-radius:7px}
+.tr-prismatic-admin .tr-admin-metrics{gap:14px!important;border:0;border-radius:0;background:transparent;padding:0}
+.tr-prismatic-admin .tr-admin-metrics>span{flex:1;min-width:160px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:22px;border:1px solid #e6e7f0!important;border-radius:12px;background:white;font-size:12px}
+.tr-prismatic-admin .tr-admin-metrics strong{font-size:30px;letter-spacing:-.045em}
+.tr-prismatic-admin :is(dialog,[role=dialog]){font-family:inherit;color:#090e36;white-space:normal}
+.tr-prismatic-admin :is(dialog,[role=dialog]) :is(header,.flex>div){min-width:0}
+.tr-prismatic-admin :is(dialog,[role=dialog]) :is(h2,p){overflow-wrap:anywhere}
+.tr-prismatic-admin [role=tab][aria-selected=true]{color:#6035ff;border-color:#6035ff}
+.tr-prismatic-admin .tr-admin-content input.pl-11{padding-left:44px}
+.tr-prismatic-admin .tr-admin-compact :is(dialog.tr-modal-overlay>div,dialog.tr-modal-overlay>section,.tr-admin-content [role=dialog]>div,.tr-admin-content dialog:not(.tr-modal-overlay)){padding:24px;border-radius:14px;border-color:#e6e7f0}
+.tr-prismatic-admin dialog::backdrop{background:rgb(9 14 54 / .36)}
+.tr-prismatic-admin .tr-admin-details-dialog{width:min(600px,calc(100vw - 24px))}
+.tr-prismatic-admin .tr-admin-details-dialog dl{gap:16px}
+.tr-prismatic-admin .tr-admin-details-dialog footer{margin-top:24px;padding-top:16px}
+.tr-prismatic-admin button.tr-admin-info-button{width:20px;height:20px;min-height:20px;padding:0;font-size:11px;border-radius:50%;border-color:#d8cff2;color:#6035ff}
+.tr-prismatic-admin .tr-admin-notifications>summary{width:40px;height:40px;border-radius:7px}
+.tr-prismatic-admin .tr-admin-notifications>summary:hover,.tr-prismatic-admin .tr-admin-notifications[open]>summary{background:#eee8ff;color:#6035ff}
+/* Same frozen shader and palette; only the banner's clipping and size adapt. */
+.tr-prismatic-admin .tr-admin-wave-banner{height:132px;position:relative;overflow:hidden;background:white;border-bottom:1px solid #e6e7f0}
+.tr-prismatic-admin .wave{position:absolute;pointer-events:none;overflow:hidden;z-index:0;left:20%;top:-210px;width:100%;height:638px}
+.tr-prismatic-admin .wave-drift{position:absolute;inset:0;animation:none!important;transform:none}
+.tr-prismatic-admin .wave-drift>img,.tr-prismatic-admin .wave-drift>canvas{position:absolute;width:100%;height:100%;object-fit:cover}
+.tr-prismatic-admin .wave-drift>canvas{opacity:0}
+.tr-prismatic-admin .wave-drift>canvas.ready{opacity:1}
+.tr-prismatic-admin .wave-drift:has(canvas.ready)>img{visibility:hidden}
+.tr-prismatic-admin button.tr-motion-toggle{position:absolute;right:24px;bottom:14px;z-index:2;display:flex;align-items:center;gap:7px;background:#fffffff0;border:1px solid #e6e7f0;border-radius:20px;min-height:32px;padding:7px 12px;font-size:10px;color:#4b536f}
+/* Login is outside AdminShell but shares the approved form styling. */
+.tr-prismatic-admin>.tr-container-narrow{padding-block:64px}
+.tr-prismatic-admin .tr-page-title{font-size:clamp(32px,4vw,48px);letter-spacing:-.05em;color:#090e36}
+.tr-prismatic-admin .tr-card-compact{background:white;border:1px solid #e6e7f0;border-radius:14px;padding:28px}
+@media(min-width:1024px){.tr-prismatic-admin .tr-admin-sidebar{width:240px;height:100dvh}.tr-prismatic-admin .tr-admin-sidebar nav{overflow-y:auto}}
+@media(max-width:1023px){.tr-prismatic-admin .tr-admin-brand{padding:12px 20px}.tr-prismatic-admin .tr-admin-brand img{width:86px;height:52px}.tr-prismatic-admin .tr-admin-sidebar nav{padding:0 14px 12px}.tr-prismatic-admin .tr-admin-context{padding:16px 20px;min-height:64px}.tr-prismatic-admin .tr-admin-wave-banner{height:100px}.tr-prismatic-admin .tr-admin-content{padding:4px 0 24px}}
+@media(max-width:640px){.tr-prismatic-admin .tr-admin-shell{--app-title:26px;--app-metric:25px}.tr-prismatic-admin .tr-admin-shell .tr-admin-content :is(.tr-admin-section,.tr-local-workspace){padding:22px 16px!important}.tr-prismatic-admin .tr-admin-context{font-size:12px;padding:12px 16px}.tr-prismatic-admin .tr-admin-context-caption{display:none}.tr-prismatic-admin .tr-admin-content :is(.p-3,.p-4,.p-5,.p-6,.p-8){padding:16px}.tr-prismatic-admin .tr-admin-metrics{gap:10px!important}.tr-prismatic-admin .tr-admin-metrics>span{min-width:130px;padding:16px}.tr-prismatic-admin :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=hidden]),select,textarea){font-size:16px;min-height:44px}.tr-prismatic-admin .wave{left:0;top:-240px}.tr-prismatic-admin .tr-admin-details-dialog dl>div{grid-template-columns:1fr;gap:4px}}
+@media(prefers-reduced-motion:reduce){.tr-prismatic-admin .tr-admin-sidebar nav a{transition:none}}
+@media(max-width:640px){.tr-prismatic-admin .tr-admin-section>.flex:has(h1){flex-wrap:wrap;gap:16px}.tr-prismatic-admin .tr-admin-section>.flex:has(h1)>.flex{flex-wrap:wrap}.tr-prismatic-admin .tr-admin-section>.flex:has(h1) a{white-space:normal}}
