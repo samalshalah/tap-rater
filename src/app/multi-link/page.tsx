@@ -1,3 +1,4 @@
+import { MultiLinkDemoVisual } from "@/components/storefront/multi-link-demo-visual";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FaqList } from "@/components/storefront/faq-list";
@@ -82,6 +83,7 @@ export default async function MultiLinkPage() {
         title="Multi-Link NFC Stands for Business"
         body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Your custom stand includes NFC and a QR code pointing to the same page.`}
         cta={{ href: "#compatible-stands", label: "Shop Compatible Stands" }}
+        media={<MultiLinkDemoVisual />}
         image={{
           ...multiLinkDemoImage,
           priority: true

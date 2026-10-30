@@ -73,3 +73,16 @@
 
 /* Hero imagery leads the stacked mobile layout across shared page templates. */
 @media(max-width:1023px){.tr-prismatic-storefront .tr-page-hero>figure{order:-1}}
+
+/* Compact, shared storefront header. Clip horizontal overflow without a scroll container. */
+body:has(.tr-prismatic-storefront){overflow-x:clip}
+.tr-prismatic-storefront>.tr-site-header{position:sticky;top:0;z-index:50;border-color:#e6e7f0;box-shadow:0 4px 18px #090e3605}
+.tr-prismatic-storefront .tr-header-row{min-height:68px}
+.tr-prismatic-storefront .tr-header-logo{height:36px;width:auto}
+.tr-prismatic-storefront .tr-header-action{border:1px solid #e6e7f0;border-radius:8px;background:#f6f8ff;color:#6035ff;transition:background .18s,border-color .18s}
+.tr-prismatic-storefront .tr-header-action:hover{background:#eee8ff;border-color:#cfc1ff}
+.tr-prismatic-storefront .tr-header-action:focus-visible{outline:2px solid #6035ff;outline-offset:3px}
+.tr-prismatic-storefront .tr-header-cart-count{background:#6035ff}
+@media(min-width:1280px){.tr-prismatic-storefront .tr-header-row{grid-template-columns:150px minmax(0,1fr) 210px}}
+@media(max-width:639px){.tr-prismatic-storefront .tr-header-row{min-height:60px}.tr-prismatic-storefront .tr-header-logo{height:32px}}
+@media(prefers-reduced-motion:reduce){.tr-prismatic-storefront .tr-header-action{transition:none}}

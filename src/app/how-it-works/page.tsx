@@ -1,3 +1,4 @@
+import { HowItWorksHeroVisual } from "@/components/storefront/multi-link-demo-visual";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ProcessStepCard } from "@/components/storefront/process-step-card";
@@ -27,10 +28,7 @@ export default function HowItWorksPage() {
         eyebrow="How it works"
         title="From product page to counter-ready stand."
         body="Direct stands are built for fast checkout: choose the stand, add one destination URL, and complete checkout."
-        image={{
-          src: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png",
-          alt: "Tap Rater review stand"
-        }}
+        media={<HowItWorksHeroVisual />}
       />
 
       <SectionShell tone="soft">

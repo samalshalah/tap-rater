@@ -1,3 +1,4 @@
+import { MultiLinkDemoVisual } from "./multi-link-demo-visual";
 import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import { singleStandPrice, type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
@@ -130,7 +131,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
     {content.multilink.enabled && isHostedPurchaseOptionEnabled() ? <section className={styles.section} aria-labelledby="home-multilink" data-home-section="multilink">
       <PrismaticWave variant="banner" />
       <div className={`${styles.container} ${styles.mediaRow}`}>
-        <figure className={styles.multiImage}><div><Photo src={content.multilink.image.src} alt={content.multilink.image.alt} /></div>{content.multilink.image.src === multiLinkDemoImage.src ? <figcaption>{multiLinkDemoImage.caption}</figcaption> : null}</figure>
+        <figure className={styles.multiImage}><div>{[multiLinkDemoImage.src, "/uploads/marketing/multi-link-bingo-tires-demo.png", "/uploads/marketing/multi-link-hero-rate-your-experience.png"].includes(content.multilink.image.src) ? <MultiLinkDemoVisual /> : <Photo src={content.multilink.image.src} alt={content.multilink.image.alt} />}</div></figure>
         <div>
           <Heading id="home-multilink" eyebrow={content.multilink.eyebrow} title={content.multilink.headline} />
           <p className={styles.body}>{content.multilink.body}</p>

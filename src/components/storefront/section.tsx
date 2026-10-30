@@ -82,6 +82,7 @@ export function PageHero({
   cta,
   eyebrow,
   image,
+  media,
   spacing = "hero",
   title
 }: {
@@ -91,6 +92,7 @@ export function PageHero({
   cta?: { href: string; label: string };
   eyebrow?: string;
   spacing?: SectionSpacing;
+  media?: ReactNode;
   image?: {
     alt: string;
     caption?: string;
@@ -105,7 +107,7 @@ export function PageHero({
   return (
     <SectionShell spacing={spacing} className={cx(className, spacing === "hero" && "tr-prismatic-page-intro")}>
       {spacing === "hero" ? <PrismaticWave variant="banner" /> : null}
-      <div className={cx("tr-container tr-page-hero", !image && "tr-page-hero-text-only")}>
+      <div className={cx("tr-container tr-page-hero", !image && !media && "tr-page-hero-text-only")}>
         <div className="tr-page-hero-copy">
           {backLink ? (
             <Link href={backLink.href} className="tr-editorial-link mb-6">
@@ -123,7 +125,7 @@ export function PageHero({
             </Link>
           ) : null}
         </div>
-        {image ? (
+        {media ? <figure className="w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end">{media}</figure> : image ? (
           <figure className="w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end">
           <div className="tr-page-hero-media relative aspect-[4/3]">
             <Image

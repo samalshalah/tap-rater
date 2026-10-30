@@ -5,7 +5,7 @@ import { loadWebsiteNavigation } from "@/lib/website-content-client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Link2, ArrowLeft, ChevronDown, CircleUserRound, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { Link2, ArrowLeft, ChevronDown, UserRound, ShoppingCart, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
@@ -204,9 +204,9 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <header ref={headerRef} className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+    <header ref={headerRef} className="tr-site-header sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
       <div className="tr-container-wide">
-        <div className="grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
+        <div className="tr-header-row grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
           {pathname.startsWith("/product/") ? <Link href="/shop" className="flex min-h-11 items-center gap-2 font-semibold text-ink md:hidden"><ArrowLeft size={22} aria-hidden="true" />Back to shop</Link> : null}
           <Link
             href={customerSession.authenticated ? "/account" : "/"}
@@ -221,7 +221,7 @@ export function Header() {
               height={76}
               priority
               unoptimized
-              className="h-12 w-auto object-contain"
+              className="tr-header-logo h-9 w-auto object-contain"
             />
           </Link>
           <nav aria-label={customerSession.authenticated ? "Customer navigation" : "Main navigation"} className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
@@ -247,7 +247,7 @@ export function Header() {
                   <button
                     ref={accountButtonRef}
                     type="button"
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
+                    className="tr-header-action inline-flex min-h-11 items-center justify-center gap-2 px-3 text-sm font-semibold"
                     aria-label="Open account menu"
                     aria-expanded={isAccountOpen}
                     onClick={() => {
@@ -255,7 +255,7 @@ export function Header() {
                       setIsAccountOpen((current) => !current);
                     }}
                   >
-                    <CircleUserRound size={20} />
+                    <UserRound size={20} strokeWidth={1.75} aria-hidden="true" />
                     <span className="hidden max-w-36 truncate xl:inline">{accountLabel}</span>
                     <ChevronDown size={16} />
                   </button>
@@ -267,14 +267,14 @@ export function Header() {
                 <Link
                   href="/account/login"
                   prefetch={false}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--tr-radius-control)] border border-line bg-white px-3.5 text-sm font-semibold transition hover:border-brand hover:text-brand"
+                  className="tr-header-action inline-flex min-h-11 items-center justify-center gap-2 px-3 text-sm font-semibold"
                   aria-label="Account"
                   onClick={() => {
                     setIsMenuOpen(false);
                     setIsAccountOpen(false);
                   }}
                 >
-                  <CircleUserRound size={20} />
+                  <UserRound size={20} strokeWidth={1.75} aria-hidden="true" />
                   <span className="hidden xl:inline">{accountLabel}</span>
                 </Link>
               )}
@@ -283,14 +283,14 @@ export function Header() {
               href="/cart"
               prefetch={false}
               aria-label={`Cart, ${cart.count} ${cart.count === 1 ? "item" : "items"}`}
-              className="relative grid h-11 w-11 place-items-center rounded-[var(--tr-radius-control)] border border-line bg-white transition hover:border-brand hover:text-brand"
+              className="tr-header-action relative grid h-11 w-11 shrink-0 place-items-center"
               onClick={() => {
                 setIsMenuOpen(false);
                 setIsAccountOpen(false);
               }}
             >
-              <ShoppingBag size={22} />
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-semibold text-white">
+              <ShoppingCart size={20} strokeWidth={1.75} aria-hidden="true" />
+              <span className="tr-header-cart-count absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-semibold text-white">
                 {cart.count}
               </span>
             </Link>

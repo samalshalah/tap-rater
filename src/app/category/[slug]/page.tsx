@@ -1,3 +1,4 @@
+import { MultiLinkDemoVisual } from "@/components/storefront/multi-link-demo-visual";
 import { getStandTypeHeroImage } from "@/lib/stand-type-image";
 import styles from "@/components/storefront/type-pages.module.css";
 import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
@@ -105,6 +106,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             ) : null}
           </>
         }
+        media={category.slug === "website-links" ? <MultiLinkDemoVisual /> : undefined}
         image={{
           src: heroImage, priority: true,
           alt: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.alt : activeStandType.title || visual.alt,
