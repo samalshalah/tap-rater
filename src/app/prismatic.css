@@ -86,3 +86,8 @@ body:has(.tr-prismatic-storefront){overflow-x:clip}
 @media(min-width:1280px){.tr-prismatic-storefront .tr-header-row{grid-template-columns:150px minmax(0,1fr) 210px}}
 @media(max-width:639px){.tr-prismatic-storefront .tr-header-row{min-height:60px}.tr-prismatic-storefront .tr-header-logo{height:32px}}
 @media(prefers-reduced-motion:reduce){.tr-prismatic-storefront .tr-header-action{transition:none}}
+
+/* Smaller header symbols and badge, retaining 44px interaction targets. */
+.tr-prismatic-storefront .tr-header-action{font-size:12px;gap:6px}
+.tr-prismatic-storefront .tr-header-action>svg{width:16px;height:16px}
+.tr-prismatic-storefront .tr-header-cart-count{height:15px;min-width:15px;font-size:9px;line-height:1;top:1px;right:1px;padding-inline:3px}

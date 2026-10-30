@@ -255,7 +255,7 @@ export function Header() {
                       setIsAccountOpen((current) => !current);
                     }}
                   >
-                    <UserRound size={20} strokeWidth={1.75} aria-hidden="true" />
+                    <UserRound size={16} strokeWidth={1.75} aria-hidden="true" />
                     <span className="hidden max-w-36 truncate xl:inline">{accountLabel}</span>
                     <ChevronDown size={16} />
                   </button>
@@ -274,7 +274,7 @@ export function Header() {
                     setIsAccountOpen(false);
                   }}
                 >
-                  <UserRound size={20} strokeWidth={1.75} aria-hidden="true" />
+                  <UserRound size={16} strokeWidth={1.75} aria-hidden="true" />
                   <span className="hidden xl:inline">{accountLabel}</span>
                 </Link>
               )}
@@ -289,7 +289,7 @@ export function Header() {
                 setIsAccountOpen(false);
               }}
             >
-              <ShoppingCart size={20} strokeWidth={1.75} aria-hidden="true" />
+              <ShoppingCart size={16} strokeWidth={1.75} aria-hidden="true" />
               <span className="tr-header-cart-count absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-xs font-semibold text-white">
                 {cart.count}
               </span>
