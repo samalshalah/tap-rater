@@ -1,3 +1,4 @@
+import styles from "@/components/storefront/business-pages.module.css";
 import { JsonLd, breadcrumbJsonLd } from "@/lib/seo";
 import { BuyingGuide } from "@/components/storefront/buying-guide";
 import Link from "next/link";
@@ -66,9 +67,9 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   const copy = getBusinessUsePageCopy(businessUse);
 
   return (
-    <main className="tr-public-shell text-ink">
+    <main className={`tr-public-shell text-ink ${styles.page}`}>
       <JsonLd data={breadcrumbJsonLd([{ name: "Solutions", href: "/solutions" }, { name: businessUse.title, href: `/solutions/${businessUse.slug}` }])} />
-      <PageHero
+      <PageHero className={styles.hero}
         spacing="compact"
         backLink={{ href: "/solutions", label: "Shop by business" }}
         eyebrow={businessUse.title}
@@ -85,7 +86,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         image={{
           src: heroImage,
           alt: businessUse.title,
-          fit: "cover"
+          fit: "cover", priority: true
         }}
       />
 
@@ -97,7 +98,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             body="Start with one action. Each stand opens the destination you choose on your customer’s phone."
             cta={{ href: "/shop", label: "Shop all stands" }}
           />
-          {recommendations.length > 0 ? <div className="mt-8 grid items-start gap-6 md:grid-cols-3">
+          {recommendations.length > 0 ? <div className={`mt-8 grid items-start gap-6 md:grid-cols-3 ${styles.recommendations}`}>
             {recommendations.map((item, index) => <article key={item.productSlug} className="min-w-0 rounded-xl border border-line bg-white p-4 sm:p-5">
               <p className="tr-eyebrow">0{index + 1} / {index === 0 ? "Start here" : "Another way to connect"}</p>
               <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{item.goal}</h3>
