@@ -1,3 +1,4 @@
+import {marketingSalesEnabled} from './marketing-sales';
 import type Stripe from 'stripe';
 import {createHash} from 'node:crypto';
 import {getStripeClient,getStripeMode} from './checkout';
@@ -21,7 +22,7 @@ export async function prepareMarketingBuyer(email:string,name:string,authenticat
  return normalized;
 }
 
-export function marketingCheckoutEnabled(){return process.env.MARKETING_CHECKOUT_ENABLED==='true'&&Boolean(process.env.MARKETING_PORTAL_CONFIGURATION_ID);}
+export function marketingCheckoutEnabled(){return marketingSalesEnabled&&process.env.MARKETING_CHECKOUT_ENABLED==='true'&&Boolean(process.env.MARKETING_PORTAL_CONFIGURATION_ID);}
 export async function createMarketingCheckout(email:string,purchase:MarketingPurchase,attempt:string,params:Stripe.Checkout.SessionCreateParams){
  if(!marketingCheckoutEnabled())throw Error('Subscriptions are not available yet.');
  const p=marketingPurchaseSchema.parse(purchase),sql=liveDb(),mode=getStripeMode();

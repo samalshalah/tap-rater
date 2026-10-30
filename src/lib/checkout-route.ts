@@ -1,3 +1,4 @@
+import {marketingSalesEnabled} from "@/lib/marketing-sales";
 import { enrollCheckoutReminder } from "@/lib/checkout-reminders";
 import {requireCustomerApi} from '@/lib/customer-auth';
 import {createMarketingCheckout,prepareMarketingBuyer} from '@/lib/marketing-subscriptions';
@@ -118,6 +119,10 @@ export async function handleCheckoutPost(
       { error: "Customer and shipping details are required before payment." },
       { status: 400 },
     );
+  }
+
+  if (parsed.data.marketing && !marketingSalesEnabled) {
+    return NextResponse.json({error:"New package subscriptions are currently unavailable."},{status:503});
   }
 
   logCheckout(dependencies.logger, "info", requestId, "parsed_cart", {

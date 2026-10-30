@@ -27,6 +27,7 @@ export async function POST(request:Request){
    const portal=await getStripeClient().billingPortal.sessions.create({...(configuration==='default'?{}:{configuration}),customer:s.stripe_customer_id,return_url:`${site}/account/packages`});
    return NextResponse.json({url:portal.url},{headers});
   }
+  if(!marketingCheckoutEnabled())return NextResponse.json({error:'New package subscriptions are currently unavailable.'},{status:503,headers});
   const {attempt,email,name,...p}=z.object({attempt:z.string().uuid(),email:z.string().email().max(254).optional(),name:z.string().trim().min(1).max(150).optional(),...marketingPurchaseSchema.shape}).strict().parse(data);
   const buyerEmail=auth.session?.email||email;if(!buyerEmail||(!auth.session&&!name))throw Error('Enter your name and email.');
   const limit=await checkLoginRateLimit({headers:request.headers,identifier:buyerEmail,scope:'customer_recovery'});

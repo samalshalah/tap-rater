@@ -32,7 +32,6 @@ export default async function PricingPage() {
       : "See product options";
   };
   const prices = [
-    ['Tap Rater Growth','$29/month per location','300 AI reply drafts, 10 GBP improvement drafts, and 3 heat-map keywords updated four times per month. Buy independently or add to your Google stand order.','/growth'],
     [
       "Custom Logo + QR",
       minimum("branded_qr_direct"),
@@ -54,7 +53,7 @@ export default async function PricingPage() {
         body="Direct stands are a one-time purchase. Every stand includes your logo and QR code, with optional hosted Multi-Link. Final prices depend on your selected product and configuration."
       />
       <SectionShell tone="soft" spacing="compact">
-        <div className="tr-container grid gap-4 md:grid-cols-3">
+        <div className="tr-container grid gap-4 md:grid-cols-2">
           {prices.map(([title, price, body, href]) => (
             <article key={title} className="tr-card flex flex-col gap-4 p-5">
               <h2 className="tr-card-title">{title}</h2>

@@ -1,5 +1,7 @@
 import {describe,it,expect,vi,beforeEach} from 'vitest';
 import type Stripe from 'stripe';
+// Keep legacy subscription lifecycle coverage independent of the sales pause.
+vi.mock('@/lib/marketing-sales',()=>({marketingSalesEnabled:true}));
 const mocks=vi.hoisted(()=>({sql:vi.fn(),retrieve:vi.fn(),create:vi.fn()}));
 vi.mock('@/lib/google-business/live-reviews',()=>({liveDb:()=>mocks.sql}));
 vi.mock('@/lib/checkout',()=>({getStripeMode:()=> 'test',getStripeClient:()=>({subscriptions:{retrieve:mocks.retrieve},checkout:{sessions:{create:mocks.create,retrieve:mocks.retrieve}}})}));

@@ -398,3 +398,12 @@ describe("checkout route reliability", () => {
     expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
   });
 });
+
+it("rejects paused Growth add-ons before pricing, orders, or Stripe side effects", async () => {
+ const dependencies=createDependencies();
+ const response=await handleCheckoutPost(createCheckoutRequest({...configuredStandardPayload,marketing:{cadence:"month",locations:1,acceptedTerms:true}}),dependencies);
+ expect(response.status).toBe(503);
+ expect(dependencies.getProducts).not.toHaveBeenCalled();
+ expect(dependencies.createStripeSession).not.toHaveBeenCalled();
+ expect(dependencies.createPendingOrder).not.toHaveBeenCalled();
+});

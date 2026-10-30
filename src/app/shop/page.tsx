@@ -71,10 +71,6 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
               {collections.map((category) => <Link key={category.slug} href={getCategoryHref(category.slug)} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">{category.title}</Link>)}
             </nav>
           </div>
-          <div className="tr-card-compact mb-5 flex flex-wrap items-center justify-between gap-3 p-4">
-            <div><h2 className="font-semibold">Tap Rater Growth</h2><p className="text-sm text-muted">AI review drafts, Google profile improvements and heat maps. From $29/month per location, with or without a stand.</p></div>
-            <Link href="/growth" className="tr-button-outline">View package</Link>
-          </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <div className="lg:hidden">

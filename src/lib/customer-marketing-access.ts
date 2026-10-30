@@ -16,7 +16,7 @@ export async function hasCustomerMarketingAccess(email:string){return (await get
 async function marketingResponse(request:Request,handler:(request:Request)=>Promise<Response>){
  const auth=await measureServerStage("authentication",()=>requireCustomerApi());if(auth.response)return auth.response;
  try{
-  if(!await measureServerStage("marketing_access",()=>hasCustomerMarketingAccess(auth.session!.email)))return NextResponse.json({error:'The Reviews package is required for marketing tools.',code:'REVIEWS_PACKAGE_REQUIRED',upgradeUrl:'/account/packages'},{status:403,headers:{'Cache-Control':'no-store'}});
+  if(!await measureServerStage("marketing_access",()=>hasCustomerMarketingAccess(auth.session!.email)))return NextResponse.json({error:'This service is not available for this account.',code:'REVIEWS_PACKAGE_REQUIRED'},{status:403,headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Package access is temporarily unavailable. Please try again.'},{status:503,headers:{'Cache-Control':'no-store'}});}
  return measureServerStage("handler",()=>handler(request));
 }

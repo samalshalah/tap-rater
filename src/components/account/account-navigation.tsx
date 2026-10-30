@@ -19,7 +19,7 @@ export function AccountNavigation({links,locations=[]}:{links:typeof customerNav
   <div id="workspace-navigation" className={'tr-app-navigation'+(open?' is-open':'')}>
   <nav aria-label="Account navigation" className="tr-account-navigation">
    {groupCustomerNavigation(links).map(section=>{
-    const items=section.id==='reviews'&&service?[...locationTools,{href:'/account/locations',label:'Manage Locations'}]:section.id==='account'?[...section.links,{href:'/account/packages',label:'Packages'},{href:'/account/feedback',label:'Feedback'}]:section.links;
+    const items=section.id==='reviews'&&service?[...locationTools,{href:'/account/locations',label:'Manage Locations'}]:section.id==='account'?[...section.links,...(service?[{href:'/account/packages',label:'Subscription'}]:[]),{href:'/account/feedback',label:'Feedback'}]:section.links;
     return <section key={section.id} aria-label={section.id==='reviews'?'Local marketing':section.label}><h2>{section.id==='reviews'?'Local marketing':section.label}</h2><div>{items.map(link=>{
      const Icon=icons[link.href]||Building2;
      const scoped=service;
