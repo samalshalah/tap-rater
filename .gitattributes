@@ -1,2 +1,2 @@
 # Preserve the approved animation bytes across Windows and Linux checkouts.
-src/components/prismatic/Wave.jsx -text
+src/components/prismatic/Wave.jsx -text whitespace=cr-at-eol

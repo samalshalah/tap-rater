@@ -101,4 +101,3 @@
 .tr-prismatic-account main.tr-app-shell.tr-client-shell dialog :is(button,a):focus-visible{outline:3px solid #845cff!important;outline-offset:3px!important}
 @media(max-width:640px){.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card.max-w-2xl.p-3{padding:20px!important}.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-listing-filters{flex-wrap:wrap!important}}
 @media(min-width:1024px){.tr-prismatic-account .tr-workspace-metrics:has(>div:nth-child(3):last-child){grid-template-columns:repeat(3,minmax(0,1fr))!important}}
-
