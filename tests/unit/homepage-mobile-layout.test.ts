@@ -6,7 +6,6 @@ import { getHomepageThemeContent, defaultHomepageContent } from "@/lib/website-c
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-import { getProductVisual } from "@/lib/storefront-visuals";
 
 vi.mock("@/lib/website-content", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/website-content")>(),
@@ -51,7 +50,7 @@ describe("mobile homepage layout", () => {
     expect(html).toContain('href="/category/menu"');
   });
 
-  it("uses original custom product photos for business cards, with existing business imagery as fallback", async () => {
+  it("uses configured business photography for the cinematic business cards", async () => {
     const uses = defaultHomepageContent.showcase.scenes.map((scene) => ({
       slug: scene.slug, title: scene.title, description: scene.body, sortOrder: 0, isActive: true, productSlugs: [],
       imageUrl: `/uploads/use-cases/${scene.slug}-configured.png`
@@ -60,26 +59,24 @@ describe("mobile homepage layout", () => {
     const html = renderToStaticMarkup(await HomePage());
     const businessSection = html.split('data-home-section="business"')[1].split('</section>')[0];
     for (const scene of defaultHomepageContent.showcase.scenes) {
-      const product = migratedProducts.find(item => item.slug === scene.productSlug && item.isActive);
       const use = uses.find(item => item.slug === scene.slug)!;
-      const src = product ? getProductVisual(product).src : use.imageUrl;
-      expect(businessSection).toContain(optimizedUploadSrc(src, 640));
-      expect(businessSection).toContain(optimizedUploadSrc(src, 160));
+      const src = use.imageUrl;
+      expect(businessSection).toContain(optimizedUploadSrc(src, scene === defaultHomepageContent.showcase.scenes[0] ? 1200 : 640));
     }
     expect(businessSection).not.toContain("Product example");
   });
 
-  it("keeps a specifically configured scene override and its caption", async () => {
+  it("uses the configured scene image when business photography is unavailable", async () => {
     const content = structuredClone(defaultHomepageContent);
     content.showcase.scenes[0].image = { src: "/uploads/scene-override.png", alt: "Custom scene", caption: "Illustration" };
     vi.mocked(getHomepageThemeContent).mockResolvedValue(content);
     vi.mocked(getPublicBusinessUses).mockResolvedValue([{
       slug: content.showcase.scenes[0].slug, title: "Restaurants", description: "", sortOrder: 0, isActive: true, productSlugs: [],
-      imageUrl: "/uploads/category-image.png"
+      imageUrl: ""
     }]);
     const html = renderToStaticMarkup(await HomePage());
-    expect(html).toContain(optimizedUploadSrc('/uploads/scene-override.png', 640));
-    expect(html).toContain("Illustration");
+    expect(html).toContain(optimizedUploadSrc('/uploads/scene-override.png', 1200));
+    expect(html).toContain("Custom scene");
     expect(html).not.toContain(optimizedUploadSrc('/uploads/category-image.png', 640));
   });
 
