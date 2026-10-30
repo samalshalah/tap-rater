@@ -28,7 +28,7 @@ export default async function PricingPage() {
           .map((o) => singleStandPrice(p.slug, o.id, o.priceCents, offers)),
       );
     return prices.length
-      ? `From ${formatPrice(Math.min(...prices))}`
+      ? `${formatPrice(Math.min(...prices))}`
       : "See product options";
   };
   const prices = [
@@ -50,7 +50,7 @@ export default async function PricingPage() {
       <PageHero
         eyebrow="Pricing"
         title="Choose the design and service you need."
-        body="Direct stands are a one-time purchase. Every stand includes your logo and QR code, with optional hosted Multi-Link. Final prices depend on your selected product and configuration."
+        body="Direct stands are a one-time purchase. Every stand includes your logo and QR code, with optional hosted Multi-Link. Your custom stand includes your logo, business name, NFC and QR code."
       />
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container grid gap-4 md:grid-cols-2">

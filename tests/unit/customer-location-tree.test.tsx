@@ -14,7 +14,7 @@ describe('shared workspace navigation',()=>{
  for(const tool of locationTools)expect(html).toContain(`href="${locationToolHref(tool.href,id)}"`);
  expect(html).not.toContain('href="/account/reviews"');expect(html).not.toContain('href="/account/heatmap"');
  expect(html).toContain(`href="/account/stands?location=${id}"`);expect(html.match(/aria-current="page"/g)).toHaveLength(1);
- expect(html.match(/aria-label="Local marketing"/g)).toHaveLength(1);
+ expect(html.match(/aria-label="Google Reviews"/g)).toHaveLength(1);
  expect(html).toContain('aria-label="Account navigation"');expect(html).not.toContain('First Street');
  expect(html).toContain(`href="/account/orders?location=${id}"`);
  });

@@ -86,7 +86,7 @@ describe("homepage shopping flow", () => {
 
   it("does not pretend an illustrative still is a real video or customer proof", () => {
     const html = render();
-    expect(html).toContain("AI-edited product illustration");
+    expect(html).not.toContain("AI-edited product illustration");
     expect(html).not.toContain("<video");
     expect(html).not.toContain("See an actual tap.");
     expect(html).not.toContain("testimonial");

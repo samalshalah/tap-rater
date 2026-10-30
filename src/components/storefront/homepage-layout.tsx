@@ -23,6 +23,7 @@ const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 
 export function HomepageLayout({ content, products, businessUses = [], offers }: { offers?: OffersSettings; content: HomepageThemeContent; products: MigratedProduct[]; businessUses?: BusinessUse[] }) {
   const { showcase } = content;
+  const heroCaption = showcase.heroCaption.trim().toLowerCase() === "ai-edited product illustration" ? "" : showcase.heroCaption;
   // Replace the two legacy hero compositions with the approved transparent stand.
   // Future custom CMS image overrides still render normally.
   const legacyHeroImages = [defaultHomepageContent.hero.image.src, "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png"];
@@ -45,14 +46,14 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
       <PrismaticWave />
       <div className={styles.heroMedia}>
         <img src={heroImage.src} alt={heroImage.alt} width={700} height={700} fetchPriority="high" className={styles.heroImage} />
-        {showcase.heroCaption ? <p className={styles.heroCaption}>{showcase.heroCaption}</p> : null}
+        {heroCaption ? <p className={styles.heroCaption}>{heroCaption}</p> : null}
       </div>
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>{content.hero.eyebrow}</p>
           <h1 id="home-title" className={styles.heroHeadline}>{content.hero.headline}</h1>
           <p className={styles.heroBody}>{content.hero.body}</p>
-          {customPrices.length ? <p className={styles.heroPrice}>From <strong>{compactPrice(Math.min(...customPrices))}</strong><span>per stand</span></p> : null}
+          {customPrices.length ? <p className={styles.heroPrice}><strong>{compactPrice(Math.min(...customPrices))}</strong><span>per stand</span></p> : null}
           <div className={styles.ctas}>
             <Link className="tr-button-primary" href={content.hero.primaryCta.href}>{content.hero.primaryCta.label}<ArrowRight size={17} aria-hidden="true" /></Link>
             {content.hero.secondaryCta ? <Link className={styles.textLink} href={content.hero.secondaryCta.href}>{content.hero.secondaryCta.label}<ArrowRight size={16} aria-hidden="true" /></Link> : null}

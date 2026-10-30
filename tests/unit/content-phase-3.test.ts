@@ -38,7 +38,7 @@ describe("content phase 3 presentation standard", () => {
     expect(html).toContain("mt-auto text-sm");
     expect(html).not.toContain("aspect-[4/5]");
     expect(html).not.toContain("line-clamp");
-    expect(html).toContain("From $49");
+    expect(html).toContain(">$49</p>");
   });
 
   it("identifies a Standard photo when advertising the available Branded price", () => {

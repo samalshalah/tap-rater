@@ -1,3 +1,4 @@
+import {businessOptimizationEnabled} from './business-optimization-feature';
 import { z } from 'zod';
 import { liveDb, LiveReviewError } from './google-business/live-reviews';
 import type { ReviewActor } from './review-workspaces';
@@ -31,8 +32,8 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
    LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
    WHERE b.status IS DISTINCT FROM 'marketing_removed' AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)})
    ORDER BY c.email,b.business_name,b.address,b.id`;
-  const listingsQuery = sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
-    WHERE b.status IS DISTINCT FROM 'marketing_removed' AND d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory`;
+  const listingsQuery = businessOptimizationEnabled ? sql`SELECT d.* FROM local_directory_listings d JOIN businesses b ON b.id=d.business_id JOIN customers c ON c.id=b.customer_id
+    WHERE b.status IS DISTINCT FROM 'marketing_removed' AND d.customer_id=b.customer_id AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) ORDER BY d.directory` : [];
   const customersQuery = actor.kind==='admin' ? sql`SELECT id,email FROM customers WHERE account_status='active' ORDER BY email` : [];
   const licensesQuery=actor.kind==='customer'?sql`SELECT a.location_limit,a.unlimited_locations,(SELECT count(*)::int FROM marketing_location_access m WHERE m.customer_id=c.id AND m.enabled) AS used FROM customers c JOIN customer_marketing_access a ON a.customer_id=c.id WHERE lower(c.email)=${email(actor)} AND a.status IN ('active','testing') AND (a.expires_at IS NULL OR a.expires_at>now())`:[];
   // Independent reads share one network wait; authorization remains in each query.

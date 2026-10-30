@@ -37,7 +37,7 @@ export async function syncLocationIssues(actor:ReviewActor,businessId:string,sql
 }
 export async function localIssueSnapshot(actor:ReviewActor,businessId?:string,sql=liveDb()){
  const locations=await sql`SELECT b.id,b.business_name FROM businesses b JOIN customers c ON c.id=b.customer_id JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
-  WHERE c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND (${businessId??null}::uuid IS NULL OR b.id=${businessId??null}::uuid) ORDER BY b.business_name LIMIT 100`;
+  WHERE b.status IS DISTINCT FROM 'marketing_removed' AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND (${businessId??null}::uuid IS NULL OR b.id=${businessId??null}::uuid) ORDER BY b.business_name LIMIT 100`;
  const errors:string[]=[];
  for(const location of locations)try{await syncLocationIssues(actor,location.id,sql);}catch{errors.push(location.business_name);}
  const issues=await sql`SELECT i.*,b.business_name,marketing_location_allowed(i.business_id) AS preview_enabled,d.id AS draft_id,d.status AS draft_status,d.content AS draft,d.approved_at
@@ -45,7 +45,7 @@ export async function localIssueSnapshot(actor:ReviewActor,businessId?:string,sq
   JOIN google_review_links l ON l.business_id=i.business_id AND l.customer_id=i.customer_id AND l.parent=i.parent AND l.google_subject=i.google_subject
   LEFT JOIN local_issue_access a ON a.business_id=i.business_id AND a.customer_id=i.customer_id AND a.parent=i.parent AND a.google_subject=i.google_subject
   LEFT JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint
-  WHERE i.active AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND (${businessId??null}::uuid IS NULL OR b.id=${businessId??null}::uuid)
+  WHERE i.active AND b.status IS DISTINCT FROM 'marketing_removed' AND c.account_status='active' AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND (${businessId??null}::uuid IS NULL OR b.id=${businessId??null}::uuid)
   ORDER BY i.read_at NULLS FIRST,i.updated_at DESC`;
  return {issues,locations,errors,pricing:'not_configured',publishingEnabled:false};
 }

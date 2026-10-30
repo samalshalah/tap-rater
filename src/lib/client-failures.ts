@@ -1,3 +1,4 @@
+import {businessOptimizationEnabled} from './business-optimization-feature';
 import {createHash} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {sendEmail,buildEmailHtml,getCustomerReplyToEmail} from './email';
@@ -38,9 +39,9 @@ export async function collectBackgroundFailures(sql=db()){
  UNION SELECT customer_id,business_id,CASE WHEN NOT allowed THEN 'review_access_unavailable' WHEN exhausted THEN 'review_ai_allowance' ELSE 'review_draft' END
  FROM draft_state WHERE nullif(draft_error,'') IS NOT NULL AND (NOT allowed OR exhausted OR NOT waiting)
  UNION SELECT b.customer_id,r.business_id,'review_publish_uncertain' FROM google_live_reviews r JOIN businesses b ON b.id=r.business_id WHERE r.publish_state='uncertain'
- UNION SELECT b.customer_id,a.business_id,CASE WHEN a.stage='publish' THEN 'review_publish_uncertain' ELSE 'review_'||a.stage END FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id WHERE a.resolved_at IS NULL AND a.failures>=3 AND (a.stage<>'draft' OR NOT EXISTS(SELECT 1 FROM draft_state d WHERE d.business_id=a.business_id AND (NOT d.allowed OR d.exhausted OR d.waiting)))
+ UNION SELECT b.customer_id,a.business_id,CASE WHEN a.stage='publish' THEN 'review_publish_uncertain' ELSE 'review_'||a.stage END FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id WHERE a.resolved_at IS NULL AND (a.stage='publish' OR (b.status IS DISTINCT FROM 'marketing_removed' AND EXISTS(SELECT 1 FROM google_review_links running WHERE running.business_id=b.id AND running.enabled AND (a.stage<>'draft' OR running.ai_consent)))) AND a.failures>=3 AND (a.stage<>'draft' OR NOT EXISTS(SELECT 1 FROM draft_state d WHERE d.business_id=a.business_id AND (NOT d.allowed OR d.exhausted OR d.waiting)))
  UNION SELECT r.customer_id,r.business_id,'heatmap_result' FROM local_rank_runs r JOIN local_rank_points p ON p.run_id=r.id WHERE p.state IN ('error','failed','uncertain') AND r.created_at>now()-interval '30 days'
- UNION SELECT i.customer_id,i.business_id,'profile_draft' FROM local_issues i JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint WHERE i.active AND d.status='failed'
+ UNION SELECT i.customer_id,i.business_id,'profile_draft' FROM local_issues i JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint WHERE ${businessOptimizationEnabled} AND i.active AND d.status='failed'
  UNION SELECT NULL::uuid,NULL::uuid,'worker_'||name FROM system_worker_health WHERE status='failed'
  UNION SELECT NULL::uuid,NULL::uuid,'heatmap_provider_hold' FROM local_rank_provider WHERE halt_reason IS NOT NULL
  UNION SELECT NULL::uuid,NULL::uuid,'email_delivery' FROM email_deliveries WHERE status IN ('failed','bounced') AND created_at>now()-interval '24 hours' AND message_type IS DISTINCT FROM 'client_failure_alert'`;

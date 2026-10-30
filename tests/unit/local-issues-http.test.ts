@@ -1,3 +1,4 @@
+vi.mock('@/lib/business-optimization-feature',()=>({businessOptimizationEnabled:true}));
 import {describe,it,expect,vi,afterEach} from 'vitest';
 const {auth,admin,snapshot,mutate}=vi.hoisted(()=>({auth:vi.fn(),admin:vi.fn(),snapshot:vi.fn(),mutate:vi.fn()}));
 vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:auth}));

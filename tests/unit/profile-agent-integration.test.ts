@@ -1,3 +1,4 @@
+vi.mock('@/lib/business-optimization-feature',()=>({businessOptimizationEnabled:true}));
 import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';

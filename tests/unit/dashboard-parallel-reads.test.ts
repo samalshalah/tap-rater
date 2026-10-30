@@ -1,3 +1,4 @@
+vi.mock('@/lib/business-optimization-feature',()=>({businessOptimizationEnabled:true}));
 import {describe,it,expect,vi} from 'vitest';
 import {localSnapshot} from '@/lib/local-management';
 function deferred(){let resolve!:(value:any[])=>void;let reject!:(error:Error)=>void;const promise=new Promise<any[]>((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};}

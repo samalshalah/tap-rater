@@ -59,7 +59,7 @@ function getPurchaseLabel(product: MigratedProduct, design?: "branded") {
     return "Subscription setup";
   }
 
-  return `From ${formatCompactPrice(getLowestPurchasePriceCents(product))}`;
+  return `${formatCompactPrice(getLowestPurchasePriceCents(product))}`;
 }
 
 function formatCompactPrice(cents: number) {

@@ -1,3 +1,4 @@
+import {businessOptimizationEnabled} from '../business-optimization-feature';
 import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-alerts';
 import { randomUUID } from "node:crypto";
 import { GoogleBusinessError } from "./client";
@@ -81,7 +82,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  await Promise.all(Array.from({length:4},async()=>{while(cursor<links.length&&Date.now()<importDeadline){const row=links[cursor++],id=String(row.business_id);
  try{await syncLiveReviews({kind:'admin'},id,sql,makeClient);synced++;await resolveReviewWorkerAlert(sql,id,'import');}catch{const failures=await reviewWorkerFailure(sql,id,'import');await sql`UPDATE google_review_links SET maintenance_due_at=now()+${Math.min(60,5*2**Math.min(failures-1,4))}*interval '1 minute' WHERE business_id=${id}`;}
 
- if(row.profile_ai_enabled)try{const {prepareProfileAgentDraft}=await import('../profile-ai-agent');await prepareProfileAgentDraft(id,sql);}catch{/* Isolate profiles. */}
+ if(businessOptimizationEnabled&&row.profile_ai_enabled)try{const {prepareProfileAgentDraft}=await import('../profile-ai-agent');await prepareProfileAgentDraft(id,sql);}catch{/* Isolate profiles. */}
  }}));
  if(cursor<links.length)await sql`UPDATE google_review_links SET maintenance_due_at=now() WHERE business_id=ANY(${links.slice(cursor).map(r=>String(r.business_id))}::uuid[])`;
  const draftLinks=await sql`WITH due AS (SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id JOIN customers c ON c.id=b.customer_id WHERE l.enabled AND l.ai_consent AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND l.draft_due_at<=now() ORDER BY l.draft_due_at,l.business_id LIMIT 80 FOR UPDATE OF l SKIP LOCKED) UPDATE google_review_links l SET draft_due_at=now()+interval '1 minute' FROM due WHERE l.business_id=due.business_id RETURNING l.business_id`;

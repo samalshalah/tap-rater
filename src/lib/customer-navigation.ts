@@ -1,4 +1,3 @@
-import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 export const customerNavigation = [
   {href:'/account',label:'Overview'},
   {href:'/account/locations',label:'Locations'},
@@ -26,13 +25,7 @@ export function groupCustomerNavigation(links:typeof customerNavigation){
 
 export const locationTools=[
  {href:'/account',label:'Overview'},
- {href:'/account/profile',label:'Google Profile'},
  {href:'/account/reviews',label:'Reviews'},
- ...(heatmapFeatureEnabled?[{href:'/account/heatmap',label:'Heat Map'}]:[]),
- {href:'/account/local',label:'Directory Listings'},
- {href:'/account/reports',label:'Reports'},
- {href:'/account/notifications',label:'Issues & Approvals'},
- {href:'/account/business',label:'Business Information'},
 ];
 export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}
 export function activeLocationId(requested:string|null,locations:{id:string}[]){return locations.some(l=>l.id===requested)?requested!:'';}

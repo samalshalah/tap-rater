@@ -7,14 +7,14 @@ export const businessDraftFields=z.object({
 }).strict();
 export const businessDraftInput=z.object({version:z.number().int().nonnegative().max(2147483646),draft:businessDraftFields}).strict();
 export type BusinessDraftFields=z.infer<typeof businessDraftFields>;
-export type AccountBusiness={id:string;current:BusinessDraftFields;draft:BusinessDraftFields|null;version:number};
+export type AccountBusiness={id:string;current:BusinessDraftFields;draft:BusinessDraftFields|null;version:number;marketingRemoved?:boolean};
 export async function accountBusinesses(email:string,businessId:string|null=null,sql=database()):Promise<AccountBusiness[]>{
- const rows=await sql`SELECT b.id,b.business_name,b.address,b.phone,b.website_url,d.draft,d.version
+ const rows=await sql`SELECT b.id,b.status,b.business_name,b.address,b.phone,b.website_url,d.draft,d.version
  FROM businesses b JOIN customers c ON c.id=b.customer_id
  LEFT JOIN account_business_drafts d ON d.business_id=b.id AND d.customer_id=b.customer_id
  WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active' AND (${businessId}::uuid IS NULL OR b.id=${businessId}::uuid)
  ORDER BY b.business_name,b.id`;
- return rows.map(row=>({id:String(row.id),current:{name:String(row.business_name||''),address:String(row.address||''),phone:String(row.phone||''),website:String(row.website_url||'')},draft:row.draft?businessDraftFields.parse(row.draft):null,version:Number(row.version||0)}));
+ return rows.map(row=>({id:String(row.id),marketingRemoved:row.status==='marketing_removed',current:{name:String(row.business_name||''),address:String(row.address||''),phone:String(row.phone||''),website:String(row.website_url||'')},draft:row.draft?businessDraftFields.parse(row.draft):null,version:Number(row.version||0)}));
 }
 export async function saveAccountBusinessDraft(email:string,businessId:string,input:z.infer<typeof businessDraftInput>,sql=database()){
  const rows=await sql`INSERT INTO account_business_drafts (business_id,customer_id,draft)

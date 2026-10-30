@@ -1,9 +1,11 @@
+import {businessOptimizationEnabled,optimizationPausedMessage} from './business-optimization-feature';
 import {z} from 'zod';
 import {authorizedLink,liveDb,LiveReviewError} from './google-business/live-reviews';
 import {syncLocationIssues,mutateIssue} from './local-issues';
 import type {ReviewActor} from './review-workspaces';
 export const profileAgentSettings=z.object({businessId:z.string().uuid(),enabled:z.boolean(),version:z.number().int().positive()}).strict();
 export async function saveProfileAgentSettings(actor:ReviewActor,raw:unknown,sql=liveDb()){
+ if(!businessOptimizationEnabled)throw new LiveReviewError(optimizationPausedMessage,410);
  const v=profileAgentSettings.parse(raw),link=await authorizedLink(actor,v.businessId,sql);
  const rows=await sql`UPDATE google_review_links SET profile_ai_enabled=${v.enabled},settings_version=settings_version+1,maintenance_due_at=CASE WHEN ${v.enabled} THEN now() ELSE maintenance_due_at END
  WHERE business_id=${v.businessId} AND customer_id=${link.customer_id} AND parent=${link.parent} AND google_subject=${link.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
@@ -11,6 +13,7 @@ export async function saveProfileAgentSettings(actor:ReviewActor,raw:unknown,sql
  return {...rows[0],enabled:v.enabled,published:false};
 }
 export async function prepareProfileAgentDraft(businessId:string,sql=liveDb(),sync=syncLocationIssues,prepare=mutateIssue){
+ if(!businessOptimizationEnabled)return {drafted:false};
  const actor={kind:'admin'} as const,link=await authorizedLink(actor,businessId,sql);
  if(!link.enabled||!link.profile_ai_enabled)return {drafted:false};
  await sync(actor,businessId,sql);

@@ -1,3 +1,4 @@
+import {businessOptimizationEnabled,optimizationPausedMessage} from './business-optimization-feature';
 import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import { NextResponse } from 'next/server';
 import { requireCustomerApi } from './customer-auth';
@@ -16,6 +17,7 @@ export async function handleLocal(request:Request,kind:'admin'|'customer') {
   const raw=await request.text();if(raw.length>16000)return NextResponse.json({error:'Request too large.'},{status:413});
   let data;try{data=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
   const parsed=localMutation.safeParse(data);if(!parsed.success)return NextResponse.json({error:'Check the fields and listing URL.'},{status:400});
+  if(!businessOptimizationEnabled&&['saveListing','advanceListing'].includes(parsed.data.action))return NextResponse.json({error:optimizationPausedMessage,code:'OPTIMIZATION_PAUSED'},{status:410});
   return NextResponse.json(await mutateLocal(actor,parsed.data),{headers:{'Cache-Control':'no-store'}});
  } catch(e) { return NextResponse.json({error:(e as {code?:string}).code==='P0001'?'Purchase an additional location license before adding another business.':e instanceof LiveReviewError?e.message:'Local management is unavailable. Please try again.'},{status:(e as {code?:string}).code==='P0001'?403:e instanceof LiveReviewError?e.status:503}); }
 }

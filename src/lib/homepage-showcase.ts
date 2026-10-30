@@ -41,7 +41,7 @@ export const defaultHomepageShowcase: HomepageShowcaseContent = {
   featuredEnabled: true,
   featuredHeadline: "Featured stands",
   featuredProductSlugs: ["google-review-stand", "yelp-review-stand", "facebook-review-stand", "rate-your-experience-stand", "follow-us-social-media-stand"],
-  heroCaption: "AI-edited product illustration",
+  heroCaption: "",
   comparisonProductSlug: "google-review-stand",
   comparisonStandard: { src: googleCustomImage, alt: "Custom Google Review stand, logo and QR", caption: "Custom design" },
   comparisonBranded: { src: "/uploads/products/taprater-stands/google/google-custom-angled.png", alt: "Branded Google Review stand template with logo, business name and QR positions", caption: "Branded template; your artwork replaces the marked areas" },

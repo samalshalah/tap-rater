@@ -1,3 +1,4 @@
+vi.mock('@/lib/business-optimization-feature',()=>({businessOptimizationEnabled:true}));
 import {describe,it,expect,vi,afterEach} from 'vitest';
 import {localMutation,mutateLocal,publicUrl} from '@/lib/local-management';
 const id='9fb3ee3b-0920-4db5-a03d-7245987a8751';

@@ -1,3 +1,4 @@
+import {businessOptimizationEnabled,optimizationPausedMessage} from '@/lib/business-optimization-feature';
 import {denyAdminClientContent} from '@/lib/admin-client-privacy';
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
@@ -9,6 +10,7 @@ import {profileMutation,profileSnapshot,mutateProfile,locationPerformance,search
 import type {ReviewActor} from '../review-workspaces';
 export async function handleProfile(request:Request,kind:'admin'|'customer'){
  if(isStaffContentRequest(kind))return denyAdminClientContent();
+ if(!businessOptimizationEnabled)return NextResponse.json({error:optimizationPausedMessage,code:'OPTIMIZATION_PAUSED'},{status:410,headers:{'Cache-Control':'no-store'}});
  let actor:ReviewActor;
  if(kind==='admin'){if(!await googleAdminIdentity())return NextResponse.json({error:'Sign in to continue.'},{status:401});actor={kind:'admin'};}
  else{const auth=await requireCustomerApi();if(auth.response)return auth.response;actor={kind:'customer',email:auth.session.email};}

@@ -1,5 +1,4 @@
 "use client";
-import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {WorkspacePageHeader,WorkspaceLoading} from './workspace-ui';
 
 
@@ -20,7 +19,7 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey,
  const router=useRouter();
  const requestedLocation=useSearchParams().get('location');
  const [data,setData]=useState<Snapshot|null>(admin?null:initialSnapshot),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
- const clientTab=!admin&&!heatmapFeatureEnabled&&initialTab==='heatmap'?'profile':initialTab;
+ const clientTab=['overview','reviews'].includes(initialTab)?initialTab:'reviews';
  const [tab,setTab]=useState<'overview'|'listings'|'reviews'|'profile'|'performance'|'heatmap'|'notifications'|'business'>(clientTab),[storedLocation,setLocation]=useState(''),[customer,setCustomer]=useState(''),[query,setQuery]=useState('');
  // Start the selected view's code download alongside its data request.
  useEffect(()=>{
@@ -40,7 +39,7 @@ export function LocalDashboard({admin=false,initialTab='overview',preferenceKey,
  }
  function restorePreference(d:Snapshot){
   if(storageKey){
-   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','profile','performance','heatmap','listings','reviews'].includes(view||''))setTab(!heatmapFeatureEnabled&&view==='heatmap'?'profile':view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
+   let saved:string|null=null;try{const params=new URLSearchParams(window.location.search);saved=params.get('location')??(initialTab==='overview'?'':window.localStorage.getItem(storageKey));const view=params.get('view');if(['overview','reviews'].includes(view||''))setTab(view as typeof tab);}catch{/* Storage may be unavailable in private browsing. */}
    // A saved preference never grants access; accept only locations returned for this account.
    const restored=restoreCustomerLocation(saved,d.locations);setLocation(restored);try{window.localStorage.setItem(storageKey,restored);}catch{}
   }
