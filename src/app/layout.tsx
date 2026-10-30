@@ -8,6 +8,8 @@ import { defaultSocialImage } from "@/lib/social-metadata";
 import "./globals.css";
 import "./workspace.css";
 import "./admin-workspace.css";
+import "./prismatic.css";
+import "./prismatic-account.css";
 
 export const metadata: Metadata = {
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),

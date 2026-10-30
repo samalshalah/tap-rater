@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { getBusinessUseImagePosition } from "@/lib/storefront-visuals";
+import { PrismaticWave } from "@/components/prismatic/motion";
 
 type SectionTone = "white" | "soft";
 type SectionSpacing = "hero" | "default" | "compact";
@@ -102,7 +103,8 @@ export function PageHero({
   const imageFit = image?.fit ?? "contain";
 
   return (
-    <SectionShell spacing={spacing} className={className}>
+    <SectionShell spacing={spacing} className={cx(className, spacing === "hero" && "tr-prismatic-page-intro")}>
+      {spacing === "hero" ? <PrismaticWave variant="banner" /> : null}
       <div className={cx("tr-container tr-page-hero", !image && "tr-page-hero-text-only")}>
         <div className="tr-page-hero-copy">
           {backLink ? (

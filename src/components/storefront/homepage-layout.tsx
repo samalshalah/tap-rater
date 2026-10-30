@@ -15,14 +15,20 @@ import { selectFeaturedHomepageProducts } from "@/lib/homepage-showcase";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { getProductVisual } from "@/lib/storefront-visuals";
-import { type HomepageThemeContent, orderedEnabledFaqs } from "@/lib/website-content";
+import { type HomepageThemeContent, orderedEnabledFaqs, defaultHomepageContent } from "@/lib/website-content";
 import styles from "./homepage-layout.module.css";
-import { MobileHome } from "./mobile-home";
+import { PrismaticWave } from "@/components/prismatic/motion";
 
 const compactPrice = (cents: number) => formatPrice(cents).replace(/\.00$/, "");
 
 export function HomepageLayout({ content, products, businessUses = [], offers }: { offers?: OffersSettings; content: HomepageThemeContent; products: MigratedProduct[]; businessUses?: BusinessUse[] }) {
   const { showcase } = content;
+  // Replace the two legacy hero compositions with the approved transparent stand.
+  // Future custom CMS image overrides still render normally.
+  const legacyHeroImages = [defaultHomepageContent.hero.image.src, "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png"];
+  const heroImage = legacyHeroImages.includes(content.hero.image.src)
+    ? { src: "/assets/custom-google-hero-cutout.png", alt: "Custom Google Review stand with your logo, business name, NFC and QR code" }
+    : content.hero.image;
   const featured = selectFeaturedHomepageProducts(products, showcase.featuredProductSlugs);
   const customPrices = products.filter((product) => product.isActive).flatMap((product) =>
     getProductPurchaseOptions(product).filter((option) => option.id === "branded_qr_direct").map((option) => option.priceCents)
@@ -35,17 +41,16 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
   const actions = content.actions.items.filter((item) => item.enabled).sort((a, b) => a.order - b.order);
 
   return <div className={styles.home}>
-    {content.hero.enabled ? <h1 className="sr-only">{content.hero.headline}</h1> : null}
-    {content.hero.enabled ? <MobileHome product={comparisonProduct ?? featured[0]} /> : null}
     {content.hero.enabled ? <section className={styles.hero} aria-labelledby="home-title" data-home-section="hero">
+      <PrismaticWave />
       <div className={styles.heroMedia}>
-        <picture><source media="(min-width: 768px)" srcSet={`${optimizedUploadSrc(content.hero.image.src, 640)} 640w, ${optimizedUploadSrc(content.hero.image.src, 1200)} 1200w`} sizes="100vw" /><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt={content.hero.image.alt} width={1672} height={941} fetchPriority="high" className={styles.heroImage} /></picture>
+        <img src={heroImage.src} alt={heroImage.alt} width={700} height={700} fetchPriority="high" className={styles.heroImage} />
         {showcase.heroCaption ? <p className={styles.heroCaption}>{showcase.heroCaption}</p> : null}
       </div>
       <div className={styles.heroInner}>
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>{content.hero.eyebrow}</p>
-          <p id="home-title" className={styles.heroHeadline}>{content.hero.headline}</p>
+          <h1 id="home-title" className={styles.heroHeadline}>{content.hero.headline}</h1>
           <p className={styles.heroBody}>{content.hero.body}</p>
           {customPrices.length ? <p className={styles.heroPrice}>From <strong>{compactPrice(Math.min(...customPrices))}</strong><span>per stand</span></p> : null}
           <div className={styles.ctas}>
@@ -111,6 +116,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           {content.howItWorks.steps.slice().sort((a, b) => a.order - b.order).map((step, index) => {
             const Icon = { shop: Smartphone, link: Bell, truck: ExternalLink }[step.icon];
             return <li key={step.title}>
+              <img className={styles.stepImage} src={["/assets/custom-google.webp", "/assets/nfc-notification-white.png", "/assets/google-review-phone.png"][index]} alt={["Custom Google Review stand", "Phone showing an NFC link notification", "Illustration of a Google review composer on a phone"][index]} loading="lazy" />
               <div className={styles.stepNumber}><Icon size={25} aria-hidden="true" /><span>0{index + 1}</span></div><h3>{step.title}</h3><p>{step.description}</p>
             </li>;
           })}
@@ -120,6 +126,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
     </section> : null}
 
     {content.multilink.enabled && isHostedPurchaseOptionEnabled() ? <section className={styles.section} aria-labelledby="home-multilink" data-home-section="multilink">
+      <PrismaticWave variant="banner" />
       <div className={`${styles.container} ${styles.mediaRow}`}>
         <figure className={styles.multiImage}><div><Photo src={content.multilink.image.src} alt={content.multilink.image.alt} /></div>{content.multilink.image.src === multiLinkDemoImage.src ? <figcaption>{multiLinkDemoImage.caption}</figcaption> : null}</figure>
         <div>
@@ -140,14 +147,16 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           const product = products.find((item) => item.slug === scene.productSlug && item.isActive);
           const businessUse = businessUses.find((item) => item.slug === scene.slug && item.isActive);
           const businessImage = businessUse?.bannerImageUrl || businessUse?.imageUrl;
-          const src = scene.image.src || businessImage || (product ? getProductVisual(product).src : "");
-          const alt = !scene.image.src && businessImage ? `${businessUse!.title} business-use image` : scene.image.alt;
+          const productVisual = product ? getProductVisual(product) : undefined;
+          const src = scene.image.src || productVisual?.src || businessImage || "";
+          const alt = scene.image.src ? scene.image.alt : productVisual?.alt || `${businessUse?.title ?? scene.title} business-use image`;
           const caption = !scene.image.src && businessImage ? "" : scene.image.caption;
           if (!src) return null;
-          return <article key={scene.slug} className="min-w-0">
+          return <details key={scene.slug} className={styles.businessScene} name="business-scenes" open={scene === showcase.scenes[0]}>
+            <summary>{scene.title}<span aria-hidden="true">+</span></summary>
             <HomepageBrowseCard href={`/solutions/${scene.slug}`} title={scene.title} description={scene.body} image={{ src, alt }} variant="use-case" />
             {caption ? <p className={styles.caption}>{caption}</p> : null}
-          </article>;
+          </details>;
         })}</div>
       </div>
     </section> : null}

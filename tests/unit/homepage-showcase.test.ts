@@ -43,7 +43,7 @@ describe("homepage shopping flow", () => {
       const product = migratedProducts.find((item) => item.slug === scene.productSlug)!;
       expect(html).toContain(renderToStaticMarkup(createElement(HomepageBrowseCard, {
         href: `/solutions/${scene.slug}`, title: scene.title, description: scene.body,
-        image: { src: scene.image.src || getProductVisual(product).src, alt: scene.image.alt }, variant: "use-case"
+        image: { src: scene.image.src || getProductVisual(product).src, alt: scene.image.src ? scene.image.alt : getProductVisual(product).alt }, variant: "use-case"
       })));
     }
     for (const product of selectFeaturedHomepageProducts(migratedProducts, defaultHomepageShowcase.featuredProductSlugs)) {

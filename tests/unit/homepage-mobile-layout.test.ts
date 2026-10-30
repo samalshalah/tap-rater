@@ -6,6 +6,7 @@ import { getHomepageThemeContent, defaultHomepageContent } from "@/lib/website-c
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
+import { getProductVisual } from "@/lib/storefront-visuals";
 
 vi.mock("@/lib/website-content", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/website-content")>(),
@@ -50,7 +51,7 @@ describe("mobile homepage layout", () => {
     expect(html).toContain('href="/category/menu"');
   });
 
-  it("loads the existing business-use images for the homepage cards", async () => {
+  it("uses original custom product photos for business cards, with existing business imagery as fallback", async () => {
     const uses = defaultHomepageContent.showcase.scenes.map((scene) => ({
       slug: scene.slug, title: scene.title, description: scene.body, sortOrder: 0, isActive: true, productSlugs: [],
       imageUrl: `/uploads/use-cases/${scene.slug}-configured.png`
@@ -58,9 +59,12 @@ describe("mobile homepage layout", () => {
     vi.mocked(getPublicBusinessUses).mockResolvedValue(uses);
     const html = renderToStaticMarkup(await HomePage());
     const businessSection = html.split('data-home-section="business"')[1].split('</section>')[0];
-    for (const use of uses) {
-      expect(businessSection).toContain(optimizedUploadSrc(use.imageUrl, 640));
-      expect(businessSection).toContain(optimizedUploadSrc(use.imageUrl, 160));
+    for (const scene of defaultHomepageContent.showcase.scenes) {
+      const product = migratedProducts.find(item => item.slug === scene.productSlug && item.isActive);
+      const use = uses.find(item => item.slug === scene.slug)!;
+      const src = product ? getProductVisual(product).src : use.imageUrl;
+      expect(businessSection).toContain(optimizedUploadSrc(src, 640));
+      expect(businessSection).toContain(optimizedUploadSrc(src, 160));
     }
     expect(businessSection).not.toContain("Product example");
   });

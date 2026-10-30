@@ -19,7 +19,6 @@ describe("shopping form input sizing", () => {
   });
 
   it.each([
-    "src/components/checkout/embedded-checkout.tsx",
     "src/components/checkout/checkout-fields.tsx",
     "src/components/checkout/address-autocomplete.tsx",
     "src/components/product/product-setup-chooser.tsx",

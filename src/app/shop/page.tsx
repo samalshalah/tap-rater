@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
 import { Plus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
@@ -64,7 +65,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           id="stand-types"
           className="tr-container scroll-mt-24"
         >
-          <div className="mb-6 max-w-3xl sm:mb-8">
+          <div className="tr-prismatic-shop-intro mb-6 sm:mb-8">
+            <PrismaticWave variant="banner" />
             <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
             <nav aria-label="Stand collections" className="mt-4 flex flex-wrap gap-x-5 gap-y-1">

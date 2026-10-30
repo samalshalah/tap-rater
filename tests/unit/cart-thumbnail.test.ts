@@ -21,7 +21,7 @@ describe("cart thumbnail delivery", () => {
       productId: "connect-with-us-stand", optionId: "branded_qr_direct", quantity: 1,
       setup: { serviceMode, serviceAddon: serviceMode === "HOSTED" ? "hosted_multilink" : undefined }
     }] });
-    const button = render().match(/<button[^>]*aria-label="Increase Tap Rater Connect With Us Stand quantity"[^>]*>/)?.[0];
+    const button = render().match(/<button[^>]*aria-label="Increase Custom Business Contact Stand quantity"[^>]*>/)?.[0];
     expect(button).toBeDefined();
     if (serviceMode === "HOSTED") expect(button).toContain('disabled=""');
     else expect(button).not.toContain('disabled=""');
@@ -32,10 +32,10 @@ describe("cart thumbnail delivery", () => {
     expect(html).toContain('src="/uploads-optimized/products/taprater-stands/google/google-custom-angled-w160.webp"');
     expect(html).not.toContain('src="/uploads/products/taprater-stands/google/google-standard-angled.png"');
     expect(html).toContain('width="96" height="96" decoding="async"');
-    expect(html).toContain("Increase Tap Rater Review Stand for Google Reviews quantity");
-    expect(html).toContain("Remove Tap Rater Review Stand for Google Reviews");
+    expect(html).toContain("Increase Custom Google Review Stand quantity");
+    expect(html).toContain("Remove Custom Google Review Stand");
     expect(html).toContain("$98.00");
-    expect(html).toContain("Secure checkout");
+    expect(html).toContain('class="tr-button-primary">Checkout</button>');
   });
 
   it.each(["https://cdn.example.com/proof.png", "/api/media/proof-123"])("preserves dynamic or external proof source %s", (src) => {

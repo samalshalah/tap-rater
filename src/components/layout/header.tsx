@@ -11,6 +11,7 @@ import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { navigationForPurchases, isNavigationActive } from "@/lib/customer-navigation";
+import { PrismaticShopMenu } from "@/components/prismatic/shop-menu";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -225,6 +226,7 @@ export function Header() {
           </Link>
           <nav aria-label={customerSession.authenticated ? "Customer navigation" : "Main navigation"} className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
             {navItems.map((item) => (
+              <div key={item.href} className="tr-header-nav-item">
               <Link
                 key={item.href}
                 href={item.href}
@@ -234,6 +236,8 @@ export function Header() {
               >
                 {item.label}
               </Link>
+              {item.href === "/shop" && !customerSession.authenticated ? <PrismaticShopMenu links={navItems.filter(link => link.href !== "/shop")} /> : null}
+              </div>
             ))}
           </nav>
           <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
