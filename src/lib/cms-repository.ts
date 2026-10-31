@@ -93,6 +93,7 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     sku: input.sku,
     category_slug: input.categorySlug,
     stand_type_slug: input.standTypeSlug ?? null,
+    ...(input.additionalUses ? { use_case_slugs: input.additionalUses } : {}),
     primary_platform_slug: input.primaryPlatformSlug ?? null,
     destination_type: input.destinationType ?? null,
     is_special_solution: input.isSpecialSolution,

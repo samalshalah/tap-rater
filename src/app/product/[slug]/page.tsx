@@ -154,6 +154,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <p className="tr-body mt-4 whitespace-pre-line">{product.description}</p>
         <nav aria-label="Shop by use and business" className="mt-6 flex flex-wrap gap-4 font-semibold text-brand underline">
           {category && <Link href={getCategoryHref(category.slug)}>{category.title}</Link>}
+          {product.additionalUses?.map(slug => getCategoryBySlug(slug)).filter(use => use && use.slug !== category?.slug).map(use => use &&
+            <Link key={use.slug} href={getCategoryHref(use.slug)}>{use.title}</Link>)}
           {linkedBusinesses.map((item) =>
             <Link key={item.slug} href={`/solutions/${item.slug}`}>{item.title}</Link>)}
         </nav>

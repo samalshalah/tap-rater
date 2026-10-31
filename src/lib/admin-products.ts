@@ -92,7 +92,7 @@ export async function getAdminProductsFromClient(client: AdminProductClient): Pr
     .map((product) => ({
       ...product,
       purchaseOptions: (optionsByProduct.get(product.slug) ?? []).sort((a, b) => a.sortOrder - b.sortOrder),
-      businessUseSlugs: businessUseSlugsByProductSlug.get(product.slug) ?? product.businessUseSlugs ?? []
+      businessUseSlugs: businessUseSlugsByProductSlug.get(product.slug) ?? []
     }))
     .sort(compareAdminProducts);
 }

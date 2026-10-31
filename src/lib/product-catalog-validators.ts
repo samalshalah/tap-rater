@@ -198,6 +198,7 @@ export const productContentSchema = z.object({
   sku: z.string().trim().min(2).max(80),
   categorySlug: z.string().trim().min(2).max(120),
   standTypeSlug: z.string().trim().min(2).max(120).optional(),
+  additionalUses: z.array(z.enum(["reviews", "social-media", "appointments", "menu", "feedback", "website-links", "custom-stands"])).optional(),
   primaryPlatformSlug: z.string().trim().min(1).max(120).optional(),
   destinationType: z.enum(destinationTypes).optional(),
   businessUseSlugs: z.array(z.string().trim().min(2).max(120)).default([]),

@@ -12,5 +12,5 @@ export function productMatchesCategory(product: MigratedProduct, categorySlug: s
   if (categorySlug === "custom-stands") {
     return getProductPurchaseOptions(product).some((option) => option.id === "branded_qr_direct");
   }
-  return product.categorySlug === categorySlug || Boolean(secondaryCategoryProducts[categorySlug]?.includes(product.slug));
+  return product.categorySlug === categorySlug || (product.catalogManaged ? Boolean(product.additionalUses?.includes(categorySlug)) : Boolean(secondaryCategoryProducts[categorySlug]?.includes(product.slug)));
 }

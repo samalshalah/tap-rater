@@ -74,7 +74,11 @@ export function isProductListReady(status: string, brandedReadiness: BrandedTemp
 
 export function buildProductTableMetadata(product: MigratedProduct) {
   const productKind = getProductKind(product);
-  const allOptions = getDefaultOptionsForProductKind(productKind);
+  const allOptions = product.purchaseOptions?.map(option => ({
+    ...option,
+    supportsReorderableLinks: option.supportsReorderableLinks ?? false,
+    supportsLinkVisibility: option.supportsLinkVisibility ?? false
+  })) ?? getDefaultOptionsForProductKind(productKind);
   const options = allOptions.filter(option => option.isActive);
   const readiness = getProductAssetReadiness(product, options);
   const brandedReadiness = getBrandedProductionTemplateReadiness(product, options);

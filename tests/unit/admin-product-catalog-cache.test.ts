@@ -13,6 +13,13 @@ describe('admin catalog metadata cache',()=>{
  it('does not share cache entries between catalog instances',()=>{expect(createProductTableMetadataCache()(product)).not.toBe(createProductTableMetadataCache()(product));});
  const props={filteredProducts:[product],productMetadata:new Map([[product,buildProductTableMetadata(product)]]),selectedSlugs:new Set<string>(),savingStatusSlugs:new Set<string>(),isDeleting:false,allSelected:false,toggleSelectAll:()=>{},toggleProduct:()=>{},updateProductStatus:async()=>{},deleteProducts:async()=>{},standTypes:[],businessUses:[],canDelete:true};
  it('preserves desktop and mobile product links, selection, readiness and status controls',()=>{const html=renderToStaticMarkup(React.createElement(AdminProductCatalogView,props));for(const text of ['Select all filtered products','Select Fixture Product','/admin/products/fixture','/product/fixture','Readiness','Status'])expect(html).toContain(text);expect((html.match(/Select Fixture Product/g)||[]).length).toBe(2);});
+ it('uses only saved active prices on both desktop and mobile',()=>{
+   const options=buildProductTableMetadata(product).options;
+   const base=options[0];
+   const changed={...product,purchaseOptions:[{...base, optionCode:'standard_direct' as const, isActive:false,priceCents:3900},{...base,optionCode:'branded_qr_direct' as const,isActive:true,priceCents:4900}]};
+   const html=renderToStaticMarkup(React.createElement(AdminProductCatalogView,{...props,filteredProducts:[changed],productMetadata:new Map([[changed,buildProductTableMetadata(changed)]])}));
+   expect(html).not.toContain('$39');expect((html.match(/\$49/g)||[]).length).toBeGreaterThanOrEqual(2);
+ });
  it('keeps deletion permission guards and selected/saving state',()=>{const html=renderToStaticMarkup(React.createElement(AdminProductCatalogView,{...props,canDelete:false,isDeleting:true,selectedSlugs:new Set(['fixture']),savingStatusSlugs:new Set(['fixture']),allSelected:true}));expect(html).toContain('checked=""');expect(html).toContain('disabled=""');expect(html).toContain('Delete Fixture Product');});
  it('renders both empty filtered states',()=>{const html=renderToStaticMarkup(React.createElement(AdminProductCatalogView,{...props,filteredProducts:[]}));expect((html.match(/No products match these filters./g)||[]).length).toBe(2);});
 });

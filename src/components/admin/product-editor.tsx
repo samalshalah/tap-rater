@@ -1,6 +1,7 @@
 "use client";
 
 import { ProductVariantEditor } from "./product-variant-editor";
+import { catalogCategories } from "@/data/migrated-products";
 import { formatPrice } from "@/lib/products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { CheckCircle2, ExternalLink, Save } from "lucide-react";
@@ -183,6 +184,11 @@ export function ProductEditor({
           </div>
         </EditorCard>
 
+        <EditorCard title="Additional uses" description="Also list this stand on these use pages. Its primary use comes from the stand type.">
+          {catalogCategories.map(use => <label className="flex items-center gap-2" key={use.slug}>
+            <input type="checkbox" name="additionalUses" value={use.slug} defaultChecked={product.additionalUses?.includes(use.slug)} />{use.title}
+          </label>)}
+        </EditorCard>
         <EditorCard title="Destination" description="Stand type is what the stand does. Platform is where the customer is sent.">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-semibold text-ink">

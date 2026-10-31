@@ -78,6 +78,7 @@ export type SupportedDestination =
 
 export type MigratedProduct = {
   catalogManaged?: boolean;
+  additionalUses?: string[];
   slug: string;
   title: string;
   sku: string;

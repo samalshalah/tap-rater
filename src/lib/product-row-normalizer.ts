@@ -130,6 +130,7 @@ export function normalizeStorefrontProductRow(row: unknown, options: { sanitizeP
 
   const product = {
     catalogManaged: true,
+    additionalUses: readStringArray(productRow.use_case_slugs) ?? [],
     slug,
     title,
     sku,

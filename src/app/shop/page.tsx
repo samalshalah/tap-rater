@@ -46,7 +46,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       : true;
     const matchesUse = selectedUse
       ? selectedUse.productSlugs.includes(product.slug) ||
-        product.businessUseSlugs?.includes(selectedUse.slug)
+        (!product.catalogManaged && product.businessUseSlugs?.includes(selectedUse.slug))
       : true;
     return matchesType && matchesUse;
   }), query);
@@ -304,7 +304,7 @@ function FilterPanelContent({
               products.filter(
                 (product) =>
                   businessUse.productSlugs.includes(product.slug) ||
-                  product.businessUseSlugs?.includes(businessUse.slug),
+                  (!product.catalogManaged && product.businessUseSlugs?.includes(businessUse.slug)),
               ).length
             }
             href={buildShopHref({

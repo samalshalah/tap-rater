@@ -39,6 +39,7 @@ const STOREFRONT_PRODUCT_COLUMNS = [
   "sku",
   "category_slug",
   "stand_type_slug",
+  "use_case_slugs",
   "primary_platform_slug",
   "destination_type",
   "is_special_solution",

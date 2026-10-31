@@ -209,6 +209,7 @@ const tableColumns = {
     "sku",
     "category_slug",
     "stand_type_slug",
+    "use_case_slugs",
     "primary_platform_slug",
     "destination_type",
     "is_special_solution",
@@ -414,7 +415,7 @@ export const jsonbColumns = new Set([
   "landing_page_preview_config"
 ]);
 
-export const textArrayColumns = new Set(["supported_destinations", "customization_options"]);
+export const textArrayColumns = new Set(["supported_destinations", "customization_options", "use_case_slugs"]);
 
 export const defaultConflictTargets: Partial<Record<TableName, string>> = {
   business_uses: "slug",

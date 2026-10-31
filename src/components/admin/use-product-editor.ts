@@ -320,6 +320,7 @@ export function useProductEditor({
           title: finalTitle,
           sku: finalSku,
           categorySlug: categorySlugForStandType(standTypeSlug),
+          additionalUses: form.getAll("additionalUses").map(String),
           standTypeSlug,
           primaryPlatformSlug,
           destinationType,
