@@ -92,3 +92,39 @@
 @media(max-width:640px){.tr-prismatic-admin .tr-admin-shell{--app-title:26px;--app-metric:25px}.tr-prismatic-admin .tr-admin-shell .tr-admin-content :is(.tr-admin-section,.tr-local-workspace){padding:22px 16px!important}.tr-prismatic-admin .tr-admin-context{font-size:12px;padding:12px 16px}.tr-prismatic-admin .tr-admin-context-caption{display:none}.tr-prismatic-admin .tr-admin-content :is(.p-3,.p-4,.p-5,.p-6,.p-8){padding:16px}.tr-prismatic-admin .tr-admin-metrics{gap:10px!important}.tr-prismatic-admin .tr-admin-metrics>span{min-width:130px;padding:16px}.tr-prismatic-admin :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=hidden]),select,textarea){font-size:16px;min-height:44px}.tr-prismatic-admin .wave{left:0;top:-240px}.tr-prismatic-admin .tr-admin-details-dialog dl>div{grid-template-columns:1fr;gap:4px}}
 @media(prefers-reduced-motion:reduce){.tr-prismatic-admin .tr-admin-sidebar nav a{transition:none}}
 @media(max-width:640px){.tr-prismatic-admin .tr-admin-section>.flex:has(h1){flex-wrap:wrap;gap:16px}.tr-prismatic-admin .tr-admin-section>.flex:has(h1)>.flex{flex-wrap:wrap}.tr-prismatic-admin .tr-admin-section>.flex:has(h1) a{white-space:normal}}
+/* Mobile administration */
+.tr-admin-menu-toggle,.tr-admin-mobile-label{display:none}
+.tr-admin-mobile-menu:not([open]){display:none}
+@media(max-width:1023px){
+.tr-prismatic-admin .tr-admin-sidebar{position:sticky;top:0;z-index:60;background:white}
+.tr-prismatic-admin .tr-admin-sidebar .tr-admin-brand{display:flex;align-items:center;gap:12px;padding:8px 16px;min-height:64px}
+.tr-prismatic-admin .tr-admin-brand img{width:66px;height:44px}
+.tr-prismatic-admin .tr-admin-mobile-label{display:block;color:#4b536f;font-size:12px;border-left:1px solid #e6e7f0;padding-left:12px}
+.tr-prismatic-admin button.tr-admin-menu-toggle{display:flex;align-items:center;gap:8px;margin-left:auto;min-height:44px;background:#f6f3ff;color:#6035ff;border:1px solid #e4dbff;padding:10px 12px}
+.tr-prismatic-admin .tr-admin-desktop-nav{display:none}
+.tr-prismatic-admin .tr-admin-context{min-height:48px;padding:4px 16px;font-size:11px}
+.tr-prismatic-admin .tr-admin-notifications{margin-left:auto}
+.tr-prismatic-admin .tr-admin-notification-panel{position:fixed;top:116px;left:12px;right:12px;width:auto;max-height:calc(100dvh - 140px)}
+.tr-prismatic-admin .tr-admin-mobile-menu{position:fixed;inset:0;margin:0 0 0 auto;padding:0;width:min(380px,100%);max-width:100%;height:100dvh;max-height:100dvh;border:0;border-radius:0;background:white;color:#090e36}
+.tr-prismatic-admin .tr-admin-menu-surface{display:flex;flex-direction:column;height:100%;min-height:0}
+.tr-prismatic-admin .tr-admin-menu-surface>header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e6e7f0;flex-shrink:0}
+.tr-prismatic-admin .tr-admin-menu-surface h2{font-size:18px;font-weight:700}
+.tr-prismatic-admin .tr-admin-menu-surface>header button{padding:10px;min-width:44px;min-height:44px}
+.tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-mobile-menu-links{overflow-y:auto;overscroll-behavior:contain;flex:1;min-height:0;padding:16px}
+.tr-prismatic-admin .tr-admin-mobile-menu-links .tr-admin-menu-group{display:block}
+.tr-prismatic-admin .tr-admin-mobile-menu-links a{min-height:44px;font-size:14px;white-space:normal}
+.tr-prismatic-admin .tr-admin-menu-surface>footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;padding:12px 16px max(12px,env(safe-area-inset-bottom));border-top:1px solid #e6e7f0;background:white;font-size:13px}
+.tr-prismatic-admin .tr-admin-content .grid:has(>.tr-admin-summary-card){grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tr-prismatic-admin .tr-admin-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}
+.tr-prismatic-admin .tr-admin-metrics>span{min-width:0;padding:14px;gap:4px}
+.tr-prismatic-admin .tr-admin-content .tr-admin-summary-card{padding:14px}
+.tr-prismatic-admin .tr-admin-content .tr-admin-summary-card p{overflow-wrap:anywhere}
+.tr-prismatic-admin .tr-admin-content .tr-admin-summary-card p:first-child{font-size:10px;line-height:1.5}
+.tr-prismatic-admin .tr-admin-content .tr-admin-summary-card .text-2xl{font-size:26px}
+.tr-prismatic-admin .tr-admin-content :is(button[class],a[class*="tr-button"],a.inline-flex){min-height:44px;white-space:normal}
+.tr-prismatic-admin .tr-admin-content button.tr-admin-info-button{width:32px;height:32px;min-width:32px;min-height:32px;padding:0}
+.tr-prismatic-admin .tr-admin-table-viewport{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.tr-prismatic-admin .tr-admin-table-viewport[data-mobile-scroll]::before{content:"Swipe table to see more columns";display:block;position:sticky;left:0;width:fit-content;padding:10px 12px;font-size:11px;line-height:1.5;color:#4b536f}
+.tr-prismatic-admin .tr-admin-content :is(dialog,[role=dialog]){max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto}
+.tr-prismatic-admin .tr-admin-content :is(h1,h2,h3){overflow-wrap:anywhere}
+}

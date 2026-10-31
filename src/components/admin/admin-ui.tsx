@@ -145,7 +145,7 @@ export function AdminSummaryCard({ label, value, description, href }: { label: s
 }
 
 function SummaryContainer({ href, children }: { href?: string; children: ReactNode }) {
-  return href ? <Link href={href} className="tr-admin-card tr-admin-card-link p-3">{children}</Link> : <AdminCard>{children}</AdminCard>;
+  return href ? <Link href={href} className="tr-admin-card tr-admin-card-link tr-admin-summary-card p-3">{children}</Link> : <AdminCard className="tr-admin-summary-card">{children}</AdminCard>;
 }
 
 export function AdminSoftPanel({ children, className }: { children: ReactNode; className?: string }) {
@@ -232,7 +232,7 @@ export function AdminDataTable({ caption, headers, children, minWidth = "640px" 
   caption: string; headers: string[]; children: ReactNode; minWidth?: string;
 }) {
   return <AdminTableShell>
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={caption}>
       <table className="w-full border-collapse text-left text-sm" style={{ minWidth }}>
         <caption className="sr-only">{caption}</caption>
         <thead><tr>{headers.map((header) => <th key={header} scope="col" className={header === "Actions" ? "text-right" : undefined}>{header}</th>)}</tr></thead>

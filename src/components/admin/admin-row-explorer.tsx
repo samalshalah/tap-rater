@@ -23,8 +23,22 @@ export function AdminRowExplorer({children}: {children: ReactNode}) {
       }
       original.delete(row);
     };
+    const tableViewports = new Set<HTMLElement>();
+    const updateTableOverflow = () => tableViewports.forEach(viewport => {
+      const table = viewport.querySelector('table');
+      viewport.toggleAttribute('data-mobile-scroll', Boolean(table && table.offsetWidth > viewport.clientWidth + 1));
+    });
+    const resizeObserver = new ResizeObserver(updateTableOverflow);
     const enhance = () => {
-      el.querySelectorAll('table').forEach(table => table.parentElement?.classList.add('tr-admin-table-viewport'));
+      el.querySelectorAll('table').forEach(table => {
+        const viewport = table.parentElement;
+        if (!viewport || tableViewports.has(viewport)) return;
+        viewport.classList.add('tr-admin-table-viewport');
+        tableViewports.add(viewport);
+        resizeObserver.observe(viewport);
+        resizeObserver.observe(table);
+      });
+      updateTableOverflow();
       el.querySelectorAll<HTMLTableRowElement>('tbody tr').forEach(row => {
         const actionable = !row.closest('dialog,[role="dialog"]') && row.cells.length >= 2 && row.cells[0]?.colSpan <= 1 && destination(row);
         if (!actionable) { restore(row); return; }
@@ -55,6 +69,8 @@ export function AdminRowExplorer({children}: {children: ReactNode}) {
     el.addEventListener('keydown', activate);
     return () => {
       observer.disconnect();
+      resizeObserver.disconnect();
+      tableViewports.forEach(viewport => viewport.removeAttribute("data-mobile-scroll"));
       el.removeEventListener('click', activate);
       el.removeEventListener('keydown', activate);
       original.forEach((_, row) => restore(row));
