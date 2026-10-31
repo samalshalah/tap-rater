@@ -142,7 +142,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   return (
     <AnalyticsContext.Provider value={{ ready, metaReady, configured, openPreferences }}>
       {children}
-      {hydrated && (open || (publicPage && ((configured && choice === null) || (config.metaPixelId && marketing === null)))) ? (
+      {/* Preferences open only on request; missing consent still leaves tracking off. */}
+      {hydrated && open ? (
         <section
           ref={preferences}
           tabIndex={-1}
