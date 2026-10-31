@@ -58,7 +58,7 @@ export function ProductGallery({ product, selectedOptionId }: { product: Migrate
                 aria-label={`View ${thumbnail.alt}`}
                 aria-pressed={galleryImageKey(image) === galleryImageKey(thumbnail)}
               >
-                {thumbnail.panel ? <span className="flex h-full items-center justify-center break-words px-1 text-center text-[10px] font-semibold leading-tight text-ink">{thumbnail.label}</span> : <Image src={optimizedUploadSrc(thumbnail.src, 160)} alt="" fill unoptimized className="object-contain p-1.5 mix-blend-multiply" />}
+                {thumbnail.panel ? <span className="flex h-full items-center justify-center break-words px-1 text-center text-[10px] font-semibold leading-tight text-ink">{thumbnail.label}</span> : <Image src={optimizedUploadSrc(thumbnail.src, 160)} alt="" fill unoptimized className="object-contain p-1 bg-white" />}
               </button>
             ))}
           </div>
