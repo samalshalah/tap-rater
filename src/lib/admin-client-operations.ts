@@ -21,8 +21,8 @@ export function operationSummary(row:Record<string,unknown>):ClientOperation {
 
 export async function clientOperations(sql=liveDb()):Promise<ClientOperation[]> {
   const rows=await sql`SELECT c.id,c.account_status,
-    coalesce(nullif(c.name,''),(SELECT b.business_name FROM businesses b WHERE b.customer_id=c.id ORDER BY b.id LIMIT 1),'Unnamed account') AS account_name,
-    (SELECT count(*) FROM businesses b WHERE b.customer_id=c.id) AS locations,
+    coalesce(nullif(c.name,''),(SELECT b.business_name FROM businesses b WHERE b.customer_id=c.id AND b.status IS DISTINCT FROM 'marketing_removed' ORDER BY b.id LIMIT 1),'Unnamed account') AS account_name,
+    (SELECT count(*) FROM businesses b WHERE b.customer_id=c.id AND b.status IS DISTINCT FROM 'marketing_removed') AS locations,
     (SELECT count(*) FROM google_review_links l JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id WHERE b.customer_id=c.id AND l.enabled) AS connected,
     (SELECT count(*) FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id WHERE b.customer_id=c.id AND l.enabled AND nullif(l.last_error,'') IS NOT NULL) AS sync_attention,
     (SELECT count(*) FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id WHERE b.customer_id=c.id AND l.enabled AND l.ai_consent) AS ai_locations,
