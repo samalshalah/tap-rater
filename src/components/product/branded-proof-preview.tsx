@@ -51,8 +51,8 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
     };
   }, [draftKey, productSlug, onReady, retry, endpoint]);
 
-  return <div className="grid min-w-0 self-start content-start gap-2 bg-white pb-2 md:sticky md:top-0">
-    <div className="relative mx-auto grid w-full max-w-[min(340px,13dvh)] place-items-center border border-line bg-white md:max-w-[min(340px,32dvh)]" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!isCurrent && !error}>
+  return <div className="grid min-w-0 self-start content-start gap-2 bg-white pb-2">
+    <div className="relative mx-auto grid w-full max-w-[340px] place-items-center border border-line bg-white md:max-w-[min(340px,38dvh)]" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!isCurrent && !error}>
       {image ? <img
         src={image.src} alt="Your Branded stand print preview" width={1278} height={1949}
         className="block h-auto w-full"
@@ -62,6 +62,6 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
     </div>
     {image && !isCurrent && !error ? <p role="status" className="text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     {error ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
-    <p className="text-center text-xs text-muted">Front artwork · 4.26 × 6.50 in</p>
+    <p className="text-center text-[10px] leading-4 text-muted md:text-xs">Front artwork · 4.26 × 6.50 in</p>
   </div>;
 }

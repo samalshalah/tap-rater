@@ -234,7 +234,7 @@ export function ProductSetupDialogContent({
                     <p className="text-sm font-semibold text-ink">Approve your stand</p>
                     <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
-                  <div className="grid min-w-0 gap-5 md:grid-cols-2">
+                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-start gap-x-3 gap-y-4 md:grid-cols-[minmax(0,1fr)_260px] md:gap-6">
                     <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
                     {logo ? <ProofControls
                       logo={logo} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}

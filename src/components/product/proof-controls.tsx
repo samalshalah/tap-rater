@@ -1,6 +1,30 @@
 "use client";
-import { RotateCcw, ImageUp } from "lucide-react";
+import { RotateCcw, ImageUp, Minus, Plus, ChevronDown } from "lucide-react";
 import type { UploadedLogo, LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
+
+export function ProofSizeControl({ label, value, min, max, disabled = false, onChange }: {
+  label: string; value: number; min: number; max: number; disabled?: boolean; onChange: (value: number) => void;
+}) {
+  return <fieldset disabled={disabled} className="min-w-0 rounded-xl border border-line bg-[#f6f8ff] p-2 md:p-4">
+    <legend className="sr-only">{label}</legend>
+    <p className="text-center text-xs font-bold text-ink md:text-sm">{label}</p>
+    <div className="mt-2 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center rounded-lg border border-line bg-white">
+      <button type="button" aria-label={`Decrease ${label.toLowerCase()}`} disabled={disabled || value <= min}
+        onClick={() => onChange(Math.max(min, value - 5))}
+        className="grid h-11 w-11 place-items-center rounded-l-lg text-brand hover:bg-soft disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
+        <Minus size={16} aria-hidden="true" />
+      </button>
+      <output aria-live="polite" className="text-center text-[11px] font-bold tabular-nums text-ink md:text-sm">{value}%</output>
+      <button type="button" aria-label={`Increase ${label.toLowerCase()}`} disabled={disabled || value >= max}
+        onClick={() => onChange(Math.min(max, value + 5))}
+        className="grid h-11 w-11 place-items-center rounded-r-lg text-brand hover:bg-soft disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
+        <Plus size={16} aria-hidden="true" />
+      </button>
+    </div>
+    {disabled ? <p className="mt-2 text-center text-xs text-muted">Business name hidden</p> : null}
+  </fieldset>;
+}
+
 function ProofRangeControl({
   label,
   max,
@@ -74,7 +98,17 @@ export function ProofControls({
   showBusinessNameOnProof: boolean;
 }) {
   return (
-    <div className="grid max-h-[30dvh] content-start gap-4 overflow-y-auto overscroll-contain px-1 md:max-h-none md:overflow-visible">
+    <>
+    <div className="grid min-w-0 self-center gap-3 md:gap-4">
+      <ProofSizeControl label="Logo size" value={proofLogoSizePercent} min={75} max={160} onChange={onProofLogoSizePercentChange} />
+      <ProofSizeControl label="Text size" value={proofFontSizePercent} min={75} max={135} disabled={!showBusinessNameOnProof} onChange={onProofFontSizePercentChange} />
+      <p className="text-center text-[11px] leading-4 text-muted md:text-xs">Adjust in 5% steps.</p>
+    </div>
+    <details className="group col-span-2 min-w-0 rounded-xl border border-line bg-white">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        More design options <ChevronDown size={16} aria-hidden="true" className="shrink-0 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="grid gap-4 border-t border-line p-4">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
         <div>
           <p className="text-sm font-black text-ink">Logo</p>
@@ -131,22 +165,6 @@ export function ProofControls({
         <p className="text-xs font-semibold text-brand">Auto-crop prepared the logo and removed white background where possible. Original is still available.</p>
       ) : null}
       <div className="grid gap-4">
-        {showBusinessNameOnProof ? (
-          <ProofRangeControl
-            label="Business name size"
-            value={proofFontSizePercent}
-            min={75}
-            max={135}
-            onChange={onProofFontSizePercentChange}
-          />
-        ) : null}
-        <ProofRangeControl
-          label="Logo size"
-          value={proofLogoSizePercent}
-          min={75}
-          max={160}
-          onChange={onProofLogoSizePercentChange}
-        />
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-ink">Logo position</p>
           <button
@@ -176,7 +194,9 @@ export function ProofControls({
           onChange={onLogoOffsetYPercentChange}
         />
       </div>
-    </div>
+      </div>
+    </details>
+    </>
   );
 }
 
