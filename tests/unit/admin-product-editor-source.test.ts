@@ -12,7 +12,7 @@ describe("admin product editor Multi-Link add-on controls", () => {
     expect(source).not.toContain('<option value="hosted_multilink">Hosted Multi-Link</option>');
   });
 
-  it("does not enable Branded + QR by default when creating a product", () => {
-    expect(readFileSync("src/components/admin/product-editor-model.ts", "utf8")).toContain('mode === "create" && code === "branded_qr_direct" ? { isActive: false } : {}');
+  it("enables Branded + QR by default when creating a product", () => {
+    expect(readFileSync("src/components/admin/product-editor-model.ts", "utf8")).toContain('mode === "create" && code === "branded_qr_direct" ? { isActive: true } : {}');
   });
 });

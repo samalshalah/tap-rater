@@ -45,8 +45,8 @@ export function buildMerchantFeed(products: MigratedProduct[], offers: OffersSet
       if (!Number.isFinite(price) || price <= 0) throw new Error("Invalid merchant price");
       const fields = [
         tag("id", id),
-        tag("title", brandedProductTitle(product.title).slice(0, 150)),
-        tag("description", `${correctKnownPurchaseCopy(product.shortDescription)} ${option.summary}`.trim().slice(0, 5000)),
+        tag("title", (product.catalogManaged ? product.title : brandedProductTitle(product.title)).slice(0, 150)),
+        tag("description", product.catalogManaged ? product.description.slice(0, 5000) : `${correctKnownPurchaseCopy(product.shortDescription)} ${option.summary}`.trim().slice(0, 5000)),
         tag("link", absolute(`/product/${product.slug}?design=branded`)),
         tag("image_link", absolute(image)),
         ...additionalImages.map((src) => tag("additional_image_link", src)),

@@ -41,6 +41,11 @@ describe("design-specific galleries", () => {
       expect(standard.some(i => images.some(c => c.src === i.src))).toBe(false);
     }
   });
+  it("uses admin gallery order and alternative text for published products", () => {
+    const images = [{ src: "/first.webp", alt: "First catalog photograph" }, { src: "/second.webp", alt: "Side view" }];
+    expect(getGalleryImages({ ...google, catalogManaged: true, images })).toEqual(images);
+    expect(getGalleryImages({ ...google, catalogManaged: true, images: [] })).toEqual([]);
+  });
   it("ships complete optimized files for all 57 sets including LinkedIn Connect", () => {
     expect(Object.keys(customProductGalleries)).toHaveLength(57);
     expect(customProductGalleries["linkedin-connect-stand"]).toHaveLength(7);

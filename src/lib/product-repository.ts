@@ -171,12 +171,13 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
   return products.filter((product) => productMatchesCategory(product, categorySlug)).sort(compareStorefrontProducts);
 }
 
-export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3): MigratedProduct[] {
+export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3, businessGroups: string[][] = []): MigratedProduct[] {
   const sameCategory = products.filter(
     (item) => item.slug !== product.slug && item.categorySlug === product.categorySlug && item.isActive && item.stockStatus === "instock"
   );
 
-  return sameCategory.sort(compareStorefrontProducts).slice(0, limit);
+  const sharedBusinesses = (slug: string) => businessGroups.filter((group) => group.includes(slug)).length;
+  return sameCategory.sort((a, b) => sharedBusinesses(b.slug) - sharedBusinesses(a.slug) || compareStorefrontProducts(a, b)).slice(0, limit);
 }
 
 export async function getStorefrontProductBySlugFromClient(
@@ -206,26 +207,9 @@ export async function getStorefrontProductBySlugFromClient(
   return isPublicLaunchStorefrontProduct(productWithOptions) ? productWithOptions : undefined;
 }
 
-export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3): Promise<MigratedProduct[]> {
-  if (!hasSupabaseAdminConfig()) {
-    const catalog = staticStorefrontProducts();
-    const related = getStorefrontRelatedProducts(product, catalog, limit);
-    const seen = new Set([product.slug, ...related.map((item) => item.slug)]);
-    return [...related, ...catalog.filter((item) => !seen.has(item.slug) && item.isActive && item.stockStatus === "instock")].slice(0, limit);
-  }
-
-  try {
-    const fetchLimit = Math.max(limit + 4, 8);
-    const categoryProducts = await getStorefrontProductsByCategoryFromClient(getSupabaseAdmin() as ProductRepositoryClient, product.categorySlug, fetchLimit);
-
-    const related = getStorefrontRelatedProducts(product, categoryProducts, limit);
-    if (related.length >= limit) return related;
-    const catalog = await getStorefrontProducts();
-    const seen = new Set([product.slug, ...related.map((item) => item.slug)]);
-    return [...related, ...catalog.filter((item) => !seen.has(item.slug) && item.isActive && item.stockStatus === "instock")].slice(0, limit);
-  } catch {
-    return [];
-  }
+export async function getRelatedStorefrontProductsForProduct(product: MigratedProduct, limit = 3, businessGroups: string[][] = []): Promise<MigratedProduct[]> {
+  const catalog = await getStorefrontProducts();
+  return getStorefrontRelatedProducts(product, catalog, limit, businessGroups);
 }
 
 export async function getStorefrontRelatedProductsFromClient(

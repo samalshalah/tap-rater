@@ -62,6 +62,7 @@ export function ProductEditor({
     setSpecifications,
     includedItems,
     setIncludedItems,
+    faqs, setFaqs,
     visibleOptions,
     activeVisibleOptions,
     effectiveAssetSet,
@@ -260,6 +261,18 @@ export function ProductEditor({
 
         <ProductDetailsEditor product={product} specifications={specifications} includedItems={includedItems} setSpecifications={setSpecifications} setIncludedItems={setIncludedItems}/>
 
+        <EditorCard title="Product FAQs" description="These questions and answers appear on the product page.">
+          {faqs.map((faq, index) => <fieldset key={index} className="grid gap-2 rounded border border-line p-3">
+            <legend>Question {index + 1}</legend>
+            {(["question", "answer"] as const).map((field) => <label key={field} className="grid gap-1 text-sm">
+              {field === "question" ? "Question" : "Answer"}
+              <textarea required maxLength={field === "question" ? 220 : 800} value={faq[field]} className="rounded border border-line p-2"
+                onChange={(event) => setFaqs(faqs.map((item, i) => i === index ? { ...item, [field]: event.target.value } : item))} />
+            </label>)}
+            <button type="button" onClick={() => setFaqs(faqs.filter((_, i) => i !== index))}>Remove question</button>
+          </fieldset>)}
+          {faqs.length < 30 && <button type="button" onClick={() => setFaqs([...faqs, { question: "", answer: "" }])}>Add question</button>}
+        </EditorCard>
         <ProductSeoEditor product={product} seoPreview={seoPreview} slug={slug}/>
       </div>
 

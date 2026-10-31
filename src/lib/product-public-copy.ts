@@ -1,19 +1,12 @@
 import type {MigratedProduct,ProductPurchaseOptionSnapshot} from '@/data/migrated-products';
 import {correctKnownPurchaseCopy} from '@/lib/purchase-options';
-import { brandedProductTitle, brandedProductSeoTitle } from '@/lib/branded-product-title';
-import { brandedProductDescription } from '@/lib/branded-product-description';
-
 export function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {
   if (isHostedProduct(product)) {
     return product;
   }
 
-  const copy = brandedProductDescription(product);
   return {
     ...product,
-    title: brandedProductTitle(product.title),
-    seoTitle: brandedProductSeoTitle(product.title),
-    ...copy,
     requiresAccount: false,
     requiresSubscription: false,
     requiresLandingPage: false,

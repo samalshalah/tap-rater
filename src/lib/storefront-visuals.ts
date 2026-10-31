@@ -169,7 +169,7 @@ export function getCategoryVisual(category: Pick<CatalogCategory, "slug" | "titl
   };
 }
 
-export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title" | "images" | "assetSet">): StorefrontVisual {
+export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title" | "images" | "assetSet" | "catalogManaged">): StorefrontVisual {
   if (product.slug === "custom-direct-stand") {
     return {
       src: "/uploads/products/business-google-white-stands-bundle.jpg",
@@ -177,6 +177,7 @@ export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title"
     };
   }
 
+  if (product.catalogManaged && product.images[0]?.src) return product.images[0];
   const gallery = (customGalleries as Record<string, { src: string }[]>)[product.slug];
   const src = gallery?.[0]?.src ?? product.assetSet?.brandedAngledImageUrl ?? product.assetSet?.brandedFrontTemplateUrl;
   return src ? { src, alt: `${product.title} custom design with logo and QR` } : { ...productImageFallback, alt: "Custom artwork preview pending" };

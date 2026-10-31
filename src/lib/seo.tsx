@@ -87,7 +87,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
     }];
   });
   if (variants.length === 0) return data;
-  if (variants.length === 1) return { "@context": "https://schema.org", ...variants[0] };
+  if (variants.length === 1) return { "@context": "https://schema.org", ...variants[0], name: product.title, description: seo.description, url };
 
   // Customization is not a size/color variant; do not invent a Google variesBy property.
   const { sku: _sku, ...group } = data;

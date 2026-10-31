@@ -45,7 +45,7 @@ export function buildInitialOptions(productKind: ProductKind, productOptions: Pr
 
   return codes.map((code) => ({
     ...(templateMap.get(code) ?? getDefaultOptionsForProductKind("normal_direct").find((option) => option.optionCode === code)!),
-    ...(mode === "create" && code === "branded_qr_direct" ? { isActive: false } : {}),
+    ...(mode === "create" && code === "branded_qr_direct" ? { isActive: true } : {}),
     ...(savedOptionMap.get(code) ?? {}),
     ...(code === "standard_direct" ? { isActive: false } : {})
   }));
@@ -143,24 +143,12 @@ export function collectImagesFromMedia(
   assetSet: AssetSetState,
   title: string
 ): MigratedProduct["images"] {
-  const sources = [
-    mainImage.src,
-    ...galleryImages.map((image) => image.src),
-    assetSet.standardAngledImageUrl,
-    assetSet.brandedAngledImageUrl,
-    assetSet.standardFrontTemplateUrl,
-    assetSet.brandedFrontTemplateUrl
-  ];
   const seen = new Set<string>();
-
-  return sources
-    .map(readOptionalString)
-    .filter((source): source is string => {
-      if (!source || seen.has(source)) return false;
-      seen.add(source);
-      return true;
-    })
-    .map((src) => ({ src, alt: title }));
+  return [mainImage, ...galleryImages].filter(({ src }) => {
+    if (!src.trim() || seen.has(src)) return false;
+    seen.add(src);
+    return true;
+  }).map(({ src, alt }) => ({ src, alt: alt.trim() || title }));
 }
 
 export function getAdminMediaWarnings(slug: string, mainImage: MediaItemState, galleryImages: MediaItemState[], assetSet: AssetSetState) {

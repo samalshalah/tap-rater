@@ -47,14 +47,14 @@ describe("product repository", () => {
 
     expect(product).toMatchObject({
       slug: "google-review-stand",
-      title: "Custom Google Review Stand with Your Logo — NFC + QR",
+      title: "Supabase Google Stand",
       sku: "SUP-1",
       categorySlug: "reviews",
       basePriceCents: 5900,
       salePriceCents: undefined,
       stockStatus: "instock",
-      shortDescription: expect.stringContaining("custom design featuring your business logo"),
-      description: expect.stringContaining("Near Field Communication"),
+      shortDescription: "Supabase short description",
+      description: "Supabase full description",
       productType: "physical_managed",
       serviceMode: "managed_redirect",
       checkoutMode: "buy_now",
@@ -69,8 +69,8 @@ describe("product repository", () => {
       allowsLogoUpload: true,
       allowsCustomDesign: true,
       designMode: "logo",
-      seoTitle: "Custom Google Review Stand with Logo, NFC & QR",
-      seoDescription: expect.stringContaining("NFC tap and QR code"),
+      seoTitle: "Supabase SEO",
+      seoDescription: "Supabase description",
       searchKeywords: ["supabase", "google"],
       isActive: true
     });
@@ -130,7 +130,7 @@ describe("product repository", () => {
     ]));
 
     expect(products).toHaveLength(1);
-    expect(products[0].title).toBe("Custom Google Review Stand with Your Logo — NFC + QR");
+    expect(products[0].title).toBe("Supabase Google Stand");
     expect(products[0].salePriceCents).toBe(4900);
     expect(products.map((product) => product.title)).not.toContain("Old active tag");
   });
@@ -230,7 +230,7 @@ describe("product repository", () => {
     expect(products).toHaveLength(1);
     expect(products[0]).toMatchObject({
       slug: "database-only-google-review-stand",
-      title: "Custom Database Only Google Review Stand with Your Logo — NFC + QR",
+      title: "Database Only Google Review Stand",
       categorySlug: "reviews",
       basePriceCents: 3900,
       images: [{ src: "/uploads/products/v5/google-review-stand.png", alt: "Database-only Google review stand" }]
@@ -243,7 +243,7 @@ describe("product repository", () => {
     return expect(getStorefrontProductsFromClient(mockProductsClient(rows, null, createQueryCalls(), options))).resolves.toEqual([]);
   });
 
-  it("preserves accurate NFC-only copy while correcting retired fee wording", () => {
+  it("uses merchant text verbatim, including descriptions edited after publication", () => {
     const product = normalizeStorefrontProductRow({
       slug: "yelp-review-stand",
       title: "Yelp Review Stand",
@@ -271,10 +271,9 @@ describe("product repository", () => {
       is_active: true
     });
 
-    expect(product?.shortDescription).toContain("custom design featuring your business logo");
-    expect(product?.description).toContain("NFC (Near Field Communication)");
-    expect(product?.seoDescription).toContain("QR code");
-    expect(product?.seoDescription).not.toMatch(/monthly fee/i);
+    expect(product?.shortDescription).toBe("Countertop NFC-only stand.");
+    expect(product?.description).toBe("Standard Direct is NFC only. No printed QR.");
+    expect(product?.seoDescription).toBe("Buy a Yelp Review Stand. No monthly fee required for basic activation.");
   });
 
   it("publishes personalized NFC and QR copy while preserving the raw admin description", () => {
@@ -286,7 +285,7 @@ describe("product repository", () => {
     const product = normalizeStorefrontProductRow(row)!;
     expect(product.shortDescription).toContain("QR");
     expect(product.description).toContain("Google review link");
-    expect(product.description).toContain("approve your artwork before payment");
+    expect(product.description).toBe(row.description);
     expect(normalizeStorefrontProductRow(row, { sanitizePublicCopy: false })?.description).toBe(row.description);
   });
 
@@ -483,7 +482,7 @@ describe("product repository", () => {
     expect(products).toHaveLength(1);
     expect(products[0]).toMatchObject({
       slug: "book-appointment-stand",
-      title: "Custom Book Appointment Stand with Your Logo — NFC + QR",
+      title: "Book Appointment Stand",
       sku: "BOOK-APPOINTMENT-STAND",
       categorySlug: "appointments",
       serviceMode: "basic_redirect",

@@ -66,7 +66,7 @@ export function ProductMediaGrid({
       nextGalleryImages.splice(selectedGalleryIndex, 1);
     }
 
-    onReplaceMedia({ src: selectedImage.src, alt: selectedImage.alt || title }, nextGalleryImages.slice(0, 5));
+    onReplaceMedia({ src: selectedImage.src, alt: selectedImage.alt || title }, nextGalleryImages);
     clearSelection();
   }
 
@@ -84,7 +84,7 @@ export function ProductMediaGrid({
       nextGalleryImages = promotedImage ? nextGalleryImages.slice(1) : nextGalleryImages;
     }
 
-    onReplaceMedia(nextMainImage, nextGalleryImages.slice(0, 5));
+    onReplaceMedia(nextMainImage, nextGalleryImages);
     clearSelection();
   }
 
@@ -142,7 +142,7 @@ export function ProductMediaGrid({
             onUpload={(file) => onUploadGallery(file, index)}
           />
         ))}
-        {galleryImages.length < 5 ? (
+        {galleryImages.length < 7 ? (
           <ProductMediaTile
             label="Add media"
             value=""
@@ -157,6 +157,16 @@ export function ProductMediaGrid({
       <p className="rounded-md border border-line bg-[#f7f8fa] px-3 py-2 text-xs leading-5 text-muted">
         Stored URLs stay in product data but are hidden from the normal editor. Use the tile menu only when you need to view or copy a URL.
       </p>
+      {[mainImage, ...galleryImages].map((image, index) => image.src && (
+        <label key={index} className="grid gap-1 text-sm font-semibold">
+          {index === 0 ? "Main image" : `Gallery ${index}`} alternative text
+          <input className="rounded border border-line p-2" value={image.alt} onChange={(event) => {
+            const updated = { ...image, alt: event.target.value };
+            if (index === 0) onReplaceMedia(updated, galleryImages);
+            else onReplaceMedia(mainImage, galleryImages.map((item, i) => i === index - 1 ? updated : item));
+          }} />
+        </label>
+      ))}
       <input type="hidden" name="product-media-title" value={title} readOnly />
     </div>
   );

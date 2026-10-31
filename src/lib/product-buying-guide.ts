@@ -38,7 +38,7 @@ export function resolveProductPageSeo(product: MigratedProduct) {
   const guide = getProductBuyingGuide(product);
   const catalogProduct = migratedProducts.find((candidate) => candidate.slug === product.slug);
   // Refresh seeded descriptions without replacing a merchant's custom SEO text.
-  if (guide && (!product.seoDescription?.trim() || product.seoDescription === catalogProduct?.seoDescription)) {
+  if (!product.catalogManaged && guide && (!product.seoDescription?.trim() || product.seoDescription === catalogProduct?.seoDescription)) {
     const firstSentence = guide.introduction.split(/(?<=\.)\s+(?=[A-Z])/)[0];
     const description = firstSentence.length <= 158
       ? firstSentence

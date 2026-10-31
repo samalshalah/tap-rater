@@ -73,7 +73,7 @@ export function defaultBusinessUseGuide(slug: string): BusinessUseGuide {
 
 export function orderBusinessUseProducts(products: MigratedProduct[], slug: string, assignedSlugs: string[]) {
   const assigned = new Map(assignedSlugs.map((value, index) => [value, index]));
-  return products.filter((product) => assigned.has(product.slug) || product.businessUseSlugs?.includes(slug))
+  return products.filter((product) => assigned.has(product.slug) || (!product.catalogManaged && product.businessUseSlugs?.includes(slug)))
     .sort((a, b) => (assigned.get(a.slug) ?? Number.MAX_SAFE_INTEGER) - (assigned.get(b.slug) ?? Number.MAX_SAFE_INTEGER));
 }
 

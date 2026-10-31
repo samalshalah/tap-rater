@@ -61,7 +61,7 @@ export function useProductEditor({
 
   const [mainImage, setMainImage] = useState<MediaItemState>(() => product.images[0] ?? { src: product.assetSet?.standardAngledImageUrl ?? "", alt: product.title });
 
-  const [galleryImages, setGalleryImages] = useState<MediaItemState[]>(() => product.images.slice(1, 5));
+  const [galleryImages, setGalleryImages] = useState<MediaItemState[]>(() => product.images.slice(1));
 
   const [uploadingRoles, setUploadingRoles] = useState<Record<string, boolean>>({});
 
@@ -77,6 +77,7 @@ export function useProductEditor({
 
   const [specifications, setSpecifications] = useState(() => product.specifications ?? []);
 
+  const [faqs, setFaqs] = useState(() => product.productFaqs ?? []);
   const [includedItems, setIncludedItems] = useState(() => product.includedItems ?? []);
 
   const visibleOptions = useMemo(
@@ -268,7 +269,7 @@ export function useProductEditor({
       } else {
         next.push({ src: uploadedUrl, alt: title });
       }
-      return next.slice(0, 5);
+      return next.slice(0, 7);
     });
   }
 
@@ -305,7 +306,7 @@ export function useProductEditor({
     const finalSortOrder = Math.max(0, Math.min(100000, Math.round(sortOrder || 1000)));
     const finalOptions = visibleOptions.map((option) => ({ ...option, priceCents: Math.max(0, Math.round(option.priceCents)) }));
     const finalActiveOptions = finalOptions.filter((option) => option.isActive);
-    const basePriceCents = finalActiveOptions.length > 0 ? Math.min(...finalActiveOptions.map((option) => option.priceCents)) : 3900;
+    const basePriceCents = finalActiveOptions.length > 0 ? Math.min(...finalActiveOptions.map((option) => option.priceCents)) : 4900;
     const supportedDestinations = getSupportedDestinations(primaryPlatformSlug);
     const shortDescription = readOptionalString(String(form.get("shortDescription") ?? "")) ?? `${finalTitle} NFC stand.`;
     const description = readOptionalString(String(form.get("description") ?? "")) ?? shortDescription;
@@ -362,7 +363,7 @@ export function useProductEditor({
           howItWorks: product.howItWorks ?? [],
           specifications: specifications.map((item) => ({ ...item, label: item.label.trim(), value: item.value.trim() })),
           includedItems: includedItems.map((item) => ({ ...item, label: item.label.trim() })),
-          productFaqs: product.productFaqs ?? [],
+          productFaqs: faqs,
           isActive: finalIsActive
         })
       });
@@ -425,6 +426,7 @@ export function useProductEditor({
     setSpecifications,
     includedItems,
     setIncludedItems,
+    faqs, setFaqs,
     visibleOptions,
     activeVisibleOptions,
     effectiveAssetSet,

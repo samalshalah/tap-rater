@@ -109,26 +109,23 @@ describe("product SEO generation", () => {
     expect(seo.generatedDescription).not.toMatch(/\.\.\.$/);
   });
 
-  it("normalizes retired public fee copy from custom backend SEO descriptions", () => {
+  it("respects merchant wording in saved SEO descriptions", () => {
     const seo = resolveProductSeo(
       productFixture({
         seoDescription: "Buy a Google Review Stand that opens your Google review link with one tap or scan. No monthly fee required for basic activation."
       })
     );
 
-    expect(seo.description).not.toMatch(/monthly fee/i);
-    expect(seo.description).toContain("One-time physical product purchase");
+    expect(seo.description).toContain("No monthly fee required for basic activation.");
   });
 
-  it("corrects only known Google SEO overrides and keeps accurate custom Branded copy", () => {
+  it("uses the saved Google SEO title and description", () => {
     const corrected = resolveProductSeo(productFixture({
       seoTitle: "Google Review Stand with NFC & QR",
       seoDescription: "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
     }));
-    expect(corrected.title).toBe("Custom Google Review Stand | Logo + NFC + QR");
-    expect(corrected.description).toContain("your logo, business name, NFC and QR");
-    expect(corrected.description).toContain("Custom Google Review Stand");
-    expect(corrected.description.length).toBeLessThanOrEqual(158);
+    expect(corrected.title).toBe("Google Review Stand with NFC & QR");
+    expect(corrected.description).toContain("Add your Google review link and receive it programmed and ready to use.");
     const custom = resolveProductSeo(productFixture({
       seoTitle: "Branded NFC and QR for reception",
       seoDescription: "Our Branded NFC and QR stand includes custom production instructions."

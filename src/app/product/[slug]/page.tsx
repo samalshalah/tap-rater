@@ -7,7 +7,7 @@ import Link from "next/link";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
-import { ProductBuyingGuide } from "@/components/product/product-buying-guide";
+import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getProductBuyingGuide, getProductBuyingFaqs, resolveProductPageSeo } from "@/lib/product-buying-guide";
 import { FaqList } from "@/components/storefront/faq-list";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
@@ -104,9 +104,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     notFound();
   }
 
-  const [offers, shipping, relatedProducts] = await Promise.all([
-    getOffersSettings().catch(() => null), getShippingSettings(), getRelatedStorefrontProductsForProduct(product, 5)
+  const [offers, shipping, businesses] = await Promise.all([
+    getOffersSettings().catch(() => null), getShippingSettings(), getPublicBusinessUses()
   ]);
+  const linkedBusinesses = businesses.filter((item) => item.productSlugs.includes(product.slug));
+  const relatedProducts = await getRelatedStorefrontProductsForProduct(product, 5, linkedBusinesses.map((item) => item.productSlugs));
   const category = getCategoryBySlug(product.categorySlug);
   // Keep merchant-authored details; the generic feature cards repeat the hero and setup guide.
   const highlights = product.keyFeatures?.length ? getProductPageHighlights(product) : [];
@@ -115,7 +117,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const destination = getReviewDestination(product);
   const purchaseOptions = getProductPurchaseOptions(product);
   const fromPrice = formatPrice(getLowestPurchasePriceCents(product)).replace(".00", "");
-  const productFaqs = [...getProductBuyingFaqs(product).filter(({ question }) =>
+  const productFaqs = product.catalogManaged ? product.productFaqs ?? [] : [...getProductBuyingFaqs(product).filter(({ question }) =>
     !question.startsWith("How does ") &&
     !/\bstandard\b/i.test(question) &&
     question !== "Do customers need a special app to tap the stand?" &&
@@ -127,6 +129,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   return (
     <main className="tr-public-shell text-ink">
       <JsonLd data={productJsonLd(product, { offers, shipping })} />
+      <JsonLd data={{ "@context": "https://schema.org", "@type": "WebPage", url: absoluteUrl(`/product/${product.slug}`), primaryImageOfPage: absoluteUrl(getProductVisual(product).src) }} />
       <JsonLd data={breadcrumbJsonLd([
         { name: "Shop", href: "/shop" },
         ...(category ? [{ name: category.title, href: getCategoryHref(category.slug) }] : []),
@@ -146,7 +149,15 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         />
       </SectionShell> : null}
 
-      {buyingGuide ? <ProductBuyingGuide title={product.title} slug={product.slug} guide={buyingGuide} /> : null}
+      <SectionShell spacing="compact"><div className="tr-container-narrow">
+        <h2 className="tr-section-title">About this stand</h2>
+        <p className="tr-body mt-4 whitespace-pre-line">{product.description}</p>
+        <nav aria-label="Shop by use and business" className="mt-6 flex flex-wrap gap-4 font-semibold text-brand underline">
+          {category && <Link href={getCategoryHref(category.slug)}>{category.title}</Link>}
+          {linkedBusinesses.map((item) =>
+            <Link key={item.slug} href={`/solutions/${item.slug}`}>{item.title}</Link>)}
+        </nav>
+      </div></SectionShell>
 
       <SectionShell spacing="default">
         <div className="tr-container">

@@ -77,6 +77,7 @@ export type SupportedDestination =
   | "custom";
 
 export type MigratedProduct = {
+  catalogManaged?: boolean;
   slug: string;
   title: string;
   sku: string;

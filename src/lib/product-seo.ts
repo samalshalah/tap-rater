@@ -46,17 +46,13 @@ export function generateProductSeo(product: MigratedProduct): Pick<ProductSeo, "
 
 export function resolveProductSeo(product: MigratedProduct): ProductSeo {
   const generated = generateProductSeo(product);
-  const customTitle = normalizeCustomSeo(product.seoTitle === "Google Review Stand with NFC & QR"
-    ? "Custom Google Review Stand | Logo + NFC + QR"
-    : product.seoTitle);
-  const customDescription = normalizeCustomSeo(product.seoDescription === "Google Review Stand with NFC and QR for counters, reception desks, and checkout areas. Add your Google review link and receive it programmed and ready to use."
-    ? "Custom Google Review Stand with your logo, business name, NFC and QR for counters and reception desks."
-    : product.seoDescription);
-  const description = customDescription ? sanitizeRetiredPublicCopy(customDescription) : generated.generatedDescription;
+  const customTitle = product.seoTitle?.trim();
+  const customDescription = product.seoDescription?.trim();
+  const description = customDescription || generated.generatedDescription;
 
   return {
     ...generated,
-    title: customTitle ? conciseProductTitle(customTitle, product.title) : generated.generatedTitle,
+    title: customTitle ? withoutSiteTitleSuffix(customTitle) : generated.generatedTitle,
     description,
     isTitleCustom: Boolean(customTitle),
     isDescriptionCustom: Boolean(customDescription)
@@ -162,20 +158,6 @@ function cleanProductTitle(title: string) {
   return title.replace(/\s+/g, " ").trim() || "Tap Rater Stand";
 }
 
-function normalizeCustomSeo(value?: string) {
-  return value && /\bstandard\b|NFC.only/i.test(value) ? undefined : value?.replace(/\s+/g, " ").trim();
-}
-
-function sanitizeRetiredPublicCopy(value: string) {
-  return value
-    .replace(/\bNo monthly fee required for basic activation\.?/gi, "One-time physical product purchase.")
-    .replace(/\bdoes not require a monthly fee for basic activation\.?/gi, "connects as a one-time physical product purchase.")
-    .replace(/\bwith no monthly fee\.?/gi, "as a one-time physical product purchase.")
-    .replace(/\bNo monthly fee\.?/gi, "One-time physical product purchase.")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function singularizeStandType(value: string) {
   return value.replace(/\bStands\b/i, "Stand").replace(/\bPlates\b/i, "Plate");
 }
@@ -201,11 +183,4 @@ function clampSeoText(value: string, maxLength: number) {
     result = next;
   }
   return result;
-}
-
-function conciseProductTitle(value: string, productTitle: string) {
-  const title = withoutSiteTitleSuffix(value);
-  // Keep intentional short merchant titles; simplify repetitive imported titles.
-  if (title.length <= 50 || !title.startsWith(`${cleanProductTitle(productTitle)} | NFC`)) return title;
-  return clampSeoText(`${cleanProductTitle(productTitle)} | NFC Stand`, 50);
 }
