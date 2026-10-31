@@ -3,6 +3,17 @@ vi.mock('@/lib/email',()=>({sendEmail:vi.fn(),buildEmailHtml:(v:unknown)=>JSON.s
 import {failurePath,recordClientFailure,sendClientFailureAlerts,supportAlertRecipient} from '@/lib/client-failures';
 afterEach(()=>{vi.unstubAllEnvs();});
 describe('client failure reporting',()=>{
+ it('explains preview rate limits without exposing raw codes or account identifiers',async()=>{
+  const row={id:'incident-id',code:'http_429',path:'/api/setup/proof',occurrences:1,http_status:429,customer_id:'private-account-id'};
+  const sql=vi.fn().mockResolvedValueOnce([row]).mockResolvedValue([]),send=vi.fn().mockResolvedValue({sent:true});
+  await sendClientFailureAlerts(sql as any,send);
+  const message=send.mock.calls[0][0];
+  expect(message.subject).toBe('Tap Rater: 1 website issue needs attention');
+  expect(message.html).toContain('Stand design preview');
+  expect(message.html).toContain('Next step:');
+  expect(message.html).toContain('Recorded once');
+  for(const raw of ['http_429','HTTP 429','/api/setup/proof','private-account-id','Location not specified']) expect(message.html).not.toContain(raw);
+ });
  it('strips query data and dynamic identifiers',()=>{expect(failurePath('/account/reviews?token=secret&email=private')).toBe('/account/reviews');expect(failurePath('/api/account/orders/12345')).toBe('/api/account/orders/[id]');expect(failurePath('/admin/secret')).toBe('/account');});
  it('uses support rather than admin and allows a configured support inbox',()=>{vi.stubEnv('ADMIN_EMAIL','admin@example.test');expect(supportAlertRecipient()).toBe('support@taprater.com');vi.stubEnv('SUPPORT_ALERT_EMAIL','help@example.test');expect(supportAlertRecipient()).toBe('help@example.test');});
  it('groups repeats by account, operation and status; does not store query strings',async()=>{const sql=vi.fn().mockResolvedValue([]);const event={customerId:'customer',source:'request' as const,code:'http_503',path:'/api/account/local/heatmap?secret=test',status:503};await recordClientFailure(event,sql as any);await recordClientFailure(event,sql as any);expect(sql.mock.calls[0][1]).toBe(sql.mock.calls[1][1]);expect(sql.mock.calls[0][0].join(' ')).toContain('ON CONFLICT');expect(JSON.stringify(sql.mock.calls)).not.toContain('secret=test');});

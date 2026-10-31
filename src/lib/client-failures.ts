@@ -1,4 +1,5 @@
 import {businessOptimizationEnabled} from './business-optimization-feature';
+import {describeClientFailure} from './client-failure-message';
 import {createHash} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {sendEmail,buildEmailHtml,getCustomerReplyToEmail} from './email';
@@ -25,7 +26,7 @@ export async function sendClientFailureAlerts(sql=db(),send=sendEmail){
  if(!rows.length)return {sent:0};
  // Reuse the claimed time bucket on retries to reduce duplicate provider deliveries.
  const key='client-failures-'+createHash('sha256').update(rows.map(r=>r.id+':'+(r.notified_at||'first')).sort().join('|')).digest('hex');
- let result;try{result=await send({to:supportAlertRecipient(),subject:`Tap Rater: ${rows.length} client failures need attention`,html:buildEmailHtml({title:'Client failures need attention',body:rows.map(r=>`${r.code} · ${r.path} · HTTP ${r.http_status||'n/a'} · ${r.occurrences} observations · Account ${r.customer_id||'unavailable'} · Location ${r.business_id||'not specified'}`),cta:{label:'View client failures',url:'https://taprater.com/admin/client-failures'}}),delivery:{messageType:'client_failure_alert',audience:'internal',idempotencyKey:key}});}catch{result={sent:false as const,reason:'send_exception'};}
+ let result;try{result=await send({to:supportAlertRecipient(),subject:`Tap Rater: ${rows.length} website ${rows.length===1?'issue needs':'issues need'} attention`,html:buildEmailHtml({title:'Website issues to review',body:[...rows.map(describeClientFailure),'These are recorded incidents, not a confirmation that the problem is still happening. Account details and technical information are available in the admin dashboard.'],cta:{label:'Review website issues',url:'https://taprater.com/admin/client-failures'}}),delivery:{messageType:'client_failure_alert',audience:'internal',idempotencyKey:key}});}catch{result={sent:false as const,reason:'send_exception'};}
  for(const row of rows)await sql`UPDATE client_failures SET notified_at=CASE WHEN ${result.sent} THEN now() ELSE notified_at END,notification_error=${result.sent?null:'Support email failed; queued for retry'} WHERE id=${row.id}`;
  return {sent:result.sent?rows.length:0};
 }

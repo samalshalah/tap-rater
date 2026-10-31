@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CartItem } from "@/lib/cart";
 import type { ProofApprovalSnapshot } from "@/lib/direct-production";
 
@@ -13,6 +13,7 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
   onReady: (proof: ReadyBrandedProof | null) => void;
 }) {
   const draftKey = JSON.stringify(setup);
+  const previewAssets = useRef<Record<string, string>>({});
   const [image, setImage] = useState<{ src: string; proof: ReadyBrandedProof } | null>(null);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
@@ -33,12 +34,18 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
         const response = await fetch(endpoint, {
           method: "POST", signal: controller.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ item: { productId: productSlug, optionId: "branded_qr_direct", quantity: 1, setup: JSON.parse(draftKey) } })
+          body: JSON.stringify({ previewTransfer: 1, knownAssets: Object.keys(previewAssets.current), item: { productId: productSlug, optionId: "branded_qr_direct", quantity: 1, setup: JSON.parse(draftKey) } })
         });
         const body = await response.json();
         if (!response.ok || !body.svg || !body.snapshot || !body.proofReceiptId) throw new Error(body.error || "Artwork preview could not be created.");
         if (!active) return;
-        const objectUrl = URL.createObjectURL(new Blob([body.svg], { type: "image/svg+xml" }));
+        const availableAssets = { ...previewAssets.current, ...body.assets };
+        const displaySvg = body.svg.replace(/proof-asset:([a-f0-9]{64})/g, (_: string, id: string) => {
+          if (!availableAssets[id]) throw new Error("Preview image is missing. Please retry the preview.");
+          return availableAssets[id];
+        });
+        previewAssets.current = Object.fromEntries((body.assetIds ?? []).map((id: string) => [id, availableAssets[id]]));
+        const objectUrl = URL.createObjectURL(new Blob([displaySvg], { type: "image/svg+xml" }));
         setImage({ src: objectUrl, proof: { snapshot: body.snapshot, proofReceiptId: body.proofReceiptId, draftKey } });
       } catch (error) {
         if (active) setError(error instanceof Error ? error.message : "Artwork preview could not be created.");

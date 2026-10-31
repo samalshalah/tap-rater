@@ -5,6 +5,7 @@ import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled } from "@/lib/
 import { productSupportsMultiLink } from "@/lib/service-addons";
 import { checkPublicRateLimit, rateLimitResponse } from "@/lib/public-rate-limit";
 import { createBrandedProof, requireProofStorage, reserveBrandedHostedDestination } from "@/lib/branded-proof";
+import { lightweightProofSvg, packProofPreview } from "@/lib/proof-preview-transfer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ reservation: { id: reservation.id, url: reservation.url } }, { headers: { "Cache-Control": "private, no-store" } });
     }
     const proof = await createBrandedProof(product, setup, storage);
+    if (input.previewTransfer === 1) {
+      const displaySvg = await lightweightProofSvg(proof.svg, proof.snapshot.frontTemplateUrl);
+      return NextResponse.json({ ...proof, ...packProofPreview(displaySvg, input.knownAssets) }, { headers: { "Cache-Control": "private, no-store" } });
+    }
     return NextResponse.json(proof, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Preview could not be created." }, { status: 400 });
