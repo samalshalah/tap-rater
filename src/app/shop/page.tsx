@@ -66,35 +66,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <PrismaticWave variant="banner" />
             <p className="tr-eyebrow">Tap Rater shop</p>
             <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
-
+            <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment.</p>
           </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
-            <div className="space-y-5 lg:sticky lg:top-24 lg:self-start lg:space-y-0">
-              <div className="lg:hidden">
-                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className={`${styles.filterPanel} group p-0`}>
-                  <summary className={styles.filterSummary}>
-                    <span className="flex min-h-12 items-center gap-2 px-4">
-                      <SlidersHorizontal size={17} aria-hidden="true" />
-                      Filters
-                    </span>
-                    <span className="px-4">
-                      {selectedType || selectedUse || query.design ? "Active" : "Type and use"}
-                    </span>
-                  </summary>
-                  <div>
-                    <FilterPanelContent
-                      businessUses={businessUses}
-                      filteredProductCount={filteredProducts.length}
-                      products={products}
-                      selectedType={selectedType}
-                      selectedUse={selectedUse}
-                      standTypes={standTypes}
-                      query={query}
-                    />
-                  </div>
-                </details>
-              </div>
-
+            <div className="hidden space-y-5 lg:block lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <aside className={`${styles.filterPanel} hidden h-fit lg:block`}>
                 <FilterPanelContent
                   businessUses={businessUses}
@@ -109,7 +84,27 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             </div>
 
             <div className="min-w-0 self-start" id="shop-results">
-              <ShopControls query={query} />
+              <ShopControls query={query} filters={<div className="min-w-0 lg:hidden">
+                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className="group">
+                  <summary className="flex h-11 cursor-pointer list-none items-center justify-center rounded-md bg-[#090e36] text-xs font-semibold text-white [&::-webkit-details-marker]:hidden">
+                    <span className="flex items-center gap-1 px-2">
+                      <SlidersHorizontal size={17} aria-hidden="true" />
+                      Filters
+                    </span>
+                  </summary>
+                  <div className={`${styles.filterPanel} absolute inset-x-0 top-full z-30 mt-2 max-h-[65dvh] overflow-y-auto shadow-xl`}>
+                    <FilterPanelContent
+                      businessUses={businessUses}
+                      filteredProductCount={filteredProducts.length}
+                      products={products}
+                      selectedType={selectedType}
+                      selectedUse={selectedUse}
+                      standTypes={standTypes}
+                      query={query}
+                    />
+                  </div>
+                </details>
+              </div>} />
               <p role="status" className="my-4 break-words text-sm text-muted">
                 Showing {visibleCount} of {filteredProducts.length} products{query.q ? ` for "${query.q}"` : ""}
               </p>
