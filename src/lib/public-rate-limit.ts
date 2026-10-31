@@ -8,6 +8,7 @@ export type RateLimitBinding = {
 type RateLimitBindingName =
   | "PUBLIC_EVENT_RATE_LIMITER"
   | "PUBLIC_FORM_RATE_LIMITER"
+  | "PUBLIC_PROOF_RATE_LIMITER"
   | "PUBLIC_CHECKOUT_RATE_LIMITER";
 
 export type PublicRateLimitScope =
@@ -23,6 +24,7 @@ export type PublicRateLimitScope =
   | "manual-checkout"
   | "setup"
   | "setup-proof"
+  | "setup-proof-reserve"
   | "setup-logo";
 
 export async function checkPublicRateLimit(

@@ -16,11 +16,16 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
   const [image, setImage] = useState<{ src: string; proof: ReadyBrandedProof } | null>(null);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const isCurrent = image?.proof.draftKey === draftKey;
+  // Keep the last rendered proof while its replacement is being prepared.
+  // Its receipt remains invalid until the current draft's image has loaded.
+  useEffect(() => {
+    const src = image?.src;
+    return () => { if (src) URL.revokeObjectURL(src); };
+  }, [image?.src]);
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
-    let objectUrl: string | undefined;
-    setImage(null);
     setError("");
     onReady(null);
     const timer = window.setTimeout(async () => {
@@ -33,29 +38,29 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
         const body = await response.json();
         if (!response.ok || !body.svg || !body.snapshot || !body.proofReceiptId) throw new Error(body.error || "Artwork preview could not be created.");
         if (!active) return;
-        objectUrl = URL.createObjectURL(new Blob([body.svg], { type: "image/svg+xml" }));
+        const objectUrl = URL.createObjectURL(new Blob([body.svg], { type: "image/svg+xml" }));
         setImage({ src: objectUrl, proof: { snapshot: body.snapshot, proofReceiptId: body.proofReceiptId, draftKey } });
       } catch (error) {
         if (active) setError(error instanceof Error ? error.message : "Artwork preview could not be created.");
       }
-    }, 350);
+    }, 600);
     return () => {
       active = false;
       clearTimeout(timer);
       controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [draftKey, productSlug, onReady, retry, endpoint]);
 
-  return <div className="grid min-w-0 content-start gap-3">
-    <div className="mx-auto grid w-full max-w-[340px] place-items-center border border-line bg-white" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!image && !error}>
-      {image && image.proof.draftKey === draftKey ? <img
+  return <div className="grid min-w-0 self-start content-start gap-2 bg-white pb-2 md:sticky md:top-0">
+    <div className="relative mx-auto grid w-full max-w-[min(340px,13dvh)] place-items-center border border-line bg-white md:max-w-[min(340px,32dvh)]" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!isCurrent && !error}>
+      {image ? <img
         src={image.src} alt="Your Branded stand print preview" width={1278} height={1949}
         className="block h-auto w-full"
-        onLoad={() => onReady(image.proof)}
+        onLoad={() => { if (isCurrent) onReady(image.proof); }}
         onError={() => { onReady(null); setImage(null); setError("The preview image could not be displayed. Please try again."); }}
       /> : <p className="p-6 text-center text-sm text-muted" role="status">{error || "Preparing your stand preview..."}</p>}
     </div>
+    {image && !isCurrent && !error ? <p role="status" className="text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     {error ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
     <p className="text-center text-xs text-muted">Front artwork · 4.26 × 6.50 in</p>
   </div>;

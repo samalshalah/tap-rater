@@ -9,7 +9,7 @@ import { createBrandedProof, requireProofStorage, reserveBrandedHostedDestinatio
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const rateLimit = await checkPublicRateLimit(request, "setup-proof", "PUBLIC_FORM_RATE_LIMITER");
+  const rateLimit = await checkPublicRateLimit(request, "setup-proof", "PUBLIC_PROOF_RATE_LIMITER");
   if (rateLimit.limited) return rateLimitResponse();
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
@@ -28,6 +28,10 @@ export async function POST(request: Request) {
     }
     body += decoder.decode();
     const input = JSON.parse(body);
+    if (input.action === "reserve") {
+      const reservationLimit = await checkPublicRateLimit(request, "setup-proof-reserve", "PUBLIC_FORM_RATE_LIMITER");
+      if (reservationLimit.limited) return rateLimitResponse();
+    }
     const parsed = checkoutCartSchema.safeParse({ items: [input.item] });
     if (!parsed.success || parsed.data.items[0]?.optionId !== "branded_qr_direct") throw new Error("A valid Branded stand setup is required.");
     const item = parsed.data.items[0];

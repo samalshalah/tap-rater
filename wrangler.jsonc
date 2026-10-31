@@ -71,6 +71,14 @@
       }
     },
     {
+      "name": "PUBLIC_PROOF_RATE_LIMITER",
+      "namespace_id": "724006",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    },
+    {
       "name": "PUBLIC_CHECKOUT_RATE_LIMITER",
       "namespace_id": "724002",
       "simple": {

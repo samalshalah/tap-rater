@@ -24,12 +24,13 @@ function ProofRangeControl({
       </span>
       <input
         type="range"
+        aria-label={label}
         min={min}
         max={max}
         step={5}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="accent-brand"
+        className="min-h-11 w-full accent-brand"
       />
     </label>
   );
@@ -73,7 +74,7 @@ export function ProofControls({
   showBusinessNameOnProof: boolean;
 }) {
   return (
-    <div className="grid content-start gap-4">
+    <div className="grid max-h-[30dvh] content-start gap-4 overflow-y-auto overscroll-contain px-1 md:max-h-none md:overflow-visible">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
         <div>
           <p className="text-sm font-black text-ink">Logo</p>
