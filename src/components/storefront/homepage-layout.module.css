@@ -204,7 +204,18 @@
 .categoryCards :global(.tr-hover-card){aspect-ratio:auto!important;min-height:370px!important}
 .categoryCards>div:first-child :global(.tr-hover-card){display:grid!important;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:1023px){.categoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;display:grid!important}.categoryCards>div{border:0!important}.categoryCards>div>a{display:none!important}.categoryCards>div>div{display:block!important}.categoryCards :global(.tr-hover-card){min-height:340px!important}.categoryCards>div:first-child{grid-column:span 2}.categoryCards :global(.tr-hover-card)>div:first-child{min-height:170px}}
-@media(max-width:600px){.categoryCards{grid-template-columns:1fr!important}.categoryCards>div:first-child{grid-column:auto}.categoryCards>div:first-child :global(.tr-hover-card){display:flex!important}.categoryCards :global(.tr-hover-card){min-height:390px!important}.categoryCards :global(.tr-hover-card)>div:first-child{min-height:230px}}
+@media(max-width:767px){
+  .categoryCards{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  .categoryCards>div:first-child{grid-column:auto}
+  .categoryCards>div:first-child :global(.tr-hover-card){display:flex!important;gap:0}
+  .categoryCards :global(.tr-hover-card){min-height:290px!important;padding:12px;border-radius:12px}
+  .categoryCards :global(.tr-hover-card)>div:first-child{min-height:140px;flex:0 0 140px}
+  .categoryCards :global(.tr-hover-card)>div:first-child img{padding:4px}
+  .categoryCards :global(.tr-hover-card)>div:last-child{padding-top:12px;flex:1}
+  .categoryCards :global(.tr-card-title){font-size:15px;line-height:1.4}
+  .categoryCards :global(.tr-body-sm){font-size:13px;line-height:1.5;margin-top:8px}
+  .categoryCards :global(.tr-hover-card)>div:last-child>span{font-size:12px;padding-top:14px;gap:6px}
+}
 .heroCaption{right:150px;bottom:12px;max-width:calc(100% - 165px)}
 @media(max-width:767px){.heroCaption{right:145px;font-size:9px;max-width:calc(100% - 150px)}}
 
