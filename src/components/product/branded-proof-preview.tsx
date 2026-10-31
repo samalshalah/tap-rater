@@ -55,12 +55,12 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
     <div className="relative mx-auto grid w-full max-w-[340px] place-items-center border border-line bg-white md:max-w-[min(340px,38dvh)]" style={{ aspectRatio: "1278 / 1949" }} aria-busy={!isCurrent && !error}>
       {image ? <img
         src={image.src} alt="Your Branded stand print preview" width={1278} height={1949}
-        className="block h-auto w-full"
+        className="absolute inset-0 block h-full w-full object-contain"
         onLoad={() => { if (isCurrent) onReady(image.proof); }}
         onError={() => { onReady(null); setImage(null); setError("The preview image could not be displayed. Please try again."); }}
-      /> : <p className="p-6 text-center text-sm text-muted" role="status">{error || "Preparing your stand preview..."}</p>}
+      /> : <p className="absolute inset-0 grid place-items-center p-3 text-center text-sm text-muted" role="status">{error || "Preparing your stand preview..."}</p>}
+      {image && !isCurrent && !error ? <p role="status" className="absolute inset-x-0 bottom-0 bg-white/95 px-1 py-2 text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     </div>
-    {image && !isCurrent && !error ? <p role="status" className="text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     {error ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
     <p className="text-center text-[10px] leading-4 text-muted md:text-xs">Front artwork · 4.26 × 6.50 in</p>
   </div>;

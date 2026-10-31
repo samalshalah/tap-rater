@@ -47,14 +47,16 @@ describe("Branded approval and printing", () => {
     for (let index = 0; index < data.length; index += 3) if (data[index] > 220 && data[index + 1] < 60 && data[index + 2] < 60) redPixels++;
     expect(redPixels).toBe(0);
   });
-  it.each(["centered", "adjusted"])("uses matching %s preview and paid artwork, with a decodable destination QR", async (placement) => {
+  it.each(["centered", "adjusted", "smallest", "largest"])("uses matching %s preview and paid artwork, with a decodable destination QR", async (placement) => {
     const { storage, values } = memoryStore();
-    const design = placement === "centered" ? { ...setup, logoOffsetXPercent: 0, logoOffsetYPercent: 0 } : setup;
+    const design = placement === "smallest" ? { ...setup, logoSizePercent: 50, fontSizePercent: 50 }
+      : placement === "largest" ? { ...setup, logoSizePercent: 180, fontSizePercent: 160 }
+      : placement === "centered" ? { ...setup, logoOffsetXPercent: 0, logoOffsetYPercent: 0 } : setup;
     const proof = await createBrandedProof(product, design, storage, resolver);
     expect([...values.values()].every((value) => !value.includes("<svg"))).toBe(true);
     const input = checkoutCartSchema.parse({ items: [{ productId: product.slug, optionId: "branded_qr_direct", quantity: 2, setup: { ...design, ...proof.snapshot, proofReceiptId: proof.proofReceiptId, proofApproved: true, proofApprovalSnapshot: proof.snapshot } }] });
-    expect(input.items[0].setup?.fontSizePercent).toBe(115);
-    expect(input.items[0].setup?.logoSizePercent).toBe(125);
+    expect(input.items[0].setup?.fontSizePercent).toBe(design.fontSizePercent);
+    expect(input.items[0].setup?.logoSizePercent).toBe(design.logoSizePercent);
     const cart = validateCheckoutCart(input.items, [product]);
     expect(cart.ok).toBe(true);
     if (!cart.ok) throw new Error(cart.message);
@@ -82,7 +84,7 @@ describe("Branded approval and printing", () => {
     expect(put).toHaveBeenCalledTimes(1);
   });
 
-  it.each([75, 100, 125, 160])("keeps a centered logo centered at %i percent size", (logoSizePercent) => {
+  it.each([50, 75, 100, 125, 160, 180])("keeps a centered logo centered at %i percent size", (logoSizePercent) => {
     const template = getProductionArtworkTemplate({ productId: product.slug, optionId: "branded_qr_direct", title: product.title, sku: product.sku, quantity: 1, unitAmountCents: 4900, lineSubtotalCents: 4900, setup: { frontTemplateUrl: product.assetSet?.brandedFrontTemplateUrl } })!;
     const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent: 0, logoOffsetYPercent: 0 });
     expect(Math.abs(region.x + region.width / 2 - template.widthPx / 2)).toBeLessThanOrEqual(1.5);

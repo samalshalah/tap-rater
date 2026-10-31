@@ -6,8 +6,8 @@ import { generateProductVariantSku, getProductBaseSku } from "@/lib/product-mode
 import { checkoutCustomerSchema, checkoutShippingAddressSchema } from "@/lib/validators";
 
 export const complimentaryDesignSchema = z.object({
-  fontSizePercent: z.number().int().min(75).max(160).default(100),
-  logoSizePercent: z.number().int().min(75).max(160).default(100),
+  fontSizePercent: z.number().int().min(50).max(160).default(100),
+  logoSizePercent: z.number().int().min(50).max(180).default(100),
   logoOffsetXPercent: z.number().int().min(-20).max(20).default(0),
   logoOffsetYPercent: z.number().int().min(-20).max(20).default(0),
   logoFitMode: z.enum(["contain", "fill"]).default("contain"),

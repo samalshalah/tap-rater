@@ -199,7 +199,7 @@ export function createProductSetupActions({
 
       setLogoBackgroundMode(preparedLogo.trimApplied ? "auto_crop" : "original");
       setLogoFitMode("contain");
-      setProofLogoSizePercent(preparedLogo.trimApplied ? 125 : 115);
+      setProofLogoSizePercent(preparedLogo.trimApplied ? 135 : 125);
       setLogoOffsetXPercent(0);
       setLogoOffsetYPercent(0);
       setLogo({

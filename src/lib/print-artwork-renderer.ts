@@ -62,7 +62,7 @@ export async function renderPrintArtwork(input: {
 }
 
 export function getPrintLogoRegion(region: ArtworkRegion, design: Pick<PrintArtworkDesign, "logoSizePercent" | "logoOffsetXPercent" | "logoOffsetYPercent">): ArtworkRegion {
-  const scale = Math.min(160, Math.max(75, design.logoSizePercent)) / 100;
+  const scale = Math.min(180, Math.max(50, design.logoSizePercent)) / 100;
   const width = Math.round(region.width * scale);
   const height = Math.round(region.height * scale);
   return {
@@ -77,7 +77,7 @@ function outlineBusinessName(name: string, region: ArtworkRegion, percent: numbe
   for (const character of name) {
     if (!font.charToGlyphIndex(character)) throw new Error("The business name contains a character this print font cannot render. Contact us for custom lettering.");
   }
-  const requestedSize = 68 * Math.min(160, Math.max(75, percent)) / 100;
+  const requestedSize = 68 * Math.min(160, Math.max(50, percent)) / 100;
   const measure = font.getPath(name, 0, 0, requestedSize).getBoundingBox();
   const scale = Math.min(1, region.width * 0.96 / Math.max(1, measure.x2 - measure.x1), region.height * 0.9 / Math.max(1, measure.y2 - measure.y1));
   const size = requestedSize * scale;

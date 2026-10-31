@@ -99,9 +99,9 @@ export function ProofControls({
 }) {
   return (
     <>
-    <div className="grid min-w-0 self-center gap-3 md:gap-4">
-      <ProofSizeControl label="Logo size" value={proofLogoSizePercent} min={75} max={160} onChange={onProofLogoSizePercentChange} />
-      <ProofSizeControl label="Text size" value={proofFontSizePercent} min={75} max={135} disabled={!showBusinessNameOnProof} onChange={onProofFontSizePercentChange} />
+    <div className="grid min-w-0 self-start gap-3 md:gap-4">
+      <ProofSizeControl label="Logo size" value={proofLogoSizePercent} min={50} max={180} onChange={onProofLogoSizePercentChange} />
+      <ProofSizeControl label="Text size" value={proofFontSizePercent} min={50} max={160} disabled={!showBusinessNameOnProof} onChange={onProofFontSizePercentChange} />
       <p className="text-center text-[11px] leading-4 text-muted md:text-xs">Adjust in 5% steps.</p>
     </div>
     <details className="group col-span-2 min-w-0 rounded-xl border border-line bg-white">
