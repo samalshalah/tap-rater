@@ -20,7 +20,7 @@ export function CategoryBuyingGuide({ slug, products }: { slug: CatalogCategoryS
           <h2 className="tr-section-title mt-2">{guide.heading}</h2>
           <p className="tr-body mt-5">{guide.introduction}</p>
           <p className="tr-body mt-4">{guide.decision}</p>
-          {options.length > 0 ? <div className="mt-7 grid gap-4 sm:grid-cols-2">
+          {options.length > 0 ? <div className="mt-7 tr-mobile-card-grid grid gap-4 sm:grid-cols-2">
             {options.map((option) => <article className="tr-card p-5" key={option.slug}>
               <h3 className="text-lg font-semibold"><Link className="text-brand underline underline-offset-4" href={`/product/${option.slug}`}>{option.title}</Link></h3>
               <p className="tr-body mt-3">{option.purpose}</p>

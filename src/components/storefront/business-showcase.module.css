@@ -18,3 +18,13 @@
 @media(max-width:1023px){.showcase{grid-template-columns:1.3fr 1fr}.featuredCopy{padding:24px}.featuredCopy .headline{font-size:29px}.businessCard .cardTitle{font-size:13px;padding:15px}}
 @media(max-width:767px){.showcase{grid-template-columns:1fr;min-height:0}.featured{min-height:390px}.featuredCopy{padding:24px 22px}.featuredCopy .headline{font-size:29px}.businessGrid{gap:12px;grid-auto-rows:185px}.businessCard{min-height:185px}.businessCard .cardTitle{font-size:13px;padding:14px;gap:6px}}
 @media(prefers-reduced-motion:reduce){.showcase *{transition:none!important;transform:none!important}}
+
+@media(max-width:767px){
+ .showcase{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .businessGrid{display:contents}
+ .featured,.businessCard{min-width:0;min-height:260px;border-radius:12px}
+ .featuredCopy{padding:14px}
+ .featuredCopy .headline{font-size:18px;line-height:1.35;margin:10px 0 14px}
+ .featuredCopy .label{font-size:9px}
+ .featuredCopy .explore{font-size:11px;padding:10px 8px;gap:6px}
+}

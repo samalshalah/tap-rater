@@ -38,12 +38,12 @@ export default function HowItWorksPage() {
             title="Choose, connect, confirm, and receive."
             body="Personalize your custom stand with your logo, business name and QR code."
           />
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 tr-mobile-card-grid grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {steps.map(([title, body], index) => (
             <ProcessStepCard key={title} description={body} index={index} title={title} />
           ))}
           </div>
-          <div className="my-6 grid gap-4 md:grid-cols-2">
+          <div className="my-6 tr-mobile-card-grid grid gap-4 md:grid-cols-2">
             {flows.map(([title, body, note]) => (
               <article key={title} className="tr-card p-5">
                 <h2 className="text-lg font-semibold text-ink">{title}</h2>

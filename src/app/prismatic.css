@@ -91,3 +91,14 @@ body:has(.tr-prismatic-storefront){overflow-x:clip}
 .tr-prismatic-storefront .tr-header-action{font-size:12px;gap:6px}
 .tr-prismatic-storefront .tr-header-action>svg{width:16px;height:16px}
 .tr-prismatic-storefront .tr-header-cart-count{height:15px;min-width:15px;font-size:9px;line-height:1;top:1px;right:1px;padding-inline:3px}
+
+/* Consistent two-card rows on phones; only applied to browse/information cards. */
+@media(max-width:767px){
+ .tr-prismatic-storefront .tr-mobile-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}
+ .tr-prismatic-storefront .tr-mobile-card-grid>*{min-width:0;overflow-wrap:anywhere}
+ .tr-prismatic-storefront .tr-mobile-card-grid>:is(.tr-card,.tr-process-step-card,.rounded-xl){padding:12px}
+ .tr-prismatic-storefront .tr-mobile-card-grid :is(h2,h3){font-size:16px;line-height:1.4;letter-spacing:-.025em}
+ .tr-prismatic-storefront .tr-mobile-card-grid :is(p,.tr-body,.tr-body-sm){font-size:13px;line-height:1.6}
+ .tr-prismatic-storefront .tr-mobile-card-grid :is(.tr-editorial-link,.tr-button-primary){font-size:12px;white-space:normal}
+ .tr-prismatic-storefront .tr-mobile-card-grid .tr-button-primary{padding-inline:10px}
+}

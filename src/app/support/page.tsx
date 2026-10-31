@@ -35,7 +35,7 @@ export default function SupportPage() {
             title="Choose the support path that matches the question."
             body="Start with the topic closest to the order, setup, shipping, or artwork issue."
           />
-        <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 tr-mobile-card-grid grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {supportLinks.map(([title, body, href]) => (
             <Link key={title} href={href} className="tr-hover-card flex min-h-[180px] flex-col p-5">
               <h2 className="tr-card-title">{title}</h2>

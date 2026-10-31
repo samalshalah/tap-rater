@@ -98,7 +98,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             body="Start with one action. Each stand opens the destination you choose on your customer’s phone."
             cta={{ href: "/shop", label: "Shop all stands" }}
           />
-          {recommendations.length > 0 ? <div className={`mt-8 grid items-start gap-6 md:grid-cols-3 ${styles.recommendations}`}>
+          {recommendations.length > 0 ? <div className={`mt-8 tr-mobile-card-grid grid items-start gap-6 md:grid-cols-3 ${styles.recommendations}`}>
             {recommendations.map((item, index) => <article key={item.productSlug} className="min-w-0 rounded-xl border border-line bg-white p-4 sm:p-5">
               <p className="tr-eyebrow">0{index + 1} / {index === 0 ? "Start here" : "Another way to connect"}</p>
               <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{item.goal}</h3>
@@ -126,7 +126,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
       </SectionShell>
       {guide.placements?.length ? <SectionShell spacing="compact"><div className="tr-container">
         <SectionHeader title={guide.placementTitle || "Where to Place Your Stands"} />
-        <div className="mt-7 grid gap-6 md:grid-cols-3">{guide.placements.map((item, index) => {
+        <div className="mt-7 tr-mobile-card-grid grid gap-6 md:grid-cols-3">{guide.placements.map((item, index) => {
           const product = products.find((candidate) => candidate.slug === item.productSlug);
           return <article key={index}>
             <h3 className="text-xl font-semibold">{item.title}</h3>
@@ -137,7 +137,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
       <SectionShell spacing="compact">
         <div className="tr-container">
           <SectionHeader eyebrow="Make it yours" title="Personalize your stand" body="Select your design on the product page. Available options and current prices appear before you buy." />
-          <div className="mt-7 grid gap-5 md:grid-cols-3">
+          <div className="mt-7 tr-mobile-card-grid grid gap-5 md:grid-cols-3">
             <div className="rounded-xl border border-line p-6"><h3 className="text-xl font-semibold">Branded + QR</h3><p className="tr-body-sm mt-3">Your business name and logo, with NFC and a printed QR code. Visitors can tap or scan. Approve your design before payment.</p></div>
             <div className="rounded-xl border border-line p-6"><h3 className="text-xl font-semibold">Need several links?</h3><p className="tr-body-sm mt-3">Optional hosted Multi-Link puts your website, social profiles, and other links on one editable page. A separate monthly charge applies.</p><Link href="/multi-link" className="tr-editorial-link mt-4">Explore Multi-Link →</Link></div>
           </div>
@@ -145,7 +145,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
       </SectionShell>
       {guide.steps?.length ? <SectionShell spacing="compact"><div className="tr-container">
         <SectionHeader title={guide.howItWorksTitle || "How Your Stand Works"} />
-        <ol className="mt-7 grid gap-6 md:grid-cols-3">{guide.steps.map((item, index) => <li key={index} className="rounded-xl border border-line p-6"><p className="tr-eyebrow">Step {index + 1}</p><h3 className="mt-3 text-xl font-semibold">{item.title}</h3><p className="tr-body-sm mt-3">{item.body}</p></li>)}</ol>
+        <ol className="mt-7 tr-mobile-card-grid grid gap-6 md:grid-cols-3">{guide.steps.map((item, index) => <li key={index} className="rounded-xl border border-line p-6"><p className="tr-eyebrow">Step {index + 1}</p><h3 className="mt-3 text-xl font-semibold">{item.title}</h3><p className="tr-body-sm mt-3">{item.body}</p></li>)}</ol>
         <nav aria-label="More buying guidance" className="mt-6 flex flex-wrap gap-5 text-brand underline"><Link href="/how-it-works">How NFC stands work</Link><Link href="/pricing">Compare pricing</Link><Link href="/stand-bundles">Stands for multiple counters</Link></nav>
         {googleReviewRecommendation ? <p className="tr-body-sm mt-5">Setting up your review stand? Use the <Link href="/review-links-generator" className="font-semibold text-brand underline underline-offset-4">Google review link generator</Link> to find the correct business location, then test the link before ordering.</p> : null}
       </div></SectionShell> : null}

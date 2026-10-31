@@ -38,7 +38,7 @@ export default async function CustomStandsPage() {
             title="A clear branded setup before production."
             body="Branded stands include your logo, business name, and a QR code generated from your destination. Approve the artwork preview before payment. Final print artwork is generated after payment."
           />
-        <div className="mt-8 grid gap-5 md:grid-cols-4">
+        <div className="mt-8 tr-mobile-card-grid grid gap-5 md:grid-cols-4">
           {customBranding.bullets.map((item, index) => (
             <article key={item} className="tr-card p-6">
               <h3 className="tr-card-title">{item}</h3>

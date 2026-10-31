@@ -220,3 +220,10 @@
 @media(max-width:767px){.heroCaption{right:145px;font-size:9px;max-width:calc(100% - 150px)}}
 
 .home [data-home-section="business"]{scroll-margin-top:78px}
+
+@media(max-width:767px){
+ .tapSteps{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .tapSteps .stepImage{height:160px}
+ .home .tapSteps h3{font-size:15px;line-height:1.4}
+ .tapSteps p{font-size:13px;line-height:1.6}
+}

@@ -53,7 +53,7 @@ export default function ReviewLinksGeneratorPage() {
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container">
           <h2 className="tr-section-title">From review link to countertop in three steps</h2>
-          <ol className="mt-8 grid gap-6 md:grid-cols-3">
+          <ol className="mt-8 tr-mobile-card-grid grid gap-6 md:grid-cols-3">
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">1. Find and check your link</h3><p className="tr-body-sm mt-3">Select your business, then open the link to check that it leads to the right Google review form. Copy it for your records.</p></li>
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">2. Choose your stand</h3><p className="tr-body-sm mt-3">Keep it simple with Standard NFC, or choose Branded + QR for your logo, business name and printed review QR code.</p></li>
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">3. Share it in person</h3><p className="tr-body-sm mt-3">Place your stand at reception or checkout. Invite customers to tap or scan and leave honest feedback about their visit.</p></li>

@@ -97,7 +97,7 @@ export default async function MultiLinkPage() {
             title="One permanent page for every customer action."
             body="One tap opens your mobile-friendly link page. Customers choose their next action, while you manage the destinations from your Tap Rater account."
           />
-          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 tr-mobile-card-grid grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {benefits.map((benefit, index) => (
               <article key={benefit} className="tr-card p-5">
                 <p className="tr-eyebrow text-brand">{String(index + 1).padStart(2, "0")}</p>
@@ -122,7 +122,7 @@ export default async function MultiLinkPage() {
       <SectionShell>
         <div className="tr-container">
           <SectionHeader eyebrow="Built for your counter" title="An NFC stand with multiple links, chosen for your business." />
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 tr-mobile-card-grid grid gap-5 md:grid-cols-3">
             {[
               { title: "Restaurants and cafes", body: "Put your digital menu, online ordering, reservations and social profiles on one page. Customers choose the link they need." },
               { title: "Salons and service businesses", body: "Share appointment booking, service information, contact details and social profiles from a stand at reception." },
@@ -135,7 +135,7 @@ export default async function MultiLinkPage() {
       <SectionShell tone="soft">
         <div className="tr-container">
           <SectionHeader eyebrow="Choose your setup" title="Direct link or Multi-Link?" body="Choose the experience you want customers to see after they tap." />
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
+          <div className="mt-8 tr-mobile-card-grid grid gap-5 md:grid-cols-2">
             <article className="tr-card p-6">
               <h3 className="text-xl font-semibold">Direct: one destination</h3>
               <p className="tr-body mt-3">Open one supplied URL, such as a menu or booking page. Direct has no Multi-Link subscription and suits a stand with one clear action.</p>

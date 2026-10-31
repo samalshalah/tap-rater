@@ -26,3 +26,12 @@
 @media(max-width:1023px){.page .hero :global(.tr-page-hero){max-width:calc(100% - 48px);padding:32px}.page .hero :global(.tr-page-hero-copy){width:65%}.collection{grid-template-columns:repeat(2,minmax(0,1fr))}.card:first-child{grid-column:span 2}}
 @media(max-width:767px){.page .hero :global(.tr-page-hero){display:flex;flex-direction:column;align-items:stretch;max-width:calc(100% - 40px);padding:0;min-height:0}.page .hero :global(.tr-page-hero)>figure{position:relative;order:-1;height:270px;z-index:0}.page .hero :global(.tr-page-hero)>figure::after{background:linear-gradient(0deg,#090e36,transparent 40%)}.page .hero :global(.tr-page-hero-copy){width:100%;max-width:none;padding:8px 24px 30px}.page .hero :global(.tr-page-title){font-size:34px!important}.collection{grid-template-columns:1fr;gap:16px}.card,.card:first-child{grid-column:auto;min-height:350px}.card .cardTitle,.card:first-child .cardTitle{font-size:26px}.cardCopy{padding:24px}}
 @media(prefers-reduced-motion:reduce){.card img,.cardTitle svg{transition:none!important;transform:none!important}}
+
+@media(max-width:767px){
+ .collection{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .card,.card:first-child{min-width:0;min-height:300px;grid-column:auto}
+ .cardCopy{padding:14px}
+ .card .cardTitle,.card:first-child .cardTitle{font-size:16px!important;line-height:1.35;gap:6px;display:block;overflow-wrap:normal}
+ .cardTitle svg{display:inline-block;width:14px;height:14px;margin-left:6px}
+ .cardCopy p{font-size:12px;line-height:1.6}
+}

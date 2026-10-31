@@ -7,7 +7,7 @@ export function ProductBuyingGuide({ title, slug, guide }: { title: string; slug
     <SectionShell spacing="compact">
       <div className="tr-container-narrow" data-product-buying-guide={slug}>
         <h2 className="tr-section-title mt-2">Placement & setup</h2>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        <div className="mt-6 tr-mobile-card-grid grid gap-6 sm:grid-cols-2">
           <div>
             <h3 className="text-lg font-semibold">Where to place it</h3>
             <p className="tr-body mt-2">{guide.placement}</p>
