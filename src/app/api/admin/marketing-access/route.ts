@@ -10,7 +10,7 @@ export async function GET(request:Request){
  try{
   const rows=await liveDb()`SELECT c.id,c.email,coalesce(nullif(c.name,''),'Unnamed account') AS name,
    a.status,a.source,a.expires_at,coalesce(a.version,0) AS version,coalesce(a.location_limit,1) AS location_limit,coalesce(a.unlimited_locations,false) AS unlimited_locations,
-   coalesce(a.ai_monthly_limit,100) AS ai_monthly_limit,coalesce(a.heatmap_monthly_points,300) AS heatmap_monthly_points,
+   coalesce(a.ai_monthly_limit,1000) AS ai_monthly_limit,coalesce(a.heatmap_monthly_points,300) AS heatmap_monthly_points,
    coalesce((SELECT jsonb_agg(jsonb_build_object('id',m.business_id,'enabled',m.enabled,
     'aiUsed',coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u WHERE u.business_id=m.business_id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0),
     'pointsUsed',coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u WHERE u.business_id=m.business_id AND u.service='heatmap' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0)) ORDER BY m.created_at,m.business_id)

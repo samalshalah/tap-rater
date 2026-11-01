@@ -49,7 +49,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
    expect(activation.ok).toBe(true);
    await expect(prepareMarketingBuyer(email,'QA takeover')).rejects.toThrow('Sign in');
    const [access]=await sql`SELECT * FROM customer_marketing_access WHERE customer_id=${c.id}`;
-   expect(access).toMatchObject({status:'active',source:'paid',location_limit:2,ai_monthly_limit:310,heatmap_monthly_points:588});
+   expect(access).toMatchObject({status:'active',source:'paid',location_limit:2,ai_monthly_limit:1000,heatmap_monthly_points:588});
    const locations=await sql`INSERT INTO businesses(customer_id,business_name) VALUES(${c.id},'QA A'),(${c.id},'QA B'),(${c.id},'QA C') RETURNING id`;
    expect((await sql`SELECT claim_marketing_location(${locations[0].id}::uuid,${c.id}::uuid) AS ok`)[0].ok).toBe(true);
    expect((await sql`SELECT claim_marketing_location(${locations[1].id}::uuid,${c.id}::uuid) AS ok`)[0].ok).toBe(true);

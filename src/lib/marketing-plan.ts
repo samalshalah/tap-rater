@@ -3,10 +3,10 @@ import type Stripe from 'stripe';
 
 export const marketingPurchaseSchema=z.object({cadence:z.literal('month'),locations:z.number().int().min(1).max(10),acceptedTerms:z.literal(true)}).strict();
 export type MarketingPurchase=z.infer<typeof marketingPurchaseSchema>;
-export const marketingPlan={name:'Tap Rater Growth',monthlyCents:2900,replies:300,fixes:10,keywords:3,points:588,updates:4} as const;
+export const marketingPlan={name:'Tap Rater Growth',monthlyCents:2900,replies:1000,fixes:10,keywords:3,points:588,updates:4} as const;
 export function marketingAmount(p:Pick<MarketingPurchase,'cadence'|'locations'>){return marketingPlan.monthlyCents*p.locations;}
 export function marketingLineItem(p:MarketingPurchase):Stripe.Checkout.SessionCreateParams.LineItem {
- return {quantity:p.locations,price_data:{currency:'usd',unit_amount:2900,recurring:{interval:p.cadence},product_data:{name:marketingPlan.name,description:'Per location: 300 review reply drafts, 10 GBP improvement drafts and 3 keywords with 4 ranking updates monthly. Publishing disabled.',metadata:{tap_rater:'marketing_growth_v1'}}}};
+ return {quantity:p.locations,price_data:{currency:'usd',unit_amount:2900,recurring:{interval:p.cadence},product_data:{name:marketingPlan.name,description:'Per location: 1,000 AI review reply generations monthly. Automatic posting for 4-5 stars; 1-3-star drafts for manual submission.',metadata:{tap_rater:'marketing_growth_v1'}}}};
 }
 export function addMarketingToCheckout(params:Stripe.Checkout.SessionCreateParams,p:MarketingPurchase,customerId:string,attempt:string){
  if(params.mode==='subscription')throw Error('Buy the marketing package separately from a Multi-Link subscription.');

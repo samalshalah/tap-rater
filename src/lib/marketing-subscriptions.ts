@@ -5,7 +5,7 @@ import {getStripeClient,getStripeMode} from './checkout';
 import {liveDb} from './google-business/live-reviews';
 import {getSupabaseAdmin} from './db';
 import {withStripeResourceLock} from './stripe-processing';
-import {addMarketingToCheckout,marketingPurchaseSchema,type MarketingPurchase} from './marketing-plan';
+import {addMarketingToCheckout,marketingPlan,marketingPurchaseSchema,type MarketingPurchase} from './marketing-plan';
 import {createCustomerActivationToken} from './customer-account';
 import {sendCustomerActivationEmail} from './hosted-setup-email';
 
@@ -98,8 +98,8 @@ export async function syncMarketingSubscription(event:Stripe.Event){
   if(mode==='test'&&process.env.MARKETING_TEST_ENTITLEMENTS!=='true')throw Error('Test entitlements require an isolated test database.');
   await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${sub.cancel_at_period_end},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), access AS (
    INSERT INTO customer_marketing_access(customer_id,status,source,expires_at,location_limit,ai_monthly_limit,heatmap_monthly_points)
-   SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},310,588 FROM saved
-   ON CONFLICT(customer_id) DO UPDATE SET status=EXCLUDED.status,source='paid',expires_at=EXCLUDED.expires_at,location_limit=EXCLUDED.location_limit,ai_monthly_limit=310,heatmap_monthly_points=588,version=customer_marketing_access.version+1,updated_at=now()
+   SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},${marketingPlan.replies},588 FROM saved
+   ON CONFLICT(customer_id) DO UPDATE SET status=EXCLUDED.status,source='paid',expires_at=EXCLUDED.expires_at,location_limit=EXCLUDED.location_limit,ai_monthly_limit=EXCLUDED.ai_monthly_limit,heatmap_monthly_points=588,version=customer_marketing_access.version+1,updated_at=now()
   ) SELECT customer_id FROM saved`;
   // A downgrade never exposes more locations than were paid for. Existing content is preserved.
   await sql`UPDATE marketing_location_access SET enabled=false WHERE business_id IN (SELECT business_id FROM marketing_location_access WHERE customer_id=${account}::uuid AND enabled ORDER BY created_at,business_id OFFSET ${state.locations})`;
