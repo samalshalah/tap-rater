@@ -15,7 +15,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  const rows=await sql`UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz
  WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
- AND (${Boolean(link.draft_low_stars&&link.review_knowledge_approved_at)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
+ AND (${Boolean(link.draft_low_stars)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
  AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
@@ -34,7 +34,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz
    AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
    AND coalesce(r.data->'reviewReply'->>'comment','')='' AND r.business_id=l.business_id AND l.enabled AND l.ai_consent
-   AND l.settings_version=${link.settings_version} AND (l.draft_low_stars AND l.review_knowledge_approved_at IS NOT NULL OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
+   AND l.settings_version=${link.settings_version} AND (l.draft_low_stars OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
   await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId}`;
   await resolveReviewWorkerAlert(sql,businessId,'draft');

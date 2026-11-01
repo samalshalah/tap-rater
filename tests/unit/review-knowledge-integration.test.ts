@@ -42,7 +42,7 @@ describe.skipIf(!url)('location AI knowledge in isolated database',()=>{
    expect((await sql`SELECT draft_low_stars FROM google_review_links WHERE business_id=${b.id}`)[0].draft_low_stars).toBe(false);
    const approvedSnapshot=await reviewKnowledgeSnapshot(actor,a.id,sql);
    await saveReviewKnowledge(actor,{businessId:a.id,version:approvedSnapshot.version,knowledge:{...knowledge,policies:'Updated policy'}},sql);
-   expect((await sql`SELECT draft_low_stars,review_knowledge_approved_at FROM google_review_links WHERE business_id=${a.id}`)[0]).toEqual({draft_low_stars:false,review_knowledge_approved_at:null});
+   expect((await sql`SELECT draft_low_stars,review_knowledge_approved_at FROM google_review_links WHERE business_id=${a.id}`)[0]).toEqual({draft_low_stars:true,review_knowledge_approved_at:null});
    const [saved]=await sql`SELECT auto_enabled,profile_ai_enabled FROM google_review_links WHERE business_id=${a.id}`;expect(saved).toEqual({auto_enabled:false,profile_ai_enabled:false});
    expect((await sql`SELECT draft FROM google_profile_drafts WHERE business_id=${a.id}`)[0].draft.name).toBe('Unsaved public change');
   }finally{await sql`DELETE FROM businesses WHERE customer_id=${c.id}`;await sql`DELETE FROM google_business_connections WHERE owner=${email}`;await sql`DELETE FROM customers WHERE id=${c.id}`;}

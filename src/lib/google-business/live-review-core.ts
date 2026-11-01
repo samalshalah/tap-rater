@@ -79,8 +79,8 @@ export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
 
 export async function queueHistoricalPositives(businessId:string,sql=liveDb()){
  await sql`UPDATE google_live_reviews r SET old_reply_requested_at=now() FROM google_review_links l
- WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.consent_at IS NOT NULL
+ WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND l.enabled AND l.ai_consent
  AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.old_reply_requested_at IS NULL AND r.scheduled_at IS NULL AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
- AND r.fetched_at>now()-interval '30 days' AND coalesce(r.data->'reviewReply'->>'comment','')='' AND NULLIF(r.data->>'createTime','')::timestamptz<=l.consent_at
- AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))`;
+ AND r.fetched_at>now()-interval '30 days' AND coalesce(r.data->'reviewReply'->>'comment','')='' AND NULLIF(r.data->>'createTime','')::timestamptz<=coalesce(l.consent_at,now())
+ AND ((l.auto_enabled AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))) OR (l.draft_low_stars AND r.data->>'starRating' IN ('ONE','TWO','THREE')))`;
 }

@@ -19,10 +19,12 @@ it('saves the combined positive toggle in one click using the latest saved delay
  const body=JSON.parse(fetcher.mock.calls[1][1].body);expect(body.action).toBe('settings');expect(body.settings).toMatchObject({businessId:'one',four:true,five:true,autoEnabled:true,lowStars:false,delayMinutes:360,version:8,confirmAutomaticPosting:true});
  expect(saved).toHaveBeenCalledOnce();expect(text(render())).not.toContain('Enable autopilot');expect(text(render())).not.toContain('hours delay');
 });
-it('requires knowledge approval before turning low-star drafts on',async()=>{
+it('enables low-star drafts without a separate knowledge approval',async()=>{
  await find(render(),n=>n.type===Toggle&&n.props.label==='1–3-star drafts').props.onChange();
- const popup=find(render(),n=>n.type===KnowledgePopup);expect(popup.props.approveLowStars).toBe(true);expect(popup.props.businessId).toBe('one');
- expect(fetcher).toHaveBeenCalledTimes(1);expect(saved).not.toHaveBeenCalled();popup.props.onClose();expect(find(render(),n=>n.type===KnowledgePopup)).toBeFalsy();
+ expect(find(render(),n=>n.type===KnowledgePopup)).toBeFalsy();
+ expect(fetcher).toHaveBeenCalledTimes(2);
+ expect(JSON.parse(fetcher.mock.calls[1][1].body).settings).toMatchObject({lowStars:true,autoEnabled:false});
+ expect(saved).toHaveBeenCalledOnce();
 });
 it('shows save errors without reporting success or changing the switch',async()=>{
  fetcher.mockResolvedValueOnce({ok:true,json:async()=>({workspaces:[workspace]})}).mockResolvedValueOnce({ok:false,json:async()=>({error:'Settings changed. Please reload.'})});

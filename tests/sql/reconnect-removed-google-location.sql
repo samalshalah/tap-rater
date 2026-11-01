@@ -50,8 +50,8 @@ BEGIN
     INSERT INTO google_review_links(business_id,customer_id,owner,google_subject,parent,title,ai_consent)
       VALUES(replacement,first_customer,verified_owner,'verified',new_parent,'Verified',true)
       ON CONFLICT (business_id) DO NOTHING;
-    IF NOT EXISTS(SELECT 1 FROM google_review_links WHERE business_id=replacement AND enabled AND NOT ai_consent
-         AND NOT auto_enabled AND NOT auto_four AND NOT auto_five AND NOT draft_low_stars AND consent_at IS NULL)
+    IF NOT EXISTS(SELECT 1 FROM google_review_links WHERE business_id=replacement AND enabled AND ai_consent
+         AND auto_enabled AND auto_four AND auto_five AND draft_low_stars AND consent_at IS NOT NULL)
       OR NOT EXISTS(SELECT 1 FROM google_review_links WHERE business_id=removed AND NOT enabled AND reconnected_to=replacement)
       OR NOT EXISTS(SELECT 1 FROM google_live_reviews WHERE id=review_id AND business_id=replacement AND draft='Saved draft'
          AND resource=new_parent || '/reviews/r1' AND data->>'name'=resource AND auto_schedule_cancelled AND scheduled_at IS NULL)
