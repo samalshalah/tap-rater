@@ -63,6 +63,7 @@ export function ProductSetupDialogContent({
   setProofFontSizePercent,
   setProofLogoSizePercent,
   showBusinessNameOnProof,
+  printBusinessName,
   setShowBusinessNameOnProof,
   proofIsReady,
   proofIsApproved,
@@ -147,23 +148,25 @@ export function ProductSetupDialogContent({
               {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-ink">Logo + business name</p>
+                    <p className="text-sm font-semibold text-ink">Stand design</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Add your logo and business name for the stand.
+                      Upload your logo. You can also print your business name.
                     </p>
                   </div>
 
-                  <label className="grid gap-2 text-sm font-semibold text-ink">
-                    Business name
-                    <input
-                      className="tr-input"
-                      value={businessName}
-                      onChange={(event) => {
-                        setBusinessName(event.target.value);
-                      }}
-                      placeholder="Your business name"
-                    />
+                  <label className="flex min-h-11 items-center gap-2 text-sm font-semibold text-ink">
+                    <input type="checkbox" checked={printBusinessName} onChange={event => setShowBusinessNameOnProof(event.target.checked)} />
+                    Add business name to stand
                   </label>
+                  {printBusinessName && (selectedLinkExperience === "multilink" ? (
+                    <p className="text-sm text-muted">{businessName}</p>
+                  ) : (
+                    <label className="grid gap-2 text-sm font-semibold text-ink">
+                      Business name (optional)
+                      <input className="tr-input" value={businessName}
+                        onChange={event => setBusinessName(event.target.value)} placeholder="Your business name" />
+                    </label>
+                  ))}
 
                   <div className="tr-panel-muted grid gap-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -236,7 +239,7 @@ export function ProductSetupDialogContent({
                 <div className="grid gap-3">
                   <div>
                     <p className="text-sm font-semibold text-ink">Approve your stand</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">{businessName} · Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-start gap-x-3 gap-y-4 md:grid-cols-[minmax(0,1fr)_260px] md:gap-6">
                     <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
@@ -247,7 +250,7 @@ export function ProductSetupDialogContent({
                       onLogoBackgroundModeChange={setLogoBackgroundMode} onLogoFitModeChange={setLogoFitMode}
                       onLogoOffsetXPercentChange={setLogoOffsetXPercent} onLogoOffsetYPercentChange={setLogoOffsetYPercent}
                       onProofFontSizePercentChange={setProofFontSizePercent} onProofLogoSizePercentChange={setProofLogoSizePercent}
-                      showBusinessNameOnProof={showBusinessNameOnProof} onShowBusinessNameOnProofChange={setShowBusinessNameOnProof}
+                      showBusinessNameOnProof={showBusinessNameOnProof}
                       isUploadingLogo={isUploadingLogo} onUploadLogo={(file) => uploadLogo(file)}
                     /> : null}
                   </div>

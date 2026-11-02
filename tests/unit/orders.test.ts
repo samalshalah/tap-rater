@@ -360,7 +360,6 @@ describe("orders repository", () => {
     expect(summary.statusLabel).toBe("Needs setup review");
     expect(summary.statusTone).toBe("warning");
     expect(summary.warnings).toEqual([
-      "Missing business name",
       "Missing logo",
       "Missing branded front template",
       "Proof not confirmed",

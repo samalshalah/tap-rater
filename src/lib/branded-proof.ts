@@ -59,7 +59,7 @@ export async function createBrandedProof(product: MigratedProduct, setup: NonNul
     baseTemplateContentHash: undefined,
     logoContentHash: undefined
   };
-  if (!canonicalSetup.businessName?.trim()) throw new Error("Enter the business name first.");
+  if (hosted && !canonicalSetup.businessName?.trim()) throw new Error("Enter a business name for your Multi-Link page.");
   const item: OrderLineItem = { productId: product.slug, optionId: "branded_qr_direct", title: product.title, sku: product.sku, quantity: 1, unitAmountCents: 0, lineSubtotalCents: 0, setup: canonicalSetup };
   const template = getProductionArtworkTemplate(item);
   if (!template) throw new Error("A Branded print template is not available for this product.");

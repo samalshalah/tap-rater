@@ -227,7 +227,7 @@ export async function composeProductionArtworkDocument(
   generatedAt: string,
   assetResolver: ProductionArtworkAssetResolver = defaultProductionArtworkAssetResolver
 ) {
-  const businessName = readSetupString(item.setup, "businessName") ?? readProofPreviewString(item.setup, "businessName");
+  const businessName = readSetupString(item.setup, "businessName") ?? readProofPreviewString(item.setup, "businessName") ?? "";
   const logoHref = readSetupString(item.setup, "logoMediaUrl") ?? readProofPreviewString(item.setup, "logoMediaUrl");
   const qrTargetUrl = readSetupString(item.setup, "qrTargetUrl") ?? readSetupString(item.setup, "generatedQrValue");
   const fontSizePercent = readSetupNumber(item.setup, "fontSizePercent") ?? readProofPreviewNumber(item.setup, "fontSizePercent") ?? 100;
@@ -237,7 +237,6 @@ export async function composeProductionArtworkDocument(
   const logoOffsetYPercent = readSetupNumber(item.setup, "logoOffsetYPercent") ?? readProofPreviewNumber(item.setup, "logoOffsetYPercent") ?? 0;
   const showBusinessNameOnProof = (readSetupOptionalBoolean(item.setup, "showBusinessNameOnProof") ?? readProofPreviewBoolean(item.setup, "showBusinessNameOnProof")) !== false;
 
-  if (!businessName) throw new Error("Business name is missing.");
   if (!logoHref) throw new Error("Logo media URL is missing.");
   if (!qrTargetUrl) throw new Error("QR target URL is missing.");
 
@@ -256,7 +255,7 @@ export async function composeProductionArtworkDocument(
 
   const svg = await renderPrintArtwork({
     template,
-    design: { businessName, qrTargetUrl, fontSizePercent, logoSizePercent, logoFitMode, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: showBusinessNameOnProof },
+    design: { businessName, qrTargetUrl, fontSizePercent, logoSizePercent, logoFitMode, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: Boolean(businessName.trim()) && showBusinessNameOnProof },
     templateDataUri: baseTemplateAsset.dataUri,
     logoDataUri: logoAsset.dataUri,
     title: `${item.title} production artwork`,

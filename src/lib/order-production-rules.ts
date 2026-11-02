@@ -210,7 +210,7 @@ export function getOrderLineItemProductionSummary(item: OrderLineItem): OrderLin
   const proofConfirmed = item.proofApproved === true;
 
   if (!destinationUrl) warnings.push("Missing destination URL");
-  if (!businessName) warnings.push(fulfillmentKind === "custom" ? "Missing business name/design name" : "Missing business name");
+  if (!businessName && fulfillmentKind === "custom") warnings.push("Missing business name/design name");
   if (!logoReference) warnings.push(fulfillmentKind === "custom" ? "Missing logo or design asset" : "Missing logo");
   if (fulfillmentKind === "branded" && !generatedQrValue) warnings.push("Missing QR value");
   if (fulfillmentKind === "branded" && !qrTargetUrl) warnings.push("Missing QR target URL");

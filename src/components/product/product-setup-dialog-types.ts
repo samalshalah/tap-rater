@@ -61,6 +61,7 @@ export type ProductSetupDialogProps = {
   setProofFontSizePercent: Dispatch<SetStateAction<number>>;
   setProofLogoSizePercent: Dispatch<SetStateAction<number>>;
   showBusinessNameOnProof: boolean;
+  printBusinessName: boolean;
   setShowBusinessNameOnProof: Dispatch<SetStateAction<boolean>>;
   proofIsReady: boolean;
   proofIsApproved: boolean;

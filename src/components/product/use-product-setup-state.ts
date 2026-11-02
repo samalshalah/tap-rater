@@ -64,7 +64,8 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
 
-  const [showBusinessNameOnProof, setShowBusinessNameOnProof] = useState(true);
+  const [printBusinessName, setShowBusinessNameOnProof] = useState(false);
+  const showBusinessNameOnProof = Boolean(businessName.trim()) && printBusinessName;
 
   const [logoBackgroundMode, setLogoBackgroundMode] = useState<LogoBackgroundMode>("auto_crop");
 
@@ -134,12 +135,13 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const selectedQuantity = quantityEnabled ? quantity : 1;
 
+  const setupBusinessName = selectedLinkExperience === "multilink" || showBusinessNameOnProof ? businessName.trim() || undefined : undefined;
   const proofSetup: NonNullable<CartItem["setup"]> = {
     productSlug: product.slug, optionCode: "branded_qr_direct",
     serviceAddon: selectedLinkExperience === "multilink" ? hostedMultiLinkServiceAddon.code : undefined,
     hostedReservationId: selectedLinkExperience === "multilink" ? hostedReservation?.id : undefined,
     destinationUrl: selectedLinkExperience === "direct" ? destinationUrl.trim() : undefined,
-    businessName: businessName.trim(), logoStorageKey: selectedLogoStorageKey, logoMediaUrl: selectedLogoMediaUrl,
+    businessName: setupBusinessName, logoStorageKey: selectedLogoStorageKey, logoMediaUrl: selectedLogoMediaUrl,
     generatedQrValue: proofQrValue, qrTargetUrl: proofQrValue, frontTemplateUrl: proofFrontTemplateUrl,
     fontSizePercent: proofFontSizePercent, logoSizePercent: proofLogoSizePercent,
     showBusinessNameOnProof, logoBackgroundMode, logoFitMode, logoOffsetXPercent, logoOffsetYPercent
@@ -195,6 +197,7 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
     proofLogoSizePercent,
     setProofLogoSizePercent,
     showBusinessNameOnProof,
+    printBusinessName,
     setShowBusinessNameOnProof,
     logoBackgroundMode,
     setLogoBackgroundMode,

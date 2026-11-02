@@ -47,12 +47,14 @@ describe("Branded approval and printing", () => {
     for (let index = 0; index < data.length; index += 3) if (data[index] > 220 && data[index + 1] < 60 && data[index + 2] < 60) redPixels++;
     expect(redPixels).toBe(0);
   });
-  it.each(["centered", "adjusted", "smallest", "largest"])("uses matching %s preview and paid artwork, with a decodable destination QR", async (placement) => {
+  it.each(["centered", "adjusted", "smallest", "largest", "logo only"])("uses matching %s preview and paid artwork, with a decodable destination QR", async (placement) => {
     const { storage, values } = memoryStore();
-    const design = placement === "smallest" ? { ...setup, logoSizePercent: 50, fontSizePercent: 50 }
+    const design = placement === "logo only" ? { ...setup, businessName: undefined, showBusinessNameOnProof: false }
+      : placement === "smallest" ? { ...setup, logoSizePercent: 50, fontSizePercent: 50 }
       : placement === "largest" ? { ...setup, logoSizePercent: 180, fontSizePercent: 160 }
       : placement === "centered" ? { ...setup, logoOffsetXPercent: 0, logoOffsetYPercent: 0 } : setup;
     const proof = await createBrandedProof(product, design, storage, resolver);
+    if (placement === "logo only") expect(proof.svg).not.toContain("data-business-name=");
     expect([...values.values()].every((value) => !value.includes("<svg"))).toBe(true);
     const input = checkoutCartSchema.parse({ items: [{ productId: product.slug, optionId: "branded_qr_direct", quantity: 2, setup: { ...design, ...proof.snapshot, proofReceiptId: proof.proofReceiptId, proofApproved: true, proofApprovalSnapshot: proof.snapshot } }] });
     expect(input.items[0].setup?.fontSizePercent).toBe(design.fontSizePercent);

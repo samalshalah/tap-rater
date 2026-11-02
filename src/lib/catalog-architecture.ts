@@ -363,7 +363,7 @@ export const brandedQrDirectProductOption: ProductOption = {
   requiresDestinationUrl: true,
   hasQr: true,
   requiresLogo: true,
-  requiresBusinessName: true,
+  requiresBusinessName: false,
   requiresDesignStep: true,
   requiresFrontProof: true,
   requiresSubscription: false,

@@ -35,6 +35,7 @@ export function createProductSetupActions({
   proofFontSizePercent,
   proofLogoSizePercent,
   setProofLogoSizePercent,
+  proofSetup,
   showBusinessNameOnProof,
   logoBackgroundMode,
   setLogoBackgroundMode,
@@ -236,10 +237,6 @@ export function createProductSetupActions({
   function continueFromDesign() {
     setError("");
 
-    if (!businessName.trim()) {
-      setError("Enter the business name that should appear on the stand.");
-      return;
-    }
 
     if (!logo) {
       setError("Upload your business logo before adding this stand to cart. If you need help, contact Tap Rater and upload your file there.");
@@ -310,11 +307,6 @@ export function createProductSetupActions({
         setStep("confirmation");
         return;
       }
-      if (!businessName.trim()) {
-        setError("Enter the business name that should appear on the stand.");
-        setStep("design");
-        return;
-      }
 
       if (!logo) {
         setError("Upload your business logo before adding this stand to cart.");
@@ -361,7 +353,7 @@ export function createProductSetupActions({
         platformSlug: product.primaryPlatformSlug,
         googlePlaceId: googlePlaceId || undefined,
         googlePlaceName: googlePlaceName || undefined,
-        businessName: selectedOption.requiresBusinessName || selectedLinkExperience === "multilink" ? businessName.trim() : undefined,
+        businessName: proofSetup.businessName,
         logoFileName: logoBackgroundMode === "original" ? logo?.originalFilename ?? logo?.filename : logo?.filename,
         logoMediaUrl: selectedLogoMediaUrl,
         logoStorageKey: selectedLogoStorageKey,

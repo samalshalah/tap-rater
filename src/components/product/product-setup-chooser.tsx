@@ -48,6 +48,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
     proofLogoSizePercent,
     setProofLogoSizePercent,
     showBusinessNameOnProof,
+    printBusinessName,
     setShowBusinessNameOnProof,
     logoBackgroundMode,
     setLogoBackgroundMode,
@@ -345,6 +346,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
               setProofFontSizePercent={setProofFontSizePercent}
               setProofLogoSizePercent={setProofLogoSizePercent}
               showBusinessNameOnProof={showBusinessNameOnProof}
+              printBusinessName={printBusinessName}
               setShowBusinessNameOnProof={setShowBusinessNameOnProof}
               proofIsReady={proofIsReady}
               proofIsApproved={proofIsApproved}

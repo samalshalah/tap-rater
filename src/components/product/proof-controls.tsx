@@ -71,7 +71,6 @@ export function ProofControls({
   onLogoFitModeChange,
   onLogoOffsetXPercentChange,
   onLogoOffsetYPercentChange,
-  onShowBusinessNameOnProofChange,
   onUploadLogo,
   onProofFontSizePercentChange,
   onProofLogoSizePercentChange,
@@ -89,7 +88,6 @@ export function ProofControls({
   onLogoFitModeChange: (value: LogoFitMode) => void;
   onLogoOffsetXPercentChange: (value: number) => void;
   onLogoOffsetYPercentChange: (value: number) => void;
-  onShowBusinessNameOnProofChange: (value: boolean) => void;
   onUploadLogo: (file: File | undefined) => void;
   onProofFontSizePercentChange: (value: number) => void;
   onProofLogoSizePercentChange: (value: number) => void;
@@ -130,20 +128,7 @@ export function ProofControls({
           />
         </label>
       </div>
-      <label className="flex items-start gap-3 rounded-lg border border-line bg-white p-3 text-sm font-semibold text-ink">
-        <input
-          className="mt-1 h-4 w-4 accent-brand"
-          type="checkbox"
-          checked={showBusinessNameOnProof}
-          onChange={(event) => onShowBusinessNameOnProofChange(event.target.checked)}
-        />
-        <span>
-          Show business name text on the stand
-          <span className="mt-1 block text-xs font-medium leading-5 text-muted">
-            Turn off when the uploaded logo already includes the business name.
-          </span>
-        </span>
-      </label>
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <ProofSegmentedControl
           label="Logo background"

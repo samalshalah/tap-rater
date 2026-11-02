@@ -60,7 +60,7 @@ describe("catalog architecture", () => {
       priceCents: 4900,
       hasQr: true,
       requiresLogo: true,
-      requiresBusinessName: true,
+      requiresBusinessName: false,
       requiresDesignStep: true,
       requiresFrontProof: true
     });

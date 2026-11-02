@@ -319,7 +319,7 @@ function isValidCheckoutSetup(option: PurchaseOption, setup: NonNullable<CartIte
     return false;
   }
 
-  if (option.requiresBusinessName && !setup.businessName) {
+  if ((option.requiresBusinessName || hasMultiLinkAddon) && !setup.businessName) {
     return false;
   }
 
