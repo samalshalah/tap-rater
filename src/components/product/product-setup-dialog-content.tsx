@@ -169,7 +169,7 @@ export function ProductSetupDialogContent({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-ink">Business logo</p>
-                        <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. SVG is not accepted here.</p>
+                        <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. Each side must be 64 to 12,000 pixels.</p>
                       </div>
                       {logo ? <span className="tr-pill-brand">Logo uploaded</span> : null}
                     </div>
@@ -182,7 +182,11 @@ export function ProductSetupDialogContent({
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
                         disabled={isUploadingLogo}
-                        onChange={(event) => uploadLogo(event.target.files?.[0])}
+                        onChange={(event) => {
+                          const file = event.currentTarget.files?.[0];
+                          event.currentTarget.value = "";
+                          void uploadLogo(file);
+                        }}
                       />
                     </label>
                   </div>

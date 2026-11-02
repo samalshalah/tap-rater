@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     const asset = await uploadProductMedia({
       file,
       productSlug: `customer-setup-${productSlug || "logo"}`,
-      role: "center_asset"
+      role: "center_asset",
+      // A portrait logo can have the same proportions as a stand.
+      rejectStandShapedArtwork: false
     });
 
     return NextResponse.json({

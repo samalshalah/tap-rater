@@ -157,11 +157,13 @@ export async function getProductMediaObject(key: string) {
 export async function uploadProductMedia({
   file,
   productSlug,
-  role
+  role,
+  rejectStandShapedArtwork = true
 }: {
   file: File;
   productSlug: string;
   role: ProductMediaRole;
+  rejectStandShapedArtwork?: boolean;
 }): Promise<UploadedProductMedia> {
   if (!file || file.size <= 0) {
     throw new ProductMediaStorageError("Choose an image file to upload.", 400);
@@ -171,26 +173,23 @@ export async function uploadProductMedia({
     throw new ProductMediaStorageError("Image must be 10 MB or smaller.", 400);
   }
 
-  if (!allowedImageTypes.has(file.type)) {
-    throw new ProductMediaStorageError("Only PNG, JPG, and WEBP images are supported for uploads.", 400);
-  }
-
   const bytes = await file.arrayBuffer();
-  const dimensions = readImageDimensions(bytes, file.type);
-
-  if (!dimensions) {
-    throw new ProductMediaStorageError("Image dimensions could not be validated.", 400);
+  // Browsers often infer file.type from the extension, even when the bytes differ.
+  const image = inspectUploadedImage(bytes);
+  if (!image) {
+    throw new ProductMediaStorageError("This file could not be read as an image. Export the logo as PNG, JPG, or WEBP and try again.", 400);
   }
+  const { contentType, dimensions } = image;
 
   if (dimensions.width < minProductMediaDimensionPixels || dimensions.height < minProductMediaDimensionPixels) {
     throw new ProductMediaStorageError("Image must be at least 64 by 64 pixels.", 400);
   }
 
   if (dimensions.width > maxProductMediaDimensionPixels || dimensions.height > maxProductMediaDimensionPixels) {
-    throw new ProductMediaStorageError("Image dimensions are too large.", 400);
+    throw new ProductMediaStorageError("Image must be 12,000 pixels or smaller on each side.", 400);
   }
 
-  if (role === "center_asset" && isLikelyFullStandArtworkUpload(dimensions)) {
+  if (rejectStandShapedArtwork && role === "center_asset" && isLikelyFullStandArtworkUpload(dimensions)) {
     throw new ProductMediaStorageError("Upload the customer logo only, not a full stand proof or template image.", 400);
   }
 
@@ -200,12 +199,16 @@ export async function uploadProductMedia({
   }
 
   const safeProductSlug = slugSegment(productSlug || "draft-product");
-  const safeFilename = fileNameSegment(file.name || "product-image");
+  const extension = contentType === "image/jpeg" ? "jpg" : contentType.slice("image/".length);
+  const name = fileNameSegment(file.name || "product-image");
+  const safeFilename = name.endsWith(`.${extension}`) || (extension === "jpg" && name.endsWith(".jpeg"))
+    ? name
+    : `${name.replace(/\.[^.]*$/, "") || "product-image"}.${extension}`;
   const storageKey = `products/${safeProductSlug}/${role}/${Date.now()}-${crypto.randomUUID()}-${safeFilename}`;
 
   await bucket.put(storageKey, bytes, {
     httpMetadata: {
-      contentType: file.type,
+      contentType,
       cacheControl: "public, max-age=31536000, immutable"
     },
     customMetadata: {
@@ -218,7 +221,7 @@ export async function uploadProductMedia({
     url: getProductMediaUrl(storageKey),
     storageKey,
     filename: safeFilename,
-    contentType: file.type,
+    contentType,
     sizeBytes: file.size,
     width: dimensions.width,
     height: dimensions.height
@@ -262,6 +265,14 @@ function fileNameSegment(value: string) {
   return cleaned.slice(0, 120) || "product-image";
 }
 
+export function inspectUploadedImage(bytes: ArrayBuffer) {
+  for (const contentType of allowedImageTypes) {
+    const dimensions = readImageDimensions(bytes, contentType);
+    if (dimensions) return { contentType, dimensions };
+  }
+  return null;
+}
+
 export function readImageDimensions(bytes: ArrayBuffer, contentType: string) {
   if (contentType === "image/png") {
     return readPngDimensions(bytes);
@@ -296,8 +307,9 @@ function readJpegDimensions(bytes: ArrayBuffer) {
   if (view.getUint8(0) !== 0xff || view.getUint8(1) !== 0xd8) return null;
 
   let offset = 2;
-  while (offset < view.byteLength) {
+  while (offset + 1 < view.byteLength) {
     if (view.getUint8(offset) !== 0xff) return null;
+    if (view.getUint8(offset + 1) === 0xff) { offset++; continue; }
     const marker = view.getUint8(offset + 1);
     offset += 2;
 

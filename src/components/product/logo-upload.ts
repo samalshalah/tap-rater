@@ -23,6 +23,10 @@ export async function uploadLogoAsset(file: File, productSlug: string): Promise<
 
 export async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied: boolean; blankMarginPercent: number }> {
   const image = await loadLogoImage(file);
+  // Avoid allocating large pixel buffers for optional cropping on phones.
+  if (image.naturalWidth * image.naturalHeight > 4_000_000) {
+    return { file, trimApplied: false, blankMarginPercent: 0 };
+  }
   const canvas = document.createElement("canvas");
   canvas.width = image.naturalWidth;
   canvas.height = image.naturalHeight;

@@ -193,13 +193,25 @@ export function createProductSetupActions({
     setIsUploadingLogo(true);
 
     try {
-      const preparedLogo = await (await import("./logo-upload")).prepareLogoUpload(file);
-      const originalAsset = await (await import("./logo-upload")).uploadLogoAsset(file, product.slug);
-      const processedAsset = preparedLogo.file === file ? originalAsset : await (await import("./logo-upload")).uploadLogoAsset(preparedLogo.file, product.slug);
+      const { uploadLogoAsset, prepareLogoUpload } = await import("./logo-upload");
+      const originalAsset = await uploadLogoAsset(file, product.slug);
+      let processedAsset = originalAsset;
+      let trimApplied = false;
+      let blankMarginPercent = 0;
+      try {
+        const prepared = await prepareLogoUpload(file);
+        if (prepared.file !== file) {
+          processedAsset = await uploadLogoAsset(prepared.file, product.slug);
+          trimApplied = prepared.trimApplied;
+          blankMarginPercent = prepared.blankMarginPercent;
+        }
+      } catch {
+        // Cropping is optional. The original upload is already ready for the proof.
+      }
 
-      setLogoBackgroundMode(preparedLogo.trimApplied ? "auto_crop" : "original");
+      setLogoBackgroundMode(trimApplied ? "auto_crop" : "original");
       setLogoFitMode("contain");
-      setProofLogoSizePercent(preparedLogo.trimApplied ? 135 : 125);
+      setProofLogoSizePercent(trimApplied ? 135 : 125);
       setLogoOffsetXPercent(0);
       setLogoOffsetYPercent(0);
       setLogo({
@@ -209,11 +221,10 @@ export function createProductSetupActions({
         originalMediaUrl: originalAsset.mediaUrl,
         originalStorageKey: originalAsset.storageKey,
         originalFilename: originalAsset.filename,
-        trimApplied: preparedLogo.trimApplied,
-        blankMarginPercent: preparedLogo.blankMarginPercent
+        trimApplied,
+        blankMarginPercent
       });
     } catch (error) {
-      setLogo(null);
       setError(error instanceof Error ? error.message : "Logo upload failed. Please try again.");
     } finally {
       setIsUploadingLogo(false);
