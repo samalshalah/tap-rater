@@ -1,3 +1,6 @@
+import {ManagedLocationWorkspace} from '@/components/admin/managed-location-workspace';
+import type {OverviewLocation} from '@/components/account/review-overview';
+import {localSnapshot} from '@/lib/local-management';
 import Link from 'next/link';
 import {notFound} from 'next/navigation';
 import {z} from 'zod';
@@ -23,7 +26,7 @@ export default async function ClientAccount({params,searchParams}:Props){
   const [account]=await sql`SELECT id,name,email,phone,account_status FROM customers WHERE id=${accountId} AND account_status IS DISTINCT FROM 'guest'`;
   if(!account)notFound();
   const locations=await sql`SELECT b.id,b.business_name,b.address,b.phone,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.draft_due_at,
-    p.low_mode,p.high_mode,p.weekly,p.monthly,p.delivery_hour,p.zone
+    marketing_location_allowed(b.id) AS allowed,p.version AS notification_version,p.low_mode,p.high_mode,p.weekly,p.monthly,p.delivery_hour,p.zone
     FROM businesses b LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
     LEFT JOIN review_email_preferences p ON p.business_id=b.id AND p.customer_id=b.customer_id
     WHERE b.customer_id=${accountId} AND b.status IS DISTINCT FROM 'marketing_removed' ORDER BY b.business_name,b.id`;
@@ -31,6 +34,14 @@ export default async function ClientAccount({params,searchParams}:Props){
   if(location&&!selected)notFound();
   const visible=selected?[selected]:locations;
   const section=sections.find(item=>item===query.section)||'Overview';
+  if(selected&&['Overview','Reviews','Notifications'].includes(section)){
+    const allowed=account.account_status==='active'&&Boolean(selected.allowed);
+    const snapshot=allowed&&section==='Overview'?await localSnapshot({kind:'customer',email:account.email}):null;
+    const overview=snapshot?.locations.find(b=>b.id===location) as OverviewLocation|undefined;
+    const notifications=selected.enabled?{businessId:selected.id,version:selected.notification_version??0,lowMode:selected.low_mode||'off',highMode:selected.high_mode||'off',weekly:!!selected.weekly,monthly:!!selected.monthly,hour:selected.delivery_hour??9,zone:selected.zone||'America/New_York'}:null;
+    return <ManagedLocationWorkspace accountId={accountId} locationId={selected.id} email={account.email} name={selected.business_name}
+      section={section} allowed={allowed} overview={overview?JSON.parse(JSON.stringify(overview)):null} notifications={notifications}/>;
+  }
   const rawPage=Number(query.page||1);
   const page=Number.isSafeInteger(rawPage)&&rawPage>0&&rawPage<100000?rawPage:1;
   function href(tab:string,id:string|null=location,n=1){

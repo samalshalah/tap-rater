@@ -101,13 +101,12 @@ export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent
 
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
- if(v.lowStars===true&&!settingsLink.review_knowledge_approved_at)throw new LiveReviewError('Approve your Knowledge Center information before activating 1–3-star drafts.');
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
  const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??120},
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
  WHERE business_id=${v.businessId} AND customer_id=${settingsLink.customer_id} AND parent=${settingsLink.parent} AND google_subject=${settingsLink.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');
- await sql`UPDATE google_live_reviews r SET scheduled_at=NULL,old_reply_requested_at=NULL FROM google_review_links l WHERE r.business_id=l.business_id AND l.business_id=${v.businessId} AND (NOT l.auto_enabled OR NOT l.ai_consent OR r.schedule_consent_at IS DISTINCT FROM l.consent_at OR (r.data->>'starRating'='FOUR' AND NOT l.auto_four) OR (r.data->>'starRating'='FIVE' AND NOT l.auto_five))`;return rows[0];
+ await sql`UPDATE google_live_reviews r SET scheduled_at=NULL,old_reply_requested_at=NULL FROM google_review_links l WHERE r.business_id=l.business_id AND l.business_id=${v.businessId} AND (NOT l.auto_enabled OR NOT l.ai_consent OR (r.scheduled_at IS NOT NULL AND r.schedule_consent_at IS DISTINCT FROM l.consent_at) OR (r.data->>'starRating'='FOUR' AND NOT l.auto_four) OR (r.data->>'starRating'='FIVE' AND NOT l.auto_five))`;return rows[0];
 }
 
 export async function stopLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb()){

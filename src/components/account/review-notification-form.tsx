@@ -1,14 +1,14 @@
 'use client';
 import {useState} from 'react';
 import type {ReviewEmailSettings} from '@/lib/review-email-preferences';
-type Props={initial:ReviewEmailSettings;name:string;email:string};
-export function ReviewNotificationForm({initial,name,email}:Props){
+type Props={endpoint?:string;initial:ReviewEmailSettings;name:string;email:string};
+export function ReviewNotificationForm({initial,name,email,endpoint='/api/account/review-notifications'}:Props){
  const [v,setV]=useState(initial),[saved,setSaved]=useState(initial),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  function field<K extends keyof ReviewEmailSettings>(key:K,value:ReviewEmailSettings[K]){setV({...v,[key]:value});setMessage('');}
  async function save(){
   setBusy(true);setMessage('');
   try{
-   const response=await fetch('/api/account/review-notifications',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});
    const result=await response.json();if(!response.ok)throw Error(result.error||'Could not save settings.');
    const next={...v,version:result.version};setV(next);setSaved(next);setMessage('Notification settings saved.');
   }catch(e){setMessage(e instanceof Error?e.message:'Could not save settings.');}finally{setBusy(false);}

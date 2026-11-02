@@ -38,9 +38,16 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
  let actor:ReviewActor;let owner='';
  if(kind==='admin'){const identity=await googleAdminIdentity();if(!identity)return NextResponse.json({error:'Sign in to continue.'},{status:401});actor={kind:'admin'};owner=identity.owner;}
  else{const auth=await requireCustomerApi();if(auth.response)return auth.response;actor={kind:'customer',email:auth.session.email};}
+ return runLiveReviews(request,actor,owner);
+}
+
+export async function runLiveReviews(request:Request,actor:ReviewActor,owner:string,managedLocation?:string){
+ const kind=actor.kind;
+ const outsideScope=()=>NextResponse.json({error:'This item does not belong to the selected location.'},{status:404});
  try{
   if(request.method==='GET'){
    const params=new URL(request.url).searchParams;
+   if(managedLocation&&params.has('businessId')&&params.get('businessId')!==managedLocation)return outsideScope();
    if(params.get('view')==='knowledge'){const id=uuid.safeParse(params.get('businessId'));if(!id.success)return NextResponse.json({error:'Choose a location.'},{status:400});return NextResponse.json(await reviewKnowledgeSnapshot(actor,id.data),{headers:{'Cache-Control':'no-store'}});}
    if(params.has('businessId')){
     const page=z.object({businessId:uuid,offset:z.coerce.number().int().min(0).max(100000)}).safeParse({businessId:params.get('businessId'),offset:params.get('offset') || 0});
@@ -49,14 +56,24 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    }
    const scope=params.has('locations')?z.array(uuid).max(1000).safeParse((params.get('locations') || '').split(',').filter(Boolean)):null;
    if(scope&&!scope.success)return NextResponse.json({error:'Invalid locations.'},{status:400});
+   if(managedLocation&&scope?.success&&scope.data.some(id=>id!==managedLocation))return outsideScope();
    const businesses=kind==='admin'?await liveDb()`SELECT b.id,b.business_name,c.email FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE c.account_status='active' ORDER BY b.business_name`:undefined;
-   return NextResponse.json({workspaces:await listLiveWorkspaces(actor,undefined,scope?.success?scope.data:null),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
+   return NextResponse.json({workspaces:await listLiveWorkspaces(actor,undefined,managedLocation?[managedLocation]:scope?.success?scope.data:null),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
   }
   if(request.headers.get('origin')!==new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://taprater.com').origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
   const raw=await request.text();if(raw.length>12000)return NextResponse.json({error:'Request too large.'},{status:413});
   let value:unknown;try{value=JSON.parse(raw);}catch{return NextResponse.json({error:'Invalid request.'},{status:400});}
   const parsed=schema.safeParse(value);if(!parsed.success)return NextResponse.json({error:'Check the request and try again.'},{status:400});const v=parsed.data;
   if(['accounts','locations','bind','remove'].includes(v.action)&&kind!=='admin')return NextResponse.json({error:'Administrator access required.'},{status:403});
+  if(managedLocation){
+   if(['accounts','locations','bind','remove','profileAgent'].includes(v.action))return outsideScope();
+   if('businessId' in v && v.businessId!==managedLocation)return outsideScope();
+   if('settings' in v && v.settings.businessId!==managedLocation)return outsideScope();
+   if('id' in v){
+    const rows=await liveDb()`SELECT id FROM google_live_reviews WHERE id=${v.id} AND business_id=${managedLocation}`;
+    if(!rows.length)return outsideScope();
+   }
+  }
   let result:unknown;
   switch(v.action){
    case 'accounts':result=await (await clientFor(owner)).listAccounts(v.pageToken,v.parent);break;
@@ -78,6 +95,7 @@ export async function handleLiveReviews(request:Request,kind:'admin'|'customer')
    case 'knowledgeRefresh':result=await mutateProfile(actor,{action:'refresh',businessId:v.businessId});break;
    case 'settings':result=await saveLiveSettings(actor,v.settings);break;
   }
+  if(managedLocation)console.info('Admin review operation',{owner,location:managedLocation,action:v.action});
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
  }catch(e){
   const message=(e as {code?:string}).code==='P0001'?'This account has no available marketing location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:e instanceof GoogleTokenExchangeError?'Reconnect the managing Google account.':'Google reviews could not complete this request. Check the connection and try again.';

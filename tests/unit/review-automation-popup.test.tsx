@@ -1,5 +1,6 @@
 import {it,expect,vi,beforeEach,afterEach} from 'vitest';
 const state=vi.hoisted(()=>({cursor:0,values:[] as any[],ref:{current:'one'}}));
+vi.mock('@/components/account/review-endpoint',()=>({useReviewEndpoint:()=>'/api/account/reviews/live'}));
 vi.mock('react',async original=>({...await original<object>(),useRef:()=>state.ref,useState:(initial:unknown)=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=initial;return [state.values[i],(v:unknown)=>{state.values[i]=v;}];}}));
 import {KnowledgePopup} from '@/components/account/ai-knowledge-settings';
 import {ReviewAutomationControls,Toggle} from '@/components/account/review-automation-controls';

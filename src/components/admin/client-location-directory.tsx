@@ -18,9 +18,13 @@ export function ClientLocationDirectory({selection}:{selection?:DirectorySelecti
   const locationId=selection?.locationId||'';
   function view(id:string,location='',section=selection?.section||(window.location.pathname==='/account/reviews'?'Reviews':'Overview')){
     if(!id){window.location.assign('/admin/customers');return;}
-    const params=new URLSearchParams({section});
+    const params=new URLSearchParams({section:location&&!['Reviews','Overview','Notifications'].includes(section)?'Overview':section});
     if(location)params.set('location',location);
     window.location.assign('/admin/customers/'+encodeURIComponent(id)+'?'+params);
+  }
+  function viewClient(id:string){
+    const owned=accounts.find(account=>account.id===id)?.locations;
+    view(id,owned?.length===1?owned[0].id:'');
   }
   useEffect(()=>{
     const section=panel.current;
@@ -51,7 +55,7 @@ export function ClientLocationDirectory({selection}:{selection?:DirectorySelecti
       <h2>Client accounts &amp; locations</h2>
       {loading?<p role="status">Loading accounts…</p>:error?<p role="alert">Accounts could not be loaded. <button onClick={()=>setAttempt(a=>a+1)}>Retry</button></p>:<>
         <div className="tr-directory-selects">
-          <label>Client account<select value={accountId} onChange={event=>view(event.target.value)}>
+          <label>Client account<select value={accountId} onChange={event=>viewClient(event.target.value)}>
             <option value="">All client accounts ({accounts.length})</option>
             {accounts.map(account=><option key={account.id} value={account.id}>{account.name} · {account.email}</option>)}
           </select></label>
@@ -65,7 +69,7 @@ export function ClientLocationDirectory({selection}:{selection?:DirectorySelecti
           {filtered.map(account=>{
             const visible=account.locations.filter(location=>!locationId||location.id===locationId);
             if(locationId&&!visible.length)return null;
-            return <div key={account.id}><button className="underline" onClick={()=>view(account.id)}>{account.name}</button><small>{account.email}</small>
+            return <div key={account.id}><button className="underline" onClick={()=>viewClient(account.id)}>{account.name}</button><small>{account.email}</small>
               {visible.length?<ul>{visible.map(location=><li key={location.id}><button className="underline" onClick={()=>view(account.id,location.id)}>{location.name}</button></li>)}</ul>:<p>No locations added.</p>}</div>;
           })}
         </div>

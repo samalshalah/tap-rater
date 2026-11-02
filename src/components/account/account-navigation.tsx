@@ -6,28 +6,30 @@ import {useEffect,useState,useTransition} from 'react';
 import {customerNavigation,groupCustomerNavigation,isNavigationActive,locationTools,locationToolHref,activeLocationId} from '@/lib/customer-navigation';
 import type {NavigationLocation} from '@/lib/customer-navigation-locations';
 const icons:Record<string,typeof Building2>={'/account':LayoutDashboard,'/account/locations':Building2,'/account/stands/overview':LayoutDashboard,'/account/stands':Tablet,'/account/multilink':Link2,'/account/orders':ShoppingBag,'/account/settings':UserRound,'/account/profile':Building2,'/account/reviews':MessageSquare,'/account/heatmap':Map,'/account/business':Building2,'/account/local':Globe,'/account/reports':BarChart3,'/account/notifications':Bell};
-export function AccountNavigation({links,locations=[]}:{links:typeof customerNavigation;locations?:NavigationLocation[];locationsError?:boolean}){
+export function AccountNavigation({links,locations=[],managed}:{managed?:{base:string;section:string;location:string};links:typeof customerNavigation;locations?:NavigationLocation[];locationsError?:boolean}){
  const pathname=usePathname(),router=useRouter(),params=useSearchParams();
  const selected=activeLocationId(params.get('location'),locations);
  const [open,setOpen]=useState(false);
  useEffect(()=>setOpen(false),[pathname,selected]);
  useEffect(()=>{let refreshed=0;const refreshAccess=()=>{if(document.visibilityState==='visible'&&Date.now()-refreshed>15000){refreshed=Date.now();router.refresh();}};window.addEventListener('focus',refreshAccess);document.addEventListener('visibilitychange',refreshAccess);return()=>{window.removeEventListener('focus',refreshAccess);document.removeEventListener('visibilitychange',refreshAccess);};},[router]);
  const service=links.some(l=>l.href==='/account/locations');
+ const sections:Record<string,string>={'/account':'Overview','/account/reviews':'Reviews','/account/notifications':'Notifications','/account/locations':'Overview','/account/stands':'My Stands','/account/multilink':'Multi-Link','/account/orders':'Orders & Billing','/account/packages':'Subscription'};
+ const managedHref=(path:string)=>managed!.base+'?'+new URLSearchParams({section:sections[path],location:managed!.location});
  return <aside className="tr-workspace-sidebar" onKeyDown={e=>{if(e.key==='Escape')setOpen(false);}}>
   <a href="#workspace-content" className="tr-app-skip">Skip to content</a>
-  <div className="tr-app-brand-row"><Link href={locationToolHref('/account',selected)} className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w320.webp" alt="Tap Rater" width="140" height="48"/></Link><button type="button" className="tr-app-menu" aria-label={open?'Close navigation':'Open navigation'} aria-controls="workspace-navigation" aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<X size={22}/>:<Menu size={22}/>}</button></div>
+  <div className="tr-app-brand-row"><Link href={managed?managedHref('/account'):locationToolHref('/account',selected)} className="tr-client-brand"><img src="/uploads-optimized/brand/tap-rater-logo-w320.webp" alt="Tap Rater" width="140" height="48"/></Link><button type="button" className="tr-app-menu" aria-label={open?'Close navigation':'Open navigation'} aria-controls="workspace-navigation" aria-expanded={open} onClick={()=>setOpen(!open)}>{open?<X size={22}/>:<Menu size={22}/>}</button></div>
   <div id="workspace-navigation" className={'tr-app-navigation'+(open?' is-open':'')}>
   <nav aria-label="Account navigation" className="tr-account-navigation">
    {groupCustomerNavigation(links).map(section=>{
     const items=section.id==='reviews'&&service?[...locationTools,{href:'/account/locations',label:'Manage Locations'}]:section.id==='account'?[...section.links,...(service?[{href:'/account/packages',label:'Subscription'}]:[]),{href:'/account/feedback',label:'Feedback'}]:section.links;
-    return <section key={section.id} aria-label={section.label}><h2>{section.label}</h2><div>{items.map(link=>{
+    return <section key={section.id} aria-label={section.label}><h2>{section.label}</h2><div>{items.filter(link=>!managed||(sections[link.href]&&link.href!=='/account/locations')).map(link=>{
      const Icon=icons[link.href]||Building2;
      const scoped=service;
-     const href=scoped?locationToolHref(link.href,selected):link.href;
-     return <Link key={link.href} href={href} aria-current={isNavigationActive(pathname,link.href)?'page':undefined} className="tr-workspace-nav-link" onClick={()=>setOpen(false)}><Icon size={18} aria-hidden="true"/><span>{link.label}</span></Link>;
+     const href=managed?managedHref(link.href):scoped?locationToolHref(link.href,selected):link.href;
+     return <Link key={link.href} href={href} aria-current={(managed?sections[link.href]===managed.section:isNavigationActive(pathname,link.href))?'page':undefined} className="tr-workspace-nav-link" onClick={()=>setOpen(false)}><Icon size={18} aria-hidden="true"/><span>{link.label}</span></Link>;
     })}</div></section>;
    })}
-  </nav><form action="/api/account/logout" method="post"><button className="tr-app-signout"><LogOut size={17} aria-hidden="true"/>Sign out</button></form>
+  </nav>{managed?<Link className="tr-app-signout" href="/admin/customers">Return to admin</Link>:<form action="/api/account/logout" method="post"><button className="tr-app-signout"><LogOut size={17} aria-hidden="true"/>Sign out</button></form>}
   </div>
  </aside>;
 }
