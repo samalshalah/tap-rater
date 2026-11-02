@@ -1,3 +1,4 @@
+import { openLogoImage } from "./logo-image";
 import type { UploadedLogo } from "./product-setup-types";
 export async function uploadLogoAsset(file: File, productSlug: string): Promise<UploadedLogo> {
   const form = new FormData();
@@ -11,7 +12,7 @@ export async function uploadLogoAsset(file: File, productSlug: string): Promise<
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok || !body.asset?.mediaUrl || !body.asset?.storageKey) {
-    throw new Error(body.error ?? "Logo upload failed. Use a PNG, JPG, or WEBP image up to 10 MB.");
+    throw new Error(body.error ?? "Logo upload failed. Please choose the file again.");
   }
 
   return {
@@ -22,7 +23,7 @@ export async function uploadLogoAsset(file: File, productSlug: string): Promise<
 }
 
 export async function prepareLogoUpload(file: File): Promise<{ file: File; trimApplied: boolean; blankMarginPercent: number }> {
-  const image = await loadLogoImage(file);
+  const image = await openLogoImage(file);
   // Avoid allocating large pixel buffers for optional cropping on phones.
   if (image.naturalWidth * image.naturalHeight > 4_000_000) {
     return { file, trimApplied: false, blankMarginPercent: 0 };
@@ -146,22 +147,6 @@ function removeEdgeConnectedWhiteBackground(context: CanvasRenderingContext2D, w
 
 function isRemovableWhitePixel(red: number, green: number, blue: number, alpha: number) {
   return alpha > 16 && red >= 242 && green >= 242 && blue >= 242;
-}
-
-function loadLogoImage(file: File) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new window.Image();
-    const objectUrl = URL.createObjectURL(file);
-    image.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(image);
-    };
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Logo image could not be prepared."));
-    };
-    image.src = objectUrl;
-  });
 }
 
 function isLogoContentPixel(red: number, green: number, blue: number, alpha: number) {

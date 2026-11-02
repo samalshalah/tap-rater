@@ -120,9 +120,13 @@ export function ProofControls({
           <input
             className="sr-only"
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds"
             disabled={isUploadingLogo}
-            onChange={(event) => onUploadLogo(event.target.files?.[0])}
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              onUploadLogo(file);
+            }}
           />
         </label>
       </div>

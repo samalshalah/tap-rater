@@ -78,6 +78,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: securityHeaders
       },
+      { source: "/logo-converter/:path*", headers: [{ key: "Content-Security-Policy", value: "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data:" }] },
       { source: "/checkout/recover", headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store" }] },
       { source: "/meta-pixel", headers: [
         { key: "Content-Security-Policy", value: "default-src 'none'; script-src 'unsafe-inline' https://connect.facebook.net; connect-src https://www.facebook.com https://connect.facebook.net; img-src https://www.facebook.com; frame-ancestors 'self'; base-uri 'none'; form-action 'none'" },

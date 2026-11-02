@@ -194,13 +194,15 @@ export function createProductSetupActions({
 
     try {
       const { uploadLogoAsset, prepareLogoUpload } = await import("./logo-upload");
-      const originalAsset = await uploadLogoAsset(file, product.slug);
+      const { printableLogo } = await import("./printable-logo");
+      const printable = await printableLogo(file);
+      const originalAsset = await uploadLogoAsset(printable, product.slug);
       let processedAsset = originalAsset;
       let trimApplied = false;
       let blankMarginPercent = 0;
       try {
-        const prepared = await prepareLogoUpload(file);
-        if (prepared.file !== file) {
+        const prepared = await prepareLogoUpload(printable);
+        if (prepared.file !== printable) {
           processedAsset = await uploadLogoAsset(prepared.file, product.slug);
           trimApplied = prepared.trimApplied;
           blankMarginPercent = prepared.blankMarginPercent;

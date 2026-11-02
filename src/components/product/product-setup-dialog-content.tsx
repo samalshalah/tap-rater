@@ -169,7 +169,7 @@ export function ProductSetupDialogContent({
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-ink">Business logo</p>
-                        <p className="mt-1 text-xs leading-5 text-muted">PNG, JPG, or WEBP up to 10 MB. Each side must be 64 to 12,000 pixels.</p>
+                        <p className="mt-1 text-xs leading-5 text-muted">Choose a photo, vector logo, or design file up to 50 MB. For documents and animations, we use the first page or frame.</p>
                       </div>
                       {logo ? <span className="tr-pill-brand">Logo uploaded</span> : null}
                     </div>
@@ -180,7 +180,7 @@ export function ProductSetupDialogContent({
                       <input
                         className="sr-only"
                         type="file"
-                        accept="image/png,image/jpeg,image/webp"
+                        accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds"
                         disabled={isUploadingLogo}
                         onChange={(event) => {
                           const file = event.currentTarget.files?.[0];

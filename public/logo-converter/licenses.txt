@@ -1,0 +1,5 @@
+Sources and licenses for the independently loaded conversion tools:
+Ghostscript WebAssembly build and build instructions: https://github.com/jsscheller/ghostscript-wasm (npm @jspawn/ghostscript-wasm 0.0.2, AGPL-3.0).
+ImageMagick WebAssembly: https://github.com/dlemstra/magick-wasm (0.0.45).
+HEIC decoder: https://github.com/hoppergee/heic-to (1.6.7).
+The original package license files are included in the vendor directory.

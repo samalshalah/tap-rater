@@ -1,2 +1,5 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
+
+/logo-converter/*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' data:

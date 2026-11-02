@@ -26,3 +26,4 @@ exports/
 
 # Isolated local dashboard sandbox (never commit database or secrets)
 .local-sandbox/
+/public/logo-converter/vendor/
