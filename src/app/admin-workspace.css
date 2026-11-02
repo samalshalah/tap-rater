@@ -16,24 +16,24 @@
 .tr-admin-compact .tr-admin-sidebar>div:last-child{padding:8px 12px}
 .tr-admin-shell.tr-admin-compact .tr-admin-content :is(h1,h1[class],.tr-admin-title,.tr-local-workspace h1[class]){font-size:var(--app-title)!important;line-height:1.35!important;font-weight:600!important;letter-spacing:0}
 .tr-admin-shell.tr-admin-compact .tr-admin-content :is(h2,h3,h4,.tr-admin-card-title){font-size:var(--app-section)!important;line-height:1.4!important;font-weight:600!important;letter-spacing:0}
-.tr-admin-compact .tr-admin-content :is(.text-sm,.text-base,.text-lg,.text-xs){font-size:var(--app-body)!important;line-height:1.45!important}
-.tr-admin-compact .tr-admin-content :is(.text-xl,.text-2xl,.text-3xl,.text-4xl,.text-5xl){font-size:var(--app-metric)!important;line-height:1.35!important}
+.tr-admin-compact .tr-admin-content :is(.text-sm,.text-base,.text-lg,.text-xs):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){font-size:var(--app-body)!important;line-height:1.45!important}
+.tr-admin-compact .tr-admin-content :is(.text-xl,.text-2xl,.text-3xl,.text-4xl,.text-5xl):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){font-size:var(--app-metric)!important;line-height:1.35!important}
 .tr-admin-compact .tr-admin-content .tr-eyebrow{font-size:10px;letter-spacing:0;text-transform:none;margin-bottom:3px}
 .tr-admin-compact .tr-admin-content :is(.tr-admin-section,.tr-local-workspace){padding:10px 12px!important;margin:0;max-width:none}
 .tr-admin-compact .tr-admin-content>main{padding:10px 12px}
 .tr-admin-compact .tr-admin-content :is(.tr-admin-card,.tr-admin-table-shell,.tr-admin-soft-panel,.rounded-xl,.rounded-2xl,.rounded-lg){border-radius:4px;box-shadow:none}
-.tr-admin-compact .tr-admin-content :is(.gap-3,.gap-4,.gap-5,.gap-6,.gap-7,.gap-8){gap:8px}
-.tr-admin-compact .tr-admin-content :is(.space-y-3,.space-y-4,.space-y-5,.space-y-6,.space-y-8)>:not([hidden])~:not([hidden]){margin-top:8px;margin-bottom:0}
-.tr-admin-compact .tr-admin-content :is(.mt-3,.mt-4,.mt-5,.mt-6,.mt-8,.mt-10,.mt-12){margin-top:8px}
-.tr-admin-compact .tr-admin-content :is(.mb-3,.mb-4,.mb-5,.mb-6,.mb-8){margin-bottom:8px}
-.tr-admin-compact .tr-admin-content :is(.my-3,.my-4,.my-5,.my-6){margin-top:8px;margin-bottom:8px}
-.tr-admin-compact .tr-admin-content :is(.p-3,.p-4,.p-5,.p-6,.p-8){padding:8px}
-.tr-admin-compact .tr-admin-content :is(.px-4,.px-5,.px-6){padding-left:10px;padding-right:10px}
-.tr-admin-compact .tr-admin-content :is(.py-3,.py-4,.py-5,.py-6){padding-top:6px;padding-bottom:6px}
-.tr-admin-compact :is(button[class],a[class*="tr-button"],a.inline-flex){font-size:11px;line-height:1.4;min-height:28px;padding:4px 8px;border-radius:3px}
-.tr-admin-compact :is(.tr-button-primary,button.bg-ink,a.bg-ink){background:var(--app-accent);border-color:var(--app-accent);color:white}
-.tr-admin-compact :is(button.h-10){height:28px;min-width:28px}
-.tr-admin-compact :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=hidden]),select,textarea){font-size:11px;line-height:1.4;min-height:28px;padding:4px 8px;border-radius:3px}
+.tr-admin-compact .tr-admin-content :is(.gap-3,.gap-4,.gap-5,.gap-6,.gap-7,.gap-8):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){gap:8px}
+.tr-admin-compact .tr-admin-content :is(.space-y-3,.space-y-4,.space-y-5,.space-y-6,.space-y-8)>:not([hidden])~:not([hidden]):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){margin-top:8px;margin-bottom:0}
+.tr-admin-compact .tr-admin-content :is(.mt-3,.mt-4,.mt-5,.mt-6,.mt-8,.mt-10,.mt-12):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){margin-top:8px}
+.tr-admin-compact .tr-admin-content :is(.mb-3,.mb-4,.mb-5,.mb-6,.mb-8):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){margin-bottom:8px}
+.tr-admin-compact .tr-admin-content :is(.my-3,.my-4,.my-5,.my-6):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){margin-top:8px;margin-bottom:8px}
+.tr-admin-compact .tr-admin-content :is(.p-3,.p-4,.p-5,.p-6,.p-8):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){padding:8px}
+.tr-admin-compact .tr-admin-content :is(.px-4,.px-5,.px-6):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){padding-left:10px;padding-right:10px}
+.tr-admin-compact .tr-admin-content :is(.py-3,.py-4,.py-5,.py-6):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){padding-top:6px;padding-bottom:6px}
+.tr-admin-compact :is(button[class],a[class*="tr-button"],a.inline-flex):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){font-size:11px;line-height:1.4;min-height:28px;padding:4px 8px;border-radius:3px}
+.tr-admin-compact :is(.tr-button-primary,button.bg-ink,a.bg-ink):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){background:var(--app-accent);border-color:var(--app-accent);color:white}
+.tr-admin-compact :is(button.h-10):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){height:28px;min-width:28px}
+.tr-admin-compact :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=hidden]),select,textarea):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){font-size:11px;line-height:1.4;min-height:28px;padding:4px 8px;border-radius:3px}
 .tr-admin-compact textarea{min-height:70px}
 .tr-admin-compact .tr-admin-content table{font-size:11px;border-collapse:collapse}
 .tr-admin-compact .tr-admin-content table thead{background:#fafbfd;color:var(--app-muted)}
@@ -57,7 +57,7 @@
 .tr-admin-compact .tr-admin-metrics>span{padding:0 12px;border-right:1px solid var(--app-border);display:flex;align-items:center;gap:8px;color:var(--app-muted)}
 .tr-admin-compact .tr-admin-metrics>span:last-child{border:0}.tr-admin-compact .tr-admin-metrics strong{font-size:16px;color:var(--app-ink)}
 @media(min-width:1024px){.tr-admin-compact .tr-admin-sidebar{position:sticky;top:0;width:180px;height:100dvh;display:flex;flex-direction:column;overflow:hidden}.tr-admin-compact .tr-admin-sidebar nav{overflow-y:auto;flex:1}.tr-admin-compact .tr-admin-sidebar nav>div+div{margin-top:8px;padding-top:6px;border-top:1px solid var(--app-border)}}
-@media(max-width:640px){.tr-admin-compact :is(button[class],a[class*="tr-button"]){min-height:36px}.tr-admin-compact :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){font-size:16px;min-height:36px}.tr-admin-compact .tr-admin-context{height:36px}.tr-admin-compact .tr-admin-details-dialog dl>div{grid-template-columns:95px minmax(0,1fr)}}
+@media(max-width:640px){.tr-admin-compact :is(button[class],a[class*="tr-button"]):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){min-height:36px}.tr-admin-compact :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea):not(:where(.tr-stand-design-editor, .tr-stand-design-editor *)){font-size:16px;min-height:36px}.tr-admin-compact .tr-admin-context{height:36px}.tr-admin-compact .tr-admin-details-dialog dl>div{grid-template-columns:95px minmax(0,1fr)}}
 
 .tr-admin-compact button.tr-admin-info-button{width:15px;height:15px;min-height:15px;padding:0;border:1px solid var(--app-border);border-radius:50%;font-size:10px;color:var(--app-muted);background:white;flex-shrink:0}
 .tr-admin-compact .tr-admin-row-identity{display:flex;align-items:center;gap:8px;white-space:nowrap}

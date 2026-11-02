@@ -1,15 +1,14 @@
 "use client";
 import { formatPrice } from "@/lib/products";
-import { UploadCloud } from "lucide-react";
+import { StandLogoField } from "./stand-logo-field";
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import type { ProductSetupDialogProps } from './product-setup-dialog-types';
 import { normalizeMultiLinkButtonsForSetup } from "./product-setup-model";
 import { ReviewLine } from "./product-setup-summary";
 const MultiLinkSetupStep=dynamic(()=>import("./multilink-setup-step").then(m=>m.MultiLinkSetupStep),{loading:()=> <p role="status">Loading link editor...</p>});
-const ProofControls = dynamic(() => import("./proof-controls").then(m => m.ProofControls));
+const StandDesignEditor = dynamic(() => import("./stand-design-editor").then(m => m.StandDesignEditor));
 import { ProductSetupDestinationStep } from "./product-setup-destination-step";
-const BrandedProofPreview = dynamic(() => import("./branded-proof-preview").then(m => m.BrandedProofPreview));
 export function ProductSetupDialogContent({
   stepGridClassName,
   stepLabels,
@@ -168,31 +167,7 @@ export function ProductSetupDialogContent({
                     </label>
                   ))}
 
-                  <div className="tr-panel-muted grid gap-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-ink">Business logo</p>
-                        <p className="mt-1 text-xs leading-5 text-muted">Choose a photo, vector logo, or design file up to 50 MB. For documents and animations, we use the first page or frame.</p>
-                      </div>
-                      {logo ? <span className="tr-pill-brand">Logo uploaded</span> : null}
-                    </div>
-                    <label className="grid min-h-32 cursor-pointer place-items-center rounded-lg border border-dashed border-line bg-white p-4 text-center text-sm font-medium text-muted transition hover:border-brand">
-                      <UploadCloud className="mb-2 h-6 w-6" />
-                      {isUploadingLogo ? "Uploading logo..." : logo ? logo.filename : "Upload logo"}
-                      <span className="mt-1 block text-xs font-semibold text-brand">{logo ? "Click to replace" : "Choose file"}</span>
-                      <input
-                        className="sr-only"
-                        type="file"
-                        accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds"
-                        disabled={isUploadingLogo}
-                        onChange={(event) => {
-                          const file = event.currentTarget.files?.[0];
-                          event.currentTarget.value = "";
-                          void uploadLogo(file);
-                        }}
-                      />
-                    </label>
-                  </div>
+                  <StandLogoField filename={logo?.filename} isUploadingLogo={isUploadingLogo} onUpload={uploadLogo} />
 
                 </div>
               ) : null}
@@ -241,19 +216,16 @@ export function ProductSetupDialogContent({
                     <p className="text-sm font-semibold text-ink">Approve your stand</p>
                     <p className="mt-1 text-sm leading-6 text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
-                  <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-start gap-x-3 gap-y-4 md:grid-cols-[minmax(0,1fr)_260px] md:gap-6">
-                    <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
-                    {logo ? <ProofControls
-                      canAutoCrop={Boolean(logo.trimApplied)} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}
-                      logoOffsetXPercent={logoOffsetXPercent} logoOffsetYPercent={logoOffsetYPercent}
-                      proofFontSizePercent={proofFontSizePercent} proofLogoSizePercent={proofLogoSizePercent}
-                      onLogoBackgroundModeChange={setLogoBackgroundMode} onLogoFitModeChange={setLogoFitMode}
-                      onLogoOffsetXPercentChange={setLogoOffsetXPercent} onLogoOffsetYPercentChange={setLogoOffsetYPercent}
-                      onProofFontSizePercentChange={setProofFontSizePercent} onProofLogoSizePercentChange={setProofLogoSizePercent}
-                      showBusinessNameOnProof={showBusinessNameOnProof}
-                      isUploadingLogo={isUploadingLogo} onUploadLogo={(file) => uploadLogo(file)}
-                    /> : null}
-                  </div>
+                  <StandDesignEditor productSlug={product.slug} setup={proofSetup} onReady={setReadyProof}
+                    controls={{
+                      canAutoCrop: Boolean(logo?.trimApplied), logoBackgroundMode, logoFitMode,
+                      logoOffsetXPercent, logoOffsetYPercent, proofFontSizePercent, proofLogoSizePercent,
+                      onLogoBackgroundModeChange: setLogoBackgroundMode, onLogoFitModeChange: setLogoFitMode,
+                      onLogoOffsetXPercentChange: setLogoOffsetXPercent, onLogoOffsetYPercentChange: setLogoOffsetYPercent,
+                      onProofFontSizePercentChange: setProofFontSizePercent, onProofLogoSizePercentChange: setProofLogoSizePercent,
+                      showBusinessNameOnProof, isUploadingLogo, onUploadLogo: uploadLogo
+                    }}
+                  />
                   <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
                   <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
                     <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}

@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { complimentaryOrderTypes } from "@/lib/complimentary-order-types";
 import { AdminButton } from "@/components/admin/admin-ui";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
-import { BrandedProofPreview } from "@/components/product/branded-proof-preview";
-import { ProofControls } from "@/components/product/proof-controls";
+import { StandDesignEditor } from "@/components/product/stand-design-editor";
+import { StandLogoField } from "@/components/product/stand-logo-field";
 import { useRouter } from "next/navigation";
 
 type Catalog = { slug: string; title: string; options: { id: string; label: string; image?: string }[] }[];
@@ -85,7 +85,7 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
     } catch (e) { setError(e instanceof Error ? e.message : "Could not create order."); lock.current = false; setBusy(false); }
   }
   if (!catalog.length) return <p>No active, in-stock stands are available.</p>;
-  return <form onSubmit={submit} className="max-w-3xl space-y-5">
+  return <form onSubmit={submit} className="max-w-5xl space-y-5">
     <fieldset disabled={busy || uploading} className="grid gap-4 rounded border border-line p-5">
       <legend className="font-semibold">Client and stand</legend>
       <div className="grid gap-4 sm:grid-cols-2">{!initial && <>{field("name", "Client name")}{field("email", "Client email", "email")}{field("phone", "Phone", "tel", false)}</>}{optionId === "branded_qr_direct" && <label className="flex items-center gap-2"><input type="checkbox" checked={design.showBusinessNameOnProof} onChange={e => setDesign(d => ({ ...d, showBusinessNameOnProof: e.target.checked }))} />Add business name to stand</label>}{(productId === "google-review-stand" || design.showBusinessNameOnProof) && <label className="grid gap-1 text-sm">{productId === "google-review-stand" ? "Google business search (optional)" : "Business name (optional)"}<input className="rounded border border-line p-2" name="businessName" value={businessName} onChange={e => { setBusinessName(e.target.value); if (selectedBusiness) setDestinationUrl(""); setSelectedBusiness(""); }} placeholder={productId === "google-review-stand" ? "Business name and city" : "Business name"} autoComplete="off" /></label>}</div>
@@ -97,33 +97,37 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
       <label className="grid gap-1">Design<select className="rounded border p-2" value={optionId} onChange={e => setOptionId(e.target.value)}>{product?.options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>
       <label className="grid gap-1">Quantity<input name="quantity" type="number" min={1} max={100} defaultValue={initial?.quantity ?? 1} readOnly={Boolean(initial)} required className="rounded border p-2" /></label>
       <label className="grid gap-1 text-sm">Destination / review link<input name="destinationUrl" type="url" required value={destinationUrl} onChange={e => setDestinationUrl(e.target.value)} className="rounded border border-line p-2" /></label>
-      {optionId === "branded_qr_direct" && <label className="grid gap-2">Client logo<input type="file" accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds" onChange={e => { const file = e.currentTarget.files?.[0]; e.currentTarget.value = ""; void upload(file); }} />{logo && <span className="text-sm">Logo uploaded. Artwork will need manual approval on the order.</span>}</label>}
-      <section className="grid gap-4 rounded-lg border border-line bg-soft p-4">
+      <section className="grid min-w-0 gap-4 rounded-lg border border-line bg-white p-4">
         <h2 className="font-semibold">Stand design</h2>
-        <div className="grid items-start gap-4 sm:grid-cols-2">
-          {optionId === "branded_qr_direct" && logo && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview key={productId} productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : (
-            <figure className="grid justify-items-center gap-2 rounded border border-line bg-white p-2">
-              {selectedOption?.image && <img src={selectedOption.image} alt={`${product?.title} front design`} className="max-h-80 max-w-full object-contain" />}
-              <figcaption className="text-sm text-muted">{optionId === "branded_qr_direct" ? "Product photo. Add a logo and destination link to preview this order." : "Catalog design"}</figcaption>
-            </figure>
-          )}
-          {optionId === "branded_qr_direct" && logo && <ProofControls
-            canAutoCrop={Boolean(design.croppedLogoStorageKey)} isUploadingLogo={uploading} onUploadLogo={upload}
-            logoBackgroundMode={design.logoBackgroundMode ?? "original"} logoFitMode={design.logoFitMode}
-            logoOffsetXPercent={design.logoOffsetXPercent} logoOffsetYPercent={design.logoOffsetYPercent}
-            proofFontSizePercent={design.fontSizePercent} proofLogoSizePercent={design.logoSizePercent}
-            showBusinessNameOnProof={design.showBusinessNameOnProof && Boolean(businessName.trim())}
-            onLogoBackgroundModeChange={mode => {
-              const key = mode === "original" ? design.originalLogoStorageKey : design.croppedLogoStorageKey;
-              if (key) { setLogo(key); setDesign(d => ({ ...d, logoBackgroundMode: mode })); }
+        {optionId === "branded_qr_direct" ? <>
+          {!logo && <StandLogoField isUploadingLogo={uploading} onUpload={upload} />}
+          <StandDesignEditor productSlug={productId} endpoint="/api/admin/orders/complimentary/preview"
+            setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }}
+            onReady={previewReady} disabled={!logo}
+            placeholder={logo && /^https?:\/\//i.test(destinationUrl.trim()) ? undefined : (
+              <figure className="grid min-w-0 justify-items-center gap-2 text-center">
+                {selectedOption?.image && <img src={selectedOption.image} alt={product?.title} className="max-h-80 max-w-full object-contain" />}
+                <figcaption className="text-xs text-muted">Add a logo and destination link to see your stand preview.</figcaption>
+              </figure>
+            )}
+            controls={{
+              canAutoCrop: Boolean(design.croppedLogoStorageKey), isUploadingLogo: uploading, onUploadLogo: upload,
+              logoBackgroundMode: design.logoBackgroundMode ?? "original", logoFitMode: design.logoFitMode,
+              logoOffsetXPercent: design.logoOffsetXPercent, logoOffsetYPercent: design.logoOffsetYPercent,
+              proofFontSizePercent: design.fontSizePercent, proofLogoSizePercent: design.logoSizePercent,
+              showBusinessNameOnProof: design.showBusinessNameOnProof && Boolean(businessName.trim()),
+              onLogoBackgroundModeChange: mode => {
+                const key = mode === "original" ? design.originalLogoStorageKey : design.croppedLogoStorageKey;
+                if (key) { setLogo(key); setDesign(d => ({ ...d, logoBackgroundMode: mode })); }
+              },
+              onLogoFitModeChange: logoFitMode => setDesign(d => ({ ...d, logoFitMode })),
+              onLogoOffsetXPercentChange: logoOffsetXPercent => setDesign(d => ({ ...d, logoOffsetXPercent })),
+              onLogoOffsetYPercentChange: logoOffsetYPercent => setDesign(d => ({ ...d, logoOffsetYPercent })),
+              onProofFontSizePercentChange: fontSizePercent => setDesign(d => ({ ...d, fontSizePercent })),
+              onProofLogoSizePercentChange: logoSizePercent => setDesign(d => ({ ...d, logoSizePercent }))
             }}
-            onLogoFitModeChange={logoFitMode => setDesign(d => ({ ...d, logoFitMode }))}
-            onLogoOffsetXPercentChange={logoOffsetXPercent => setDesign(d => ({ ...d, logoOffsetXPercent }))}
-            onLogoOffsetYPercentChange={logoOffsetYPercent => setDesign(d => ({ ...d, logoOffsetYPercent }))}
-            onProofFontSizePercentChange={fontSizePercent => setDesign(d => ({ ...d, fontSizePercent }))}
-            onProofLogoSizePercentChange={logoSizePercent => setDesign(d => ({ ...d, logoSizePercent }))}
-          />}
-        </div>
+          />
+        </> : selectedOption?.image && <img src={selectedOption.image} alt={product?.title} className="max-h-80 max-w-full object-contain" />}
       </section>
       {!initial && <>
         <label className="grid gap-1">Order type
