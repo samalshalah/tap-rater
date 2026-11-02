@@ -80,12 +80,26 @@ describe.skipIf(!url)('enrolled review automation on isolated database',()=>{
     SELECT ${original},${parent}||'/reviews/pending-'||rating,
       jsonb_build_object('starRating',rating,'createTime',now()-interval '1 day')
     FROM unnest(ARRAY['ONE','FIVE']) AS rating`;
+  // Existing generated drafts and a deliberate cancellation have different futures after removal.
+  await sql`INSERT INTO google_live_reviews(business_id,resource,data,draft,draft_generated_at,version,auto_schedule_cancelled,scheduled_at)
+    SELECT ${original},${parent}||'/reviews/'||tag,
+      jsonb_build_object('starRating',rating,'createTime',now()-interval '2 days'),
+      'Previously saved reply',now()-interval '1 day',v,held,CASE WHEN tag='automatic' THEN now()+interval '1 hour' END
+    FROM (VALUES ('automatic','FIVE',2,false),('ungenerated-schedule','FOUR',2,false),('held','FIVE',2,true),
+      ('edited','FIVE',3,false),('low','TWO',2,false)) cases(tag,rating,v,held)`;
   const [business]=await sql`SELECT local_profile_version FROM businesses WHERE id=${original}`;
   await mutateLocal(actor,{action:'deleteLocation',businessId:original,version:business.local_profile_version},sql);
   const replacement=await add();await bind(replacement);
   expect((await sql`SELECT ai_consent,auto_enabled,auto_four,auto_five,draft_low_stars FROM google_review_links WHERE business_id=${replacement}`)[0])
     .toEqual({ai_consent:true,auto_enabled:true,auto_four:true,auto_five:true,draft_low_stars:true});
-  expect((await sql`SELECT count(*)::int AS n FROM google_live_reviews WHERE business_id=${replacement}`)[0].n).toBe(12);
+  expect((await sql`SELECT count(*)::int AS n FROM google_live_reviews WHERE business_id=${replacement}`)[0].n).toBe(17);
+  const recovered=await sql`SELECT resource,scheduled_at,schedule_consent_at,scheduled_version FROM google_live_reviews
+    WHERE business_id=${replacement} AND draft='Previously saved reply' AND scheduled_at IS NOT NULL ORDER BY resource`;
+  expect(recovered.map(r=>r.resource.split('/').pop())).toEqual(['automatic','ungenerated-schedule']);
+  expect(recovered.every(r=>r.schedule_consent_at&&r.scheduled_version===2)).toBe(true);
+  const [again]=await sql`UPDATE google_live_reviews SET fetched_at=now() WHERE business_id=${replacement}
+    AND resource=${recovered[0].resource} RETURNING scheduled_at`;
+  expect(again.scheduled_at).toEqual(recovered[0].scheduled_at);
   await queueHistoricalPositives(replacement,sql);
   expect((await sql`SELECT count(*)::int AS n FROM google_live_reviews
     WHERE business_id=${replacement} AND draft='' AND old_reply_requested_at IS NOT NULL
