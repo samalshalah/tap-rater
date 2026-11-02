@@ -46,13 +46,13 @@ describe('review list indexing', () => {
  });
  it('retains overlapping status counts while isolating suspected spam', () => {
   const reviews=[row('empty'),row('draft',{draft:'Hi'}),row('approved',{draft:'Hi',approved_version:1}),row('replied',{data:{starRating:'FIVE',reviewReply:{comment:'Thanks'}} as Row['data']}),row('spam',{suspected_spam:true,draft:'Hi'})];
-  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,unanswered:3,drafts:1,approved:1,replied:1,spam:1});
+  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,unanswered:3,queued:0,drafts:1,approved:1,replied:1,spam:1});
  });
  it('matches the previous filter-count algorithm across all status combinations', () => {
   const reviews:Row[]=[];
   for(const spam of [false,true]) for(const draft of ['','Reply']) for(const reply of ['', 'Published']) for(const approved of [null,1,2]) for(const state of ['idle','published','publishing','uncertain']) reviews.push(row(String(reviews.length),{suspected_spam:spam,draft,approved_version:approved,publish_state:state,data:{starRating:'ONE',reviewReply:{comment:reply}} as Row['data']}));
   const all=[workspace('a',reviews),workspace('b',reviews.slice(0,10))];
   const counts=countReviewFilters(all);
-  for(const [key] of reviewFilters) expect(counts[key]).toBe(all.flatMap(w=>w.reviews).filter(r=>matchesReview(r,key)).length);
+  for(const [key] of reviewFilters) expect(counts[key]).toBe(all.flatMap(w=>w.reviews.filter(r=>matchesReview(r,key,w))).length);
  });
 });

@@ -12,10 +12,14 @@ const row=(id:string,extra:Partial<Row>={}):Row=>({id,data:{starRating:'FIVE'},d
 const reviews=[row('unanswered'),row('draft',{draft:'Draft text'}),row('approved',{draft:'Approved text',approved_version:1}),row('replied',{data:{starRating:'FIVE',reviewReply:{comment:'Reply'}} as Row['data']}),row('spam',{suspected_spam:true})];
 const workspace={business_id:'business',business_name:'Fixture',enabled:true,connected:true,ai_consent:true,settings_version:1,initial_import_completed:true,reviews,moreReviews:true} as Workspace;
 const base={workspace,reviews,reviewFilter:'all',post:async()=>({}),refresh:async()=>{},aiAllowed:true,active:true,canPublish:false};
-import {nextQueueCheck} from '@/components/account/google-live-review-model';
+import {countReviewFilters,nextQueueCheck} from '@/components/account/google-live-review-model';
 it('shows the next location check only for pending positive autopilot reviews',()=>{
  const w={...workspace,auto_enabled:true,auto_five:true,draft_due_at:'2026-11-02T20:20:00Z'};
  const r=row('old',{old_reply_requested_at:'2026-11-01T20:00:00Z'});
+ const mixed=[r,...reviews,row('scheduled',{scheduled_at:w.draft_due_at})];
+ const html=renderToStaticMarkup(React.createElement(GoogleLiveReviewTable,{...base,workspace:w,reviews:mixed,reviewFilter:'queued'}));
+ expect([...html.matchAll(/data-review="([^"]+)"/g)].map(match=>match[1])).toEqual(['old']);
+ expect(countReviewFilters([{...w,reviews:mixed}]).queued).toBe(1);
  expect(nextQueueCheck(r,w)).toBe(w.draft_due_at);
  for(const override of [{auto_schedule_cancelled:true},{draft:'mine'},{scheduled_at:w.draft_due_at},{suspected_spam:true},{publish_state:'uncertain'},{data:{...r.data,starRating:'THREE' as const}}])expect(nextQueueCheck({...r,...override},w)).toBeFalsy();
  expect(nextQueueCheck(r,{...w,connected:false})).toBeFalsy();
