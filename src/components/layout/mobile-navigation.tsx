@@ -25,7 +25,7 @@ export function MobileNavigation({ items, pathname, accountHref, accountLabel, c
           <span className="min-w-0 [overflow-wrap:anywhere]">Cart ({cartCount})</span>
         </Link>
       </div>
-      <nav aria-label={authenticated ? "Customer mobile navigation" : "Mobile navigation"} className="divide-y divide-line text-ink">
+      <nav aria-label="Mobile navigation" className="divide-y divide-line text-ink">
         {items.map((item) => (
           <Link
             key={item.href}
@@ -42,9 +42,6 @@ export function MobileNavigation({ items, pathname, accountHref, accountLabel, c
       </nav>
       {authenticated ? (
         <div className="border-t border-line pt-2">
-          <Link href="/shop" prefetch={false} onClick={onNavigate} className="flex min-h-11 items-center gap-3 px-3 py-2.5 text-sm font-semibold text-ink hover:bg-soft hover:text-brand">
-            <ShoppingBag size={18} aria-hidden="true" />Shop stands
-          </Link>
           <form action="/api/account/logout" method="post">
             <button className="flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-sm font-semibold text-ink hover:bg-soft hover:text-brand">
               <LogOut size={18} aria-hidden="true" />Sign out

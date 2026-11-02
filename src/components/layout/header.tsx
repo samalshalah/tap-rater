@@ -5,12 +5,12 @@ import { loadWebsiteNavigation } from "@/lib/website-content-client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Link2, ArrowLeft, ChevronDown, UserRound, ShoppingCart, LayoutDashboard, LogOut, Menu, PackageCheck, PanelsTopLeft, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, UserRound, ShoppingCart, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCart } from "@/components/cart/cart-provider";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
-import { navigationForPurchases, isNavigationActive } from "@/lib/customer-navigation";
+import { isNavigationActive } from "@/lib/customer-navigation";
 import { PrismaticShopMenu } from "@/components/prismatic/shop-menu";
 
 type HeaderNavigationContent = {
@@ -24,9 +24,6 @@ type HeaderNavigationContent = {
 
 type CustomerSessionState = {
   authenticated: boolean;
-  service?: boolean;
-  stands?: boolean;
-  multilink?: boolean;
   email?: string;
   name?: string;
   businessName?: string;
@@ -111,8 +108,8 @@ export function Header() {
     defaultHeaderNavigation,
   );
   const navItems = useMemo(
-    () => customerSession.authenticated ? navigationForPurchases(customerSession) : orderedEnabledLinks(navigation.items),
-    [customerSession.authenticated, customerSession.service, customerSession.stands, customerSession.multilink, navigation.items],
+    () => orderedEnabledLinks(navigation.items),
+    [navigation.items],
   );
   const accountLabel = customerSession.authenticated
     ? `Welcome, ${getCustomerFirstName(customerSession)}`
@@ -183,9 +180,6 @@ export function Header() {
           if (active) {
             setCustomerSession({
               authenticated: body?.authenticated === true,
-              service: body?.service === true,
-              stands: body?.stands === true,
-              multilink: body?.multilink === true,
               email: typeof body?.email === "string" ? body.email : undefined,
               name: typeof body?.name === "string" ? body.name : undefined,
               businessName: typeof body?.businessName === "string" ? body.businessName : undefined,
@@ -209,7 +203,7 @@ export function Header() {
         <div className="tr-header-row grid min-h-[72px] grid-cols-[1fr_auto] items-center gap-3 xl:min-h-[78px] xl:grid-cols-[210px_1fr_210px]">
           {pathname.startsWith("/product/") ? <Link href="/shop" className="flex min-h-11 items-center gap-2 font-semibold text-ink md:hidden"><ArrowLeft size={22} aria-hidden="true" />Back to shop</Link> : null}
           <Link
-            href={customerSession.authenticated ? "/account" : "/"}
+            href="/"
             prefetch={false}
             className={pathname.startsWith("/product/") ? "hidden items-center md:inline-flex" : "inline-flex items-center"}
             onClick={() => setIsMenuOpen(false)}
@@ -224,7 +218,7 @@ export function Header() {
               className="tr-header-logo h-9 w-auto object-contain"
             />
           </Link>
-          <nav aria-label={customerSession.authenticated ? "Customer navigation" : "Main navigation"} className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
+          <nav aria-label="Main navigation" className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
             {navItems.map((item) => (
               <div key={item.href} className="tr-header-nav-item">
               <Link
@@ -236,7 +230,7 @@ export function Header() {
               >
                 {item.label}
               </Link>
-              {item.href === "/shop" && !customerSession.authenticated ? <PrismaticShopMenu links={navItems.filter(link => link.href !== "/shop")} /> : null}
+              {item.href === "/shop" ? <PrismaticShopMenu links={navItems.filter(link => link.href !== "/shop")} /> : null}
               </div>
             ))}
           </nav>
@@ -326,15 +320,6 @@ export function Header() {
   );
 }
 
-const accountLinks = [
-  { href: "/account/multilink", label: "Multi-Link", icon: Link2 },
-  { href: "/account", label: "Account dashboard", icon: LayoutDashboard },
-  { href: "/account/stands", label: "My stands", icon: PanelsTopLeft },
-  { href: "/account/heatmap", label: "Heat Map", icon: LayoutDashboard },
-  { href: "/account/orders", label: "Orders & billing", icon: PackageCheck },
-  { href: "/shop", label: "Shop stands", icon: ShoppingBag },
-];
-
 function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState; onClose: () => void }) {
   const firstName = getCustomerFirstName(customer);
 
@@ -344,21 +329,15 @@ function AccountDropdown({ customer, onClose }: { customer: CustomerSessionState
         <p className="font-medium text-ink">Welcome, {firstName}</p>
       </div>
       <div className="py-2">
-        {accountLinks.filter(link=>link.href==='/shop'||navigationForPurchases(customer).some(item=>item.href===link.href)).map((link) => {
-          const Icon = link.icon;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              prefetch={false}
-              className="flex min-h-10 items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 font-semibold text-ink transition hover:bg-soft hover:text-brand"
-              onClick={onClose}
-            >
-              <Icon size={17} />
-              {link.label}
-            </Link>
-          );
-        })}
+        <Link
+          href="/account"
+          prefetch={false}
+          className="flex min-h-10 items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 font-semibold text-ink transition hover:bg-soft hover:text-brand"
+          onClick={onClose}
+        >
+          <LayoutDashboard size={17} />
+          Account dashboard
+        </Link>
       </div>
       <form action="/api/account/logout" method="post" className="border-t border-line pt-2">
         <button className="flex min-h-10 w-full items-center gap-3 rounded-[var(--tr-radius-control)] px-3 py-2 text-left font-semibold text-ink transition hover:bg-soft hover:text-brand">

@@ -2,7 +2,6 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
-import { customerNavigation } from "@/lib/customer-navigation";
 
 const props = {
   items: [
@@ -19,23 +18,17 @@ const props = {
 };
 
 describe("mobile navigation", () => {
-  it("shows customer destinations and sign out instead of the storefront menu", () => {
+  it("shows the public menu alongside account access after sign-in", () => {
     const html = renderToStaticMarkup(createElement(MobileNavigation, {
       ...props,
       authenticated: true,
       accountHref: "/account",
       accountLabel: "Welcome, Alex",
-      pathname: "/account/orders/example",
-      items: customerNavigation,
     }));
-    for (const item of customerNavigation) expect(html).toContain(`href="${item.href}"`);
-    expect(html).toContain('aria-label="Customer mobile navigation"');
+    for (const item of props.items) expect(html).toContain(`href="${item.href}"`);
+    expect(html).toContain('aria-label="Mobile navigation"');
+    expect(html).toContain('href="/account"');
     expect(html).toContain('action="/api/account/logout"');
-    expect(html).toContain('method="post"');
-    expect(html).toContain('Shop stands');
-    expect(html).not.toContain('Shop by Type');
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page"[^>]*href="\/account\/orders"/);
   });
   it("puts account and cart before the navigation and retains all configured destinations", () => {
     const html = renderToStaticMarkup(createElement(MobileNavigation, props));

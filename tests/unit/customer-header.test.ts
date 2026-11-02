@@ -30,31 +30,15 @@ describe("customer header", () => {
     expect(html).not.toContain("Orders &amp; Billing");
   });
 
-  it("replaces storefront links with customer navigation even on a store page", () => {
+  it("keeps the same shopping destinations after sign-in", () => {
     state.authenticated = true;
     const html = renderToStaticMarkup(createElement(Header));
-    expect(html).toContain('aria-label="Customer navigation"');
-    for (const route of ["/account", "/account/stands", "/account/locations", "/account/multilink", "/account/settings", "/account/orders"]) {
-      expect(html).toContain(`href="${route}"`);
-    }
-    expect(html).not.toContain("Shop by Type");
-    expect(html).not.toContain("How It Works");
+    expect(html).toContain('aria-label="Main navigation"');
+    expect(html).toContain("Shop by Type");
+    expect(html).toContain("How It Works");
     expect(html).toContain("Welcome, Alex");
-  });
-
-  it("does not advertise tools the signed-in account has not purchased", () => {
-    state.authenticated = true;
-    state.service = state.stands = state.multilink = false;
-    const html = renderToStaticMarkup(createElement(Header));
-    for (const route of ["/account/stands", "/account/locations", "/account/multilink"]) expect(html).not.toContain(`href="${route}"`);
-    for (const route of ["/account", "/account/orders", "/account/settings"]) expect(html).toContain(`href="${route}"`);
-  });
-
-  it("highlights the customer section on nested pages without highlighting Overview", () => {
-    state.authenticated = true;
-    state.pathname = "/account/orders/example";
-    const html = renderToStaticMarkup(createElement(Header));
-    expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-    expect(html).toMatch(/aria-current="page"[^>]*href="\/account\/orders"/);
+    expect(html).not.toContain('href="/account/orders"');
+    expect(html).not.toContain('href="/account/locations"');
+    expect(html).toMatch(/<a[^>]*href="\/"[^>]*><img[^>]*alt="Tap Rater"/);
   });
 });
