@@ -155,3 +155,28 @@ function isLogoContentPixel(red: number, green: number, blue: number, alpha: num
 }
 
 
+
+export async function prepareStandLogo(file: File, store: (file: File) => Promise<UploadedLogo>) {
+  const { printableLogo } = await import("./printable-logo");
+  const printable = await printableLogo(file);
+  const original = await store(printable);
+  let asset = original;
+  let trimApplied = false;
+  let blankMarginPercent = 0;
+  try {
+    const prepared = await prepareLogoUpload(printable);
+    if (prepared.file !== printable) {
+      asset = await store(prepared.file);
+      trimApplied = prepared.trimApplied;
+      blankMarginPercent = prepared.blankMarginPercent;
+    }
+  } catch {
+    // A valid original remains printable if optional cropping fails.
+  }
+  return {
+    logo: { ...asset, originalMediaUrl: original.mediaUrl, originalStorageKey: original.storageKey,
+      originalFilename: original.filename, trimApplied, blankMarginPercent },
+    backgroundMode: trimApplied ? "auto_crop" as const : "original" as const,
+    logoSizePercent: trimApplied ? 135 : 125
+  };
+}

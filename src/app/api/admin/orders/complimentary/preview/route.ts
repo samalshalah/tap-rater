@@ -8,7 +8,7 @@ import { composeProductionArtworkDocument, getProductionArtworkTemplate } from "
 import type { OrderLineItem } from "@/lib/orders";
 
 const schema = z.object({ item: z.object({ productId: z.string(), setup: complimentaryDesignSchema.extend({
-  businessName: z.string().trim().min(1).max(120),
+  businessName: z.string().trim().max(120).default(""),
   destinationUrl: z.string().url().max(2048).refine(v => /^https?:\/\//i.test(v)),
   logoStorageKey: z.string().max(500).refine(isSafeProductMediaKey)
 }) }) });
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   const auth = await requireAdminApi(); if (auth) return auth;
   if (request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const input = schema.safeParse(await request.json().catch(() => null));
-  if (!input.success) return NextResponse.json({ error: "Enter a business name, valid link and logo before previewing." }, { status: 400 });
+  if (!input.success) return NextResponse.json({ error: "Enter a valid destination link and upload a logo to preview the stand." }, { status: 400 });
   try {
     const { productId, setup } = input.data.item;
     const entry = complimentaryCatalog(await getCheckoutProducts()).find(e => e.product.slug === productId && e.options.some(o => o.id === "branded_qr_direct"));

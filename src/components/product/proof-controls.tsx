@@ -1,6 +1,6 @@
 "use client";
 import { RotateCcw, ImageUp, Minus, Plus, ChevronDown } from "lucide-react";
-import type { UploadedLogo, LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
+import type { LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
 
 export function ProofSizeControl({ label, value, min, max, disabled = false, onChange }: {
   label: string; value: number; min: number; max: number; disabled?: boolean; onChange: (value: number) => void;
@@ -62,7 +62,7 @@ function ProofRangeControl({
 
 export function ProofControls({
   isUploadingLogo,
-  logo,
+  canAutoCrop,
   logoBackgroundMode,
   logoFitMode,
   logoOffsetXPercent,
@@ -79,7 +79,7 @@ export function ProofControls({
   showBusinessNameOnProof
 }: {
   isUploadingLogo: boolean;
-  logo: UploadedLogo;
+  canAutoCrop: boolean;
   logoBackgroundMode: LogoBackgroundMode;
   logoFitMode: LogoFitMode;
   logoOffsetXPercent: number;
@@ -137,7 +137,7 @@ export function ProofControls({
             { label: "Auto-crop", value: "auto_crop" },
             { label: "Original", value: "original" }
           ]}
-          disabled={!logo.trimApplied}
+          disabled={!canAutoCrop}
           onChange={(value) => onLogoBackgroundModeChange(value as LogoBackgroundMode)}
         />
         <ProofSegmentedControl
@@ -150,7 +150,7 @@ export function ProofControls({
           onChange={(value) => onLogoFitModeChange(value as LogoFitMode)}
         />
       </div>
-      {logo.trimApplied ? (
+      {canAutoCrop ? (
         <p className="text-xs font-semibold text-brand">Auto-crop prepared the logo and removed white background where possible. Original is still available.</p>
       ) : null}
       <div className="grid gap-4">

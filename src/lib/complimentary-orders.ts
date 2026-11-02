@@ -1,4 +1,6 @@
 import { complimentaryOrderTypes } from "@/lib/complimentary-order-types";
+import { getProductVisual } from "@/lib/storefront-visuals";
+import { isSafeProductMediaKey } from "@/lib/admin-media-storage";
 import { z } from "zod";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { OrderRecord } from "@/lib/orders";
@@ -7,6 +9,9 @@ import { generateProductVariantSku, getProductBaseSku } from "@/lib/product-mode
 import { checkoutCustomerSchema, checkoutShippingAddressSchema } from "@/lib/validators";
 
 export const complimentaryDesignSchema = z.object({
+  originalLogoStorageKey: z.string().max(500).refine(isSafeProductMediaKey).optional(),
+  croppedLogoStorageKey: z.string().max(500).refine(isSafeProductMediaKey).optional(),
+  logoBackgroundMode: z.enum(["original","auto_crop"]).optional(),
   fontSizePercent: z.number().int().min(50).max(160).default(100),
   logoSizePercent: z.number().int().min(50).max(180).default(100),
   logoOffsetXPercent: z.number().int().min(-20).max(20).default(0),
@@ -21,7 +26,7 @@ export const complimentaryOrderSchema = z.object({
   productId: z.string().min(1),
   optionId: z.enum(["standard_direct", "branded_qr_direct"]),
   quantity: z.number().int().min(1).max(100),
-  businessName: z.string().trim().min(1).max(120),
+  businessName: z.string().trim().max(120).default(""),
   destinationUrl: z.string().trim().url().max(2048).refine(v => /^https?:\/\//i.test(v), "Use an http or https link."),
   logoStorageKey: z.string().max(500).optional(),
   design: complimentaryDesignSchema.optional(),
@@ -47,10 +52,13 @@ export function complimentaryFormCatalog(products: MigratedProduct[]) {
   return complimentaryCatalog(products).map(({ product, options }) => ({
     slug: product.slug,
     title: product.title,
-    options: options.map(({ id, label }) => ({
-      id, label,
-      image: (id === "branded_qr_direct" ? product.assetSet?.brandedFrontTemplateUrl : product.assetSet?.standardFrontTemplateUrl) || product.images[0]?.src
-    }))
+    options: options.map(({ id, label }) => {
+      const photo = getProductVisual(product).src;
+      return {
+        id, label,
+        image: id === "branded_qr_direct" ? (photo === product.assetSet?.brandedFrontTemplateUrl ? undefined : photo) : product.assetSet?.standardFrontTemplateUrl || product.images[0]?.src
+      };
+    })
   }));
 }
 

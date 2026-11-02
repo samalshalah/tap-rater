@@ -4,10 +4,11 @@ import { complimentaryOrderTypes } from "@/lib/complimentary-order-types";
 import { AdminButton } from "@/components/admin/admin-ui";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { BrandedProofPreview } from "@/components/product/branded-proof-preview";
+import { ProofControls } from "@/components/product/proof-controls";
 import { useRouter } from "next/navigation";
 
 type Catalog = { slug: string; title: string; options: { id: string; label: string; image?: string }[] }[];
-export type StandEditInitial = { orderId: string; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
+export type StandEditInitial = { orderId: string; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { originalLogoStorageKey?: string; croppedLogoStorageKey?: string; logoBackgroundMode?: "original" | "auto_crop"; fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
 export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog; initial?: StandEditInitial }) {
   const [orderType, setOrderType] = useState("");
   const router = useRouter();
@@ -20,7 +21,7 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
   const [matches, setMatches] = useState<GoogleBusinessSelection[]>([]);
   const [searchStatus, setSearchStatus] = useState("");
   const [selectedBusiness, setSelectedBusiness] = useState("");
-  const [design, setDesign] = useState(initial?.design ?? { fontSizePercent: 100, logoSizePercent: 100, logoOffsetXPercent: 0, logoOffsetYPercent: 0, logoFitMode: "contain" as "contain" | "fill", showBusinessNameOnProof: true });
+  const [design, setDesign] = useState<StandEditInitial["design"]>(initial?.design ?? { fontSizePercent: 100, logoSizePercent: 100, logoOffsetXPercent: 0, logoOffsetYPercent: 0, logoFitMode: "contain" as "contain" | "fill", showBusinessNameOnProof: false });
   const previewReady = useCallback(() => {}, []);
   useEffect(() => {
     setMatches([]); setSearchStatus("");
@@ -45,14 +46,25 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
   const lock = useRef(false);
   const field = (name: string, label: string, type = "text", required = true) => <label className="grid gap-1 text-sm">{label}<input className="rounded border border-line p-2" name={name} type={type} required={required} /></label>;
   async function upload(file?: File) {
-    setLogo(""); if (!file) return;
+    if (!file) return;
     setUploading(true); setError("");
     try {
-      const form = new FormData(); form.set("file", file); form.set("role", "gallery"); form.set("productSlug", productId);
-      const res = await fetch("/api/admin/media/upload", { method: "POST", body: form });
-      const body = await res.json();
-      if (!res.ok || !body.asset?.storageKey) throw new Error(body.error ?? "Logo upload failed.");
-      setLogo(body.asset.storageKey);
+      const { prepareStandLogo } = await import("@/components/product/logo-upload");
+      const result = await prepareStandLogo(file, async printable => {
+        const form = new FormData();
+        form.set("file", printable);
+        form.set("role", "gallery");
+        form.set("productSlug", productId);
+        const res = await fetch("/api/admin/media/upload", { method: "POST", body: form });
+        const body = await res.json();
+        if (!res.ok || !body.asset?.storageKey) throw new Error(body.error ?? "Logo upload failed.");
+        return { storageKey: body.asset.storageKey, mediaUrl: body.asset.url, filename: body.asset.filename };
+      });
+      setLogo(result.logo.storageKey);
+      setDesign(current => ({ ...current, logoFitMode: "contain", logoOffsetXPercent: 0, logoOffsetYPercent: 0,
+        logoSizePercent: result.logoSizePercent, logoBackgroundMode: result.backgroundMode,
+        originalLogoStorageKey: result.logo.originalStorageKey,
+        croppedLogoStorageKey: result.logo.trimApplied ? result.logo.storageKey : undefined }));
     } catch (e) { setError(e instanceof Error ? e.message : "Logo upload failed."); }
     finally { setUploading(false); }
   }
@@ -76,7 +88,7 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
   return <form onSubmit={submit} className="max-w-3xl space-y-5">
     <fieldset disabled={busy || uploading} className="grid gap-4 rounded border border-line p-5">
       <legend className="font-semibold">Client and stand</legend>
-      <div className="grid gap-4 sm:grid-cols-2">{!initial && <>{field("name", "Client name")}{field("email", "Client email", "email")}{field("phone", "Phone", "tel", false)}</>}<label className="grid gap-1 text-sm">{productId === "google-review-stand" ? "Business name / Google search" : "Business name"}<input className="rounded border border-line p-2" name="businessName" required value={businessName} onChange={e => { setBusinessName(e.target.value); if (selectedBusiness) setDestinationUrl(""); setSelectedBusiness(""); }} placeholder={productId === "google-review-stand" ? "Business name and city" : "Business name"} autoComplete="off" /></label></div>
+      <div className="grid gap-4 sm:grid-cols-2">{!initial && <>{field("name", "Client name")}{field("email", "Client email", "email")}{field("phone", "Phone", "tel", false)}</>}{optionId === "branded_qr_direct" && <label className="flex items-center gap-2"><input type="checkbox" checked={design.showBusinessNameOnProof} onChange={e => setDesign(d => ({ ...d, showBusinessNameOnProof: e.target.checked }))} />Add business name to stand</label>}{(productId === "google-review-stand" || design.showBusinessNameOnProof) && <label className="grid gap-1 text-sm">{productId === "google-review-stand" ? "Google business search (optional)" : "Business name (optional)"}<input className="rounded border border-line p-2" name="businessName" value={businessName} onChange={e => { setBusinessName(e.target.value); if (selectedBusiness) setDestinationUrl(""); setSelectedBusiness(""); }} placeholder={productId === "google-review-stand" ? "Business name and city" : "Business name"} autoComplete="off" /></label>}</div>
       <label className="grid gap-1">Existing stand<select className="rounded border p-2" value={productId} onChange={e => { setProductId(e.target.value); setMatches([]); setSelectedBusiness(""); setDestinationUrl(""); setOptionId(catalog.find(p => p.slug === e.target.value)?.options[0]?.id ?? ""); }}>{!product && <option value={productId}>Choose an available stand</option>}{catalog.map(p => <option key={p.slug} value={p.slug}>{p.title}</option>)}</select></label>
       {productId === "google-review-stand" && <div className="grid gap-2" aria-live="polite">
         <p className="text-sm text-muted">{selectedBusiness ? `Selected: ${selectedBusiness}` : searchStatus || "Type the business name above, then select its Google listing."}</p>
@@ -85,22 +97,32 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
       <label className="grid gap-1">Design<select className="rounded border p-2" value={optionId} onChange={e => setOptionId(e.target.value)}>{product?.options.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>
       <label className="grid gap-1">Quantity<input name="quantity" type="number" min={1} max={100} defaultValue={initial?.quantity ?? 1} readOnly={Boolean(initial)} required className="rounded border p-2" /></label>
       <label className="grid gap-1 text-sm">Destination / review link<input name="destinationUrl" type="url" required value={destinationUrl} onChange={e => setDestinationUrl(e.target.value)} className="rounded border border-line p-2" /></label>
-      {optionId === "branded_qr_direct" && <label className="grid gap-2">Client logo (PNG, JPEG or WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => void upload(e.target.files?.[0])} />{logo && <span className="text-sm">Logo uploaded. Artwork will need manual approval on the order.</span>}</label>}
+      {optionId === "branded_qr_direct" && <label className="grid gap-2">Client logo<input type="file" accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds" onChange={e => { const file = e.currentTarget.files?.[0]; e.currentTarget.value = ""; void upload(file); }} />{logo && <span className="text-sm">Logo uploaded. Artwork will need manual approval on the order.</span>}</label>}
       <section className="grid gap-4 rounded-lg border border-line bg-soft p-4">
         <h2 className="font-semibold">Stand design</h2>
         <div className="grid items-start gap-4 sm:grid-cols-2">
-          {optionId === "branded_qr_direct" && logo && businessName.trim() && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : (
+          {optionId === "branded_qr_direct" && logo && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview key={productId} productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : (
             <figure className="grid justify-items-center gap-2 rounded border border-line bg-white p-2">
               {selectedOption?.image && <img src={selectedOption.image} alt={`${product?.title} front design`} className="max-h-80 max-w-full object-contain" />}
-              <figcaption className="text-sm text-muted">Catalog design</figcaption>
+              <figcaption className="text-sm text-muted">{optionId === "branded_qr_direct" ? "Product photo. Add a logo and destination link to preview this order." : "Catalog design"}</figcaption>
             </figure>
           )}
-          {optionId === "branded_qr_direct" && <div className="grid gap-4">
-            <p className="text-sm text-muted">Enter the business name and destination link and upload the logo to preview your personalized stand. Size and position are saved with this order.</p>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={design.showBusinessNameOnProof} onChange={e => setDesign(d => ({ ...d, showBusinessNameOnProof: e.target.checked }))} />Show business name on stand</label>
-        {([['logoSizePercent', 'Logo size', 50, 180], ['fontSizePercent', 'Business name size', 75, 160], ['logoOffsetXPercent', 'Logo left / right', -20, 20], ['logoOffsetYPercent', 'Logo up / down', -20, 20]] as const).map(([key, label, min, max]) => <label key={key} className="grid gap-2 text-sm">{label}: {design[key]}%<input aria-label={label} type="range" min={min} max={max} value={design[key]} onChange={e => setDesign(d => ({ ...d, [key]: Number(e.target.value) }))} /></label>)}
-        <label className="grid gap-1 text-sm">Logo fit<select value={design.logoFitMode} onChange={e => setDesign(d => ({ ...d, logoFitMode: e.target.value as "contain" | "fill" }))} className="rounded border p-2"><option value="contain">Fit entire logo</option><option value="fill">Fill logo area</option></select></label>
-          </div>}
+          {optionId === "branded_qr_direct" && logo && <ProofControls
+            canAutoCrop={Boolean(design.croppedLogoStorageKey)} isUploadingLogo={uploading} onUploadLogo={upload}
+            logoBackgroundMode={design.logoBackgroundMode ?? "original"} logoFitMode={design.logoFitMode}
+            logoOffsetXPercent={design.logoOffsetXPercent} logoOffsetYPercent={design.logoOffsetYPercent}
+            proofFontSizePercent={design.fontSizePercent} proofLogoSizePercent={design.logoSizePercent}
+            showBusinessNameOnProof={design.showBusinessNameOnProof && Boolean(businessName.trim())}
+            onLogoBackgroundModeChange={mode => {
+              const key = mode === "original" ? design.originalLogoStorageKey : design.croppedLogoStorageKey;
+              if (key) { setLogo(key); setDesign(d => ({ ...d, logoBackgroundMode: mode })); }
+            }}
+            onLogoFitModeChange={logoFitMode => setDesign(d => ({ ...d, logoFitMode }))}
+            onLogoOffsetXPercentChange={logoOffsetXPercent => setDesign(d => ({ ...d, logoOffsetXPercent }))}
+            onLogoOffsetYPercentChange={logoOffsetYPercent => setDesign(d => ({ ...d, logoOffsetYPercent }))}
+            onProofFontSizePercentChange={fontSizePercent => setDesign(d => ({ ...d, fontSizePercent }))}
+            onProofLogoSizePercentChange={logoSizePercent => setDesign(d => ({ ...d, logoSizePercent }))}
+          />}
         </div>
       </section>
       {!initial && <>

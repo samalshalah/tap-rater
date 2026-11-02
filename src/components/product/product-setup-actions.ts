@@ -194,39 +194,14 @@ export function createProductSetupActions({
     setIsUploadingLogo(true);
 
     try {
-      const { uploadLogoAsset, prepareLogoUpload } = await import("./logo-upload");
-      const { printableLogo } = await import("./printable-logo");
-      const printable = await printableLogo(file);
-      const originalAsset = await uploadLogoAsset(printable, product.slug);
-      let processedAsset = originalAsset;
-      let trimApplied = false;
-      let blankMarginPercent = 0;
-      try {
-        const prepared = await prepareLogoUpload(printable);
-        if (prepared.file !== printable) {
-          processedAsset = await uploadLogoAsset(prepared.file, product.slug);
-          trimApplied = prepared.trimApplied;
-          blankMarginPercent = prepared.blankMarginPercent;
-        }
-      } catch {
-        // Cropping is optional. The original upload is already ready for the proof.
-      }
-
-      setLogoBackgroundMode(trimApplied ? "auto_crop" : "original");
+      const { prepareStandLogo, uploadLogoAsset } = await import("./logo-upload");
+      const result = await prepareStandLogo(file, printable => uploadLogoAsset(printable, product.slug));
+      setLogoBackgroundMode(result.backgroundMode);
       setLogoFitMode("contain");
-      setProofLogoSizePercent(trimApplied ? 135 : 125);
+      setProofLogoSizePercent(result.logoSizePercent);
       setLogoOffsetXPercent(0);
       setLogoOffsetYPercent(0);
-      setLogo({
-        mediaUrl: processedAsset.mediaUrl,
-        storageKey: processedAsset.storageKey,
-        filename: processedAsset.filename,
-        originalMediaUrl: originalAsset.mediaUrl,
-        originalStorageKey: originalAsset.storageKey,
-        originalFilename: originalAsset.filename,
-        trimApplied,
-        blankMarginPercent
-      });
+      setLogo(result.logo);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Logo upload failed. Please try again.");
     } finally {

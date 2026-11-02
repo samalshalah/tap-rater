@@ -244,7 +244,7 @@ export function ProductSetupDialogContent({
                   <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-start gap-x-3 gap-y-4 md:grid-cols-[minmax(0,1fr)_260px] md:gap-6">
                     <BrandedProofPreview productSlug={product.slug} setup={proofSetup} onReady={setReadyProof} />
                     {logo ? <ProofControls
-                      logo={logo} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}
+                      canAutoCrop={Boolean(logo.trimApplied)} logoBackgroundMode={logoBackgroundMode} logoFitMode={logoFitMode}
                       logoOffsetXPercent={logoOffsetXPercent} logoOffsetYPercent={logoOffsetYPercent}
                       proofFontSizePercent={proofFontSizePercent} proofLogoSizePercent={proofLogoSizePercent}
                       onLogoBackgroundModeChange={setLogoBackgroundMode} onLogoFitModeChange={setLogoFitMode}
