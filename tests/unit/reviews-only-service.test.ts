@@ -9,7 +9,7 @@ import {accountBusinesses} from '@/lib/account-business-drafts';
 describe('Google Reviews only service',()=>{
  it('keeps reviews navigation without optimization destinations',()=>{
   expect(businessOptimizationEnabled).toBe(false);
-  expect(locationTools.map(x=>x.href)).toEqual(['/account','/account/reviews']);
+  expect(locationTools.map(x=>x.href)).toEqual(['/account','/account/reviews','/account/notifications']);
  });
  it('blocks profile and issue endpoints before any work or mutation',async()=>{
   for(const handler of [handleProfile,handleLocalIssues])for(const method of ['GET','POST']){

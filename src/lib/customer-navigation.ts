@@ -26,6 +26,7 @@ export function groupCustomerNavigation(links:typeof customerNavigation){
 export const locationTools=[
  {href:'/account',label:'Overview'},
  {href:'/account/reviews',label:'Reviews'},
+ {href:'/account/notifications',label:'Notifications'},
 ];
 export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}
 export function activeLocationId(requested:string|null,locations:{id:string}[]){return locations.some(l=>l.id===requested)?requested!:'';}

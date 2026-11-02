@@ -26,6 +26,7 @@ export default {
       }catch { console.warn(`${name} worker unavailable`); }
     };
     await invoke('reviews','google-reviews');
+    await invoke('review-emails','review-notifications');
     // Alert delivery runs independently of scans and publishing.
     try {await observeWorker('client-alerts',async()=>{const response=await openNextWorker.fetch(new Request('https://taprater.com/api/internal/client-failures',{
       method:'POST',headers:{'x-internal-secret':env.ADMIN_SESSION_SECRET,'Content-Type':'application/json'},body:JSON.stringify({action:'drain'}),
