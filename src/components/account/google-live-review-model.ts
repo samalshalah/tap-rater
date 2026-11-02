@@ -41,3 +41,10 @@ export function countReviewFilters(workspaces: Workspace[]): Record<string, numb
   }
   return counts;
 }
+
+export function nextQueueCheck(r:Row,w:Workspace){
+ const positive=r.data.starRating==='FIVE'?w.auto_five:r.data.starRating==='FOUR'&&w.auto_four;
+ const enrolled=Boolean(r.old_reply_requested_at)||(Boolean(w.consent_at&&r.data.createTime)&&Date.parse(r.data.createTime!)>Date.parse(w.consent_at!));
+ return w.enabled&&w.connected&&w.ai_consent&&w.auto_enabled&&positive&&enrolled&&!r.suspected_spam&&!r.auto_schedule_cancelled
+  &&r.publish_state==='idle'&&!r.draft&&!r.draft_generated_at&&r.approved_version==null&&!r.scheduled_at&&!r.data.reviewReply?.comment?w.draft_due_at:null;
+}

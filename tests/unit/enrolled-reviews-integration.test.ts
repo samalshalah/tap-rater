@@ -39,6 +39,16 @@ describe.skipIf(!url)('enrolled review automation on isolated database',()=>{
   await queueHistoricalPositives(original,sql);
   expect((await sql`SELECT count(*)::int AS n FROM google_live_reviews WHERE business_id=${original} AND old_reply_requested_at IS NOT NULL`)[0].n).toBe(5);
   const generate=vi.fn(async()=>({friendly:'Thank you for your feedback.',short:'Thank you.',professional:'Thank you.',personal:'Thank you.'}));
+  // A cooldown and a full rolling window must wake at different times; neither consumes a review's turn.
+  for(const full of [false,true]){
+   await sql`UPDATE google_review_links SET ai_last_at=now(),ai_hour_reservations=CASE WHEN ${full}
+    THEN array_fill(now()-interval '58 minutes',ARRAY[20]) ELSE '{}'::timestamptz[] END WHERE business_id=${original}`;
+   expect(await prepareAutomaticDraft(original,sql,generate)).toEqual({drafted:false,deferred:'hourly'});
+   const [pause]=await sql`SELECT extract(epoch FROM draft_due_at - CASE WHEN ${full} THEN ai_hour_reservations[1] ELSE ai_last_at END)::int AS seconds FROM google_review_links WHERE business_id=${original}`;
+   expect(pause.seconds).toBe(full?3600:10);
+   expect((await sql`SELECT id FROM google_live_reviews WHERE business_id=${original} AND auto_attempt_at IS NOT NULL`)).toHaveLength(0);
+  }
+  await sql`UPDATE google_review_links SET ai_hour_reservations='{}' WHERE business_id=${original}`;
   for(let i=0;i<10;i++){
     // Simulate separate worker ticks without waiting for the production cooldown.
     await sql`UPDATE google_review_links SET ai_last_at=now()-interval '1 minute' WHERE business_id=${original}`;

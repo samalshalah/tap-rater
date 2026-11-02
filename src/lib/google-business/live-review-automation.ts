@@ -13,14 +13,14 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
  const claimTime=new Date().toISOString();
- const rows=await sql`UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz
- WHERE r.id=(SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
+ const rows=await sql`WITH candidate AS (SELECT id,auto_attempt_at AS prior_attempt FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND (${Boolean(link.draft_low_stars)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
  AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
- ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1)
+ ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED)
+ UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz FROM candidate WHERE r.id=candidate.id
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
- AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*`;
+ AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*,candidate.prior_attempt`;
  if(!rows.length){
   // A quiet queue is still a completed background check. Do not hide a retryable error.
   await sql`UPDATE google_review_links SET draft_checked_at=now() WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
@@ -44,9 +44,13 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  }catch(error){
   if(error instanceof ReviewAiWaitError){
    // An expected allowance pause is not an AI/provider failure. Never retry it every minute.
-   await sql`UPDATE google_review_links SET draft_error=${error.message},draft_checked_at=now(),
-    draft_due_at=CASE WHEN ${error.reason==='monthly'} THEN (date_trunc('month',now() AT TIME ZONE 'America/New_York')+interval '1 month') AT TIME ZONE 'America/New_York' ELSE now()+interval '1 hour' END
-    WHERE business_id=${businessId}`;
+   await sql`WITH released AS (
+     UPDATE google_live_reviews SET auto_attempt_at=${review.prior_attempt??null}::timestamptz
+     WHERE id=${review.id} AND auto_attempt_at=${claimTime}::timestamptz AND version=${review.version}
+    ) UPDATE google_review_links SET draft_error=${error.message},draft_checked_at=now(),
+    draft_due_at=CASE WHEN ${error.reason==='monthly'} THEN (date_trunc('month',now() AT TIME ZONE 'America/New_York')+interval '1 month') AT TIME ZONE 'America/New_York' ELSE greatest(now(),ai_last_at+interval '10 seconds',
+     (SELECT CASE WHEN count(*)>=20 THEN min(t)+interval '1 hour' END FROM unnest(ai_hour_reservations) t WHERE t>now()-interval '1 hour')) END
+    WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
    await resolveReviewWorkerAlert(sql,businessId,'draft');
    return {drafted:false,deferred:error.reason};
   }

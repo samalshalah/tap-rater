@@ -425,3 +425,5 @@ main.tr-app-shell.tr-client-shell .tr-heatmap-keyword-dialog .tr-heatmap-editor-
 .tr-profile-draft-preview>article{padding:12px;border-bottom:1px solid #dce4ed}.tr-profile-draft-preview>article>h4{font-size:12px!important;margin:0 0 8px!important}.tr-profile-draft-preview>p{padding:14px;font-size:12px}.tr-profile-ai-findings{border:1px solid #dce4ed;border-radius:5px;padding:10px 12px;background:#fff}.tr-profile-ai-findings>summary{cursor:pointer;font-size:11px;font-weight:600}.tr-profile-ai-findings>.tr-client-issues{margin-top:12px}
 @media(max-width:1000px){.tr-profile-suggestion-grid{grid-template-columns:235px minmax(0,1fr)}.tr-profile-compare{grid-template-columns:1fr}}
 @media(max-width:700px){.tr-profile-suggestion-grid{grid-template-columns:1fr}}
+
+.tr-client-shell .tr-review-status.status-queued { white-space:normal; background:#eae5ff; color:#452baa; }
