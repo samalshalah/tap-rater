@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import './client-location-directory.css';
 import {Building2, ChevronDown} from 'lucide-react';
 
@@ -7,6 +7,7 @@ type Location = {id:string; name:string};
 type Account = {id:string; name:string; email:string; locations:Location[]};
 
 export function ClientLocationDirectory(){
+  const panel=useRef<HTMLElement>(null);
   const [open,setOpen]=useState(false);
   const [accounts,setAccounts]=useState<Account[]>([]);
   const [loading,setLoading]=useState(true);
@@ -14,6 +15,14 @@ export function ClientLocationDirectory(){
   const [attempt,setAttempt]=useState(0);
   const [accountId,setAccountId]=useState('');
   const [locationId,setLocationId]=useState('');
+  useEffect(()=>{
+    const section=panel.current;
+    if(!section)return;
+    const sync=()=>setOpen(section.matches(':popover-open'));
+    section.addEventListener('toggle',sync);
+    sync();
+    return ()=>section.removeEventListener('toggle',sync);
+  },[]);
   useEffect(()=>{
     if(!open)return;
     const controller=new AbortController();
@@ -31,7 +40,7 @@ export function ClientLocationDirectory(){
   const locations=filtered.flatMap(account=>account.locations.map(location=>({...location,account:account.email})));
   return <div className="tr-client-directory">
     <button type="button" popoverTarget="admin-client-directory" className="tr-directory-trigger"><Building2 size={16} aria-hidden="true"/> Clients &amp; locations <ChevronDown size={14} aria-hidden="true"/></button>
-    <section id="admin-client-directory" popover="auto" onToggle={event=>setOpen(event.newState==='open')} aria-label="Client accounts and locations" className="tr-directory-panel">
+    <section id="admin-client-directory" popover="auto" ref={panel} aria-label="Client accounts and locations" className="tr-directory-panel">
       <h2>Client accounts &amp; locations</h2>
       {loading?<p role="status">Loading accounts…</p>:error?<p role="alert">Accounts could not be loaded. <button onClick={()=>setAttempt(a=>a+1)}>Retry</button></p>:<>
         <div className="tr-directory-selects">
