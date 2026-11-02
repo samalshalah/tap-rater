@@ -15,7 +15,7 @@ export function ReviewAutomationControls({location,onSaved}:{location:ReviewAuto
  async function save(w:AutomationWorkspace,key:AutomationChange,enabled:boolean){
   const ai=key==='ai'?enabled:w.ai_consent;
   const automatic=ai&&(key==='positive'?enabled:w.auto_enabled);
-  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:automatic,four:key==='positive'?enabled:w.auto_four,five:key==='positive'?enabled:w.auto_five,lowStars:key==='low'?enabled:w.draft_low_stars!==false,style:w.auto_style||'friendly',version:w.settings_version,confirmAutomaticPosting:automatic,delayMinutes:w.reply_delay_minutes??120}})});
+  const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'settings',settings:{businessId:w.business_id,aiConsent:ai,autoEnabled:automatic,four:key==='positive'?enabled:w.auto_four,five:key==='positive'?enabled:w.auto_five,lowStars:key==='low'?enabled:w.draft_low_stars!==false,style:w.auto_style||'friendly',version:w.settings_version,confirmAutomaticPosting:automatic,delayMinutes:w.reply_delay_minutes??20}})});
   const d=await r.json();if(!r.ok)throw Error(d.error||'Settings could not be saved.');
   await onSaved();
  }

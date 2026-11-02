@@ -34,7 +34,7 @@ describe.skipIf(!url)('enrolled review automation on isolated database',()=>{
   }
   await bind(original);
   const [settings]=await sql`SELECT * FROM google_review_links WHERE business_id=${original}`;
-  expect(settings).toMatchObject({ai_consent:true,auto_enabled:true,auto_four:true,auto_five:true,draft_low_stars:true,review_knowledge_approved_at:null});
+  expect(settings).toMatchObject({reply_delay_minutes:20,ai_consent:true,auto_enabled:true,auto_four:true,auto_five:true,draft_low_stars:true,review_knowledge_approved_at:null});
   await syncLiveReviews(actor,original,sql,google);
   await queueHistoricalPositives(original,sql);
   expect((await sql`SELECT count(*)::int AS n FROM google_live_reviews WHERE business_id=${original} AND old_reply_requested_at IS NOT NULL`)[0].n).toBe(5);
@@ -48,8 +48,15 @@ describe.skipIf(!url)('enrolled review automation on isolated database',()=>{
    expect(pause.seconds).toBe(full?3600:10);
    expect((await sql`SELECT id FROM google_live_reviews WHERE business_id=${original} AND auto_attempt_at IS NOT NULL`)).toHaveLength(0);
   }
+  await sql`UPDATE google_review_links SET ai_hour_reservations=array_fill(now()-interval '10 minutes',ARRAY[18]),ai_last_at=NULL WHERE business_id=${original}`;
+  await sql`UPDATE google_live_reviews SET auto_attempt_at=now(),created_at=now()-interval '12 minutes' WHERE business_id=${original} AND old_reply_requested_at IS NULL`;
+  expect(await prepareAutomaticDraft(original,sql,generate)).toEqual({drafted:false});
+  await sql`UPDATE google_live_reviews SET auto_attempt_at=NULL WHERE business_id=${original} AND old_reply_requested_at IS NULL`;
+  expect(await prepareAutomaticDraft(original,sql,generate)).toEqual({drafted:true});
+  const [timing]=await sql`SELECT extract(epoch FROM scheduled_at-created_at)::int AS seconds FROM google_live_reviews WHERE business_id=${original} AND scheduled_at IS NOT NULL`;
+  expect(timing.seconds).toBe(1200);
   await sql`UPDATE google_review_links SET ai_hour_reservations='{}' WHERE business_id=${original}`;
-  for(let i=0;i<10;i++){
+  for(let i=0;i<9;i++){
     // Simulate separate worker ticks without waiting for the production cooldown.
     await sql`UPDATE google_review_links SET ai_last_at=now()-interval '1 minute' WHERE business_id=${original}`;
     expect(await prepareAutomaticDraft(original,sql,generate)).toEqual({drafted:true});

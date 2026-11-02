@@ -70,7 +70,7 @@ export function scheduledReplyEligible(review:any,link:any,now=Date.now()):boole
 }
 
 export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
- await sql`UPDATE google_live_reviews r SET scheduled_at=CASE WHEN r.old_reply_requested_at IS NOT NULL THEN greatest(now(),r.old_reply_requested_at+interval '1 hour') ELSE now()+l.reply_delay_minutes*interval '1 minute' END,scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
+ await sql`UPDATE google_live_reviews r SET scheduled_at=CASE WHEN r.old_reply_requested_at IS NOT NULL THEN greatest(now(),r.old_reply_requested_at+interval '1 hour') WHEN l.reply_delay_minutes=20 THEN greatest(now(),r.created_at+interval '20 minutes') ELSE now()+l.reply_delay_minutes*interval '1 minute' END,scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
  FROM google_review_links l WHERE r.id=${id} AND r.version=${version} AND r.approved_version IS NULL AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled
  AND NOT r.auto_schedule_cancelled AND r.draft<>'' AND r.draft_generated_at IS NOT NULL AND NOT r.suspected_spam AND r.publish_state='idle' AND r.scheduled_at IS NULL
  AND coalesce(r.data->'reviewReply'->>'comment','')='' AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))

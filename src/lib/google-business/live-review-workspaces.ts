@@ -97,12 +97,12 @@ export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=li
  finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}
 }
 
-export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean(),lowStars:z.boolean().optional(),delayMinutes:z.union([z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]).optional()}).strict();
+export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean(),lowStars:z.boolean().optional(),delayMinutes:z.union([z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]).optional()}).strict();
 
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
- const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??120},
+ const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??20},
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
  WHERE business_id=${v.businessId} AND customer_id=${settingsLink.customer_id} AND parent=${settingsLink.parent} AND google_subject=${settingsLink.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');
@@ -126,5 +126,5 @@ export async function olderReviews(actor:ReviewActor,businessId:string,confirm=f
  await sql`UPDATE google_live_reviews SET old_reply_requested_at=now() WHERE business_id=${businessId} AND id=ANY(${rows.map(r=>String(r.id))}::uuid[]) AND draft='' AND publish_state='idle' AND NOT suspected_spam AND coalesce(data->'reviewReply'->>'comment','')=''`;
  await sql`UPDATE google_review_links SET maintenance_due_at=now() WHERE business_id=${businessId}`;
  }
- return {total:rows.length,scheduled:automatic,drafts:rows.length-automatic,queued:confirm,delayMinutes:link.reply_delay_minutes??120};
+ return {total:rows.length,scheduled:automatic,drafts:rows.length-automatic,queued:confirm,delayMinutes:link.reply_delay_minutes??20};
 }
