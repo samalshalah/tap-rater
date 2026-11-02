@@ -10,3 +10,5 @@
 .tr-directory-results small{display:block;color:#4b536f;overflow-wrap:anywhere}
 .tr-directory-results li{list-style:disc;margin:2px 0 2px 20px}
 @media(max-width:640px){.tr-directory-selects{grid-template-columns:1fr}.tr-app-context:has(.tr-client-directory){height:auto;flex-wrap:wrap}.tr-directory-panel{font-size:14px}}
+
+.tr-directory-trigger>span{max-width:min(44vw,28rem);overflow:hidden;text-overflow:ellipsis}
