@@ -258,7 +258,7 @@ export function ProductSetupDialogContent({
                   <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
                     <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
                       checked={proofIsApproved} onChange={(event) => setApprovedProofId(event.target.checked ? readyProof?.proofReceiptId ?? "" : "")} />
-                    I approve this artwork, business name, and QR destination for printing.
+                    I approve this artwork and QR destination for printing.
                   </label>
                 </div>
               ) : null}
