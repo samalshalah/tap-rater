@@ -29,6 +29,16 @@ describe("complimentary orders", () => {
     expect(order).toMatchObject({ total_cents: 0, shipping_amount_cents: 0, payment_status: "complimentary", shipping_method: "Pickup" });
     expect(order.line_items_json[0]).toMatchObject({ title: "Tap Rater Review Stand for Google Reviews", unitAmountCents: 0, quantity: 2 });
   });
+  it.each(["Free / giveaway", "Etsy", "eBay", "Amazon", "Other"])("stores the %s order type at zero charge", async orderType => {
+    const reason = orderType === "Other" ? "Local market" : undefined;
+    expect((await POST(request({ ...input, orderType, reason }))).status).toBe(201);
+    expect(db.table("orders")[0]).toMatchObject({ total_cents: 0, customer_details_json: { complimentary_order_type: orderType } });
+  });
+  it("requires a description for Other and rejects unknown types", async () => {
+    for (const orderType of ["Other", "unknown"]) {
+      expect((await POST(request({ ...input, orderType, reason: " " }))).status).toBe(400);
+    }
+  });
   it("requires admin and a same-origin request", async () => {
     mocks.auth.mockResolvedValue(new Response(null, { status: 401 }));
     expect((await POST(request())).status).toBe(401);

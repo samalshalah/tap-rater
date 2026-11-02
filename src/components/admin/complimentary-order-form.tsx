@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { complimentaryOrderTypes } from "@/lib/complimentary-order-types";
 import { AdminButton } from "@/components/admin/admin-ui";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { BrandedProofPreview } from "@/components/product/branded-proof-preview";
@@ -8,6 +9,7 @@ import { useRouter } from "next/navigation";
 type Catalog = { slug: string; title: string; options: { id: string; label: string }[] }[];
 export type StandEditInitial = { orderId: string; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
 export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog; initial?: StandEditInitial }) {
+  const [orderType, setOrderType] = useState("");
   const router = useRouter();
   const [productId, setProductId] = useState(initial?.productId ?? catalog[0]?.slug ?? "");
   const product = catalog.find(p => p.slug === productId);
@@ -60,7 +62,7 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
     const data = new FormData(event.currentTarget); const value = (key: string) => String(data.get(key) ?? "").trim();
     try {
       const response = await fetch(initial ? `/api/admin/orders/${initial.orderId}/stand` : "/api/admin/orders/complimentary", { method: initial ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
-        expectedUpdatedAt: initial?.expectedUpdatedAt, requestId: requestId.current, productId, optionId, quantity: Number(value("quantity")), businessName, destinationUrl, design: optionId === "branded_qr_direct" ? design : undefined, reason: value("reason"), delivery,
+        expectedUpdatedAt: initial?.expectedUpdatedAt, requestId: requestId.current, productId, optionId, quantity: Number(value("quantity")), businessName, destinationUrl, design: optionId === "branded_qr_direct" ? design : undefined, orderType: orderType || undefined, reason: value("reason") || undefined, delivery,
         logoStorageKey: optionId === "branded_qr_direct" ? logo : undefined,
         customer: { name: value("name"), email: value("email"), phone: value("phone") },
         shippingAddress: delivery === "free_shipping" ? { name: value("name"), line1: value("line1"), line2: value("line2"), city: value("city"), state: value("state"), postalCode: value("postalCode"), country: "US", phone: value("phone") } : undefined
@@ -91,7 +93,16 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
         <label className="grid gap-1 text-sm">Logo fit<select value={design.logoFitMode} onChange={e => setDesign(d => ({ ...d, logoFitMode: e.target.value as "contain" | "fill" }))} className="rounded border p-2"><option value="contain">Fit entire logo</option><option value="fill">Fill logo area</option></select></label>
         {logo && businessName.trim() && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : <p className="text-sm text-muted">Enter the business name, link and upload a logo to see the live preview.</p>}
       </section>}
-      {!initial && <><label className="grid gap-1">Reason for complimentary order<textarea name="reason" required minLength={3} maxLength={1000} className="rounded border p-2" placeholder="Client gift, sample, replacement…" /></label>
+      {!initial && <>
+        <label className="grid gap-1">Order type
+          <select required value={orderType} onChange={e => setOrderType(e.target.value)} className="rounded border p-2">
+            <option value="" disabled>Choose an order type</option>
+            {complimentaryOrderTypes.map(type => <option key={type}>{type}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1">{orderType === "Other" ? "Order source or reason" : "Order note (optional)"}
+          <textarea name="reason" required={orderType === "Other"} maxLength={1000} className="rounded border p-2" />
+        </label>
       <label className="grid gap-1">Delivery<select value={delivery} onChange={e => setDelivery(e.target.value)} className="rounded border p-2"><option value="free_shipping">Free shipping (US)</option><option value="pickup">Pickup / hand delivery</option></select></label>
       {delivery === "free_shipping" && <div className="grid gap-4 sm:grid-cols-2">{field("line1", "Street address")}{field("line2", "Apt / suite", "text", false)}{field("city", "City")}{field("state", "State (two-letter code)")}{field("postalCode", "ZIP code")}</div>}</>}
     </fieldset>

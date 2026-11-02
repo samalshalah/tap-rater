@@ -63,6 +63,9 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             <InfoCard title="Customer">
               <Field label="Name" value={order.customer_name} />
               <Field label="Email" value={order.email} />
+              {order.payment_status === "complimentary" && (
+                <Field label="Order type" value={readNested(order.customer_details_json, ["complimentary_order_type"]) ?? "Unspecified"} />
+              )}
               <Field label="Phone" value={readNested(order.customer_details_json, ["phone"])} />
             </InfoCard>
 
