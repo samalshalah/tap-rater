@@ -43,6 +43,17 @@ export function complimentaryCatalog(products: MigratedProduct[]) {
     .filter(p => p.options.length > 0);
 }
 
+export function complimentaryFormCatalog(products: MigratedProduct[]) {
+  return complimentaryCatalog(products).map(({ product, options }) => ({
+    slug: product.slug,
+    title: product.title,
+    options: options.map(({ id, label }) => ({
+      id, label,
+      image: (id === "branded_qr_direct" ? product.assetSet?.brandedFrontTemplateUrl : product.assetSet?.standardFrontTemplateUrl) || product.images[0]?.src
+    }))
+  }));
+}
+
 export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrderSchema>, products: MigratedProduct[]): OrderRecord {
   const entry = complimentaryCatalog(products).find(p => p.product.slug === input.productId);
   const option = entry?.options.find(o => o.id === input.optionId);

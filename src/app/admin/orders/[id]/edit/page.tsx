@@ -4,14 +4,14 @@ import { ComplimentaryOrderForm } from "@/components/admin/complimentary-order-f
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminOrderById } from "@/lib/orders";
 import { getStorefrontProducts } from "@/lib/product-repository";
-import { canChangeComplimentaryStand, complimentaryCatalog, complimentaryDesignSchema } from "@/lib/complimentary-orders";
+import { canChangeComplimentaryStand, complimentaryFormCatalog, complimentaryDesignSchema } from "@/lib/complimentary-orders";
 
 export default async function EditStandPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
   const { id } = await params;
   const { order } = await getAdminOrderById(id);
   if (!order) notFound();
-  const catalog = complimentaryCatalog(await getStorefrontProducts()).map(({ product, options }) => ({ slug: product.slug, title: product.title, options: options.map(o => ({ id: o.id, label: o.label })) }));
+  const catalog = complimentaryFormCatalog(await getStorefrontProducts());
   const item = order.line_items_json[0];
   const setup = item?.setup ?? {};
   const design = complimentaryDesignSchema.safeParse(setup);

@@ -6,7 +6,7 @@ import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/goog
 import { BrandedProofPreview } from "@/components/product/branded-proof-preview";
 import { useRouter } from "next/navigation";
 
-type Catalog = { slug: string; title: string; options: { id: string; label: string }[] }[];
+type Catalog = { slug: string; title: string; options: { id: string; label: string; image?: string }[] }[];
 export type StandEditInitial = { orderId: string; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
 export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog; initial?: StandEditInitial }) {
   const [orderType, setOrderType] = useState("");
@@ -14,6 +14,7 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
   const [productId, setProductId] = useState(initial?.productId ?? catalog[0]?.slug ?? "");
   const product = catalog.find(p => p.slug === productId);
   const [optionId, setOptionId] = useState(initial?.optionId ?? product?.options[0]?.id ?? "");
+  const selectedOption = product?.options.find(option => option.id === optionId);
   const [businessName, setBusinessName] = useState(initial?.businessName ?? "");
   const [destinationUrl, setDestinationUrl] = useState(initial?.destinationUrl ?? "");
   const [matches, setMatches] = useState<GoogleBusinessSelection[]>([]);
@@ -85,14 +86,23 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
       <label className="grid gap-1">Quantity<input name="quantity" type="number" min={1} max={100} defaultValue={initial?.quantity ?? 1} readOnly={Boolean(initial)} required className="rounded border p-2" /></label>
       <label className="grid gap-1 text-sm">Destination / review link<input name="destinationUrl" type="url" required value={destinationUrl} onChange={e => setDestinationUrl(e.target.value)} className="rounded border border-line p-2" /></label>
       {optionId === "branded_qr_direct" && <label className="grid gap-2">Client logo (PNG, JPEG or WebP)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => void upload(e.target.files?.[0])} />{logo && <span className="text-sm">Logo uploaded. Artwork will need manual approval on the order.</span>}</label>}
-      {optionId === "branded_qr_direct" && <section className="grid gap-4 rounded-lg border border-line bg-soft p-4">
-        <h2 className="font-semibold">Adjust your stand design</h2>
-        <p className="text-sm text-muted">Your settings are saved with the order and used for the final print file.</p>
+      <section className="grid gap-4 rounded-lg border border-line bg-soft p-4">
+        <h2 className="font-semibold">Stand design</h2>
+        <div className="grid items-start gap-4 sm:grid-cols-2">
+          {optionId === "branded_qr_direct" && logo && businessName.trim() && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : (
+            <figure className="grid justify-items-center gap-2 rounded border border-line bg-white p-2">
+              {selectedOption?.image && <img src={selectedOption.image} alt={`${product?.title} front design`} className="max-h-80 max-w-full object-contain" />}
+              <figcaption className="text-sm text-muted">Catalog design</figcaption>
+            </figure>
+          )}
+          {optionId === "branded_qr_direct" && <div className="grid gap-4">
+            <p className="text-sm text-muted">Enter the business name and destination link and upload the logo to preview your personalized stand. Size and position are saved with this order.</p>
         <label className="flex items-center gap-2"><input type="checkbox" checked={design.showBusinessNameOnProof} onChange={e => setDesign(d => ({ ...d, showBusinessNameOnProof: e.target.checked }))} />Show business name on stand</label>
-        {([['logoSizePercent', 'Logo size', 75, 160], ['fontSizePercent', 'Business name size', 75, 160], ['logoOffsetXPercent', 'Logo left / right', -20, 20], ['logoOffsetYPercent', 'Logo up / down', -20, 20]] as const).map(([key, label, min, max]) => <label key={key} className="grid gap-2 text-sm">{label}: {design[key]}%<input aria-label={label} type="range" min={min} max={max} value={design[key]} onChange={e => setDesign(d => ({ ...d, [key]: Number(e.target.value) }))} /></label>)}
+        {([['logoSizePercent', 'Logo size', 50, 180], ['fontSizePercent', 'Business name size', 75, 160], ['logoOffsetXPercent', 'Logo left / right', -20, 20], ['logoOffsetYPercent', 'Logo up / down', -20, 20]] as const).map(([key, label, min, max]) => <label key={key} className="grid gap-2 text-sm">{label}: {design[key]}%<input aria-label={label} type="range" min={min} max={max} value={design[key]} onChange={e => setDesign(d => ({ ...d, [key]: Number(e.target.value) }))} /></label>)}
         <label className="grid gap-1 text-sm">Logo fit<select value={design.logoFitMode} onChange={e => setDesign(d => ({ ...d, logoFitMode: e.target.value as "contain" | "fill" }))} className="rounded border p-2"><option value="contain">Fit entire logo</option><option value="fill">Fill logo area</option></select></label>
-        {logo && businessName.trim() && /^https?:\/\//i.test(destinationUrl) ? <BrandedProofPreview productSlug={productId} setup={{ ...design, businessName: businessName.trim(), destinationUrl: destinationUrl.trim(), logoStorageKey: logo }} onReady={previewReady} endpoint="/api/admin/orders/complimentary/preview" /> : <p className="text-sm text-muted">Enter the business name, link and upload a logo to see the live preview.</p>}
-      </section>}
+          </div>}
+        </div>
+      </section>
       {!initial && <>
         <label className="grid gap-1">Order type
           <select required value={orderType} onChange={e => setOrderType(e.target.value)} className="rounded border p-2">
