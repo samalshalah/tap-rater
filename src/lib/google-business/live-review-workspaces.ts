@@ -20,7 +20,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  const rows=await sql`SELECT locations.business_id, page.*
  FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
  CROSS JOIN LATERAL (
-  SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at
+  SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at,policy_check
   FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
   ORDER BY data->>'updateTime' DESC,id LIMIT 101
  ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC,page.id`;
@@ -37,7 +37,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
 
 export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at,policy_check FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
 

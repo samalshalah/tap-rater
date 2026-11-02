@@ -1,5 +1,6 @@
 import {businessOptimizationEnabled} from '../business-optimization-feature';
 import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-alerts';
+import {checkNextReviewPolicy} from '../review-policy-worker';
 import { randomUUID } from "node:crypto";
 import { GoogleBusinessError } from "./client";
 import { generateReviewSuggestions } from "../review-ai-provider";
@@ -89,6 +90,11 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  let draftCursor=0;
  await Promise.all(Array.from({length:4},async()=>{while(draftCursor<draftLinks.length&&Date.now()<deadline){const id=String(draftLinks[draftCursor++].business_id);try{await queueHistoricalPositives(id,sql);const result=await prepareAutomaticDraft(id,sql,generate);if(result.drafted)drafted++;}catch{await reviewWorkerFailure(sql,id,'draft');}}}));
  if(draftCursor<draftLinks.length)await sql`UPDATE google_review_links SET draft_due_at=now() WHERE business_id=ANY(${draftLinks.slice(draftCursor).map(r=>String(r.business_id))}::uuid[])`;
+ // Advisory checks run independently of reply generation and its monthly allowance.
+ if(Date.now()<deadline){
+   try{await checkNextReviewPolicy(sql);}
+   catch{console.warn('review_policy_check_deferred');}
+ }
  // Support delivery is consolidated by the client-failures monitor.
  return {synced,drafted,published};
  }finally{await sql`UPDATE google_review_worker_lease SET lease_until=now() WHERE id=1 AND token=${workerToken}`;}

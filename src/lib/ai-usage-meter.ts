@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {getCloudflareContext} from '@opennextjs/cloudflare';
 
-export type AiUsageContext={businessId:string;customerId:string;service:'review_manual'|'review_automatic'|'sample_manual'|'sample_automatic'|'profile_fix'};
+export type AiUsageContext={businessId:string;customerId:string;service:'review_policy'|'review_manual'|'review_automatic'|'sample_manual'|'sample_automatic'|'profile_fix'};
 // Snapshot rates with every event. Gross model cost, not an invoice allocation.
 // Verified 2026-10-22: https://developers.cloudflare.com/workers-ai/models/llama-3.3-70b-instruct-fp8-fast/
 export const aiRate={model:'@cf/meta/llama-3.3-70b-instruct-fp8-fast',version:'cloudflare-2026-10-22',input:293,output:2253} as const;
