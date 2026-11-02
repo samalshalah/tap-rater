@@ -6,7 +6,7 @@ import { AdminSummaryCard } from "@/components/admin/admin-ui";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 const base: AdminOrdersWorkspaceOrder = {
   id: "order-1", checkoutSessionId: "cs_test_example", customerName: "Production customer", email: "test@example.com",
-  items: [], total: "$39.00", status: "paid", paymentStatus: "paid", createdAt: "Today",
+  isEtsy: false, items: [], total: "$39.00", status: "paid", paymentStatus: "paid", createdAt: "Today",
   fulfillmentBadges: [], productionStatus: "completed", shippingStatus: "not_shipped",
   shippingMethod: "", shippingCarrier: "", trackingNumber: "", trackingUrl: "", internalNotes: "", adminFulfillmentNotes: ""
 };
@@ -14,6 +14,12 @@ function render(filter: string, overrides: Partial<AdminOrdersWorkspaceOrder> = 
   return renderToStaticMarkup(createElement(AdminOrdersWorkspace, { configured: true, initialFilter: filter, orders: [{ ...base, ...overrides }] }));
 }
 describe("dashboard destinations", () => {
+  it("separates Etsy sales from complimentary orders", () => {
+    const sale = { isEtsy: true, paymentStatus: "complimentary" };
+    expect(render("etsy", sale)).toContain("Production customer");
+    expect(render("complimentary", sale)).not.toContain("Production customer");
+    expect(render("complimentary", { paymentStatus: "complimentary" })).toContain("Production customer");
+  });
   it("renders the whole summary as a native link", () => {
     const html = renderToStaticMarkup(createElement(AdminSummaryCard, { label: "Ready to ship", value: "2", href: "/admin/orders?filter=ready_to_ship" }));
     expect(html).toMatch(/^<a .*href="\/admin\/orders\?filter=ready_to_ship"/);

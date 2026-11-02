@@ -1,3 +1,4 @@
+import { isEtsyOrder } from "@/lib/complimentary-order-types";
 import { Plus } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOrdersWorkspace, type AdminOrdersWorkspaceOrder } from "@/components/admin/admin-orders-workspace";
@@ -75,6 +76,7 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
     }),
     total: formatPrice(order.total_cents),
     status: order.status,
+    isEtsy: isEtsyOrder(order),
     paymentStatus: order.payment_status ?? "",
     productionStatus: order.production_status,
     shippingStatus: order.shipping_status,
@@ -96,6 +98,7 @@ function toWorkspaceOrder(order: OrderRecord): AdminOrdersWorkspaceOrder {
 }
 
 function formatPaymentBadge(order: OrderRecord) {
+  if (isEtsyOrder(order)) return "Etsy";
   if (order.payment_status === "complimentary") return "Complimentary — no payment due";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";

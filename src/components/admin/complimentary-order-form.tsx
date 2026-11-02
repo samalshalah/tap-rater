@@ -8,7 +8,7 @@ import { StandLogoField } from "@/components/product/stand-logo-field";
 import { useRouter } from "next/navigation";
 
 type Catalog = { slug: string; title: string; options: { id: string; label: string; image?: string }[] }[];
-export type StandEditInitial = { orderId: string; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { originalLogoStorageKey?: string; croppedLogoStorageKey?: string; logoBackgroundMode?: "original" | "auto_crop"; fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
+export type StandEditInitial = { orderId: string; isEtsy?: boolean; expectedUpdatedAt: string; productId: string; optionId: string; businessName: string; destinationUrl: string; logoStorageKey: string; quantity: number; design: { originalLogoStorageKey?: string; croppedLogoStorageKey?: string; logoBackgroundMode?: "original" | "auto_crop"; fontSizePercent: number; logoSizePercent: number; logoOffsetXPercent: number; logoOffsetYPercent: number; logoFitMode: "contain" | "fill"; showBusinessNameOnProof: boolean } };
 export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog; initial?: StandEditInitial }) {
   const [orderType, setOrderType] = useState("");
   const router = useRouter();
@@ -142,8 +142,8 @@ export function ComplimentaryOrderForm({ catalog, initial }: { catalog: Catalog;
       <label className="grid gap-1">Delivery<select value={delivery} onChange={e => setDelivery(e.target.value)} className="rounded border p-2"><option value="free_shipping">Free shipping (US)</option><option value="pickup">Pickup / hand delivery</option></select></label>
       {delivery === "free_shipping" && <div className="grid gap-4 sm:grid-cols-2">{field("line1", "Street address")}{field("line2", "Apt / suite", "text", false)}{field("city", "City")}{field("state", "State (two-letter code)")}{field("postalCode", "ZIP code")}</div>}</>}
     </fieldset>
-    <p className="font-semibold">Client total: $0.00 — Complimentary</p>
+    <p className="font-semibold">{orderType === "Etsy" || initial?.isEtsy ? "Etsy order · No payment collected here" : "Client total: $0.00 — Complimentary"}</p>
     {error && <p role="alert" className="text-red-700">{error}</p>}
-    <AdminButton type="submit" variant="primary" className="min-h-12 w-full sm:w-auto" disabled={!product || busy || uploading || (optionId === "branded_qr_direct" && !logo)}>{uploading ? "Uploading logo…" : busy ? "Saving order…" : initial ? "Save stand changes" : "Create complimentary order"}</AdminButton>
+    <AdminButton type="submit" variant="primary" className="min-h-12 w-full sm:w-auto" disabled={!product || busy || uploading || (optionId === "branded_qr_direct" && !logo)}>{uploading ? "Uploading logo…" : busy ? "Saving order…" : initial ? "Save stand changes" : orderType === "Etsy" ? "Create Etsy order" : "Create complimentary order"}</AdminButton>
   </form>;
 }

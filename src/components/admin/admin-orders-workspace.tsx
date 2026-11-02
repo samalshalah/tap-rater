@@ -44,6 +44,7 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
         order.checkoutSessionId,
         formatOrderReference(order.checkoutSessionId || order.id),
         order.customerName,
+        order.isEtsy ? "Etsy" : "",
         order.email,
         order.paymentStatus,
         order.items.map((item) => `${item.title} ${item.sku}`).join(" ")
@@ -51,7 +52,8 @@ export function AdminOrdersWorkspace({ orders, configured, initialFilter = "all"
 
       if (!matchesSearch) return false;
       if (filter === "paid") return order.status === "paid" && order.paymentStatus !== "complimentary";
-      if (filter === "complimentary") return order.paymentStatus === "complimentary";
+      if (filter === "etsy") return order.isEtsy;
+      if (filter === "complimentary") return !order.isEtsy && order.paymentStatus === "complimentary";
       if (filter === "pending") return order.status === "pending_payment";
       const productionEligible = canOperateOrder(order) && !order.shippedAt && order.shippingStatus !== "shipped" && order.shippingStatus !== "delivered";
       if (filter === "production") return productionEligible && (order.productionStatus !== "completed" || order.hasProductionWarnings || order.hasArtworkFailure);

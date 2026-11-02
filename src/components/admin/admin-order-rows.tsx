@@ -48,7 +48,7 @@ export function OrderRow({
         <td className="px-4 py-4 align-top font-semibold text-ink">
           {order.total}
           <div className="mt-2">
-            <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill>
+            <StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.isEtsy ? "Etsy" : order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill>
           </div>
         </td>
         <td className="px-4 py-4 align-top text-muted">{order.createdAt}</td>
@@ -127,7 +127,7 @@ export function OrderMobileCard({
         <p className="shrink-0 font-semibold text-ink">{order.total}</p>
       </div>
       <div className="mt-4 grid gap-2 text-sm">
-        <OrderMobileField label="Payment"><StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill></OrderMobileField>
+        <OrderMobileField label="Payment"><StatusPill tone={order.status === "paid" ? "ready" : "warning"}>{order.isEtsy ? "Etsy" : order.paymentStatus === "complimentary" ? "Complimentary" : formatStatus(order.status)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Production"><StatusPill tone={order.productionStatus === "completed" ? "ready" : order.productionStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.productionStatus)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Fulfillment"><StatusPill tone={order.shippingStatus === "shipped" || order.shippingStatus === "delivered" ? "ready" : order.shippingStatus === "blocked" ? "warning" : "neutral"}>{formatStatus(order.shippingStatus)}</StatusPill></OrderMobileField>
         <OrderMobileField label="Date">{order.createdAt}</OrderMobileField>

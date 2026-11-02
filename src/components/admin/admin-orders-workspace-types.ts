@@ -7,6 +7,7 @@ export type AdminOrdersWorkspaceOrder = AdminOrderActionSource & {
   items: AdminOrdersWorkspaceItem[];
   total: string;
   status: "pending_payment" | "paid" | "failed" | "canceled";
+  isEtsy: boolean;
   paymentStatus: string;
   createdAt: string;
   shippedAt?: string | null;
@@ -36,6 +37,7 @@ export type AdminOrdersFilter = (typeof filterOptions)[number][0];
 export const filterOptions = [
   ["all", "All"],
   ["paid", "Paid"],
+  ["etsy", "Etsy"],
   ["complimentary", "Complimentary"],
   ["pending", "Pending"],
   ["production", "Needs production"],

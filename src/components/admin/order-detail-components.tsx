@@ -1,3 +1,4 @@
+import { isEtsyOrder } from "@/lib/complimentary-order-types";
 import { publicProofHistory } from "@/lib/stand-proof-history";
 import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { AdminAlert, AdminBadge, AdminCard, AdminSoftPanel } from "@/components/admin/admin-ui";
@@ -214,7 +215,8 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
   return typeof value === "string" && value.trim() ? value : null;
 }
 
-export function formatPaymentStatus(order: { status: string; payment_status?: string | null }) {
+export function formatPaymentStatus(order: Pick<OrderRecord, "status" | "payment_status" | "customer_details_json">) {
+  if (isEtsyOrder(order)) return "Etsy";
   if (order.payment_status === "complimentary") return "Complimentary â€” no payment due";
   if (order.payment_status === "refunded") return "Refunded";
   if (order.payment_status === "refund_pending") return "Refund pending";
