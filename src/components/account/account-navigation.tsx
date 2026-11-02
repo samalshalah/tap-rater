@@ -31,12 +31,13 @@ export function AccountNavigation({links,locations=[]}:{links:typeof customerNav
   </div>
  </aside>;
 }
-export function AccountContext({locations,enabled,locationsError=false}:{locations:NavigationLocation[];enabled:boolean;locationsError?:boolean}){
+export function AccountContext({locations,enabled,locationsError=false,adminDirectory}:{locations:NavigationLocation[];enabled:boolean;locationsError?:boolean;adminDirectory?:React.ReactNode}){
  const pathname=usePathname(),params=useSearchParams(),router=useRouter();
  const [pending,startTransition]=useTransition();
  const id=activeLocationId(params.get('location'),locations),selected=locations.find(l=>l.id===id);
  const scoped=locationTools.some(t=>t.href===pathname)||pathname==='/account/locations';
  return <header className="tr-app-context">
+  {adminDirectory}
   {enabled&&scoped?<><div className="tr-app-context-picker"><Building2 size={18} aria-hidden="true"/><label><span>Workspace</span><select aria-label="Business location" value={id} disabled={pending||locationsError} onChange={e=>{const next=new URLSearchParams(params.toString());next.set('location',e.target.value);next.delete('view');startTransition(()=>router.push((pathname==='/account/locations'?'/account':pathname)+'?'+next.toString()));}}><option value="">All locations</option>{locations.map(l=><option value={l.id} key={l.id}>{l.name}{locations.filter(other=>other.name===l.name).length>1&&l.address?' · '+l.address:''}</option>)}</select></label></div><span className="tr-app-context-address" title={selected?.address}>{selected?.address||(!selected?`${locations.length} review location${locations.length===1?'':'s'}`:'')}</span>{pending&&<span role="status" className="tr-app-context-status">Switching…</span>}{locationsError&&<p role="alert">Locations unavailable. <button onClick={()=>router.refresh()}>Retry</button></p>}</>:<span className="tr-app-context-caption">Your account workspace</span>}
  </header>;
 }
