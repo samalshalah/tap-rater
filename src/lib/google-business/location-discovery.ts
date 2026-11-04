@@ -1,4 +1,4 @@
-export type GoogleLocationChoice={name:string;account:string;accountLabel:string;title?:string;storefrontAddress?:{addressLines?:string[];locality?:string;administrativeArea?:string;postalCode?:string}};
+export type GoogleLocationChoice={name:string;account:string;accountLabel:string;title?:string;storefrontAddress?:{addressLines?:string[];locality?:string;administrativeArea?:string;postalCode?:string};phoneNumbers?:{primaryPhone?:string};websiteUri?:string};
 type Account={name:string;accountName?:string;type?:string};
 type Page={accounts?:Account[];locations?:Omit<GoogleLocationChoice,'account'|'accountLabel'>[];nextPageToken?:string};
 export async function discoverGoogleLocations(post:(body:Record<string,string>)=>Promise<Page>){
