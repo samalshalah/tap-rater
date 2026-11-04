@@ -112,7 +112,7 @@ export async function ServiceUsage() {
 
     <div className="mt-3 grid gap-3 text-xs leading-5 text-muted lg:grid-cols-3">
 
-      <p><strong>AI limits:</strong> 20 review requests per rolling hour and 10 fix requests daily per enabled location; sample AI has a separate 20-request daily limit. Allowances shown are totals, but cannot be pooled between locations. Zero means no eligible location.</p>
+      <p><strong>AI limits:</strong> Up to 60 review generations per rolling hour and 10 fix requests daily per enabled location; sample AI has a separate 20-request daily limit. Allowances shown are totals, but cannot be pooled between locations. Zero means no eligible location.</p>
 
       <p><strong>Heat-map limits:</strong> Four scheduled windows per month per enabled location with active tracking. Extra scans require cost approval. There is no separate client spending cap; all accounts share the budget above. Scan usage counts runs created this month in New York time.</p>
 

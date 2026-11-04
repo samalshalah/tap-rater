@@ -27,6 +27,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
       { label: "Customers & Licences", href: "/admin/customers", description: "Customers, Google Reviews and Multi-Link licences" },
       { label: "Client Failures", href: "/admin/client-failures", description: "Client failures and support email notifications" },
       { label: "Workers & Health", href: "/admin/workers", description: "Worker activity, client integrations and location health" },
+      { label: "Review Operations", href: "/admin/review-operations", description: "Google review performance, reply queues and timing controls" },
       { label: "Usage", href: "/admin/usage", description: "AI requests and heat-map scan usage" },
       { label: "AI Agent", href: "/admin/ai-agent", description: "Draft-generation status and AI request counts" },
       { label: "Google Connection", href: "/admin/google-connection", description: "Connection coverage and import status" },

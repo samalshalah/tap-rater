@@ -20,7 +20,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  const rows=await sql`SELECT locations.business_id, page.*
  FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
  CROSS JOIN LATERAL (
-  SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at
+  SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at
   FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
   ORDER BY data->>'updateTime' DESC,id LIMIT 101
  ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC,page.id`;
@@ -37,7 +37,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
 
 export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
 
@@ -97,16 +97,31 @@ export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=li
  finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}
 }
 
-export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean(),lowStars:z.boolean().optional(),delayMinutes:z.union([z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]).optional()}).strict();
+export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent:z.boolean(),autoEnabled:z.boolean(),four:z.boolean(),five:z.boolean(),style:z.enum(['friendly','professional','personal','short']),version:z.number().int().positive(),confirmAutomaticPosting:z.boolean(),lowStars:z.boolean().optional(),delayMinutes:z.union([z.literal(5),z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]).optional()}).strict();
 
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
- const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??20},
+ const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??5},
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
  WHERE business_id=${v.businessId} AND customer_id=${settingsLink.customer_id} AND parent=${settingsLink.parent} AND google_subject=${settingsLink.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');
  await sql`UPDATE google_live_reviews r SET scheduled_at=NULL,old_reply_requested_at=NULL FROM google_review_links l WHERE r.business_id=l.business_id AND l.business_id=${v.businessId} AND (NOT l.auto_enabled OR NOT l.ai_consent OR (r.scheduled_at IS NOT NULL AND r.schedule_consent_at IS DISTINCT FROM l.consent_at) OR (r.data->>'starRating'='FOUR' AND NOT l.auto_four) OR (r.data->>'starRating'='FIVE' AND NOT l.auto_five))`;return rows[0];
+}
+
+const replyDelaySchema=z.union([z.literal(5),z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]);
+export async function updateReviewReplyDelay(actor:ReviewActor,businessId:string,delayMinutes:number,sql=liveDb()){
+ const delay=replyDelaySchema.parse(delayMinutes);
+ await authorizedLink(actor,businessId,sql);
+ const updated=await sql`UPDATE google_review_links SET reply_delay_minutes=${delay},settings_version=settings_version+1,draft_due_at=LEAST(draft_due_at,now())
+  WHERE business_id=${businessId} AND enabled AND ai_consent RETURNING business_id,reply_delay_minutes`;
+ if(!updated.length)throw new LiveReviewError('Reply timing can only be changed for an active Google Reviews location with AI replies enabled.');
+ const rescheduled=await sql`UPDATE google_live_reviews r SET scheduled_at=greatest(now(),coalesce(r.draft_generated_at,r.created_at,now())+${delay}*interval '1 minute')
+  FROM google_review_links l WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND r.scheduled_at IS NOT NULL
+  AND r.publish_state='idle' AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.approved_version IS NULL
+  AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at AND coalesce(r.data->'reviewReply'->>'comment','')=''
+  RETURNING r.id`;
+ return {businessId,replyDelayMinutes:delay,rescheduled:rescheduled.length};
 }
 
 export async function stopLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb()){
@@ -126,5 +141,5 @@ export async function olderReviews(actor:ReviewActor,businessId:string,confirm=f
  await sql`UPDATE google_live_reviews SET old_reply_requested_at=now() WHERE business_id=${businessId} AND id=ANY(${rows.map(r=>String(r.id))}::uuid[]) AND draft='' AND publish_state='idle' AND NOT suspected_spam AND coalesce(data->'reviewReply'->>'comment','')=''`;
  await sql`UPDATE google_review_links SET maintenance_due_at=now() WHERE business_id=${businessId}`;
  }
- return {total:rows.length,scheduled:automatic,drafts:rows.length-automatic,queued:confirm,delayMinutes:link.reply_delay_minutes??20};
+ return {total:rows.length,scheduled:automatic,drafts:rows.length-automatic,queued:confirm,delayMinutes:link.reply_delay_minutes??5};
 }

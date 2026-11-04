@@ -24,6 +24,7 @@ export {
   syncLiveReviews,
   liveSettingsSchema,
   saveLiveSettings,
+  updateReviewReplyDelay,
   stopLiveReviews,
   olderReviews
 } from "./live-review-workspaces";

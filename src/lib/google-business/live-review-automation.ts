@@ -3,23 +3,22 @@ import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-
 import {checkNextReviewPolicy} from '../review-policy-worker';
 import { randomUUID } from "node:crypto";
 import { GoogleBusinessError } from "./client";
-import { generateReviewSuggestions } from "../review-ai-provider";
+import { generateAutomaticReviewReply } from "../review-ai-provider";
 import type { ReplyStyle } from "../review-ai-options";
+import type { ReplySuggestions } from "../review-ai-options";
+import type { AiUsageContext } from "../ai-usage-meter";
 import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, queueHistoricalPositives } from "./live-review-core";
 import { syncLiveReviews } from "./live-review-workspaces";
 import { publishLiveReply } from "./live-review-actions";
 
-export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate=generateReviewSuggestions,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
+type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions>;
+export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate:AutomaticReplyGenerator=generateAutomaticReviewReply,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
- // Preserve two drafting slots for newly imported reviews during historical catch-up.
- const used=(link.ai_hour_reservations as (Date|string)[]|undefined)?.filter(t=>new Date(t).getTime()>Date.now()-3600000).length??0;
- const reserveForNew=Boolean(link.auto_enabled&&(link.auto_four||link.auto_five))&&used>=18;
  const claimTime=new Date().toISOString();
  const rows=await sql`WITH candidate AS (SELECT id,auto_attempt_at AS prior_attempt FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND (${Boolean(link.draft_low_stars)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
- AND (NOT ${reserveForNew} OR old_reply_requested_at IS NULL)
  AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${link.consent_at||null}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${link.consent_at||null}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED)
  UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz FROM candidate WHERE r.id=candidate.id
@@ -33,8 +32,9 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  const review=rows[0];
  try{
   await reserveAi(businessId,sql);
-  const suggestions=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
-  const saved=await sql`UPDATE google_live_reviews r SET draft=${suggestions[link.auto_style as ReplyStyle]},version=r.version+1,
+  const generated=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',link.auto_style as ReplyStyle,undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
+  const reply=typeof generated==='string'?generated:generated[link.auto_style as ReplyStyle];
+  const saved=await sql`UPDATE google_live_reviews r SET draft=${reply},version=r.version+1,
    approved_version=NULL,draft_generated_at=now() FROM google_review_links l,businesses b,customers c,google_business_connections g
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz
    AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
@@ -53,19 +53,25 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
      WHERE id=${review.id} AND auto_attempt_at=${claimTime}::timestamptz AND version=${review.version}
     ) UPDATE google_review_links SET draft_error=${error.message},draft_checked_at=now(),
     draft_due_at=CASE WHEN ${error.reason==='monthly'} THEN (date_trunc('month',now() AT TIME ZONE 'America/New_York')+interval '1 month') AT TIME ZONE 'America/New_York' ELSE greatest(now(),ai_last_at+interval '10 seconds',
-     (SELECT CASE WHEN count(*)>=20 THEN min(t)+interval '1 hour' END FROM unnest(ai_hour_reservations) t WHERE t>now()-interval '1 hour')) END
+    (SELECT CASE WHEN count(*)>=60 THEN min(t)+interval '1 hour' END FROM unnest(ai_hour_reservations) t WHERE t>now()-interval '1 hour')) END
     WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
    await resolveReviewWorkerAlert(sql,businessId,'draft');
    return {drafted:false,deferred:error.reason};
   }
-  await sql`UPDATE google_review_links SET draft_error=${error instanceof LiveReviewError&&error.status===429?'Draft generation is queued until the hourly AI limit or cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.'},draft_checked_at=now() WHERE business_id=${businessId}`;
-  const failures=await reviewWorkerFailure(sql,businessId,'draft');
-  await sql`UPDATE google_review_links SET draft_due_at=now()+${Math.min(60,2**Math.min(failures,6))}*interval '1 minute' WHERE business_id=${businessId}`;
+  const rateLimited=error instanceof LiveReviewError&&error.status===429;
+  const failureMessage=rateLimited?'Draft generation is queued until the provider cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.';
+  const failures=rateLimited?0:await reviewWorkerFailure(sql,businessId,'draft');
+  const retryMinutes=rateLimited?5:Math.min(5,2**Math.min(failures,3));
+  await sql`WITH released AS (
+    UPDATE google_live_reviews SET auto_attempt_at=${review.prior_attempt??null}::timestamptz
+    WHERE id=${review.id} AND auto_attempt_at=${claimTime}::timestamptz AND version=${review.version}
+   ) UPDATE google_review_links SET draft_error=${failureMessage},draft_checked_at=now(),draft_due_at=now()+${retryMinutes}*interval '1 minute'
+   WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
   return {drafted:false};
  }
 }
 
-export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor,generate=generateReviewSuggestions){
+export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor,generate:AutomaticReplyGenerator=generateAutomaticReviewReply){
  const workerToken=randomUUID(),deadline=Date.now()+50_000,publishDeadline=Date.now()+15_000,importDeadline=Date.now()+35_000;
  // A database lease prevents overlapping cron invocations from multiplying API traffic.
  const lease=await sql`UPDATE google_review_worker_lease SET token=${workerToken},lease_until=now()+interval '4 minutes' WHERE id=1 AND lease_until<now() RETURNING id`;
@@ -73,7 +79,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  let synced=0,drafted=0,published=0;
  try {
  if(new Date().getUTCHours()===0&&new Date().getUTCMinutes()===0)await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
- const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<20)) fair ORDER BY turn,scheduled_at LIMIT 40`;
+ const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60)) fair ORDER BY turn,scheduled_at LIMIT 40`;
  for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolveReviewWorkerAlert(sql,String(row.business_id),'publish');}}catch(error){
  await reviewWorkerFailure(sql,String(row.business_id),'publish',!(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)));
  if(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)){

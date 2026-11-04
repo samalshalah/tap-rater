@@ -22,7 +22,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  if(automatic && (!link.auto_enabled || !link.ai_consent || !scheduledReplyEligible(review,link)))throw new LiveReviewError('Automatic posting is no longer eligible.');
  if(automatic&&review.old_reply_requested_at){
   const [budget]=await sql`SELECT count(*)::int AS used,min(attempted_at)+interval '1 hour' AS next_at FROM google_live_reviews WHERE business_id=${link.business_id} AND old_reply_requested_at IS NOT NULL AND attempted_at>now()-interval '1 hour' AND publish_state IN ('published','publishing','uncertain')`;
-  if(Number(budget?.used)>=20){await sql`UPDATE google_live_reviews SET scheduled_at=${budget.next_at}::timestamptz+interval '1 second' WHERE id=${id} AND version=${version} AND publish_state='idle'`;return {published:false};}
+  if(Number(budget?.used)>=60){await sql`UPDATE google_live_reviews SET scheduled_at=${budget.next_at}::timestamptz+interval '1 second' WHERE id=${id} AND version=${version} AND publish_state='idle'`;return {published:false};}
  }
  const client=await makeClient(String(link.owner));
  // Refresh immediately before a write so we do not blindly overwrite changes made on Google.
@@ -35,7 +35,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  WHERE r.id=${id} AND NOT r.suspected_spam AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
- AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<20) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
+ AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
  if(!claimed.length)throw new LiveReviewError('Publishing is already underway or the workspace changed. Check the result before trying again.');
  try{
   const reply=await client.publishReply(String(review.resource),String(review.draft));
