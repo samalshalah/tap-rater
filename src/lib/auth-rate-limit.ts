@@ -25,6 +25,12 @@ export async function checkLoginRateLimit(input: {
 }) {
   const context = createLoginRateLimitContext(input);
 
+  // Admin login attempts are still recorded for audit, but an identifier
+  // lockout can prevent the site owner from recovering access.
+  if (context.scope === "admin") {
+    return { context, limited: false, retryAfterSeconds: 0 };
+  }
+
   if (!context.configured) {
     return { context, limited: false, retryAfterSeconds: 0 };
   }
