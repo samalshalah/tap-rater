@@ -9,6 +9,17 @@ export function removeUnsupportedReplyClaims(value:string):string {
  return value.split(/(?<=[.!?])\s+/).filter(sentence=>!unsupported.test(sentence)).join(' ').trim();
 }
 export const reviewAiModel = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+export function ratingOnlyReviewSuggestions(rating:number,language='English'):ReplySuggestions{
+ const score=Math.max(1,Math.min(5,Math.round(rating)));
+ const copy:Record<string,Record<ReplyStyle,string>>={
+  English:{friendly:score>=4?`Thank you for the ${score}-star rating! We really appreciate your support and hope to welcome you back soon.`:score===3?'Thank you for your 3-star rating. We appreciate you taking the time to rate us.':'Thank you for your rating. We’re sorry your experience did not meet expectations.',professional:score>=4?`Thank you for your ${score}-star rating. We appreciate your support and hope to serve you again.`:score===3?'Thank you for your 3-star rating. We appreciate you sharing it with us.':'Thank you for your rating. We’re sorry your experience did not meet expectations.',personal:score>=4?`Thanks for the ${score} stars! Your support means a lot to us, and we hope to welcome you again.`:score===3?'Thank you for taking the time to rate us. We appreciate it and hope to serve you better next time.':'Thank you for rating us. We’re sorry we did not meet your expectations, and we appreciate you sharing your rating.',short:score>=4?`Thank you for the ${score}-star rating! We appreciate your support.`:'Thank you for your rating. We appreciate it.'},
+  Arabic:{friendly:score>=4?`شكراً لك على تقييم ${score} نجوم! نقدّر دعمك ونتمنى أن نرحّب بك مجدداً قريباً.`:score===3?'شكراً لك على تقييمنا بثلاث نجوم. نقدّر تخصيصك الوقت لمشاركة تقييمك.':'شكراً لك على تقييمك. نأسف لأن تجربتك لم تكن بالمستوى الذي تطلعت إليه.',professional:score>=4?`شكراً لك على تقييم ${score} نجوم. نقدّر دعمك ونتطلع إلى خدمتك مجدداً.`:score===3?'شكراً لك على تقييمنا بثلاث نجوم. نقدّر مشاركتك لتقييمك.':'شكراً لك على تقييمك. نأسف لأن تجربتك لم تلبِّ توقعاتك.',personal:score>=4?`شكراً لك على ${score} نجوم! دعمك يعني لنا الكثير، ونتمنى أن نرحّب بك مجدداً.`:score===3?'شكراً لك على تخصيص الوقت لتقييمنا. نقدّر ذلك ونتمنى أن نخدمك بشكل أفضل في المرة القادمة.':'شكراً لك على تقييمنا. نأسف لأننا لم نلبِّ توقعاتك، ونقدّر مشاركتك لتقييمك.',short:score>=4?`شكراً لك على تقييم ${score} نجوم! نقدّر دعمك.`:'شكراً لك على تقييمك. نقدّر ذلك.'},
+  Spanish:{friendly:score>=4?`¡Gracias por tu calificación de ${score} estrellas! Agradecemos mucho tu apoyo y esperamos recibirte de nuevo pronto.`:score===3?'Gracias por tu calificación de 3 estrellas. Agradecemos que te hayas tomado el tiempo de calificarnos.':'Gracias por tu calificación. Lamentamos que tu experiencia no haya cumplido tus expectativas.',professional:score>=4?`Gracias por tu calificación de ${score} estrellas. Agradecemos tu apoyo y esperamos atenderte de nuevo.`:score===3?'Gracias por tu calificación de 3 estrellas. Agradecemos que la hayas compartido.':'Gracias por tu calificación. Lamentamos que tu experiencia no haya cumplido tus expectativas.',personal:score>=4?`¡Gracias por esas ${score} estrellas! Tu apoyo significa mucho para nosotros y esperamos volver a recibirte.`:score===3?'Gracias por tomarte el tiempo de calificarnos. Lo apreciamos y esperamos ofrecerte una mejor experiencia la próxima vez.':'Gracias por calificarnos. Lamentamos no haber cumplido tus expectativas y agradecemos que compartieras tu calificación.',short:score>=4?`¡Gracias por tu calificación de ${score} estrellas! Agradecemos tu apoyo.`:'Gracias por tu calificación. Lo apreciamos.'},
+  French:{friendly:score>=4?`Merci pour votre note de ${score} étoiles ! Votre soutien nous fait plaisir et nous espérons vous accueillir à nouveau bientôt.`:score===3?'Merci pour votre note de 3 étoiles. Nous vous remercions d’avoir pris le temps de nous évaluer.':'Merci pour votre note. Nous sommes désolés que votre expérience n’ait pas répondu à vos attentes.',professional:score>=4?`Merci pour votre note de ${score} étoiles. Nous apprécions votre soutien et espérons vous servir à nouveau.`:score===3?'Merci pour votre note de 3 étoiles. Nous vous remercions de l’avoir partagée.':'Merci pour votre note. Nous sommes désolés que votre expérience n’ait pas répondu à vos attentes.',personal:score>=4?`Merci pour ces ${score} étoiles ! Votre soutien compte beaucoup pour nous et nous espérons vous revoir.`:score===3?'Merci d’avoir pris le temps de nous évaluer. Nous l’apprécions et espérons vous offrir une meilleure expérience la prochaine fois.':'Merci de nous avoir évalués. Nous sommes désolés de ne pas avoir répondu à vos attentes et vous remercions pour votre note.',short:score>=4?`Merci pour votre note de ${score} étoiles ! Nous apprécions votre soutien.`:'Merci pour votre note. Nous l’apprécions.'}
+ };
+ const selected=copy[language]||copy.English;
+ return {...selected};
+}
 export const reviewAiSystem = `Write four distinct business-owner replies to a customer review.
 Return ONLY a JSON object with exactly four string keys: friendly, professional, personal, short.
 friendly: approachable and upbeat. professional: courteous and clear. personal: warm and empathetic. short: one or two brief sentences.
@@ -26,6 +37,11 @@ Never invent policies, discounts, refunds, contact details, stock availability, 
 Do not ask for a higher rating or offer incentives. Do not disclose personal information.
 No markdown, placeholders, links, star scores, or claims that a reply was posted. These are drafts for human review.`;
 export async function generateReviewSuggestions(businessName: string, rating: number, comment: string, run?: (model:string,input:unknown)=>Promise<unknown>,meter?:AiUsageContext): Promise<ReplySuggestions> {
+ if(!comment.trim()){
+  let language='English';
+  if(meter&&['review_manual','review_automatic'].includes(meter.service))try{language=(await (await import('./review-knowledge')).replyKnowledgeContext(meter.businessId,meter.customerId)).preferences.language;}catch{/* Rating-only replies must still be available without knowledge data. */}
+  return ratingOnlyReviewSuggestions(rating,language);
+ }
  const invoke = run ?? ((model:string,input:unknown)=>invokeMeteredAi(meter,model,input));
  const knowledge=meter&&['review_manual','review_automatic'].includes(meter.service)?await (await import('./review-knowledge')).replyKnowledgeContext(meter.businessId,meter.customerId):undefined;
  const useKnowledge=knowledge?.preferences.enabled!==false;
@@ -50,6 +66,7 @@ Length preference for non-short variants: ${knowledge.preferences.length==='deta
 
 const automaticReplySchema=z.object({reply});
 export async function generateAutomaticReviewReply(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:(model:string,input:unknown)=>Promise<unknown>,meter?:AiUsageContext):Promise<string>{
+ if(!comment.trim())return (await generateReviewSuggestions(businessName,rating,'',undefined,meter))[style];
  const invoke=run??((model:string,input:unknown)=>invokeMeteredAi(meter,model,input));
  const knowledge=meter&&['review_manual','review_automatic'].includes(meter.service)?await (await import('./review-knowledge')).replyKnowledgeContext(meter.businessId,meter.customerId):undefined;
  const useKnowledge=knowledge?.preferences.enabled!==false;

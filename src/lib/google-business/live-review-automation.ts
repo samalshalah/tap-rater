@@ -31,7 +31,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  }
  const review=rows[0];
  try{
-  await reserveAi(businessId,sql);
+  if(review.data.comment?.trim())await reserveAi(businessId,sql);
   const generated=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',link.auto_style as ReplyStyle,undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
   const reply=typeof generated==='string'?generated:generated[link.auto_style as ReplyStyle];
   const saved=await sql`UPDATE google_live_reviews r SET draft=${reply},version=r.version+1,

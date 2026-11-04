@@ -36,7 +36,7 @@ export async function suggestReviewReply(actor:ReviewActor,id:string,sql=db(),ge
  WHERE r.id=${id} AND w.mode='sample' AND (${actor.kind==="admin"} OR (lower(c.email)=${email(actor)} AND c.account_status='active'))`;
  if(!rows.length)throw new ReviewAiError("Review is unavailable.",404);
  const r=rows[0];
- await reserveGeneration(String(r.business_id),sql);
+ if(String(r.comment||'').trim())await reserveGeneration(String(r.business_id),sql);
  return generate(String(r.business_name),Number(r.rating),String(r.comment),undefined,{businessId:String(r.business_id),customerId:String(r.customer_id),service:'sample_manual'});
 }
 export async function runSampleAutoReplies(actor:ReviewActor,businessId:string,sql=db(),generate=generateReviewSuggestions){
@@ -53,7 +53,7 @@ export async function runSampleAutoReplies(actor:ReviewActor,businessId:string,s
   const claimed=await sql`UPDATE workspace_sample_reviews SET auto_attempt_at=now() WHERE id=${r.id} AND version=${r.version}
    AND reply='' AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes') RETURNING id`;
   if(!claimed.length)continue;
-  await reserveGeneration(String(r.business_id),sql);
+  if(String(r.comment||'').trim())await reserveGeneration(String(r.business_id),sql);
   const suggestions=await generate(String(r.business_name),Number(r.rating),String(r.comment),undefined,{businessId:String(r.business_id),customerId:String(r.customer_id),service:'sample_automatic'});
   // Recheck ownership, enabled settings and version after inference; never replace a customer's edit.
   const updated=await sql`UPDATE workspace_sample_reviews r SET reply=${suggestions[settings.style]},status='draft',reply_source='ai-auto',version=r.version+1,updated_at=now()
