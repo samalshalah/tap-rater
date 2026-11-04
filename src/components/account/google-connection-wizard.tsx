@@ -2,7 +2,7 @@
 import {DialogTabPanel} from '@/components/ui/dialog-tab-panel';
 import {useEffect,useRef,useState} from 'react';
 import {GoogleLocationPicker} from './google-location-picker';
-import {findMatchingGoogleLocation,useGoogleLocationSearch} from './google-location-search';
+import {findMatchingGoogleLocation,prioritizeMatchingGoogleLocation,useGoogleLocationSearch} from './google-location-search';
 import {discoverGoogleLocations,type GoogleLocationChoice} from '@/lib/google-business/location-discovery';
 type Setup={connection:{email:string}|null;businesses:{id:string;business_name:string;address?:string}[]};
 export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLinked:()=>Promise<void>;businessId?:string;compact?:boolean}){
@@ -19,7 +19,7 @@ export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLi
  useEffect(()=>{
   if(!setup?.connection)return;
   let active=true;setPickerOpen(true);setBusy(true);setError('');setLocations([]);setLocation('');setAccount('');setConfirmed(false);
-  discoverGoogleLocations(post).then(rows=>{if(active){setLocations(rows);const workspace=setup.businesses.find(item=>item.id===(businessId||business));const match=workspace&&findMatchingGoogleLocation(workspace,rows);if(match){setLocation(match.name);setAccount(match.account);}if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');}}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setBusy(false);});
+  discoverGoogleLocations(post).then(rows=>{if(active){const workspace=setup.businesses.find(item=>item.id===(businessId||business));const match=workspace&&findMatchingGoogleLocation(workspace,rows);setLocations(prioritizeMatchingGoogleLocation(rows,match));if(match){setLocation(match.name);setAccount(match.account);}if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');}}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setBusy(false);});
   return()=>{active=false;};
  },[setup]);
  async function run(action:'connect'|'accounts'|'bind'|'disconnect'){
@@ -28,7 +28,7 @@ export function GoogleConnectionWizard({onLinked,businessId,compact=false}:{onLi
    if(action==='disconnect'){await post({action,confirm:true});setPickerOpen(false);setDisconnectPrompt(false);setLocations([]);setLocation('');setAccount('');setConfirmed(false);setSetup(current=>current?{...current,connection:null}:current);return;}
    if(action==='bind'){if(!confirmed||!location||!business||!locations.some(l=>l.name===location&&l.account===account))throw Error('Choose and confirm one business first.');await post({action,businessId:business,account,location,confirmAssignment:true});setPickerOpen(false);setLocations([]);setConfirmed(false);await onLinked();return;}
    setPickerOpen(true);setLocation('');setAccount('');setConfirmed(false);setLocations([]);
-   const rows=await discoverGoogleLocations(post);setLocations(rows);const workspace=setup?.businesses.find(item=>item.id===(businessId||business));const match=workspace&&findMatchingGoogleLocation(workspace,rows);if(match){setLocation(match.name);setAccount(match.account);}if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');
+   const rows=await discoverGoogleLocations(post);const workspace=setup?.businesses.find(item=>item.id===(businessId||business));const match=workspace&&findMatchingGoogleLocation(workspace,rows);setLocations(prioritizeMatchingGoogleLocation(rows,match));if(match){setLocation(match.name);setAccount(match.account);}if(!rows.length)setError('No businesses found. Connect the Google account that owns or manages your business.');
   }catch(e){setError(e instanceof Error?e.message:'Connection failed.');}finally{setBusy(false);}
  }
  const {address,visibleLocations,selected}=useGoogleLocationSearch(locations,filter,location);
