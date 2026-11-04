@@ -35,6 +35,11 @@ export function findMatchingGoogleLocation(business:WorkspaceBusiness,locations:
  return matches.length===1?matches[0]:undefined;
 }
 
+export function prioritizeMatchingGoogleLocation(locations:GoogleLocationChoice[],match:GoogleLocationChoice|undefined){
+ if(!match)return locations;
+ return [match,...locations.filter(choice=>choice.name!==match.name)];
+}
+
 export function indexGoogleLocations(locations:GoogleLocationChoice[]){
  return locations.map(choice=>{
   const address=googleLocationAddress(choice);
