@@ -50,8 +50,8 @@ export async function adminWorkerHealth(sql=liveDb()){
     (SELECT coalesce(sum(u.units),0) FROM marketing_usage_reservations u WHERE u.customer_id=c.id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_used,
     (SELECT count(*) FROM email_deliveries e WHERE lower(e.recipient)=lower(c.email) AND e.status IN ('failed','bounced') AND e.created_at>now()-interval '7 days') AS email_failures
     FROM customers c LEFT JOIN customer_marketing_access ma ON ma.customer_id=c.id WHERE c.account_status<>'guest' ORDER BY c.created_at DESC`,
-  sql`SELECT b.id,b.customer_id,b.business_name AS name,c.account_status,ma.expires_at AS licence_expires_at,ma.ai_monthly_limit AS monthly_ai_limit,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.profile_ai_enabled,l.draft_low_stars,l.reply_delay_minutes,
-    l.synced_at,l.checked_at,l.maintenance_due_at,l.draft_checked_at,l.draft_due_at,l.review_total,l.draft_error AS draft_error_message,
+  sql`SELECT b.id,b.customer_id,b.business_name AS name,c.account_status,ma.expires_at AS licence_expires_at,ma.ai_monthly_limit AS monthly_ai_limit,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,l.profile_ai_enabled,l.draft_low_stars,l.reply_delay_minutes,
+    l.synced_at,l.checked_at,l.maintenance_due_at,l.draft_checked_at,l.draft_due_at,l.review_total,l.last_error AS import_error_message,l.draft_error AS draft_error_message,
     nullif(l.last_error,'') IS NOT NULL AS import_error,(nullif(l.draft_error,'') IS NOT NULL AND l.draft_error NOT LIKE 'Draft generation is queued%' AND l.draft_error NOT LIKE 'Monthly AI allowance exhausted.%') AS draft_error,
     EXISTS(SELECT 1 FROM google_business_connections g WHERE g.owner=l.owner AND g.google_subject=l.google_subject) AS connected,
     (SELECT g.email FROM google_business_connections g WHERE g.owner=l.owner AND g.google_subject=l.google_subject) AS google_email,
@@ -73,6 +73,7 @@ export async function adminWorkerHealth(sql=liveDb()){
       count(*) FILTER(WHERE coalesce(data->'reviewReply'->>'comment','')='' AND publish_state='idle' AND scheduled_at IS NULL AND old_reply_requested_at IS NOT NULL AND draft='' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS waiting,
       count(*) FILTER(WHERE draft<>'' AND publish_state='idle' AND scheduled_at IS NULL) AS manual_drafts,
       count(*) FILTER(WHERE publish_state='uncertain') AS uncertain,
+      count(*) FILTER(WHERE publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>'') AS failed_publish,
       min(scheduled_at) FILTER(WHERE publish_state='idle' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS next_reply
       FROM google_live_reviews r WHERE r.business_id=b.id) r ON true
     LEFT JOIN LATERAL (SELECT string_agg(stage || ': ' || failures::text, ', ' ORDER BY stage) AS alert_stages,count(*) AS alerts,max(updated_at) AS last_failure,max(emailed_at) AS email_sent FROM review_worker_alerts a WHERE a.business_id=b.id AND a.resolved_at IS NULL AND (a.stage<>'draft' OR (coalesce(l.draft_error,'') NOT LIKE 'Draft generation is queued%' AND coalesce(l.draft_error,'') NOT LIKE 'Monthly AI allowance exhausted.%'))) a ON true
@@ -86,7 +87,11 @@ export async function adminWorkerHealth(sql=liveDb()){
     (SELECT max(delivered_at) FROM email_deliveries) AS email_last_delivered,
     (SELECT count(*) FROM email_deliveries WHERE status IN ('failed','bounced') AND created_at>now()-interval '24 hours') AS email_failures`
  ]);
+ let history:Record<string,any>[]=[];let historyAvailable=true;
+ try{history=await sql`SELECT business_id,action,details,created_at FROM admin_review_setting_audit WHERE business_id=ANY(${locations.map((l:any)=>String(l.id))}::uuid[]) ORDER BY created_at DESC LIMIT 800`;}catch{historyAvailable=false;}
+ const historyByLocation=new Map<string,Record<string,any>[]>();
+ for(const item of history){const key=String(item.business_id),list=historyByLocation.get(key)||[];if(list.length<8)list.push(item);historyByLocation.set(key,list);}
  const checkedAt=new Date().toISOString();
- return {checkedAt,workers:workerCatalog.map((w):Record<string,any>&{name:string;label:string;minutes:number;health:string}=>({...w,...workers.find(r=>r.name===w.name),health:workerState(workers.find(r=>r.name===w.name),w.minutes)})),accounts,locations:locations.map((l):Record<string,any>&{status:string;reasons:string[]}=>({...l,...locationHealth(l)})),integrations:integrations[0]};
+ return {checkedAt,workers:workerCatalog.map((w):Record<string,any>&{name:string;label:string;minutes:number;health:string}=>({...w,...workers.find(r=>r.name===w.name),health:workerState(workers.find(r=>r.name===w.name),w.minutes)})),accounts,locations:locations.map((l):Record<string,any>&{status:string;reasons:string[]}=>({...l,history_available:historyAvailable,setting_history:historyByLocation.get(String(l.id))||[],...locationHealth(l)})),integrations:integrations[0]};
 }
 export type WorkerHealthData=Awaited<ReturnType<typeof adminWorkerHealth>>;

@@ -60,15 +60,15 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
  return {linked:true};
 }
 
-export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb(),makeClient=clientFor){
+export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=liveDb(),makeClient=clientFor,force=false){
  const link=await authorizedLink(actor,businessId,sql);if(!link.enabled)throw new LiveReviewError('Google review access is stopped.');
  // Completed runs have a server-enforced cooldown, including stale browser requests.
- if(!link.next_page&&link.synced_at&&Date.now()-new Date(link.synced_at).getTime()<15*60*1000)return {imported:0,more:false};
+ if(!force&&!link.next_page&&link.synced_at&&Date.now()-new Date(link.synced_at).getTime()<15*60*1000)return {imported:0,more:false};
  const lock=randomUUID();
  const claims=await sql`UPDATE google_review_links SET sync_lock=${lock},sync_lock_until=now()+interval '3 minutes',checked_at=now()
  WHERE business_id=${businessId} AND enabled AND (sync_lock_until IS NULL OR sync_lock_until<now())
  AND (checked_at IS NULL OR checked_at<now()-interval '10 seconds')
- AND (next_page IS NOT NULL OR synced_at IS NULL OR synced_at<now()-interval '15 minutes')
+ AND (${force} OR next_page IS NOT NULL OR synced_at IS NULL OR synced_at<now()-interval '15 minutes')
  AND customer_id=${link.customer_id} AND owner=${link.owner} AND parent=${link.parent} AND google_subject=${link.google_subject}
  RETURNING business_id,next_page,sync_run`;
  if(!claims.length)throw new LiveReviewError('A sync is running or was just requested. Please wait briefly.');
