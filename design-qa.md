@@ -147,3 +147,11 @@ final result: passed
 - TypeScript, build and 21 focused tests passed. Production b8893839-ed76-4746-996e-336918cd800a.
 - Norah QA: new blank special date blocked Apply and Cancel left main draft clean; Sunday changed to 12:15 temporarily, applied/reopened then restored to noon; saved/reloaded with original special dates preserved. Description Cancel preserved text; unsafe featured URL blocked Apply.
 - Desktop/mobile screenshots inspected in artifacts/compact-profile-20261023. Mobile hours dialog 341px wide/339px scroll width, internal scroll and footer visible.
+
+## 2026-11-04 Location health overview (option 3)
+- Updated the client Locations page to group locations into Needs a fix, Needs attention, and Running well, with icon counts and plain-language explanations. Each location shows connection/health state plus review and reply metrics. Existing search, add/connect, edit, delete and Reviews navigation remain available.
+- Status is derived from the location API's connection/error/sync/unanswered/draft/autopilot fields. No backend or client account data was modified during visual QA.
+- Production URL: https://taprater.com/account/locations. Desktop and mobile were inspected in the authenticated browser. At 390×844, the location identity remains readable and controls wrap below it; desktop cards and status counts also rendered.
+- Visual reference: `C:\Users\hussa\AppData\Local\Temp\taprater-option-3.png` (199×112 concept board). The implementation follows the selected grouped-status direction; exact pixel matching is limited by the reference image's small collage format.
+- Checked typography, spacing, status colors/icons, labels and narrow viewport layout against the approved website style. Production build and TypeScript passed. No tests were added or run.
+- Deployed Worker version: `8ad7624b-68dd-4672-aa99-15b23b5974dc`. Existing build emitted a Durable Object binding warning and a Windows OpenNext warning; deployment completed successfully.
