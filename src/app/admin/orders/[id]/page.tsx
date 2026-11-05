@@ -66,6 +66,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               {order.payment_status === "complimentary" && (
                 <Field label="Order type" value={readNested(order.customer_details_json, ["complimentary_order_type"]) ?? "Unspecified"} />
               )}
+              {typeof order.customer_details_json?.replacement_of_order_id === "string" && <p className="text-sm"><span className="font-semibold">Replacement for: </span><a className="text-brand underline" href={`/admin/orders/${order.customer_details_json.replacement_of_order_id}`}>View original order</a></p>}
               <Field label="Phone" value={readNested(order.customer_details_json, ["phone"])} />
             </InfoCard>
 

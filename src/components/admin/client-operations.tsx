@@ -2,6 +2,7 @@ import {AdminHelp} from './admin-help';
 import {Users} from 'lucide-react';
 import {clientOperations, type ClientOperation} from '@/lib/admin-client-operations';
 import {ClientLicencesButton} from './marketing-access-editor';
+import {AdminLinkButton} from './admin-ui';
 
 type View = 'all'|'accounts'|'usage'|'ai'|'google';
 const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Customers & Licences',usage:'Service usage',ai:'AI agent',google:'Google connection'};
@@ -22,6 +23,7 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
   try {accounts=await clientOperations();} catch {unavailable=true;}
   return <section className="tr-admin-section">
     <header className="flex items-center gap-2"><h1 className="tr-admin-title">{titles[view]}</h1><AdminHelp title={titles[view]}><p>{view==='accounts'?'Manage customers and their licences.':'Account status, Google connectivity, and service usage. Client reviews, drafts, profiles, listings, heat maps, and Google reports are private.'}</p><p className="mt-2">Usage counts requests, including attempts; it is not a billing statement. Replies and profile changes remain drafts. New pricing is not active.</p></AdminHelp></header>
+    {view==='accounts' && <div className="mt-4"><AdminLinkButton href="/admin/customers/replacement" variant="primary">Create replacement stand</AdminLinkButton></div>}
     {unavailable ? <p role="alert" className="mt-4">Operational data is temporarily unavailable.</p> : <>
       <div className="tr-admin-metrics my-4 flex flex-wrap gap-5 text-sm">
         <span><strong>{accounts.length}</strong> accounts</span>
