@@ -7,7 +7,7 @@ import { Discovery } from './google-live-review-discovery';
 import {GoogleLiveReviewWorkspace} from './google-live-review-workspace';
 import { appendUnseenReviews,countReviewFilters,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
 import type { Post,Row,Snapshot,Workspace } from './google-live-review-types';
-export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false,managed=false}:{managed?:boolean;admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean}){
+export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false,managed=false,promoteActions=false}:{managed?:boolean;admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean;promoteActions?:boolean}){
  const params=useSearchParams();
  const pathname=usePathname(),router=useRouter();
  const [importStatus,setImportStatus]=useState<{id:string;name:string;done:boolean}|null>(null);
@@ -59,7 +59,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
 
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
  {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':managed?'The client can connect this location in their account.':'Connect your Google business below to import reviews.'}</p>}
- {scopedWorkspaces.map((w,index)=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} allowGoogleConnection={!admin&&!managed} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={index===0} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)}
+ {scopedWorkspaces.map((w,index)=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} allowGoogleConnection={!admin&&!managed} promoteActions={promoteActions&&index===0} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={index===0} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)}
 
  </section>;
 }

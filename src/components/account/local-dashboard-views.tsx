@@ -27,5 +27,5 @@ export function LocalDashboardViews({tab,data,visible,selected,location,customer
   {tab==='listings'&&data&&<DirectoryManager key={location+customer} locations={visible} records={data?.listings||[]} save={save} busy={busy}/>}
   {tab==='notifications'&&data&&<LocalIssueCenter key={location||'all'} businessId={location||undefined}/>}
   {/* Customer review reads enforce ownership themselves and can run alongside the workspace read. */}
-  {tab==='reviews'&&(data||!admin)&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={businessIds}/>}
+  {tab==='reviews'&&(data||!admin)&&<GoogleLiveReviews key={location+customer} admin={admin} businessId={location||undefined} businessIds={businessIds} promoteActions/>}
 </>;}
