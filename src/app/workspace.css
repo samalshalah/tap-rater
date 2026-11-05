@@ -432,6 +432,66 @@ main.tr-app-shell.tr-client-shell .tr-client-table .tr-review-status { border-ra
 main.tr-app-shell.tr-client-shell .tr-client-table-wrap .tr-listing-empty { border:0; border-radius:0; }
 @media(max-width:760px) { main.tr-app-shell.tr-client-shell .tr-client-table :is(th,td) { padding:8px; } }
 
+/* Reviews is the live client table used by signed-in accounts. Keep its
+   existing workspace shell, but give its real controls and rows the selected
+   compact table treatment instead of the older violet filter surface. */
+main.tr-app-shell.tr-client-shell .tr-review-filter-bar {
+ display:flex;
+ align-items:center;
+ gap:12px;
+ margin:0 0 10px;
+ padding:0;
+ border:0;
+ border-radius:0;
+ background:transparent;
+ box-shadow:none;
+ overflow:visible;
+}
+main.tr-app-shell.tr-client-shell .tr-review-filter-group { padding:0; gap:8px; }
+main.tr-app-shell.tr-client-shell .tr-review-filter-group + .tr-review-filter-group { border-left:0; }
+main.tr-app-shell.tr-client-shell .tr-review-filter-label { color:#52616b; font-size:12px; font-weight:600; letter-spacing:0; }
+main.tr-app-shell.tr-client-shell .tr-review-status-select {
+ min-width:188px;
+ min-height:34px;
+ border:1px solid #dce5ef;
+ border-radius:5px;
+ padding:6px 28px 6px 9px;
+ color:#172c3d;
+ font-size:13px;
+ background:#fff;
+}
+main.tr-app-shell.tr-client-shell .tr-review-status-select:focus-visible { border-color:#008783; box-shadow:0 0 0 2px #00878320; }
+main.tr-app-shell.tr-client-shell .tr-review-filter-options { gap:4px; }
+main.tr-app-shell.tr-client-shell .tr-review-filter-options button {
+ min-height:32px;
+ border:1px solid #dce5ef;
+ border-radius:5px;
+ padding:5px 8px;
+ background:#fff;
+ color:#52616b;
+ font-size:12px;
+}
+main.tr-app-shell.tr-client-shell .tr-review-filter-options button span:last-child { color:inherit; }
+main.tr-app-shell.tr-client-shell .tr-review-filter-options button[aria-pressed="true"] {
+ color:#087e79;
+ border-color:#bfe3dc;
+ background:#eaf6f3;
+ box-shadow:none;
+}
+main.tr-app-shell.tr-client-shell .tr-review-filter-options button[aria-pressed="true"] span:last-child { color:inherit; }
+main.tr-app-shell.tr-client-shell .tr-review-table-wrap { border:1px solid #dce5ef; border-radius:6px; background:#fff; }
+main.tr-app-shell.tr-client-shell .tr-review-table thead { background:#fff; color:#52616b; }
+main.tr-app-shell.tr-client-shell .tr-review-table :is(th,td) { border-color:#dfe7e6; padding:9px 10px; }
+main.tr-app-shell.tr-client-shell .tr-review-table thead th { padding-top:10px; padding-bottom:10px; font-size:12px; font-weight:600; }
+main.tr-app-shell.tr-client-shell .tr-review-row[aria-selected="true"] { background:#eaf6f3; box-shadow:inset 3px 0 #008783; }
+main.tr-app-shell.tr-client-shell .tr-review-row:is(:hover,:focus-within) { background:#f0f8f7; }
+main.tr-app-shell.tr-client-shell .tr-review-status { border-radius:4px; padding:4px 7px; font-size:12px; }
+@media(max-width:760px) {
+ main.tr-app-shell.tr-client-shell .tr-review-filter-bar { align-items:flex-start; flex-wrap:wrap; }
+ main.tr-app-shell.tr-client-shell .tr-review-filter-group { align-items:center; flex-direction:row; }
+ main.tr-app-shell.tr-client-shell .tr-review-status-select { min-width:170px; }
+}
+
 /* Shared compact profile suggestions and draft comparisons. */
 .tr-profile-view-tabs{display:flex;gap:14px;border-bottom:1px solid #dce4ed;padding-bottom:4px;flex-wrap:wrap}
 .tr-profile-view-tabs button[aria-pressed=true]{color:#008783;border-color:#008783;background:#edf7f6}
