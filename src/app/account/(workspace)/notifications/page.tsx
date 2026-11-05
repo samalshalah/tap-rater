@@ -7,10 +7,11 @@ export const metadata={title:'Review notifications',robots:{index:false,follow:f
 export default async function Page({searchParams}:{searchParams:Promise<{location?:string}>}){
  const session=await requireCustomer();
  const [locations,{location}]=await Promise.all([emailLocations(session.email),searchParams]);
- const active=locations.find(row=>row.id===location)||locations[0];
+ const selectedLocation=locations.find(row=>row.id===location);
+ const active=selectedLocation||locations[0];
  return <section className="mx-auto max-w-3xl space-y-5 p-4"><h1 className="text-3xl font-bold">Review notifications</h1>
- <p>Choose which emails you receive for each location.</p>
- {locations.length>1&&<nav className="flex flex-wrap gap-3" aria-label="Notification locations">{locations.map(row=><Link aria-current={row.id===active?.id?'page':undefined} className="underline" key={row.id} href={'/account/notifications?location='+row.id}>{row.business_name}</Link>)}</nav>}
+ <p>Choose which emails you receive {selectedLocation?'for this location.':'for each location.'}</p>
+ {locations.length>1&&!selectedLocation&&<nav className="flex flex-wrap gap-3" aria-label="Notification locations">{locations.map(row=><Link aria-current={row.id===active?.id?'page':undefined} className="underline" key={row.id} href={'/account/notifications?location='+row.id}>{row.business_name}</Link>)}</nav>}
  {active?<ReviewNotificationForm key={active.id} name={active.business_name} email={session.email} initial={{businessId:active.id,
  version:active.version??0,lowMode:active.low_mode??'off',highMode:active.high_mode??'off',weekly:active.weekly??false,
  monthly:active.monthly??false,hour:active.delivery_hour??9,zone:active.zone??'America/New_York'}}/>:
