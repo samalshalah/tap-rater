@@ -31,7 +31,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  const refresh=useCallback(async(preserveLoaded=false)=>{const version=++refreshVersion.current;const r=await fetch(readEndpoint,{cache:'no-store'});const data=await r.json();if(!r.ok)throw new Error(data.error || 'Could not load Google reviews.');if(!mounted.current||version!==refreshVersion.current)return;
   setSnapshot(old=>mergeReviewSnapshot(data,old,preserveLoaded));
  },[readEndpoint]);
- useEffect(()=>{let active=true;mounted.current=true;setSnapshot(null);setError('');refresh().catch(e=>{if(active)setError(e.message);});return()=>{active=false;mounted.current=false;refreshVersion.current++;};},[readEndpoint]);
+ useEffect(()=>{let active=true;mounted.current=true;setError('');refresh(true).catch(e=>{if(active)setError(e.message);});return()=>{active=false;mounted.current=false;refreshVersion.current++;};},[readEndpoint]);
  useEffect(()=>{if(!admin&&!managed&&!busy&&!error&&!importing.current){const pending=snapshot?.workspaces.find(w=>inScope(w.business_id)&&w.enabled&&w.connected&&!w.initial_import_completed&&(!w.synced_at||w.next_page)&&!w.last_error);if(pending)void businessAction('sync',pending.business_id);}},[snapshot,busy,error,admin,managed]); // Authenticated server routes enforce ownership on every action.
  // After initial import the page only observes status; the scheduled worker owns refreshes.
  useEffect(()=>{if(admin)return;let polling=false;const timer=setInterval(async()=>{if(polling||importing.current||document.hidden)return;polling=true;try{await refresh(true);}catch{/* Keep saved reviews visible when a status poll fails. */}finally{polling=false;}},15000);return()=>clearInterval(timer);},[readEndpoint,admin]);
