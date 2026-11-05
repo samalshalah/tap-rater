@@ -18,9 +18,21 @@ main.tr-app-shell nav.tr-account-navigation { display:flex; flex-direction:colum
 .tr-app-context { position:sticky; top:0; z-index:20; display:flex; align-items:center; flex-wrap:wrap; gap:16px; min-height:76px; padding:12px 28px; background:#fff; border-bottom:1px solid var(--app-border); }
 .tr-app-context-picker { display:flex; align-items:center; gap:10px; min-width:0; max-width:100%; }
 .tr-app-context-picker > svg { flex-shrink:0; color:#008c87; }
-.tr-app-context-picker label { display:grid; gap:3px; min-width:0; }
-.tr-app-context-picker label > span { font-size:11px; color:var(--app-muted); }
-.tr-app-context-picker select { width:100%; max-width:480px; min-height:30px; padding:2px 24px 2px 0; background:#fff; color:#162d56; font-weight:600; font-size:14px; text-overflow:ellipsis; }
+.tr-app-context-select-wrap { position:relative; display:grid; gap:3px; min-width:0; }
+.tr-app-context-label { font-size:11px; color:var(--app-muted); }
+.tr-app-context-trigger { display:flex; align-items:center; justify-content:space-between; gap:18px; width:min(480px,52vw); min-width:180px; min-height:36px; padding:7px 10px; border:1px solid #e6e7f0; border-radius:7px; background:#fff; color:#090e36; font-family:inherit; font-size:13px; font-weight:600; line-height:1.35; text-align:left; cursor:pointer; }
+.tr-app-context-trigger:hover,.tr-app-context-trigger[aria-expanded="true"] { border-color:#6035ff; }
+.tr-app-context-trigger:focus-visible,.tr-app-context-options button:focus-visible { outline:2px solid #6035ff; outline-offset:2px; }
+.tr-app-context-trigger:disabled { opacity:.55; cursor:wait; }
+.tr-app-context-trigger > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tr-app-context-trigger > svg { flex-shrink:0; color:#4b536f; transition:transform .16s ease; }
+.tr-app-context-trigger[aria-expanded="true"] > svg { transform:rotate(180deg); }
+.tr-app-context-options { position:absolute; z-index:40; top:calc(100% + 7px); left:0; width:min(480px,calc(100vw - 40px)); max-height:min(390px,65vh); overflow-y:auto; padding:5px; border:1px solid #e6e7f0; border-radius:10px; background:#fff; box-shadow:0 14px 36px rgb(9 14 54 / 14%); }
+.tr-app-context-options button { position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; padding:9px 34px 9px 10px; border:0; border-radius:6px; background:transparent; color:#090e36; font-family:inherit; font-size:13px; font-weight:500; line-height:1.35; text-align:left; cursor:pointer; }
+.tr-app-context-options button:hover,.tr-app-context-options button[aria-selected="true"] { background:#f0ebff; color:#6035ff; }
+.tr-app-context-options button small { color:#4b536f; font-size:11px; line-height:1.35; }
+.tr-app-context-options button[aria-selected="true"] small { color:#6552a8; }
+.tr-app-context-check { position:absolute; top:50%; right:12px; transform:translateY(-50%); color:#6035ff; font-weight:700; }
 .tr-app-context-address { margin-left:auto; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--app-muted); font-size:12px; }
 .tr-app-context-caption,.tr-app-context-status { color:var(--app-muted); font-size:13px; }
 .tr-app-shell .tr-workspace-content { padding:24px 28px 40px; }
@@ -88,8 +100,8 @@ main.tr-app-shell .tr-workspace-nav-link:hover { background:#f0f5f7; }
 .tr-app-shell .tr-app-navigation form { padding:9px 6px 0; }
 .tr-app-shell .tr-app-signout { min-height:29px; font-size:12px; }
 .tr-app-shell .tr-app-context { min-height:43px; padding:5px 18px; gap:12px; }
-.tr-app-shell .tr-app-context-picker label > span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
-.tr-app-shell .tr-app-context-picker select { min-height:29px; font-size:12px; }
+ .tr-app-shell .tr-app-context-label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+ .tr-app-shell .tr-app-context-trigger { min-height:29px; width:min(480px,55vw); font-size:12px; }
 main.tr-app-shell .tr-workspace-content { padding:12px; }
 main.tr-app-shell .tr-workspace-content h1 { font-size:var(--app-title)!important; line-height:1.3!important; letter-spacing:-.15px; }
 main.tr-app-shell .tr-workspace-content :is(h2,h3),main.tr-app-shell .tr-local-workspace .tr-marketing-feature h2[class] { font-size:var(--app-section)!important; line-height:1.4!important; }
@@ -250,7 +262,7 @@ main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=chec
 main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.text-xs,th,.tr-review-status,.tr-competitor-meta,.tr-workspace-metrics dt,.tr-card-metrics span,.tr-rank-metrics span,.tr-heatmap-status,.tr-heatmap-settings) { font-size:var(--app-label); }
 main.tr-app-shell.tr-client-shell .tr-account-navigation .tr-workspace-nav-link,
 main.tr-app-shell.tr-client-shell .tr-app-signout,
-main.tr-app-shell.tr-client-shell .tr-app-context-picker select { font-size:var(--app-body); }
+ main.tr-app-shell.tr-client-shell .tr-app-context-trigger { font-size:var(--app-body); }
 main.tr-app-shell.tr-client-shell .tr-app-context-address { font-size:var(--app-label); }
 main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card-heading { font-size:var(--app-section); }
 main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-heatmap-feature .tr-heatmap-scan-bar h3[class] { font-size:var(--app-body)!important; }
