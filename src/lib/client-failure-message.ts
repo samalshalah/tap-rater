@@ -5,6 +5,7 @@ export type Failure = {
   path?: string;
   http_status?: number;
   occurrences?: number;
+  notified_at?: string | null;
   business_name?: string | null;
   address?: string | null;
   email?: string | null;
