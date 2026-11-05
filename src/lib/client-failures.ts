@@ -1,5 +1,5 @@
 import {businessOptimizationEnabled} from './business-optimization-feature';
-import {describeClientFailure} from './client-failure-message';
+import {describeClientFailure,failureAlertKind,failureAlertSubject,failureAlertTitle,type Failure,type FailureAlertKind} from './client-failure-message';
 import {createHash} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import {sendEmail,buildEmailHtml,getCustomerReplyToEmail} from './email';
@@ -21,14 +21,21 @@ export async function recordClientFailure(input:ClientFailure,sql=db()){
  ON CONFLICT(fingerprint) DO UPDATE SET occurrences=client_failures.occurrences+1,last_seen=now(),resolved_at=NULL`;
 }
 export async function sendClientFailureAlerts(sql=db(),send=sendEmail){
- const rows=await sql`WITH due AS (SELECT id FROM client_failures WHERE resolved_at IS NULL AND (notified_at IS NULL OR (last_seen>notified_at AND notified_at<now()-interval '24 hours')) AND (notification_attempt_at IS NULL OR notification_attempt_at<now()-interval '15 minutes') ORDER BY first_seen LIMIT 30 FOR UPDATE SKIP LOCKED)
- UPDATE client_failures f SET notification_attempt_at=now() FROM due WHERE f.id=due.id RETURNING f.*`;
+ const rows=await sql`WITH due AS (SELECT id FROM client_failures WHERE resolved_at IS NULL AND (notified_at IS NULL OR (last_seen>notified_at AND notified_at<now()-interval '24 hours')) AND (notification_attempt_at IS NULL OR notification_attempt_at<now()-interval '15 minutes') ORDER BY first_seen LIMIT 30 FOR UPDATE SKIP LOCKED), claimed AS (
+ UPDATE client_failures f SET notification_attempt_at=now() FROM due WHERE f.id=due.id RETURNING f.*
+ ) SELECT claimed.*,c.email,b.business_name,b.address FROM claimed LEFT JOIN customers c ON c.id=claimed.customer_id LEFT JOIN businesses b ON b.id=claimed.business_id` as Failure[];
  if(!rows.length)return {sent:0};
- // Reuse the claimed time bucket on retries to reduce duplicate provider deliveries.
- const key='client-failures-'+createHash('sha256').update(rows.map(r=>r.id+':'+(r.notified_at||'first')).sort().join('|')).digest('hex');
- let result;try{result=await send({to:supportAlertRecipient(),subject:`Tap Rater: ${rows.length} website ${rows.length===1?'issue needs':'issues need'} attention`,html:buildEmailHtml({title:'Website issues to review',body:[...rows.map(describeClientFailure),'These are recorded incidents, not a confirmation that the problem is still happening. Account details and technical information are available in the admin dashboard.'],cta:{label:'Review website issues',url:'https://taprater.com/admin/client-failures'}}),delivery:{messageType:'client_failure_alert',audience:'internal',idempotencyKey:key}});}catch{result={sent:false as const,reason:'send_exception'};}
- for(const row of rows)await sql`UPDATE client_failures SET notified_at=CASE WHEN ${result.sent} THEN now() ELSE notified_at END,notification_error=${result.sent?null:'Support email failed; queued for retry'} WHERE id=${row.id}`;
- return {sent:result.sent?rows.length:0};
+ const groups=rows.reduce((all,row)=>{const kind=failureAlertKind(row);(all[kind]??=[]).push(row);return all;},{} as Partial<Record<FailureAlertKind,Failure[]>>);
+ let sent=0;
+ for(const [kind,group] of Object.entries(groups) as [FailureAlertKind,Failure[]][]){
+  // Reuse the claimed time bucket on retries to reduce duplicate provider deliveries.
+  const key='client-failures-'+createHash('sha256').update(kind+':'+group.map(r=>r.id+':'+(r.notified_at||'first')).sort().join('|')).digest('hex');
+  const single=group.length===1?group[0]:null;
+  let result;try{result=await send({to:supportAlertRecipient(),subject:failureAlertSubject(kind,group),html:buildEmailHtml({title:failureAlertTitle(kind),body:[...group.map(describeClientFailure),'Status: This alert is active. It is not confirmation that the problem is still happening.'],cta:{label:single?'Review this alert':'Review alerts',url:single?.id?`https://taprater.com/admin/client-failures/${encodeURIComponent(single.id)}`:'https://taprater.com/admin/client-failures'}}),delivery:{messageType:'client_failure_alert',audience:'internal',idempotencyKey:key}});}catch{result={sent:false as const};}
+  for(const row of group)await sql`UPDATE client_failures SET notified_at=CASE WHEN ${result.sent} THEN now() ELSE notified_at END,notification_error=${result.sent?null:'Support email failed; queued for retry'} WHERE id=${row.id}`;
+  if(result.sent)sent+=group.length;
+ }
+ return {sent};
 }
 export async function collectBackgroundFailures(sql=db()){
  const rows=await sql`WITH draft_state AS (

@@ -1,4 +1,44 @@
-type Failure = { code?: string; path?: string; http_status?: number; occurrences?: number };
+export type Failure = {
+  id?: string;
+  code?: string;
+  source?: string;
+  path?: string;
+  http_status?: number;
+  occurrences?: number;
+  business_name?: string | null;
+  address?: string | null;
+  email?: string | null;
+};
+
+export type FailureAlertKind = 'review' | 'website' | 'email' | 'system';
+
+export function failureAlertKind(row: Failure): FailureAlertKind {
+  if (row.code?.startsWith('review_')) return 'review';
+  if (row.code === 'email_delivery') return 'email';
+  if (row.code?.startsWith('worker_') || row.code?.startsWith('heatmap_') || row.code === 'profile_draft') return 'system';
+  return 'website';
+}
+
+export function failureAlertTitle(kind: FailureAlertKind) {
+  return {
+    review: 'Google review alerts to review',
+    website: 'Website alerts to review',
+    email: 'Email delivery alerts to review',
+    system: 'System alerts to review',
+  }[kind];
+}
+
+export function failureAlertSubject(kind: FailureAlertKind, rows: Failure[]) {
+  const location = rows.length === 1 ? rows[0].business_name?.trim() : '';
+  const prefix = location ? `${location} — ` : rows.length === 1 ? '' : `${rows.length} `;
+  const label = {
+    review: 'Google reply needs review',
+    website: 'website issue needs review',
+    email: 'email delivery issue needs review',
+    system: 'system issue needs review',
+  }[kind];
+  return `Tap Rater: ${prefix}${label}`;
+}
 
 export function describeClientFailure(row: Failure) {
   const area = row.path?.includes('/setup/proof') ? 'Stand design preview'
@@ -26,5 +66,9 @@ export function describeClientFailure(row: Failure) {
     : [`${area}: an action could not be completed.`, 'Review the incident in the admin dashboard to identify the affected action.']
   );
   const count = Number(row.occurrences) || 1;
-  return `${summary} Recorded ${count === 1 ? 'once' : `${count} times`}. Next step: ${action}`;
+  const location = row.business_name?.trim()
+    ? `Location: ${row.business_name.trim()}${row.address?.trim() ? ` — ${row.address.trim()}` : ''}. `
+    : '';
+  const account = !location && row.email?.trim() ? `Customer account: ${row.email.trim()}. ` : '';
+  return `${location}${account}${summary} Recorded ${count === 1 ? 'once' : `${count} times`}. Next step: ${action}`;
 }
