@@ -41,7 +41,7 @@ export function AccountContext({locations,enabled,locationsError=false,adminDire
  useEffect(()=>{if(!pickerOpen)return;const outside=(event:PointerEvent)=>{if(!pickerRef.current?.contains(event.target as Node))setPickerOpen(false);};const escape=(event:KeyboardEvent)=>{if(event.key==='Escape'){setPickerOpen(false);pickerRef.current?.querySelector<HTMLButtonElement>('.tr-app-context-trigger')?.focus();}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape);};},[pickerOpen]);
  const choices=[{id:'',name:'All locations',address:''},...locations.map(l=>({id:l.id,name:l.name,address:locations.filter(other=>other.name===l.name).length>1?l.address||'': ''}))];
  const currentLabel=selected?`${selected.name}${locations.filter(other=>other.name===selected.name).length>1&&selected.address?' · '+selected.address:''}`:'All locations';
- const choose=(nextId:string)=>{setPickerOpen(false);if(nextId===id)return;const next=new URLSearchParams(params.toString());if(nextId)next.set('location',nextId);else next.delete('location');next.delete('view');startTransition(()=>router.push((pathname==='/account/locations'?'/account':pathname)+(next.size?'?'+next.toString():'')));};
+ const choose=(nextId:string)=>{setPickerOpen(false);if(nextId===id)return;const next=new URLSearchParams(params.toString());if(nextId)next.set('location',nextId);else next.delete('location');next.delete('view');startTransition(()=>router.push(pathname+(next.size?'?'+next.toString():'')));};
  const scoped=locationTools.some(t=>t.href===pathname)||pathname==='/account/locations';
  return <header className="tr-app-context">
   {adminDirectory}
