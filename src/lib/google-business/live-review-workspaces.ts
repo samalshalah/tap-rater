@@ -23,7 +23,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
   SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at
   FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
   ORDER BY CASE WHEN ${prioritizeDrafts} AND NOT suspected_spam AND draft<>'' AND publish_state<>'published' AND approved_version IS DISTINCT FROM version THEN 0 ELSE 1 END,data->>'updateTime' DESC,id LIMIT 101
- ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC,page.id`;
+ ) page ORDER BY locations.business_id,CASE WHEN ${prioritizeDrafts} AND NOT page.suspected_spam AND page.draft<>'' AND page.publish_state<>'published' AND page.approved_version IS DISTINCT FROM page.version THEN 0 ELSE 1 END,page.data->>'updateTime' DESC,page.id`;
  const grouped=new Map<string,typeof rows>();
  for(const {business_id,...review} of rows){
   const reviews=grouped.get(business_id) || [];
