@@ -4,6 +4,7 @@ import { createManualOrderReference } from "@/lib/order-reference";
 import type { CheckoutCustomerInput, CheckoutShippingAddressInput } from "@/lib/validators";
 import { inferOrderProductionStatus, mapCheckoutRowsToOrderLineItems, mapCheckoutSessionToOrderInput, mergeOrderDetails, normalizeOrderRecord, normalizePrePaymentShippingAddress } from "./order-model";
 import { guardedOrderUpdate, matchOrderField } from "./order-persistence";
+import { ensureOrderCustomerRecord } from "./order-customers";
 import type { CheckoutPaymentFailureStatus, OrderRecord, OrderRefundSaveResult, OrdersDbClient, PaidOrderSaveResult, StripeCheckoutSessionLike } from "./order-types";
 export {
   updateOrderFulfillment,
@@ -295,6 +296,7 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
       if (repaired.error || !repaired.data) return { ok: false, error: repaired.error?.message ?? "Payment reference changed. Retry the event." };
       existingOrder.stripe_payment_intent_id = order.stripe_payment_intent_id;
     }
+    await recordOrderCustomer(client, existingOrder);
     return { ok: true, order: existingOrder, wasAlreadyPaid: true };
   }
   const shouldPreserveExistingLineItems = Boolean(existingOrder?.line_items_json.length);
@@ -344,9 +346,27 @@ export async function savePaidOrderFromCheckoutSessionWithClient(
     : client.from("orders").insert(payload);
   const { data: savedOrder, error } = await query.select("*").maybeSingle();
 
-  return error || !savedOrder
-    ? { ok: false, error: error?.message ?? "Order changed during payment processing. Retry the event." }
-    : { ok: true, order: savedOrder ? normalizeOrderRecord(savedOrder) : mergedOrder, wasAlreadyPaid };
+  if (error || !savedOrder) {
+    return { ok: false, error: error?.message ?? "Order changed during payment processing. Retry the event." };
+  }
+
+  const normalizedOrder = normalizeOrderRecord(savedOrder);
+  await recordOrderCustomer(client, normalizedOrder);
+  return { ok: true, order: normalizedOrder, wasAlreadyPaid };
+}
+
+async function recordOrderCustomer(client: OrdersDbClient, order: OrderRecord) {
+  try {
+    await ensureOrderCustomerRecord(client, order);
+  } catch (error) {
+    // Payment and order persistence are already complete. A directory issue
+    // must not turn a paid order into a failed checkout.
+    console.warn("[orders] customer_directory_sync_failed", {
+      orderId: order.id,
+      email: order.email,
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+  }
 }
 
 export async function getAdminOrders(): Promise<{ configured: boolean; orders: OrderRecord[] }> {

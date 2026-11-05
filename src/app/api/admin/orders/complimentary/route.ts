@@ -4,6 +4,7 @@ import { complimentaryOrderSchema, buildComplimentaryOrder } from "@/lib/complim
 import { getCheckoutProducts } from "@/lib/product-repository";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getProductMediaObject, isSafeProductMediaKey } from "@/lib/admin-media-storage";
+import { ensureOrderCustomerRecord } from "@/lib/order-customers";
 
 export async function POST(request: Request) {
   const auth = await requireAdminApi();
@@ -31,6 +32,15 @@ export async function POST(request: Request) {
       throw saved.error;
     }
     if (!saved.data) throw new Error("Order save returned no identifier.");
+    try {
+      await ensureOrderCustomerRecord(db, order);
+    } catch (syncError) {
+      console.warn("[complimentary-orders] customer_directory_sync_failed", {
+        orderId: saved.data.id,
+        email: order.email,
+        reason: syncError instanceof Error ? syncError.message : "unknown"
+      });
+    }
     return NextResponse.json({ orderId: saved.data.id }, { status: 201 });
   } catch (error) {
     const invalid = error instanceof Error && error.message.startsWith("Choose an available");
