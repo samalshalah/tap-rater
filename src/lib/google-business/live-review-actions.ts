@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { generateReviewSuggestions } from "../review-ai-provider";
+import { replyStyles } from "../review-ai-options";
 import type { ReviewActor } from "../review-workspaces";
 import { livePublishingEnabled, liveDb, LiveReviewError, actorEmail, reviewStars, clientFor, loadLiveReview, reserveAi, assertReviewNotSpam, scheduledReplyEligible } from "./live-review-core";
 
@@ -13,6 +14,23 @@ export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,ver
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);if(review.data.comment?.trim())await reserveAi(String(link.business_id),sql);
  return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
+}
+
+export async function generateLiveReply(actor:ReviewActor,id:string,version:number,sql=liveDb()){
+ const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
+ if(!link.ai_consent)throw new LiveReviewError('Turn on AI replies for this location before generating a reply.');
+ if(Number(review.version)!==version)throw new LiveReviewError('This review changed. Reload it before generating a reply.');
+ if(review.data.reviewReply?.comment||review.publish_state==='published')throw new LiveReviewError('This review already has a reply on Google.');
+ if(['publishing','uncertain'].includes(review.publish_state))throw new LiveReviewError('Check the current Google publish result before generating another reply.');
+ await reserveAi(String(link.business_id),sql);
+ const suggestions=await generateReviewSuggestions(String(link.business_name),reviewStars(review.data),review.data.comment||'',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
+ const style=Object.hasOwn(replyStyles,String(link.auto_style))?String(link.auto_style):'friendly';
+ const draft=suggestions[style as keyof typeof replyStyles];
+ const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle',approved_version=NULL,auto_schedule_cancelled=true,scheduled_at=NULL,old_reply_requested_at=NULL
+  WHERE id=${id} AND version=${version} AND NOT suspected_spam AND publish_state NOT IN ('publishing','uncertain')
+  AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING version`;
+ if(!rows.length)throw new LiveReviewError('This review changed while the reply was being prepared. Reload it and try again.');
+ return {generated:true,draft,version:Number(rows[0].version),published:false};
 }
 
 export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){

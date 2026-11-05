@@ -31,6 +31,7 @@ export {
 export {
   saveLiveDraft,
   suggestLiveReply,
+  generateLiveReply,
   publishLiveReply,
   reconcileLiveReply,
   approveLiveDraft,

@@ -10,7 +10,7 @@ import {GoogleBusinessError} from './client';
 import {GoogleTokenExchangeError} from './connection';
 import {approveLiveDraft,liveReviewPage,flagLiveReview} from './live-reviews';
 import type {ReviewActor} from '../review-workspaces';
-import {authorizedLink,bindGoogleLocation,clientFor,liveDb,livePublishingEnabled,LiveReviewError,listLiveWorkspaces,liveSettingsSchema,saveLiveSettings,stopLiveReviews,syncLiveReviews,saveLiveDraft,suggestLiveReply,publishLiveReply,reconcileLiveReply} from './live-reviews';
+import {authorizedLink,bindGoogleLocation,clientFor,liveDb,livePublishingEnabled,LiveReviewError,listLiveWorkspaces,liveSettingsSchema,saveLiveSettings,stopLiveReviews,syncLiveReviews,saveLiveDraft,suggestLiveReply,generateLiveReply,publishLiveReply,reconcileLiveReply} from './live-reviews';
 import {profileAgentSettings,saveProfileAgentSettings} from '../profile-ai-agent';
 const uuid=z.string().uuid(),token=z.string().max(4096).optional(),account=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/);
 const schema=z.discriminatedUnion('action',[
@@ -23,6 +23,7 @@ const schema=z.discriminatedUnion('action',[
  z.object({action:z.literal('stop'),businessId:uuid}).strict(),
  z.object({action:z.literal('remove'),businessId:uuid}).strict(),
  z.object({action:z.literal('save'),id:uuid,draft:z.string().trim().max(4000),version:z.number().int().positive()}).strict(),
+ z.object({action:z.literal('generate'),id:uuid,version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('approve'),id:uuid,version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('spam'),id:uuid,spam:z.boolean(),version:z.number().int().positive()}).strict(),
  z.object({action:z.literal('suggest'),id:uuid}).strict(),
@@ -88,6 +89,7 @@ export async function runLiveReviews(request:Request,actor:ReviewActor,owner:str
    case 'spam':result=await flagLiveReview(actor,v.id,v.spam,v.version);break;
    case 'approve':result=await approveLiveDraft(actor,v.id,v.version);break;
    case 'suggest':result={suggestions:await suggestLiveReply(actor,v.id)};break;
+   case 'generate':result=await generateLiveReply(actor,v.id,v.version);break;
    case 'publish':result=await publishLiveReply(actor,v.id,v.version);break;
    case 'reconcile':result=await reconcileLiveReply(actor,v.id);break;
    case 'profileAgent':result=await saveProfileAgentSettings(actor,v.settings);break;

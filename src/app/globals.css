@@ -813,6 +813,7 @@ a {
 .tr-review-status{display:inline-block;border-radius:4px;padding:3px 6px;background:#edf6f1;color:#22624b;font-size:11px;}
 .tr-review-status.is-unanswered{background:#fff3dc;color:#865b14;}
 .tr-review-status.status-queued{background:#eee9ff;color:#4e35ae;}
+.tr-review-status.status-processing{background:#d8f1e9;color:#087e69;}
 .tr-review-status.status-drafts{background:#fff3dc;color:#865b14;}
 .tr-review-status.status-approved{background:#e8f0ff;color:#315b9d;}
 .tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;}
@@ -883,7 +884,7 @@ a {
 .tr-review-stars{display:inline-flex;align-items:center;gap:0;color:#f4ae00;white-space:nowrap;}.tr-review-stars svg{flex:none;}.tr-review-stars .is-empty{color:#c5ceda;}
 .tr-review-excerpt{color:#445e89;}.tr-review-date{color:#7286a8;white-space:nowrap;}
 .tr-client-shell .tr-review-status{font-size:13px;border-radius:8px;padding:7px 12px;background:#d8f1e9;color:#087e69;white-space:nowrap;}
-.tr-client-shell .tr-review-status.status-queued{background:#eee9ff;color:#4e35ae;white-space:nowrap;}.tr-client-shell .tr-review-status.status-replied{background:#def4ee;color:#087e69;white-space:nowrap;}
+.tr-client-shell .tr-review-status.status-queued{background:#eee9ff;color:#4e35ae;white-space:nowrap;}.tr-client-shell .tr-review-status.status-processing{background:#d8f1e9;color:#087e69;white-space:nowrap;}.tr-client-shell .tr-review-status.status-replied{background:#def4ee;color:#087e69;white-space:nowrap;}
 .tr-client-shell .tr-review-status.status-drafts{background:#fff3dc;color:#865b14;white-space:nowrap;}.tr-client-shell .tr-review-status.status-approved{background:#e8f0ff;color:#315b9d;white-space:nowrap;}.tr-client-shell .tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;white-space:nowrap;}.tr-client-shell .tr-review-status.status-attention,.tr-client-shell .tr-review-status.status-spam{background:#fff0f0;color:#a52b2b;white-space:nowrap;}
 .tr-client-shell .tr-review-status{font-size:12px;padding:5px 8px;}
 .tr-review-dialog{width:min(650px,calc(100vw - 32px));border:1px solid #d9e2ef;border-radius:12px;box-shadow:0 16px 60px #1a355a24;color:#0d224a;font-family:Arial,Helvetica,sans-serif;max-height:90dvh;}
