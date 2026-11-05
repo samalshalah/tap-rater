@@ -7,15 +7,15 @@ export function matchesReview(review:Row,filter:string,workspace:Workspace){
 export function reviewStatus(review:Row,workspace?:Workspace){
  if(review.suspected_spam)return 'spam';
  if(review.data.reviewReply?.comment||review.publish_state==='published')return 'replied';
- if(review.publish_state==='publishing'||review.publish_state==='uncertain')return 'attention';
- if(review.scheduled_at&&review.publish_state==='idle')return 'queued';
+ if(review.publish_state==='publishing'||review.publish_state==='uncertain')return 'processing';
+ if(review.scheduled_at&&review.publish_state==='idle')return 'processing';
  if(review.draft&&review.publish_state==='idle'&&review.approved_version===review.version)return 'approved';
  if(review.draft&&review.publish_state==='idle'&&review.approved_version!==review.version)return 'drafts';
  if(review.publish_state==='idle'&&!review.draft&&!review.scheduled_at&&!review.auto_schedule_cancelled&&workspace?.enabled&&workspace.connected&&workspace.ai_consent&&(review.old_reply_requested_at||review.auto_attempt_at||nextQueueCheck(review,workspace)))return 'processing';
  return 'unanswered';
 }
 
-export const reviewFilters = [['all','All reviews'],['unanswered','Needs reply'],['processing','Processing'],['queued','Scheduled'],['drafts','Draft'],['approved','Approved'],['attention','Checking reply'],['replied','Replied'],['spam','Suspected spam']] as const;
+export const reviewFilters = [['all','All reviews'],['processing','Processing'],['drafts','Draft'],['replied','Replied'],['spam','Suspected spam']] as const;
 
 // Only exclude IDs already in the first list; retain ordering and duplicates within either list.
 export function appendUnseenReviews(existing: Row[], incoming: Row[]): Row[] {

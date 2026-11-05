@@ -5,7 +5,7 @@ import { livePublishingEnabled, liveDb, LiveReviewError, ReviewAiWaitError, acto
 
 const reviewFilterKeys=['all','unanswered','processing','queued','drafts','approved','attention','replied','spam'] as const;
 type ReviewFilterKey=typeof reviewFilterKeys[number];
-function safeReviewFilter(value:string|undefined):ReviewFilterKey{return reviewFilterKeys.includes(value as ReviewFilterKey)?value as ReviewFilterKey:'all';}
+function safeReviewFilter(value:string|undefined):ReviewFilterKey{if(value==='queued')return 'processing';return reviewFilterKeys.includes(value as ReviewFilterKey)?value as ReviewFilterKey:'all';}
 
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,filterValue='all') {
  const filter=safeReviewFilter(filterValue);
@@ -26,8 +26,8 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
   SELECT r.business_id,CASE
    WHEN r.suspected_spam THEN 'spam'
    WHEN coalesce(r.data->'reviewReply'->>'comment','')<>'' OR r.publish_state='published' THEN 'replied'
-   WHEN r.publish_state IN ('publishing','uncertain') THEN 'attention'
-   WHEN r.publish_state='idle' AND r.scheduled_at IS NOT NULL THEN 'queued'
+   WHEN r.publish_state IN ('publishing','uncertain') THEN 'processing'
+   WHEN r.publish_state='idle' AND r.scheduled_at IS NOT NULL THEN 'processing'
    WHEN r.publish_state='idle' AND r.scheduled_at IS NULL AND r.draft<>'' AND r.approved_version=r.version THEN 'approved'
    WHEN r.publish_state='idle' AND r.scheduled_at IS NULL AND r.draft<>'' AND r.approved_version IS DISTINCT FROM r.version THEN 'drafts'
    WHEN r.publish_state='idle' AND r.draft='' AND r.scheduled_at IS NULL AND NOT r.auto_schedule_cancelled AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (r.old_reply_requested_at IS NOT NULL OR r.auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(r.data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day'))) THEN 'processing'
@@ -48,8 +48,8 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
    SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_attempt_at,auto_schedule_cancelled,draft_generated_at,
     CASE WHEN suspected_spam THEN 'spam'
      WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
-     WHEN publish_state IN ('publishing','uncertain') THEN 'attention'
-     WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'queued'
+     WHEN publish_state IN ('publishing','uncertain') THEN 'processing'
+     WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'processing'
      WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
      WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
      WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=google_live_reviews.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'
@@ -78,8 +78,8 @@ export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:
   SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_attempt_at,auto_schedule_cancelled,draft_generated_at,
    CASE WHEN suspected_spam THEN 'spam'
     WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
-    WHEN publish_state IN ('publishing','uncertain') THEN 'attention'
-    WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'queued'
+    WHEN publish_state IN ('publishing','uncertain') THEN 'processing'
+    WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'processing'
     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
     WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=google_live_reviews.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'

@@ -19,7 +19,7 @@ export function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
  const preExistingReply=hasReply&&!tapRaterReply&&Number.isFinite(updateTime)&&Number.isFinite(consentTime)&&updateTime<=consentTime;
  const sourceLabel=tapRaterReply?'Tap Rater posted this reply':preExistingReply?'This reply was already on Google before Tap Rater was activated':'Reply exists on Google; Tap Rater has no matching publish record';
  const state=reviewStatus(review,props.workspace);
- const statusLabel:Record<string,string>={replied:'Replied',drafts:'Draft',approved:'Approved',queued:'Scheduled',unanswered:'Needs reply',processing:'Processing',attention:'Checking reply',spam:'Suspected spam'};
+ const statusLabel:Record<string,string>={replied:'Replied',drafts:'Draft',approved:'Ready to submit',unanswered:'Not started',processing:'Processing',attention:'Processing',spam:'Suspected spam'};
  const status=statusLabel[state]||'Needs reply';
  return <tr className={"tr-review-row"+(review.suspected_spam?" bg-amber-50":"")} data-dashboard-row onClick={event=>activateListRow(event,()=>setOpen(true))}>
  <th scope="row"><div className="tr-review-person"><ReviewAvatar name={name}/><img src="/brand/google-g.png" width="18" height="18" alt="Google"/><button type="button" className="tr-review-row-trigger" aria-label={'Open review details for '+name} onClick={()=>setOpen(true)}>{name}</button></div></th>
