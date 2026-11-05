@@ -876,6 +876,7 @@ a {
 .tr-review-filter-group{display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;}
 .tr-review-filter-group+.tr-review-filter-group{border-left:1px solid #e0e7f0;}
 .tr-review-filter-label{flex:none;color:#53698f;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.tr-review-status-select{min-width:210px;min-height:34px;border:1px solid #cbd8e8;border-radius:5px;padding:6px 30px 6px 10px;background:#fff;color:#263e67;font-size:13px;line-height:1.2;}
 .tr-review-filter-options{display:flex;flex-wrap:wrap;gap:5px;min-width:0;}
 .tr-review-filter-options button{display:inline-flex;align-items:center;gap:4px;min-height:29px;border:1px solid transparent;border-radius:4px;padding:5px 8px;background:#f8fafd;color:#3d557f;font-size:12px;line-height:1;}
 .tr-review-filter-options button span:last-child{color:#7185a5;}
