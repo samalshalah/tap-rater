@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ReviewActor } from "../review-workspaces";
 import { livePublishingEnabled, liveDb, LiveReviewError, ReviewAiWaitError, actorEmail, reviewStars, clientFor, authorizedLink } from "./live-review-core";
 
-export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null) {
+export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,prioritizeDrafts=false) {
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,l.draft_due_at,l.consent_at,
  b.business_name, l.review_total,
  (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
@@ -22,7 +22,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  CROSS JOIN LATERAL (
   SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at
   FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
-  ORDER BY data->>'updateTime' DESC,id LIMIT 101
+  ORDER BY CASE WHEN ${prioritizeDrafts} AND NOT suspected_spam AND draft<>'' AND publish_state<>'published' AND approved_version IS DISTINCT FROM version THEN 0 ELSE 1 END,data->>'updateTime' DESC,id LIMIT 101
  ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC,page.id`;
  const grouped=new Map<string,typeof rows>();
  for(const {business_id,...review} of rows){
@@ -35,9 +35,9 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  });
 }
 
-export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb()){
+export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb(),prioritizeDrafts=false){
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY CASE WHEN ${prioritizeDrafts} AND NOT suspected_spam AND draft<>'' AND publish_state<>'published' AND approved_version IS DISTINCT FROM version THEN 0 ELSE 1 END,data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
 
