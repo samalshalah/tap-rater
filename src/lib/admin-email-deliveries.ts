@@ -168,7 +168,7 @@ async function buildOrderRetryInput(
     if (!sameRecipient(order.email, delivery.recipient)) {
       return { ok: false, error: "The order customer email no longer matches this delivery.", status: 409 };
     }
-    const template = await getTemplateSafely("shipping-tracking", getTemplateFn);
+    const template = await getTemplateSafely(typeof order.customer_details_json?.replacement_of_order_id === "string" ? "replacement-shipping" : "shipping-tracking", getTemplateFn);
     return {
       ok: true,
       input: {

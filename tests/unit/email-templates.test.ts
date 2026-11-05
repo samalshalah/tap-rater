@@ -109,9 +109,10 @@ describe("email template settings", () => {
 
     const templates = await getAllEmailTemplatesWithClient(client);
 
-    expect(templates).toHaveLength(4);
+    expect(templates).toHaveLength(5);
     expect(templates.find((template) => template.key === "customer-order-confirmation")?.subject).toBe("Custom subject");
     expect(templates.find((template) => template.key === "admin-new-order")?.subject).toBe("New paid Tap Rater order");
+    expect(templates.find((template) => template.key === "replacement-shipping")?.subject).toBe("Your Tap Rater replacement stand is on its way");
   });
 
   it("does not send a test email for disabled templates", async () => {

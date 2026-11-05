@@ -25,7 +25,7 @@ export async function getAdminEmailPreview(id: string) {
       let html = "";
       if (delivery.messageType === "paid_order_customer") html = buildCustomerPaidOrderEmailHtml(order, await getEmailTemplate("customer-order-confirmation"));
       if (delivery.messageType === "paid_order_admin") html = buildAdminPaidOrderEmailHtml(order, await getEmailTemplate("admin-new-order"));
-      if (delivery.messageType === "shipping_tracking_customer") html = buildShippingNotificationEmailHtml(order, await getEmailTemplate("shipping-tracking"));
+      if (delivery.messageType === "shipping_tracking_customer") html = buildShippingNotificationEmailHtml(order, await getEmailTemplate(typeof order.customer_details_json?.replacement_of_order_id === "string" ? "replacement-shipping" : "shipping-tracking"));
       if (html) return { ...metadata, html, text: "", source: "reconstructed" as const };
     }
   }

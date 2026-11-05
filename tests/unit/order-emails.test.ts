@@ -12,6 +12,7 @@ import {
 } from "@/lib/hosted-setup-email";
 import type { OrderRecord } from "@/lib/orders";
 import { formatOrderReference } from "@/lib/order-reference";
+import { defaultEmailTemplates } from "@/lib/email-templates";
 
 const paidOrder: OrderRecord = {
   id: "order-123",
@@ -408,6 +409,18 @@ describe("paid order emails", () => {
     expect(html).not.toContain("Internal packing note");
     expect(html).not.toContain("Admin-only note");
     expect(html).not.toMatch(/production_status|shipping_status|line_items_json|service_mode|basic_redirect|hosted_landing_page|localhost|workers\\.dev/i);
+  });
+
+  it("uses the replacement shipment language for linked replacement orders", () => {
+    const html = buildShippingNotificationEmailHtml({
+      ...paidOrder,
+      customer_details_json: { replacement_of_order_id: "original-order", replacement_of_order_reference: "cs_original" },
+      tracking_number: "TRACK123"
+    }, defaultEmailTemplates["replacement-shipping"]);
+
+    expect(html).toContain("Your replacement stand is on its way.");
+    expect(html).toContain("No payment is required");
+    expect(html).toContain(formatOrderReference("cs_original"));
   });
 
   it("tracks shipping email attempts with a stable hashed idempotency key", async () => {

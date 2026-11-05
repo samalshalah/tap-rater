@@ -17,7 +17,7 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
   const to = input.order.email?.trim();
   if (!to) return { sent: false, reason: "missing_customer_email" };
 
-  const template = await resolveShippingTemplate(input.getTemplateFn);
+  const template = await resolveShippingTemplate(input.getTemplateFn, isReplacementOrder(input.order));
   const sendEmailFn = input.sendEmailFn ?? sendEmail;
 
   try {
@@ -48,29 +48,36 @@ export async function sendShippingNotificationEmail(input: ShippingEmailInput): 
 }
 
 export function buildShippingNotificationEmailHtml(order: OrderRecord, template = defaultEmailTemplates["shipping-tracking"]) {
+  const replacement = isReplacementOrder(order);
+  const originalReference = typeof order.customer_details_json?.replacement_of_order_reference === "string" ? order.customer_details_json.replacement_of_order_reference : "your original order";
   return renderEmailTemplateHtml(template, {
-    title: "Your order is on its way.",
-    eyebrow: "SHIPPED",
+    title: replacement ? "Your replacement stand is on its way." : "Your order is on its way.",
+    eyebrow: replacement ? "REPLACEMENT SHIPPED" : "SHIPPED",
     cta: order.tracking_url ? { label: "Track your shipment", url: order.tracking_url } : { label: "View your order", url: "https://taprater.com/account/orders" },
     rows: {
       "Order number": formatOrderReference(order.stripe_checkout_session_id || order.id),
+      ...(replacement ? { "Replacing": formatOrderReference(originalReference), "Payment due": "No payment required" } : {}),
       Status: "Shipped",
       Carrier: order.shipping_carrier ?? "",
       "Tracking number": order.tracking_number ?? "",
       "Tracking link": order.tracking_url ?? ""
     },
     body: [
-      "Your Tap Rater order has shipped.",
+      replacement ? "Your replacement stand has shipped. No payment is required." : "Your Tap Rater order has shipped.",
 
       "Support: https://taprater.com/support"
     ]
   });
 }
 
-async function resolveShippingTemplate(getTemplateFn: (() => Promise<EmailTemplateSettings>) | undefined) {
+async function resolveShippingTemplate(getTemplateFn: (() => Promise<EmailTemplateSettings>) | undefined, replacement: boolean) {
   try {
-    return getTemplateFn ? await getTemplateFn() : await getEmailTemplate("shipping-tracking");
+    return getTemplateFn ? await getTemplateFn() : await getEmailTemplate(replacement ? "replacement-shipping" : "shipping-tracking");
   } catch {
-    return defaultEmailTemplates["shipping-tracking"];
+    return defaultEmailTemplates[replacement ? "replacement-shipping" : "shipping-tracking"];
   }
+}
+
+function isReplacementOrder(order: OrderRecord) {
+  return typeof order.customer_details_json?.replacement_of_order_id === "string";
 }

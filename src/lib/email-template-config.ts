@@ -2,7 +2,8 @@ export const emailTemplateKeys = [
   "customer-order-confirmation",
   "admin-new-order",
   "support-request",
-  "shipping-tracking"
+  "shipping-tracking",
+  "replacement-shipping"
 ] as const;
 
 export type EmailTemplateKey = (typeof emailTemplateKeys)[number];
@@ -58,5 +59,15 @@ export const defaultEmailTemplates: Record<EmailTemplateKey, EmailTemplateSettin
     introText: "Your Tap Rater order has a shipping update.",
     supportText: "Contact Tap Rater support if anything looks incorrect.",
     footerText: "Shipping timelines are reviewed by Tap Rater before fulfillment."
+  },
+  "replacement-shipping": {
+    key: "replacement-shipping",
+    label: "Replacement stand shipped",
+    description: "Sent automatically once a replacement order is marked shipped with tracking.",
+    enabled: true,
+    subject: "Your Tap Rater replacement stand is on its way",
+    introText: "Your replacement stand has shipped. No payment is required.",
+    supportText: "Contact Tap Rater support if anything looks incorrect.",
+    footerText: "Tap Rater is sending this replacement because your original stand was damaged in delivery."
   }
 };

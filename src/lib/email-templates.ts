@@ -175,6 +175,15 @@ export function buildEmailTemplatePreviewHtml(template: EmailTemplateSettings) {
         setup: { destinationUrl: "https://example.com/review" } }]
     }, template, {}, false);
   }
+  if (template.key === "replacement-shipping") {
+    return renderEmailTemplateHtml(template, {
+      title: "Your replacement stand is on its way.",
+      eyebrow: "REPLACEMENT SHIPPED",
+      cta: { label: "Track your shipment", url: "https://tools.usps.com/go/TrackConfirmAction" },
+      rows: { "Replacement order": "TR-260901-REPL", Replacing: "TR-260824-ORIG", "Payment due": "No payment required", Carrier: "USPS", "Tracking number": "9400 0000 0000 0000 0000 00" },
+      body: ["Your replacement stand has shipped. No payment is required."]
+    });
+  }
   return renderEmailTemplateHtml(template, {
     rows: getSampleRowsForTemplate(template.key),
     body: getSampleBodyForTemplate(template.key)
@@ -233,6 +242,10 @@ function getSampleRowsForTemplate(key: EmailTemplateKey) {
     };
   }
 
+  if (key === "replacement-shipping") {
+    return { "Replacement order": "TR-260901-REPL", Replacing: "TR-260824-ORIG", "Payment due": "No payment required", Carrier: "USPS", "Tracking number": "9400 0000 0000 0000 0000 00" };
+  }
+
   return {
     "Order number": "TR-260901-AB12CD",
     Status: "Paid",
@@ -257,6 +270,10 @@ function getSampleBodyForTemplate(key: EmailTemplateKey) {
 
   if (key === "shipping-tracking") {
     return ["Shipping/tracking emails are configured here but are not sent automatically in Phase 1C."];
+  }
+
+  if (key === "replacement-shipping") {
+    return ["Your replacement stand has shipped. No payment is required."];
   }
 
   return [
