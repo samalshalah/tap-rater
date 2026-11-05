@@ -6,9 +6,9 @@ import { AdminButton } from "@/components/admin/admin-ui";
 
 export type ReplacementCustomer = { email: string; name: string; orders: Array<{ id: string; reference: string; label: string; createdAt?: string }> };
 
-export function ReplacementOrderForm({ customers }: { customers: ReplacementCustomer[] }) {
+export function ReplacementOrderForm({ customers, selectedEmail }: { customers: ReplacementCustomer[]; selectedEmail?: string }) {
   const router = useRouter();
-  const [email, setEmail] = useState(customers[0]?.email ?? "");
+  const [email, setEmail] = useState(customers.some((customer) => customer.email === selectedEmail) ? selectedEmail! : customers[0]?.email ?? "");
   const [orderId, setOrderId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
