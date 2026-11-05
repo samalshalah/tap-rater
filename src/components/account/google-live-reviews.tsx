@@ -3,15 +3,18 @@ import {useReviewEndpoint} from './review-endpoint';
 import { importReviewPages } from '@/lib/google-business/import-pages';
 import dynamic from 'next/dynamic';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
+import {useSearchParams} from 'next/navigation';
 import { Discovery } from './google-live-review-discovery';
 import {GoogleLiveReviewWorkspace} from './google-live-review-workspace';
 import { appendUnseenReviews,countReviewFilters,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
 import type { Post,Row,Snapshot,Workspace } from './google-live-review-types';
 const GoogleConnectionWizard=dynamic(()=>import('./google-connection-wizard').then(module=>module.GoogleConnectionWizard),{loading:()=> <p role="status">Loading Google connection...</p>});
 export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false,managed=false}:{managed?:boolean;admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean}){
+ const params=useSearchParams();
  const [manageConnectionOpen,setManageConnectionOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('connection')&&new URLSearchParams(window.location.search).get('location')===businessId);
  const [importStatus,setImportStatus]=useState<{id:string;name:string;done:boolean}|null>(null);
  const [reviewFilter,setReviewFilter]=useState('all');
+ useEffect(()=>{const requested=params.get('view');setReviewFilter(reviewFilters.find(([key])=>key===requested)?.[0]||'all');},[params]);
  const inScope=(id:string)=>(!businessId||id===businessId)&&(!businessIds||businessIds.includes(id));
  const reviewEndpoint=useReviewEndpoint();
  const endpoint=admin?'/api/admin/google-business/reviews':reviewEndpoint;
