@@ -17,7 +17,7 @@ export function ReviewListRow(props:Parameters<typeof LiveCard>[0]){
  const consentTime=props.consentAt?Date.parse(props.consentAt):NaN;
  const preExistingReply=hasReply&&!tapRaterReply&&Number.isFinite(updateTime)&&Number.isFinite(consentTime)&&updateTime<=consentTime;
  const sourceLabel=tapRaterReply?'Tap Rater posted this reply':preExistingReply?'This reply was already on Google before Tap Rater was activated':'Reply exists on Google; Tap Rater has no matching publish record';
- const status=hasReply?'Replied':'Queued';
+ const status=hasReply?'Replied':review.draft&&review.approved_version!==review.version?'Draft':review.approved_version===review.version?'Approved':'Queued';
  return <tr className={"tr-review-row"+(review.suspected_spam?" bg-amber-50":"")} data-dashboard-row onClick={event=>activateListRow(event,()=>setOpen(true))}>
  <th scope="row"><div className="tr-review-person"><ReviewAvatar name={name}/><img src="/brand/google-g.png" width="18" height="18" alt="Google"/><button type="button" className="tr-review-row-trigger" aria-label={'Open review details for '+name} onClick={()=>setOpen(true)}>{name}</button></div></th>
  <td><ReviewStars rating={review.data.starRating}/></td>
