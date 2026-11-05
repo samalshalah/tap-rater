@@ -44,15 +44,14 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  }
  const importWorkspace=snapshot?.workspaces.find(w=>inScope(w.business_id)&&(importStatus?w.business_id===importStatus.id:true));
  const imported=Number(importWorkspace?.imported_count||0),total=importWorkspace?.review_total;
- const saved=Number(importWorkspace?.saved_count??imported);
  const initialComplete=Boolean(importWorkspace?.initial_import_completed||importStatus?.done);
  const importError=error||importWorkspace?.last_error;
  const checking=Boolean(importWorkspace?.sync_in_progress||(importStatus&&!importStatus.done&&busy));
  const percent=typeof total==='number'&&total>0?Math.min(99,Math.floor(imported/total*100)):null;
  return <section aria-label="Live Google reviews" className="tr-review-list"><h2 className="sr-only">Google reviews</h2>
- {importWorkspace&&<div role="status" aria-live="polite" className="mb-2 flex items-center gap-2 text-xs text-muted" title={importWorkspace.business_name}>
+ {importWorkspace&&(!initialComplete||checking||importError)&&<div role="status" aria-live="polite" className="mb-2 flex items-center gap-2 text-xs text-muted" title={importWorkspace.business_name}>
  {checking&&!importError&&<span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-teal-600/25 border-t-teal-600 motion-reduce:animate-none"/>}
- <span>{initialComplete?`${saved} reviews saved${importError?' · Update check paused':checking?' · Checking for updates':''}`:`${importError?'Import paused':'Importing'} · ${imported}${typeof total==='number'?` / ${total}`:''} reviews${!importError&&percent!==null?` · ${percent}%`:''}`}</span>
+ <span>{initialComplete?(importError?'Update check paused':'Checking for updates…'):`${importError?'Import paused':'Importing'} · ${imported}${typeof total==='number'?` / ${total}`:''} reviews${!importError&&percent!==null?` · ${percent}%`:''}`}</span>
  </div>}
 
  <p className="sr-only">{draftOnly?'Draft-only workspace. Approve saved drafts for review; nothing is published.':snapshot?.publishingEnabled?'Live publishing activated. Publishing a saved reply requires your confirmation.':'Live publishing disabled. Saved and approved replies remain drafts.'}</p>

@@ -819,7 +819,6 @@ a {
 .tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;}
 .tr-review-status.status-attention,.tr-review-status.status-spam{background:#fff0f0;color:#a52b2b;}
 .tr-review-source{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:50%;}.tr-review-source.is-taprater{background:#e3f5f1;color:#087e69;}.tr-review-source.is-existing{background:#edf1f6;color:#66748a;}.tr-review-source.is-unknown{background:#edf1f6;color:#66748a;}
-.tr-review-source-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:8px 10px;color:#65748a;font-size:11px;}.tr-review-source-legend span{display:inline-flex;align-items:center;gap:5px;}
 .tr-review-dialog{width:min(720px,calc(100vw - 28px));max-height:88dvh;margin:auto;padding:0;border:1px solid #dbe3e1;border-radius:12px;color:#172c3d;background:#fff;box-shadow:0 20px 70px #122a3540;cursor:default;}
 .tr-review-dialog::backdrop{background:#12233480;}
 .tr-review-dialog>header{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid #e2e8e6;background:white;}
@@ -872,16 +871,17 @@ a {
 .tr-review-update-status{font-size:12px;color:#6f82a4;}
 .tr-review-toolbar-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;}
 .tr-review-toolbar-actions .tr-button-ghost{min-height:36px;}
-.tr-review-filter-bar{display:flex;align-items:stretch;gap:0;margin:0 0 14px;border:1px solid #d8e2ef;border-radius:7px;background:#fff;overflow:hidden;}
+.tr-review-filter-bar{display:flex;align-items:stretch;gap:0;margin:0 0 14px;border:1px solid #ded5ff;border-radius:8px;background:#fff;overflow:hidden;box-shadow:0 1px 2px #4822a00a;}
 .tr-review-filter-group{display:flex;align-items:center;gap:10px;min-width:0;padding:8px 10px;}
-.tr-review-filter-group+.tr-review-filter-group{border-left:1px solid #e0e7f0;}
-.tr-review-filter-label{flex:none;color:#53698f;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
-.tr-review-status-select{min-width:210px;min-height:34px;border:1px solid #cbd8e8;border-radius:5px;padding:6px 30px 6px 10px;background:#fff;color:#263e67;font-size:13px;line-height:1.2;}
+.tr-review-filter-group+.tr-review-filter-group{border-left:1px solid #ece7fb;}
+.tr-review-filter-label{flex:none;color:#594b7d;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+.tr-review-status-select{min-width:210px;min-height:34px;border:1px solid #d8ccff;border-radius:7px;padding:6px 30px 6px 10px;background:#fff;color:#25345a;font-size:13px;line-height:1.2;}
+.tr-review-status-select:focus-visible{outline:0;border-color:#7042ff;box-shadow:0 0 0 3px #7042ff24;}
 .tr-review-filter-options{display:flex;flex-wrap:wrap;gap:5px;min-width:0;}
-.tr-review-filter-options button{display:inline-flex;align-items:center;gap:4px;min-height:29px;border:1px solid transparent;border-radius:4px;padding:5px 8px;background:#f8fafd;color:#3d557f;font-size:12px;line-height:1;}
+.tr-review-filter-options button{display:inline-flex;align-items:center;gap:4px;min-height:29px;border:1px solid #eee9fc;border-radius:6px;padding:5px 8px;background:#faf9ff;color:#435577;font-size:12px;line-height:1;}
 .tr-review-filter-options button span:last-child{color:#7185a5;}
-.tr-review-filter-options button[aria-pressed="true"]{color:#006c6d;border-color:#008e88;background:#e0f6f3;box-shadow:inset 0 0 0 1px white;}
-.tr-review-filter-options button[aria-pressed="true"] span:last-child{color:#006c6d;}
+.tr-review-filter-options button[aria-pressed="true"]{color:#5927dc;border-color:#bba7ff;background:#f0eaff;box-shadow:inset 0 0 0 1px white;}
+.tr-review-filter-options button[aria-pressed="true"] span:last-child{color:#5927dc;}
 .tr-client-shell .tr-review-workspace{padding:0;margin:0;}.tr-review-workspace-meta:empty{display:none;}.tr-review-workspace-meta h3{margin:8px 0;}
 .tr-review-workspace-meta span:empty{display:none;}.tr-review-workspace-meta{font-size:13px;}
 .tr-client-shell .tr-review-table-wrap{border:0;border-radius:6px;overflow-x:auto;}
