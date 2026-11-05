@@ -52,7 +52,7 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
   if(found){title=found.title || location;selectedAddress=[...(found.storefrontAddress?.addressLines||[]),found.storefrontAddress?.locality,found.storefrontAddress?.administrativeArea,found.storefrontAddress?.postalCode].filter(Boolean).join(', ');break;}token=result.nextPageToken;if(!token)break;
  }
  if(!title)throw new LiveReviewError('Choose a location returned by the connected Google account.');
- const profile=await client.getProfile(location.split('/').pop()!);
+ const profile=await client.getProfile(location);
  if(profile.name!==title)title=profile.name;
  if(profile.address)selectedAddress=profile.address;
  const parent=account+'/'+location;
