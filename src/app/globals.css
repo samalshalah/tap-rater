@@ -818,7 +818,7 @@ a {
 .tr-review-status.status-approved{background:#e8f0ff;color:#315b9d;}
 .tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;}
 .tr-review-status.status-attention,.tr-review-status.status-spam{background:#fff0f0;color:#a52b2b;}
-.tr-review-source{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:50%;}.tr-review-source.is-taprater{background:#e3f5f1;color:#087e69;}.tr-review-source.is-existing{background:#edf1f6;color:#66748a;}.tr-review-source.is-unknown{background:#fff2d4;color:#8b6500;}
+.tr-review-source{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:50%;}.tr-review-source.is-taprater{background:#e3f5f1;color:#087e69;}.tr-review-source.is-existing{background:#edf1f6;color:#66748a;}.tr-review-source.is-unknown{background:#edf1f6;color:#66748a;}
 .tr-review-source-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:8px 10px;color:#65748a;font-size:11px;}.tr-review-source-legend span{display:inline-flex;align-items:center;gap:5px;}
 .tr-review-dialog{width:min(720px,calc(100vw - 28px));max-height:88dvh;margin:auto;padding:0;border:1px solid #dbe3e1;border-radius:12px;color:#172c3d;background:#fff;box-shadow:0 20px 70px #122a3540;cursor:default;}
 .tr-review-dialog::backdrop{background:#12233480;}
