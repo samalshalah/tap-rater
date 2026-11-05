@@ -1,18 +1,15 @@
 "use client";
 import {useReviewEndpoint} from './review-endpoint';
 import { importReviewPages } from '@/lib/google-business/import-pages';
-import dynamic from 'next/dynamic';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import { Discovery } from './google-live-review-discovery';
 import {GoogleLiveReviewWorkspace} from './google-live-review-workspace';
 import { appendUnseenReviews,countReviewFilters,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
 import type { Post,Row,Snapshot,Workspace } from './google-live-review-types';
-const GoogleConnectionWizard=dynamic(()=>import('./google-connection-wizard').then(module=>module.GoogleConnectionWizard),{loading:()=> <p role="status">Loading Google connection...</p>});
 export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false,managed=false}:{managed?:boolean;admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean}){
  const params=useSearchParams();
  const pathname=usePathname(),router=useRouter();
- const [manageConnectionOpen,setManageConnectionOpen]=useState(()=>typeof window!=='undefined'&&new URLSearchParams(window.location.search).has('connection')&&new URLSearchParams(window.location.search).get('location')===businessId);
  const [importStatus,setImportStatus]=useState<{id:string;name:string;done:boolean}|null>(null);
  const [reviewFilter,setReviewFilter]=useState('all');
  const [ratingFilter,setRatingFilter]=useState('all');
@@ -43,7 +40,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  async function businessAction(action:'sync'|'stop'|'remove',businessId:string){
   if(action==='stop'&&!window.confirm('Stop Google syncing, AI, and automatic replies for this business? An already-sent reply may still finish. Contact support to also remove Tap Rater’s manager access on Google.'))return;
   if(action==='remove'&&!window.confirm('Remove this stopped assignment and its cached reviews and drafts?'))return;
-  setBusy(true);setError('');try{if(action==='sync'){if(importing.current)return;importing.current=true;const workspace=snapshot?.workspaces.find(w=>w.business_id===businessId);setImportStatus({id:businessId,name:workspace?.title||workspace?.business_name||'your business',done:false});setManageConnectionOpen(false);await importReviewPages(async()=>{const result=await post({action,businessId}) as {imported:number;more:boolean};if(mounted.current)await refresh();return result;},()=>{},undefined,()=>!mounted.current);if(mounted.current)setImportStatus(current=>current?.id===businessId?{...current,done:true}:current);}else await post({action,businessId});if(mounted.current)await refresh();}catch(e){if(mounted.current)setError(e instanceof Error?e.message:'Request failed.');}finally{importing.current=false;if(mounted.current)setBusy(false);}
+  setBusy(true);setError('');try{if(action==='sync'){if(importing.current)return;importing.current=true;const workspace=snapshot?.workspaces.find(w=>w.business_id===businessId);setImportStatus({id:businessId,name:workspace?.title||workspace?.business_name||'your business',done:false});await importReviewPages(async()=>{const result=await post({action,businessId}) as {imported:number;more:boolean};if(mounted.current)await refresh();return result;},()=>{},undefined,()=>!mounted.current);if(mounted.current)setImportStatus(current=>current?.id===businessId?{...current,done:true}:current);}else await post({action,businessId});if(mounted.current)await refresh();}catch(e){if(mounted.current)setError(e instanceof Error?e.message:'Request failed.');}finally{importing.current=false;if(mounted.current)setBusy(false);}
  }
  const importWorkspace=snapshot?.workspaces.find(w=>inScope(w.business_id)&&(importStatus?w.business_id===importStatus.id:true));
  const imported=Number(importWorkspace?.imported_count||0),total=importWorkspace?.review_total;
@@ -63,7 +60,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
 
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
  {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':managed?'The client can connect this location in their account.':'Connect your Google business below to import reviews.'}</p>}
- {scopedWorkspaces.map((w,index)=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={index===0} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)} {!admin&&!managed&&snapshot&&<details className="tr-review-settings" open={manageConnectionOpen} onToggle={e=>setManageConnectionOpen(e.currentTarget.open)}><summary>Manage Google connection</summary>{manageConnectionOpen&&<GoogleConnectionWizard key={businessId||'all'} onLinked={async()=>{setManageConnectionOpen(false);const url=new URL(window.location.href);url.searchParams.delete('connection');url.searchParams.delete('step');window.history.replaceState(null,'',url);await refresh();}} businessId={businessId}/>}</details>}
+ {scopedWorkspaces.map((w,index)=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} allowGoogleConnection={!admin&&!managed} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={index===0} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)}
 
  </section>;
 }
