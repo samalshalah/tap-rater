@@ -3,7 +3,12 @@ import { z } from "zod";
 import type { ReviewActor } from "../review-workspaces";
 import { livePublishingEnabled, liveDb, LiveReviewError, ReviewAiWaitError, actorEmail, reviewStars, clientFor, authorizedLink } from "./live-review-core";
 
-export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,prioritizeDrafts=false) {
+const reviewFilterKeys=['all','unanswered','queued','drafts','approved','attention','replied','spam'] as const;
+type ReviewFilterKey=typeof reviewFilterKeys[number];
+function safeReviewFilter(value:string|undefined):ReviewFilterKey{return reviewFilterKeys.includes(value as ReviewFilterKey)?value as ReviewFilterKey:'all';}
+
+export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,filterValue='all') {
+ const filter=safeReviewFilter(filterValue);
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,l.draft_due_at,l.consent_at,
  b.business_name, l.review_total,
  (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
@@ -17,13 +22,38 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  WHERE b.customer_id=l.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) AND (${locationIds===null} OR l.business_id=ANY(${locationIds ?? []}::uuid[])) ORDER BY b.business_name`;
  // One bounded batch replaces a network round trip for every authorized location.
  if(!links.length)return [];
+ const counts=await sql`WITH classified AS (
+  SELECT business_id,CASE
+   WHEN suspected_spam THEN 'spam'
+   WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
+   WHEN publish_state IN ('publishing','uncertain') THEN 'attention'
+   WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'queued'
+   WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
+   WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
+   ELSE 'unanswered' END AS status
+  FROM google_live_reviews WHERE business_id=ANY(${links.map(link=>link.business_id)}::uuid[])
+ ) SELECT business_id,count(*)::int AS total_count,count(*) FILTER(WHERE status='unanswered')::int AS unanswered,
+  count(*) FILTER(WHERE status='queued')::int AS queued,count(*) FILTER(WHERE status='drafts')::int AS drafts,
+  count(*) FILTER(WHERE status='approved')::int AS approved,count(*) FILTER(WHERE status='attention')::int AS attention,
+  count(*) FILTER(WHERE status='replied')::int AS replied,count(*) FILTER(WHERE status='spam')::int AS spam
+ FROM classified GROUP BY business_id`;
+ const countsByBusiness=new Map(counts.map(row=>[String(row.business_id),row]));
  const rows=await sql`SELECT locations.business_id, page.*
  FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
  CROSS JOIN LATERAL (
-  SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at
-  FROM google_live_reviews WHERE business_id=locations.business_id AND fetched_at>now()-interval '30 days'
-  ORDER BY CASE WHEN ${prioritizeDrafts} AND NOT suspected_spam AND draft<>'' AND publish_state<>'published' AND approved_version IS DISTINCT FROM version THEN 0 ELSE 1 END,data->>'updateTime' DESC,id LIMIT 101
- ) page ORDER BY locations.business_id,CASE WHEN ${prioritizeDrafts} AND NOT page.suspected_spam AND page.draft<>'' AND page.publish_state<>'published' AND page.approved_version IS DISTINCT FROM page.version THEN 0 ELSE 1 END,page.data->>'updateTime' DESC,page.id`;
+  SELECT * FROM (
+   SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at,
+    CASE WHEN suspected_spam THEN 'spam'
+     WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
+     WHEN publish_state IN ('publishing','uncertain') THEN 'attention'
+     WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'queued'
+     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
+     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
+     ELSE 'unanswered' END AS review_status
+   FROM google_live_reviews WHERE business_id=locations.business_id
+  ) classified WHERE (${filter}='all' OR review_status=${filter})
+  ORDER BY data->>'updateTime' DESC NULLS LAST,id LIMIT 101
+  ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC NULLS LAST,page.id`;
  const grouped=new Map<string,typeof rows>();
  for(const {business_id,...review} of rows){
   const reviews=grouped.get(business_id) || [];
@@ -31,13 +61,27 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  }
  return links.map(link=>{
   const reviews=grouped.get(link.business_id) || [];
-  return {...link,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100};
+  const totals=countsByBusiness.get(link.business_id);
+  const review_counts={all:Number(totals?.total_count||0),unanswered:Number(totals?.unanswered||0),queued:Number(totals?.queued||0),drafts:Number(totals?.drafts||0),approved:Number(totals?.approved||0),attention:Number(totals?.attention||0),replied:Number(totals?.replied||0),spam:Number(totals?.spam||0)};
+  return {...link,review_counts,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100};
  });
 }
 
-export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb(),prioritizeDrafts=false){
+export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:number,sql=liveDb(),filterValue='all'){
+ const filter=safeReviewFilter(filterValue);
  await authorizedLink(actor,businessId,sql);
- const rows=await sql`SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at FROM google_live_reviews WHERE business_id=${businessId} AND fetched_at>now()-interval '30 days' ORDER BY CASE WHEN ${prioritizeDrafts} AND NOT suspected_spam AND draft<>'' AND publish_state<>'published' AND approved_version IS DISTINCT FROM version THEN 0 ELSE 1 END,data->>'updateTime' DESC,id LIMIT 101 OFFSET ${offset}`;
+ const rows=await sql`SELECT * FROM (
+  SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_schedule_cancelled,draft_generated_at,
+   CASE WHEN suspected_spam THEN 'spam'
+    WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
+    WHEN publish_state IN ('publishing','uncertain') THEN 'attention'
+    WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'queued'
+    WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
+    WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
+    ELSE 'unanswered' END AS review_status
+  FROM google_live_reviews WHERE business_id=${businessId}
+ ) classified WHERE (${filter}='all' OR review_status=${filter})
+ ORDER BY data->>'updateTime' DESC NULLS LAST,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }
 

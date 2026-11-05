@@ -812,6 +812,11 @@ a {
 .tr-review-rating{display:block;color:#87631c;font-size:12px;margin-top:2px;}
 .tr-review-status{display:inline-block;border-radius:4px;padding:3px 6px;background:#edf6f1;color:#22624b;font-size:11px;}
 .tr-review-status.is-unanswered{background:#fff3dc;color:#865b14;}
+.tr-review-status.status-queued{background:#eee9ff;color:#4e35ae;}
+.tr-review-status.status-drafts{background:#fff3dc;color:#865b14;}
+.tr-review-status.status-approved{background:#e8f0ff;color:#315b9d;}
+.tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;}
+.tr-review-status.status-attention,.tr-review-status.status-spam{background:#fff0f0;color:#a52b2b;}
 .tr-review-source{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;width:20px;height:20px;margin-left:5px;border-radius:50%;}.tr-review-source.is-taprater{background:#e3f5f1;color:#087e69;}.tr-review-source.is-existing{background:#edf1f6;color:#66748a;}.tr-review-source.is-unknown{background:#fff2d4;color:#8b6500;}
 .tr-review-source-legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:8px 10px;color:#65748a;font-size:11px;}.tr-review-source-legend span{display:inline-flex;align-items:center;gap:5px;}
 .tr-review-dialog{width:min(720px,calc(100vw - 28px));max-height:88dvh;margin:auto;padding:0;border:1px solid #dbe3e1;border-radius:12px;color:#172c3d;background:#fff;box-shadow:0 20px 70px #122a3540;cursor:default;}
@@ -879,6 +884,7 @@ a {
 .tr-review-excerpt{color:#445e89;}.tr-review-date{color:#7286a8;white-space:nowrap;}
 .tr-client-shell .tr-review-status{font-size:13px;border-radius:8px;padding:7px 12px;background:#d8f1e9;color:#087e69;white-space:nowrap;}
 .tr-client-shell .tr-review-status.status-queued{background:#eee9ff;color:#4e35ae;white-space:nowrap;}.tr-client-shell .tr-review-status.status-replied{background:#def4ee;color:#087e69;white-space:nowrap;}
+.tr-client-shell .tr-review-status.status-drafts{background:#fff3dc;color:#865b14;white-space:nowrap;}.tr-client-shell .tr-review-status.status-approved{background:#e8f0ff;color:#315b9d;white-space:nowrap;}.tr-client-shell .tr-review-status.status-unanswered{background:#fff3dc;color:#865b14;white-space:nowrap;}.tr-client-shell .tr-review-status.status-attention,.tr-client-shell .tr-review-status.status-spam{background:#fff0f0;color:#a52b2b;white-space:nowrap;}
 .tr-client-shell .tr-review-status{font-size:12px;padding:5px 8px;}
 .tr-review-dialog{width:min(650px,calc(100vw - 32px));border:1px solid #d9e2ef;border-radius:12px;box-shadow:0 16px 60px #1a355a24;color:#0d224a;font-family:Arial,Helvetica,sans-serif;max-height:90dvh;}
 .tr-review-dialog::backdrop{background:#eef3fa52;}

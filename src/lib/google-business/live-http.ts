@@ -52,13 +52,13 @@ export async function runLiveReviews(request:Request,actor:ReviewActor,owner:str
    if(params.has('businessId')){
     const page=z.object({businessId:uuid,offset:z.coerce.number().int().min(0).max(100000)}).safeParse({businessId:params.get('businessId'),offset:params.get('offset') || 0});
     if(!page.success)return NextResponse.json({error:'Invalid review page.'},{status:400});
-    return NextResponse.json(await liveReviewPage(actor,page.data.businessId,page.data.offset,undefined,params.get('view')==='drafts'),{headers:{'Cache-Control':'no-store'}});
+    return NextResponse.json(await liveReviewPage(actor,page.data.businessId,page.data.offset,undefined,params.get('view')||'all'),{headers:{'Cache-Control':'no-store'}});
    }
    const scope=params.has('locations')?z.array(uuid).max(1000).safeParse((params.get('locations') || '').split(',').filter(Boolean)):null;
    if(scope&&!scope.success)return NextResponse.json({error:'Invalid locations.'},{status:400});
    if(managedLocation&&scope?.success&&scope.data.some(id=>id!==managedLocation))return outsideScope();
    const businesses=kind==='admin'?await liveDb()`SELECT b.id,b.business_name,c.email FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE c.account_status='active' ORDER BY b.business_name`:undefined;
-   return NextResponse.json({workspaces:await listLiveWorkspaces(actor,undefined,managedLocation?[managedLocation]:scope?.success?scope.data:null,params.get('view')==='drafts'),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
+   return NextResponse.json({workspaces:await listLiveWorkspaces(actor,undefined,managedLocation?[managedLocation]:scope?.success?scope.data:null,params.get('view')||'all'),publishingEnabled:livePublishingEnabled(),businesses},{headers:{'Cache-Control':'no-store'}});
   }
   if(request.headers.get('origin')!==new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://taprater.com').origin)return NextResponse.json({error:'Invalid request origin.'},{status:403});
   const raw=await request.text();if(raw.length>12000)return NextResponse.json({error:'Request too large.'},{status:413});

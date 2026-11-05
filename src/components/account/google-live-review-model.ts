@@ -1,14 +1,20 @@
 import type { Row,Snapshot,Workspace } from './google-live-review-types';
 
-export function matchesReview(review:Row,filter:string,workspace:Workspace){
- if(filter==='all')return true;
- if(filter==='queued')return Boolean(nextQueueCheck(review,workspace));
- if(filter==='spam')return Boolean(review.suspected_spam);
- if(review.suspected_spam)return false;
- return filter==='unanswered'?!review.data.reviewReply?.comment:filter==='drafts'?Boolean(review.draft)&&review.publish_state!=='published'&&review.approved_version!==review.version:filter==='replied'?Boolean(review.data.reviewReply?.comment):Boolean(review.draft)&&review.publish_state!=='published'&&review.approved_version===review.version;
+export function matchesReview(review:Row,filter:string,_workspace:Workspace){
+ return filter==='all'||reviewStatus(review)===filter;
 }
 
-export const reviewFilters = [['all','All reviews'],['unanswered','Awaiting reply'],['queued','Queued'],['drafts','Drafts'],['approved','Approved'],['replied','Replied'],['spam','Suspected spam']] as const;
+export function reviewStatus(review:Row){
+ if(review.suspected_spam)return 'spam';
+ if(review.data.reviewReply?.comment||review.publish_state==='published')return 'replied';
+ if(review.publish_state==='publishing'||review.publish_state==='uncertain')return 'attention';
+ if(review.scheduled_at&&review.publish_state==='idle')return 'queued';
+ if(review.draft&&review.publish_state==='idle'&&review.approved_version===review.version)return 'approved';
+ if(review.draft&&review.publish_state==='idle'&&review.approved_version!==review.version)return 'drafts';
+ return 'unanswered';
+}
+
+export const reviewFilters = [['all','All reviews'],['unanswered','Needs reply'],['queued','Scheduled'],['drafts','Draft'],['approved','Approved'],['attention','Checking reply'],['replied','Replied'],['spam','Suspected spam']] as const;
 
 // Only exclude IDs already in the first list; retain ordering and duplicates within either list.
 export function appendUnseenReviews(existing: Row[], incoming: Row[]): Row[] {
@@ -37,8 +43,9 @@ export function scopeReviewWorkspaces(workspaces: Workspace[], businessId?: stri
 
 export function countReviewFilters(workspaces: Workspace[]): Record<string, number> {
   const counts: Record<string, number> = Object.fromEntries(reviewFilters.map(([key]) => [key, 0]));
-  for (const workspace of workspaces) for (const review of workspace.reviews) {
-    for (const [key] of reviewFilters) if (matchesReview(review, key, workspace)) counts[key]++;
+  for (const workspace of workspaces) {
+    if(workspace.review_counts){for(const [key] of reviewFilters)counts[key]+=workspace.review_counts[key]||0;continue;}
+    for (const review of workspace.reviews) for (const [key] of reviewFilters) if (matchesReview(review, key, workspace)) counts[key]++;
   }
   return counts;
 }
