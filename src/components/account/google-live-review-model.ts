@@ -16,6 +16,11 @@ export function reviewStatus(review:Row,workspace?:Workspace){
 }
 
 export const reviewFilters = [['all','All reviews'],['processing','Processing'],['drafts','Draft'],['replied','Replied'],['spam','Suspected spam']] as const;
+export const reviewRatingFilters = [['all','All stars'],['FIVE','5 stars'],['FOUR','4 stars'],['THREE','3 stars'],['TWO','2 stars'],['ONE','1 star']] as const;
+
+export function matchesReviewRating(review:Row, filter:string) {
+ return filter==='all'||review.data.starRating===filter;
+}
 
 // Only exclude IDs already in the first list; retain ordering and duplicates within either list.
 export function appendUnseenReviews(existing: Row[], incoming: Row[]): Row[] {

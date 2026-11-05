@@ -46,7 +46,7 @@ describe('review list indexing', () => {
  });
  it('retains overlapping status counts while isolating suspected spam', () => {
   const reviews=[row('empty'),row('draft',{draft:'Hi'}),row('approved',{draft:'Hi',approved_version:1}),row('replied',{data:{starRating:'FIVE',reviewReply:{comment:'Thanks'}} as Row['data']}),row('spam',{suspected_spam:true,draft:'Hi'})];
-  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,unanswered:3,queued:0,drafts:1,approved:1,replied:1,spam:1});
+  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,processing:0,drafts:1,replied:1,spam:1});
  });
  it('matches the previous filter-count algorithm across all status combinations', () => {
   const reviews:Row[]=[];
