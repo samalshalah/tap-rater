@@ -17,8 +17,8 @@ export function CustomerOrdersManager({orders,invoices,subscriptions,licences=[]
  const invoiceIndex=useMemo(()=>indexBillingInvoices(orders,invoices),[orders,invoices]);
 
  return <>
-  <section id="invoices" aria-label="Orders" className="overflow-x-auto rounded-md border border-line bg-white">
-   <table className="w-full min-w-[700px] text-left text-sm">
+  <section id="invoices" aria-label="Orders" className="tr-client-table-wrap overflow-x-auto rounded-md border border-line bg-white">
+   <table className="tr-client-table w-full min-w-[700px] text-left text-sm">
     <thead className="border-b border-line bg-soft text-xs text-muted"><tr>{['Order','Date','Items','Status','Total','Actions'].map(label=><th key={label} scope="col" className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
     <tbody className="divide-y divide-line">{orders.map(order=>{
      const documents=invoiceIndex.byOrder.get(order.id)||[];

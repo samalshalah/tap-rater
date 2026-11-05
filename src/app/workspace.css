@@ -416,6 +416,22 @@ main.tr-app-shell.tr-client-shell .tr-heatmap-keyword-dialog .tr-heatmap-editor-
 main.tr-app-shell.tr-client-shell .tr-heatmap-keyword-dialog .tr-heatmap-editor-fields > :is(label:first-child,p) { grid-column:1 / -1; }
 @media(max-width:480px){main.tr-app-shell.tr-client-shell .tr-heatmap-keyword-dialog .tr-heatmap-editor-fields { grid-template-columns:1fr; }}
 
+/* Shared client tables: one calm, selectable-row treatment for every account
+   data view, while retaining the established white, navy and teal workspace. */
+main.tr-app-shell.tr-client-shell .tr-client-table-wrap { overflow-x:auto; border:1px solid #dce5ef; border-radius:6px; background:#fff; }
+main.tr-app-shell.tr-client-shell .tr-client-table { width:100%; border-collapse:collapse; color:#172c3d; }
+main.tr-app-shell.tr-client-shell .tr-client-table thead { background:#fff; color:#52616b; }
+main.tr-app-shell.tr-client-shell .tr-client-table :is(th,td) { border-bottom:1px solid #dfe7e6; padding:9px 10px; vertical-align:middle; }
+main.tr-app-shell.tr-client-shell .tr-client-table th { font-size:12px; font-weight:600; text-align:left; white-space:nowrap; }
+main.tr-app-shell.tr-client-shell .tr-client-table td { font-size:13px; }
+main.tr-app-shell.tr-client-shell .tr-client-table tbody tr:last-child > * { border-bottom:0; }
+main.tr-app-shell.tr-client-shell .tr-client-table tbody tr:is(:hover,:focus-within) { background:#f0f8f7; }
+main.tr-app-shell.tr-client-shell .tr-client-table tbody tr[data-dashboard-row] { cursor:pointer; }
+main.tr-app-shell.tr-client-shell .tr-client-table .tr-listing-badge,
+main.tr-app-shell.tr-client-shell .tr-client-table .tr-review-status { border-radius:4px; box-shadow:none; }
+main.tr-app-shell.tr-client-shell .tr-client-table-wrap .tr-listing-empty { border:0; border-radius:0; }
+@media(max-width:760px) { main.tr-app-shell.tr-client-shell .tr-client-table :is(th,td) { padding:8px; } }
+
 /* Shared compact profile suggestions and draft comparisons. */
 .tr-profile-view-tabs{display:flex;gap:14px;border-bottom:1px solid #dce4ed;padding-bottom:4px;flex-wrap:wrap}
 .tr-profile-view-tabs button[aria-pressed=true]{color:#008783;border-color:#008783;background:#edf7f6}
