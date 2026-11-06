@@ -10,6 +10,7 @@ import { OrderProductionActions } from "@/components/admin/order-production-acti
 import { OrderRefundForm } from "@/components/admin/order-refund-form";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
+import { getSupabaseAdmin } from "@/lib/db";
 import { canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
 import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
@@ -29,12 +30,17 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
     notFound();
   }
 
-  const [standRecords, deliveryOverview] = await Promise.all([
+  const [standRecords, deliveryOverview, billingInvoiceResult] = await Promise.all([
     orderStandRegistry(id),
     getAdminEmailDeliveries(order.id),
+    getSupabaseAdmin().from("billing_invoices").select("invoice_number,invoice_pdf_url,hosted_invoice_url").eq("order_id", id).maybeSingle(),
   ]);
   const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
   const attentionItems = buildAttentionItems(order, summaries);
+  const billingInvoice = billingInvoiceResult.data as Record<string, unknown> | null;
+  const invoicePdfUrl = readNested(order.customer_details_json, ["invoice_pdf_url"]) ?? readNested(billingInvoice, ["invoice_pdf_url"]);
+  const hostedInvoiceUrl = readNested(order.customer_details_json, ["hosted_invoice_url"]) ?? readNested(billingInvoice, ["hosted_invoice_url"]);
+  const invoiceNumber = readNested(order.customer_details_json, ["invoice_number"]) ?? readNested(billingInvoice, ["invoice_number"]);
 
   return (
     <AdminShell>
@@ -98,6 +104,12 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               <Field label="Tracking" value={order.tracking_number} />
               <Field label="Tracking URL" value={order.tracking_url} link />
             </InfoCard>
+            {(invoicePdfUrl || hostedInvoiceUrl) && <InfoCard title="Invoice">
+              <Field label="Invoice number" value={invoiceNumber} />
+              <Field label="Invoice status" value={order.payment_status ?? order.status} />
+              {invoicePdfUrl && <a href={`/api/admin/orders/${id}/invoice`} className="tr-button-primary inline-flex min-h-10 items-center">Download invoice PDF</a>}
+              {!invoicePdfUrl && hostedInvoiceUrl && <a href={hostedInvoiceUrl} target="_blank" rel="noreferrer" className="tr-button-ghost inline-flex min-h-10 items-center">Open Stripe invoice</a>}
+            </InfoCard>}
             {order.id && order.payment_status !== "complimentary" && (order.status === "paid" || order.payment_status === "paid" || order.payment_status === "refunded") ? (
               <OrderRefundForm
                 orderId={order.id}
