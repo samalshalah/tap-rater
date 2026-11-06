@@ -27,6 +27,7 @@
     "milestone7:qa:dev": "node scripts/milestone7-qa-runtime.mjs --dev",
     "check:platform-schema": "node scripts/check-platform-schema.mjs",
     "check:recovery-readiness": "node scripts/check-recovery-readiness.mjs",
+    "audit:production": "npm audit --omit=dev --audit-level=high",
     "images:generate": "node scripts/generate-image-variants.mjs",
     "images:check": "node scripts/generate-image-variants.mjs --check",
     "test": "vitest run",

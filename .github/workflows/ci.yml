@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm run audit:production
+
       - name: Run tests
         run: |
           if npm pkg get scripts.test | grep -qv "null"; then
