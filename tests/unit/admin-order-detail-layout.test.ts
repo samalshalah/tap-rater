@@ -10,6 +10,9 @@ vi.mock("next/navigation", async original => ({
 vi.mock("@/lib/email-deliveries", () => ({
   getAdminEmailDeliveries: vi.fn(async () => ({ available: true, deliveries: [], acceptedCount: 0, deliveredCount: 0, problemCount: 0, pendingCount: 0 }))
 }));
+vi.mock("@/lib/db", () => ({
+  getSupabaseAdmin: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) })
+}));
 
 const { getOrder } = vi.hoisted(() => ({ getOrder: vi.fn() }));
 vi.mock("@/lib/customer-stand-registry", () => ({ orderStandRegistry: vi.fn(async () => []) }));

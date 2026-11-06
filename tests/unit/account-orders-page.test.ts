@@ -38,7 +38,7 @@ beforeEach(() => {
 describe("compact customer billing",()=>{
  it("attaches only this order's invoice in order details",()=>{
  const html=renderToStaticMarkup(createElement(OrderInvoiceAttachments,{orderId:"qa-order",invoices:[...portal.invoices,{...portal.invoices[0],id:"foreign",orderId:"another-order",invoiceNumber:"DO-NOT-SHOW",invoicePdfUrl:"https://example.test/foreign.pdf"}],onView:()=>{}}));
- expect(html).toContain("QA-0001");expect(html).toContain("Download PDF");expect(html).toContain("https://example.test/invoice.pdf");expect(html).not.toContain("DO-NOT-SHOW");expect(html).not.toContain("foreign.pdf");
+ expect(html).toContain("QA-0001");expect(html).toContain("Download PDF");expect(html).toContain("/api/account/orders/qa-order/invoice");expect(html).not.toContain("DO-NOT-SHOW");expect(html).not.toContain("foreign.pdf");
  });
 
  it("keeps each invoice PDF on its matching order row",async()=>{
@@ -46,10 +46,10 @@ describe("compact customer billing",()=>{
   portal.invoices.push({...portal.invoices[0],id:"second-invoice",orderId:"second-order",invoiceNumber:"SECOND",invoicePdfUrl:"https://example.test/second.pdf"});
   const html=renderToStaticMarkup(await AccountOrdersPage({}));
   const rows=html.match(/<tr(?:\s[^>]*)?>.*?<\/tr>/g)!;
-  expect(rows[1]).toContain("https://example.test/invoice.pdf");
-  expect(rows[1]).not.toContain("https://example.test/second.pdf");
-  expect(rows[2]).toContain("https://example.test/second.pdf");
-  expect(rows[2]).not.toContain('href="https://example.test/invoice.pdf"');
+  expect(rows[1]).toContain("/api/account/orders/qa-order/invoice");
+  expect(rows[1]).not.toContain("/api/account/orders/second-order/invoice");
+  expect(rows[2]).toContain("/api/account/orders/second-order/invoice");
+  expect(rows[2]).not.toContain('href="/api/account/orders/qa-order/invoice"');
  });
 
  it("loads only the signed-in customer and links documents on their order row",async()=>{const html=renderToStaticMarkup(await AccountOrdersPage({}));expect(getCustomerPortal).toHaveBeenCalledWith("billing@example.test");expect(html).toContain("View order");expect(html).toContain("View invoice");expect(html).toContain("QA-0001");expect(html).not.toContain("cs_test_history_only");expect(html).toContain("Download PDF");expect(html).toContain("https://example.test/receipt");expect(html).not.toContain("Recurring billing");});

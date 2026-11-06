@@ -3,6 +3,9 @@ const mocks = vi.hoisted(() => ({ auth: vi.fn(), order: vi.fn(), stands: vi.fn()
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: mocks.auth }));
 vi.mock("@/lib/customer-stand-registry", () => ({ orderStandRegistry: mocks.stands }));
 vi.mock("@/lib/email-deliveries", () => ({ getAdminEmailDeliveries: mocks.deliveries }));
+vi.mock("@/lib/db", () => ({
+  getSupabaseAdmin: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) })
+}));
 vi.mock("next/navigation", () => ({ notFound: () => { throw new Error("not found"); } }));
 vi.mock("@/lib/orders", () => ({ getAdminOrderById: mocks.order, getOrderLineItemProductionSummary: vi.fn(), getAdminOrderArtworkUrl: vi.fn(), getOrderProductionBlockers: () => [] }));
 vi.mock("@/lib/products", () => ({ formatPrice: String }));
