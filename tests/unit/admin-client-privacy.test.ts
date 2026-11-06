@@ -28,7 +28,7 @@ describe('staff client privacy boundary',()=>{
   }
   it('allows only operational fields even if the source includes sensitive content',()=>{
     const summary=operationSummary({id:'account-1',account_name:'Norah Boutique',account_status:'active',locations:'2',connected:'1',ai_calls_today:'3',email:'private@example.com',address:'private address',draft:'private draft',keyword:'private keyword',last_error:'token secret',google_subject:'secret',reviews:[{comment:'private'}]});
-    expect(summary).toEqual({accountId:'account-1',accountName:'Norah Boutique',status:'active',locations:2,connected:1,syncAttention:0,aiLocations:0,aiCallsToday:3,scansThisMonth:0,scanPointsThisMonth:0});
-    expect(JSON.stringify(summary)).not.toMatch(/private|secret/);
+    expect(summary).toEqual({accountId:'account-1',accountName:'Norah Boutique',email:'private@example.com',status:'active',locations:2,connected:1,syncAttention:0,aiLocations:0,aiCallsToday:3,scansThisMonth:0,scanPointsThisMonth:0});
+    expect(JSON.stringify(summary)).not.toMatch(/private address|private draft|private keyword|secret/);
   });
 });

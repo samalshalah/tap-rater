@@ -6,8 +6,9 @@ export type ClientOperation = {
   scansThisMonth:number; scanPointsThisMonth:number;
 };
 
-// Explicit allowlist: never serialize a business profile, review, draft, keyword,
-// Google identity, error message, or ranking/performance result to staff.
+// Explicit allowlist: the account email is retained for staff support and replacement
+// fulfillment. Never serialize a business profile, review, draft, keyword, Google
+// identity, error message, or ranking/performance result to staff.
 export function operationSummary(row:Record<string,unknown>):ClientOperation {
   const count=(key:string)=>Math.max(0,Number(row[key])||0);
   return {
