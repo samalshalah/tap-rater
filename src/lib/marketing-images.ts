@@ -1,5 +1,5 @@
 export const multiLinkDemoImage = {
-  src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png",
-  alt: "Custom Rate Your Experience stand with your logo and QR code",
-  caption: "Rate Your Experience stand and example Multi-Link page"
+  src: "/uploads/marketing/multi-link-bingo-tires-demo.png",
+  alt: "Illustrative Bingo Tires branded NFC stand beside a Multi-Link page with review and website buttons",
+  caption: "Illustrative example: a branded NFC stand opens a customer Multi-Link page"
 };

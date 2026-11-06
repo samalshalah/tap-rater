@@ -62,7 +62,7 @@ describe("content phase 3 presentation standard", () => {
     expect(multiLinkDemoImage.alt).toContain("Illustrative");
     expect(multiLinkDemoImage.alt).toContain("Bingo Tires");
     const homepage = readFileSync("src/components/storefront/homepage-layout.tsx", "utf8");
-    expect(homepage).toContain("content.multilink.image.src === multiLinkDemoImage.src ? <figcaption");
+    expect(homepage).toContain("[multiLinkDemoImage.src, \"/uploads/marketing/multi-link-bingo-tires-demo.png\"");
     const manifest = JSON.parse(readFileSync("public/uploads-optimized/manifest.json", "utf8"));
     expect(manifest.sources["marketing/multi-link-bingo-tires-demo.png"]).toMatch(/^[a-f0-9]{64}$/);
   });
