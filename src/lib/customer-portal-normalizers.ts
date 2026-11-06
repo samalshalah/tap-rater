@@ -187,6 +187,13 @@ export function deriveInvoicesFromOrders(orders: CustomerPortalOrder[]): Custome
     }));
 }
 
+/** Include legacy order-level invoices alongside the newer billing invoice rows. */
+export function mergeCustomerInvoices(billingInvoices: CustomerPortalInvoice[], orders: CustomerPortalOrder[]) {
+  const coveredOrderIds = new Set(billingInvoices.map(invoice => invoice.orderId).filter((id): id is string => Boolean(id)));
+  const knownIds = new Set(billingInvoices.map(invoice => invoice.id));
+  return [...billingInvoices, ...deriveInvoicesFromOrders(orders).filter(invoice => !coveredOrderIds.has(invoice.orderId ?? "") && !knownIds.has(invoice.id))];
+}
+
 export function readRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 }

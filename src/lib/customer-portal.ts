@@ -1,4 +1,4 @@
-import { emptyPortal, normalizeCustomer, normalizeBusiness, normalizeDevice, normalizeDeliveryAddress, normalizeOrder, normalizeSubscription, normalizeInvoice, deriveInvoicesFromOrders, readRecord, readString, readNumber, readPaymentMethodLabel, readOrderUrl, readOrderValue, capitalize, countLineItems, normalizeOrderItems, buildCustomerStands, readProofPreviewString, normalizeOrderLineItem } from "./customer-portal-normalizers";
+import { emptyPortal, normalizeCustomer, normalizeBusiness, normalizeDevice, normalizeDeliveryAddress, normalizeOrder, normalizeSubscription, normalizeInvoice, deriveInvoicesFromOrders, mergeCustomerInvoices, readRecord, readString, readNumber, readPaymentMethodLabel, readOrderUrl, readOrderValue, capitalize, countLineItems, normalizeOrderItems, buildCustomerStands, readProofPreviewString, normalizeOrderLineItem } from "./customer-portal-normalizers";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { isOrderPaymentConfirmed } from "@/lib/order-fulfillment-rules";
@@ -229,7 +229,7 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
 
   const orders = Array.isArray(orderRows) ? orderRows.map(normalizeOrder).filter((order): order is CustomerPortalOrder => Boolean(order)) : [];
   const subscriptions = Array.isArray(subscriptionRows) ? subscriptionRows.map(normalizeSubscription).filter((subscription): subscription is CustomerPortalSubscription => Boolean(subscription)) : [];
-  const invoices = invoiceResult.ok ? invoiceResult.invoices : deriveInvoicesFromOrders(orders);
+  const invoices = invoiceResult.ok ? mergeCustomerInvoices(invoiceResult.invoices, orders) : deriveInvoicesFromOrders(orders);
 
   return {
     configured: true,
