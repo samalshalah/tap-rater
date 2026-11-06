@@ -1,6 +1,6 @@
 import {describe,it,expect,vi,beforeEach,afterEach} from 'vitest';
 const m=vi.hoisted(()=>({index:0,setters:[] as ReturnType<typeof vi.fn>[],router:{refresh:vi.fn(),push:vi.fn()}}));
-vi.mock('next/navigation',()=>({useRouter:()=>m.router}));
+vi.mock('next/navigation',()=>({useRouter:()=>m.router,useSearchParams:()=>({get:()=>null})}));
 vi.mock('react',async original=>({...await original<object>(),useEffect:vi.fn(),useState:(initial:unknown)=>{
  const i=m.index++;const setter=vi.fn();m.setters[i]=setter;
  const overrides:Record<number,unknown>={0:{locations:[],listings:[],licenses:{unlimited_locations:true,used:0,location_limit:1}},7:{name:'New Business',formattedAddress:'123 Main St'},9:true};
