@@ -21,7 +21,7 @@ describe('live review HTTP boundaries',()=>{
 it('scopes dashboard reads to validated locations after authentication',async()=>{
  auth.mockResolvedValue({session:{email:'owner@example.com'}});list.mockResolvedValue([]);
  const response=await handleLiveReviews(new Request('https://taprater.com/api/account/reviews/live?locations='+id),'customer');
- expect(response.status).toBe(200);expect(list).toHaveBeenCalledWith({kind:'customer',email:'owner@example.com'},undefined,[id]);expect(response.headers.get('Cache-Control')).toBe('no-store');
+ expect(response.status).toBe(200);expect(list).toHaveBeenCalledWith({kind:'customer',email:'owner@example.com'},undefined,[id],'all');expect(response.headers.get('Cache-Control')).toBe('no-store');
 });
 it('rejects invalid dashboard scopes without querying reviews',async()=>{
  auth.mockResolvedValue({session:{email:'owner@example.com'}});

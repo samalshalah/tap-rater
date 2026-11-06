@@ -81,7 +81,7 @@ describe("SEO offer accuracy", () => {
       })),
     };
     expect(getProductPurchaseOptions(edited)[0].summary).toContain(
-      "logo, business name, and a QR code",
+      "logo and QR code, with an optional business name",
     );
   });
 });

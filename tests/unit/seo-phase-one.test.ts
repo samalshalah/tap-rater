@@ -46,7 +46,7 @@ describe("product variant structured data", () => {
     const data = schema(google);
     expect(data["@type"]).toBe("Product"); expect(data.hasVariant).toBeUndefined();
     expect(data.offers).toMatchObject({ price: "49.00", priceCurrency: "USD", availability: "https://schema.org/InStock" });
-    expect(data.sku).toContain("BRD"); expect(data.url).toContain("?design=branded");
+    expect(data.sku).toContain("BRD"); expect(data.url).toBe("https://taprater.com/product/google-review-stand");
     expect(data.image[0]).toContain(google.assetSet!.brandedAngledImageUrl);
     expect(data.aggregateRating).toBeUndefined();
   });
@@ -56,7 +56,7 @@ describe("product variant structured data", () => {
       ...option, isActive: option.optionCode === "branded_qr_direct", priceCents: 5900
     })) };
     expect(schema(product)).toMatchObject({ "@type": "Product", offers: { price: "59.00" } });
-    expect(schema(product).url).toContain("?design=branded");
+    expect(schema(product).url).toBe("https://taprater.com/product/google-review-stand");
     expect(schema({ ...google, purchaseOptions: [] })).not.toHaveProperty("offers");
     expect(schema({ ...google, purchaseOptions: [] })).not.toHaveProperty("hasVariant");
   });
