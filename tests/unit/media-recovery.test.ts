@@ -1,4 +1,4 @@
-import { Miniflare, convertV4MiniflareOptions } from "miniflare";
+import { Miniflare } from "miniflare";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { backupMediaObject, getMediaBackupState, restoreMediaToStaging, runMediaBackupBatch, runMediaRecoveryDrill } from "@/lib/media-recovery";
 
@@ -7,7 +7,7 @@ describe("R2 backup and recovery", () => {
   let source: R2Bucket;
   let backup: R2Bucket;
   beforeEach(async () => {
-    runtime = new Miniflare(convertV4MiniflareOptions({ name: "recovery-test", modules: true, script: "export default { fetch() { return new Response('test'); } }", r2Buckets: ["SOURCE", "BACKUP"] }));
+    runtime = new Miniflare({ name: "recovery-test", modules: true, script: "export default { fetch() { return new Response('test'); } }", r2Buckets: ["SOURCE", "BACKUP"] });
     source = await testBucket(runtime, "SOURCE");
     backup = await testBucket(runtime, "BACKUP");
   });

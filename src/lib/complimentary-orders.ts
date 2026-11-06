@@ -103,12 +103,12 @@ export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrder
 
 export const changeComplimentaryStandSchema = z.object({
   expectedUpdatedAt: z.string().min(1),
-  productId: complimentaryOrderSchema.innerType().shape.productId,
-  optionId: complimentaryOrderSchema.innerType().shape.optionId,
-  businessName: complimentaryOrderSchema.innerType().shape.businessName,
-  destinationUrl: complimentaryOrderSchema.innerType().shape.destinationUrl,
-  logoStorageKey: complimentaryOrderSchema.innerType().shape.logoStorageKey,
-  design: complimentaryOrderSchema.innerType().shape.design
+  productId: complimentaryOrderSchema.shape.productId,
+  optionId: complimentaryOrderSchema.shape.optionId,
+  businessName: complimentaryOrderSchema.shape.businessName,
+  destinationUrl: complimentaryOrderSchema.shape.destinationUrl,
+  logoStorageKey: complimentaryOrderSchema.shape.logoStorageKey,
+  design: complimentaryOrderSchema.shape.design
 }).superRefine((v, ctx) => {
   if (v.optionId === "branded_qr_direct" && !v.logoStorageKey) ctx.addIssue({ code: "custom", path: ["logoStorageKey"], message: "Upload a logo for a branded stand." });
 });
