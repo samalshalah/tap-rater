@@ -107,7 +107,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
             {(invoicePdfUrl || hostedInvoiceUrl) && <InfoCard title="Invoice">
               <Field label="Invoice number" value={invoiceNumber} />
               <Field label="Invoice status" value={order.payment_status ?? order.status} />
-              {invoicePdfUrl && <a href={`/api/admin/orders/${id}/invoice`} className="tr-button-primary inline-flex min-h-10 items-center">Download invoice PDF</a>}
+              {invoicePdfUrl && <a href={invoicePdfUrl} target="_blank" rel="noreferrer" className="tr-button-primary inline-flex min-h-10 items-center">Open / download invoice PDF</a>}
               {!invoicePdfUrl && hostedInvoiceUrl && <a href={hostedInvoiceUrl} target="_blank" rel="noreferrer" className="tr-button-ghost inline-flex min-h-10 items-center">Open Stripe invoice</a>}
             </InfoCard>}
             {order.id && order.payment_status !== "complimentary" && (order.status === "paid" || order.payment_status === "paid" || order.payment_status === "refunded") ? (
