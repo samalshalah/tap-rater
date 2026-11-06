@@ -70,6 +70,18 @@ export function getCustomerReplyToEmail(env: Record<string, string | undefined> 
   return env.CUSTOMER_SUPPORT_EMAIL || "support@taprater.com";
 }
 
+export function isInternalSupportEmail(value: string, env: Record<string, string | undefined> = process.env) {
+  const normalize = (address: string) => address.trim().toLowerCase();
+  const supportAddresses = [
+    env.SUPPORT_ALERT_EMAIL,
+    env.SUPPORT_NOTIFICATION_EMAIL,
+    env.CUSTOMER_SUPPORT_EMAIL,
+    "support@taprater.com",
+    "support@taprateremail.com",
+  ].filter((address): address is string => Boolean(address?.trim())).map(normalize);
+  return supportAddresses.includes(normalize(value));
+}
+
 export function hasResendApiKey(env: Record<string, string | undefined> = process.env) {
   return Boolean(env.RESEND_API_KEY);
 }

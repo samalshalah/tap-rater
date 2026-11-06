@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {liveDb} from './google-business/live-review-core';
-import {buildEmailHtml,sendEmail} from './email';
+import {buildEmailHtml,isInternalSupportEmail,sendEmail} from './email';
 
 export async function enqueueReviewReports(sql=liveDb(),at=new Date()){
  await sql`WITH schedules AS (
@@ -74,6 +74,10 @@ export async function deliverReviewEmails(sql=liveDb(),send=sendEmail){
     JOIN customers c ON c.id=b.customer_id JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=c.id
     WHERE q.id=${id} AND q.claim=${token}::uuid AND l.enabled AND marketing_location_allowed(b.id) AND c.account_status='active'`;
    if(!job)continue;
+   if(isInternalSupportEmail(job.email)){
+    await sql`UPDATE review_email_queue SET finished_at=now(),result='suppressed_internal_support',claim=NULL WHERE id=${id} AND claim=${token}::uuid`;
+    continue;
+   }
    const message=job.message||await compose(job as Job,sql);
    const frozen=await sql`UPDATE review_email_queue q SET message=coalesce(message,${JSON.stringify(message)}::jsonb) FROM review_email_preferences p
     WHERE q.id=${id} AND q.claim=${token}::uuid AND q.business_id=p.business_id AND q.customer_id=p.customer_id AND q.pref_version=p.version
