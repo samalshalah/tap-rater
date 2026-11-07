@@ -46,7 +46,18 @@ describe('review list indexing', () => {
  });
  it('retains overlapping status counts while isolating suspected spam', () => {
   const reviews=[row('empty'),row('draft',{draft:'Hi'}),row('approved',{draft:'Hi',approved_version:1}),row('replied',{data:{starRating:'FIVE',reviewReply:{comment:'Thanks'}} as Row['data']}),row('spam',{suspected_spam:true,draft:'Hi'})];
-  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,processing:0,drafts:1,replied:1,spam:1});
+  expect(countReviewFilters([workspace('a',reviews)])).toEqual({all:5,tasks:0,processing:0,drafts:1,replied:1,spam:1});
+ });
+ it('keeps pre-service drafts in history and surfaces only current drafts as tasks', () => {
+  const reviews=[row('historic',{draft:'Old reply',data:{starRating:'ONE',createTime:'2026-01-01T00:00:00Z'} as Row['data']}),row('current',{draft:'New reply',data:{starRating:'ONE',createTime:'2026-02-01T00:00:00Z'} as Row['data']}),row('requested',{draft:'Requested reply',old_reply_requested_at:'2026-01-15T00:00:00Z',data:{starRating:'ONE',createTime:'2026-01-01T00:00:00Z'} as Row['data']})];
+  const w={...workspace('a',reviews),consent_at:'2026-01-15T00:00:00Z'};
+  expect(reviews.filter(review=>matchesReview(review,'tasks',w)).map(review=>review.id)).toEqual(['current','requested']);
+  expect(countReviewFilters([w]).tasks).toBe(2);
+ });
+ it('uses the completed first import as the boundary for historical drafts', () => {
+  const reviews=[row('historic',{draft:'Old reply',data:{starRating:'ONE',createTime:'2025-05-01T00:00:00Z'} as Row['data']}),row('current',{draft:'New reply',data:{starRating:'ONE',createTime:'2026-11-02T00:00:00Z'} as Row['data']})];
+  const w={...workspace('a',reviews),consent_at:'2024-01-01T00:00:00Z',initial_import_completed_at:'2026-11-01T00:00:00Z'};
+  expect(reviews.filter(review=>matchesReview(review,'tasks',w)).map(review=>review.id)).toEqual(['current']);
  });
  it('matches the previous filter-count algorithm across all status combinations', () => {
   const reviews:Row[]=[];

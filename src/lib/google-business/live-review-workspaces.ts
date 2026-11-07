@@ -3,13 +3,13 @@ import { z } from "zod";
 import type { ReviewActor } from "../review-workspaces";
 import { livePublishingEnabled, liveDb, LiveReviewError, ReviewAiWaitError, actorEmail, reviewStars, clientFor, authorizedLink } from "./live-review-core";
 
-const reviewFilterKeys=['all','unanswered','processing','queued','drafts','approved','attention','replied','spam'] as const;
+const reviewFilterKeys=['all','tasks','unanswered','processing','queued','drafts','approved','attention','replied','spam'] as const;
 type ReviewFilterKey=typeof reviewFilterKeys[number];
 function safeReviewFilter(value:string|undefined):ReviewFilterKey{if(value==='queued')return 'processing';return reviewFilterKeys.includes(value as ReviewFilterKey)?value as ReviewFilterKey:'all';}
 
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,filterValue='all') {
  const filter=safeReviewFilter(filterValue);
- const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,l.draft_due_at,l.consent_at,
+ const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,l.draft_due_at,l.consent_at,l.initial_import_completed_at,
  b.business_name, l.review_total,
  (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
   (l.review_total IS NOT NULL AND (SELECT count(*) FROM google_live_reviews r WHERE r.business_id=l.business_id)>=l.review_total)) AS initial_import_completed,
@@ -23,7 +23,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  // One bounded batch replaces a network round trip for every authorized location.
  if(!links.length)return [];
  const counts=await sql`WITH classified AS (
-  SELECT r.business_id,CASE
+  SELECT r.business_id,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,CASE
    WHEN r.suspected_spam THEN 'spam'
    WHEN coalesce(r.data->'reviewReply'->>'comment','')<>'' OR r.publish_state='published' THEN 'replied'
    WHEN r.publish_state IN ('publishing','uncertain') THEN 'processing'
@@ -37,6 +37,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
   WHERE r.business_id=ANY(${links.map(link=>link.business_id)}::uuid[])
  ) SELECT business_id,count(*)::int AS total_count,count(*) FILTER(WHERE status='unanswered')::int AS unanswered,
   count(*) FILTER(WHERE status='processing')::int AS processing,count(*) FILTER(WHERE status='queued')::int AS queued,count(*) FILTER(WHERE status='drafts')::int AS drafts,
+  count(*) FILTER(WHERE status='drafts' AND current_task)::int AS tasks,
   count(*) FILTER(WHERE status='approved')::int AS approved,count(*) FILTER(WHERE status='attention')::int AS attention,
   count(*) FILTER(WHERE status='replied')::int AS replied,count(*) FILTER(WHERE status='spam')::int AS spam
  FROM classified GROUP BY business_id`;
@@ -45,17 +46,17 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
  CROSS JOIN LATERAL (
   SELECT * FROM (
-   SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_attempt_at,auto_schedule_cancelled,draft_generated_at,
+   SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,
     CASE WHEN suspected_spam THEN 'spam'
      WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
      WHEN publish_state IN ('publishing','uncertain') THEN 'processing'
      WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'processing'
      WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
      WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
-     WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=google_live_reviews.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'
+     WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=r.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'
      ELSE 'unanswered' END AS review_status
-   FROM google_live_reviews WHERE business_id=locations.business_id
-  ) classified WHERE (${filter}='all' OR review_status=${filter})
+   FROM google_live_reviews r JOIN google_review_links l ON l.business_id=r.business_id WHERE r.business_id=locations.business_id
+  ) classified WHERE (${filter}='all' OR (${filter}='tasks' AND review_status='drafts' AND current_task) OR review_status=${filter})
   ORDER BY data->>'updateTime' DESC NULLS LAST,id LIMIT 101
   ) page ORDER BY locations.business_id,page.data->>'updateTime' DESC NULLS LAST,page.id`;
  const grouped=new Map<string,typeof rows>();
@@ -66,7 +67,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  return links.map(link=>{
   const reviews=grouped.get(link.business_id) || [];
   const totals=countsByBusiness.get(link.business_id);
-  const review_counts={all:Number(totals?.total_count||0),unanswered:Number(totals?.unanswered||0),processing:Number(totals?.processing||0),queued:Number(totals?.queued||0),drafts:Number(totals?.drafts||0),approved:Number(totals?.approved||0),attention:Number(totals?.attention||0),replied:Number(totals?.replied||0),spam:Number(totals?.spam||0)};
+  const review_counts={all:Number(totals?.total_count||0),tasks:Number(totals?.tasks||0),unanswered:Number(totals?.unanswered||0),processing:Number(totals?.processing||0),queued:Number(totals?.queued||0),drafts:Number(totals?.drafts||0),approved:Number(totals?.approved||0),attention:Number(totals?.attention||0),replied:Number(totals?.replied||0),spam:Number(totals?.spam||0)};
   return {...link,review_counts,draft_error:link.draft_error&&link.ai_monthly_limit!=null&&Number(link.ai_monthly_used)>=Number(link.ai_monthly_limit)?new ReviewAiWaitError('monthly').message:link.draft_error,reviews:reviews.slice(0,100),moreReviews:reviews.length>100};
  });
 }
@@ -75,17 +76,17 @@ export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:
  const filter=safeReviewFilter(filterValue);
  await authorizedLink(actor,businessId,sql);
  const rows=await sql`SELECT * FROM (
-  SELECT id,data,draft,version,publish_state,attempted_at,approved_version,suspected_spam,scheduled_at,policy_check,old_reply_requested_at,auto_attempt_at,auto_schedule_cancelled,draft_generated_at,
+  SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,
    CASE WHEN suspected_spam THEN 'spam'
     WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
     WHEN publish_state IN ('publishing','uncertain') THEN 'processing'
     WHEN publish_state='idle' AND scheduled_at IS NOT NULL THEN 'processing'
     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version=version THEN 'approved'
     WHEN publish_state='idle' AND scheduled_at IS NULL AND draft<>'' AND approved_version IS DISTINCT FROM version THEN 'drafts'
-    WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=google_live_reviews.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'
+    WHEN publish_state='idle' AND draft='' AND scheduled_at IS NULL AND NOT auto_schedule_cancelled AND EXISTS(SELECT 1 FROM google_review_links l LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject WHERE l.business_id=r.business_id AND l.enabled AND l.ai_consent AND g.owner IS NOT NULL AND (old_reply_requested_at IS NOT NULL OR auto_attempt_at IS NOT NULL OR (l.auto_enabled AND ((data->>'starRating'='FOUR' AND l.auto_four) OR (data->>'starRating'='FIVE' AND l.auto_five)) AND nullif(data->>'createTime','')::timestamptz>coalesce(l.consent_at,now()-interval '1 day')))) THEN 'processing'
     ELSE 'unanswered' END AS review_status
-  FROM google_live_reviews WHERE business_id=${businessId}
- ) classified WHERE (${filter}='all' OR review_status=${filter})
+  FROM google_live_reviews r JOIN google_review_links l ON l.business_id=r.business_id WHERE r.business_id=${businessId}
+ ) classified WHERE (${filter}='all' OR (${filter}='tasks' AND review_status='drafts' AND current_task) OR review_status=${filter})
  ORDER BY data->>'updateTime' DESC NULLS LAST,id LIMIT 101 OFFSET ${offset}`;
  return {reviews:rows.slice(0,100),moreReviews:rows.length>100};
 }

@@ -1,7 +1,17 @@
 import type { Row,Snapshot,Workspace } from './google-live-review-types';
 
 export function matchesReview(review:Row,filter:string,workspace:Workspace){
+ if(filter==='tasks')return reviewStatus(review,workspace)==='drafts'&&isCurrentReviewTask(review,workspace);
  return filter==='all'||reviewStatus(review,workspace)===filter;
+}
+
+export function isCurrentReviewTask(review:Row,workspace:Workspace){
+ if(review.current_task!==undefined)return review.current_task;
+ if(review.old_reply_requested_at)return true;
+ const activationAt=workspace.initial_import_completed_at||workspace.consent_at;
+ if(!activationAt||!review.data.createTime)return false;
+ const reviewTime=Date.parse(review.data.createTime),consentTime=Date.parse(activationAt);
+ return Number.isFinite(reviewTime)&&Number.isFinite(consentTime)&&reviewTime>consentTime;
 }
 
 export function reviewStatus(review:Row,workspace?:Workspace){
@@ -15,7 +25,7 @@ export function reviewStatus(review:Row,workspace?:Workspace){
  return 'unanswered';
 }
 
-export const reviewFilters = [['all','All reviews'],['processing','Processing'],['drafts','Draft'],['replied','Replied'],['spam','Suspected spam']] as const;
+export const reviewFilters = [['all','All reviews'],['tasks','Needs your review'],['processing','Processing'],['drafts','Draft history'],['replied','Replied'],['spam','Suspected spam']] as const;
 export const reviewRatingFilters = [['all','All stars'],['FIVE','5 stars'],['FOUR','4 stars'],['THREE','3 stars'],['TWO','2 stars'],['ONE','1 star']] as const;
 
 export function matchesReviewRating(review:Row, filter:string) {
