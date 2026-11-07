@@ -15,8 +15,9 @@ export async function sendReviewWorkerAlerts(sql:Sql,send=sendEmail){
   JOIN customers c ON c.id=b.customer_id
   LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
   WHERE a.resolved_at IS NULL
-   AND (a.stage='publish' OR (b.status IS DISTINCT FROM 'marketing_removed' AND l.enabled AND (a.stage<>'draft' OR l.ai_consent)))
-   AND a.failures>=3
+   AND a.stage IN ('import','draft')
+   AND b.status IS DISTINCT FROM 'marketing_removed' AND l.enabled AND (a.stage<>'draft' OR l.ai_consent)
+   AND a.failures>=CASE WHEN a.stage='draft' THEN 10 ELSE 3 END
    AND (emailed_at IS NULL OR emailed_at<now()-interval '24 hours')
    AND (email_attempt_at IS NULL OR email_attempt_at<now()-interval '15 minutes')
   LIMIT 20 FOR UPDATE OF a SKIP LOCKED
@@ -46,7 +47,7 @@ export async function activeReviewWorkerAlerts(sql:Sql){
  return sql`SELECT a.business_id,a.stage,a.failures,a.updated_at,a.emailed_at
  FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id
  LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
- WHERE a.resolved_at IS NULL AND (a.stage='publish' OR
- (b.status IS DISTINCT FROM 'marketing_removed' AND l.enabled AND (a.stage<>'draft' OR l.ai_consent)))
+ WHERE a.resolved_at IS NULL AND a.stage IN ('import','draft') AND
+ b.status IS DISTINCT FROM 'marketing_removed' AND l.enabled AND (a.stage<>'draft' OR l.ai_consent)
  ORDER BY a.updated_at DESC LIMIT 100`;
 }
