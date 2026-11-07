@@ -26,6 +26,8 @@ describe("customer header", () => {
     const html = renderToStaticMarkup(createElement(Header));
     expect(html).toContain('aria-label="Main navigation"');
     expect(html).toContain("Shop by Type");
+    expect(html).toContain('href="/contact-us"');
+    expect(html).toContain("Contact Us");
     expect(html).toContain('href="/account/login"');
     expect(html).not.toContain("Orders &amp; Billing");
   });

@@ -48,6 +48,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
       enabled: true,
     },
     { label: "Resources", href: "/support", order: 60, enabled: true },
+    { label: "Contact Us", href: "/contact-us", order: 70, enabled: true },
   ],
 };
 
@@ -78,8 +79,17 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
         { label: "Home", href: "/", order: 5, enabled: true },
         ...withShopByType,
       ];
+  const hasContact = normalizedItems.some(
+    (item) => item.href === "/contact-us",
+  );
+  const withContact = hasContact
+    ? normalizedItems
+    : [
+        ...normalizedItems,
+        { label: "Contact Us", href: "/contact-us", order: 70, enabled: true },
+      ];
 
-  return normalizedItems
+  return withContact
     .map((item) =>
       item.href === "/solutions" && ["by use", "shop by use", "business uses"].includes(item.label.toLowerCase())
         ? { ...item, label: "Shop by Business" }

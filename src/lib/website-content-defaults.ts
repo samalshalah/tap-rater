@@ -12,7 +12,8 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "By Use", href: "/solutions", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     { label: "Multi-Link", href: "/multi-link", order: 40, enabled: true },
-    { label: "Resources", href: "/support", order: 60, enabled: true }
+    { label: "Resources", href: "/support", order: 60, enabled: true },
+    { label: "Contact Us", href: "/contact-us", order: 70, enabled: true }
   ]
 };
 
