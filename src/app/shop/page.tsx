@@ -4,6 +4,7 @@ import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
 import { Plus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
+import { ShopFilterLink } from "@/components/product/shop-filter-link";
 import { ShopControls } from "@/components/product/shop-controls";
 import { SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
@@ -354,14 +355,13 @@ function FilterLink({
   label: string;
 }) {
   return (
-    <Link
+    <ShopFilterLink
+      active={active}
+      count={count}
       href={href}
-      prefetch={false}
-      aria-current={active ? "true" : undefined}
+      label={label}
       className={styles.filterLink}
-    >
-      <span className="min-w-0">{label}</span>
-      <span className={styles.filterCount}>{count}</span>
-    </Link>
+      countClassName={styles.filterCount}
+    />
   );
 }
