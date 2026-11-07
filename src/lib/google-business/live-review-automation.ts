@@ -10,17 +10,18 @@ import type { AiUsageContext } from "../ai-usage-meter";
 import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, queueHistoricalPositives } from "./live-review-core";
 import { syncLiveReviews } from "./live-review-workspaces";
 import { publishLiveReply } from "./live-review-actions";
+import { reviewTaskBoundary } from './review-task-boundary';
 
 type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions>;
 export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate:AutomaticReplyGenerator=generateAutomaticReviewReply,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
- const activationAt=link.initial_import_completed_at||link.consent_at||null;
+ const activationAt=reviewTaskBoundary(link.initial_import_completed_at,link.consent_at);
  const claimTime=new Date().toISOString();
  const rows=await sql`WITH candidate AS (SELECT id,auto_attempt_at AS prior_attempt FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND (${Boolean(link.draft_low_stars)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
- AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at IS NOT NULL OR NULLIF(data->>'createTime','')::timestamptz>coalesce(${activationAt}::timestamptz,now()-interval '1 day')) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
+ AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at>${activationAt}::timestamptz OR NULLIF(data->>'createTime','')::timestamptz>${activationAt}::timestamptz) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
  ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${activationAt}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED)
  UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz FROM candidate WHERE r.id=candidate.id
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL

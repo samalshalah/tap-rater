@@ -23,7 +23,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  // One bounded batch replaces a network round trip for every authorized location.
  if(!links.length)return [];
  const counts=await sql`WITH classified AS (
-  SELECT r.business_id,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,CASE
+  SELECT r.business_id,coalesce(r.old_reply_requested_at>timestamptz '2026-11-07T16:45:00.000Z' OR nullif(r.data->>'createTime','')::timestamptz>greatest(timestamptz '2026-11-07T16:45:00.000Z',coalesce(l.initial_import_completed_at,l.consent_at,timestamptz '2026-11-07T16:45:00.000Z')),false) AS current_task,CASE
    WHEN r.suspected_spam THEN 'spam'
    WHEN coalesce(r.data->'reviewReply'->>'comment','')<>'' OR r.publish_state='published' THEN 'replied'
    WHEN r.publish_state IN ('publishing','uncertain') THEN 'processing'
@@ -46,7 +46,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  FROM unnest(${links.map(link=>link.business_id)}::uuid[]) AS locations(business_id)
  CROSS JOIN LATERAL (
   SELECT * FROM (
-   SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,
+   SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at>timestamptz '2026-11-07T16:45:00.000Z' OR nullif(r.data->>'createTime','')::timestamptz>greatest(timestamptz '2026-11-07T16:45:00.000Z',coalesce(l.initial_import_completed_at,l.consent_at,timestamptz '2026-11-07T16:45:00.000Z')),false) AS current_task,
     CASE WHEN suspected_spam THEN 'spam'
      WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
      WHEN publish_state IN ('publishing','uncertain') THEN 'processing'
@@ -76,7 +76,7 @@ export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:
  const filter=safeReviewFilter(filterValue);
  await authorizedLink(actor,businessId,sql);
  const rows=await sql`SELECT * FROM (
-  SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at IS NOT NULL OR nullif(r.data->>'createTime','')::timestamptz>coalesce(l.initial_import_completed_at,l.consent_at,now()),false) AS current_task,
+  SELECT r.id,r.data,r.draft,r.version,r.publish_state,r.attempted_at,r.approved_version,r.suspected_spam,r.scheduled_at,r.policy_check,r.old_reply_requested_at,r.auto_attempt_at,r.auto_schedule_cancelled,r.draft_generated_at,coalesce(r.old_reply_requested_at>timestamptz '2026-11-07T16:45:00.000Z' OR nullif(r.data->>'createTime','')::timestamptz>greatest(timestamptz '2026-11-07T16:45:00.000Z',coalesce(l.initial_import_completed_at,l.consent_at,timestamptz '2026-11-07T16:45:00.000Z')),false) AS current_task,
    CASE WHEN suspected_spam THEN 'spam'
     WHEN coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published' THEN 'replied'
     WHEN publish_state IN ('publishing','uncertain') THEN 'processing'

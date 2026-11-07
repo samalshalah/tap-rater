@@ -1,4 +1,5 @@
 import type { Row,Snapshot,Workspace } from './google-live-review-types';
+import { reviewTaskBoundary } from '../../lib/google-business/review-task-boundary';
 
 export function matchesReview(review:Row,filter:string,workspace:Workspace){
  if(filter==='tasks')return reviewStatus(review,workspace)==='drafts'&&isCurrentReviewTask(review,workspace);
@@ -7,8 +8,8 @@ export function matchesReview(review:Row,filter:string,workspace:Workspace){
 
 export function isCurrentReviewTask(review:Row,workspace:Workspace){
  if(review.current_task!==undefined)return review.current_task;
- if(review.old_reply_requested_at)return true;
- const activationAt=workspace.initial_import_completed_at||workspace.consent_at;
+ const activationAt=reviewTaskBoundary(workspace.initial_import_completed_at,workspace.consent_at);
+ if(review.old_reply_requested_at&&Date.parse(review.old_reply_requested_at)>Date.parse(activationAt))return true;
  if(!activationAt||!review.data.createTime)return false;
  const reviewTime=Date.parse(review.data.createTime),consentTime=Date.parse(activationAt);
  return Number.isFinite(reviewTime)&&Number.isFinite(consentTime)&&reviewTime>consentTime;
