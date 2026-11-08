@@ -1,7 +1,7 @@
 "use client";
 
 import type { RefObject } from "react";
-import { Building2, Check, ChevronDown, Info, MapPin, Search } from "lucide-react";
+import { Building2, Check, ChevronDown, Info, MapPin, Search, X } from "lucide-react";
 import type { GoogleLocationChoice } from "@/lib/google-business/location-discovery";
 
 type Props = {
@@ -26,21 +26,23 @@ type Props = {
   busy: boolean;
   error: string;
   setPickerOpen: (value: boolean) => void;
+  onClose?: () => void;
   run: (action: "connect" | "accounts" | "bind" | "disconnect") => Promise<void>;
 };
 
 export function GoogleLocationPicker({
   picker, email, businesses, locations, visibleLocations, selected, address, filter, setFilter,
   location, setLocation, setAccount, confirmed, setConfirmed, business, setBusiness, compact,
-  businessId, busy, error, setPickerOpen, run
+  businessId, busy, error, setPickerOpen, onClose, run
 }: Props) {
   const canConnect = Boolean(location && business && confirmed);
 
   return (
     <dialog ref={picker} onCancel={(event) => { event.preventDefault(); setPickerOpen(false); }} aria-labelledby="google-location-picker-title" className="m-auto max-h-[88vh] w-[min(760px,94vw)] overflow-hidden rounded-2xl border border-line bg-white p-0 text-ink shadow-2xl backdrop:bg-slate-900/40">
-      <div className="border-b border-line px-5 pb-4 pt-5 sm:px-7">
-        <h3 id="google-location-picker-title" className="text-lg font-semibold tracking-tight">Choose a Google location</h3>
-        <p className="mt-1 text-sm text-muted">Select the business you want to connect for {email}.</p>
+      <div className="flex items-start justify-between gap-4 border-b border-line px-5 pb-4 pt-5 sm:px-7">
+        <div><h3 id="google-location-picker-title" className="text-lg font-semibold tracking-tight">Choose a Google location</h3>
+        <p className="mt-1 text-sm text-muted">Select the business you want to connect for {email}.</p></div>
+        <button type="button" aria-label="Close Google location picker" className="tr-button-ghost -mt-1 shrink-0" onClick={() => { setPickerOpen(false); onClose?.(); }}><X className="h-4 w-4" /></button>
       </div>
 
       {locations.length > 0 && <div className="space-y-4 px-5 py-4 sm:px-7">
