@@ -11,6 +11,8 @@ const industries = {
     singular: "dental practice",
     title: "Google Review Stand for Dentists",
     description: "Custom Google review stands for dental practices. Add your logo, NFC and QR code, then help patients reach the correct Google review link after a visit.",
+    image: "/uploads-optimized/use-cases/healthcare-dental-w1200.webp",
+    imageAlt: "Custom Google review stand at a modern dental practice reception",
     intro: "Place a custom Google review stand at dental reception so patients can find the correct practice review page after their appointment. NFC tap and the printed QR code open the same link you approve during setup.",
     placement: "Place the stand on the patient side of reception after the appointment is complete, away from payment terminals, private paperwork, and clinical instructions.",
     check: "Use the Google review link for the exact office location. Test it on a phone and verify the practice name and address before approving the design.",
@@ -26,6 +28,8 @@ const industries = {
     singular: "restaurant",
     title: "Google Review Stand for Restaurants",
     description: "Custom Google review stands for restaurants. Add your logo, NFC and QR code, then give diners a simple way to reach the correct Google review link.",
+    image: "/uploads-optimized/use-cases/restaurants-cafes-w1200.webp",
+    imageAlt: "Custom NFC review stand at a restaurant counter",
     intro: "A custom Google review stand gives diners a simple route to your restaurant’s review page after their visit. Your logo, NFC tap and matching QR code are prepared for the same location link.",
     placement: "Place the stand at the host desk, pickup counter, or checkout area where guests can reach it without blocking service or payment.",
     check: "Use the Google review link for the exact restaurant location. Confirm the name and address on a phone before you approve the artwork.",
@@ -41,6 +45,8 @@ const industries = {
     singular: "salon or beauty studio",
     title: "Google Review Stand for Salons",
     description: "Custom Google review stands for salons and beauty studios. Add your logo, NFC and QR code, then let clients open the correct Google review page after an appointment.",
+    image: "/uploads-optimized/use-cases/beauty-wellness-w1200.webp",
+    imageAlt: "Custom Google review stand at a beauty and wellness reception",
     intro: "Use a custom Google review stand at salon reception to help clients open the right location’s review page after an appointment. The stand combines your logo with NFC tap and a matching QR code.",
     placement: "Place the stand at reception or beside checkout after the service is complete, leaving room for clients to use their phone without interrupting payment or retail displays.",
     check: "Check the Google review link on a phone and confirm the salon name and address before approving the custom artwork.",
@@ -91,7 +97,7 @@ export default async function IndustryGoogleReviewStandPage({ params }: PageProp
         title={`${content.title} with your logo, NFC + QR`}
         body={<p className="tr-body">{content.intro}</p>}
         cta={{ href: "/product/google-review-stand", label: "Personalize your stand" }}
-        image={{ src: "/product-galleries/google-custom/tap-rater-custom-google-review-stand-01-white-background-angled.webp", alt: `Custom Google review stand for a ${content.singular}`, priority: true }}
+        image={{ src: content.image, alt: content.imageAlt, fit: "cover", priority: true }}
       />
 
       <SectionShell spacing="compact">
