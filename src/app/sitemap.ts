@@ -15,6 +15,7 @@ const staticRoutes = [
   "/solutions",
   "/how-it-works",
   "/review-links-generator",
+  "/nfc-vs-qr-google-review-stand",
   "/custom-stands",
   "/multi-link",
   "/pricing",
