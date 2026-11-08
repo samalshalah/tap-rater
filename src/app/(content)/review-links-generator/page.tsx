@@ -7,15 +7,15 @@ import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Free Google Review Link Generator",
-  description: "Find and copy your Google review link for free. Then put it on a review stand for Google Reviews with NFC, or personalize a stand with your logo, business name and QR code.",
+  description: "Find and copy your Google review link for free. Then personalize a custom review stand with your logo, NFC and a matching QR code.",
   alternates: { canonical: "/review-links-generator" }
 };
 
 const questions = [
   { question: "Is the Google review link generator free?", answer: "Yes. Find, copy and use your review link without buying a stand. The stand is an optional way to share that same link with customers in person." },
   { question: "What if I cannot find my business?", answer: "Check your business name and location. You can also copy the review link from your Google Business Profile's review-sharing option and paste it into the generator." },
-  { question: "Which review stand for Google Reviews should I choose?", answer: "Standard uses NFC tapping. Branded + QR includes NFC plus your logo, business name and a printed QR code. Both Direct designs open your chosen Google review link and are one-time purchases without a subscription." },
-  { question: "Will my stand include the red placeholder text?", answer: "No. The red text in the custom sample shows where your logo, business name and QR code go. Your finished Branded + QR stand uses your approved business details." },
+  { question: "What does a custom review stand include?", answer: "Every stand includes NFC, your logo and a printed QR code. Both open the Google review link you choose. It is a one-time purchase with no subscription." },
+  { question: "Will my stand include the red placeholder text?", answer: "No. The red text in the custom sample shows where your logo, business name and QR code go. Your finished stand uses your approved business details." },
   { question: "Does opening the link automatically post a review?", answer: "No. Customers choose whether to leave a review and may need to sign in to Google. A link or stand does not guarantee a rating or publication. Invite honest feedback without incentives." }
 ];
 
@@ -55,7 +55,7 @@ export default function ReviewLinksGeneratorPage() {
           <h2 className="tr-section-title">From review link to countertop in three steps</h2>
           <ol className="mt-8 tr-mobile-card-grid grid gap-6 md:grid-cols-3">
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">1. Find and check your link</h3><p className="tr-body-sm mt-3">Select your business, then open the link to check that it leads to the right Google review form. Copy it for your records.</p></li>
-            <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">2. Choose your stand</h3><p className="tr-body-sm mt-3">Keep it simple with Standard NFC, or choose Branded + QR for your logo, business name and printed review QR code.</p></li>
+            <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">2. Personalize your stand</h3><p className="tr-body-sm mt-3">Add your logo and business details. Your custom stand includes NFC and a printed QR code for the same review link.</p></li>
             <li className="rounded-xl border border-line bg-white p-6"><h3 className="text-lg font-semibold">3. Share it in person</h3><p className="tr-body-sm mt-3">Place your stand at reception or checkout. Invite customers to tap or scan and leave honest feedback about their visit.</p></li>
           </ol>
           <div className="mt-8 flex flex-wrap gap-3"><Link href="/product/google-review-stand" className="tr-button-primary">Choose your review stand for Google Reviews</Link><a href="#generate-review-link" className="tr-button-outline">Find my review link first</a></div>
