@@ -172,7 +172,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <article className="rounded-xl border border-line bg-white p-6">
               <h3 className="text-lg font-semibold">Designed for your business</h3>
-              <p className="tr-body-sm mt-3">Add your logo and optional business name, then review the custom artwork before payment.</p>
+              <p className="tr-body-sm mt-3">Printed in the USA with your logo and optional business name, then reviewed as custom artwork before payment.</p>
             </article>
             <article className="rounded-xl border border-line bg-white p-6">
               <h3 className="text-lg font-semibold">Tap or scan</h3>
