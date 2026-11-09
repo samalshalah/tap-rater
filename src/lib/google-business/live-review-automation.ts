@@ -9,7 +9,7 @@ import type { ReplySuggestions } from "../review-ai-options";
 import type { AiUsageContext } from "../ai-usage-meter";
 import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, queueHistoricalPositives } from "./live-review-core";
 import { syncLiveReviews } from "./live-review-workspaces";
-import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear } from "./live-review-actions";
+import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear, verifyAndRecoverLiveReply } from "./live-review-actions";
 import { reviewTaskBoundary } from './review-task-boundary';
 
 type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions>;
@@ -92,6 +92,27 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
   if(result.queued)requeued++;
   if(result.published||result.alreadyReplied)await resolvePublishAlertIfClear(sql,String(row.business_id));
  }catch{/* Leave the review unresolved and retry the read-only Google check on the next worker pass. */}}
+ // A previous automatic retry may have stopped on a stale or transient failure.
+ // Recheck those reviews after a cooldown, with a fixed retry ceiling and a live
+ // Google read before any new publish is queued.
+ const recoverable=await sql`SELECT id,business_id FROM (
+  SELECT r.id,r.business_id,a.updated_at,row_number() OVER(PARTITION BY r.business_id ORDER BY a.updated_at,r.created_at) AS location_turn
+  FROM google_live_reviews r JOIN google_review_links l ON l.business_id=r.business_id
+  JOIN businesses b ON b.id=r.business_id AND b.customer_id=l.customer_id
+  JOIN customers c ON c.id=b.customer_id
+  JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
+  JOIN review_worker_alerts a ON a.business_id=r.business_id AND a.stage='publish' AND a.resolved_at IS NULL
+  WHERE r.publish_state='idle' AND r.schedule_failures BETWEEN 1 AND 4 AND r.scheduled_at IS NULL AND r.draft<>''
+   AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')=''
+   AND r.data->>'starRating' IN ('FOUR','FIVE') AND l.enabled AND l.ai_consent AND l.auto_enabled AND c.account_status='active'
+   AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))
+   AND a.updated_at<now()-interval '5 minutes' AND marketing_location_allowed(r.business_id)
+ ) pending WHERE location_turn=1 ORDER BY updated_at LIMIT 8`;
+ for(const row of recoverable){if(Date.now()>=publishDeadline-4000)break;try{
+  const result=await verifyAndRecoverLiveReply({kind:'admin'},String(row.id),String(row.business_id),sql,makeClient,true);reconciled++;
+  if(result.queued)requeued++;
+  if(result.published||result.alreadyReplied)await resolvePublishAlertIfClear(sql,String(row.business_id));
+ }catch{await reviewWorkerFailure(sql,String(row.business_id),'publish',true);}}
  const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60)) fair ORDER BY turn,scheduled_at LIMIT 40`;
  for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolvePublishAlertIfClear(sql,String(row.business_id));}}catch(error){
  await reviewWorkerFailure(sql,String(row.business_id),'publish',!(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)));

@@ -102,7 +102,7 @@ export async function reconcileLiveReply(actor:ReviewActor,id:string,sql=liveDb(
 }
 
 /** Verify the live Google record before recovering a failed 4–5-star automatic reply. */
-export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,businessId:string,sql=liveDb(),makeClient=clientFor){
+export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,businessId:string,sql=liveDb(),makeClient=clientFor,automatic=false){
  const {review,link}=await loadLiveReview(actor,id,sql);
  if(String(review.business_id)!==businessId)throw new LiveReviewError('This review does not belong to the selected location.',404);
  if(['publishing','uncertain'].includes(review.publish_state))return reconcileLiveReply(actor,id,sql,makeClient);
@@ -123,7 +123,7 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
    WHERE id=${id} AND version=${review.version} AND publish_state='idle'`;
   return {resolved:true,published:false,alreadyReplied:false,queued:false,needsAttention:true};
  }
- const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=0,auto_schedule_cancelled=false
+ const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},auto_schedule_cancelled=false
   WHERE id=${id} AND version=${review.version} AND publish_state='idle' AND schedule_failures>0 AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING id`;
  if(!updated.length)throw new LiveReviewError('This review changed during the Google check. Refresh its status.');
  return {resolved:true,published:false,alreadyReplied:false,queued:true,needsAttention:false};
