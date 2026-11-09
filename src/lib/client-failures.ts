@@ -21,7 +21,7 @@ export async function recordClientFailure(input:ClientFailure,sql=db()){
  ON CONFLICT(fingerprint) DO UPDATE SET occurrences=client_failures.occurrences+1,last_seen=now(),resolved_at=NULL`;
 }
 export async function sendClientFailureAlerts(sql=db(),send=sendEmail){
- const rows=await sql`WITH due AS (SELECT id FROM client_failures WHERE resolved_at IS NULL AND (notified_at IS NULL OR (last_seen>notified_at AND notified_at<now()-interval '24 hours')) AND (notification_attempt_at IS NULL OR notification_attempt_at<now()-interval '15 minutes') ORDER BY first_seen LIMIT 30 FOR UPDATE SKIP LOCKED), claimed AS (
+ const rows=await sql`WITH due AS (SELECT id FROM client_failures WHERE resolved_at IS NULL AND code<>'review_ai_allowance' AND (notified_at IS NULL OR (last_seen>notified_at AND notified_at<now()-interval '24 hours')) AND (notification_attempt_at IS NULL OR notification_attempt_at<now()-interval '15 minutes') ORDER BY first_seen LIMIT 30 FOR UPDATE SKIP LOCKED), claimed AS (
  UPDATE client_failures f SET notification_attempt_at=now() FROM due WHERE f.id=due.id RETURNING f.*
  ) SELECT claimed.*,c.email,b.business_name,b.address FROM claimed LEFT JOIN customers c ON c.id=claimed.customer_id LEFT JOIN businesses b ON b.id=claimed.business_id` as Failure[];
  if(!rows.length)return {sent:0};
