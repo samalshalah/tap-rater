@@ -43,7 +43,7 @@ export async function POST(request:Request){
   if(parsed.data.action==='settings'||parsed.data.action==='delay'||parsed.data.action==='pauseAutomation'||parsed.data.action==='allowance'){
    const sql=liveDb();
    const id=parsed.data.action==='settings'?parsed.data.settings.businessId:parsed.data.businessId;
-   const details=parsed.data.action==='pauseAutomation'?{operation:'pauseAutomation'}:parsed.data.action==='allowance'?{operation:'monthlyAiAllowance',monthlyAiLimit:parsed.data.monthlyAiLimit,scope:'all client locations'}:parsed.data;
+   const details=parsed.data.action==='pauseAutomation'?{operation:'pauseAutomation'}:parsed.data.action==='allowance'?{operation:'monthlyAiAllowance',monthlyAiLimit:parsed.data.monthlyAiLimit,scope:'this location only'}:parsed.data;
    try{await sql`INSERT INTO admin_review_setting_audit(business_id,admin_email,action,details) VALUES(${id},${process.env.ADMIN_EMAIL||'admin'},${parsed.data.action==='delay'?'delay':'settings'},${JSON.stringify(details)}::jsonb)`;}catch(error){console.warn('review_settings_audit_unavailable',error);}
   }
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
@@ -56,27 +56,29 @@ export async function POST(request:Request){
 async function updateMonthlyAiAllowance(businessId:string,monthlyAiLimit:number,currentLimit:number){
  const sql=liveDb();
  const rows=await sql`WITH target AS (
-  SELECT b.customer_id FROM businesses b WHERE b.id=${businessId} FOR UPDATE
+  SELECT b.customer_id,coalesce(m.ai_monthly_limit_override,a.ai_monthly_limit) AS current_limit
+  FROM businesses b JOIN customer_marketing_access a ON a.customer_id=b.customer_id
+  JOIN marketing_location_access m ON m.business_id=b.id AND m.customer_id=b.customer_id
+  WHERE b.id=${businessId} FOR UPDATE OF a,m
  ), saved AS (
-  UPDATE customer_marketing_access a SET ai_monthly_limit=${monthlyAiLimit},version=a.version+1,updated_at=now()
-  FROM target t WHERE a.customer_id=t.customer_id AND a.ai_monthly_limit=${currentLimit}
-  RETURNING a.customer_id
+  UPDATE marketing_location_access m SET ai_monthly_limit_override=${monthlyAiLimit}
+  FROM target t WHERE m.business_id=${businessId} AND m.customer_id=t.customer_id AND t.current_limit=${currentLimit}
+  RETURNING m.business_id,m.customer_id
  ), usage AS (
   SELECT coalesce(sum(u.units),0)::int AS used FROM marketing_usage_reservations u
   WHERE u.business_id=${businessId} AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date
  ), woken AS (
   UPDATE google_review_links l SET draft_due_at=now(),draft_error=NULL
-  FROM saved s WHERE l.customer_id=s.customer_id AND l.enabled AND l.ai_consent
-  AND coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u WHERE u.business_id=l.business_id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0)<${monthlyAiLimit}
+  FROM saved s,usage u WHERE l.business_id=s.business_id AND l.customer_id=s.customer_id AND l.enabled AND l.ai_consent AND u.used<${monthlyAiLimit}
   AND l.draft_error LIKE 'Monthly AI allowance exhausted.%' RETURNING l.business_id
  ) SELECT s.customer_id,u.used,(SELECT count(*) FROM woken)::int AS woken FROM saved s CROSS JOIN usage u`;
  if(!rows.length){
-  const [state]=await sql`SELECT a.ai_monthly_limit,coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u WHERE u.business_id=${businessId} AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0)::int AS used FROM businesses b JOIN customer_marketing_access a ON a.customer_id=b.customer_id WHERE b.id=${businessId}`;
+  const [state]=await sql`SELECT coalesce(m.ai_monthly_limit_override,a.ai_monthly_limit) AS current_limit,coalesce((SELECT sum(u.units) FROM marketing_usage_reservations u WHERE u.business_id=${businessId} AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date),0)::int AS used FROM businesses b JOIN customer_marketing_access a ON a.customer_id=b.customer_id JOIN marketing_location_access m ON m.business_id=b.id AND m.customer_id=b.customer_id WHERE b.id=${businessId}`;
   if(!state)throw new Error('The client allowance could not be found.');
-  if(Number(state.ai_monthly_limit)!==currentLimit)throw new Error('The allowance changed in another session. Refresh and try again.');
+  if(Number(state.current_limit)!==currentLimit)throw new Error('The allowance changed in another session. Refresh and try again.');
   throw new Error('No monthly AI allowance change was saved.');
  }
- return {saved:true,monthlyAiLimit,used:Number(rows[0].used),woken:Number(rows[0].woken),scope:'all client locations'};
+ return {saved:true,monthlyAiLimit,used:Number(rows[0].used),woken:Number(rows[0].woken),scope:'location'};
 }
 
 async function resumeDrafts(businessId:string){

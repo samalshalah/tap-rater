@@ -4,7 +4,7 @@ Admin > Customers & Licences has a Manage licences action on each client row. Th
 
 The existing admin-authenticated endpoint now supports a selected customer filter and persists unlimited_locations. Grant writes retain optimistic version checks, tenant checks on enabled location IDs, and marketing_access_audit. Active grants reject a past expiry. No Stripe calls, billing changes, content publication, Google imports or scans are triggered by this UI.
 
-Review Operations also lets an admin raise the monthly AI attempts cap from a location panel. The cap is stored per client and applies to each of that client's locations; raising it does not change the subscription or charge the client. Queues paused specifically for monthly exhaustion are made eligible again when the new cap covers their current usage. Expected allowance exhaustion remains visible in admin failures but is excluded from support email alerts.
+Review Operations lets an admin set a monthly AI attempts override for an individual location. Otherwise that location uses the client account's default cap. Raising a location override does not change the subscription or charge the client. Queues paused specifically for monthly exhaustion are made eligible again when the new cap covers their current usage. Expected allowance exhaustion remains visible in admin failures but is excluded from support email alerts.
 
 Validation: 51 targeted tests passed, TypeScript passed. Local mocked browser testing confirmed the Google Reviews grant form, unlimited toggle, successful save and retained values. No real client grants were changed during testing.
 

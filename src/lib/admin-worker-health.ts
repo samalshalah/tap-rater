@@ -50,7 +50,7 @@ export async function adminWorkerHealth(sql=liveDb()){
     (SELECT coalesce(sum(u.units),0) FROM marketing_usage_reservations u WHERE u.customer_id=c.id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_used,
     (SELECT count(*) FROM email_deliveries e WHERE lower(e.recipient)=lower(c.email) AND e.status IN ('failed','bounced') AND e.created_at>now()-interval '7 days') AS email_failures
     FROM customers c LEFT JOIN customer_marketing_access ma ON ma.customer_id=c.id WHERE c.account_status<>'guest' ORDER BY c.created_at DESC`,
-  sql`SELECT b.id,b.customer_id,b.business_name AS name,c.account_status,ma.expires_at AS licence_expires_at,ma.ai_monthly_limit AS monthly_ai_limit,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,l.profile_ai_enabled,l.draft_low_stars,l.reply_delay_minutes,
+  sql`SELECT b.id,b.customer_id,b.business_name AS name,c.account_status,ma.expires_at AS licence_expires_at,ma.ai_monthly_limit AS account_monthly_ai_limit,coalesce(mla.ai_monthly_limit_override,ma.ai_monthly_limit) AS monthly_ai_limit,l.enabled,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.settings_version,l.profile_ai_enabled,l.draft_low_stars,l.reply_delay_minutes,
     l.synced_at,l.checked_at,l.maintenance_due_at,l.draft_checked_at,l.draft_due_at,l.review_total,l.last_error AS import_error_message,l.draft_error AS draft_error_message,
     nullif(l.last_error,'') IS NOT NULL AS import_error,(nullif(l.draft_error,'') IS NOT NULL AND l.draft_error NOT LIKE 'Draft generation is queued%' AND l.draft_error NOT LIKE 'Monthly AI allowance exhausted.%') AS draft_error,
     EXISTS(SELECT 1 FROM google_business_connections g WHERE g.owner=l.owner AND g.google_subject=l.google_subject) AS connected,
@@ -60,7 +60,7 @@ export async function adminWorkerHealth(sql=liveDb()){
     (SELECT count(*) FROM unnest(l.ai_hour_reservations) AS t WHERE t>now()-interval '1 hour') AS ai_hour_used,
     r.*,a.alerts,a.last_failure,a.email_sent,a.alert_stages,p.profile_checked,p.profile_drafts,p.profile_errors,
     s.enabled AS heatmap_enabled,s.cadence,h.scan_at,h.scan_pending,h.scan_errors
-    FROM businesses b JOIN customers c ON c.id=b.customer_id LEFT JOIN customer_marketing_access ma ON ma.customer_id=b.customer_id LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
+    FROM businesses b JOIN customers c ON c.id=b.customer_id LEFT JOIN customer_marketing_access ma ON ma.customer_id=b.customer_id LEFT JOIN marketing_location_access mla ON mla.business_id=b.id AND mla.customer_id=b.customer_id LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
     LEFT JOIN LATERAL (SELECT count(*) AS imported,
       count(*) FILTER(WHERE coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published') AS answered,
       count(*) FILTER(WHERE data->>'starRating' IN ('FOUR','FIVE') AND (coalesce(data->'reviewReply'->>'comment','')<>'' OR publish_state='published')) AS positive_answered,
