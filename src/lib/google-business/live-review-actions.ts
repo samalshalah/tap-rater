@@ -53,10 +53,11 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  const attempt=randomUUID();
  const claimed=await sql`UPDATE google_live_reviews r SET publish_state='publishing',attempt_id=${attempt},attempted_reply=draft,attempted_at=now()
  FROM google_review_links l,businesses b,customers c,google_business_connections g
- WHERE r.id=${id} AND NOT r.suspected_spam AND r.version=${version} AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
+ WHERE r.id=${id} AND NOT r.suspected_spam AND (${automatic} OR r.version=${version}) AND r.publish_state NOT IN ('publishing','uncertain') AND r.business_id=l.business_id AND l.enabled
+ AND r.draft=${review.draft} AND (${!automatic} OR (r.data->>'comment' IS NOT DISTINCT FROM ${current.comment||null} AND r.data->>'starRating' IS NOT DISTINCT FROM ${current.starRating||null} AND coalesce(r.data->'reviewReply'->>'comment','')=${current.reviewReply?.comment||''}))
  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
- AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
+ AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60) AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
  if(!claimed.length){
   // Google sync can refresh metadata between the live read and the atomic claim.
   // If only the database version moved, and the saved reply and substantive Google
@@ -155,7 +156,7 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
  const {review,link}=await loadLiveReview(actor,id,sql);
  if(String(review.business_id)!==businessId)throw new LiveReviewError('This review does not belong to the selected location.',404);
  if(['publishing','uncertain'].includes(review.publish_state))return reconcileLiveReply(actor,id,sql,makeClient);
- if(review.publish_state!=='idle'||!review.draft||Number(review.schedule_failures||0)<1)throw new LiveReviewError('This review is no longer a failed automatic reply. Refresh the location status.');
+ if(review.publish_state!=='idle'||!review.draft||(Number(review.schedule_failures||0)<1&&!review.last_publish_error))throw new LiveReviewError('This review is no longer a failed automatic reply. Refresh the location status.');
  const current=await (await makeClient(String(link.owner))).getReview(String(review.resource));
  const actualReply=String(current.reviewReply?.comment||'').trim();
  if(actualReply){
@@ -172,15 +173,15 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
    WHERE id=${id} AND version=${review.version} AND publish_state='idle'`;
   return {resolved:true,published:false,alreadyReplied:false,queued:false,needsAttention:true};
  }
- const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},last_publish_error=NULL,auto_schedule_cancelled=false
-  WHERE id=${id} AND version=${review.version} AND publish_state='idle' AND schedule_failures>0 AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING id`;
+ const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now()+greatest(0,coalesce(${Number(link.reply_delay_minutes)||20},20))*interval '1 minute',scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},last_publish_error=NULL,auto_schedule_cancelled=false
+  WHERE id=${id} AND version=${review.version} AND publish_state='idle' AND (schedule_failures>0 OR nullif(last_publish_error,'') IS NOT NULL) AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING id`;
  if(!updated.length)throw new LiveReviewError('This review changed during the Google check. Refresh its status.');
  return {resolved:true,published:false,alreadyReplied:false,queued:true,needsAttention:false};
 }
 
 export async function resolvePublishAlertIfClear(sql:ReturnType<typeof liveDb>,businessId:string){
  const [row]=await sql`SELECT EXISTS(SELECT 1 FROM google_live_reviews r WHERE r.business_id=${businessId}
-  AND (r.publish_state IN ('publishing','uncertain') OR (r.publish_state='idle' AND r.schedule_failures>0 AND r.scheduled_at IS NULL AND r.draft<>'' AND coalesce(r.data->'reviewReply'->>'comment','')=''))) AS pending`;
+  AND (r.publish_state IN ('publishing','uncertain') OR (r.publish_state='idle' AND (r.schedule_failures>0 OR nullif(r.last_publish_error,'') IS NOT NULL) AND r.scheduled_at IS NULL AND r.draft<>'' AND coalesce(r.data->'reviewReply'->>'comment','')=''))) AS pending`;
  if(!row?.pending)await resolveReviewWorkerAlert(sql,businessId,'publish');
 }
 

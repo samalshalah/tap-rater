@@ -73,7 +73,7 @@ export async function adminWorkerHealth(sql=liveDb()){
       count(*) FILTER(WHERE coalesce(data->'reviewReply'->>'comment','')='' AND publish_state='idle' AND scheduled_at IS NULL AND old_reply_requested_at IS NOT NULL AND draft='' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS waiting,
       count(*) FILTER(WHERE draft<>'' AND publish_state='idle' AND scheduled_at IS NULL) AS manual_drafts,
       count(*) FILTER(WHERE publish_state='uncertain') AS uncertain,
-      count(*) FILTER(WHERE publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>'' AND coalesce(data->'reviewReply'->>'comment','')='') AS failed_publish,
+      count(*) FILTER(WHERE publish_state='idle' AND (schedule_failures>0 OR nullif(last_publish_error,'') IS NOT NULL) AND scheduled_at IS NULL AND draft<>'' AND coalesce(data->'reviewReply'->>'comment','')='') AS failed_publish,
       coalesce(jsonb_agg(jsonb_build_object(
         'id',id,'reviewer',coalesce(data#>>'{reviewer,displayName}','Google reviewer'),
         'rating',data->>'starRating','comment',coalesce(data->>'comment',''),'review_date',coalesce(data->>'createTime',data->>'updateTime'),
@@ -81,7 +81,7 @@ export async function adminWorkerHealth(sql=liveDb()){
         'issue',CASE WHEN publish_state IN ('publishing','uncertain') THEN 'uncertain' ELSE 'failed' END,
         'publish_state',publish_state,'schedule_failures',schedule_failures
       ) ORDER BY CASE WHEN publish_state IN ('publishing','uncertain') THEN 0 ELSE 1 END,created_at DESC)
-        FILTER(WHERE (publish_state IN ('publishing','uncertain') OR (publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>''))
+        FILTER(WHERE (publish_state IN ('publishing','uncertain') OR (publish_state='idle' AND (schedule_failures>0 OR nullif(last_publish_error,'') IS NOT NULL) AND scheduled_at IS NULL AND draft<>''))
           AND (publish_state IN ('publishing','uncertain') OR coalesce(data->'reviewReply'->>'comment','')='')),'[]'::jsonb) AS problem_reviews,
       min(scheduled_at) FILTER(WHERE publish_state='idle' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS next_reply
       FROM google_live_reviews r WHERE r.business_id=b.id) r ON true

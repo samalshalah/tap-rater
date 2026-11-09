@@ -102,7 +102,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
   JOIN customers c ON c.id=b.customer_id
   JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
   JOIN review_worker_alerts a ON a.business_id=r.business_id AND a.stage='publish' AND a.resolved_at IS NULL
-  WHERE r.publish_state='idle' AND r.schedule_failures BETWEEN 1 AND 4 AND r.scheduled_at IS NULL AND r.draft<>''
+  WHERE r.publish_state='idle' AND (r.schedule_failures BETWEEN 1 AND 4 OR (r.schedule_failures=0 AND nullif(r.last_publish_error,'') IS NOT NULL)) AND r.scheduled_at IS NULL AND r.draft<>''
    AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')=''
    AND r.data->>'starRating' IN ('FOUR','FIVE') AND l.enabled AND l.ai_consent AND l.auto_enabled AND c.account_status='active'
    AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))
@@ -122,7 +122,7 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  continue;
  }
  // A changed review or uncertain write requires human review, never a blind retry.
- await sql`UPDATE google_live_reviews SET scheduled_at=NULL,last_publish_error=${failure.slice(0,1000)} WHERE id=${row.id}`;
+ await sql`UPDATE google_live_reviews SET scheduled_at=NULL,schedule_failures=LEAST(schedule_failures+1,5),last_publish_error=${failure.slice(0,1000)} WHERE id=${row.id}`;
  }}
  const links=await sql`WITH due AS (SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE l.enabled AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND l.maintenance_due_at<=now()
