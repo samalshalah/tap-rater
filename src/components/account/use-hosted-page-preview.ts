@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { HostedPageEditorDraft, HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
-import { renderHostedPageDraftPreview } from "@/lib/hosted-page-editor";
+// Import the browser-safe draft renderer directly.  The editor service module also
+// owns filesystem/database helpers, which must never be pulled into this client hook.
+import { renderHostedPageDraftPreview } from "@/lib/hosted-page-editor-draft";
 import { createHostedPagePreviewLoader } from "@/lib/hosted-page-preview-loader";
 
 export function useHostedPagePreview(page: HostedPageEditorRecord, draft: HostedPageEditorDraft) {
