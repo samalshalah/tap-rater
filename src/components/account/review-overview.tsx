@@ -4,7 +4,7 @@ import {type ReviewAutomation} from './review-automation-controls';
 import {useState} from 'react';
 import {WorkspaceMetrics} from './workspace-ui';
 import {ArrowUpRight,Info,Sparkles} from 'lucide-react';
-export type OverviewLocation=ReviewAutomation&{id:string;business_name:string;connected:boolean;review_count:number;unanswered_count:number;draft_count:number;ai_consent?:boolean;auto_style?:string;rating_summary?:{sum:number;count:number};review_growth?:{month:string;rating:string;count:number}[]};
+export type OverviewLocation=ReviewAutomation&{id:string;business_name:string;address?:string|null;connected:boolean;review_count:number;unanswered_count:number;draft_count:number;ai_consent?:boolean;auto_style?:string;rating_summary?:{sum:number;count:number};review_growth?:{month:string;rating:string;count:number}[]};
 const ratings=['FIVE','FOUR','THREE','TWO','ONE','STAR_RATING_UNSPECIFIED'];
 const colors=['#16a34a','#4ade80','#facc15','#fb923c','#ef4444','#cbd5e1'];
 export function summarizeOverview(locations:OverviewLocation[],now=new Date()){
@@ -15,7 +15,7 @@ export function summarizeOverview(locations:OverviewLocation[],now=new Date()){
 }
 export function ReviewOverview({locations,onReviews,onProfile,onIssues,onSaved}:{onSaved:()=>Promise<void>;locations:OverviewLocation[];onReviews:()=>void;onProfile:()=>void;onIssues:()=>void}){
  const [range,setRange]=useState(12);
- const summary=summarizeOverview(locations),months=summary.months.slice(-range),max=Math.max(1,...months.map(m=>m.counts.reduce((a,b)=>a+b,0))),auto=locations.filter(l=>l.ai_consent&&l.connected).length;
+ const summary=summarizeOverview(locations),months=summary.months.slice(-range),max=Math.max(1,...months.map(m=>m.counts.reduce((a,b)=>a+b,0))),auto=locations.filter(l=>l.ai_consent&&l.connected&&l.auto_enabled&&(l.auto_four||l.auto_five));
  const panel='rounded-lg border border-line bg-white overflow-hidden';
  return <div className="tr-review-overview space-y-3" aria-label="Review overview">
  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted"><span>{locations.length===1?(locations[0].connected?'● Google connected':'Google not connected'):`${locations.filter(l=>l.connected).length} of ${locations.length} locations connected`}</span><button onClick={onReviews} className="inline-flex items-center gap-1 text-teal-700">View reviews <ArrowUpRight size={14}/></button></div>
@@ -26,7 +26,8 @@ export function ReviewOverview({locations,onReviews,onProfile,onIssues,onSaved}:
  <div className="mt-5 flex h-44 items-end gap-2 border-b border-line" aria-label="Monthly review counts">{months.map(m=>{const total=m.counts.reduce((a,b)=>a+b,0);return <div key={m.key} className="flex h-full min-w-0 flex-1 flex-col justify-end items-center" title={`${m.key}: ${total} reviews`}><span className="mb-1 text-[11px] text-muted">{total}</span><div className="flex w-full max-w-8 flex-col-reverse" style={{height:`${total/max*85}%`}}>{m.counts.map((n,i)=>n>0&&<div key={i} style={{height:`${n/total*100}%`,background:colors[i]}}/>)}</div></div>;})}</div><div className="mt-2 flex gap-2 text-center text-[11px] text-muted">{months.map(m=><span key={m.key} className="min-w-0 flex-1">{m.label}</span>)}</div>
  <WorkspaceDetails label="View chart data" title="Monthly review counts"><div className="tr-client-table-wrap overflow-x-auto"><table className="tr-client-table mt-2 w-full text-right"><thead><tr><th className="text-left">Month</th>{ratings.map((r,i)=><th key={r}>{i<5?`${5-i}★`:'Unrated'}</th>)}</tr></thead><tbody>{months.map(m=><tr key={m.key}><th className="text-left font-normal">{m.key}</th>{m.counts.map((n,i)=><td key={i}>{n}</td>)}</tr>)}</tbody></table></div></WorkspaceDetails></div></section>
  </div>
- <section className="tr-overview-reply-toolbar"><h2 className="flex items-center gap-2"><Sparkles size={14}/>AI replies</h2><span className="text-xs text-muted">{locations.some(l=>l.auto_enabled)?'Autopilot on':'Autopilot off'}</span><button className="tr-button-ghost" onClick={onReviews}>Manage replies</button></section>
+ <section className="tr-overview-reply-toolbar"><div><h2 className="flex items-center gap-2"><Sparkles size={14}/>AI replies</h2><p className="mt-1 text-xs text-muted">{auto.length?`4–5-star autopilot is on for ${auto.length} of ${locations.length} location${locations.length===1?'':'s'}.`:'4–5-star autopilot is off for every location.'}</p></div><button className="tr-button-ghost" onClick={onReviews}>Manage replies</button></section>
+ {locations.length>1&&<WorkspaceDetails label="View autopilot status by location" title="Autopilot by location"><div className="mt-2 divide-y divide-line">{locations.map(location=>{const enabled=auto.some(item=>item.id===location.id),rating=location.auto_four&&location.auto_five?'4–5 stars':location.auto_five?'5 stars':location.auto_four?'4 stars':'';return <div key={location.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span className="min-w-0"><span className="block font-medium text-ink">{location.business_name}</span>{location.address&&<span className="block truncate text-xs text-muted">{location.address}</span>}</span><span className={enabled?'text-teal-700':'text-muted'}>{enabled?`Autopilot on · ${rating}`:location.connected&&location.ai_consent?'Drafts only':location.connected?'AI replies off':'Google not connected'}</span></div>;})}</div></WorkspaceDetails>}
 
  </div>;
 }

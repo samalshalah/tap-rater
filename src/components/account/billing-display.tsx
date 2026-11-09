@@ -1,7 +1,11 @@
 import type {ReactNode} from 'react';
 import type {CustomerPortalSubscription} from '@/lib/customer-portal';
 export const subscriptionStatus=(subscription:CustomerPortalSubscription)=>subscription.source==='admin'&&subscription.currentPeriodEnd&&Date.parse(subscription.currentPeriodEnd)<=Date.now()?'expired':subscription.lifecycleStatus;
-export const statusText=(value:string)=>value.replaceAll('_',' ');
+export const statusText=(value:string)=>({
+  manual_unpaid:'Payment review',pending_payment:'Payment pending',incomplete:'Checkout not completed',
+  incomplete_expired:'Checkout expired',expired:'Checkout expired',paid:'Paid',complimentary:'Complimentary',
+  active:'Active',cancelled:'Cancelled',canceled:'Cancelled',past_due:'Payment needs attention',unpaid:'Payment due'
+} as Record<string,string>)[value]||value.replaceAll('_',' ');
 export const date=(value?:string)=>value ? new Date(value).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : '';
 export function money(cents:number,currency='usd'){return new Intl.NumberFormat('en-US',{style:'currency',currency:currency.toUpperCase()}).format(cents/100);}
 

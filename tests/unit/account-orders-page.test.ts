@@ -64,6 +64,6 @@ describe("compact customer billing",()=>{
 
 it("shows an admin grant in the order table without a payment action",async()=>{
  portal.orders=[];portal.invoices=[];portal.licences=[{id:"grant",title:"Reviews service",source:"manual",status:"active",locationLimit:1,expiresAt:"2027-01-01"}];
- const html=renderToStaticMarkup(await AccountOrdersPage({}));expect(html).toContain("Granted by admin");expect(html).toContain("View licence");expect(html).toContain("No charge");expect(html).not.toContain("No orders yet");expect(html).not.toContain("Download PDF");
+ const html=renderToStaticMarkup(await AccountOrdersPage({}));expect(html).toContain("Granted by admin");expect(html).toContain("View access");expect(html).toContain("no charge");expect(html).not.toContain("No orders yet");expect(html).not.toContain("Download PDF");
  const details=renderToStaticMarkup(createElement(LicenceDetails,{licence:portal.licences[0]}));expect(details).toContain("Jan 1, 2027");expect(details).toContain("Complimentary access");
 });

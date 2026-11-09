@@ -27,7 +27,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
   const [message, setMessage] = useState("");
   const [showLinkChoices, setShowLinkChoices] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const {previewHtml,previewMessage,refreshPreview}=useHostedPagePreview(page.code,draft);
+  const {previewHtml,previewMessage,refreshPreview}=useHostedPagePreview(page,draft);
 
   useEffect(()=>{onDirtyChange?.(isDirty);},[isDirty,onDirtyChange]);
   useEffect(()=>{onBusyChange?.(status==="saving"||status==="publishing");},[status,onBusyChange]);
