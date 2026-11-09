@@ -5,7 +5,7 @@ import {countMultiLinkPages,countPaidStandQuantity,type CustomerPortalData} from
 import {formatOrderReference} from '@/lib/order-reference';
 export function StandsOverview({portal}:{portal:CustomerPortalData}){
  const firstName=portal.customer?.name?.trim().split(/\s+/)[0]??'there';
- const actions=buildDashboardActions(portal),latestOrder=portal.orders[0];
+ const actions=buildDashboardActions(portal),latestOrder=portal.orders[0],multiLinkPages=countMultiLinkPages(portal.subscriptions);
  return (
       <section aria-label="Stands overview" className="tr-stands-overview mt-4">
       <h1 className="text-2xl font-semibold">Stands overview</h1>
@@ -15,7 +15,7 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
         <WorkspaceMetrics items={[
           {label:'Paid stands',value:countPaidStandQuantity(portal.orders)},
           {label:'Orders',value:portal.orders.length},
-          {label:'Multi-Link pages',value:countMultiLinkPages(portal.subscriptions)},
+          ...(multiLinkPages>0?[{label:'Multi-Link pages',value:multiLinkPages}]:[]),
         ]}/>
 
         {actions.length > 0 && <section className="tr-card p-5">
