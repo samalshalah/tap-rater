@@ -34,7 +34,7 @@ export async function generateLiveReply(actor:ReviewActor,id:string,version:numb
  return {generated:true,draft,version:Number(rows[0].version),published:false};
 }
 
-export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor){
+export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor,rebaseAttempted=false){
  if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
@@ -58,6 +58,28 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
  AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
  if(!claimed.length){
+  // Google sync can refresh metadata between the live read and the atomic claim.
+  // If only the database version moved, and the saved reply and substantive Google
+  // fields are still identical, safely rebase the queued version and repeat once.
+  if(automatic&&!rebaseAttempted){
+   const [latest]=await sql`SELECT r.version,r.draft,r.data,r.publish_state,r.scheduled_at,r.auto_schedule_cancelled,r.suspected_spam,
+    l.settings_version,l.consent_at FROM google_live_reviews r JOIN google_review_links l ON l.business_id=r.business_id WHERE r.id=${id}`;
+   const sameReview=latest&&String(latest.draft)===String(review.draft)
+    &&String(latest.data?.comment||'')===String(current.comment||'')
+    &&String(latest.data?.starRating||'')===String(current.starRating||'')
+    &&String(latest.data?.reviewReply?.comment||'')===String(current.reviewReply?.comment||'');
+   if(sameReview&&latest.publish_state==='idle'&&Number(latest.version)!==version&&latest.scheduled_at&&new Date(latest.scheduled_at).getTime()<=Date.now()
+    &&!latest.auto_schedule_cancelled&&!latest.suspected_spam&&Number(latest.settings_version)===Number(link.settings_version)
+    &&new Date(latest.consent_at).getTime()===new Date(link.consent_at).getTime()){
+    const rebased=await sql`UPDATE google_live_reviews r SET scheduled_version=r.version FROM google_review_links l
+     WHERE r.id=${id} AND r.version=${latest.version} AND r.draft=${review.draft} AND r.publish_state='idle' AND r.scheduled_at<=now()
+      AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.data->>'comment' IS NOT DISTINCT FROM ${current.comment||null}
+      AND r.data->>'starRating'=${current.starRating} AND coalesce(r.data->'reviewReply'->>'comment','')=${current.reviewReply?.comment||''}
+      AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.settings_version=${link.settings_version}
+      AND l.consent_at=${link.consent_at} AND r.schedule_consent_at=l.consent_at RETURNING r.version`;
+    if(rebased.length)return publishLiveReply(actor,id,Number(rebased[0].version),automatic,sql,makeClient,true);
+   }
+  }
   const [state]=await sql`SELECT r.version,r.publish_state,r.scheduled_at,r.scheduled_version,r.schedule_consent_at,r.auto_schedule_cancelled,r.suspected_spam,
    l.enabled,l.ai_consent,l.auto_enabled,l.settings_version,l.consent_at,c.account_status,marketing_location_allowed(b.id) AS licensed,
    EXISTS(SELECT 1 FROM google_business_connections gc WHERE gc.owner=l.owner AND gc.google_subject=l.google_subject) AS connected,
@@ -80,7 +102,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
    :Number(state.settings_version)!==Number(link.settings_version)||new Date(state.consent_at).getTime()!==new Date(link.consent_at).getTime()||new Date(state.schedule_consent_at).getTime()!==new Date(state.consent_at).getTime()?'The location reply settings changed while this reply was queued.'
    :state.auto_schedule_cancelled?'This automatic reply was cancelled.'
    :state.suspected_spam?'This review is flagged for spam review.'
-   :'Google’s publish conditions changed during the final check.';
+   :'A concurrent queue update prevented this reply from being claimed. No Google reply was sent.';
   throw new LiveReviewError(`Automatic publishing stopped: ${reason}`);
  }
  try{
