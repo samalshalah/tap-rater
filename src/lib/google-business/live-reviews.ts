@@ -34,6 +34,7 @@ export {
   generateLiveReply,
   publishLiveReply,
   reconcileLiveReply,
+  verifyAndRecoverLiveReply,
   approveLiveDraft,
   flagLiveReview,
   cancelScheduledReply

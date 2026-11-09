@@ -9,7 +9,7 @@ import type { ReplySuggestions } from "../review-ai-options";
 import type { AiUsageContext } from "../ai-usage-meter";
 import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, queueHistoricalPositives } from "./live-review-core";
 import { syncLiveReviews } from "./live-review-workspaces";
-import { publishLiveReply } from "./live-review-actions";
+import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear } from "./live-review-actions";
 import { reviewTaskBoundary } from './review-task-boundary';
 
 type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions>;
@@ -78,11 +78,22 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  // A database lease prevents overlapping cron invocations from multiplying API traffic.
  const lease=await sql`UPDATE google_review_worker_lease SET token=${workerToken},lease_until=now()+interval '4 minutes' WHERE id=1 AND lease_until<now() RETURNING id`;
  if(!lease.length)return {synced:0,drafted:0,published:0,busy:true};
- let synced=0,drafted=0,published=0;
+ let synced=0,drafted=0,published=0,reconciled=0,requeued=0;
  try {
  if(new Date().getUTCHours()===0&&new Date().getUTCMinutes()===0)await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
+ // Resolve ambiguous Google writes before choosing new work. A reply is retried only
+ // after Google confirms it is absent; replies already on Google are never duplicated.
+ const uncertain=await sql`SELECT id,business_id FROM (
+  SELECT id,business_id,attempted_at,row_number() OVER(PARTITION BY business_id ORDER BY attempted_at) AS location_turn
+  FROM google_live_reviews WHERE publish_state IN ('publishing','uncertain') AND attempted_at<now()-interval '1 minute'
+ ) pending WHERE location_turn=1 ORDER BY attempted_at LIMIT 16`;
+ for(const row of uncertain){if(Date.now()>=publishDeadline-4000)break;try{
+  const result=await reconcileLiveReply({kind:'admin'},String(row.id),sql,makeClient);reconciled++;
+  if(result.queued)requeued++;
+  if(result.published||result.alreadyReplied)await resolvePublishAlertIfClear(sql,String(row.business_id));
+ }catch{/* Leave the review unresolved and retry the read-only Google check on the next worker pass. */}}
  const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60)) fair ORDER BY turn,scheduled_at LIMIT 40`;
- for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolveReviewWorkerAlert(sql,String(row.business_id),'publish');}}catch(error){
+ for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolvePublishAlertIfClear(sql,String(row.business_id));}}catch(error){
  await reviewWorkerFailure(sql,String(row.business_id),'publish',!(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)));
  if(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)){
  await sql`UPDATE google_live_reviews SET scheduled_at=CASE WHEN schedule_failures<5 THEN now()+power(2,schedule_failures)*interval '1 minute' ELSE NULL END,schedule_failures=schedule_failures+1 WHERE id=${row.id} AND publish_state='idle' AND scheduled_at IS NOT NULL`;
@@ -112,6 +123,6 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
    catch{console.warn('review_policy_check_deferred');}
  }
  // Support delivery is consolidated by the client-failures monitor.
- return {synced,drafted,published};
+ return {synced,drafted,published,reconciled,requeued};
  }finally{await sql`UPDATE google_review_worker_lease SET lease_until=now() WHERE id=1 AND token=${workerToken}`;}
 }

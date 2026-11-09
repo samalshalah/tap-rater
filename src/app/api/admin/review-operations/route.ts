@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
 import {requireAdminApi} from '@/lib/admin-auth';
-import {liveDb, liveSettingsSchema, reconcileLiveReply, saveLiveSettings, syncLiveReviews, updateReviewReplyDelay} from '@/lib/google-business/live-reviews';
+import {liveDb, liveSettingsSchema, reconcileLiveReply, saveLiveSettings, syncLiveReviews, updateReviewReplyDelay, verifyAndRecoverLiveReply} from '@/lib/google-business/live-reviews';
 
 const delay=z.union([z.literal(5),z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]);
 const input=z.discriminatedUnion('action',[
@@ -10,8 +10,8 @@ const input=z.discriminatedUnion('action',[
  z.object({action:z.literal('settings'),settings:liveSettingsSchema}).strict(),
  z.object({action:z.literal('sync'),businessId:z.string().uuid()}).strict(),
  z.object({action:z.literal('resumeDrafts'),businessId:z.string().uuid()}).strict(),
- z.object({action:z.literal('retryFailedPublishes'),businessId:z.string().uuid()}).strict(),
  z.object({action:z.literal('reconcilePublishes'),businessId:z.string().uuid()}).strict(),
+ z.object({action:z.literal('repairReview'),businessId:z.string().uuid(),reviewId:z.string().uuid()}).strict(),
  z.object({action:z.literal('pauseAutomation'),businessId:z.string().uuid()}).strict(),
 ]);
 
@@ -35,10 +35,10 @@ export async function POST(request:Request){
      ? await syncLiveReviews(actor,parsed.data.businessId,undefined,undefined,true)
      : parsed.data.action==='resumeDrafts'
       ? await resumeDrafts(parsed.data.businessId)
-      : parsed.data.action==='retryFailedPublishes'
-       ? await retryFailedPublishes(parsed.data.businessId)
-       : parsed.data.action==='reconcilePublishes'
+      : parsed.data.action==='reconcilePublishes'
         ? await reconcilePublishes(parsed.data.businessId)
+        : parsed.data.action==='repairReview'
+         ? await verifyAndRecoverLiveReply(actor,parsed.data.reviewId,parsed.data.businessId)
         : await pauseAutomation(parsed.data.businessId);
   if(parsed.data.action==='settings'||parsed.data.action==='delay'||parsed.data.action==='pauseAutomation'||parsed.data.action==='allowance'){
    const sql=liveDb();
@@ -87,17 +87,6 @@ async function resumeDrafts(businessId:string){
  if(!rows.length)throw new Error('Draft processing can only be resumed for an active location with AI replies enabled.');
  await sql`UPDATE review_worker_alerts SET resolved_at=now(),failures=0,updated_at=now() WHERE business_id=${businessId} AND stage='draft' AND resolved_at IS NULL`;
  return {resumed:true};
-}
-
-async function retryFailedPublishes(businessId:string){
- const sql=liveDb();
- const rows=await sql`UPDATE google_live_reviews r SET scheduled_at=now(),scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
- FROM google_review_links l WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled
- AND r.publish_state='idle' AND r.schedule_failures>0 AND r.scheduled_at IS NULL AND r.draft<>'' AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam
- AND r.approved_version IS NULL AND r.data->>'starRating' IN ('FOUR','FIVE') AND coalesce(r.data->'reviewReply'->>'comment','')=''
- AND (r.old_reply_requested_at IS NOT NULL OR NULLIF(r.data->>'createTime','')::timestamptz>l.consent_at)
- AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five)) RETURNING r.id`;
- return {retried:rows.length};
 }
 
 async function reconcilePublishes(businessId:string){

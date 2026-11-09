@@ -73,10 +73,19 @@ export async function adminWorkerHealth(sql=liveDb()){
       count(*) FILTER(WHERE coalesce(data->'reviewReply'->>'comment','')='' AND publish_state='idle' AND scheduled_at IS NULL AND old_reply_requested_at IS NOT NULL AND draft='' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS waiting,
       count(*) FILTER(WHERE draft<>'' AND publish_state='idle' AND scheduled_at IS NULL) AS manual_drafts,
       count(*) FILTER(WHERE publish_state='uncertain') AS uncertain,
-      count(*) FILTER(WHERE publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>'') AS failed_publish,
+      count(*) FILTER(WHERE publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>'' AND coalesce(data->'reviewReply'->>'comment','')='') AS failed_publish,
+      coalesce(jsonb_agg(jsonb_build_object(
+        'id',id,'reviewer',coalesce(data#>>'{reviewer,displayName}','Google reviewer'),
+        'rating',data->>'starRating','comment',coalesce(data->>'comment',''),'review_date',coalesce(data->>'createTime',data->>'updateTime'),
+        'reply',draft,'attempted_reply',attempted_reply,
+        'issue',CASE WHEN publish_state IN ('publishing','uncertain') THEN 'uncertain' ELSE 'failed' END,
+        'publish_state',publish_state,'schedule_failures',schedule_failures
+      ) ORDER BY CASE WHEN publish_state IN ('publishing','uncertain') THEN 0 ELSE 1 END,created_at DESC)
+        FILTER(WHERE (publish_state IN ('publishing','uncertain') OR (publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>''))
+          AND (publish_state IN ('publishing','uncertain') OR coalesce(data->'reviewReply'->>'comment','')='')),'[]'::jsonb) AS problem_reviews,
       min(scheduled_at) FILTER(WHERE publish_state='idle' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS next_reply
       FROM google_live_reviews r WHERE r.business_id=b.id) r ON true
-    LEFT JOIN LATERAL (SELECT string_agg(stage || ': ' || failures::text, ', ' ORDER BY stage) AS alert_stages,count(*) AS alerts,max(updated_at) AS last_failure,max(emailed_at) AS email_sent FROM review_worker_alerts a WHERE a.business_id=b.id AND a.resolved_at IS NULL AND (a.stage<>'draft' OR (coalesce(l.draft_error,'') NOT LIKE 'Draft generation is queued%' AND coalesce(l.draft_error,'') NOT LIKE 'Monthly AI allowance exhausted.%'))) a ON true
+    LEFT JOIN LATERAL (SELECT string_agg(stage || ': ' || failures::text, ', ' ORDER BY stage) AS alert_stages,count(*) AS alerts,max(updated_at) AS last_failure,max(emailed_at) AS email_sent FROM review_worker_alerts a WHERE a.business_id=b.id AND a.resolved_at IS NULL AND (a.stage<>'draft' OR nullif(l.draft_error,'') IS NOT NULL)) a ON true
     LEFT JOIN LATERAL (SELECT max(i.updated_at) AS profile_checked,count(d.id) FILTER(WHERE d.status<>'failed') AS profile_drafts,count(d.id) FILTER(WHERE d.status='failed') AS profile_errors FROM local_issues i LEFT JOIN local_issue_drafts d ON d.issue_id=i.id AND d.fingerprint=i.fingerprint WHERE i.business_id=b.id AND i.customer_id=b.customer_id AND i.active AND i.finding->>'kind'='profile') p ON true
     LEFT JOIN local_rank_schedules s ON s.business_id=b.id AND s.customer_id=b.customer_id
     LEFT JOIN LATERAL (SELECT max(r.created_at) AS scan_at,count(p.id) FILTER(WHERE p.state IN ('queued','pending','submitting')) AS scan_pending,count(p.id) FILTER(WHERE p.state IN ('error','failed','uncertain')) AS scan_errors FROM local_rank_runs r LEFT JOIN local_rank_points p ON p.run_id=r.id WHERE r.business_id=b.id AND r.customer_id=b.customer_id AND r.created_at>now()-interval '30 days') h ON true
