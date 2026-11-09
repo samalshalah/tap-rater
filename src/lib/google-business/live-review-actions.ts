@@ -61,10 +61,11 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  try{
   const reply=await client.publishReply(String(review.resource),String(review.draft));
   if(reply.comment!==review.draft)throw new LiveReviewError('Google did not confirm the exact reply. Check the publishing result.');
-  await sql`UPDATE google_live_reviews SET data=jsonb_set(data,'{reviewReply}',${JSON.stringify(reply)}::jsonb),publish_state='published',version=version+1,fetched_at=now(),scheduled_at=NULL WHERE id=${id} AND attempt_id=${attempt}`;
+  await sql`UPDATE google_live_reviews SET data=jsonb_set(data,'{reviewReply}',${JSON.stringify(reply)}::jsonb),publish_state='published',version=version+1,fetched_at=now(),scheduled_at=NULL,last_publish_error=NULL WHERE id=${id} AND attempt_id=${attempt}`;
   return {published:true};
  }catch(error){
-  await sql`UPDATE google_live_reviews SET publish_state='uncertain' WHERE id=${id} AND attempt_id=${attempt}`;
+  const message=error instanceof Error?error.message:'Google did not confirm the reply.';
+  await sql`UPDATE google_live_reviews SET publish_state='uncertain',last_publish_error=${message.slice(0,1000)} WHERE id=${id} AND attempt_id=${attempt}`;
   throw new LiveReviewError('Publishing was not confirmed. Use Check publish result before taking another action. No automatic retry will be sent.');
  }
 }
@@ -94,6 +95,7 @@ export async function reconcileLiveReply(actor:ReviewActor,id:string,sql=liveDb(
   scheduled_version=CASE WHEN ${retryable} THEN version+1 ELSE NULL END,
   schedule_consent_at=CASE WHEN ${retryable} THEN ${link.consent_at}::timestamptz ELSE NULL END,
   schedule_failures=CASE WHEN ${retryable} THEN schedule_failures+1 WHEN ${hasOtherReply} THEN 0 ELSE schedule_failures END,
+  last_publish_error=CASE WHEN ${matched||hasOtherReply||retryable} THEN NULL ELSE last_publish_error END,
   auto_schedule_cancelled=CASE WHEN ${hasOtherReply} THEN true ELSE auto_schedule_cancelled END
  WHERE id=${id} AND attempt_id=${review.attempt_id} AND publish_state IN ('publishing','uncertain') RETURNING id`;
  if(!updated.length)throw new LiveReviewError('This review changed while Google was being checked. Refresh its status.');
@@ -110,7 +112,7 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
  const current=await (await makeClient(String(link.owner))).getReview(String(review.resource));
  const actualReply=String(current.reviewReply?.comment||'').trim();
  if(actualReply){
-  const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=NULL,scheduled_version=NULL,schedule_consent_at=NULL,schedule_failures=0,auto_schedule_cancelled=true
+  const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=NULL,scheduled_version=NULL,schedule_consent_at=NULL,schedule_failures=0,last_publish_error=NULL,auto_schedule_cancelled=true
    WHERE id=${id} AND version=${review.version} AND publish_state='idle' RETURNING id`;
   if(!updated.length)throw new LiveReviewError('This review changed during the Google check. Refresh its status.');
   await resolvePublishAlertIfClear(sql,String(link.business_id));
@@ -123,7 +125,7 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
    WHERE id=${id} AND version=${review.version} AND publish_state='idle'`;
   return {resolved:true,published:false,alreadyReplied:false,queued:false,needsAttention:true};
  }
- const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},auto_schedule_cancelled=false
+ const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},last_publish_error=NULL,auto_schedule_cancelled=false
   WHERE id=${id} AND version=${review.version} AND publish_state='idle' AND schedule_failures>0 AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING id`;
  if(!updated.length)throw new LiveReviewError('This review changed during the Google check. Refresh its status.');
  return {resolved:true,published:false,alreadyReplied:false,queued:true,needsAttention:false};

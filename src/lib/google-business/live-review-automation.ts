@@ -115,13 +115,14 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  }catch{await reviewWorkerFailure(sql,String(row.business_id),'publish',true);}}
  const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60)) fair ORDER BY turn,scheduled_at LIMIT 40`;
  for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolvePublishAlertIfClear(sql,String(row.business_id));}}catch(error){
+ const failure=error instanceof Error?error.message:'Automatic publishing did not complete.';
  await reviewWorkerFailure(sql,String(row.business_id),'publish',!(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)));
  if(error instanceof GoogleBusinessError&&['quota','unavailable'].includes(error.code)){
- await sql`UPDATE google_live_reviews SET scheduled_at=CASE WHEN schedule_failures<5 THEN now()+power(2,schedule_failures)*interval '1 minute' ELSE NULL END,schedule_failures=schedule_failures+1 WHERE id=${row.id} AND publish_state='idle' AND scheduled_at IS NOT NULL`;
+ await sql`UPDATE google_live_reviews SET scheduled_at=CASE WHEN schedule_failures<5 THEN now()+power(2,schedule_failures)*interval '1 minute' ELSE NULL END,schedule_failures=schedule_failures+1,last_publish_error=${failure.slice(0,1000)} WHERE id=${row.id} AND publish_state='idle' AND scheduled_at IS NOT NULL`;
  continue;
  }
  // A changed review or uncertain write requires human review, never a blind retry.
- await sql`UPDATE google_live_reviews SET scheduled_at=NULL WHERE id=${row.id}`;
+ await sql`UPDATE google_live_reviews SET scheduled_at=NULL,last_publish_error=${failure.slice(0,1000)} WHERE id=${row.id}`;
  }}
  const links=await sql`WITH due AS (SELECT l.business_id FROM google_review_links l JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE l.enabled AND c.account_status='active' AND marketing_location_allowed(l.business_id) AND l.maintenance_due_at<=now()

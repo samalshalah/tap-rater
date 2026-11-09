@@ -77,7 +77,7 @@ export async function adminWorkerHealth(sql=liveDb()){
       coalesce(jsonb_agg(jsonb_build_object(
         'id',id,'reviewer',coalesce(data#>>'{reviewer,displayName}','Google reviewer'),
         'rating',data->>'starRating','comment',coalesce(data->>'comment',''),'review_date',coalesce(data->>'createTime',data->>'updateTime'),
-        'reply',draft,'attempted_reply',attempted_reply,
+        'reply',draft,'attempted_reply',attempted_reply,'error',last_publish_error,
         'issue',CASE WHEN publish_state IN ('publishing','uncertain') THEN 'uncertain' ELSE 'failed' END,
         'publish_state',publish_state,'schedule_failures',schedule_failures
       ) ORDER BY CASE WHEN publish_state IN ('publishing','uncertain') THEN 0 ELSE 1 END,created_at DESC)
