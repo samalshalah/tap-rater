@@ -4,7 +4,8 @@ export const subscriptionStatus=(subscription:CustomerPortalSubscription)=>subsc
 export const statusText=(value:string)=>({
   manual_unpaid:'Payment review',pending_payment:'Payment pending',incomplete:'Checkout not completed',
   incomplete_expired:'Checkout expired',expired:'Checkout expired',paid:'Paid',complimentary:'Complimentary',
-  active:'Active',cancelled:'Cancelled',canceled:'Cancelled',past_due:'Payment needs attention',unpaid:'Payment due'
+  active:'Active',ACTIVE:'Active',cancelled:'Cancelled',canceled:'Cancelled',past_due:'Payment needs attention',unpaid:'Payment due',
+  PAST_DUE:'Payment needs attention',CANCELLED_AT_PERIOD_END:'Ends at the current period',EXPIRED:'Expired',REACTIVATED:'Active'
 } as Record<string,string>)[value]||value.replaceAll('_',' ');
 export const date=(value?:string)=>value ? new Date(value).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : '';
 export function money(cents:number,currency='usd'){return new Intl.NumberFormat('en-US',{style:'currency',currency:currency.toUpperCase()}).format(cents/100);}
