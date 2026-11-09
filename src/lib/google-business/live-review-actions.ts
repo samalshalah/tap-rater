@@ -57,7 +57,32 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id)
  AND g.owner=l.owner AND g.google_subject=l.google_subject AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})
  AND (${!automatic} OR (l.auto_enabled AND l.ai_consent AND l.settings_version=${link.settings_version} AND r.scheduled_at<=now() AND NOT r.auto_schedule_cancelled AND (r.old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60) AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at)) RETURNING r.id`;
- if(!claimed.length)throw new LiveReviewError('Publishing is already underway or the workspace changed. Check the result before trying again.');
+ if(!claimed.length){
+  const [state]=await sql`SELECT r.version,r.publish_state,r.scheduled_at,r.scheduled_version,r.schedule_consent_at,r.auto_schedule_cancelled,r.suspected_spam,
+   l.enabled,l.ai_consent,l.auto_enabled,l.settings_version,l.consent_at,c.account_status,marketing_location_allowed(b.id) AS licensed,
+   EXISTS(SELECT 1 FROM google_business_connections gc WHERE gc.owner=l.owner AND gc.google_subject=l.google_subject) AS connected,
+   (SELECT count(*)::int FROM google_live_reviews p WHERE p.business_id=r.business_id AND p.old_reply_requested_at IS NOT NULL AND p.attempted_at>now()-interval '1 hour' AND p.publish_state IN ('published','publishing','uncertain')) AS recent_old_reply_attempts
+   FROM google_live_reviews r JOIN google_review_links l ON l.business_id=r.business_id JOIN businesses b ON b.id=l.business_id AND b.customer_id=l.customer_id
+   JOIN customers c ON c.id=b.customer_id WHERE r.id=${id}`;
+  if(state&&automatic&&Number(state.recent_old_reply_attempts)>=60){
+   const [budget]=await sql`SELECT min(attempted_at)+interval '1 hour' AS next_at FROM google_live_reviews WHERE business_id=${link.business_id} AND old_reply_requested_at IS NOT NULL AND attempted_at>now()-interval '1 hour' AND publish_state IN ('published','publishing','uncertain')`;
+   await sql`UPDATE google_live_reviews SET scheduled_at=greatest(now(),${budget?.next_at||null}::timestamptz)+interval '1 second' WHERE id=${id} AND version=${version} AND publish_state='idle'`;
+   return {published:false};
+  }
+  const reason=!state?'Review was removed or is no longer available.'
+   :state.publish_state!=='idle'?'Another publish check has already claimed this review.'
+   :Number(state.version)!==version?'The saved reply changed while it was being checked.'
+   :Number(state.scheduled_version)!==Number(state.version)?'The automatic queue version no longer matches the saved reply.'
+   :!state.scheduled_at||new Date(state.scheduled_at).getTime()>Date.now()?'This reply is no longer due for posting.'
+   :!state.enabled||!state.ai_consent||!state.auto_enabled?'Automatic replies were turned off for this location.'
+   :!state.connected?'The Google connection is no longer available.'
+   :state.account_status!=='active'||!state.licensed?'The client account or location access is inactive.'
+   :Number(state.settings_version)!==Number(link.settings_version)||new Date(state.consent_at).getTime()!==new Date(link.consent_at).getTime()||new Date(state.schedule_consent_at).getTime()!==new Date(state.consent_at).getTime()?'The location reply settings changed while this reply was queued.'
+   :state.auto_schedule_cancelled?'This automatic reply was cancelled.'
+   :state.suspected_spam?'This review is flagged for spam review.'
+   :'Google’s publish conditions changed during the final check.';
+  throw new LiveReviewError(`Automatic publishing stopped: ${reason}`);
+ }
  try{
   const reply=await client.publishReply(String(review.resource),String(review.draft));
   if(reply.comment!==review.draft)throw new LiveReviewError('Google did not confirm the exact reply. Check the publishing result.');
