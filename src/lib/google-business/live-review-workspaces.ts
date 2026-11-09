@@ -156,7 +156,7 @@ export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof li
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1
  WHERE business_id=${v.businessId} AND customer_id=${settingsLink.customer_id} AND parent=${settingsLink.parent} AND google_subject=${settingsLink.google_subject} AND enabled AND settings_version=${v.version} RETURNING settings_version`;
  if(!rows.length)throw new LiveReviewError('Settings changed. Reload and try again.');
- await sql`UPDATE google_live_reviews r SET scheduled_at=NULL,old_reply_requested_at=NULL FROM google_review_links l WHERE r.business_id=l.business_id AND l.business_id=${v.businessId} AND (NOT l.auto_enabled OR NOT l.ai_consent OR (r.scheduled_at IS NOT NULL AND r.schedule_consent_at IS DISTINCT FROM l.consent_at) OR (r.data->>'starRating'='FOUR' AND NOT l.auto_four) OR (r.data->>'starRating'='FIVE' AND NOT l.auto_five))`;return rows[0];
+ await sql`UPDATE google_live_reviews r SET scheduled_at=NULL,old_reply_requested_at=NULL FROM google_review_links l WHERE r.business_id=l.business_id AND l.business_id=${v.businessId} AND (NOT l.auto_enabled OR NOT l.ai_consent OR (r.scheduled_at IS NOT NULL AND date_trunc('milliseconds',r.schedule_consent_at) IS DISTINCT FROM date_trunc('milliseconds',l.consent_at)) OR (r.data->>'starRating'='FOUR' AND NOT l.auto_four) OR (r.data->>'starRating'='FIVE' AND NOT l.auto_five))`;return rows[0];
 }
 
 const replyDelaySchema=z.union([z.literal(5),z.literal(20),z.literal(60),z.literal(120),z.literal(360),z.literal(1440)]);
@@ -169,7 +169,7 @@ export async function updateReviewReplyDelay(actor:ReviewActor,businessId:string
  const rescheduled=await sql`UPDATE google_live_reviews r SET scheduled_at=greatest(now(),coalesce(r.draft_generated_at,r.created_at,now())+${delay}*interval '1 minute')
   FROM google_review_links l WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND r.scheduled_at IS NOT NULL
   AND r.publish_state='idle' AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.approved_version IS NULL
-  AND r.scheduled_version=r.version AND r.schedule_consent_at=l.consent_at AND coalesce(r.data->'reviewReply'->>'comment','')=''
+  AND r.scheduled_version=r.version AND date_trunc('milliseconds',r.schedule_consent_at)=date_trunc('milliseconds',l.consent_at) AND coalesce(r.data->'reviewReply'->>'comment','')=''
   RETURNING r.id`;
  return {businessId,replyDelayMinutes:delay,rescheduled:rescheduled.length};
 }
