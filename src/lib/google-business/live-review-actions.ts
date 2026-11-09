@@ -46,7 +46,9 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
  const client=await makeClient(String(link.owner));
  // Refresh immediately before a write so we do not blindly overwrite changes made on Google.
  const current=await client.getReview(String(review.resource));
- if((current.reviewReply?.comment || '')!==(review.data.reviewReply?.comment || '') || current.updateTime!==review.data.updateTime)throw new LiveReviewError('The review or reply changed on Google. Sync and review it again.');
+ if((current.reviewReply?.comment || '')!==(review.data.reviewReply?.comment || '')
+  || current.comment!==review.data.comment || current.starRating!==review.data.starRating)
+  throw new LiveReviewError('The review text, rating, or reply changed on Google. Refresh it before publishing.');
  if(automatic && !scheduledReplyEligible({...review,data:current},link))throw new LiveReviewError('This review now needs manual attention.');
  const attempt=randomUUID();
  const claimed=await sql`UPDATE google_live_reviews r SET publish_state='publishing',attempt_id=${attempt},attempted_reply=draft,attempted_at=now()
