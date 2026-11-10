@@ -117,6 +117,12 @@ export function Footer() {
           <p className="tr-body-sm mt-3 max-w-sm">
             {content.intro}
           </p>
+          <a
+            href="https://www.google.com/preferences/source?q=taprater.com"
+            className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4"
+          >
+            Add Tap Rater as a Preferred Source on Google
+          </a>
         </div>
         {columns.map((column) => (
           <div key={column.label} className="grid content-start gap-2 text-sm text-muted">
