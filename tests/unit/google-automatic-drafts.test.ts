@@ -16,7 +16,7 @@ describe('automatic draft processing',()=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');
   const sql=vi.fn(async(strings:TemplateStringsArray)=>{const q=strings.join('?');if(q.includes('UPDATE google_review_worker_lease')&&q.includes('RETURNING'))return [{id:1}];if(q.includes('RETURNING l.business_id,l.profile_ai_enabled'))return [{business_id:id}];if(q.includes("SET draft_due_at=now()+interval '1 minute'"))return [{business_id:id}];if(q.includes('SELECT l.*'))return [link];if(q.includes('SET sync_lock='))return [{business_id:id}];if(q.includes('SET auto_attempt_at='))return [review];if(q.includes('reserve_marketing_units'))return [{allowed:true}];if(q.includes('reserve_review_ai_hour'))return [{business_id:id}];if(q.includes('draft_generated_at=now()'))return [{id}];return [];});
   const publishReply=vi.fn();const client={listReviews:vi.fn().mockResolvedValue({reviews:[]}),publishReply};
-  expect(await runLiveReviewMaintenance(sql as any,async()=>client as any,vi.fn().mockResolvedValue(suggestions))).toEqual({synced:1,drafted:1,published:0});expect(publishReply).not.toHaveBeenCalled();
+  expect(await runLiveReviewMaintenance(sql as any,async()=>client as any,vi.fn().mockResolvedValue(suggestions))).toEqual({synced:1,drafted:1,published:0,reconciled:0,requeued:0});expect(publishReply).not.toHaveBeenCalled();
  });
 });
 

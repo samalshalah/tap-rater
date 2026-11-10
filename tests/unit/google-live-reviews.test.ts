@@ -36,9 +36,9 @@ describe('live Google review safety',()=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const google=client();google.getReview.mockResolvedValue({...data,reviewReply:{comment:'Owner replied elsewhere'}} as any);
   await expect(publishLiveReply({kind:'admin'},id,2,false,sqlRows([review],[link]),async()=>google)).rejects.toThrow('changed on Google');expect(google.publishReply).not.toHaveBeenCalled();
  });
- it('does not publish after a concurrent draft or permission change wins the claim',async()=>{
-  vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const google=client(),sql=sqlRows([review],[link],[]);
-  await expect(publishLiveReply({kind:'admin'},id,2,false,sql,async()=>google)).rejects.toThrow('already underway');expect(google.publishReply).not.toHaveBeenCalled();
+ it('does not publish after a concurrent publisher wins the claim',async()=>{
+  vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const google=client(),sql=sqlRows([review],[link],[],[{version:2,publish_state:'publishing'}]);
+  await expect(publishLiveReply({kind:'admin'},id,2,false,sql,async()=>google)).rejects.toThrow('already claimed this review');expect(google.publishReply).not.toHaveBeenCalled();
   const query=sql.mock.calls[2][0].join('?');expect(query).toContain('r.version=');expect(query).toContain('l.enabled');expect(query).toContain('g.google_subject=l.google_subject');
  });
  it('records an uncertain outcome on timeout and never retries the write',async()=>{
@@ -51,8 +51,8 @@ describe('live Google review safety',()=>{
  });
  it('reconciles a timed-out publish using a read only',async()=>{
   const google=client();google.getReview.mockResolvedValue({...data,reviewReply:{comment:review.draft}} as any);
-  const sql=sqlRows([{...review,publish_state:'uncertain',attempted_reply:review.draft,attempted_at:new Date(Date.now()-120000).toISOString(),attempt_id:id}],[link],[]);
-  expect(await reconcileLiveReply({kind:'admin'},id,sql,async()=>google)).toEqual({resolved:true,published:true});expect(google.publishReply).not.toHaveBeenCalled();
+  const sql=sqlRows([{...review,publish_state:'uncertain',attempted_reply:review.draft,attempted_at:new Date(Date.now()-120000).toISOString(),attempt_id:id}],[link],[{id}],[{pending:false}],[]);
+  expect(await reconcileLiveReply({kind:'admin'},id,sql,async()=>google)).toEqual({resolved:true,published:true,alreadyReplied:false,queued:false,needsAttention:false});expect(google.publishReply).not.toHaveBeenCalled();
  });
  it('syncs a page without overwriting local drafts or deleting unseen later pages',async()=>{
   const google=client(),sql=sqlRows([link],[{id}],[],[],[]);expect(await syncLiveReviews({kind:'admin'},id,sql,async()=>google)).toEqual({imported:1,more:true});
