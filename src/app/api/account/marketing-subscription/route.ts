@@ -6,12 +6,12 @@ import {checkLoginRateLimit,recordLoginAttempt} from '@/lib/auth-rate-limit';
 import {marketingPurchaseSchema} from '@/lib/marketing-plan';
 import {getStripeClient,getStripeMode,getCheckoutSiteUrl} from '@/lib/checkout';
 import {liveDb} from '@/lib/google-business/live-reviews';
+import {getCustomerReviewSubscription} from '@/lib/customer-review-subscription';
 const headers={'Cache-Control':'private, no-store'};
 export async function GET(){
  const auth=await requireCustomerApi();if(auth.response)return auth.response;
- try{const [s]=await liveDb()`SELECT m.status,m.cadence,m.locations,m.current_period_end,m.cancel_at_period_end,m.stripe_customer_id FROM marketing_subscriptions m JOIN customers c ON c.id=m.customer_id WHERE lower(c.email)=${auth.session.email.toLowerCase()} AND m.stripe_mode=${getStripeMode()}`;
- const manageable=Boolean(s?.stripe_customer_id&&['active','trialing','past_due','unpaid'].includes(String(s.status)));
- return NextResponse.json({subscription:s?{...s,billingAvailable:manageable}:null,available:marketingCheckoutEnabled()},{headers});}catch{return NextResponse.json({error:'Subscription status unavailable.'},{status:503,headers});}
+ try{const subscription=await getCustomerReviewSubscription(auth.session.email);
+ return NextResponse.json({subscription,available:marketingCheckoutEnabled()},{headers});}catch{return NextResponse.json({error:'Subscription status unavailable.'},{status:503,headers});}
 }
 export async function POST(request:Request){
  const auth=await requireCustomerApi();

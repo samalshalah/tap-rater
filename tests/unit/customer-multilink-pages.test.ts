@@ -11,6 +11,7 @@ const { getCustomerPortal, getHostedPageEditorContext, manager } = vi.hoisted(()
 }));
 vi.mock('@/lib/customer-stand-registry',async original=>({...await original<object>(),customerStandRegistry:async()=>[]}));
 vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:async()=>false}));
+vi.mock('@/lib/customer-workspace-experience',()=>({getCustomerWorkspaceExperience:async()=>({configured:true,service:false,multilink:true})}));
 vi.mock("@/lib/customer-auth", () => ({ requireCustomer: async () => ({ email: "owner@example.com" }) }));
 vi.mock("@/components/account/account-shell", () => ({ AccountShell: ({ children }: { children: ReactNode }) => children }));
 vi.mock("@/lib/customer-portal", async (importOriginal) => ({ ...await importOriginal<object>(), getCustomerPortal }));
@@ -46,9 +47,9 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
       { ...stand, id: "stand-4", paymentStatus: "expired" }
     ]));
     const html = renderToStaticMarkup(await AccountPage());
-    expect(html).toMatch(/Multi-Link pages<\/dt><dd>2<\/dd>/);
+    expect(html).toContain("2 pages · 2 active");
     expect(html).not.toContain("Multi-Link setup is pending");
-    expect(html).toContain("Manage Multi-Link page");
+    expect(html).toContain("Manage Multi-Link");
   });
 
   it("retains a real paid provisioning reminder", async () => {

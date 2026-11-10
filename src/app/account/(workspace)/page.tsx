@@ -1,18 +1,24 @@
 import {getInitialDashboardSnapshot} from '@/lib/initial-dashboard-snapshot';
 import {getCustomerWorkspaceExperience} from '@/lib/customer-workspace-experience';
 import {getCustomerPortal} from '@/lib/customer-portal';
-import {MarketingGate} from '@/components/account/marketing-gate';
-import {LocalDashboard} from '@/components/account/local-dashboard';
-import {StandsOverview} from '@/components/account/stands-overview';
+import {CustomerOverview} from '@/components/account/customer-overview';
 import {AccountShell} from '@/components/account/account-shell';
 import {requireCustomer} from '@/lib/customer-auth';
+import {getCustomerReviewSubscription} from '@/lib/customer-review-subscription';
+
 export default async function AccountPage(){
- const session=await requireCustomer();
- const [{configured,service,unavailable},initialSnapshot]=await Promise.all([getCustomerWorkspaceExperience(session.email),getInitialDashboardSnapshot(session.email)]);
- const portal=service?null:await getCustomerPortal(session.email);
- return <AccountShell overview>
- {!configured&&<p role="alert">Your account is temporarily unavailable. Please try again shortly.</p>}
- {unavailable&&<p role="alert">Service access is temporarily unavailable. Your stands are available below.</p>}
- {service?<MarketingGate email={session.email}><LocalDashboard initialSnapshot={initialSnapshot} preferenceKey={session.email.toLowerCase()}/></MarketingGate>:<StandsOverview portal={portal!}/>}
- </AccountShell>;
+  const { email } = await requireCustomer();
+  const experiencePromise = getCustomerWorkspaceExperience(email);
+  const [portal, { configured, service, unavailable, multilink }, reviews, reviewSubscription] = await Promise.all([
+    getCustomerPortal(email),
+    experiencePromise,
+    experiencePromise.then(({ service }) => service ? getInitialDashboardSnapshot(email) : null),
+    experiencePromise.then(({ service }) => service ? getCustomerReviewSubscription(email).catch(() => undefined) : undefined)
+  ]);
+
+  return <AccountShell overview>
+    {!configured && <p role="alert">Your account is temporarily unavailable. Please try again shortly.</p>}
+    {unavailable && <p role="alert">Google Reviews access is temporarily unavailable.</p>}
+    <CustomerOverview portal={portal} reviewsEnabled={service} reviews={reviews} reviewSubscription={reviewSubscription} multiLinkEnabled={multilink} />
+  </AccountShell>;
 }
