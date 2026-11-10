@@ -7,6 +7,9 @@ import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes"
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { productMatchesCategory } from "@/lib/category-products";
+import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
+import { retiredProductRedirects } from "@/lib/storefront-redirects";
+import { googleReviewStandGuides } from "@/lib/google-review-stand-guides";
 
 const siteUrl = getPublicSiteUrl();
 const staticRoutes = [
@@ -16,9 +19,7 @@ const staticRoutes = [
   "/how-it-works",
   "/review-links-generator",
   "/nfc-vs-qr-google-review-stand",
-  "/google-review-stand-for/dentists",
-  "/google-review-stand-for/restaurants",
-  "/google-review-stand-for/salons",
+  ...googleReviewStandGuides.map(({ href }) => href),
   "/custom-stands",
   "/multi-link",
   "/pricing",
@@ -40,7 +41,10 @@ function route(path: string): MetadataRoute.Sitemap[number] {
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, businessUses, standTypes] = await Promise.all([getStorefrontProducts(), getPublicBusinessUses(), getPublicStandTypes()]);
-  const productRoutes = products.map((product) => `/product/${product.slug}`);
+  const canonicalProducts = products.filter(({ slug }) => slug !== "multi-link-stand"
+    && !Object.hasOwn(retiredProductRedirects, slug)
+    && getCanonicalProductSlug(slug) === slug);
+  const productRoutes = canonicalProducts.map((product) => `/product/${product.slug}`);
   const categoryRoutes = catalogCategories
     .filter((category) => category.slug !== "custom-stands"
       && standTypes.some((type) => type.slug === categoryToStandTypeSlug(category.slug))
@@ -49,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const businessUseRoutes = businessUses.map((businessUse) => `/solutions/${businessUse.slug}`);
   const paths = Array.from(new Set([...staticRoutes, ...categoryRoutes, ...businessUseRoutes, ...productRoutes]));
 
-  const productImages = new Map(products.map((product) => [
+  const productImages = new Map(canonicalProducts.map((product) => [
     `/product/${product.slug}`,
     new URL(getProductVisual(product).src, siteUrl).toString()
   ]));

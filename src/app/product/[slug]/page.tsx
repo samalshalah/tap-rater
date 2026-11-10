@@ -23,6 +23,7 @@ import { absoluteUrl, breadcrumbJsonLd, faqJsonLd, JsonLd, productJsonLd } from 
 import { getCategoryHref } from "@/lib/category-routes";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
+import { GoogleReviewStandGuideLinks } from "@/components/storefront/google-review-stand-guide-links";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { productSupportsMultiLink } from "@/lib/service-addons";
 import { getProductVisual } from "@/lib/storefront-visuals";
@@ -184,6 +185,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
             </article>
           </div>
           <p className="mt-6 text-sm text-muted">Not sure whether NFC or QR is right for your counter? <Link href="/nfc-vs-qr-google-review-stand" className="font-semibold text-brand underline underline-offset-4">Compare NFC and QR code review stands</Link>.</p>
+          <GoogleReviewStandGuideLinks />
         </div>
       </SectionShell> : null}
 

@@ -1,6 +1,7 @@
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 import { legacyPublicAssetRewrites } from "./src/lib/legacy-public-assets";
+import { retiredProductRedirects } from "./src/lib/storefront-redirects";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -57,13 +58,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      { source: "/product/book-your-next-visit-stand", destination: "/product/connect-with-us-stand", permanent: true },
-      { source: "/product/book-appointment-stand", destination: "/product/connect-with-us-stand", permanent: true },
-      { source: "/product/view-our-menu-stand", destination: "/product/menu-and-order-stand", permanent: true },
-      { source: "/product/view-menu-stand", destination: "/product/menu-and-order-stand", permanent: true },
-      { source: "/product/custom-direct-stand", destination: "/custom-stands", permanent: true },
-      { source: "/product/tap-rater-business-white-bundle", destination: "/stand-bundles", permanent: true },
-      { source: "/product/tap-rater-business-white-stands-bundle", destination: "/stand-bundles", permanent: true },
+      ...Object.entries(retiredProductRedirects).map(([slug, destination]) => ({
+        source: `/product/${slug}`, destination, permanent: true
+      })),
       { source: "/faq", destination: "/faqs", permanent: true },
       { source: "/contact", destination: "/contact-us", permanent: true },
       { source: "/shop-by-use", destination: "/solutions", permanent: true },

@@ -14,6 +14,7 @@ import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { getBusinessUseGuide } from "@/lib/business-use-guide-store";
 import { orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
+import { googleReviewStandGuides } from "@/lib/google-review-stand-guides";
 
 type BusinessUsePageProps = {
   params: Promise<{ slug: string }>;
@@ -62,6 +63,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   const assignedProducts = orderBusinessUseProducts(products, slug, businessUse.productSlugs);
   const recommendations = resolveRecommendations(guide, products);
   const googleReviewRecommendation = recommendations.find((item) => item.productSlug === "google-review-stand");
+  const reviewStandGuide = googleReviewStandGuides.find((item) => item.solution === businessUse.slug);
   const remainingProducts = assignedProducts.filter((product) => !recommendations.some((item) => item.product.slug === product.slug));
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
   const copy = getBusinessUsePageCopy(businessUse);
@@ -118,6 +120,11 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             </div>
           ) : null}
         </div>
+          {reviewStandGuide ? (
+            <p className="tr-body-sm mt-6">
+              Need help with placement or setup? Read our guide to <Link href={reviewStandGuide.href} className="font-semibold text-brand underline underline-offset-4">{reviewStandGuide.label}</Link>.
+            </p>
+          ) : null}
           <Link href="/solutions" className="tr-editorial-link mt-8">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to businesses

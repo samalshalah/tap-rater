@@ -81,6 +81,22 @@ describe("canonical public category URLs", () => {
     expect(paths).toContain("/review-links-generator");
   });
 
+  it("omits retired product URLs even when the public catalog still returns them", async () => {
+    mocks.products.mockResolvedValue([
+      ...["book-appointment-stand", "view-menu-stand", "book-your-next-visit-stand",
+        "view-our-menu-stand", "google-review-white-plate", "multi-link-stand"]
+        .map((slug) => ({ ...googleStand, slug })),
+      googleStand,
+      migratedProducts.find((product) => product.slug === "connect-with-us-stand")!,
+      migratedProducts.find((product) => product.slug === "menu-and-order-stand")!
+    ]);
+    const paths = (await sitemap()).map(({ url }) => new URL(url).pathname);
+    expect(paths.filter((path) => path.startsWith("/product/"))).toEqual([
+      "/product/google-review-stand", "/product/connect-with-us-stand", "/product/menu-and-order-stand"
+    ]);
+    expect(paths).toContain("/multi-link");
+  });
+
   it("includes the populated secondary appointment and feedback collections", async () => {
     mocks.products.mockResolvedValue([
       migratedProducts.find((product) => product.slug === "connect-with-us-stand")!,

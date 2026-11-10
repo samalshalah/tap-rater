@@ -4,6 +4,7 @@ import styles from "@/components/storefront/type-pages.module.css";
 import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
+import { GoogleReviewStandGuideLinks } from "@/components/storefront/google-review-stand-guide-links";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionShell } from "@/components/storefront/section";
 import { catalogCategories } from "@/data/migrated-products";
@@ -135,6 +136,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </SectionShell>
       <CategoryBuyingGuide slug={category.slug} products={products} />
+      {category.slug === "reviews" ? (
+        <SectionShell spacing="compact">
+          <div className="tr-container">
+            <h2 className="tr-section-title">Set up a Google review stand for your business</h2>
+            <GoogleReviewStandGuideLinks />
+          </div>
+        </SectionShell>
+      ) : null}
     </main>
   );
 }
