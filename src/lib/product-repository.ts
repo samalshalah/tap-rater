@@ -10,6 +10,7 @@ import { normalizeProductOptionRow } from "@/lib/catalog-architecture-repository
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getCategoryBySlug, getProductBySlug } from "@/lib/products";
 import { productMatchesCategory } from "@/lib/category-products";
+import { retiredProductRedirects } from "@/lib/storefront-redirects";
 import { getProductPurchaseOptions, isPurchaseOptionSellableForProduct } from "@/lib/purchase-options";
 
 const readPublicCatalog = publicDataCache(async () => getStorefrontProductsFromClient(getSupabaseAdmin() as ProductRepositoryClient), "public-catalog-list-v1", catalogCacheTag);
@@ -169,7 +170,9 @@ export async function getStorefrontProductsByCategory(slug: string): Promise<Mig
   const products = await getStorefrontProducts();
   const categorySlug = getCategoryBySlug(slug)?.slug ?? slug;
 
-  return products.filter((product) => productMatchesCategory(product, categorySlug)).sort(compareStorefrontProducts);
+  return products
+    .filter((product) => productMatchesCategory(product, categorySlug) && !Object.hasOwn(retiredProductRedirects, product.slug))
+    .sort(compareStorefrontProducts);
 }
 
 export function getStorefrontRelatedProducts(product: MigratedProduct, products: MigratedProduct[], limit = 3, businessGroups: string[][] = []): MigratedProduct[] {

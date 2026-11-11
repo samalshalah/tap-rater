@@ -2,6 +2,7 @@ import type { HeaderNavigationContent, FooterContent, FaqContent, HomepageThemeC
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
+import { brandedStandCatalogHref } from "@/lib/category-routes";
 import { cafeHeroImage, defaultHomepageShowcase, googleCustomImage } from "@/lib/homepage-showcase";
 
 export const defaultHeaderNavigation: HeaderNavigationContent = {
@@ -120,7 +121,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     headline: "Tap Rater NFC Business Stands.",
     body: "Put reviews, menus, bookings, and social follows one tap away. A small stand for the moments your customers are ready to connect.",
     primaryCta: { label: "Shop Stands", href: "/shop" },
-    secondaryCta: { label: "Customize Yours", href: "/custom-stands" },
+    secondaryCta: { label: "Customize Yours", href: brandedStandCatalogHref },
     proofPoints: ["Direct stands: no subscription", "Branded: preview before payment"],
     image: { src: cafeHeroImage, alt: "Custom Google Review stand with a business logo and QR code on a countertop" }
   },
@@ -201,7 +202,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     eyebrow: "Custom Branding",
     headline: "Made for your business",
     body: "Add your business name, logo, and destination-generated QR with Branded. Approve the artwork preview before payment. Final print artwork is generated after payment.",
-    cta: { label: "Shop Branded Stands", href: "/custom-stands" },
+    cta: { label: "Shop Branded Stands", href: brandedStandCatalogHref },
     image: { src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "Finished River Cafe branded Tap Rater stand demo with logo and QR code" },
     bullets: ["Your logo", "Your business", "Your destination", "Approve preview before payment"]
   },

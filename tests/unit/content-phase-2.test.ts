@@ -8,29 +8,22 @@ import { defaultHomepageContent } from "@/lib/website-content";
 import { getDefaultShippingSettings } from "@/lib/shipping-settings";
 import { ProductPhysicalDetailsEditor } from "@/components/admin/product-physical-details-editor";
 import { ProductCard } from "@/components/product/product-card";
+import { customOnlyPublicContent } from "@/lib/custom-only-public-content";
 
-const mocks = vi.hoisted(() => ({ home: vi.fn(), shipping: vi.fn() }));
-vi.mock("@/lib/website-content", async original => ({ ...await original<typeof import("@/lib/website-content")>(), getHomepageThemeContent: mocks.home }));
+const mocks = vi.hoisted(() => ({ shipping: vi.fn() }));
 vi.mock("@/lib/shipping-settings", async original => ({ ...await original<typeof import("@/lib/shipping-settings")>(), getShippingSettings: mocks.shipping }));
-import CustomStandsPage from "@/app/custom-stands/page";
 import ShippingPage from "@/app/shipping/page";
 
 beforeEach(() => {
-  mocks.home.mockResolvedValue(defaultHomepageContent);
   mocks.shipping.mockResolvedValue(getDefaultShippingSettings());
 });
 
 describe("content phase 2", () => {
-  it("takes custom-stand shoppers to eligible catalog products, not back to the same page", async () => {
-    const html = renderToStaticMarkup(await CustomStandsPage());
-    expect(html).toContain('href="/shop?design=branded"');
-    expect(html).toContain("Shop Branded + QR stands");
-    expect(html).not.toContain('href="/custom-stands"');
-    expect(html).toContain("Branded + QR stands</h1>");
-  });
-
-  it("does not change the homepage custom-branding destination", () => {
-    expect(defaultHomepageContent.customBranding.cta.href).toBe("/custom-stands");
+  it("links homepage custom-branding CTAs to eligible catalog products", () => {
+    expect(defaultHomepageContent.customBranding.cta.href).toBe("/shop?design=branded");
+    expect(defaultHomepageContent.hero.secondaryCta?.href).toBe("/shop?design=branded");
+    expect(customOnlyPublicContent({ label: "Customize Yours", href: "https://taprater.com/custom-stands" }))
+      .toEqual({ label: "Customize Yours", href: "/shop?design=branded" });
   });
 
   it.each([

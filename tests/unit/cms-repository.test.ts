@@ -32,7 +32,7 @@ describe("cms repository", () => {
 
     expect(content.heroTitle).toContain("NFC & QR stands");
     expect(content.primaryButtonHref).toBe("/shop");
-    expect(content.secondaryButtonHref).toBe("/custom-stands");
+    expect(content.secondaryButtonHref).toBe("/shop?design=branded");
     expect(content.featuredLabel).toBe("Physical stands");
   });
 

@@ -275,10 +275,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "social-media",
     title: "Social Media Stands",
     eyebrow: "Social",
-    description: "NFC tabletop stands that open social profiles or a social media link.",
+    description: "Give customers a quick way to find your social profile. Choose a custom NFC stand for Instagram, TikTok, Facebook, LinkedIn, and more. Customers tap or scan the QR code to open the profile you choose.",
     seoTitle: "NFC Social Media Stands | Tap Rater",
-    seoDescription: "Shop NFC social media stands that open social profiles or a social media link.",
-    buyerIntent: "For businesses that want customers to follow or visit social profiles after an in-person interaction.",
+    seoDescription: "Shop custom NFC social media stands with your logo and QR code for Instagram, TikTok, Facebook, LinkedIn, and other platforms.",
+    buyerIntent: "Choose the platform you want customers to find and bring the public link to your profile.",
     aliases: ["social-booking-products", "social-booking-stands", "social-booking-plates", "social-follow-products", "social-media-products"],
     seoCopy:
       "Social media products can open a direct social profile or a social media hub for Facebook, X, Instagram, and YouTube."
@@ -287,10 +287,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "appointments",
     title: "Appointment & Reservation Stands",
     eyebrow: "Booking",
-    description: "NFC tabletop stands that open booking pages, reservation forms, calendars, or scheduling URLs.",
-    seoTitle: "Appointment and Reservation NFC Stands | Tap Rater",
-    seoDescription: "Shop NFC appointment and reservation stands that open booking pages, forms, calendars, or scheduling URLs.",
-    buyerIntent: "For salons, clinics, consultants, service businesses, and teams that want customers to book the next visit.",
+    description: "Give customers a way to book their next visit from your front desk, salon, or host stand. They can tap or scan a custom NFC stand to open the booking or reservation page you already use.",
+    seoTitle: "NFC Appointment & Reservation Stands | Tap Rater",
+    seoDescription: "Shop NFC appointment and reservation stands with your logo and QR code. Send customers to your existing booking page, calendar, or reservation form.",
+    buyerIntent: "Choose a design for booking appointments, making reservations, or browsing services before booking.",
     aliases: ["appointment-products", "booking-products"],
     seoCopy:
       "Appointment products open one booking, calendar, form, or scheduling URL through a permanent Tap Rater link."
@@ -299,10 +299,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "menu",
     title: "Menu & Info Stands",
     eyebrow: "Menu",
-    description: "NFC tabletop stands that open a restaurant menu, cafe menu, service list, or information page.",
-    seoTitle: "NFC Menu and Info Stands | Tap Rater",
-    seoDescription: "Shop NFC menu and information stands that open a restaurant menu, cafe menu, service list, or information page.",
-    buyerIntent: "For restaurants, cafes, counters, tables, and service businesses that need customers to open a menu.",
+    description: "Put your digital menu, ordering page, or service list within reach at a table or counter. Guests tap or scan the QR code on your custom NFC menu stand to open the page you choose.",
+    seoTitle: "NFC Menu & Info Stands | Tap Rater",
+    seoDescription: "Shop NFC menu stands with your logo and QR code for restaurants, cafés, and counters. Link to a digital menu, ordering page, or service list.",
+    buyerIntent: "Choose the design that matches what guests can do after they tap, from browsing a menu to ordering.",
     aliases: ["menu-products"],
     seoCopy:
       "Menu products are menu-only customer prompts. They should not be marketed as Wi-Fi products."
@@ -311,10 +311,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "feedback",
     title: "Feedback Stands",
     eyebrow: "Feedback",
-    description: "NFC tabletop stands that open customer feedback or experience forms.",
-    seoTitle: "NFC Feedback Stands | Tap Rater",
-    seoDescription: "Shop NFC feedback stands that open customer feedback or experience forms.",
-    buyerIntent: "For businesses that want customers to tap and share experience feedback.",
+    description: "Give customers an easy way to open your feedback form or survey after a visit. A custom NFC feedback stand lets them tap or scan the printed QR code at reception, checkout, or an event.",
+    seoTitle: "NFC Feedback & Survey Stands | Tap Rater",
+    seoDescription: "Shop NFC customer feedback stands with your logo and QR code. Send customers to your own survey or feedback form after a visit.",
+    buyerIntent: "Have the public link to your survey ready so customers can open it on their own phones.",
     aliases: ["experience-feedback-products", "feedback-referral-products", "feedback-referral-stands", "feedback-stands"],
     seoCopy:
       "Feedback products open customer feedback or experience forms without review-gating language."
@@ -323,10 +323,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "website-links",
     title: "Multi-Link Stand",
     eyebrow: "Multi-Link",
-    description: "NFC tabletop stands with an optional hosted Multi-Link page for reviews, social profiles, websites, booking, menus, and more.",
-    seoTitle: "Multi-Link Stand | Tap Rater",
-    seoDescription: "Shop NFC stands that can add a hosted Multi-Link page with up to 10 customer links.",
-    buyerIntent: "For businesses that want one stand to open multiple important customer links.",
+    description: "Compare NFC stands that support a hosted Multi-Link page. Choose a design for your counter or front desk so customers can tap or scan and choose your menu, booking page, social profiles, or other links.",
+    seoTitle: "Multi-Link Compatible NFC Stands | Tap Rater",
+    seoDescription: "Compare Multi-Link compatible NFC stands with a printed QR code. Choose a design for your reception desk, checkout counter, or event table.",
+    buyerIntent: "Choose the printed message that tells customers what they’ll find on your hosted page.",
     aliases: ["website-link-stands", "link-stands", "website-links"],
     seoCopy:
       "Multi-Link is an optional hosted service add-on for compatible physical stands."

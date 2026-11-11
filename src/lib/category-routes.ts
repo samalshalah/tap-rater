@@ -1,7 +1,9 @@
 import type { CatalogCategorySlug } from "@/data/migrated-products";
 
+export const brandedStandCatalogHref = "/shop?design=branded";
+
 export function getCategoryHref(slug: CatalogCategorySlug) {
-  if (slug === "custom-stands") return "/custom-stands";
+  if (slug === "custom-stands") return brandedStandCatalogHref;
   return slug === "website-links" ? "/category/website-link-stands" : `/category/${slug}`;
 }
 

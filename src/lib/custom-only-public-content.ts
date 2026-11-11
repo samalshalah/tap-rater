@@ -1,3 +1,5 @@
+import { brandedStandCatalogHref } from "@/lib/category-routes";
+
 // Exact migrations for retired public sales copy and photos. Never applied to saved orders.
 const retiredClaims: [string, string][] = [
   [
@@ -275,6 +277,7 @@ const retiredImages: Record<string, string> = {
 };
 
 export function customOnlyPublicText(value: string): string {
+  if (/^(?:https?:\/\/(?:www\.)?taprater\.com)?\/(?:custom-stands|custom-branding)\/?$/.test(value)) return brandedStandCatalogHref;
   let result = retiredImages[value] ?? value;
   for (const [old, replacement] of retiredClaims) result = result.replaceAll(old, replacement);
   return result;

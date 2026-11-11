@@ -2,6 +2,7 @@ import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 import { legacyPublicAssetRewrites } from "./src/lib/legacy-public-assets";
 import { retiredProductRedirects } from "./src/lib/storefront-redirects";
+import { brandedStandCatalogHref } from "./src/lib/category-routes";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -64,7 +65,8 @@ const nextConfig: NextConfig = {
       { source: "/faq", destination: "/faqs", permanent: true },
       { source: "/contact", destination: "/contact-us", permanent: true },
       { source: "/shop-by-use", destination: "/solutions", permanent: true },
-      { source: "/custom-branding", destination: "/custom-stands", permanent: true },
+      { source: "/custom-stands", destination: brandedStandCatalogHref, permanent: true },
+      { source: "/custom-branding", destination: brandedStandCatalogHref, permanent: true },
       { source: "/product-category/:slug*", destination: "/shop", permanent: true },
       { source: "/my-account", destination: "/admin", permanent: true }
     ];

@@ -18,9 +18,16 @@ import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
 import { getBusinessUsePageCopy } from "@/lib/business-use-content";
+import { lockedStandTypes } from "@/lib/catalog-architecture";
 
 type CategoryPageProps = {
   params: Promise<{ slug: string }>;
+};
+
+const legacyMultiLinkCopy = {
+  title: "Multi-Link Stand",
+  intro: "Add a hosted Multi-Link page to compatible NFC and QR stands.",
+  description: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 10 customer links."
 };
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
@@ -35,17 +42,25 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   }
 
   const products = await getStorefrontProductsByCategory(category.slug);
+  const isMultiLinkCategory = category.slug === "website-links";
+  const configuredTitle = standType?.seoTitle && withoutSiteTitleSuffix(standType.seoTitle);
+  const seoTitle = isMultiLinkCategory && configuredTitle === legacyMultiLinkCopy.title
+    ? category.seoTitle
+    : standType?.seoTitle || category.seoTitle;
+  const seoDescription = isMultiLinkCategory && standType?.seoDescription === legacyMultiLinkCopy.description
+    ? category.seoDescription
+    : standType?.seoDescription || category.seoDescription;
 
   return {
-    title: withoutSiteTitleSuffix(standType?.seoTitle || category.seoTitle),
+    title: withoutSiteTitleSuffix(seoTitle),
     robots: !standType || products.length === 0 ? { index: false, follow: true } : undefined,
-    description: standType?.seoDescription || category.seoDescription,
+    description: seoDescription,
     alternates: {
       canonical: getCategoryHref(category.slug)
     },
     openGraph: {
-      title: standType?.seoTitle || category.seoTitle,
-      description: standType?.seoDescription || category.seoDescription,
+      title: seoTitle,
+      description: seoDescription,
       url: getCategoryHref(category.slug),
       images: [{
         url: standType?.bannerImageUrl || standType?.imageUrl || getCategoryVisual(category).src,
@@ -82,15 +97,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const visual = getCategoryVisual(category);
   const heroImage = getStandTypeHeroImage(category, activeStandType, products);
   const isReviewCategory = category.slug === "reviews";
-  const standTypeTitle = activeStandType.title || category.title;
-  const standTypeDescription = activeStandType.shortDescription || activeStandType.description;
-  // Replace the original seeded copy on this landing page while keeping merchant edits.
-  const title = isReviewCategory && standTypeTitle === "Review Stands" ? "NFC Review Stands" : standTypeTitle;
-  const description = isReviewCategory && standTypeDescription === "Stands that send customers to a review destination."
+  const isMultiLinkCategory = category.slug === "website-links";
+  const defaultStandType = lockedStandTypes.find((standType) => standType.slug === activeStandType.slug);
+  const standTypeDescription = (activeStandType.shortDescription || activeStandType.description)?.trim();
+  // Refresh original catalog copy while preserving merchant-authored headings and descriptions.
+  const title = !activeStandType.title || activeStandType.title === defaultStandType?.title
+    ? withoutSiteTitleSuffix(category.seoTitle)
+    : activeStandType.title;
+  const usesDefaultDescription = !standTypeDescription || standTypeDescription === defaultStandType?.description
+    || (isMultiLinkCategory && standTypeDescription === legacyMultiLinkCopy.intro);
+  const description = usesDefaultDescription
     ? category.description
-    : standTypeDescription || category.description;
+    : standTypeDescription;
   const copy = getBusinessUsePageCopy({ description, longContent: activeStandType.longContent });
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
+  const optionsId = isReviewCategory ? "review-stand-options" : "stand-options";
 
   return (
     <main className={`tr-public-shell text-ink ${styles.page}`}>
@@ -100,13 +121,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         backLink={{ href: "/shop", label: "Shop all stands" }}
         eyebrow={category.eyebrow}
         title={title}
-        cta={isReviewCategory && products.length > 0 ? { href: "#review-stand-options", label: "Browse all review stands" } : undefined}
+        cta={products.length > 0 ? { href: `#${optionsId}`, label: isReviewCategory ? "Browse all review stands" : "Browse all stand options" } : undefined}
         body={
           <>
             <p>{copy.intro}</p>
             {copy.body ? <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div> : null}
-            {category.slug === "appointments" ? <p className="tr-body-sm mt-4">Connect a stand to your existing booking or reservation URL. Your booking provider manages appointments; the stand opens that page.</p> : null}
-            {category.slug === "feedback" ? <p className="tr-body-sm mt-4">Connect a stand to your customer feedback form or survey. Customers open the destination you provide and choose whether to leave feedback.</p> : null}
             {products.some(productSupportsMultiLink) ? (
               <p className="tr-body-sm mt-4">
                 Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
@@ -114,7 +133,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             ) : null}
           </>
         }
-        media={category.slug === "website-links" ? <MultiLinkDemoVisual /> : undefined}
+        media={isMultiLinkCategory ? <MultiLinkDemoVisual /> : undefined}
         image={{
           src: heroImage, priority: true,
           alt: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.alt : activeStandType.title || visual.alt,
@@ -127,8 +146,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">{products.length} {products.length === 1 ? "stand" : "stands"}</p>
-            <h2 id={isReviewCategory ? "review-stand-options" : undefined} className="tr-section-title mt-2 scroll-mt-24">
-              {isReviewCategory ? "Shop NFC review stands by platform" : `Shop ${title.toLowerCase()}`}
+            <h2 id={optionsId} className="tr-section-title mt-2 scroll-mt-24">
+              {isReviewCategory ? "Shop NFC review stands by platform" : "Shop all stand options"}
             </h2>
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>

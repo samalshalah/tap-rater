@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { Footer } from "@/components/layout/footer";
-import CustomStandsPage from "@/app/custom-stands/page";
 import MultiLinkPage from "@/app/multi-link/page";
 
 vi.mock("next/cache", () => ({ unstable_noStore: vi.fn() }));
@@ -42,10 +41,4 @@ describe("public capability copy", () => {
     expect(html).not.toContain("QR and NFC point to one permanent");
   });
 
-  it("renders the branded preview and payment sequence on the custom-stands page", async () => {
-    const html = renderToStaticMarkup(await CustomStandsPage());
-    expect(html).toContain("Approve the artwork preview before payment.");
-    expect(html).toContain("Final print artwork is generated after payment.");
-    expect(html).toContain("Branded QR is generated from the destination used by NFC.");
-  });
 });

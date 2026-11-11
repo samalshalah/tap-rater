@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
+import { brandedStandCatalogHref } from "@/lib/category-routes";
 import type { AdminConfigInput, AdminProductStatusUpdateInput, HomepageContentInput, PageContentInput, ProductContentInput } from "@/lib/validators";
 
 type MutationResult = PromiseLike<{ error: null | { message: string } }>;
@@ -37,7 +38,7 @@ export function getDefaultHomepageContent(): HomepageContentInput {
     primaryButtonLabel: "Shop Stands",
     primaryButtonHref: "/shop",
     secondaryButtonLabel: "Create Custom Stand",
-    secondaryButtonHref: "/custom-stands",
+    secondaryButtonHref: brandedStandCatalogHref,
     featuredBadge: "Launch products",
     featuredLabel: "Physical stands"
   };

@@ -14,7 +14,9 @@ describe("next config redirects", () => {
         { source: "/faq", destination: "/faqs", permanent: true },
         { source: "/contact", destination: "/contact-us", permanent: true },
         { source: "/shop-by-use", destination: "/solutions", permanent: true },
-        { source: "/custom-branding", destination: "/custom-stands", permanent: true },
+        { source: "/custom-stands", destination: "/shop?design=branded", permanent: true },
+        { source: "/custom-branding", destination: "/shop?design=branded", permanent: true },
+        { source: "/product/custom-direct-stand", destination: "/shop?design=branded", permanent: true },
         { source: "/product-category/:slug*", destination: "/shop", permanent: true },
         { source: "/my-account", destination: "/admin", permanent: true }
       ])

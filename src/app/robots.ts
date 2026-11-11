@@ -20,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/$", "/shop$", "/category/", "/product/", "/solutions$", "/solutions/",
           "/google-review-stand-for/", "/nfc-vs-qr-google-review-stand$",
           "/review-links-generator$", "/how-it-works$", "/pricing$", "/shipping$",
-          "/stand-bundles$", "/custom-stands$", "/multi-link$", "/faqs$"
+          "/stand-bundles$", "/multi-link$", "/faqs$"
         ],
         disallow: "/"
       }

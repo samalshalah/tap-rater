@@ -1,4 +1,5 @@
 import type { CatalogCategorySlug } from "@/data/migrated-products";
+import { brandedStandCatalogHref } from "@/lib/category-routes";
 
 type Faq = { question: string; answer: string };
 export type CategoryBuyingGuide = {
@@ -37,11 +38,12 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     ]
   },
   "social-media": {
-    heading: "Choose a social stand around the connection you want",
+    heading: "Choose an NFC social media stand for your platform",
     introduction: "Social media stands bring your online presence into a shop, studio, reception area, or event. Choose the account you actively maintain and the action visitors expect: exploring photos, watching videos, following business updates, or finding a professional contact. A recognizable profile and useful content give people a reason to stay connected after the tap.",
     decision: "One direct profile keeps the next step simple. A link hub suits a business that wants visitors to choose between several active channels. Avoid presenting a long list of rarely updated accounts. If the display represents a company, use a company destination; an individual's networking table may be better served by a personal professional profile.",
     options: [
       { slug: "instagram-follow-stand", purpose: "Share visual work, products, or finished results.", consideration: "Use a stable public profile rather than a temporary post." },
+      { slug: "linkedin-follow-stand", purpose: "Share a professional profile at an event or reception desk.", consideration: "Choose a personal profile for networking or a company page for a shared display." },
       { slug: "youtube-follow-stand", purpose: "Help customers find demonstrations and tutorials.", consideration: "Choose a channel for discovery or a public playlist for one topic." },
       { slug: "follow-us-social-media-stand", purpose: "Offer a broader invitation to your social presence.", consideration: "Supply one profile or a suitable link hub with clear choices." }
     ],
@@ -58,7 +60,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     ]
   },
   appointments: {
-    heading: "Choose a booking stand that fits your appointment journey",
+    heading: "Choose an NFC stand for appointments or reservations",
     introduction: "An appointment stand makes your existing scheduling destination easier to reach at reception or checkout. Start with the service your customer needs next, then choose whether the destination should show a provider, a branch, or a general booking menu. A useful booking page explains the available services before asking someone to select a time.",
     decision: "For a practice with several clinicians or a salon with independent professionals, avoid sending everyone to the wrong calendar. A direct booking URL works well for one clear next step. If visitors need to compare services first, a service-information destination may be a better starting point than an immediate time-slot picker.",
     options: [
@@ -70,7 +72,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     placement: "Place the stand where staff discuss the next visit, such as reception checkout or a consultation desk. Customers should have space to check dates without blocking the queue. Keep a provider-specific stand close to that provider's service area. At a restaurant, a reservation destination belongs where guests discuss returning, rather than beside a prompt to order today's meal.",
     related: [{ href: "/solutions/beauty-salon-wellness", label: "Rebooking at salons and spas" }, { href: "/solutions/healthcare-dental", label: "Stands for practice reception" }, { href: "/category/website-link-stands", label: "Compare service-information stands" }],
     faqs: [
-      { question: "Is appointment software included with the stand?", answer: "No. The stand opens your existing booking destination. Your provider manages availability, confirmations, reminders, payments, and cancellations. Choose a page that already supports the scheduling workflow you need." },
+      { question: "How does an NFC appointment stand work?", answer: "Customers tap the stand or scan its QR code to open the booking page you provide. Your booking provider manages availability, confirmations, reminders, payments, and cancellations." },
       { question: "Can I use my current booking provider?", answer: "Use a working customer-facing booking URL and test it on a phone before ordering. Check that visitors can select the intended service without using your administrator account. The stand does not require you to move your calendar into Tap Rater." },
       { question: "Can a stand book an appointment automatically?", answer: "No. Customers choose a service and time and complete any required steps on the booking page. Opening the link does not reserve a slot or submit their details." },
       { question: "Do different practitioners need different stands?", answer: "Separate stands are useful when each practitioner has a different booking URL. A shared destination can work when it clearly lets customers select the right provider. Choose based on how your reception desk actually serves visitors." },
@@ -78,11 +80,12 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     ]
   },
   menu: {
-    heading: "Choose between browsing a menu and placing an order",
+    heading: "Choose an NFC stand for menus or online orders",
     introduction: "Menu stands connect tables, counters, and waiting areas to a menu guests can read on their phones. Decide whether you want people to browse food and drinks or complete an order. A readable menu page suits table service, while a customer-facing ordering page needs the right branch, collection method, and payment flow.",
     decision: "Use a stable URL when dishes, prices, or opening hours change frequently. Updating content at that address can keep the stand useful across seasonal menus. For several restaurants or table-specific ordering, check how your existing system identifies the location. A general NFC link does not automatically know which table a guest is sitting at.",
     options: [
-      { slug: "menu-and-order-stand", purpose: "Connect guests to a menu or online ordering journey.", consideration: "Check branch selection, pickup choices, and checkout before launch." }
+      { slug: "menu-and-order-stand", purpose: "Connect guests to your own menu or ordering page.", consideration: "Check branch selection, pickup choices, and checkout before launch." },
+      { slug: "ubereats-review-stand", purpose: "Open your restaurant’s Uber Eats storefront.", consideration: "Use the public listing for the location that will fulfill the order." }
     ],
     setupHeading: "Prepare a menu guests can use on a phone",
     setup: "Open the supplied menu URL on a small screen and check headings, prices, and navigation. A website menu should be easy to browse without zooming; a document should remain readable and publicly accessible. For ordering, test the customer journey through selecting items and confirming the restaurant, without using a private basket or staff dashboard link.",
@@ -92,12 +95,12 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
       { question: "Does a menu stand include online ordering software?", answer: "No. It opens your existing menu or ordering destination. Your website or provider handles items, payments, order routing, and kitchen notifications. Check that those features work before connecting the stand." },
       { question: "Can I update prices without replacing the stand?", answer: "Yes, if you update the menu content at the same URL. Keep the public address stable when replacing documents or publishing seasonal menus. If the address changes, check the stand's destination setup before relying on the new page." },
       { question: "Can the stand tell our system which table ordered?", answer: "A direct stand opens its configured URL. Table identification must come from your ordering system, such as a table-specific URL or a customer selection. Test that workflow rather than assuming a tap supplies the table number." },
-      { question: "Can customers tap or scan?", answer: "Every custom stand includes NFC and a printed QR alongside your logo and business name, giving guests a camera-scanning option. Both open your approved destination." },
+      { question: "How does an NFC menu stand work?", answer: "Guests tap with a compatible phone or scan the printed QR code to open the same menu link. Add your logo and business name so they know which restaurant or location the stand represents." },
       { question: "Can I show breakfast and dinner menus on one stand?", answer: "Yes. Link to one page that clearly presents both menus and their service times. The stand opens that page; your website determines which menu information is shown and how guests move between sections." }
     ]
   },
   feedback: {
-    heading: "Choose a feedback destination that produces useful responses",
+    heading: "Choose an NFC stand for customer feedback",
     introduction: "Feedback stands give customers a clear way to open your survey or feedback form after a visit. Begin with the question your business needs answered: service experience, a recent event, or a specific part of the customer journey. A short, understandable form is easier to complete than a long questionnaire unrelated to the visit.",
     decision: "Decide whether responses should go privately to your team or be submitted to a public review platform. Those are different destinations and should have different invitations. For private feedback, check who receives submissions and how your team follows up. A physical stand makes the form accessible; it does not replace your response process.",
     options: [
@@ -107,9 +110,9 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     setupHeading: "Check the form before displaying the invitation",
     setup: "Test the form on a phone, including required fields and the confirmation shown after submission. Use your form provider's test process to check where responses arrive. Avoid a URL tied to one respondent or a signed-in administrator session. Ask only for information your team needs, and make any follow-up contact choice clear within the form.",
     placement: "Choose a place where customers can respond comfortably, such as an exit area or a quiet part of reception. Give them enough room to use a phone without staff watching over their shoulder. Make the same feedback opportunity available to everyone. For an event, keep the stand near the departure point while the experience is still fresh.",
-    related: [{ href: "/category/reviews", label: "Compare public review stands" }, { href: "/custom-stands", label: "Create a branded feedback display" }, { href: "/solutions/retail-local-business", label: "Feedback at retail counters" }],
+    related: [{ href: "/category/reviews", label: "Compare public review stands" }, { href: brandedStandCatalogHref, label: "Browse stands with your logo and QR code" }, { href: "/solutions/retail-local-business", label: "Feedback at retail counters" }],
     faqs: [
-      { question: "Is a survey builder included?", answer: "A direct feedback stand opens the URL you provide. Create and maintain the form with your chosen provider, then connect the customer-facing link. Check the selected product and service options for any separate hosted features." },
+      { question: "How does an NFC feedback stand work?", answer: "Customers tap or scan the stand to open a survey or feedback form you already use. Your form provider collects the responses. Use the public form link so visitors can open it on their own phones." },
       { question: "Are responses private or public?", answer: "That depends on the destination you choose. A survey can send responses to your team, while a public review platform publishes feedback under its own rules. Explain the destination clearly so customers understand where their response goes." },
       { question: "Can I change the survey questions later?", answer: "If your form provider keeps the same public URL, you can update the questions while the stand continues opening that address. Test the updated form and confirmation message before using it with customers." },
       { question: "Can I route only happy customers to public reviews?", answer: "Use a consistent feedback opportunity instead of selecting who can reach a public review destination based on their rating. Keep public review access clear and follow the destination platform's rules." },
@@ -117,11 +120,12 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     ]
   },
   "website-links": {
-    heading: "Choose a website stand around one useful next step",
-    introduction: "Website and information stands connect a physical location to the page visitors need next. That might be a service list, public practice resources, business instructions, or a contact page. Begin with the question people ask at that counter and choose a destination that answers it clearly on a phone.",
-    decision: "A homepage works for general discovery, but a focused page is often easier to use when visitors already know what they need. Match the printed prompt to the destination: Patient Resources should open useful practice information, while Explore Our Services should help customers compare services. If several choices are essential, compare a link hub with a single direct destination.",
+    heading: "Choose a stand for the links customers need",
+    introduction: "A contact stand suits an event or reception desk where customers ask how to reach you. A services or information stand fits a counter where visitors need prices, instructions, or a booking link. Match the printed message to the first links people will see.",
+    decision: "Start with the most common customer request. A clinic might put patient forms and directions first, while a salon might start with its services and booking page. One public URL is enough when the stand has one clear job.",
     options: [
-      { slug: "visit-our-website-stand", purpose: "Open a business website or focused landing page.", consideration: "Use a stable public address that you can maintain." },
+      { slug: "connect-with-us-stand", purpose: "Group ways for customers to contact or follow your business.", consideration: "Put the contact method your team monitors first." },
+      { slug: "check-our-information-stand", purpose: "Share several practical links from a counter or reception desk.", consideration: "Start with information visitors regularly ask staff for." },
       { slug: "patient-resources-stand", purpose: "Share general practice forms, instructions, or resources.", consideration: "Keep personal records in your existing secure systems." },
       { slug: "explore-our-services-stand", purpose: "Help visitors understand packages and service options.", consideration: "Make the next enquiry or booking step easy to find." }
     ],

@@ -4,6 +4,7 @@ import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getStorefrontProducts } from "@/lib/product-repository";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getOffersSettings } from "@/lib/offer-settings";
+import { brandedStandCatalogHref } from "@/lib/category-routes";
 import { singleStandPrice } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
@@ -36,7 +37,7 @@ export default async function PricingPage() {
       "Custom Logo + QR",
       minimum("branded_qr_direct"),
       "Your logo, business name and a printed QR code alongside NFC. Review and approve your artwork preview before payment. Current eligible single-stand savings are included in the price above.",
-      "/custom-stands",
+      brandedStandCatalogHref,
     ],
     [
       "Optional Multi-Link",

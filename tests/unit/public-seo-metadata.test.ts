@@ -54,7 +54,7 @@ describe("canonical public category URLs", () => {
 
   it.each(catalogCategories)("keeps $slug lookup consistent with the public URL", (category) => {
     const path = getCategoryHref(category.slug);
-    expect(path).toBe(category.slug === "custom-stands" ? "/custom-stands" : category.slug === "website-links" ? "/category/website-link-stands" : `/category/${category.slug}`);
+    expect(path).toBe(category.slug === "custom-stands" ? "/shop?design=branded" : category.slug === "website-links" ? "/category/website-link-stands" : `/category/${category.slug}`);
   });
 
   it("publishes the canonical Multi-Link category once and keeps products and business uses", async () => {
@@ -70,11 +70,11 @@ describe("canonical public category URLs", () => {
     expect(entries.find((entry) => entry.url.endsWith("/product/google-review-stand"))?.images).toEqual([new URL(getProductVisual(googleStand).src, "https://taprater.com").toString()]);
   });
 
-  it("excludes empty and disabled categories and consolidates custom stands", async () => {
+  it("excludes empty and disabled categories and the retired custom stands page", async () => {
     mocks.standTypes.mockResolvedValue([{ slug: "social-media-stands" }]);
     const paths = (await sitemap()).map((entry) => new URL(entry.url).pathname);
     expect(paths.filter((path) => path.startsWith("/category/"))).toEqual([]);
-    expect(paths.filter((path) => path === "/custom-stands")).toHaveLength(1);
+    expect(paths).not.toContain("/custom-stands");
     expect(paths).not.toContain("/category/custom-stands");
     expect(paths).not.toContain("/setup-new-taprater");
     expect(paths).not.toContain("/change-taprater-link");
@@ -117,8 +117,8 @@ describe("canonical public category URLs", () => {
     expect((await categoryMetadata(params("reviews"))).robots).toEqual({ index: false, follow: true });
   });
 
-  it("redirects the duplicate custom collection to the customization page", async () => {
-    await expect(CategoryPage(params("custom-stands"))).rejects.toThrow("REDIRECT:/custom-stands");
+  it("redirects the retired custom collection to the branded catalog", async () => {
+    await expect(CategoryPage(params("custom-stands"))).rejects.toThrow("REDIRECT:/shop?design=branded");
     expect(mocks.products).not.toHaveBeenCalled();
   });
 

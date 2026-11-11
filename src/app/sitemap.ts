@@ -20,7 +20,6 @@ const staticRoutes = [
   "/review-links-generator",
   "/nfc-vs-qr-google-review-stand",
   ...googleReviewStandGuides.map(({ href }) => href),
-  "/custom-stands",
   "/multi-link",
   "/pricing",
   "/stand-bundles",
@@ -48,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const categoryRoutes = catalogCategories
     .filter((category) => category.slug !== "custom-stands"
       && standTypes.some((type) => type.slug === categoryToStandTypeSlug(category.slug))
-      && products.some((product) => productMatchesCategory(product, category.slug)))
+      && canonicalProducts.some((product) => productMatchesCategory(product, category.slug)))
     .map((category) => getCategoryHref(category.slug));
   const businessUseRoutes = businessUses.map((businessUse) => `/solutions/${businessUse.slug}`);
   const paths = Array.from(new Set([...staticRoutes, ...categoryRoutes, ...businessUseRoutes, ...productRoutes]));
