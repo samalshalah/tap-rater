@@ -25,7 +25,10 @@ describe("customer header", () => {
   it("keeps storefront navigation for guests", () => {
     const html = renderToStaticMarkup(createElement(Header));
     expect(html).toContain('aria-label="Main navigation"');
-    expect(html).toContain("Shop by Type");
+    expect(html).toMatch(/<summary[^>]*>Shop by Type/);
+    expect(html).toContain('href="/shop"');
+    expect(html).toContain('href="/category/reviews"');
+    expect(html).not.toContain('href="/shop#stand-types"');
     expect(html).toContain('href="/contact-us"');
     expect(html).toContain("Contact Us");
     expect(html).toContain('href="/account/login"');

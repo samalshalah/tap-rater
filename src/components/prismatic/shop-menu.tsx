@@ -1,30 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
-import { catalogCategories } from "@/data/migrated-products";
-import { getCategoryHref } from "@/lib/category-routes";
+import { useCallback, useEffect, useRef } from "react";
+import { ArrowRight, ChevronDown } from "lucide-react";
+import { isStandTypePath, StandTypeLinks } from "@/components/layout/stand-type-links";
 
-export function PrismaticShopMenu({ links }: { links: { href: string; label: string }[] }) {
+export function PrismaticShopMenu({ label, pathname }: { label: string; pathname: string }) {
   const ref = useRef<HTMLDetailsElement>(null);
-  const pathname = usePathname();
-  const categoryPages = catalogCategories.filter((category) => category.slug !== "custom-stands");
-  useEffect(() => { if (ref.current) ref.current.open = false; }, [pathname]);
-  useEffect(() => {
-    const close = (event: PointerEvent) => { if (ref.current && !ref.current.contains(event.target as Node)) ref.current.open = false; };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
+
+  const closeMenu = useCallback(() => {
+    if (ref.current) ref.current.open = false;
   }, []);
-  return <details ref={ref} className="tr-shop-menu" onKeyDown={event => {
-    if (event.key === "Escape" && ref.current) { ref.current.open = false; ref.current.querySelector("summary")?.focus(); }
-  }}>
-    <summary aria-label="Browse shop collections"><ChevronDown size={14} /></summary>
-    <div className="tr-shop-menu-panel" onClick={event => { if ((event.target as HTMLElement).closest("a") && ref.current) ref.current.open = false; }}>
-      <div><h2>Shop by Type</h2>{categoryPages.map(category => <Link key={category.slug} href={getCategoryHref(category.slug)}>{category.title}</Link>)}</div>
-      <div><h2>Explore</h2>{links.map(link => <Link key={link.href} href={link.href}>{link.label}</Link>)}</div>
-      <Link className="tr-shop-menu-feature" href="/product/google-review-stand"><img src="/assets/custom-google.webp" alt="Custom Google Review stand" /><span>Custom Google Review Stand →</span></Link>
-    </div>
-  </details>;
+
+  useEffect(closeMenu, [closeMenu, pathname]);
+  useEffect(() => {
+    function closeOutside(event: PointerEvent) {
+      if (event.target instanceof Node && !ref.current?.contains(event.target)) closeMenu();
+    }
+    document.addEventListener("pointerdown", closeOutside);
+    return () => document.removeEventListener("pointerdown", closeOutside);
+  }, [closeMenu]);
+
+  return (
+    <details
+      ref={ref}
+      className="tr-shop-menu group"
+      onBlur={(event) => {
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget)) closeMenu();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || !event.currentTarget.open) return;
+        event.preventDefault();
+        closeMenu();
+        event.currentTarget.querySelector("summary")?.focus();
+      }}
+    >
+      <summary className={`flex min-h-11 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-[var(--tr-radius-control)] px-2.5 hover:bg-soft hover:text-brand ${isStandTypePath(pathname) ? "bg-panel text-brand" : ""}`}>
+        {label}
+        <ChevronDown size={14} className="shrink-0 group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="tr-shop-menu-panel">
+        <StandTypeLinks pathname={pathname} onNavigate={closeMenu} className="grid content-start grid-cols-2 gap-2" />
+        <Link className="tr-shop-menu-feature" href="/product/google-review-stand" prefetch={false} onClick={closeMenu}>
+          <img src="/assets/custom-google.webp" alt="" />
+          <span className="flex items-center gap-2">Custom Google Review Stand <ArrowRight size={15} aria-hidden="true" /></span>
+        </Link>
+      </div>
+    </details>
+  );
 }

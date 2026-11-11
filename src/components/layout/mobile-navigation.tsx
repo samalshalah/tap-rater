@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ChevronRight, CircleUserRound, LogOut, ShoppingBag } from "lucide-react";
+import { ChevronDown, ChevronRight, CircleUserRound, LogOut, ShoppingBag } from "lucide-react";
 import { isNavigationActive } from "@/lib/customer-navigation";
+import { isStandTypePath, shopByTypeHref, StandTypeLinks } from "@/components/layout/stand-type-links";
 
 type MobileNavigationProps = {
   items: Array<{ label: string; href: string }>;
@@ -26,7 +27,15 @@ export function MobileNavigation({ items, pathname, accountHref, accountLabel, c
         </Link>
       </div>
       <nav aria-label="Mobile navigation" className="divide-y divide-line text-ink">
-        {items.map((item) => (
+        {items.map((item) => item.href === shopByTypeHref ? (
+          <details key={item.href} className="group">
+            <summary className={`flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-base hover:bg-soft hover:text-brand [&::-webkit-details-marker]:hidden ${isStandTypePath(pathname) ? "bg-panel text-brand" : ""}`}>
+              <span>{item.label}</span>
+              <ChevronDown size={16} className="shrink-0 group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <StandTypeLinks pathname={pathname} onNavigate={onNavigate} className="mb-2 ml-3 border-l border-line pl-2" />
+          </details>
+        ) : (
           <Link
             key={item.href}
             href={item.href}

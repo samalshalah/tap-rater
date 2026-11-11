@@ -17,6 +17,8 @@ const props = {
   onNavigate: () => undefined
 };
 
+const directLinks = props.items.filter(({ href }) => href !== "/shop#stand-types");
+
 describe("mobile navigation", () => {
   it("shows the public menu alongside account access after sign-in", () => {
     const html = renderToStaticMarkup(createElement(MobileNavigation, {
@@ -25,7 +27,7 @@ describe("mobile navigation", () => {
       accountHref: "/account",
       accountLabel: "Welcome, Alex",
     }));
-    for (const item of props.items) expect(html).toContain(`href="${item.href}"`);
+    for (const item of directLinks) expect(html).toContain(`href="${item.href}"`);
     expect(html).toContain('aria-label="Mobile navigation"');
     expect(html).toContain('href="/account"');
     expect(html).toContain('action="/api/account/logout"');
@@ -35,12 +37,23 @@ describe("mobile navigation", () => {
     expect(html.indexOf('href="/account/login"')).toBeLessThan(html.indexOf('<nav'));
     expect(html.indexOf('href="/cart"')).toBeLessThan(html.indexOf('<nav'));
     expect(html).toContain('Cart (3)');
-    for (const item of props.items) expect(html).toContain(`href="${item.href}"`);
+    for (const item of directLinks) expect(html).toContain(`href="${item.href}"`);
     expect(html).toContain('aria-label="Mobile navigation"');
     expect(html).toContain('id="mobile-site-navigation"');
   });
 
-  it("marks only the current route, not its hash-link sibling", () => {
+  it("opens direct type choices and marks the current category", () => {
+    const html = renderToStaticMarkup(createElement(MobileNavigation, { ...props, pathname: "/category/reviews" }));
+    expect(html).toMatch(/<details[^>]*><summary[^>]*><span>Shop by Type<\/span>/);
+    for (const slug of ["reviews", "social-media", "appointments", "menu", "feedback", "website-link-stands"]) {
+      expect(html).toContain(`href="/category/${slug}"`);
+    }
+    expect(html).toMatch(/aria-current="page"[^>]*href="\/category\/reviews"/);
+    expect(html).not.toContain('href="/shop#stand-types"');
+    expect(html).not.toContain('href="/custom-stands"');
+  });
+
+  it("marks the shop link when browsing the full catalog", () => {
     const html = renderToStaticMarkup(createElement(MobileNavigation, props));
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-current="page"[^>]*href="\/shop"/);

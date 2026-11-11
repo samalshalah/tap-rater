@@ -12,6 +12,8 @@ import { MobileNavigation } from "@/components/layout/mobile-navigation";
 import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { isNavigationActive } from "@/lib/customer-navigation";
 import { PrismaticShopMenu } from "@/components/prismatic/shop-menu";
+import { shopByTypeHref } from "@/components/layout/stand-type-links";
+import { getCategoryHref } from "@/lib/category-routes";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -35,7 +37,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "Shop", href: "/shop", order: 10, enabled: true },
     {
       label: "Shop by Type",
-      href: "/shop#stand-types",
+      href: shopByTypeHref,
       order: 15,
       enabled: true,
     },
@@ -54,7 +56,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
   const enabledItems = items.filter(
-    (item) => item.enabled && item.label.toLowerCase() !== "custom branding",
+    (item) => item.enabled && item.label.toLowerCase() !== "custom branding" && item.href !== getCategoryHref("website-links"),
   );
   const hasShopByType = enabledItems.some(
     (item) => item.label.toLowerCase() === "shop by type",
@@ -65,7 +67,7 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
         ...enabledItems,
         {
           label: "Shop by Type",
-          href: "/shop#stand-types",
+          href: shopByTypeHref,
           order: 15,
           enabled: true,
         },
@@ -94,9 +96,7 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
       item.href === "/solutions" && ["by use", "shop by use", "business uses"].includes(item.label.toLowerCase())
         ? { ...item, label: "Shop by Business" }
         : item.label.toLowerCase() === "shop by type"
-        ? { ...item, href: "/shop#stand-types" }
-        : (item.label.toLowerCase() === "multi-link stands" || item.label.toLowerCase() === "website links" || item.label.toLowerCase() === "website & link stands") && item.href === "/category/website-link-stands"
-          ? { ...item, label: "Multi-Link Stand" }
+        ? { ...item, href: shopByTypeHref }
         : item,
     )
     .sort(
@@ -229,19 +229,18 @@ export function Header() {
             />
           </Link>
           <nav aria-label="Main navigation" className="hidden justify-center gap-1 rounded-[var(--tr-radius-control)] border border-line bg-white p-1.5 text-sm font-semibold text-ink shadow-sm xl:flex">
-            {navItems.map((item) => (
-              <div key={item.href} className="tr-header-nav-item">
+            {navItems.map((item) => item.href === shopByTypeHref ? (
+              <PrismaticShopMenu key={item.href} label={item.label} pathname={pathname} />
+            ) : (
               <Link
                 key={item.href}
                 href={item.href}
                 prefetch={false}
                 aria-current={isNavigationActive(pathname, item.href) ? "page" : undefined}
-                className={`min-h-11 rounded-[var(--tr-radius-control)] px-3.5 py-2.5 transition hover:bg-soft hover:text-brand ${isNavigationActive(pathname, item.href) ? "bg-panel text-brand" : ""}`}
+                className={`flex min-h-11 items-center rounded-[var(--tr-radius-control)] px-3.5 py-2.5 transition hover:bg-soft hover:text-brand ${isNavigationActive(pathname, item.href) ? "bg-panel text-brand" : ""}`}
               >
                 {item.label}
               </Link>
-              {item.href === "/shop" ? <PrismaticShopMenu links={navItems.filter(link => link.href !== "/shop")} /> : null}
-              </div>
             ))}
           </nav>
           <div className="flex items-center justify-end gap-3 text-sm font-medium text-ink">
