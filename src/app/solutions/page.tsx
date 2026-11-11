@@ -19,8 +19,8 @@ export default async function SolutionsPage() {
   const visibleBusinessUses = businessUses;
 
   return (
-    <main className={`tr-public-shell text-ink ${styles.page}`}>
-      <PageHero className={styles.hero}
+    <main className="tr-public-shell text-ink">
+      <PageHero
         eyebrow="Shop by business"
         title="Your business. Their next step."
         body="From restaurant tables to reception desks, find a stand that helps customers reach your reviews, menus, booking pages, and more. Choose your business to get started."

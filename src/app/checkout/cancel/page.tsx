@@ -10,6 +10,7 @@ export default function CheckoutCancelPage() {
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
+        variant="plain"
         eyebrow="Stripe checkout"
         title="Checkout canceled"
         body="No payment was completed. Your cart stays in the browser so you can adjust quantities or try checkout again."

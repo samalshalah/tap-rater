@@ -1,12 +1,11 @@
 import styles from "@/components/storefront/type-pages.module.css";
 import type { Metadata } from "next";
-import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
 import { Plus, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { ShopFilterLink } from "@/components/product/shop-filter-link";
 import { ShopControls } from "@/components/product/shop-controls";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProducts } from "@/lib/product-repository";
@@ -58,17 +57,18 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="tr-public-shell text-ink">
+      <PageHero
+        eyebrow="Tap Rater shop"
+        title={query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}
+        body="Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment."
+        cta={{ href: "#stand-types", label: "Browse stands" }}
+        image={{ src: "/uploads/use-cases/restaurants-cafes.webp", alt: "Tap Rater tabletop stand at a café counter", fit: "cover", priority: true }}
+      />
       <SectionShell tone="soft" spacing="compact">
         <div
           id="stand-types"
           className="tr-container scroll-mt-24"
         >
-          <div className="tr-prismatic-shop-intro mb-6 sm:mb-8">
-            <PrismaticWave variant="banner" />
-            <p className="tr-eyebrow">Tap Rater shop</p>
-            <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
-            <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment.</p>
-          </div>
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="hidden space-y-5 lg:block lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <aside className={`${styles.filterPanel} hidden h-fit lg:block`}>

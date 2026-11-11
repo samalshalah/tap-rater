@@ -36,6 +36,7 @@ export default async function CheckoutSuccessPage({ searchParams }: CheckoutSucc
       <CheckoutSuccessEffects sessionId={sessionId} />
       {!isManualOrder ? <PurchaseAnalyticsEvent purchase={order?.purchase ?? null} pending={/^cs_live_[A-Za-z0-9]+$/.test(sessionId) && (!order || order.pending)} /> : null}
       <PageHero
+        variant="plain"
         eyebrow="Order received"
         title="Your order was received"
         body={isManualOrder

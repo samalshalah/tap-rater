@@ -84,10 +84,6 @@ export default async function MultiLinkPage() {
         body={`Give customers one place to find your menu, bookings, social profiles, reviews and website. Add up to ${maxLinks} editable links to a compatible stand for ${monthlyPrice}/month per hosted page, plus the physical stand. Your custom stand includes NFC and a QR code pointing to the same page.`}
         cta={{ href: "#compatible-stands", label: "Shop Compatible Stands" }}
         media={<MultiLinkDemoVisual />}
-        image={{
-          ...multiLinkDemoImage,
-          priority: true
-        }}
       />
 
       <SectionShell tone="soft">

@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { optimizedUploadSrc } from "@/lib/optimized-upload";
 import { getBusinessUseImagePosition } from "@/lib/storefront-visuals";
 import { PrismaticWave } from "@/components/prismatic/motion";
+import { ResponsiveUpload } from "./responsive-upload";
+import styles from "./business-pages.module.css";
 
 type SectionTone = "white" | "soft";
 type SectionSpacing = "hero" | "default" | "compact";
@@ -78,17 +78,16 @@ export function SectionHeader({
 export function PageHero({
   backLink,
   body,
-  className,
   cta,
   eyebrow,
   image,
   media,
   spacing = "hero",
-  title
+  title,
+  variant = "cinematic"
 }: {
   backLink?: { href: string; label: string };
   body?: ReactNode;
-  className?: string;
   cta?: { href: string; label: string };
   eyebrow?: string;
   spacing?: SectionSpacing;
@@ -97,52 +96,61 @@ export function PageHero({
     alt: string;
     caption?: string;
     fit?: "contain" | "cover";
+    placement?: "right";
     priority?: boolean;
     src: string;
   };
   title: ReactNode;
+  variant?: "cinematic" | "plain";
 }) {
-  const imageFit = image?.fit ?? "contain";
+  const cinematic = variant === "cinematic";
+  const hasMedia = Boolean(image || media);
+  const fullPhoto = !media && image?.fit === "cover";
 
   return (
-    <SectionShell spacing={spacing} className={cx(className, spacing === "hero" && "tr-prismatic-page-intro")}>
+    <SectionShell spacing={spacing} className={cx(cinematic && styles.hero, spacing === "hero" && "tr-prismatic-page-intro")}>
       {spacing === "hero" ? <PrismaticWave variant="banner" /> : null}
-      <div className={cx("tr-container tr-page-hero", !image && !media && "tr-page-hero-text-only")}>
-        <div className="tr-page-hero-copy">
+      <div className={cx(
+        "tr-container tr-page-hero",
+        !hasMedia && "tr-page-hero-text-only",
+        cinematic && styles.frame,
+        cinematic && (fullPhoto ? styles.photo : hasMedia ? styles.split : styles.textOnly),
+        cinematic && fullPhoto && image?.placement === "right" && styles.photoOnRight
+      )}>
+        <div className={cx("tr-page-hero-copy", cinematic && styles.copy)}>
           {backLink ? (
-            <Link href={backLink.href} className="tr-editorial-link mb-6">
+            <Link href={backLink.href} className={cx("tr-editorial-link mb-6", cinematic && styles.back)}>
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               {backLink.label}
             </Link>
           ) : null}
           {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
-          <h1 className="tr-page-title mt-4 max-w-3xl">{title}</h1>
+          <h1 className={cx("mt-4 max-w-3xl", cinematic ? styles.title : "tr-page-title")}>{title}</h1>
           {body ? <div className="tr-page-hero-body mt-5 max-w-2xl">{body}</div> : null}
           {cta ? (
-            <Link href={cta.href} className="tr-editorial-link mt-7">
+            <Link href={cta.href} className={cx("tr-editorial-link mt-7", cinematic && styles.cta)}>
               {cta.label}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           ) : null}
         </div>
-        {media ? <figure className="w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end">{media}</figure> : image ? (
-          <figure className="w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end">
-          <div className="tr-page-hero-media relative aspect-[4/3]">
-            <Image
-              src={optimizedUploadSrc(image.src, 1200)}
-              alt={image.alt}
-              fill
-              priority={image.priority}
-              fetchPriority={image.priority ? "high" : undefined}
-              unoptimized
-              style={imageFit === "cover" ? { objectPosition: getBusinessUseImagePosition(image.src) } : undefined}
-              className={cx(
-                imageFit === "cover" ? "object-cover" : "object-contain p-7 sm:p-10",
-                imageFit === "contain" && "mix-blend-multiply"
-              )}
-            />
-          </div>
-          {image.caption ? <figcaption className="mt-2 text-center text-xs text-muted">{image.caption}</figcaption> : null}
+        {hasMedia ? (
+          <figure className={cx("w-full min-w-0 max-w-[520px] justify-self-center lg:justify-self-end", cinematic && styles.visual)}>
+            {media ?? (image && (
+              <div className={cx("tr-page-hero-media relative aspect-[4/3]", cinematic && styles.image)}>
+                <ResponsiveUpload
+                  src={image.src}
+                  alt={image.alt}
+                  sizes={fullPhoto && !image.placement ? "(min-width: 1440px) 1296px, 100vw" : "(min-width: 1024px) 55vw, 100vw"}
+                  fallbackWidth={1200}
+                  loading={image.priority ? "eager" : "lazy"}
+                  fetchPriority={image.priority ? "high" : undefined}
+                  style={fullPhoto ? { objectPosition: getBusinessUseImagePosition(image.src) } : undefined}
+                  className={fullPhoto ? "object-cover" : "object-contain p-7 sm:p-10"}
+                />
+              </div>
+            ))}
+            {!media && image?.caption ? <figcaption className="px-4 py-2 text-center text-xs text-muted">{image.caption}</figcaption> : null}
           </figure>
         ) : null}
       </div>

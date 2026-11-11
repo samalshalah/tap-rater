@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ReviewLinkTool } from "@/components/forms/review-link-tool";
-import { SectionShell } from "@/components/storefront/section";
+import { PageHero, SectionShell } from "@/components/storefront/section";
 import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -23,15 +23,18 @@ export default function ReviewLinksGeneratorPage() {
   return (
     <main className="tr-public-shell text-ink">
       <JsonLd data={breadcrumbJsonLd([{ name: "Google Review Link Generator", href: "/review-links-generator" }])} />
+      <PageHero
+        spacing="compact"
+        eyebrow="Free tool for your business"
+        title="Google Review Link Generator"
+        body={<>
+          <p>Find your business. Copy your review link. Make it easy for customers to share their experience—online or at your counter.</p>
+          <p className="mt-3 text-sm">Free to use. No stand purchase required.</p>
+        </>}
+      />
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <div className="max-w-3xl">
-            <p className="tr-eyebrow">Free tool for your business</p>
-            <h1 className="tr-page-title mt-4">Google Review Link Generator</h1>
-            <p className="tr-body mt-4">Find your business. Copy your review link. Make it easy for customers to share their experience—online or at your counter.</p>
-            <p className="mt-3 text-sm text-muted">Free to use. No stand purchase required.</p>
-          </div>
-          <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
             <section id="generate-review-link" className="min-w-0 scroll-mt-24 rounded-2xl border border-line bg-white p-5 sm:p-8" aria-labelledby="generator-heading">
               <h2 id="generator-heading" className="text-xl font-semibold">Find your Google review link</h2>
               <p className="tr-body-sm mb-6 mt-2">Search for your business and confirm the correct location, or paste a review link you already have.</p>

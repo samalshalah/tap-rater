@@ -1,6 +1,6 @@
 import { MultiLinkDemoVisual } from "@/components/storefront/multi-link-demo-visual";
 import { getStandTypeHeroImage } from "@/lib/stand-type-image";
-import styles from "@/components/storefront/type-pages.module.css";
+import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -11,7 +11,6 @@ import { catalogCategories } from "@/data/migrated-products";
 import { getPublicStandTypeBySlug, getPublicStandTypes } from "@/lib/admin-stand-types";
 import { getStorefrontProductsByCategory } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
-import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 import { categoryToStandTypeSlug, getCategoryHref } from "@/lib/category-routes";
 import { breadcrumbJsonLd, JsonLd } from "@/lib/seo";
@@ -94,7 +93,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   if (!activeStandType) {
     notFound();
   }
-  const visual = getCategoryVisual(category);
   const heroImage = getStandTypeHeroImage(category, activeStandType, products);
   const isReviewCategory = category.slug === "reviews";
   const isMultiLinkCategory = category.slug === "website-links";
@@ -114,9 +112,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const optionsId = isReviewCategory ? "review-stand-options" : "stand-options";
 
   return (
-    <main className={`tr-public-shell text-ink ${styles.page}`}>
+    <main className="tr-public-shell text-ink">
       <JsonLd data={breadcrumbJsonLd([{ name: "Shop all stands", href: "/shop" }, { name: title, href: getCategoryHref(category.slug) }])} />
-      <PageHero className={styles.hero}
+      <PageHero
         spacing="compact"
         backLink={{ href: "/shop", label: "Shop all stands" }}
         eyebrow={category.eyebrow}
@@ -133,12 +131,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             ) : null}
           </>
         }
-        media={isMultiLinkCategory ? <MultiLinkDemoVisual /> : undefined}
-        image={{
-          src: heroImage, priority: true,
-          alt: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.alt : activeStandType.title || visual.alt,
-          caption: heroImage === multiLinkDemoImage.src ? multiLinkDemoImage.caption : undefined
-        }}
+        media={isMultiLinkCategory && (!activeStandType.bannerImageUrl || heroImage.src === multiLinkDemoImage.src) ? <MultiLinkDemoVisual /> : undefined}
+        image={{ ...heroImage, priority: true }}
       />
 
       <SectionShell tone="soft" spacing="compact">

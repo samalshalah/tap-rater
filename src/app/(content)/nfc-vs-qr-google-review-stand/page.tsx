@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { FaqList } from "@/components/storefront/faq-list";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
+import { googleReviewCountertop } from "@/lib/stand-type-image";
 import { absoluteUrl, breadcrumbJsonLd, faqJsonLd, JsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -44,6 +45,7 @@ export default function NfcVsQrGoogleReviewStandPage() {
         title="NFC vs. QR code: why your review stand should use both"
         body={<p className="tr-body">A custom Google review stand gives customers two simple ways to reach the review form: tap with an NFC-enabled phone or scan a printed QR code.</p>}
         cta={{ href: "/product/google-review-stand", label: "Personalize a Google review stand" }}
+        image={{ ...googleReviewCountertop, priority: true }}
       />
 
       <SectionShell spacing="compact">

@@ -69,9 +69,9 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   const copy = getBusinessUsePageCopy(businessUse);
 
   return (
-    <main className={`tr-public-shell text-ink ${styles.page}`}>
+    <main className="tr-public-shell text-ink">
       <JsonLd data={breadcrumbJsonLd([{ name: "Solutions", href: "/solutions" }, { name: businessUse.title, href: `/solutions/${businessUse.slug}` }])} />
-      <PageHero className={styles.hero}
+      <PageHero
         spacing="compact"
         backLink={{ href: "/solutions", label: "Shop by business" }}
         eyebrow={businessUse.title}

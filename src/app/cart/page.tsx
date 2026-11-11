@@ -18,6 +18,7 @@ export default async function CartPage() {
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
+        variant="plain"
         spacing="compact"
         eyebrow="Cart"
         title="Review your order"
