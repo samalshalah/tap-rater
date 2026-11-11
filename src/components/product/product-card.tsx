@@ -1,13 +1,20 @@
 import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import Link from "next/link";
+import customProductGalleries from "@/data/custom-product-galleries.json";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { getReviewDestination } from "@/lib/product-page-content";
+import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
-import { getProductVisual } from "@/lib/storefront-visuals";
+import { getProductVisual, type StorefrontVisual } from "@/lib/storefront-visuals";
+
+const replacementThumbnails: Partial<Record<string, StorefrontVisual>> = {
+  "book-your-next-visit-stand": customProductGalleries["connect-with-us-stand"][0],
+  "view-our-menu-stand": customProductGalleries["menu-and-order-stand"][0]
+};
 
 export function ProductCard({ product, design }: { product: MigratedProduct; design?: "branded" }) {
-  const image = getProductVisual(product);
+  const image = replacementThumbnails[getCanonicalProductSlug(product.slug)] ?? getProductVisual(product);
   const category = getCategoryBySlug(product.categorySlug);
   const purchaseLabel = getPurchaseLabel(product, design);
   const destination = getReviewDestination(product);
