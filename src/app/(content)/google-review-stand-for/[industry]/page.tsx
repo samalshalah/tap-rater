@@ -114,7 +114,7 @@ export default async function IndustryGoogleReviewStandPage({ params }: PageProp
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container-narrow">
           <SectionHeader align="left" title="Custom design, clear destination" body="Add your business logo and optional name during setup. NFC tap and the printed QR code are prepared for the same Google review destination, and you approve the design before payment." />
-          <div className="mt-7 flex flex-wrap gap-3"><Link href="/product/google-review-stand" className="tr-button-primary">Build my custom stand</Link><Link href="/review-links-generator" className="tr-button-outline">Find my Google review link</Link></div>
+          <div className="mt-7 flex flex-wrap gap-3"><Link href="/product/google-review-stand" className="tr-button-primary">Build my custom stand</Link><Link href="/category/reviews" className="tr-button-outline">Browse all NFC review stands</Link></div>
         </div>
       </SectionShell>
 

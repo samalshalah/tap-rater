@@ -19,7 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           "/$", "/shop$", "/category/", "/product/", "/solutions$", "/solutions/",
           "/google-review-stand-for/", "/nfc-vs-qr-google-review-stand$",
-          "/review-links-generator$", "/how-it-works$", "/pricing$", "/shipping$",
+          "/how-it-works$", "/pricing$", "/shipping$",
           "/stand-bundles$", "/multi-link$", "/faqs$"
         ],
         disallow: "/"

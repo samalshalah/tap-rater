@@ -117,7 +117,6 @@ const publicPages = new Set([
   "/terms",
   "/privacy-policy",
   "/refund-policy",
-  "/review-links-generator",
   "/setup-new-taprater",
   "/change-taprater-link",
 ]);

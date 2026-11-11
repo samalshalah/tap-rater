@@ -78,7 +78,7 @@ describe("canonical public category URLs", () => {
     expect(paths).not.toContain("/category/custom-stands");
     expect(paths).not.toContain("/setup-new-taprater");
     expect(paths).not.toContain("/change-taprater-link");
-    expect(paths).toContain("/review-links-generator");
+    expect(paths).not.toContain("/review-links-generator");
   });
 
   it("omits retired product URLs even when the public catalog still returns them", async () => {

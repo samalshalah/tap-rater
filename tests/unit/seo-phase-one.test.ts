@@ -9,7 +9,6 @@ import { getDefaultPurchasableProductSize } from "@/lib/product-model";
 import { breadcrumbJsonLd, JsonLd, productJsonLd } from "@/lib/seo";
 import { metadata as setupMetadata } from "@/app/(content)/setup-new-taprater/page";
 import { metadata as changeMetadata } from "@/app/(content)/change-taprater-link/page";
-import { metadata as reviewToolMetadata } from "@/app/(content)/review-links-generator/page";
 
 const google = migratedProducts.find((product) => product.slug === "google-review-stand")!;
 const connect = migratedProducts.find((product) => product.slug === "connect-with-us-stand")!;
@@ -117,10 +116,8 @@ describe("public review-link tool and utility indexing", () => {
     expect(normalizeGoogleReviewLink(url)).toBeUndefined();
   });
 
-  it("keeps account utility forms out of search while restoring the useful legacy tool", () => {
+  it("keeps account utility forms out of search", () => {
     expect(setupMetadata.robots).toEqual({ index: false, follow: true });
     expect(changeMetadata.robots).toEqual({ index: false, follow: true });
-    expect(reviewToolMetadata.alternates?.canonical).toBe("/review-links-generator");
-    expect(reviewToolMetadata.robots).toBeUndefined();
   });
 });

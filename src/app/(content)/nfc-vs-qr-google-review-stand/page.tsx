@@ -75,7 +75,7 @@ export default function NfcVsQrGoogleReviewStandPage() {
           </div>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link href="/product/google-review-stand" className="tr-button-primary">Build my custom stand</Link>
-            <Link href="/review-links-generator" className="tr-button-outline">Find my Google review link</Link>
+            <Link href="/category/reviews" className="tr-button-outline">Browse all NFC review stands</Link>
           </div>
         </div>
       </SectionShell>

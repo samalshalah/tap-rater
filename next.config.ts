@@ -64,6 +64,7 @@ const nextConfig: NextConfig = {
       })),
       { source: "/faq", destination: "/faqs", permanent: true },
       { source: "/contact", destination: "/contact-us", permanent: true },
+      { source: "/review-links-generator", destination: "/product/google-review-stand", permanent: true },
       { source: "/shop-by-use", destination: "/solutions", permanent: true },
       { source: "/custom-stands", destination: brandedStandCatalogHref, permanent: true },
       { source: "/custom-branding", destination: brandedStandCatalogHref, permanent: true },

@@ -193,7 +193,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
         <div className="tr-container">
           <SectionHeader align="left" title="Questions & answers" />
           <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
-          {product.slug === "google-review-stand" ? <Link href="/review-links-generator" className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">Find your Google review link</Link> : null}
+          {product.slug === "google-review-stand" ? <p className="tr-body-sm mt-5">During stand setup, search for your business by name and city or paste your existing Google review link.</p> : null}
         </div>
       </SectionShell>
 
