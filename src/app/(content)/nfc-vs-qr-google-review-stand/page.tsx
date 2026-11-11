@@ -43,7 +43,7 @@ export default function NfcVsQrGoogleReviewStandPage() {
       <PageHero
         eyebrow="Google review stand buying guide"
         title="NFC vs. QR code: why your review stand should use both"
-        body={<p className="tr-body">A custom Google review stand gives customers two simple ways to reach the review form: tap with an NFC-enabled phone or scan a printed QR code.</p>}
+        body="A custom Google review stand gives customers two simple ways to reach the review form: tap with an NFC-enabled phone or scan a printed QR code."
         cta={{ href: "/product/google-review-stand", label: "Personalize a Google review stand" }}
         image={{ ...googleReviewCountertop, priority: true }}
       />

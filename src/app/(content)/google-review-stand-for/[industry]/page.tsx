@@ -95,14 +95,14 @@ export default async function IndustryGoogleReviewStandPage({ params }: PageProp
       <PageHero
         eyebrow={`Custom Google review stand for ${content.label.toLowerCase()}`}
         title={`${content.title} with your logo, NFC + QR`}
-        body={<p className="tr-body">{content.intro}</p>}
+        body={content.description}
         cta={{ href: "/product/google-review-stand", label: "Personalize your stand" }}
         image={{ src: content.image, alt: content.imageAlt, fit: "cover", priority: true }}
       />
 
       <SectionShell spacing="compact">
         <div className="tr-container">
-          <SectionHeader align="left" title={`How to set up a review stand for your ${content.singular}`} />
+          <SectionHeader align="left" title={`How to set up a review stand for your ${content.singular}`} body={content.intro} />
           <ol className="mt-8 tr-mobile-card-grid grid gap-5 md:grid-cols-3">
             <li className="rounded-xl border border-line bg-white p-6"><p className="tr-eyebrow">01</p><h2 className="mt-3 text-xl font-semibold">Choose the location</h2><p className="tr-body-sm mt-3">{content.placement}</p></li>
             <li className="rounded-xl border border-line bg-white p-6"><p className="tr-eyebrow">02</p><h2 className="mt-3 text-xl font-semibold">Check the link</h2><p className="tr-body-sm mt-3">{content.check}</p></li>

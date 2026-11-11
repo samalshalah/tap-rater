@@ -16,16 +16,19 @@ function cx(...classes: Array<string | false | null | undefined>) {
 export function SectionShell({
   children,
   className,
+  id,
   spacing = "default",
   tone = "white"
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
   spacing?: SectionSpacing;
   tone?: SectionTone;
 }) {
   return (
     <section
+      id={id}
       className={cx(
         tone === "soft" ? "tr-section-shell-soft" : "tr-section-shell",
         spacing === "hero" && "tr-section-hero",
@@ -108,30 +111,35 @@ export function PageHero({
   const fullPhoto = !media && image?.fit === "cover";
 
   return (
-    <SectionShell spacing={spacing} className={cx(cinematic && styles.hero, spacing === "hero" && "tr-prismatic-page-intro")}>
+    <SectionShell spacing={spacing} className={cx(styles.hero, spacing === "hero" && "tr-prismatic-page-intro")}>
       {spacing === "hero" ? <PrismaticWave variant="banner" /> : null}
       <div className={cx(
         "tr-container tr-page-hero",
+        styles.banner,
         !hasMedia && "tr-page-hero-text-only",
         cinematic && styles.frame,
         cinematic && (fullPhoto ? styles.photo : hasMedia ? styles.split : styles.textOnly),
         cinematic && fullPhoto && image?.placement === "right" && styles.photoOnRight
       )}>
         <div className={cx("tr-page-hero-copy", cinematic && styles.copy)}>
-          {backLink ? (
-            <Link href={backLink.href} className={cx("tr-editorial-link mb-6", cinematic && styles.back)}>
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              {backLink.label}
-            </Link>
-          ) : null}
           {eyebrow ? <p className="tr-eyebrow">{eyebrow}</p> : null}
           <h1 className={cx("mt-4 max-w-3xl", cinematic ? styles.title : "tr-page-title")}>{title}</h1>
           {body ? <div className="tr-page-hero-body mt-5 max-w-2xl">{body}</div> : null}
-          {cta ? (
-            <Link href={cta.href} className={cx("tr-editorial-link mt-7", cinematic && styles.cta)}>
-              {cta.label}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+          {cta || backLink ? (
+            <div className={styles.actions}>
+              {cta ? (
+                <Link href={cta.href} className={cx("tr-editorial-link", cinematic && styles.cta)}>
+                  {cta.label}
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              ) : null}
+              {backLink ? (
+                <Link href={backLink.href} className={cx("tr-editorial-link", styles.back)}>
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  {backLink.label}
+                </Link>
+              ) : null}
+            </div>
           ) : null}
         </div>
         {hasMedia ? (

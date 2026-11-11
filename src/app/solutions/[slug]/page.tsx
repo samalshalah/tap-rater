@@ -77,14 +77,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         eyebrow={businessUse.title}
         title={guide.headline || `NFC Stands for ${businessUse.title}`}
         cta={{ href: "#recommended-stands", label: "Find your stand" }}
-        body={
-          <>
-            <p>{guide.introduction || copy.intro}</p>
-            {!guide.introduction && copy.body ? (
-              <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div>
-            ) : null}
-          </>
-        }
+        body={copy.intro}
         image={{
           src: heroImage,
           alt: businessUse.title,
@@ -100,6 +93,9 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
             body="Start with one action. Each stand opens the destination you choose on your customer’s phone."
             cta={{ href: "/shop", label: "Shop all stands" }}
           />
+          {guide.introduction || copy.body ? (
+            <p className="tr-body-sm mt-4 max-w-3xl whitespace-pre-line">{guide.introduction || copy.body}</p>
+          ) : null}
           {recommendations.length > 0 ? <div className={`mt-8 tr-mobile-card-grid grid items-start gap-6 md:grid-cols-3 ${styles.recommendations}`}>
             {recommendations.map((item, index) => <article key={item.productSlug} className="min-w-0 rounded-xl border border-line bg-white p-4 sm:p-5">
               <p className="tr-eyebrow">0{index + 1} / {index === 0 ? "Start here" : "Another way to connect"}</p>

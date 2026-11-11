@@ -1,4 +1,5 @@
 import styles from "@/components/storefront/type-pages.module.css";
+import heroStyles from "@/components/storefront/business-pages.module.css";
 import type { Metadata } from "next";
 import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
@@ -58,17 +59,16 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <main className="tr-public-shell text-ink">
-      <SectionShell tone="soft" spacing="compact">
+      <SectionShell tone="soft" spacing="compact" id="stand-types" className={`scroll-mt-24 ${heroStyles.hero}`}>
         <div
-          id="stand-types"
-          className="tr-container scroll-mt-24"
+          className={`tr-container tr-prismatic-shop-intro mb-6 sm:mb-8 ${heroStyles.banner} ${heroStyles.shopBanner}`}
         >
-          <div className="tr-prismatic-shop-intro mb-6 sm:mb-8">
-            <PrismaticWave variant="banner" />
-            <p className="tr-eyebrow">Tap Rater shop</p>
-            <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
-            <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment.</p>
-          </div>
+          <PrismaticWave variant="banner" />
+          <p className="tr-eyebrow">Tap Rater shop</p>
+          <h1 className="tr-page-title mt-4">{query.design === "branded" ? "Stands with Branded + QR." : "Shop NFC and QR stands."}</h1>
+          <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment.</p>
+        </div>
+        <div className="tr-container">
           <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
             <div className="hidden space-y-5 lg:block lg:sticky lg:top-24 lg:self-start lg:space-y-0">
               <aside className={`${styles.filterPanel} hidden h-fit lg:block`}>

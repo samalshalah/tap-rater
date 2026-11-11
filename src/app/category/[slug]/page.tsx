@@ -110,6 +110,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   const copy = getBusinessUsePageCopy({ description, longContent: activeStandType.longContent });
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
   const optionsId = isReviewCategory ? "review-stand-options" : "stand-options";
+  const hasMultiLinkOptions = products.some(productSupportsMultiLink);
 
   return (
     <main className="tr-public-shell text-ink">
@@ -120,17 +121,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         eyebrow={category.eyebrow}
         title={title}
         cta={products.length > 0 ? { href: `#${optionsId}`, label: isReviewCategory ? "Browse all review stands" : "Browse all stand options" } : undefined}
-        body={
-          <>
-            <p>{copy.intro}</p>
-            {copy.body ? <div className="tr-body-sm mt-5 whitespace-pre-line">{copy.body}</div> : null}
-            {products.some(productSupportsMultiLink) ? (
-              <p className="tr-body-sm mt-4">
-                Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
-              </p>
-            ) : null}
-          </>
-        }
+        body={copy.intro}
         media={isMultiLinkCategory && (!activeStandType.bannerImageUrl || heroImage.src === multiLinkDemoImage.src) ? <MultiLinkDemoVisual /> : undefined}
         image={{ ...heroImage, priority: true }}
       />
@@ -146,6 +137,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
         </div>
+        {copy.body ? <p className="tr-body-sm mt-4 max-w-3xl whitespace-pre-line">{copy.body}</p> : null}
+        {hasMultiLinkOptions ? (
+          <p className="tr-body-sm mt-4 max-w-3xl">
+            Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
+          </p>
+        ) : null}
         <div className="tr-product-grid mt-6">
           {products.length > 0 ? (
             products.map((product) => <ProductCard key={product.slug} product={product} />)
