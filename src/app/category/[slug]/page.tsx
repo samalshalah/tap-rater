@@ -81,8 +81,14 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
   const visual = getCategoryVisual(category);
   const heroImage = getStandTypeHeroImage(category, activeStandType, products);
-  const title = activeStandType.title || category.title;
-  const description = activeStandType.shortDescription || activeStandType.description || category.description;
+  const isReviewCategory = category.slug === "reviews";
+  const standTypeTitle = activeStandType.title || category.title;
+  const standTypeDescription = activeStandType.shortDescription || activeStandType.description;
+  // Replace the original seeded copy on this landing page while keeping merchant edits.
+  const title = isReviewCategory && standTypeTitle === "Review Stands" ? "NFC Review Stands" : standTypeTitle;
+  const description = isReviewCategory && standTypeDescription === "Stands that send customers to a review destination."
+    ? category.description
+    : standTypeDescription || category.description;
   const copy = getBusinessUsePageCopy({ description, longContent: activeStandType.longContent });
   const buyerIntent = activeStandType.buyerIntent || category.buyerIntent;
 
@@ -94,6 +100,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         backLink={{ href: "/shop", label: "Shop all stands" }}
         eyebrow={category.eyebrow}
         title={title}
+        cta={isReviewCategory && products.length > 0 ? { href: "#review-stand-options", label: "Browse all review stands" } : undefined}
         body={
           <>
             <p>{copy.intro}</p>
@@ -120,7 +127,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="tr-eyebrow">{products.length} {products.length === 1 ? "stand" : "stands"}</p>
-            <h2 className="tr-section-title mt-2">Shop {title.toLowerCase()}</h2>
+            <h2 id={isReviewCategory ? "review-stand-options" : undefined} className="tr-section-title mt-2 scroll-mt-24">
+              {isReviewCategory ? "Shop NFC review stands by platform" : `Shop ${title.toLowerCase()}`}
+            </h2>
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
         </div>
@@ -136,7 +145,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </SectionShell>
       <CategoryBuyingGuide slug={category.slug} products={products} />
-      {category.slug === "reviews" ? (
+      {isReviewCategory ? (
         <SectionShell spacing="compact">
           <div className="tr-container">
             <h2 className="tr-section-title">Set up a Google review stand for your business</h2>

@@ -263,10 +263,10 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "reviews",
     title: "Review Stands",
     eyebrow: "Reviews",
-    description: "NFC tabletop stands that open Google, Yelp, Facebook, TripAdvisor, or other review destinations.",
+    description: "Shop custom NFC review stands for Google, Yelp, Facebook, Tripadvisor, and industry review sites. Add your logo and choose the page customers open when they tap the stand or scan its QR code.",
     seoTitle: "NFC Review Stands | Tap Rater",
-    seoDescription: "Shop NFC review stands for Google, Yelp, Facebook, TripAdvisor, and other review destinations.",
-    buyerIntent: "For businesses that want customers to tap and open a public review destination.",
+    seoDescription: "Shop custom NFC review stands with your logo and QR code for Google, Yelp, Facebook, Tripadvisor, and other review platforms.",
+    buyerIntent: "Choose a platform below, then add the link for your business location during setup.",
     aliases: ["review-stands", "review-plates", "google-review-products", "review-platform-products", "google-review-stands", "review-platform-stands", "google-review-plates"],
     seoCopy:
       "Review stands focus on one clear customer action: tap to open the review destination."

@@ -15,12 +15,13 @@ export type CategoryBuyingGuide = {
 
 export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGuide> = {
   reviews: {
-    heading: "Choose a review stand for the platform your customers use",
-    introduction: "A review stand connects a physical visit to an existing online business destination. Start with the profile you want customers to find, then select the design that matches that platform. The most useful choice is the one associated with the correct business and location, rather than simply the platform with the most recognizable logo.",
-    decision: "For a business with several branches, check each location's destination separately. For a specialist business, such as a dealership or hotel, inspect the exact public page before buying. Some platforms connect review eligibility to an account or completed transaction. A stand opens a link; it does not create that eligibility, submit feedback, or guarantee a rating.",
+    heading: "Choose an NFC review stand for your platform",
+    introduction: "Start with the listing your business uses. The printed platform name helps customers recognize what they are opening. The URL you provide determines which page and location they see.",
+    decision: "A salon or dealership can also choose a stand for an industry platform such as Booksy or DealerRater. Check the destination on a phone before ordering, since some platforms require an account or completed visit to leave a review.",
     options: [
       { slug: "google-review-stand", purpose: "Make a location's Google review form easy to reach.", consideration: "Confirm the business name and address for each branch." },
       { slug: "yelp-review-stand", purpose: "Help visitors discover your Yelp business page.", consideration: "Use a profile-discovery prompt; Yelp says businesses should not ask for reviews." },
+      { slug: "facebook-review-stand", purpose: "Open your business's Facebook Page.", consideration: "Check that Recommendations are enabled and visible to visitors if you want customers to find them." },
       { slug: "tripadvisor-review-stand", purpose: "Connect guests to a travel or hospitality listing.", consideration: "Check whether the hotel, restaurant, and attraction have separate pages." }
     ],
     setupHeading: "Prepare the right review destination",
@@ -31,7 +32,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
       { question: "Does a review stand automatically post a review?", answer: "No. It opens the destination on the customer's phone. The customer decides whether to sign in, write feedback, choose a rating, and submit it through the platform's own process." },
       { question: "Which review stand should I choose for several locations?", answer: "Choose the platform your business uses, then supply the correct URL for each location. Identical designs can use different destinations. Test each branch's link rather than assuming a company-wide page will direct customers to the right office." },
       { question: "Do all review stands include a printed QR code?", answer: "Every custom stand includes NFC, your logo, business name, and a QR code generated from the destination. Review the artwork preview before payment." },
-      { question: "Can the stand guarantee five-star reviews?", answer: "No. It makes a destination easier to access. Customers control their feedback, and the platform controls publication. Choose this product for convenient access, not a promised rating or search position." },
+      { question: "What is an NFC review stand?", answer: "It is a countertop sign with a built-in NFC tag. Customers hold a compatible phone near the tap area or scan the printed QR code with their camera to open the link you provide. They do not need a Tap Rater app." },
       { question: "Should I use a public review page or a private survey?", answer: "Choose a review stand when your purpose is access to a public platform. For comments sent through your own survey, compare Feedback Stands. The destination and printed invitation should clearly explain what customers are opening." }
     ]
   },
