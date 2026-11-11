@@ -2,6 +2,7 @@ import { MultiLinkDemoVisual } from "@/components/storefront/multi-link-demo-vis
 import { getStandTypeHeroImage } from "@/lib/stand-type-image";
 import { getCategoryVisual } from "@/lib/storefront-visuals";
 import { CategoryBuyingGuide } from "@/components/storefront/category-buying-guide";
+import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { GoogleReviewStandGuideLinks } from "@/components/storefront/google-review-stand-guide-links";
@@ -28,6 +29,13 @@ const legacyMultiLinkCopy = {
   intro: "Add a hosted Multi-Link page to compatible NFC and QR stands.",
   description: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 10 customer links."
 };
+
+const featuredReviewPlatforms = [
+  { label: "Google", slug: "google-review-stand" },
+  { label: "Yelp", slug: "yelp-review-stand" },
+  { label: "Facebook", slug: "facebook-review-stand" },
+  { label: "Tripadvisor", slug: "tripadvisor-review-stand" }
+];
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -95,6 +103,9 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
   const heroImage = getStandTypeHeroImage(category, activeStandType, products);
   const isReviewCategory = category.slug === "reviews";
+  const reviewPlatforms = isReviewCategory
+    ? featuredReviewPlatforms.filter(({ slug }) => products.some((product) => product.slug === slug))
+    : [];
   const isMultiLinkCategory = category.slug === "website-links";
   const defaultStandType = lockedStandTypes.find((standType) => standType.slug === activeStandType.slug);
   const standTypeDescription = (activeStandType.shortDescription || activeStandType.description)?.trim();
@@ -138,6 +149,20 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
         </div>
         {copy.body ? <p className="tr-body-sm mt-4 max-w-3xl whitespace-pre-line">{copy.body}</p> : null}
+        {isReviewCategory ? (
+          <p className="tr-body-sm mt-4 max-w-3xl">
+            Your custom NFC stand includes your business logo and a printed QR code. Customers can tap with a compatible phone or scan the code to open the review page or business listing you choose. Approve your artwork before paying.
+          </p>
+        ) : null}
+        {reviewPlatforms.length > 0 ? (
+          <nav aria-label="Review stand platforms" className="mt-5 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
+            {reviewPlatforms.map(({ label, slug }) => (
+              <Link key={slug} href={`/product/${slug}`} prefetch={false} className="tr-button-outline">
+                {label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
         {hasMultiLinkOptions ? (
           <p className="tr-body-sm mt-4 max-w-3xl">
             Optional hosted Multi-Link costs {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page, in addition to the physical stand price. Includes up to {hostedMultiLinkServiceAddon.maxLinks} editable links.
