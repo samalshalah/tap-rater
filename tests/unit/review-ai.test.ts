@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from "vitest";
 import {eligibleForAutoReply,type AutoReplySettings} from "@/lib/review-ai-options";
-import {generateReviewSuggestions,removeUnsupportedReplyClaims,replyQualityIssues} from "@/lib/review-ai-provider";
+import {generateAutomaticReviewReply,generateReviewSuggestions,removeUnsupportedReplyClaims,replyQualityIssues} from "@/lib/review-ai-provider";
 import {suggestReviewReply,runSampleAutoReplies,saveAutoSettings} from "@/lib/review-ai";
 const settings:AutoReplySettings={enabled:true,four:true,five:true,style:"friendly",version:1};
 const id="9fb3ee3b-0920-4db5-a03d-7245987a8751";
@@ -75,4 +75,28 @@ it("rejects copied praise without blocking specific complaint acknowledgments",(
  const echoed={...outputs,personal:"It warms our hearts to know you enjoyed our fresh and tasty meat. We look forward to seeing you again soon."};
  expect(replyQualityIssues(echoed,[],true,'Food was amazing, meat always fresh and tasty')).toContain('personal: echoes descriptive wording from the review');
  expect(replyQualityIssues(outputs,[],true,'Food was amazing, meat always fresh and tasty')).toEqual([]);
+});
+
+it('repairs an automatic reply that is too brief', async () => {
+ const run = vi.fn()
+  .mockResolvedValueOnce({response:{reply:'Thank you!'}})
+  .mockResolvedValueOnce({response:{reply:outputs.friendly}});
+ await expect(generateAutomaticReviewReply('Example',5,'Wonderful experience', 'friendly',run)).resolves.toBe(outputs.friendly);
+ expect(run.mock.calls[1][1].messages[0].content).toContain('incomplete or too brief');
+ expect(run.mock.calls[1][1].messages).toHaveLength(2);
+});
+
+it('offers a starter draft after malformed output and a failed quality retry', async () => {
+ const run = vi.fn()
+  .mockResolvedValueOnce({response:'malformed'})
+  .mockResolvedValueOnce({response:{reply:'Thanks!'}});
+ await expect(generateAutomaticReviewReply('Example',5,'Wonderful experience','friendly',run)).resolves.toEqual({
+  text:expect.stringContaining('Thank you'), reason:'quality_check'
+ });
+});
+
+it('lets provider failures reach the worker retry handling', async () => {
+ const run = vi.fn().mockRejectedValue(new Error('provider unavailable'));
+ await expect(generateAutomaticReviewReply('Example',5,'Wonderful experience','friendly',run)).rejects.toThrow('provider unavailable');
+ expect(run).toHaveBeenCalledTimes(1);
 });

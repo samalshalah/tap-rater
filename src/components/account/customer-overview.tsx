@@ -33,7 +33,9 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
 
   const locations = reviews?.locations ?? [];
   const connected = locations.filter(location => location.connected).length;
-  const connectionIssues = locations.filter(location => !location.connected || location.last_error).length;
+  const connectionIssues = locations.length - connected;
+  const importIssues = locations.filter(location => location.connected && location.last_error).length;
+  const draftingIssues = locations.filter(location => location.connected && location.draft_error).length;
   const replyDrafts = locations.reduce((count, location) => count + Number(location.active_draft_count || 0), 0);
   const reviewCount = locations.reduce((count, location) => count + Number(location.review_count || 0), 0);
   const ratings = locations.reduce((total, location) => ({
@@ -44,6 +46,8 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
   const alerts = [
     proofCount > 0 && { title: `${proofCount} stand design ${proofCount === 1 ? 'proof' : 'proofs'} to review`, href: '/account/stands' },
     connectionIssues > 0 && { title: `${connectionIssues} Google ${connectionIssues === 1 ? 'location needs' : 'locations need'} a connection check`, href: '/account/locations' },
+    importIssues > 0 && { title: `Review import needs attention at ${importIssues} ${importIssues === 1 ? 'location' : 'locations'}`, href: '/account/locations' },
+    draftingIssues > 0 && { title: `Reply drafting is delayed at ${draftingIssues} ${draftingIssues === 1 ? 'location' : 'locations'}`, href: '/account/locations' },
     replyDrafts > 0 && { title: `${number.format(replyDrafts)} current reply ${replyDrafts === 1 ? 'draft' : 'drafts'}`, href: '/account/reviews' },
     pendingSetup && { title: 'Multi-Link setup is pending', href: '/account/stands' },
     paymentCount > 0 && { title: `${paymentCount} ${paymentCount === 1 ? 'order is' : 'orders are'} awaiting Tap Rater payment review`, href: '/account/orders' }

@@ -3,7 +3,7 @@ import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-
 import {checkNextReviewPolicy} from '../review-policy-worker';
 import { randomUUID } from "node:crypto";
 import { GoogleBusinessError } from "./client";
-import { generateAutomaticReviewReply } from "../review-ai-provider";
+import { generateAutomaticReviewReply, type AutomaticReplyForReview } from "../review-ai-provider";
 import type { ReplyStyle } from "../review-ai-options";
 import type { ReplySuggestions } from "../review-ai-options";
 import type { AiUsageContext } from "../ai-usage-meter";
@@ -12,40 +12,68 @@ import { syncLiveReviews } from "./live-review-workspaces";
 import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear, verifyAndRecoverLiveReply } from "./live-review-actions";
 import { reviewTaskBoundary } from './review-task-boundary';
 
-type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions>;
+type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions|AutomaticReplyForReview>;
 export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate:AutomaticReplyGenerator=generateAutomaticReviewReply,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
  const activationAt=reviewTaskBoundary(link.initial_import_completed_at,link.consent_at);
  const claimTime=new Date().toISOString();
- const rows=await sql`WITH candidate AS (SELECT id,auto_attempt_at AS prior_attempt FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
+ const clearIdleWarning = Boolean(link.draft_error && !String(link.draft_error).startsWith('The draft was saved.'));
+ const [review]=await sql`WITH eligible AS NOT MATERIALIZED (
+ SELECT id FROM google_live_reviews WHERE business_id=${businessId} AND NOT suspected_spam AND draft='' AND draft_generated_at IS NULL
  AND approved_version IS NULL AND publish_state='idle' AND coalesce(data->'reviewReply'->>'comment','')=''
  AND (${Boolean(link.draft_low_stars)} OR data->>'starRating' NOT IN ('ONE','TWO','THREE'))
- AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days' AND (old_reply_requested_at>${activationAt}::timestamptz OR NULLIF(data->>'createTime','')::timestamptz>${activationAt}::timestamptz) AND (auto_attempt_at IS NULL OR auto_attempt_at<now()-interval '15 minutes')
- ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(data->>'createTime','')::timestamptz>${activationAt}::timestamptz AND ((data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,auto_attempt_at NULLS FIRST,created_at,id LIMIT 1 FOR UPDATE SKIP LOCKED)
+ AND NOT auto_schedule_cancelled AND fetched_at>now()-interval '30 days'
+ AND (old_reply_requested_at>${activationAt}::timestamptz OR NULLIF(data->>'createTime','')::timestamptz>${activationAt}::timestamptz)
+ ), candidate AS (
+ SELECT r.id,r.auto_attempt_at AS prior_attempt FROM google_live_reviews r JOIN eligible ON eligible.id=r.id
+ WHERE r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes'
+ ORDER BY CASE WHEN ${Boolean(link.auto_enabled)} AND NULLIF(r.data->>'createTime','')::timestamptz>${activationAt}::timestamptz AND ((r.data->>'starRating'='FOUR' AND ${Boolean(link.auto_four)}) OR (r.data->>'starRating'='FIVE' AND ${Boolean(link.auto_five)})) THEN 0 ELSE 1 END,r.auto_attempt_at NULLS FIRST,r.created_at,r.id LIMIT 1 FOR UPDATE OF r SKIP LOCKED
+ ), claimed AS (
  UPDATE google_live_reviews r SET auto_attempt_at=${claimTime}::timestamptz FROM candidate WHERE r.id=candidate.id
  AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.publish_state='idle' AND r.approved_version IS NULL
- AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*,candidate.prior_attempt`;
- if(!rows.length){
-  // A quiet queue is still a completed background check. Do not hide a retryable error.
-  await sql`UPDATE google_review_links SET draft_checked_at=now() WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
+ AND (r.auto_attempt_at IS NULL OR r.auto_attempt_at<now()-interval '15 minutes') RETURNING r.*,candidate.prior_attempt
+ )
+ SELECT claimed.*, CASE WHEN claimed.id IS NULL AND ${clearIdleWarning}
+  THEN EXISTS(SELECT 1 FROM eligible) END AS work_waiting
+ FROM (SELECT 1) state LEFT JOIN claimed ON true`;
+ if(!review?.id){
+  // Reviews waiting for their cooldown keep the warning. A finished queue clears it.
+  if (clearIdleWarning && review?.work_waiting === false) {
+   const cleared = await sql`UPDATE google_review_links SET draft_checked_at=now(),draft_error=NULL
+    WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}
+    AND draft_error IS NOT DISTINCT FROM ${link.draft_error} RETURNING business_id`;
+   if (cleared.length) await resolveReviewWorkerAlert(sql,businessId,'draft');
+  } else {
+   await sql`UPDATE google_review_links SET draft_checked_at=now() WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
+  }
   return {drafted:false};
  }
- const review=rows[0];
+ let stage: 'generation' | 'save' | 'schedule' = 'generation';
  try{
   if(review.data.comment?.trim())await reserveAi(businessId,sql);
   const generated=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',link.auto_style as ReplyStyle,undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
-  const reply=typeof generated==='string'?generated:generated[link.auto_style as ReplyStyle];
+  const fallback = typeof generated === 'object' && 'reason' in generated ? generated : null;
+  const reply = typeof generated === 'string' ? generated
+   : 'reason' in generated ? generated.text : generated[link.auto_style as ReplyStyle];
+  stage = 'save';
   const saved=await sql`UPDATE google_live_reviews r SET draft=${reply},version=r.version+1,
-   approved_version=NULL,draft_generated_at=now() FROM google_review_links l,businesses b,customers c,google_business_connections g
+   approved_version=NULL,draft_generated_at=now(),auto_schedule_cancelled=${Boolean(fallback)}
+   FROM google_review_links l,businesses b,customers c,google_business_connections g
    WHERE r.id=${review.id} AND r.version=${review.version} AND r.auto_attempt_at=${claimTime}::timestamptz
-   AND NOT r.suspected_spam AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
+   AND NOT r.suspected_spam AND NOT r.auto_schedule_cancelled AND r.draft='' AND r.draft_generated_at IS NULL AND r.approved_version IS NULL AND r.publish_state='idle'
    AND coalesce(r.data->'reviewReply'->>'comment','')='' AND r.business_id=l.business_id AND l.enabled AND l.ai_consent
    AND l.settings_version=${link.settings_version} AND (l.draft_low_stars OR r.data->>'starRating' NOT IN ('ONE','TWO','THREE')) AND b.id=l.business_id AND b.customer_id=l.customer_id
    AND c.id=b.customer_id AND c.account_status='active' AND g.owner=l.owner AND g.google_subject=l.google_subject RETURNING r.id`;
-  await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId}`;
+  await sql`UPDATE google_review_links SET draft_error=NULL,draft_checked_at=now() WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
   await resolveReviewWorkerAlert(sql,businessId,'draft');
-  if(saved.length)await scheduleSavedReply(String(review.id),Number(review.version)+1,sql);
+  if (saved.length) {
+   if (fallback) console.info('Automatic review fallback saved', {businessId, reason:fallback.reason});
+   else {
+    stage = 'schedule';
+    await scheduleSavedReply(String(review.id), Number(review.version)+1, sql);
+   }
+  }
   return {drafted:saved.length>0};
  }catch(error){
   if(error instanceof ReviewAiWaitError){
@@ -61,7 +89,11 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
    return {drafted:false,deferred:error.reason};
   }
   const rateLimited=error instanceof LiveReviewError&&error.status===429;
-  const failureMessage=rateLimited?'Draft generation is queued until the provider cooldown resets.':'Automatic drafting could not finish. It will retry; you can also write a draft manually.';
+  if (!rateLimited) console.warn('Automatic review draft failed', {businessId, stage});
+  const failureMessage = rateLimited ? 'Draft generation is queued until the provider cooldown resets.'
+   : stage === 'save' ? 'The automatic draft could not be saved. Tap Rater will retry.'
+   : stage === 'schedule' ? 'The draft was saved. Open Reviews to check its posting status.'
+   : 'Automatic drafting could not finish. Tap Rater will retry.';
   const failures=rateLimited?0:await reviewWorkerFailure(sql,businessId,'draft');
   const retryMinutes=rateLimited?5:Math.min(5,2**Math.min(failures,3));
   await sql`WITH released AS (

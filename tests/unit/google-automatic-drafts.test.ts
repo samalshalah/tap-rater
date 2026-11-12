@@ -10,6 +10,16 @@ describe('automatic draft processing',()=>{
  it('requires per-location AI permission',async()=>{const generate=vi.fn();expect(await prepareAutomaticDraft(id,rows([{...link,ai_consent:false}]),generate)).toEqual({drafted:false});expect(generate).not.toHaveBeenCalled();});
  it('processes negative reviews but saves only unapproved drafts',async()=>{const sql=rows([link],[review],[{id}],[{allowed:true}],[{id}],[]);const generate=vi.fn().mockResolvedValue(suggestions);expect(await prepareAutomaticDraft(id,sql,generate)).toEqual({drafted:true});expect(generate).toHaveBeenCalledWith('Example',1,'Disappointing visit','friendly',undefined,{businessId:id,customerId:id,service:'review_automatic'});const query=sql.mock.calls[4][0].join('?');expect(query).toContain('approved_version=NULL');expect(query).toContain("r.draft=''");expect(query).toContain('r.version=');expect(query).toContain('b.customer_id=l.customer_id');expect(query).toContain('g.google_subject=l.google_subject');});
  it('records a quiet draft check without calling AI or clearing retry errors',async()=>{const generate=vi.fn(),sql=rows([link],[],[]);expect(await prepareAutomaticDraft(id,sql,generate)).toEqual({drafted:false});expect(generate).not.toHaveBeenCalled();const query=sql.mock.calls[2][0].join('?');expect(query).toContain('draft_checked_at=now()');expect(query).toContain('settings_version=');expect(query).not.toContain('draft_error=NULL');expect(sql.mock.calls[2]).toContain(id);});
+ it.each([true,false])('clears a drafting warning only when work_waiting is false (%s)',async waiting=>{
+  const draft_error='Automatic drafting could not finish. Tap Rater will retry.';
+  const sql=rows([{...link,draft_error}],[{id:null,work_waiting:waiting}],[{business_id:id}],[]);
+  const generate=vi.fn();
+  expect(await prepareAutomaticDraft(id,sql,generate)).toEqual({drafted:false});
+  expect(generate).not.toHaveBeenCalled();
+  const queries=sql.mock.calls.map((call:any)=>call[0].join('?'));
+  expect(queries.some((query:string)=>query.includes('draft_error=NULL'))).toBe(!waiting);
+  expect(queries.some((query:string)=>query.includes('SET resolved_at=now()'))).toBe(!waiting);
+ });
  it('does not overwrite a human edit or approval made during generation',async()=>{expect(await prepareAutomaticDraft(id,rows([link],[review],[{id}],[{allowed:true}],[],[]),vi.fn().mockResolvedValue(suggestions))).toEqual({drafted:false});});
  it('records a retryable failure without saving or publishing',async()=>{const sql=rows([link],[review],[{id}],[{allowed:true}],[]);expect(await prepareAutomaticDraft(id,sql,vi.fn().mockRejectedValue(new Error('provider unavailable')))).toEqual({drafted:false});const queries=sql.mock.calls.map((call:any)=>call[0].join('?'));expect(queries.some((query:string)=>query.includes('INSERT INTO review_worker_alerts'))).toBe(true);expect(queries.some((query:string)=>query.includes('draft_error='))).toBe(true);});
  it('never publishes from scheduled work even when the publishing flag is true',async()=>{
@@ -21,6 +31,19 @@ describe('automatic draft processing',()=>{
 });
 
 describe('opt-in positive review autopilot',()=>{
+ it('saves a starter draft and excludes it from automatic posting',async()=>{
+  const auto={...link,auto_enabled:true,auto_four:true,auto_five:true};
+  const sql=rows([auto],[{...review,data:{...review.data,starRating:'FIVE'}}],[{id}],[{allowed:true}],[{id}],[]);
+  const publish=vi.fn();
+  const fallback={text:'Thank you for the five stars.',reason:'quality_check' as const};
+  expect(await prepareAutomaticDraft(id,sql,async()=>fallback,publish)).toEqual({drafted:true});
+  const save=sql.mock.calls.find((call:any)=>call[0].join('?').includes('SET draft='));
+  expect(save).toContain(fallback.text);
+  expect(save[0].join('?')).toContain('auto_schedule_cancelled=?');
+  expect(save[2]).toBe(true);
+  expect(sql.mock.calls.some((call:any)=>call[0].join('?').includes('SET scheduled_at='))).toBe(false);
+  expect(publish).not.toHaveBeenCalled();
+ });
  it.each(['FOUR','FIVE'])('schedules a new selected %s review without publishing during generation',async starRating=>{
   vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');
   const auto={...link,auto_enabled:true,auto_four:true,auto_five:true,consent_at:'2026-10-20T00:00:00Z'};
