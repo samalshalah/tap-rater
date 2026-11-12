@@ -76,7 +76,7 @@ export async function publishLiveReply(actor:ReviewActor,id:string,version:numbe
       AND NOT r.auto_schedule_cancelled AND NOT r.suspected_spam AND r.data->>'comment' IS NOT DISTINCT FROM ${current.comment||null}
       AND r.data->>'starRating'=${current.starRating} AND coalesce(r.data->'reviewReply'->>'comment','')=${current.reviewReply?.comment||''}
       AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.settings_version=${link.settings_version}
-      AND l.consent_at=${link.consent_at} AND r.schedule_consent_at=l.consent_at RETURNING r.version`;
+      AND r.schedule_consent_at=l.consent_at RETURNING r.version`;
     if(rebased.length)return publishLiveReply(actor,id,Number(rebased[0].version),automatic,sql,makeClient,true);
    }
   }
@@ -140,7 +140,7 @@ export async function reconcileLiveReply(actor:ReviewActor,id:string,sql=liveDb(
   publish_state=${nextState},version=version+1,
   scheduled_at=CASE WHEN ${retryable} THEN now() ELSE NULL END,
   scheduled_version=CASE WHEN ${retryable} THEN version+1 ELSE NULL END,
-  schedule_consent_at=CASE WHEN ${retryable} THEN ${link.consent_at}::timestamptz ELSE NULL END,
+  schedule_consent_at=CASE WHEN ${retryable} THEN schedule_consent_at ELSE NULL END,
   schedule_failures=CASE WHEN ${retryable} THEN schedule_failures+1 WHEN ${hasOtherReply} THEN 0 ELSE schedule_failures END,
   last_publish_error=CASE WHEN ${matched||hasOtherReply||retryable} THEN NULL ELSE last_publish_error END,
   auto_schedule_cancelled=CASE WHEN ${hasOtherReply} THEN true ELSE auto_schedule_cancelled END
@@ -155,8 +155,10 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
  const {review,link}=await loadLiveReview(actor,id,sql);
  if(String(review.business_id)!==businessId)throw new LiveReviewError('This review does not belong to the selected location.',404);
  if(['publishing','uncertain'].includes(review.publish_state))return reconcileLiveReply(actor,id,sql,makeClient);
- if(review.publish_state!=='idle'||!review.draft||Number(review.schedule_failures||0)<1)throw new LiveReviewError('This review is no longer a failed automatic reply. Refresh the location status.');
+ const failed = Number(review.schedule_failures || 0) > 0 || (!automatic && Boolean(review.last_publish_error));
+ if(review.publish_state!=='idle'||!String(review.draft || '').trim()||review.scheduled_at||!failed)throw new LiveReviewError('This review is no longer a failed automatic reply. Refresh the location status.');
  const current=await (await makeClient(String(link.owner))).getReview(String(review.resource));
+ if(current.reviewId!==review.data.reviewId||(current.name&&current.name!==review.resource))throw new LiveReviewError('Google returned a different review. No reply was queued.');
  const actualReply=String(current.reviewReply?.comment||'').trim();
  if(actualReply){
   const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=NULL,scheduled_version=NULL,schedule_consent_at=NULL,schedule_failures=0,last_publish_error=NULL,auto_schedule_cancelled=true
@@ -167,13 +169,29 @@ export async function verifyAndRecoverLiveReply(actor:ReviewActor,id:string,busi
  }
  const rating=reviewStars(current),starEnabled=(rating===4&&link.auto_four)||(rating===5&&link.auto_five);
  const withinConsent=Boolean(review.old_reply_requested_at||(current.createTime&&link.consent_at&&new Date(current.createTime).getTime()>new Date(link.consent_at).getTime()));
- if(!link.enabled||!link.ai_consent||!link.auto_enabled||!link.consent_at||!starEnabled||review.suspected_spam||review.auto_schedule_cancelled||!withinConsent){
+ const contentChanged = current.starRating !== review.data.starRating
+  || (current.comment || '').trim() !== (review.data.comment || '').trim()
+  || review.last_publish_error === 'The review text, rating, or reply changed on Google. Refresh it before publishing.';
+ if(contentChanged || !link.enabled||!link.ai_consent||!link.auto_enabled||!link.consent_at||!starEnabled||review.suspected_spam||review.auto_schedule_cancelled||review.approved_version!=null||!withinConsent){
   await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=NULL,scheduled_version=NULL,schedule_consent_at=NULL,auto_schedule_cancelled=true
    WHERE id=${id} AND version=${review.version} AND publish_state='idle'`;
   return {resolved:true,published:false,alreadyReplied:false,queued:false,needsAttention:true};
  }
- const updated=await sql`UPDATE google_live_reviews SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=version+1,scheduled_at=now(),scheduled_version=version+1,schedule_consent_at=${link.consent_at},schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},last_publish_error=NULL,auto_schedule_cancelled=false
-  WHERE id=${id} AND version=${review.version} AND publish_state='idle' AND schedule_failures>0 AND coalesce(data->'reviewReply'->>'comment','')='' RETURNING id`;
+ const updated=await sql`UPDATE google_live_reviews r SET data=${JSON.stringify(current)}::jsonb,fetched_at=now(),version=r.version+1,
+  scheduled_at=now(),scheduled_version=r.version+1,schedule_consent_at=l.consent_at,
+  schedule_failures=${automatic?Number(review.schedule_failures||0)+1:0},last_publish_error=NULL
+  FROM google_review_links l,businesses b,customers c,google_business_connections g
+  WHERE r.id=${id} AND r.version=${review.version} AND r.business_id=l.business_id AND r.publish_state='idle'
+  AND r.scheduled_at IS NULL AND (r.schedule_failures>0 OR (${!automatic} AND nullif(r.last_publish_error,'') IS NOT NULL))
+  AND NOT r.suspected_spam AND NOT r.auto_schedule_cancelled AND r.approved_version IS NULL AND r.draft=${review.draft}
+  AND coalesce(r.data->'reviewReply'->>'comment','')=''
+  AND b.id=l.business_id AND b.customer_id=l.customer_id AND c.id=b.customer_id AND c.account_status='active'
+  AND marketing_location_allowed(b.id) AND g.owner=l.owner AND g.google_subject=l.google_subject
+  AND l.owner=${link.owner} AND l.google_subject=${link.google_subject} AND l.parent=${link.parent}
+  AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.settings_version=${link.settings_version} AND l.consent_at IS NOT NULL
+  AND ((${rating}::int=4 AND l.auto_four) OR (${rating}::int=5 AND l.auto_five))
+  AND (r.old_reply_requested_at IS NOT NULL OR ${current.createTime||null}::timestamptz>l.consent_at)
+  RETURNING r.id`;
  if(!updated.length)throw new LiveReviewError('This review changed during the Google check. Refresh its status.');
  return {resolved:true,published:false,alreadyReplied:false,queued:true,needsAttention:false};
 }

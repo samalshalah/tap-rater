@@ -58,6 +58,7 @@ export async function adminWorkerHealth(sql=liveDb()){
     (SELECT coalesce(sum(u.units),0) FROM marketing_usage_reservations u WHERE u.business_id=b.id AND u.service='ai' AND u.month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS monthly_ai_used,
     marketing_location_allowed(b.id) AS licensed,
     (SELECT count(*) FROM unnest(l.ai_hour_reservations) AS t WHERE t>now()-interval '1 hour') AS ai_hour_used,
+    coalesce(l.ai_hourly_limit_override,20) AS ai_hour_limit,
     r.*,a.alerts,a.last_failure,a.email_sent,a.alert_stages,p.profile_checked,p.profile_drafts,p.profile_errors,
     s.enabled AS heatmap_enabled,s.cadence,h.scan_at,h.scan_pending,h.scan_errors
     FROM businesses b JOIN customers c ON c.id=b.customer_id LEFT JOIN customer_marketing_access ma ON ma.customer_id=b.customer_id LEFT JOIN marketing_location_access mla ON mla.business_id=b.id AND mla.customer_id=b.customer_id LEFT JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=b.customer_id
@@ -73,7 +74,7 @@ export async function adminWorkerHealth(sql=liveDb()){
       count(*) FILTER(WHERE coalesce(data->'reviewReply'->>'comment','')='' AND publish_state='idle' AND scheduled_at IS NULL AND old_reply_requested_at IS NOT NULL AND draft='' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS waiting,
       count(*) FILTER(WHERE draft<>'' AND publish_state='idle' AND scheduled_at IS NULL) AS manual_drafts,
       count(*) FILTER(WHERE publish_state='uncertain') AS uncertain,
-      count(*) FILTER(WHERE publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>'' AND coalesce(data->'reviewReply'->>'comment','')='') AS failed_publish,
+      count(*) FILTER(WHERE publish_state='idle' AND (schedule_failures>0 OR nullif(last_publish_error,'') IS NOT NULL) AND scheduled_at IS NULL AND draft<>'' AND coalesce(data->'reviewReply'->>'comment','')='') AS failed_publish,
       coalesce(jsonb_agg(jsonb_build_object(
         'id',id,'reviewer',coalesce(data#>>'{reviewer,displayName}','Google reviewer'),
         'rating',data->>'starRating','comment',coalesce(data->>'comment',''),'review_date',coalesce(data->>'createTime',data->>'updateTime'),
@@ -81,7 +82,7 @@ export async function adminWorkerHealth(sql=liveDb()){
         'issue',CASE WHEN publish_state IN ('publishing','uncertain') THEN 'uncertain' ELSE 'failed' END,
         'publish_state',publish_state,'schedule_failures',schedule_failures
       ) ORDER BY CASE WHEN publish_state IN ('publishing','uncertain') THEN 0 ELSE 1 END,created_at DESC)
-        FILTER(WHERE (publish_state IN ('publishing','uncertain') OR (publish_state='idle' AND schedule_failures>0 AND scheduled_at IS NULL AND draft<>''))
+        FILTER(WHERE (publish_state IN ('publishing','uncertain') OR (publish_state='idle' AND (schedule_failures>0 OR nullif(last_publish_error,'') IS NOT NULL) AND scheduled_at IS NULL AND draft<>''))
           AND (publish_state IN ('publishing','uncertain') OR coalesce(data->'reviewReply'->>'comment','')='')),'[]'::jsonb) AS problem_reviews,
       min(scheduled_at) FILTER(WHERE publish_state='idle' AND NOT suspected_spam AND NOT auto_schedule_cancelled) AS next_reply
       FROM google_live_reviews r WHERE r.business_id=b.id) r ON true

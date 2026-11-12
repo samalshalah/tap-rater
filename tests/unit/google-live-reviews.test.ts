@@ -1,5 +1,5 @@
 import {describe,it,expect,vi,afterEach} from 'vitest';
-import {authorizedLink,isAutomaticCandidate,publishLiveReply,reconcileLiveReply,syncLiveReviews,suggestLiveReply,saveLiveSettings,bindGoogleLocation,stopLiveReviews} from '@/lib/google-business/live-reviews';
+import {authorizedLink,isAutomaticCandidate,publishLiveReply,reconcileLiveReply,syncLiveReviews,suggestLiveReply,saveLiveSettings,bindGoogleLocation,stopLiveReviews,verifyAndRecoverLiveReply} from '@/lib/google-business/live-reviews';
 const id='9fb3ee3b-0920-4db5-a03d-7245987a8751';
 const data={reviewId:'r1',starRating:'FIVE' as const,comment:'Lovely dress',createTime:'2026-10-20T12:00:00Z',updateTime:'2026-10-20T12:00:00Z'};
 const review={id,business_id:id,resource:'accounts/a/locations/l/reviews/r1',data,draft:'Thank you for visiting!',version:2,publish_state:'idle'};
@@ -53,6 +53,33 @@ describe('live Google review safety',()=>{
   const google=client();google.getReview.mockResolvedValue({...data,reviewReply:{comment:review.draft}} as any);
   const sql=sqlRows([{...review,publish_state:'uncertain',attempted_reply:review.draft,attempted_at:new Date(Date.now()-120000).toISOString(),attempt_id:id}],[link],[{id}],[{pending:false}],[]);
   expect(await reconcileLiveReply({kind:'admin'},id,sql,async()=>google)).toEqual({resolved:true,published:true,alreadyReplied:false,queued:false,needsAttention:false});expect(google.publishReply).not.toHaveBeenCalled();
+ });
+ it('checks Google before requeuing a failed reply and preserves exact consent from Postgres',async()=>{
+  const google=client();
+  const failed={...review,schedule_failures:0,last_publish_error:'Concurrent queue update'};
+  const sql=sqlRows([failed],[link],[{id}]);
+  expect(await verifyAndRecoverLiveReply({kind:'admin'},id,id,sql,async()=>google)).toMatchObject({queued:true});
+  expect(google.getReview).toHaveBeenCalledExactlyOnceWith(review.resource);
+  expect(google.publishReply).not.toHaveBeenCalled();
+  const [query,...parameters]=sql.mock.calls[2];
+  expect(query.join('?')).toContain('schedule_consent_at=l.consent_at');
+  expect(query.join('?')).toContain('l.settings_version=');
+  expect(parameters).not.toContain(link.consent_at);
+ });
+ it('holds a failed draft when the live Google review changed',async()=>{
+  const google=client();
+  google.getReview.mockResolvedValue({...data,comment:'Changed after the draft'});
+  const sql=sqlRows([{...review,schedule_failures:1}],[link],[]);
+  expect(await verifyAndRecoverLiveReply({kind:'admin'},id,id,sql,async()=>google)).toMatchObject({queued:false,needsAttention:true});
+  expect(sql.mock.calls[2][0].join('?')).toContain('auto_schedule_cancelled=true');
+  expect(google.publishReply).not.toHaveBeenCalled();
+ });
+ it('records an existing Google reply without sending another',async()=>{
+  const google=client();
+  google.getReview.mockResolvedValue({...data,reviewReply:{comment:'Already answered elsewhere'}});
+  const sql=sqlRows([{...review,schedule_failures:1}],[link],[{id}],[{pending:true}]);
+  expect(await verifyAndRecoverLiveReply({kind:'admin'},id,id,sql,async()=>google)).toMatchObject({alreadyReplied:true,queued:false});
+  expect(google.publishReply).not.toHaveBeenCalled();
  });
  it('syncs a page without overwriting local drafts or deleting unseen later pages',async()=>{
   const google=client(),sql=sqlRows([link],[{id}],[],[],[]);expect(await syncLiveReviews({kind:'admin'},id,sql,async()=>google)).toEqual({imported:1,more:true});

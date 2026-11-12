@@ -83,7 +83,8 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
      WHERE id=${review.id} AND auto_attempt_at=${claimTime}::timestamptz AND version=${review.version}
     ) UPDATE google_review_links SET draft_error=${error.message},draft_checked_at=now(),
     draft_due_at=CASE WHEN ${error.reason==='monthly'} THEN (date_trunc('month',now() AT TIME ZONE 'America/New_York')+interval '1 month') AT TIME ZONE 'America/New_York' ELSE greatest(now(),ai_last_at+interval '10 seconds',
-    (SELECT CASE WHEN count(*)>=60 THEN min(t)+interval '1 hour' END FROM unnest(ai_hour_reservations) t WHERE t>now()-interval '1 hour')) END
+    (SELECT t+interval '1 hour' FROM unnest(ai_hour_reservations) t WHERE t>now()-interval '1 hour'
+      ORDER BY t DESC OFFSET (coalesce(ai_hourly_limit_override,20)-1) LIMIT 1)) END
     WHERE business_id=${businessId} AND enabled AND ai_consent AND settings_version=${link.settings_version}`;
    await resolveReviewWorkerAlert(sql,businessId,'draft');
    return {drafted:false,deferred:error.reason};
