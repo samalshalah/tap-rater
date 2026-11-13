@@ -13,6 +13,7 @@ import {
   readConsent,
   type AnalyticsConfig,
   type ConsentChoice,
+  type CheckoutAnalyticsEvent,
   type EcommerceData,
   type EcommerceEvent,
   type PurchaseData,
@@ -27,7 +28,7 @@ let activeConfig: AnalyticsConfig = {
   origin: "https://taprater.com",
 };
 let loadedId: string | null = null;
-let ready = false;
+let tagReady = false;
 let enabled = false;
 let entry: { path: string; attribution: Attribution } | null = null;
 type Visit = {
@@ -87,8 +88,7 @@ function visit(): Visit | null {
 function recordJourney(name: string, itemId?: string) {
   const session = visit(),
     page = analyticsPage(window.location.pathname);
-  if (!session || !page || window.location.origin !== activeConfig.origin)
-    return;
+  if (!session || !page) return;
   void fetch("/api/site/analytics-events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -110,22 +110,17 @@ function recordJourney(name: string, itemId?: string) {
   }).catch(() => {});
 }
 export function trackCheckoutStep(
-  name:
-    | "add_shipping_info"
-    | "payment_step"
-    | "add_payment_info"
-    | "checkout_error"
-    | "payment_error",
+  name: CheckoutAnalyticsEvent,
+  data?: EcommerceData,
 ) {
-  if (!analyticsAvailable()) return;
-  command("event", name, { ...context(), send_to: activeConfig.measurementId });
-  recordJourney(name);
+  if (!analyticsAvailable()) return false;
+  sendEvent(name, data);
+  return true;
 }
 export async function checkoutAnalyticsHeaders(): Promise<
   Record<string, string>
 > {
   if (!analyticsAvailable()) return {};
-  // Ensure the first-party session exists before associating a verified payment with it.
   const session = visit();
   if (!session) return {};
   const get = (field: string) =>
@@ -140,10 +135,10 @@ export async function checkoutAnalyticsHeaders(): Promise<
         );
       });
     });
-  const [clientId, gaSessionId] = await Promise.all([
-    get("client_id"),
-    get("session_id"),
-  ]);
+  const [clientId, gaSessionId] = tagReady
+    ? await Promise.all([get("client_id"), get("session_id")])
+    : [];
+  if (!analyticsAvailable()) return {};
   return {
     "x-taprater-analytics": JSON.stringify({
       sessionId: session.id,
@@ -201,6 +196,7 @@ export function saveBrowserConsent(choice: ConsentChoice) {
   }
   forcedDenied = true;
   enabled = false;
+  if (!tagReady) discardPendingEvents();
   if (loadedId)
     (window as unknown as AnalyticsWindow)[`ga-disable-${loadedId}`] = true;
   try {
@@ -220,6 +216,15 @@ function command(..._args: unknown[]) {
   const target = window as unknown as AnalyticsWindow;
   target.tapRaterDataLayer ??= [];
   target.tapRaterDataLayer.push(arguments);
+}
+
+function discardPendingEvents() {
+  const queue = (window as unknown as AnalyticsWindow).tapRaterDataLayer;
+  if (!queue) return;
+  for (let i = queue.length - 1; i >= 0; i--) {
+    const [name] = Array.from(queue[i] as IArguments);
+    if (name === "event" || name === "get") queue.splice(i, 1);
+  }
 }
 
 function context() {
@@ -244,7 +249,10 @@ function context() {
 
 export function analyticsAvailable() {
   return (
-    enabled && ready && browserConsent() === "granted" && Boolean(context())
+    enabled &&
+    window.location.origin === activeConfig.origin &&
+    browserConsent() === "granted" &&
+    Boolean(analyticsPage(window.location.pathname))
   );
 }
 
@@ -258,7 +266,7 @@ function clearAnalyticsCookies() {
   }
 }
 
-export function syncAnalytics(config: AnalyticsConfig, onReady: () => void) {
+export function syncAnalytics(config: AnalyticsConfig, onTagReady: () => void = () => {}) {
   activeConfig = config;
   captureAnalyticsEntry();
   if (browserConsent() === "granted")
@@ -276,6 +284,7 @@ export function syncAnalytics(config: AnalyticsConfig, onReady: () => void) {
   if (id) target[`ga-disable-${id}`] = !permitted;
   if (loadedId && loadedId !== id) target[`ga-disable-${loadedId}`] = true;
   if (!permitted || !id) {
+    if (browserConsent() !== "granted" && !tagReady) discardPendingEvents();
     if (loadedId)
       command("consent", "update", {
         analytics_storage: "denied",
@@ -284,7 +293,7 @@ export function syncAnalytics(config: AnalyticsConfig, onReady: () => void) {
         ad_personalization: "denied",
       });
     if (browserConsent() !== "granted") clearAnalyticsCookies();
-    return;
+    return false;
   }
   const page = context();
   command("set", page);
@@ -295,11 +304,11 @@ export function syncAnalytics(config: AnalyticsConfig, onReady: () => void) {
       ad_user_data: "denied",
       ad_personalization: "denied",
     });
-    if (ready) onReady();
-    return;
+    if (tagReady) onTagReady();
+    return true;
   }
   loadedId = id;
-  ready = false;
+  tagReady = false;
   command("consent", "default", {
     analytics_storage: "denied",
     ad_storage: "denied",
@@ -329,51 +338,54 @@ export function syncAnalytics(config: AnalyticsConfig, onReady: () => void) {
   script.referrerPolicy = "no-referrer";
   script.src = `https://www.googletagmanager.com/gtag/js?id=${id}&l=tapRaterDataLayer`;
   script.onload = () => {
-    ready = true;
-    if (analyticsAvailable()) onReady();
-  };
-  script.onerror = () => {
-    ready = false;
+    if (loadedId !== id) return;
+    tagReady = true;
+    if (analyticsAvailable()) onTagReady();
   };
   document.head.appendChild(script);
+  return true;
 }
 
 export function trackPageView() {
   if (!analyticsAvailable()) return false;
-  command("event", "page_view", {
-    ...context(),
-    send_to: activeConfig.measurementId,
-  });
-  recordJourney("page_view");
+  sendEvent("page_view");
   return true;
 }
 
 export function trackEcommerce(name: EcommerceEvent, data: EcommerceData) {
   const metaSent = name === "add_to_cart" ? trackMetaEcommerce(name, data) : false;
   if (!analyticsAvailable() || !data.items.length) return metaSent;
-  for (const item of data.items) recordJourney(name, item.item_id);
+  sendEvent(name, data);
+  return true;
+}
+
+function sendEvent(name: string, data?: EcommerceData) {
+  const itemIds = new Set(data?.items.map(({ item_id }) => item_id));
+  if (!itemIds.size) recordJourney(name);
+  for (const itemId of itemIds) recordJourney(name, itemId);
   // Copy only the approved schema, never a cart setup or form object.
   command("event", name, {
     ...context(),
     send_to: activeConfig.measurementId,
-    currency: data.currency,
-    value: data.value,
-    items: data.items.map(({ item_id, item_variant, price, quantity }) => ({
-      item_id,
-      item_name: analyticsItemName(item_id),
-      item_variant,
-      price,
-      quantity,
-    })),
+    ...(data ? { currency: data.currency, value: data.value, items: gaItems(data) } : {}),
   });
-  return true;
+}
+
+function gaItems(data: EcommerceData) {
+  return data.items.map(({ item_id, item_variant, price, quantity }) => ({
+    item_id,
+    item_name: analyticsItemName(item_id),
+    item_variant,
+    price,
+    quantity,
+  }));
 }
 
 export async function trackPurchase(data: PurchaseData) {
   if (activeConfig.serverPurchases) return false;
   const key = `taprater:ga4-purchase:${activeConfig.measurementId}:${data.transaction_id}`;
   const send = () => {
-    if (!analyticsAvailable() || sentPurchases.has(key)) return false;
+    if (!analyticsAvailable() || !tagReady || sentPurchases.has(key)) return false;
     try {
       if (localStorage.getItem(key)) return false;
       // Reserve before dispatch. A stable transaction_id also lets GA4 deduplicate across browsers.
@@ -390,13 +402,7 @@ export async function trackPurchase(data: PurchaseData) {
       value: data.value,
       tax: data.tax,
       shipping: data.shipping,
-      items: data.items.map(({ item_id, item_variant, price, quantity }) => ({
-        item_id,
-        item_name: analyticsItemName(item_id),
-        item_variant,
-        price,
-        quantity,
-      })),
+      items: gaItems(data),
     });
     return true;
   };

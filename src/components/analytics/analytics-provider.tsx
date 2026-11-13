@@ -25,6 +25,7 @@ import {
 } from "@/lib/analytics-browser";
 
 const AnalyticsContext = createContext({
+  googleReady: false,
   metaReady: false,
   ready: false,
   configured: false,
@@ -45,6 +46,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
   const [gpc, setGpc] = useState(false);
   const lastPage = useRef<string | null>(null);
@@ -94,8 +96,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useLayoutEffect(() => {
-    setReady(false);
-    syncAnalytics(config, () => setReady(true));
+    setGoogleReady(false);
+    setReady(syncAnalytics(config, () => setGoogleReady(true)));
     if (choice !== "granted" || !publicPage) lastPage.current = null;
   }, [config, choice, pathname, publicPage]);
 
@@ -128,7 +130,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     setChoice(next);
     setOpen(false);
     // Revoke immediately, before React renders or another event can be dispatched.
-    syncAnalytics(config, () => setReady(true));
+    setReady(syncAnalytics(config, () => setGoogleReady(true)));
   }
 
   function openPreferences() {
@@ -140,7 +142,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AnalyticsContext.Provider value={{ ready, metaReady, configured, openPreferences }}>
+    <AnalyticsContext.Provider value={{ ready, googleReady, metaReady, configured, openPreferences }}>
       {children}
       {/* Preferences open only on request; missing consent still leaves tracking off. */}
       {hydrated && open ? (

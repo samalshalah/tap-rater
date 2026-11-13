@@ -32,10 +32,18 @@ export type PurchaseData = EcommerceData & {
 };
 export type EcommerceEvent =
   | "view_item"
+  | "stand_setup_started"
+  | "stand_design_approved"
   | "add_to_cart"
   | "remove_from_cart"
   | "view_cart"
   | "begin_checkout";
+export type CheckoutAnalyticsEvent =
+  | "add_shipping_info"
+  | "payment_step"
+  | "add_payment_info"
+  | "checkout_error"
+  | "payment_error";
 export type ConsentChoice = "granted" | "denied";
 export const consentStorageKey = "taprater:analytics-consent:v1";
 export const consentMaxAge = 180 * 24 * 60 * 60 * 1000;

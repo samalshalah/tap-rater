@@ -33,6 +33,8 @@ export const analyticsEventSchema = z.object({
   name: z.enum([
     "page_view",
     "view_item",
+    "stand_setup_started",
+    "stand_design_approved",
     "add_to_cart",
     "remove_from_cart",
     "view_cart",
@@ -146,7 +148,16 @@ export async function linkAnalyticsCheckout(
   const consent = rows.length > 0;
   await sql.query(
     `INSERT INTO storefront_analytics_checkouts(stripe_session_id,session_id,excluded,ga_client_id,ga_session_id,consent)
-    VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(stripe_session_id) DO UPDATE SET excluded=storefront_analytics_checkouts.excluded OR EXCLUDED.excluded`,
+    VALUES($1,$2,$3,$4,$5,$6)
+    ON CONFLICT(stripe_session_id) DO UPDATE SET
+      excluded=storefront_analytics_checkouts.excluded OR EXCLUDED.excluded,
+      ga_client_id=COALESCE(storefront_analytics_checkouts.ga_client_id, EXCLUDED.ga_client_id),
+      ga_session_id=COALESCE(storefront_analytics_checkouts.ga_session_id, EXCLUDED.ga_session_id)
+    WHERE EXCLUDED.excluded OR (
+      storefront_analytics_checkouts.consent AND EXCLUDED.consent
+      AND NOT storefront_analytics_checkouts.excluded
+      AND storefront_analytics_checkouts.session_id=EXCLUDED.session_id
+    )`,
     [
       stripeId,
       consent ? identity!.sessionId : null,

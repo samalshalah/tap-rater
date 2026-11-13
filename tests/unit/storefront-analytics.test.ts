@@ -145,6 +145,48 @@ describe("browser analytics consent and dispatch", () => {
     expect(events()[0][2]).toMatchObject({campaign_source:"etsy",campaign_medium:"referral",campaign_name:"shop",items:[{item_name:analyticsItemName("google-review-stand")}]});
     expect(JSON.stringify(commands())).not.toContain("private@example.com");
   });
+  it("records the consented stand journey and links checkout while the Google tag is unavailable", async () => {
+    target.location.pathname = "/product/google-review-stand";
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    const post = vi.fn().mockResolvedValue(new Response(null));
+    vi.stubGlobal("fetch", post);
+    client.saveBrowserConsent("granted");
+    const onGoogleReady = vi.fn();
+    expect(client.syncAnalytics(config, onGoogleReady)).toBe(true);
+    const stand = ecommerceData([{ item_id: "google-review-stand", item_variant: "branded_qr_direct", price: 49, quantity: 1 }]);
+    expect(client.trackPageView()).toBe(true);
+    client.trackEcommerce("view_item", stand);
+    client.trackEcommerce("stand_setup_started", stand);
+    client.trackEcommerce("stand_design_approved", stand);
+    client.trackEcommerce("add_to_cart", stand);
+    target.location.pathname = "/checkout";
+    client.trackEcommerce("begin_checkout", stand);
+    client.trackCheckoutStep("add_shipping_info", stand);
+    const headers = await client.checkoutAnalyticsHeaders();
+    client.trackCheckoutStep("payment_step", stand);
+    client.trackCheckoutStep("add_payment_info", stand);
+    const recorded = post.mock.calls.map(([, request]) => JSON.parse(request.body));
+    expect(recorded.map(event => event.name)).toEqual(["page_view", "view_item", "stand_setup_started", "stand_design_approved", "add_to_cart", "begin_checkout", "add_shipping_info", "payment_step", "add_payment_info"]);
+    expect(recorded.at(-1)).toMatchObject({ itemId: "google-review-stand", page: "/checkout", landing: "/product/google-review-stand" });
+    expect(new Set(recorded.map(event => event.sessionId))).toEqual(new Set([JSON.parse(headers["x-taprater-analytics"]).sessionId]));
+    expect(events().find(([, name]) => name === "add_payment_info")?.[2]).toMatchObject({ items: [{ item_id: "google-review-stand" }], value: 49, currency: "USD" });
+    expect(onGoogleReady).not.toHaveBeenCalled();
+    expect(await client.trackPurchase(verifiedPurchase(order())!)).toBe(false);
+    scripts[0].onload?.();
+    expect(onGoogleReady).toHaveBeenCalledOnce();
+    expect(await client.trackPurchase(verifiedPurchase(order())!)).toBe(true);
+  });
+  it("discards events still waiting for Google when consent is withdrawn", () => {
+    client.saveBrowserConsent("granted");
+    client.syncAnalytics(config);
+    client.trackPageView();
+    expect(events()).toHaveLength(1);
+    client.saveBrowserConsent("denied");
+    client.syncAnalytics(config);
+    expect(events()).toHaveLength(0);
+    expect(client.trackPageView()).toBe(false);
+  });
   it("blocks private pages even before a navigation effect has run", () => {
     grant();
     target.location.pathname = "/account/orders";

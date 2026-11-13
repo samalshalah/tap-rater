@@ -123,6 +123,8 @@ describe("attribution and exclusions", () => {
     query.mockResolvedValueOnce([]).mockResolvedValueOnce([{id:sessionId}]).mockResolvedValueOnce([]);
     await linkAnalyticsCheckout(new Request("https://taprater.com", {headers:{cookie:"taprater_analytics_consent=granted", "x-taprater-analytics":JSON.stringify({sessionId,clientId:"123.456",gaSessionId:"1791576000",entry:{source:"google",medium:"organic",landing:"/shop",device:"mobile"}})}}),"cs_live_example");
     expect(query.mock.calls[2][1]).toEqual(["cs_live_example",sessionId,false,"123.456","1791576000",true]);
+    expect(query.mock.calls[2][0]).toContain("storefront_analytics_checkouts.consent AND EXCLUDED.consent");
+    expect(query.mock.calls[2][0]).toContain("storefront_analytics_checkouts.session_id=EXCLUDED.session_id");
   });
   it("binds internal checkouts as excluded without forwarding GA identifiers", async () => {
     query.mockResolvedValue([]);

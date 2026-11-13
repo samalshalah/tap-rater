@@ -13,6 +13,7 @@ import {
   checkoutAnalyticsHeaders,
   trackCheckoutStep,
 } from "@/lib/analytics-browser";
+import { cartAnalyticsItems, ecommerceData } from "@/lib/storefront-analytics";
 import { useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import { ArrowLeft, LockKeyhole } from "lucide-react";
@@ -86,6 +87,13 @@ export function EmbeddedCheckoutClient({
   const [differentRecipient, setDifferentRecipient] = useState(false);
   const rows = useMemo(() => getCartRows(items), [items]);
   const promotion = useMemo(() => quoteOffers(rows.map(r => ({ productId: r.item.productId, optionId: r.option.id, quantity: r.item.quantity, unitAmountCents: r.unitPriceCents, recurring: r.option.requiresSubscription || r.item.setup?.serviceMode === "HOSTED" })), offers), [rows, offers]);
+  const checkoutAnalytics = useMemo(() => ecommerceData(rows.flatMap(({ item, option, unitPriceCents }, index) =>
+    cartAnalyticsItems([{ ...item, optionId: option.id }]).map((analyticsItem) =>
+      analyticsItem.item_id === item.productId
+        ? { ...analyticsItem, price: (unitPriceCents - (promotion.lineDiscounts[index] ?? 0) / item.quantity) / 100 }
+        : analyticsItem
+    )
+  )), [rows, promotion.lineDiscounts]);
   const standTotalCents = promotion.subtotalCents;
   const recurringTotalCents = useMemo(() => calculateRecurringTotalCents(rows), [rows]);
   const shippingRule = useMemo(() => resolveCheckoutShippingRule(standTotalCents, offerShippingSettings(shippingSettings, offers, shipping.country)), [standTotalCents, shippingSettings, offers, shipping.country]);
@@ -126,10 +134,9 @@ export function EmbeddedCheckoutClient({
       session?.sessionId &&
       trackedPaymentSession.current !== session.sessionId
     ) {
-      trackCheckoutStep("payment_step");
-      trackedPaymentSession.current = session.sessionId;
+      if (trackCheckoutStep("payment_step", checkoutAnalytics)) trackedPaymentSession.current = session.sessionId;
     }
-  }, [analyticsReady, step, session?.sessionId]);
+  }, [analyticsReady, step, session?.sessionId, checkoutAnalytics]);
   const publishableKey = stripePublicConfig.ok
     ? stripePublicConfig.publishableKey
     : "";
@@ -278,6 +285,7 @@ export function EmbeddedCheckoutClient({
     setError("");
 
     if (!stripePublicConfig.ok) {
+      trackCheckoutStep("checkout_error", checkoutAnalytics);
       setError(stripePublicConfig.error);
       setIsStartingPayment(false);
       return;
@@ -302,7 +310,7 @@ export function EmbeddedCheckoutClient({
           window.sessionStorage.setItem(attemptKey, checkoutAttemptId.current);
       }
 
-      trackCheckoutStep("add_shipping_info");
+      trackCheckoutStep("add_shipping_info", checkoutAnalytics);
       const analyticsHeaders = await checkoutAnalyticsHeaders();
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -332,7 +340,7 @@ export function EmbeddedCheckoutClient({
         typeof body.clientSecret !== "string" ||
         typeof body.sessionId !== "string"
       ) {
-        trackCheckoutStep("checkout_error");
+        trackCheckoutStep("checkout_error", checkoutAnalytics);
         setError(body.error ?? "Stripe Checkout is not available yet.");
         return;
       }
@@ -354,6 +362,7 @@ export function EmbeddedCheckoutClient({
       setSession(nextSession);
       setStep("payment");
     } catch {
+      trackCheckoutStep("checkout_error", checkoutAnalytics);
       setError("Stripe Checkout is not available yet.");
     } finally {
       setIsStartingPayment(false);
@@ -447,7 +456,7 @@ export function EmbeddedCheckoutClient({
                 taxSettings={taxSettings}
               />
               <section className="tr-card min-h-[420px] p-4 sm:p-5">
-                <StripePaymentPanel stripe={stripePromise} options={options} />
+                <StripePaymentPanel stripe={stripePromise} options={options} analytics={checkoutAnalytics} />
               </section>
             </>
           ) : (

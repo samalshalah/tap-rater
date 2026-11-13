@@ -6,6 +6,8 @@ import { useEffect } from "react";
 import type { ProductSetupDialogProps } from './product-setup-dialog-types';
 import { normalizeMultiLinkButtonsForSetup } from "./product-setup-model";
 import { ReviewLine } from "./product-setup-summary";
+import { trackEcommerce } from "@/lib/analytics-browser";
+import { ecommerceData } from "@/lib/storefront-analytics";
 const MultiLinkSetupStep=dynamic(()=>import("./multilink-setup-step").then(m=>m.MultiLinkSetupStep),{loading:()=> <p role="status">Loading link editor...</p>});
 const StandDesignEditor = dynamic(() => import("./stand-design-editor").then(m => m.StandDesignEditor));
 import { ProductSetupDestinationStep } from "./product-setup-destination-step";
@@ -229,7 +231,18 @@ export function ProductSetupDialogContent({
                   <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
                   <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
                     <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
-                      checked={proofIsApproved} onChange={(event) => setApprovedProofId(event.target.checked ? readyProof?.proofReceiptId ?? "" : "")} />
+                      checked={proofIsApproved} onChange={(event) => {
+                        const receipt = event.target.checked ? readyProof?.proofReceiptId ?? "" : "";
+                        setApprovedProofId(receipt);
+                        if (receipt && configuredUnitPriceCents !== null) {
+                          trackEcommerce("stand_design_approved", ecommerceData([{
+                            item_id: product.slug,
+                            item_variant: selectedOption.id,
+                            price: configuredUnitPriceCents / 100,
+                            quantity: selectedQuantity,
+                          }]));
+                        }
+                      }} />
                     I approve this artwork and QR destination for printing.
                   </label>
                 </div>

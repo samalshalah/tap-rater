@@ -62,7 +62,12 @@ export function metaEventData(data: EcommerceData, ids: Record<string, string>) 
   return { content_type: "product", content_ids: contents.map(item => item.id), contents, currency: "USD", value: Math.round(contents.reduce((sum, item) => sum + item.item_price * item.quantity, 0) * 100) / 100, num_items: contents.reduce((sum, item) => sum + item.quantity, 0) };
 }
 export function trackMetaEcommerce(name: EcommerceEvent, data: EcommerceData) {
-  const event = { view_item: "ViewContent", add_to_cart: "AddToCart", begin_checkout: "InitiateCheckout", view_cart: "", remove_from_cart: "" }[name];
+  const events: Partial<Record<EcommerceEvent, string>> = {
+    view_item: "ViewContent",
+    add_to_cart: "AddToCart",
+    begin_checkout: "InitiateCheckout",
+  };
+  const event = events[name];
   const payload = metaEventData(data, activeConfig.metaCatalogIds ?? {});
   return Boolean(event && payload.contents.length && send(event, payload));
 }

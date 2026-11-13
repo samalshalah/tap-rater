@@ -41,16 +41,16 @@ export function ProductAnalyticsEvent({ item }: { item: AnalyticsItem }) {
 }
 
 export function PurchaseAnalyticsEvent({ purchase, pending }: { purchase: PurchaseData | null; pending: boolean }) {
-  const { ready, metaReady } = useAnalytics();
+  const { googleReady, metaReady } = useAnalytics();
   const router = useRouter();
   const attempts = useRef(0);
-  useEffect(() => { if (ready && purchase) void trackPurchase(purchase); }, [ready, purchase]);
+  useEffect(() => { if (googleReady && purchase) void trackPurchase(purchase); }, [googleReady, purchase]);
   useEffect(() => { if (metaReady && purchase) trackMetaPurchase(purchase); }, [metaReady, purchase]);
   useEffect(() => {
-    if ((!ready && !metaReady) || !pending || purchase) return;
+    if ((!googleReady && !metaReady) || !pending || purchase) return;
     // Webhook confirmation can arrive after the redirect. Retry for one minute, without exposing an order API.
     const timer = setInterval(() => { if (++attempts.current > 12) { clearInterval(timer); return; } router.refresh(); }, 5000);
     return () => clearInterval(timer);
-  }, [pending, purchase, ready, metaReady, router]);
+  }, [pending, purchase, googleReady, metaReady, router]);
   return null;
 }

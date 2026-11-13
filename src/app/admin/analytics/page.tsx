@@ -38,6 +38,8 @@ export default async function AdminAnalyticsPage({
   }
   const steps = [
     ["view_item", "Viewed a product"],
+    ["stand_setup_started", "Started stand setup"],
+    ["stand_design_approved", "Approved stand artwork"],
     ["add_to_cart", "Added to cart"],
     ["view_cart", "Viewed cart"],
     ["begin_checkout", "Started checkout"],

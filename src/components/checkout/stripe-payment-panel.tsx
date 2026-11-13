@@ -2,11 +2,15 @@
 import {useState,type FormEvent,type ComponentProps} from 'react';
 import {CheckoutElementsProvider,PaymentElement,useCheckoutElements} from '@stripe/react-stripe-js/checkout';
 import {trackCheckoutStep} from '@/lib/analytics-browser';
+import type { EcommerceData } from "@/lib/storefront-analytics";
 import {CheckoutError} from './checkout-fields';
-export function StripePaymentPanel(props: Pick<ComponentProps<typeof CheckoutElementsProvider>, 'stripe' | 'options'>) {
-  return <CheckoutElementsProvider {...props}><StripePaymentForm /></CheckoutElementsProvider>;
+type PaymentPanelProps = Pick<ComponentProps<typeof CheckoutElementsProvider>, "stripe" | "options"> & {
+  analytics: EcommerceData;
+};
+export function StripePaymentPanel({ analytics, ...props }: PaymentPanelProps) {
+  return <CheckoutElementsProvider {...props}><StripePaymentForm analytics={analytics} /></CheckoutElementsProvider>;
 }
-export function StripePaymentForm() {
+export function StripePaymentForm({ analytics }: { analytics?: EcommerceData }) {
   const result = useCheckoutElements();
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,17 +26,17 @@ export function StripePaymentForm() {
     setErrorMessage("");
 
     try {
-      trackCheckoutStep("add_payment_info");
+      trackCheckoutStep("add_payment_info", analytics);
       const confirmResult = await result.checkout.confirm();
 
       if (confirmResult.type === "error") {
-        trackCheckoutStep("payment_error");
+        trackCheckoutStep("payment_error", analytics);
         setErrorMessage(
           confirmResult.error.message ?? "Payment could not be completed.",
         );
       }
     } catch (error) {
-      trackCheckoutStep("payment_error");
+      trackCheckoutStep("payment_error", analytics);
       setErrorMessage(
         error instanceof Error
           ? error.message

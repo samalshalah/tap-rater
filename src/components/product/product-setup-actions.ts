@@ -8,6 +8,8 @@ import { type PurchaseOptionId } from "@/lib/purchase-options";
 import { QR_CODE_ERROR_MESSAGE } from "@/lib/qr-code-message";
 import { type GoogleBusinessSelection } from "@/lib/google-places-client";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
+import { trackEcommerce } from "@/lib/analytics-browser";
+import { ecommerceData } from "@/lib/storefront-analytics";
 import type { useProductSetupState } from "./use-product-setup-state";
 
 export function createProductSetupActions({
@@ -112,6 +114,14 @@ export function createProductSetupActions({
     setStep("destination");
     setError("");
     setIsBuilderOpen(true);
+    if (configuredUnitPriceCents !== null) {
+      trackEcommerce("stand_setup_started", ecommerceData([{
+        item_id: product.slug,
+        item_variant: optionId,
+        price: configuredUnitPriceCents / 100,
+        quantity: selectedQuantity,
+      }]));
+    }
   }
 
   function closeBuilder() {
