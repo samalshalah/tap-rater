@@ -3,7 +3,8 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { AnalyticsControls } from "@/components/admin/analytics-controls";
 import { LiveAnalyticsPanel } from "@/components/admin/live-analytics";
 import { requireAdmin } from "@/lib/admin-auth";
-import { storefrontAnalyticsReport } from "@/lib/storefront-analytics-report";
+import { formatOrderTrafficSource, storefrontAnalyticsReport } from "@/lib/storefront-analytics-report";
+import { formatOrderReference } from "@/lib/order-reference";
 import type { ReactNode } from "react";
 const money = (n: unknown) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
@@ -282,6 +283,7 @@ export default async function AdminAnalyticsPage({
                     "Order",
                     "Created (UTC)",
                     "Paid total",
+                    "Order source",
                     "Analytics status",
                     "Testing",
                   ].map((v) => (
@@ -299,7 +301,7 @@ export default async function AdminAnalyticsPage({
                         className="text-brand underline"
                         href={"/admin/orders/" + r.id}
                       >
-                        View order
+                        {formatOrderReference(String(r.order_reference || r.id))}
                       </Link>
                     </td>
                     <td className="p-3 whitespace-nowrap">
@@ -309,6 +311,12 @@ export default async function AdminAnalyticsPage({
                         .replace("T", " ")}
                     </td>
                     <td className="p-3">{money(r.total_cents)}</td>
+                    <td className="p-3">
+                      {formatOrderTrafficSource(r)}
+                      {typeof r.campaign === "string" && (
+                        <p className="mt-1 break-words text-xs text-muted">{r.campaign}</p>
+                      )}
+                    </td>
                     <td className="p-3">{String(r.tracking)}</td>
                     <td className="p-3">
                       <AnalyticsControls

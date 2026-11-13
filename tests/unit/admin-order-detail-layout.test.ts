@@ -14,7 +14,10 @@ vi.mock("@/lib/db", () => ({
   getSupabaseAdmin: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) })
 }));
 
-const { getOrder } = vi.hoisted(() => ({ getOrder: vi.fn() }));
+const { getOrder, queryAttribution } = vi.hoisted(() => ({ getOrder: vi.fn(), queryAttribution: vi.fn() }));
+vi.mock("@/lib/storefront-analytics-server", () => ({
+  analyticsSql: () => ({ query: queryAttribution }),
+}));
 vi.mock("@/lib/customer-stand-registry", () => ({ orderStandRegistry: vi.fn(async () => []) }));
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: vi.fn() }));
 vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: ({ children }: { children: ReactNode }) => children }));
@@ -28,6 +31,32 @@ vi.mock("@/lib/orders", async original => ({
 }));
 
 describe("admin order detail wrapping", () => {
+  it("shows the recorded referral and keeps unattributed sales distinct from direct visits", async () => {
+    const id = "11111111-1111-4111-8111-111111111111";
+    const sessionId = "cs_live_attributionTest";
+    getOrder.mockResolvedValue({ configured: true, order: {
+      id, stripe_checkout_session_id: sessionId, total_cents: 4900,
+      status: "paid", payment_status: "paid", production_status: "not_started",
+      shipping_status: "not_shipped", line_items_json: [],
+    } });
+    queryAttribution.mockResolvedValueOnce([{
+      source: "google", medium: "organic", campaign: "review-stands",
+      landing_page: "/product/google-review-stand", consent: true, excluded: false,
+    }]).mockResolvedValueOnce([{ consent: false }]);
+    const render = async () => renderToStaticMarkup(await AdminOrderDetailPage({ params: Promise.resolve({ id }) }));
+    const attributed = await render();
+    expect(attributed).toContain("Google · Organic search");
+    expect(attributed).toContain("review-stands");
+    expect(attributed).toContain("/product/google-review-stand");
+    expect(queryAttribution.mock.calls[0][1]).toEqual([sessionId]);
+
+    const unattributed = await render();
+    expect(unattributed).toContain("TapRater.com");
+    expect(unattributed).toContain("Source unavailable");
+    expect(unattributed).toContain("Analytics consent not recorded");
+    expect(unattributed).not.toContain("Direct / no referrer");
+  });
+
   it("maps production previews and downloads to the authenticated order line, ignoring legacy public URLs", async () => {
     const id = "11111111-1111-4111-8111-111111111111";
     getOrder.mockResolvedValue({ configured: true, order: {

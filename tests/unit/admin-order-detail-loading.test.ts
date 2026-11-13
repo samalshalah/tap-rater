@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({ auth: vi.fn(), order: vi.fn(), stands: vi.fn()
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: mocks.auth }));
 vi.mock("@/lib/customer-stand-registry", () => ({ orderStandRegistry: mocks.stands }));
 vi.mock("@/lib/email-deliveries", () => ({ getAdminEmailDeliveries: mocks.deliveries }));
+vi.mock("@/lib/storefront-analytics-report", () => ({ getStorefrontOrderAttribution: async () => null }));
 vi.mock("@/lib/db", () => ({
   getSupabaseAdmin: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }) })
 }));

@@ -1,4 +1,68 @@
 import { analyticsSql } from "@/lib/storefront-analytics-server";
+
+const orderAttributionJoin = `
+  LEFT JOIN storefront_analytics_sessions s
+    ON s.id=c.session_id AND c.consent AND s.consent AND NOT c.excluded AND NOT s.excluded
+`;
+
+type OrderAttributionRow = {
+  source?: unknown;
+  medium?: unknown;
+};
+
+const sourceNames: Record<string, string> = {
+  google: "Google",
+  bing: "Bing",
+  yahoo: "Yahoo",
+  duckduckgo: "DuckDuckGo",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  linkedin: "LinkedIn",
+  etsy: "Etsy",
+  yelp: "Yelp",
+  "other-referral": "Other website",
+};
+
+const mediumNames: Record<string, string> = {
+  organic: "Organic search",
+  cpc: "Paid clicks",
+  paid_search: "Paid search",
+  paid_social: "Paid social",
+  referral: "Referral",
+  email: "Email",
+};
+
+export function formatOrderTrafficSource(row: OrderAttributionRow | undefined) {
+  if (typeof row?.source !== "string" || typeof row.medium !== "string") {
+    return "Source unavailable";
+  }
+  if (row.source === "direct" && row.medium === "none") return "Direct / no referrer";
+  const source = Object.hasOwn(sourceNames, row.source) ? sourceNames[row.source] : row.source;
+  const medium = Object.hasOwn(mediumNames, row.medium) ? mediumNames[row.medium] : row.medium;
+  return `${source} · ${medium}`;
+}
+
+export async function getStorefrontOrderAttribution(stripeSessionId: string | null | undefined) {
+  if (!stripeSessionId || !/^cs_live_[a-z0-9]+$/i.test(stripeSessionId)) return null;
+  try {
+    const [row] = await analyticsSql().query(
+      `SELECT s.source, s.medium, s.campaign, s.landing_page, c.consent, c.excluded
+      FROM storefront_analytics_checkouts c
+      ${orderAttributionJoin}
+      WHERE c.stripe_session_id=$1`,
+      [stripeSessionId],
+    );
+    return {
+      source: formatOrderTrafficSource(row),
+      campaign: typeof row?.campaign === "string" ? row.campaign : null,
+      landingPage: typeof row?.landing_page === "string" ? row.landing_page : null,
+      detail: row?.excluded ? "Excluded from analytics" : row?.consent === false ? "Analytics consent not recorded" : null,
+    };
+  } catch {
+    return { source: "Source temporarily unavailable", campaign: null, landingPage: null, detail: null };
+  }
+}
+
 export async function storefrontAnalyticsReport(days: number) {
   const sql = analyticsSql();
   const [
@@ -41,7 +105,24 @@ export async function storefrontAnalyticsReport(days: number) {
       [days],
     ),
     sql.query(
-      `SELECT o.id,o.created_at,o.total_cents,o.status,coalesce(c.excluded,false) excluded,CASE WHEN c.excluded THEN 'Excluded test' WHEN c.sent_at IS NOT NULL THEN 'Submitted to GA4' WHEN c.ga_status='invalid_order' THEN 'Review order totals' WHEN c.ga_status='retrying' THEN 'Retrying' WHEN c.consent AND c.ga_client_id IS NOT NULL AND c.ga_session_id IS NOT NULL THEN 'Queued' ELSE 'No analytics consent / attribution' END tracking FROM orders o LEFT JOIN storefront_analytics_checkouts c ON c.stripe_session_id=o.stripe_checkout_session_id WHERE o.created_at>=now()-make_interval(days=>$1) AND o.stripe_checkout_session_id LIKE 'cs_live_%' AND o.payment_status='paid' ORDER BY o.created_at DESC LIMIT 30`,
+      `SELECT o.id, o.stripe_checkout_session_id AS order_reference, o.created_at, o.total_cents,
+        COALESCE(c.excluded,false) excluded, s.source, s.medium, s.campaign,
+        CASE
+          WHEN c.excluded THEN 'Excluded test'
+          WHEN c.sent_at IS NOT NULL THEN 'Submitted to GA4'
+          WHEN c.ga_status='invalid_order' THEN 'Review order totals'
+          WHEN c.ga_status='retrying' THEN 'Retrying'
+          WHEN c.consent=false THEN 'Analytics consent not recorded'
+          WHEN s.id IS NULL THEN 'No linked session'
+          WHEN c.ga_client_id IS NOT NULL AND c.ga_session_id IS NOT NULL THEN 'Queued'
+          ELSE 'GA4 session unavailable'
+        END tracking
+      FROM orders o
+      LEFT JOIN storefront_analytics_checkouts c ON c.stripe_session_id=o.stripe_checkout_session_id
+      ${orderAttributionJoin}
+      WHERE o.created_at>=now()-make_interval(days=>$1) AND o.stripe_checkout_session_id LIKE 'cs_live_%'
+        AND o.payment_status='paid'
+      ORDER BY o.created_at DESC LIMIT 30`,
       [days],
     ),
     sql.query(

@@ -15,6 +15,7 @@ import { canRunOrderProductionActions } from "@/lib/order-fulfillment-rules";
 import { getAdminOrderById, getAdminOrderArtworkUrl, getOrderLineItemProductionSummary, getOrderProductionBlockers } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 import { formatOrderReference } from "@/lib/order-reference";
+import { getStorefrontOrderAttribution } from "@/lib/storefront-analytics-report";
 import { InfoCard, OrderAttentionCard, Field, AddressBlock, LineItemDetail, readNested, formatPaymentStatus, buildAttentionItems } from "@/components/admin/order-detail-components";
 
 type AdminOrderDetailPageProps = {
@@ -30,10 +31,11 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
     notFound();
   }
 
-  const [standRecords, deliveryOverview, billingInvoiceResult] = await Promise.all([
+  const [standRecords, deliveryOverview, billingInvoiceResult, attribution] = await Promise.all([
     orderStandRegistry(id),
     getAdminEmailDeliveries(order.id),
     getSupabaseAdmin().from("billing_invoices").select("invoice_number,invoice_pdf_url,hosted_invoice_url").eq("order_id", id).maybeSingle(),
+    getStorefrontOrderAttribution(order.stripe_checkout_session_id),
   ]);
   const summaries = order.line_items_json.map(getOrderLineItemProductionSummary);
   const attentionItems = buildAttentionItems(order, summaries);
@@ -93,6 +95,13 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
           </div>
 
           <div className="min-w-0 space-y-6">
+            {attribution && <InfoCard title="Order source">
+              <Field label="Sales channel" value="TapRater.com" />
+              <Field label="Traffic source" value={attribution.source} />
+              {attribution.detail && <p className="text-sm text-muted">{attribution.detail}</p>}
+              {attribution.campaign && <Field label="Campaign" value={attribution.campaign} />}
+              {attribution.landingPage && <Field label="Landing page" value={attribution.landingPage} />}
+            </InfoCard>}
             <InfoCard title="Status">
               <Field label="Payment" value={formatPaymentStatus(order)} />
               <Field label="Payment status" value={order.payment_status} />
