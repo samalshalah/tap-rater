@@ -67,6 +67,12 @@ No real customer payment, public Google reply, or Google Growth activation was p
 - Retained the synthetic record for audit, disabled it and cleared its activation token after checking delivery. No production password was created. Password activation and single-use token behavior were already tested in isolated QA.
 - Evidence: `archives/google-reviews-fixes-2026-11-14/activation-email-delivered.jpg` and `production-webhook-replay.jpg` in the parent workspace.
 
+### QA account activation completed
+
+The owner requested that the QA alias remain enabled for continued testing. Restored only this synthetic customer to pending activation and resent its activation email; delivery was confirmed at `2026-11-14T15:11:15.220Z`. The owner then completed password setup using the new link. Verified the production record is now active, has a password, and has consumed its activation token. The browser displayed the customer dashboard with no purchased stands. The QA account has zero locations and no active Reviews licence; no paid entitlement was fabricated. It remains enabled. The main account and its locations were not modified.
+
+The owner confirmed that no separate Google Business Profile is currently available. Live Google OAuth, import, public reply, and scheduled posting acceptance remain blocked on that prerequisite. Do not use or move the main account's locations for these tests. Reviews packages remain hidden (404), Growth remains paused (redirect to `/shop`), and stand checkout remains available (200). No additional deployment was needed for this activation check.
+
 ## Reproduce
 
 ```powershell
