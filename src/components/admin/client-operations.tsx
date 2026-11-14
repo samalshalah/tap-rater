@@ -3,6 +3,7 @@ import {Users} from 'lucide-react';
 import {clientOperations, type ClientOperation} from '@/lib/admin-client-operations';
 import {ClientLicencesButton} from './marketing-access-editor';
 import {AdminLinkButton} from './admin-ui';
+import {CustomerActivationButton} from './customer-activation-button';
 
 type View = 'all'|'accounts'|'usage'|'ai'|'google';
 const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Customers & Licences',usage:'Service usage',ai:'AI agent',google:'Google connection'};
@@ -36,7 +37,7 @@ export async function ClientOperations({view='all'}:{view?:View}={}) {
           <thead className="bg-slate-50"><tr>{visibleColumns.map(c=><th key={c.label} className="px-3 py-3 font-semibold">{c.label}</th>)}{view==='accounts'&&<><th className="px-3 py-3">Replacement</th><th className="px-3 py-3">Licences</th></>}</tr></thead>
           <tbody>{accounts.map(a=><tr key={a.accountId} className="border-t border-line">
             {visibleColumns.map(c=><td key={c.label} className="px-3 py-3">{c.label==='Account'?<span className="tr-admin-row-identity"><Users aria-hidden="true"/>{c.value(a)}</span>:c.value(a)}</td>)}
-            {view==='accounts'&&<><td className="px-3 py-3"><AdminLinkButton href={`/admin/customers/replacement?customer=${encodeURIComponent(a.email)}`} className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Replace stand</AdminLinkButton></td><td className="px-3 py-3"><ClientLicencesButton customerId={a.accountId}/></td></>}
+            {view==='accounts'&&<><td className="px-3 py-3"><AdminLinkButton href={`/admin/customers/replacement?customer=${encodeURIComponent(a.email)}`} className="min-h-9 px-3 py-1.5 text-xs" variant="outline">Replace stand</AdminLinkButton></td><td className="px-3 py-3"><ClientLicencesButton customerId={a.accountId}/>{a.status==='pending_activation'&&<CustomerActivationButton customerId={a.accountId}/>}</td></>}
           </tr>)}</tbody>
         </table>
       </div>
