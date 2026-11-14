@@ -1,8 +1,15 @@
-import {readFileSync} from 'node:fs';
+import {readFileSync,writeFileSync} from 'node:fs';
 import {randomUUID} from 'node:crypto';
 import {neon,neonConfig} from '@neondatabase/serverless';
 import {describe,it,expect,vi} from 'vitest';
-import {bindGoogleLocation,syncLiveReviews,listLiveWorkspaces,saveLiveDraft,approveLiveDraft,publishLiveReply,saveLiveSettings,prepareAutomaticDraft} from '@/lib/google-business/live-reviews';
+const onboarding=vi.hoisted(()=>({email:'',factory:vi.fn()}));
+vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:async()=>({session:{email:onboarding.email}})}));
+vi.mock('@/lib/google-business/live-reviews',async(importOriginal)=>{
+ const actual=await importOriginal<typeof import('@/lib/google-business/live-reviews')>();
+ return {...actual,syncLiveReviews:(actor:Parameters<typeof actual.syncLiveReviews>[0],id:string)=>actual.syncLiveReviews(actor,id,actual.liveDb(),onboarding.factory)};
+});
+import {bindGoogleLocation,listLiveWorkspaces,saveLiveDraft,approveLiveDraft,publishLiveReply,saveLiveSettings,prepareAutomaticDraft} from '@/lib/google-business/live-reviews';
+import {GET,POST} from '@/app/api/account/onboarding/route';
 
 const enabled=process.env.REVIEWS_READONLY_SNAPSHOT_TEST==='1';
 describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google network access)',()=>{
@@ -18,7 +25,9 @@ describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google 
   const blocked:string[]=[];
   vi.stubGlobal('fetch',async(input:any,init?:any)=>{
    const destination=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url);
-   if(destination.hostname!==databaseApi){blocked.push(destination.hostname);throw Error('External network blocked in snapshot test');}
+   const headers=new Headers(init?.headers);
+   const connection=headers.get('Neon-Connection-String');
+   if(destination.protocol!=='https:'||destination.hostname!==databaseApi||destination.pathname!=='/sql'||!connection||new URL(connection).hostname!==host){blocked.push(destination.hostname);throw Error('Only the exact QA database is allowed in snapshot test');}
    return originalFetch(input,init);
   });
   vi.stubEnv('DATABASE_URL',url);vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','false');
@@ -30,15 +39,41 @@ describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google 
   const google={listLocations:vi.fn().mockResolvedValue({locations:[{name:'locations/'+uid,title:fixture.business_name}]}),
    listReviews:vi.fn(async(_parent:string,page?:string)=>({reviews:reviews.slice(Number(page||0),Number(page||0)+10),totalReviewCount:reviews.length,...(Number(page||0)+10<reviews.length?{nextPageToken:String(Number(page||0)+10)}:{})})),publishReply:publish};
   const factory=vi.fn().mockResolvedValue(google);
+  onboarding.email=email;onboarding.factory.mockImplementation(factory);
+  const request=(body?:unknown)=>new Request('https://taprater.com/api/account/onboarding',body?{method:'POST',headers:{origin:'https://taprater.com'},body:JSON.stringify(body)}:undefined);
+  const state=async()=>{const response=await GET(request());expect(response.status).toBe(200);return response.json();};
+  const action=async(body:unknown,status=200)=>{const response=await POST(request(body));expect(response.status).toBe(status);return response.json();};
   try{
    [{id:customerId}]=await sql`INSERT INTO customers(email,name,account_status) VALUES(${email},'Isolated location snapshot QA','active') RETURNING id`;
+   expect((await GET(request())).status).toBe(403);
    await sql`INSERT INTO customer_marketing_access(customer_id,status,source,location_limit,ai_monthly_limit) VALUES(${customerId},'testing','testing',1,0)`;
-   [{id:businessId}]=await sql`SELECT create_marketing_business(${customerId}::uuid,${fixture.business_name},'Isolated snapshot only') AS id`;
+   expect(await state()).toMatchObject({completed:null,business_id:null});
+   const chosen=await action({action:'choose',name:fixture.business_name,address:'Isolated snapshot only'});
+   businessId=chosen.business_id;expect(businessId).toBeTruthy();
+   // Repeating setup cannot create a second location or overwrite the first selection.
+   expect((await action({action:'choose',name:'Repeated selection',address:'QA'})).business_id).toBe(businessId);
+   expect((await state()).business_name).toBe(fixture.business_name);
+   await action({action:'finish'},400);
    owner=`customer:${email}:location:${businessId}`;
    await sql`INSERT INTO google_business_connections(owner,google_subject,email,access_ciphertext,refresh_ciphertext,expires_at,scopes) VALUES(${owner},${uid},${email},'not-a-credential','not-a-credential',now()+interval '1 hour','snapshot-only')`;
    await bindGoogleLocation(owner,businessId,'accounts/qa','locations/'+uid,sql,factory,email);
+   const connected=await state();
+   expect(connected).toMatchObject({connected:true,completed:null,synced_at:null});
+   const importStates=[];
+   await action({action:'finish'},400);
    let more=true,pages=0;
-   while(more){if(++pages>100)throw Error('Pagination failed');const result=await syncLiveReviews(actor,businessId,sql,factory);more=result.more;if(more)await sql`UPDATE google_review_links SET checked_at=now()-interval '11 seconds' WHERE business_id=${businessId}`;}
+   while(more){
+    if(++pages>100)throw Error('Pagination failed');
+    const progress=await action({action:'import'});more=Boolean(progress.next_page);
+    importStates.push(progress);
+    expect(progress.completed).toBeNull();
+    if(more){await action({action:'finish'},400);expect((await state()).next_page).toBe(progress.next_page);await sql`UPDATE google_review_links SET checked_at=now()-interval '11 seconds' WHERE business_id=${businessId}`;}
+   }
+   const finished=await action({action:'finish'});
+   expect(finished.completed).toBeTruthy();expect(finished.review_count).toBe(reviews.length);
+   expect(await state()).toMatchObject({completed:finished.completed,review_count:reviews.length,next_page:null,last_error:null});
+   const reads=google.listReviews.mock.calls.length;
+   await action({action:'import'});expect(google.listReviews.mock.calls.length).toBe(reads);
    const [workspace]=await listLiveWorkspaces(actor,sql,[businessId]);
    expect(workspace).toMatchObject({saved_count:reviews.length,initial_import_completed:true});
    const stored=await sql`SELECT id,data,version FROM google_live_reviews WHERE business_id=${businessId}`;
@@ -56,7 +91,8 @@ describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google 
    expect(await prepareAutomaticDraft(businessId,sql,vi.fn())).toEqual({drafted:false});
    expect(link).toMatchObject({ai_consent:false,auto_enabled:false});expect(publish).not.toHaveBeenCalled();expect(blocked).toEqual([]);
    expect((await sql`SELECT count(*)::int AS total FROM google_live_reviews WHERE business_id=${businessId} AND scheduled_at IS NOT NULL`)[0].total).toBe(0);
-   console.log(JSON.stringify({location:fixture.business_name,reviews:reviews.length,pages,publishingCalls:publish.mock.calls.length,externalRequests:blocked.length,source:'stored production review snapshot; Google responses replayed'}));
+   writeFileSync('.local-sandbox/qa-onboarding-states.json',JSON.stringify({connected,importStates,finished}));
+   console.log(JSON.stringify({location:fixture.business_name,reviews:reviews.length,pages,onboardingCompleted:true,publishingCalls:publish.mock.calls.length,externalRequests:blocked.length,source:'previously retrieved live review snapshot; Google responses replayed'}));
   }finally{
    if(businessId)await sql`DELETE FROM businesses WHERE id=${businessId}`;
    if(owner)await sql`DELETE FROM google_business_connections WHERE owner=${owner}`;

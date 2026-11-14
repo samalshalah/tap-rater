@@ -93,6 +93,25 @@ Removed the temporary QA OAuth connection after the read (verified zero remainin
 
 Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/norah-live-google-read.jpg`; ignored local `.local-sandbox/google-live-readonly-result.json` contains the sanitized HTTP audit without tokens or review text.
 
+## Isolated remaining setup test — 2026-11-14
+
+At the user's request, the remaining onboarding handlers were exercised against the exact dedicated QA database using the previously retrieved live Norah review data. Authentication was injected for a temporary synthetic QA customer; Google responses were replayed with synthetic resource IDs. Production credentials and ownership were not copied. The network guard validates both the Neon API destination and the exact database hostname in the connection header, rejecting Google and other external requests. Publishing remains locked.
+
+Passed: unlicensed access denial, initial setup state, business selection and repeat-selection idempotency, refusal to finish before connection or during partial import, three-page import of all 22 reviews, saved progress, completion persistence, and no redundant import after completion. Existing content-fidelity, customer isolation, draft editing, stale edit rejection, approval, and publishing/automatic-posting denial checks also passed. No replies were scheduled or published. Temporary database records were cleaned up and zero temporary test accounts remained. The 27 focused tests and TypeScript passed.
+
+The local browser harness uses the actual `FirstLoginSetup` component and only the state responses captured by this integration test. It is a UI replay, not another live Google authorization or a production end-to-end session. Browser checks passed: import progress, reload/resume at 10 of 22 reviews, 100% completion with 22 reviews, and Open dashboard dismissing setup to reveal the QA dashboard placeholder. Production Norah's assignment/settings fingerprint remains unchanged; packages return 404, Growth redirects to `/shop`, and checkout returns 200. No application deployment or sales-flag change is required. The local server was stopped after verification. Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/isolated-norah-setup-complete.jpg` and `isolated-norah-qa-dashboard.jpg`.
+
+Reproduce the isolated import/onboarding test and local screen replay:
+
+```powershell
+$env:REVIEWS_READONLY_SNAPSHOT_TEST='1'
+node --env-file=.env.reviews-qa node_modules/vitest/vitest.mjs run tests/unit/reviews-readonly-snapshot.test.ts
+node tests/fixtures/reviews-launch/serve-onboarding.mjs
+# Open http://127.0.0.1:4183/onboarding.html
+```
+
+The captured state file lives under ignored `.local-sandbox/`; no review text, tokens, or production credentials are served by the onboarding replay endpoint.
+
 ## Reproduce
 
 ### Deployed customer setup follow-up — 2026-11-14
