@@ -73,6 +73,14 @@ The owner requested that the QA alias remain enabled for continued testing. Rest
 
 The owner confirmed that no separate Google Business Profile is currently available. Live Google OAuth, import, public reply, and scheduled posting acceptance remain blocked on that prerequisite. Do not use or move the main account's locations for these tests. Reviews packages remain hidden (404), Growth remains paused (redirect to `/shop`), and stand checkout remains available (200). No additional deployment was needed for this activation check.
 
+### Existing-location isolated snapshot test
+
+The owner authorized choosing an existing location for an isolated read-only test, without moving it, changing the main account, or posting replies. Selected Norah Boutique, 50 Massachusetts Ave NE, Washington, DC. Read its 22 previously imported reviews (last recorded sync `2026-11-14T16:01:01.437Z`) from production and retained only review IDs, ratings, text, timestamps and existing reply content in an ignored local fixture; no Google tokens, reviewer names or profile images were copied.
+
+`reviews-readonly-snapshot.test.ts` passed on the exact allowlisted QA database. It replayed the stored data through the production binding, paginated import, workspace, draft and approval functions using a temporary synthetic customer and location. All 22 reviews imported across three pages with content intact. Unauthorized customer access and stale edits were rejected. Manual publishing and automatic-posting configuration were rejected with publishing disabled; no replies were scheduled and the publishing adapter was never called. Network access was restricted to the Neon database API; no Google or AI requests were made. Temporary QA records were removed afterward. The activated production QA alias remains active and unchanged.
+
+A before/after fingerprint confirmed the original production customer assignment, connection owner, Google resource, enabled state, AI consent, autopilot setting and settings version were unchanged. This is snapshot-based integration acceptance, not fresh Google OAuth or live Google API import acceptance. Live reply publishing remains intentionally untested. No deployment or sales-gate change was made.
+
 ## Reproduce
 
 ```powershell
