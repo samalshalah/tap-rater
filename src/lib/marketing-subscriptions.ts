@@ -69,7 +69,10 @@ export function marketingSubscriptionState(s:Stripe.Subscription){
  if(interval!=='month'||price.currency!=='usd'||price.unit_amount!==2900||price.recurring?.interval_count!==1||!item.quantity||item.quantity>10)throw Error('Package price or quantity does not match.');
  const invoice=typeof s.latest_invoice==='object'?s.latest_invoice:null;
  const paid=s.status==='active'&&invoice?.status==='paid'&&!s.pause_collection;
- return {paid,locations:item.quantity,cadence:interval!,end:new Date(item.current_period_end*1000).toISOString()};
+ // The hosted portal can schedule cancel_at without setting cancel_at_period_end.
+ const renewalCanceled=Boolean(s.cancel_at_period_end||s.cancel_at);
+ const end=s.cancel_at?Math.min(item.current_period_end,s.cancel_at):item.current_period_end;
+ return {paid,locations:item.quantity,cadence:interval!,renewalCanceled,end:new Date(end*1000).toISOString()};
 }
 /** Called only after Stripe signature verification. Retrieve current state under the account lease. */
 export async function syncMarketingSubscription(event:Stripe.Event){
@@ -96,7 +99,7 @@ export async function syncMarketingSubscription(event:Stripe.Event){
   if(!row||row.stripe_subscription_id&&row.stripe_subscription_id!==id)throw Error('Subscription ownership could not be verified.');
   await assertActive();
   if(mode==='test'&&process.env.MARKETING_TEST_ENTITLEMENTS!=='true')throw Error('Test entitlements require an isolated test database.');
-  await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${sub.cancel_at_period_end},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), access AS (
+  await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${state.renewalCanceled},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), access AS (
    INSERT INTO customer_marketing_access(customer_id,status,source,expires_at,location_limit,ai_monthly_limit,heatmap_monthly_points)
    SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},${marketingPlan.replies},588 FROM saved
    ON CONFLICT(customer_id) DO UPDATE SET status=EXCLUDED.status,source='paid',expires_at=EXCLUDED.expires_at,location_limit=EXCLUDED.location_limit,ai_monthly_limit=EXCLUDED.ai_monthly_limit,heatmap_monthly_points=588,version=customer_marketing_access.version+1,updated_at=now()

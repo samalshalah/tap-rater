@@ -28,6 +28,11 @@ describe('Growth checkout',()=>{
  it('requires the release switch',async()=>{vi.stubEnv('MARKETING_CHECKOUT_ENABLED','false');await expect(createMarketingCheckout('x@y.test',{cadence:'month',locations:1,acceptedTerms:true},'attempt',{mode:'payment'})).rejects.toThrow('not available');expect(mocks.create).not.toHaveBeenCalled();});
 });
 describe('Growth entitlement lifecycle',()=>{
+ it('recognizes hosted-portal cancellation dates without the legacy period-end flag',()=>{
+  expect(marketingSubscriptionState(sub({cancel_at:1899999000,cancel_at_period_end:false}))).toMatchObject({paid:true,renewalCanceled:true,end:new Date(1899999000*1000).toISOString()});
+  expect(marketingSubscriptionState(sub({cancel_at:null,cancel_at_period_end:false})).renewalCanceled).toBe(false);
+  expect(marketingSubscriptionState(sub({cancel_at_period_end:true})).renewalCanceled).toBe(true);
+ });
  it('only grants access on an active subscription with a paid latest invoice',()=>{
   expect(marketingSubscriptionState(sub()).paid).toBe(true);
   for(const status of ['past_due','unpaid','canceled','incomplete','trialing'])expect(marketingSubscriptionState(sub({status})).paid).toBe(false);

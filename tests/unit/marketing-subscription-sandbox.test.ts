@@ -12,13 +12,14 @@ vi.mock('@/lib/hosted-setup-email',()=>({sendCustomerActivationEmail:activationM
 import {activateCustomerAccountWithClient} from '@/lib/customer-account';
 import {createNeonSupabaseAdapterFromUrl} from '@/lib/neon-supabase-adapter';
 import {prepareMarketingBuyer,createMarketingCheckout,syncMarketingSubscription} from '@/lib/marketing-subscriptions';
-describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated Stripe sandbox',()=>{
+describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Google Reviews isolated Stripe sandbox',()=>{
  it('validates standalone and bundled sessions, paid access, cancellation and location allowances',async()=>{
-  const url=process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL!;
-  if(!new URL(url).hostname.includes('ep-lively-star-at7d9rqv')||!process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_'))throw Error('Isolated staging and sandbox credentials required');
+  const url=process.env.REVIEWS_JOURNEY_DATABASE_URL||process.env.LOCAL_MANAGEMENT_TEST_DATABASE_URL!;
+  const allowedHosts=['ep-cold-voice-atmq1yn4-pooler.c-9.us-east-1.aws.neon.tech'];
+  if(!allowedHosts.includes(new URL(url).hostname)||!process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_'))throw Error('Isolated staging and sandbox credentials required');
   process.env.DATABASE_URL=url;process.env.STRIPE_MODE='test';process.env.MARKETING_CHECKOUT_ENABLED='true';process.env.MARKETING_TEST_ENTITLEMENTS='true';
   const stripe=new Stripe(process.env.STRIPE_SECRET_KEY),sql=neon(url);
-  expect((await stripe.accounts.retrieve('acct_1U1TpVJEgI4VUlPP')).id).toBe('acct_1U1TpVJEgI4VUlPP');
+  expect((await stripe.accounts.retrieve(null)).id).toBe('acct_1U1TpVJEgI4VUlPP');
   const email=`growth-${randomUUID()}@example.test`,email2=`growth-${randomUUID()}@example.test`;
   const accounts=await sql`INSERT INTO customers(email,account_status) VALUES(${email},'pending_activation'),(${email2},'pending_activation') RETURNING id,email`;
   const c=accounts.find(a=>a.email===email)!;
@@ -39,7 +40,8 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
    product=(await stripe.products.create({name:'Growth sandbox lifecycle QA',metadata:{test_only:'true'}})).id;
    const customer=await stripe.customers.create({email,name:'Growth sandbox QA',payment_method:'pm_card_visa',invoice_settings:{default_payment_method:'pm_card_visa'}});
    subscription=await stripe.subscriptions.create({customer:customer.id,items:[{price_data:{currency:'usd',unit_amount:2900,recurring:{interval:'month'},product},quantity:2}],metadata:{tap_rater:'marketing_growth_v1',account_id:String(c.id),purchase_attempt:attempt}});
-   const portal=await stripe.billingPortal.sessions.create({customer:customer.id,configuration:process.env.MARKETING_PORTAL_CONFIGURATION_ID,return_url:'https://taprater.com/account/packages'});
+   const configuration=process.env.MARKETING_PORTAL_CONFIGURATION_ID;
+   const portal=await stripe.billingPortal.sessions.create({customer:customer.id,...(configuration&&configuration!=='default'?{configuration}:{}),return_url:'https://taprater.com/account/packages'});
    expect(portal.url).toMatch(/^https:\/\/billing.stripe.com\//);
    const event=()=>({type:'customer.subscription.updated',data:{object:subscription}} as unknown as Stripe.Event);
    await syncMarketingSubscription(event());

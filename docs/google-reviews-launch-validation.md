@@ -27,9 +27,26 @@ Base: production branch `origin/nextjs-commerce`, commit `757c1b7ebdeaa2ce9a8b5e
 
 ## Remaining launch acceptance
 
-The Stripe connector requires reauthentication; no designated Google test Business Profile or test credentials were available. Automated substitutes do not prove provider configuration, email delivery, OAuth scopes, or scheduled production execution.
+### Real Stripe sandbox acceptance completed later November 14
 
-Before opening packages, use a Stripe sandbox and designated Google test profile to complete hosted payment, webhook/activation-email delivery, fresh Google authorization and location selection, full imports, a manual public test reply, an observed scheduled opt-in autopilot run, and billing-portal cancellation. Confirm the stand checkout regression in that release environment. Keep packages hidden until these checks pass.
+Used Sam's signed-in Chrome session to access the existing private Tap Rater sandbox `acct_1U1TpVJEgI4VUlPP`. Reused its existing test keys only in ignored local QA configuration. No live Stripe keys, payment settings, or production sales gates changed.
+
+- Real Stripe API lifecycle integration passed against the dedicated Neon QA branch: standalone and bundled Checkout amounts, retry idempotency, duplicate purchase prevention, paid activation, location and generation allowances, billing portal creation, cancellation, and access revocation.
+- Real hosted $29 monthly Checkout passed with a standard Stripe test card. A declined test card first showed the decline message, left payment unpaid, and granted no access; retry succeeded.
+- Stripe CLI forwarded genuine signed `invoice.paid`, `customer.subscription.created`, `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted` events into the production webhook handler running locally against QA. All five returned HTTP 200. Invalid signatures were rejected. Account activation passed; email delivery was simulated.
+- Customer billing-portal cancellation passed. Access remained active for the paid period; final sandbox cancellation revoked access. The test subscriptions were canceled and the temporary listener stopped.
+- Sandbox portal heading was corrected from Google Growth to Google Reviews. Production portal copy was not changed or verified.
+- Acceptance run: session `cs_test_a0EfNYftilUiyuo9pp7dMh9cnOCHqnjQh6xVug2k55KGUejkg4vGpMytIv`; subscription `sub_1Ubi0IJEgI4VUlPPyf16Sl8m`.
+
+The real portal exposed a cancellation mapping bug: Stripe can set `cancel_at` while leaving `cancel_at_period_end=false`. A local correction now recognizes both forms and caps entitlement expiry at the earlier cancellation date. Hosted acceptance passed after the fix; 2,438 unit tests and TypeScript also passed. **This additional cancellation fix has not been deployed.** The production version recorded above remains unchanged.
+
+Reproduce real acceptance by starting `node --env-file=.env.stripe-reviews-qa tests/fixtures/reviews-launch/stripe-listener.mjs`, then setting `REVIEWS_HOSTED_STRIPE_TEST=1` and running the hosted acceptance test with both ignored QA env files. Complete only its sandbox Checkout and portal links. This does not enable public packages. Credentials and session bearer URLs must remain out of version control.
+
+### Still required
+
+Deploy the tested cancellation correction before launch. Verify real activation-email delivery and the deployed webhook configuration; the local CLI-forwarded test does not prove production endpoint configuration. No designated Google test Business Profile is available yet. Fresh Google OAuth, imports, a reviewed public reply, and observed scheduled opt-in execution remain unverified. The Stripe app connector still needs reconnection separately from the working Chrome session.
+
+Before opening packages, complete the remaining checks above with a designated Google test profile and confirm stand checkout in the release environment. Keep packages hidden until these checks pass. Review subscription tax requirements before launch; no tax collection settings were changed in this test.
 
 No real customer payment, public Google reply, production data change, or Google Growth activation was performed during this work.
 
