@@ -2,7 +2,7 @@
 
 Status: deployed November 14, 2026 with owner authorization; packages remain hidden. Real provider acceptance is still required before launch.
 
-Production Worker version: `407657af-4eb5-4230-b6e6-3b8daa13d59a`. Build ID: `NsdHqcqfUf-mO9rUnWMFv` (verified against the live `/BUILD_ID`). Previous version for rollback: `98547a55-6988-402f-b2bc-0ccc2436e329`.
+Current production Worker version: `a454804e-3db1-4081-b0ff-c151c6ff05c0`. Build ID: `SX9CO3WA_GHhDM6WLbTsA` (verified against the live `/BUILD_ID` after pushing release `3c4c1cc`). Includes the cancellation correction and the admin activation-email action. Previous version for rollback: `c2db6d3c-6dec-4971-9bae-7329dabbace5` (cancellation correction only). Initial readiness release: `407657af-4eb5-4230-b6e6-3b8daa13d59a`.
 
 Post-deployment checks passed: public route smoke tests; Reviews packages return 404; purchase API returns 503 without contacting Stripe; Growth redirects to `/shop`; unauthenticated review access returns 401. The existing configured stand cart opens checkout at $49 before tax with free shipping, optional account creation, and no subscription. No live payment was submitted. Public cache regression checks passed before deployment; runtime variables were preserved with `--keep-vars`.
 
@@ -38,17 +38,34 @@ Used Sam's signed-in Chrome session to access the existing private Tap Rater san
 - Sandbox portal heading was corrected from Google Growth to Google Reviews. Production portal copy was not changed or verified.
 - Acceptance run: session `cs_test_a0EfNYftilUiyuo9pp7dMh9cnOCHqnjQh6xVug2k55KGUejkg4vGpMytIv`; subscription `sub_1Ubi0IJEgI4VUlPPyf16Sl8m`.
 
-The real portal exposed a cancellation mapping bug: Stripe can set `cancel_at` while leaving `cancel_at_period_end=false`. A local correction now recognizes both forms and caps entitlement expiry at the earlier cancellation date. Hosted acceptance passed after the fix; 2,438 unit tests and TypeScript also passed. **This additional cancellation fix has not been deployed.** The production version recorded above remains unchanged.
+The real portal exposed a cancellation mapping bug: Stripe can set `cancel_at` while leaving `cancel_at_period_end=false`. The correction recognizes both forms and caps entitlement expiry at the earlier cancellation date. Hosted acceptance passed after the fix; 2,438 unit tests and TypeScript also passed. The fix was deployed with owner authorization on November 14 at 14:41 UTC as Worker `c2db6d3c-6dec-4971-9bae-7329dabbace5`, build `L5QMJnOPsemoxipSXhjlm`, release commit `93fb5a3` on `nextjs-commerce`. Active version and live build ID matched after pushing. Production smoke and cache checks passed; variables were preserved.
+
+### Production webhook verification
+
+- Live destination `we_1U4fx8JfXGmPO60V40lmMASQ` is active at `https://taprater.com/api/webhooks/stripe`, API version `2026-07-29.dahlia`. All 13 required existing checkout/refund and subscription/invoice events remain subscribed. No Stripe live configuration changed.
+- Stripe showed four successful deliveries and zero failures this week before the check.
+- Replayed already-completed live checkout event `evt_1UbROZJfXGmPO60VDpEzJARZ` at November 14, 09:42:33 EST. Stripe confirmed HTTP 200 and `received: true` from the new deployment. The existing completed recovery record was checked before and after; its attempt count and timestamp stayed unchanged, confirming duplicate processing was skipped.
+- Missing and invalid signatures both returned HTTP 400. Packages returned 404, Growth redirected to `/shop`, and stand checkout returned 200.
+- This verifies actual production signed delivery and idempotency. New subscription lifecycle processing was verified in the isolated real Stripe sandbox described above; no live purchase was made.
 
 Reproduce real acceptance by starting `node --env-file=.env.stripe-reviews-qa tests/fixtures/reviews-launch/stripe-listener.mjs`, then setting `REVIEWS_HOSTED_STRIPE_TEST=1` and running the hosted acceptance test with both ignored QA env files. Complete only its sandbox Checkout and portal links. This does not enable public packages. Credentials and session bearer URLs must remain out of version control.
 
 ### Still required
 
-Deploy the tested cancellation correction before launch. Verify real activation-email delivery and the deployed webhook configuration; the local CLI-forwarded test does not prove production endpoint configuration. No designated Google test Business Profile is available yet. Fresh Google OAuth, imports, a reviewed public reply, and observed scheduled opt-in execution remain unverified. The Stripe app connector still needs reconnection separately from the working Chrome session.
+No designated Google test Business Profile is available yet. Fresh Google OAuth, imports, a reviewed public reply, and observed scheduled opt-in execution remain unverified. The Stripe app connector still needs reconnection separately from the working Chrome session.
 
 Before opening packages, complete the remaining checks above with a designated Google test profile and confirm stand checkout in the release environment. Keep packages hidden until these checks pass. Review subscription tax requirements before launch; no tax collection settings were changed in this test.
 
-No real customer payment, public Google reply, production data change, or Google Growth activation was performed during this work.
+No real customer payment, public Google reply, or Google Growth activation was performed. Production changes were limited to the authorized releases, a signed idempotent webhook replay, and the isolated activation-email QA account described below.
+
+### Production activation-email delivery verified
+
+- Added an admin-only Send activation email button for pending accounts, using the existing authenticated endpoint and its five-minute cooldown. The endpoint existed without a corresponding customer-list action. Existing licence controls remain intact.
+- All 2,438 tests, TypeScript, Cloudflare build, public-cache checks and deployment dry-run passed again. Deployed with preserved variables at 14:46 UTC; production branch and active build were verified. Public smoke tests passed, `/checkout` stayed 200, packages stayed 404, and Growth stayed a redirect to `/shop`.
+- Created the clearly labeled `QA Activation Delivery 2026-11-14` customer (`e9018ee7-1bd2-49ae-8b9a-e62a3508d5da`) using the owner's Gmail QA alias, without purchases, licences, locations or Google access. Used the new admin button on production to send the real activation email.
+- Delivery ledger: accepted `2026-11-14T14:46:50.331Z`, delivered `2026-11-14T14:46:51.365Z`, no failure reason. Independently opened the received message in the owner's Gmail Inbox: subject Activate your Tap Rater account, sender support@taprater.com, activation link on taprater.com, seven-day expiry notice.
+- Retained the synthetic record for audit, disabled it and cleared its activation token after checking delivery. No production password was created. Password activation and single-use token behavior were already tested in isolated QA.
+- Evidence: `archives/google-reviews-fixes-2026-11-14/activation-email-delivered.jpg` and `production-webhook-replay.jpg` in the parent workspace.
 
 ## Reproduce
 
