@@ -35,7 +35,7 @@ export async function POST(request:Request){
   if(!limit.context.configured||limit.limited)return NextResponse.json({error:'Please wait before trying checkout again.'},{status:429,headers});
   await recordLoginAttempt(limit.context,false);
   await prepareMarketingBuyer(buyerEmail,name||'',auth.session?.email);
-  const session=await createMarketingCheckout(buyerEmail,p,attempt,{mode:'payment',ui_mode:'hosted_page',integration_identifier:'taprater_growth_hjksapqw',success_url:`${site}/growth/thank-you`,cancel_url:`${site}/growth`,metadata:{marketing_only:'true'},billing_address_collection:'required'});
+  const session=await createMarketingCheckout(buyerEmail,p,attempt,{mode:'payment',ui_mode:'hosted_page',integration_identifier:'taprater_growth_hjksapqw',success_url:`${site}/google-reviews/thank-you`,cancel_url:`${site}/google-reviews/packages?checkout=cancelled`,metadata:{marketing_only:'true'},billing_address_collection:'required'});
   return NextResponse.json({url:session.url},{headers});
  }catch(e){return NextResponse.json({error:e instanceof z.ZodError?'Check your plan selection.':e instanceof Error?e.message:'Checkout is unavailable.'},{status:400,headers});}
 }

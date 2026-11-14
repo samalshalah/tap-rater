@@ -16,7 +16,7 @@ export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),location
  (l.next_page IS NOT NULL OR l.sync_lock_until>now()) AS sync_in_progress,
  (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id) AS saved_count,
  (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND (l.sync_run IS NULL OR r.seen_run=l.sync_run)) AS imported_count, (g.owner IS NOT NULL) AS connected,
- (SELECT ai_monthly_limit FROM customer_marketing_access WHERE customer_id=b.customer_id) AS ai_monthly_limit,
+ (SELECT coalesce((SELECT m.ai_monthly_limit_override FROM marketing_location_access m WHERE m.business_id=b.id AND m.customer_id=b.customer_id AND m.enabled),a.ai_monthly_limit) FROM customer_marketing_access a WHERE a.customer_id=b.customer_id) AS ai_monthly_limit,
  (SELECT coalesce(sum(units),0) FROM marketing_usage_reservations WHERE business_id=b.id AND service='ai' AND month=date_trunc('month',now() AT TIME ZONE 'America/New_York')::date) AS ai_monthly_used FROM google_review_links l JOIN businesses b ON b.id=l.business_id JOIN customers c ON c.id=b.customer_id
  LEFT JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.customer_id=l.customer_id AND c.account_status='active' AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)}) AND (${locationIds===null} OR l.business_id=ANY(${locationIds ?? []}::uuid[])) ORDER BY b.business_name`;
@@ -92,6 +92,7 @@ export async function liveReviewPage(actor:ReviewActor,businessId:string,offset:
 }
 
 export async function bindGoogleLocation(owner:string,businessId:string,account:string,location:string,sql=liveDb(),makeClient=clientFor,customerEmail:string|null=null){
+ if(customerEmail!==null){const customerOwner='customer:'+customerEmail.trim().toLowerCase();if(owner!==customerOwner&&owner!==`${customerOwner}:location:${businessId}`)throw new LiveReviewError('Connect your own Google account to choose a location.',403);}
  z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/).parse(account);z.string().regex(/^locations\/[A-Za-z0-9_-]+$/).parse(location);
  const businesses=await sql`SELECT b.customer_id FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE b.status IS DISTINCT FROM 'marketing_removed' AND b.id=${businessId} AND c.account_status='active' AND (${customerEmail===null} OR lower(c.email)=${customerEmail})`;
  const connections=await sql`SELECT google_subject FROM google_business_connections WHERE owner=${owner}`;
@@ -105,7 +106,7 @@ export async function bindGoogleLocation(owner:string,businessId:string,account:
  const parent=account+'/'+location;
  const preview=await client.listReviews(parent); // Read only the selected location before assignment.
  const rows=await sql`WITH linked AS (INSERT INTO google_review_links (business_id,customer_id,owner,google_subject,parent,title,ai_consent,auto_enabled,auto_four,auto_five,draft_low_stars,consent_at,review_total)
- VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},true,true,true,true,true,now(),${preview.totalReviewCount??null}) ON CONFLICT (business_id) DO UPDATE SET owner=EXCLUDED.owner,google_subject=EXCLUDED.google_subject,title=EXCLUDED.title,enabled=true,last_error=NULL,sync_lock=NULL,sync_lock_until=NULL,maintenance_due_at=now(),settings_version=google_review_links.settings_version+1 WHERE google_review_links.customer_id=EXCLUDED.customer_id AND google_review_links.parent=EXCLUDED.parent RETURNING business_id), named AS (UPDATE businesses b SET business_name=${title},address=${selectedAddress},google_place_id=NULL,google_review_url=NULL FROM linked l,customers c WHERE b.id=l.business_id AND b.customer_id=c.id AND c.marketing_onboarding_business_id=b.id AND c.marketing_onboarding_completed_at IS NULL RETURNING b.id) SELECT business_id FROM linked`;
+ VALUES (${businessId},${businesses[0].customer_id},${owner},${connections[0].google_subject},${parent},${title},false,false,false,false,false,NULL,${preview.totalReviewCount??null}) ON CONFLICT (business_id) DO UPDATE SET owner=EXCLUDED.owner,google_subject=EXCLUDED.google_subject,title=EXCLUDED.title,enabled=true,last_error=NULL,sync_lock=NULL,sync_lock_until=NULL,maintenance_due_at=now(),settings_version=google_review_links.settings_version+1 WHERE google_review_links.customer_id=EXCLUDED.customer_id AND google_review_links.parent=EXCLUDED.parent RETURNING business_id), named AS (UPDATE businesses b SET business_name=${title},address=${selectedAddress},google_place_id=NULL,google_review_url=NULL FROM linked l,customers c WHERE b.id=l.business_id AND b.customer_id=c.id AND c.marketing_onboarding_business_id=b.id AND c.marketing_onboarding_completed_at IS NULL RETURNING b.id) SELECT business_id FROM linked`;
  if(!rows.length)throw new LiveReviewError('This customer workspace or Google location is already assigned. Stop and remove its previous assignment first.');
  return {linked:true};
 }

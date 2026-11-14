@@ -1,6 +1,22 @@
-# Draft-only review automation
+# Review automation operations
 
-This is the current operational workflow. Do not activate live reply publishing or customer pricing when diagnosing automation.
+## November 14 launch-readiness update
+
+Deployed with owner authorization as Worker version `407657af-4eb5-4230-b6e6-3b8daa13d59a`; see `google-reviews-launch-validation.md` for acceptance evidence and remaining provider tests.
+
+Google Reviews sales remain disabled in `marketing-sales.ts`; Google Growth remains paused in `business-optimization-feature.ts`. Do not open sales based solely on the automated checks below.
+
+New Google connections import reviews with AI, low-star drafting, and automatic posting off. Customers enable AI in Reply settings and separately confirm public 4–5-star posting. Reconnecting preserves existing settings. Low-star replies require manual submission. Existing production locations may already have publishing enabled; the historical draft-only policy below does not describe their current behavior.
+
+Customer discovery and binding require that customer's own Google connection; a shared manager connection can continue servicing an existing assignment but cannot expose its location directory to the customer. Reviews onboarding completes when all review pages finish, independently of paused profile optimization. Usage displays the effective location allowance, including overrides.
+
+`reviews-customer-journey-integration.test.ts` exercises checkout, paid activation, imports, editing, publishing reconciliation, consent, allowances, and subscription revocation on the dedicated QA branch. It simulates Stripe, Google and activation-email delivery. Its exact endpoint guard prevents use against production. Use `REVIEWS_JOURNEY_DATABASE_URL` only for that branch; credentials must never be committed. The local component harness is `node tests/fixtures/reviews-launch/serve.mjs`; it makes no external service requests.
+
+Before reopening packages, complete a real Stripe test Checkout and portal cancellation with webhook delivery and activation email, fresh Google OAuth with a designated test Business Profile, paginated import, manual reply, and an observed scheduled opt-in autopilot run. External checks remain unverified because the Stripe connector needs reauthentication and no Google test profile has been designated. Keep the public sales gate closed until those checks pass.
+
+## Historical draft-only workflow (October 23)
+
+The following records the October 23 operational workflow and its evidence. Do not activate customer pricing when diagnosing automation.
 
 ## Scheduled work
 

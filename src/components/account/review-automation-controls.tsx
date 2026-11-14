@@ -2,6 +2,7 @@
 import {useReviewEndpoint} from './review-endpoint';
 import {AiKnowledgeSettings} from './ai-knowledge-settings';
 import {useState,useRef} from 'react';
+import {ModalDialog} from '@/components/ui/modal-dialog';
 import type {ReplyStyle} from '@/lib/review-ai-options';
 export type ReviewAutomation={id:string;connected:boolean;ai_consent?:boolean;auto_enabled?:boolean;auto_four?:boolean;auto_five?:boolean;auto_style?:string;profile_ai_enabled?:boolean;settings_version?:number;reply_delay_minutes?:number;draft_low_stars?:boolean};
 export function Toggle({label,on,disabled,onChange}:{label:string;on:boolean;disabled?:boolean;onChange:()=>void}){return <button type="button" role="switch" aria-checked={on} aria-label={label} disabled={disabled} onClick={onChange} className="inline-flex items-center gap-2 text-sm disabled:opacity-50"><span className={'relative inline-block h-5 w-9 rounded-full transition-colors '+(on?'bg-teal-600':'bg-slate-300')}><span className={'absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all '+(on?'left-[18px]':'left-0.5')}/></span><span>{label}</span><span className="text-xs text-muted">{on?'On':'Off'}</span></button>;}
@@ -10,6 +11,7 @@ type AutomationChange='ai'|'positive'|'low';
 export function ReviewAutomationControls({location,onSaved}:{location:ReviewAutomation;onSaved:()=>Promise<void>}){
  const endpoint=useReviewEndpoint();
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [postingConsent,setPostingConsent]=useState<string|null>(null);
  const activeLocation=useRef(location.id);activeLocation.current=location.id;
  const positiveOn=Boolean(location.ai_consent&&location.auto_enabled&&(location.auto_four||location.auto_five));
  async function save(w:AutomationWorkspace,key:AutomationChange,enabled:boolean){
@@ -32,10 +34,12 @@ export function ReviewAutomationControls({location,onSaved}:{location:ReviewAuto
  }
  return <div className="space-y-3"><div className="flex flex-wrap items-center gap-5">
  <Toggle label="AI replies" on={Boolean(location.ai_consent)} disabled={busy||!location.connected} onChange={()=>change('ai',!location.ai_consent)}/>
- <Toggle label="4–5-star autopilot" on={positiveOn} disabled={busy||!location.connected||!location.ai_consent} onChange={()=>change('positive',!positiveOn)}/>
+ <Toggle label="4–5-star autopilot" on={positiveOn} disabled={busy||!location.connected||!location.ai_consent} onChange={()=>positiveOn?change('positive',false):setPostingConsent(location.id)}/>
  <Toggle label="1–3-star drafts" on={Boolean(location.ai_consent&&location.draft_low_stars!==false)} disabled={busy||!location.connected||!location.ai_consent} onChange={()=>change('low',location.draft_low_stars===false)}/>
  <AiKnowledgeSettings businessId={location.id} onSaved={onSaved}/>
  </div>{positiveOn&&location.auto_four!==location.auto_five&&<p className="text-xs text-muted">Currently {location.auto_five?'5':'4'}-star autopilot only.</p>}
+ <p className="text-xs text-muted">AI replies use review text and ratings to prepare drafts within your monthly allowance. Automatic posting requires a separate opt-in. 1–3-star replies always need your manual submission.</p>
+ {postingConsent===location.id&&<ModalDialog labelledBy="autopilot-consent-title" onClose={()=>setPostingConsent(null)}><section className="tr-listing-dialog space-y-4"><h2 id="autopilot-consent-title" tabIndex={-1} data-dialog-heading>Turn on automatic Google replies?</h2><p>Tap Rater will generate and publicly post replies to new and older unanswered 4–5-star reviews for this location, using your reply schedule and remaining AI allowance.</p><p>Existing replies, saved drafts and flagged spam are excluded. Replies to 1–3-star reviews stay as drafts. You can turn autopilot off in Reply settings.</p><div className="flex flex-wrap gap-3"><button type="button" className="tr-button-primary" disabled={busy} onClick={async()=>{if(activeLocation.current!==postingConsent)return;await change('positive',true);setPostingConsent(null);}}>Enable automatic posting</button><button type="button" className="tr-button-ghost" disabled={busy} onClick={()=>setPostingConsent(null)}>Keep autopilot off</button></div></section></ModalDialog>}
  {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
  </div>;
 }

@@ -13,9 +13,11 @@ function text(node:any):string{if(node==null)return '';if(typeof node==='string'
 let fetcher:ReturnType<typeof vi.fn>;
 beforeEach(()=>{state.values=[];state.cursor=0;state.ref.current='one';saved.mockClear();fetcher=vi.fn().mockResolvedValue({ok:true,json:async()=>({workspaces:[workspace]})});vi.stubGlobal('fetch',fetcher);vi.stubGlobal('window',{confirm:vi.fn(()=>{throw Error('Native confirmation must not be used');})});});
 afterEach(()=>vi.unstubAllGlobals());
-it('saves the combined positive toggle in one click using the latest saved delay',async()=>{
+it('requires explicit posting consent and saves using the latest saved delay',async()=>{
  const tree=render();expect(find(tree,n=>n.type===Toggle&&n.props.label==='5-star autopilot')).toBeFalsy();
  await find(tree,n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ expect(fetcher).not.toHaveBeenCalled();
+ await find(render(),n=>n.type==='button'&&text(n)==='Enable automatic posting').props.onClick();
  expect(fetcher).toHaveBeenCalledTimes(2);
  const body=JSON.parse(fetcher.mock.calls[1][1].body);expect(body.action).toBe('settings');expect(body.settings).toMatchObject({businessId:'one',four:true,five:true,autoEnabled:true,lowStars:false,delayMinutes:360,version:8,confirmAutomaticPosting:true});
  expect(saved).toHaveBeenCalledOnce();expect(text(render())).not.toContain('Enable autopilot');expect(text(render())).not.toContain('hours delay');
@@ -30,11 +32,15 @@ it('enables low-star drafts without a separate knowledge approval',async()=>{
 it('shows save errors without reporting success or changing the switch',async()=>{
  fetcher.mockResolvedValueOnce({ok:true,json:async()=>({workspaces:[workspace]})}).mockResolvedValueOnce({ok:false,json:async()=>({error:'Settings changed. Please reload.'})});
  await find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ await find(render(),n=>n.type==='button'&&text(n)==='Enable automatic posting').props.onClick();
  const tree=render();expect(text(tree)).toContain('Settings changed. Please reload.');expect(find(tree,n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.on).toBe(false);expect(saved).not.toHaveBeenCalled();
 });
 it('does not save if the user switches location while settings are loading',async()=>{
  let resolve!:(value:unknown)=>void;fetcher.mockReturnValueOnce(new Promise(r=>{resolve=r;}));
- const change=find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();
+ const change=find(render(),n=>n.type==='button'&&text(n)==='Enable automatic posting').props.onClick();
  render({...location,id:'two'});resolve({ok:true,json:async()=>({workspaces:[workspace]})});await change;
  expect(fetcher).toHaveBeenCalledTimes(1);expect(saved).not.toHaveBeenCalled();
 });
+
+it('canceling autopilot consent never saves settings',()=>{find(render(),n=>n.type===Toggle&&n.props.label==='4–5-star autopilot').props.onChange();expect(text(render())).toContain('older unanswered');find(render(),n=>n.type==='button'&&text(n)==='Keep autopilot off').props.onClick();expect(fetcher).not.toHaveBeenCalled();expect(text(render())).not.toContain('Turn on automatic Google replies?');});

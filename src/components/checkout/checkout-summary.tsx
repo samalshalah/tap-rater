@@ -121,7 +121,7 @@ export const CheckoutSummary = memo(function CheckoutSummary({
         <div className="mt-4 grid gap-2 border-t border-line pt-4 text-sm">
           <OfferSummary quote={promotion} offers={offers} />
           <SummaryRow label="Stands after savings" value={formatPrice(standTotalCents)} />
-          {marketing&&<SummaryRow label={`Growth · ${marketing.locations} location(s)`} value={`${formatPrice(marketingAmount(marketing))}/month`}/>}
+          {marketing&&<SummaryRow label={`Google Reviews · ${marketing.locations} location(s)`} value={`${formatPrice(marketingAmount(marketing))}/month`}/>}
           {recurringTotalCents > 0 ? (
             <SummaryRow
               label="Monthly"

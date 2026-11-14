@@ -2,6 +2,8 @@ import {randomUUID} from 'node:crypto';
 import {neon} from '@neondatabase/serverless';
 import Stripe from 'stripe';
 import {describe,it,expect,vi} from 'vitest';
+// Isolated test only: never add a runtime bypass to the production sales gate.
+vi.mock('@/lib/marketing-sales',()=>({marketingSalesEnabled:true}));
 vi.mock('@/lib/db',()=>({getSupabaseAdmin:()=>({})}));
 // Single-process harness: concurrency enforcement is tested separately against Postgres.
 vi.mock('@/lib/stripe-processing',()=>({withStripeResourceLock:async(_db:unknown,_key:string,fn:any)=>fn(async()=>{})}));
@@ -55,9 +57,9 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Growth isolated S
    expect((await sql`SELECT claim_marketing_location(${locations[1].id}::uuid,${c.id}::uuid) AS ok`)[0].ok).toBe(true);
    expect((await sql`SELECT claim_marketing_location(${locations[2].id}::uuid,${c.id}::uuid) AS ok`)[0].ok).toBe(false);
    const loc=locations[0].id;
-   expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',300,'review-full') AS ok`)[0].ok).toBe(true);
+   expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',1000,'review-full') AS ok`)[0].ok).toBe(true);
    expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',1,'review-extra') AS ok`)[0].ok).toBe(false);
-   expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',10,'profile:full') AS ok`)[0].ok).toBe(true);
+   expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',10,'profile:full') AS ok`)[0].ok).toBe(false);
    expect((await sql`SELECT reserve_marketing_units(${loc}::uuid,'ai',1,'profile:extra') AS ok`)[0].ok).toBe(false);
    subscription=await stripe.subscriptions.update(subscription.id,{cancel_at_period_end:true});await syncMarketingSubscription(event());
    expect((await sql`SELECT status FROM customer_marketing_access WHERE customer_id=${c.id}`)[0].status).toBe('active');

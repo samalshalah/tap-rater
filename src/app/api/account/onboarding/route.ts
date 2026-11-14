@@ -3,7 +3,6 @@ import {z} from 'zod';
 import {requireCustomerApi} from '@/lib/customer-auth';
 import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {liveDb,syncLiveReviews} from '@/lib/google-business/live-reviews';
-import {mutateProfile} from '@/lib/google-business/profile-management';
 const input=z.discriminatedUnion('action',[
  z.object({action:z.literal('choose'),name:z.string().trim().min(1).max(200),address:z.string().max(1000),placeId:z.string().max(500).optional()}).strict(),
  z.object({action:z.literal('import')}).strict(),z.object({action:z.literal('finish')}).strict()
@@ -25,10 +24,9 @@ async function handle(request:Request){
    const row=await snapshot();if(!row?.business_id||!row.connected)throw Error('Connect the selected Google business first.');
    if(v.action==='import'){
     const actor={kind:'customer' as const,email};
-    if(!row.profile_synced)await mutateProfile(actor,{action:'refresh',businessId:String(row.business_id)});
     if(!row.synced_at||row.next_page||row.last_error)await syncLiveReviews(actor,String(row.business_id));
    }else{
-    if(!row.synced_at||row.next_page||row.last_error||!row.profile_synced)throw Error('Wait for the business information and all review pages to finish importing.');
+    if(!row.synced_at||row.next_page||row.last_error)throw Error('Wait for all review pages to finish importing.');
     await sql`UPDATE customers SET marketing_onboarding_completed_at=now() WHERE lower(email)=${email}`;
    }
   }

@@ -6,6 +6,15 @@ const actor={kind:'customer' as const,email:'client@example.com'};
 const rows=(...values:unknown[][])=>{const sql=vi.fn();values.forEach(v=>sql.mockResolvedValueOnce(v));return sql as any;};
 afterEach(()=>vi.unstubAllEnvs());
 describe('client connection and authorized publishing',()=>{
+ it('rejects a shared manager credential before any database or Google access for customer binding',async()=>{
+  const sql=vi.fn(),factory=vi.fn();await expect(bindGoogleLocation('admin:shared',id,'accounts/a','locations/l',sql as any,factory,actor.email)).rejects.toMatchObject({status:403});expect(sql).not.toHaveBeenCalled();expect(factory).not.toHaveBeenCalled();
+ });
+ it('creates import-only connections without silently consenting to AI or posting',async()=>{
+  const sql=rows([{customer_id:id}],[{google_subject:'s'}],[{business_id:id}]);
+  const factory=vi.fn().mockResolvedValue({listLocations:async()=>({locations:[{name:'locations/l',title:'QA'}]}),listReviews:async()=>({reviews:[],totalReviewCount:0})});
+  expect(await bindGoogleLocation('customer:'+actor.email,id,'accounts/a','locations/l',sql,factory,actor.email)).toEqual({linked:true});
+  expect(sql.mock.calls[2][0].join('?')).toContain('false,false,false,false,false,NULL');
+ });
  it('automatically exhausts every page sequentially',async()=>{
  const page=vi.fn().mockResolvedValueOnce({imported:50,more:true}).mockResolvedValueOnce({imported:50,more:true}).mockResolvedValueOnce({imported:3,more:false});const progress=vi.fn(),wait=vi.fn().mockResolvedValue(undefined);
  await importReviewPages(page,progress,wait);expect(page).toHaveBeenCalledTimes(3);expect(wait).toHaveBeenCalledTimes(2);expect(progress).toHaveBeenLastCalledWith(103);

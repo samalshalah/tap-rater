@@ -23,7 +23,7 @@ async function marketingGET(request:Request){
  const businesses=await liveDb()`SELECT b.id,b.business_name,b.address FROM businesses b JOIN customers c ON c.id=b.customer_id WHERE lower(c.email)=${identity.email} AND c.account_status='active' AND b.status IS DISTINCT FROM 'marketing_removed' ORDER BY b.business_name`;
  const id=new URL(request.url).searchParams.get('businessId');
  const scope=id&&z.string().uuid().safeParse(id).success?await customerLocationConnection(identity,id):null;
- return NextResponse.json({connection:scope?await googleConnectionSummary(scope.connectionOwner):null,businesses},{headers:{'Cache-Control':'no-store'}});
+ return NextResponse.json({connection:scope?.canDiscover?await googleConnectionSummary(scope.connectionOwner):null,managedConnection:Boolean(scope&&!scope.canDiscover),businesses},{headers:{'Cache-Control':'no-store'}});
  }catch{return NextResponse.json({error:'Google connection setup is unavailable. Please try again.'},{status:503});}
 }
 async function marketingPOST(request:Request){
@@ -34,6 +34,7 @@ async function marketingPOST(request:Request){
  const raw=await request.text();if(raw.length>12000)return NextResponse.json({error:'Request too large.'},{status:413});
  const parsed=bodySchema.safeParse(JSON.parse(raw));if(!parsed.success)return NextResponse.json({error:'Check your selection.'},{status:400});
  const v=parsed.data;const scope=await customerLocationConnection(identity,v.businessId);let result:unknown;
+ if(['accounts','locations','bind'].includes(v.action)&&!scope.canDiscover)return NextResponse.json({error:'Connect your own Google account to choose a location. Your existing managed review connection is unchanged.'},{status:403,headers:{'Cache-Control':'no-store'}});
  if(v.action==='connect'){
   const authorizationUrl=await beginGoogleConnection(scope.owner,identity.session);
   const state=new URL(authorizationUrl).searchParams.get('state')!;

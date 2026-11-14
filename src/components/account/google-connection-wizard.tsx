@@ -4,7 +4,7 @@ import {useEffect,useRef,useState} from 'react';
 import {GoogleLocationPicker} from './google-location-picker';
 import {findMatchingGoogleLocation,prioritizeMatchingGoogleLocation,useGoogleLocationSearch} from './google-location-search';
 import {discoverGoogleLocations,type GoogleLocationChoice} from '@/lib/google-business/location-discovery';
-type Setup={connection:{email:string}|null;businesses:{id:string;business_name:string;address?:string}[]};
+type Setup={managedConnection?:boolean;connection:{email:string}|null;businesses:{id:string;business_name:string;address?:string}[]};
 export function GoogleConnectionWizard({onLinked,onClose,businessId,compact=false}:{onLinked:()=>Promise<void>;onClose?:()=>void;businessId?:string;compact?:boolean}){
  const [setup,setSetup]=useState<Setup|null>(null),[locations,setLocations]=useState<GoogleLocationChoice[]>([]),[account,setAccount]=useState(''),[location,setLocation]=useState(''),[business,setBusiness]=useState(''),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [filter,setFilter]=useState('');
@@ -34,6 +34,7 @@ export function GoogleConnectionWizard({onLinked,onClose,businessId,compact=fals
  const {address,visibleLocations,selected}=useGoogleLocationSearch(locations,filter,location);
  return <section aria-label="Connect your Google business" className="my-5 rounded-xl border border-line p-5"><div role="tablist" aria-label="Connection method" className="mb-4 flex border-b border-line">{([['google','Connect Google'],['manual','Manual setup']] as const).map(([id,label])=><button key={id} id={`connection-tab-${id}`} type="button" role="tab" aria-selected={connectionTab===id} aria-controls={`connection-panel-${id}`} tabIndex={connectionTab===id?0:-1} className={`border-b-2 px-4 py-2 text-sm font-medium ${connectionTab===id?'border-teal-600 text-teal-700':'border-transparent text-muted'}`} onClick={()=>setConnectionTab(id)} onKeyDown={e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();const next=e.key==='Home'?'google':e.key==='End'?'manual':connectionTab==='google'?'manual':'google';setConnectionTab(next);document.getElementById(`connection-tab-${next}`)?.focus();}}}>{label}</button>)}</div>
  <div className="grid"><DialogTabPanel active={connectionTab==='google'} id="connection-panel-google" labelledBy="connection-tab-google"><p className="mb-4 text-sm">Sign in to Google, then choose the business you want to connect.</p>
+ {setup?.managedConnection&&<p className="mb-4 text-sm">Tap Rater manages the existing connection for this location. To manage the connection yourself, connect the Google account that owns or manages this business. Review imports remain connected while you do this.</p>}
  <fieldset disabled={busy} className="space-y-4">
  {setup?.connection?<p>Google account authorized: <strong>{setup.connection.email}</strong></p>:<p>Sign in with the Google account that manages your business.</p>}
  {!businessId&&<label className="block text-sm">Business<select className="mt-1 w-full rounded border border-line p-2" value={business} onChange={e=>{setSetup(null);setPickerOpen(false);setBusiness(e.target.value);}}><option value="">Choose business</option>{setup?.businesses.map(b=><option key={b.id} value={b.id}>{b.business_name}</option>)}</select></label>}

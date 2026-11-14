@@ -31,6 +31,18 @@ it('rejects another customer location before OAuth or discovery',async()=>{m.sql
 it('does not inherit the customer-wide Google connection for a new location',async()=>{await GET(new Request('https://taprater.com/api/account/google-business?businessId='+businessId));expect(m.summary).toHaveBeenCalledWith(scoped);expect(m.summary).not.toHaveBeenCalledWith(identity.owner);});
 it('keeps legacy connected locations using their existing authorization for discovery',async()=>{m.sql.mockResolvedValue([{id:businessId,connection_owner:identity.owner}]);await GET(new Request('https://taprater.com/api/account/google-business?businessId='+businessId));expect(m.summary).toHaveBeenCalledWith(identity.owner);});
 
+it('does not disclose staff-manager identity or discover its other businesses',async()=>{
+ m.sql.mockResolvedValue([{id:businessId,connection_owner:'admin:shared-manager'}]);
+ const response=await GET(new Request('https://taprater.com/api/account/google-business?businessId='+businessId));
+ expect(await response.json()).toMatchObject({connection:null,managedConnection:true});expect(m.summary).not.toHaveBeenCalled();
+ for(const action of [{action:'accounts'},{action:'locations',account:'accounts/shared'},{action:'bind',account:'accounts/shared',location:'locations/other-client',confirmAssignment:true}])expect((await POST(req(action))).status).toBe(403);
+ expect(m.client).not.toHaveBeenCalled();expect(m.bind).not.toHaveBeenCalled();
+});
+it('rejects another customer credential even when the workspace belongs to this customer',async()=>{
+ m.sql.mockResolvedValue([{id:businessId,connection_owner:'customer:two@example.com'}]);
+ expect((await POST(req({action:'accounts'}))).status).toBe(403);expect(m.client).not.toHaveBeenCalled();
+});
+
  it.each(['google_review_links_parent_key','google_review_links_location'])('explains duplicate Google business conflicts without revealing the other customer (%s)',async constraint=>{
   m.bind.mockRejectedValue({code:'23505',constraint,detail:'Private customer and resource details'});
   const response=await POST(req({action:'bind',account:'accounts/a',location:'locations/l',confirmAssignment:true}));

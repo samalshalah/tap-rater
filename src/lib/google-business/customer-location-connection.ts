@@ -9,5 +9,9 @@ export async function customerLocationConnection(identity:{owner:string;email:st
  LEFT JOIN google_business_connections g ON g.owner=${owner}
  WHERE b.id=${businessId}::uuid AND lower(c.email)=${identity.email} AND c.account_status='active' AND b.status IS DISTINCT FROM 'marketing_removed'`;
  if(!rows.length)throw new LiveReviewError('Choose a location from your account.',404);
- return {owner,connectionOwner:rows[0].connection_owner?String(rows[0].connection_owner):owner};
+ const connectionOwner=rows[0].connection_owner?String(rows[0].connection_owner):owner;
+ // Legacy customer-wide credentials are still owned by this customer. A staff
+ // manager may import the assigned location, but must not power client discovery.
+ const canDiscover=connectionOwner===owner||connectionOwner===identity.owner;
+ return {owner,connectionOwner,canDiscover};
 }
