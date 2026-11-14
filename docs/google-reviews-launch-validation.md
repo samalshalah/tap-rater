@@ -95,6 +95,14 @@ Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/norah-live-
 
 ## Reproduce
 
+### Deployed customer setup follow-up — 2026-11-14
+
+The activated QA alias was granted a manual one-location Reviews licence through the admin UI, expiring November 21, with zero monthly AI attempts. This is test access, not a paid subscription. The account remains active. Its customer navigation exposed Reviews; the setup wizard found Norah Boutique at 50 Massachusetts Ave NE, Washington, DC and created a separate, unconnected QA workspace (`a3ace447-152d-461b-9a5c-4e053c7b46a8`). No existing location was moved.
+
+The deployed Connect Google button reached Google's normal OAuth sign-in. The required manager identity, hussam.alshalah@gmail.com, was not signed in in the QA account's Sam Chrome profile; the browser test is awaiting user login. The production QA workspace has zero Google links and onboarding remains incomplete. Do not claim that the full deployed wizard passed. Norah's existing production assignment must not be removed or bypassed to finish this test.
+
+The Norah ownership/connection/AI/autopilot fingerprint remained identical before and after the QA setup actions. The focused onboarding, paused-sales, checkout-route, read-only snapshot import, and Google network-guard suites passed (27 tests across five files). Live checks returned packages 404, Growth 307 to `/shop`, and checkout 200. No public replies or new payments were made. Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/qa-setup-test-licence.jpg`.
+
 ```powershell
 npm test
 npx tsc --noEmit
