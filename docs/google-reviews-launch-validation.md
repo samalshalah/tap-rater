@@ -52,7 +52,7 @@ Reproduce real acceptance by starting `node --env-file=.env.stripe-reviews-qa te
 
 ### Still required
 
-No designated Google test Business Profile is available yet. Fresh Google OAuth, imports, a reviewed public reply, and observed scheduled opt-in execution remain unverified. The Stripe app connector still needs reconnection separately from the working Chrome session.
+Fresh Google OAuth and live read-only retrieval now passed for Norah Boutique in isolated QA, as recorded below. The deployed customer setup wizard has not been exercised end to end with a separate location assignment. A reviewed public reply and observed scheduled opt-in execution remain unverified and were expressly excluded by the owner. The Stripe app connector still needs reconnection separately from the working Chrome session.
 
 Before opening packages, complete the remaining checks above with a designated Google test profile and confirm stand checkout in the release environment. Keep packages hidden until these checks pass. Review subscription tax requirements before launch; no tax collection settings were changed in this test.
 
@@ -80,6 +80,18 @@ The owner authorized choosing an existing location for an isolated read-only tes
 `reviews-readonly-snapshot.test.ts` passed on the exact allowlisted QA database. It replayed the stored data through the production binding, paginated import, workspace, draft and approval functions using a temporary synthetic customer and location. All 22 reviews imported across three pages with content intact. Unauthorized customer access and stale edits were rejected. Manual publishing and automatic-posting configuration were rejected with publishing disabled; no replies were scheduled and the publishing adapter was never called. Network access was restricted to the Neon database API; no Google or AI requests were made. Temporary QA records were removed afterward. The activated production QA alias remains active and unchanged.
 
 A before/after fingerprint confirmed the original production customer assignment, connection owner, Google resource, enabled state, AI consent, autopilot setting and settings version were unchanged. This is snapshot-based integration acceptance, not fresh Google OAuth or live Google API import acceptance. Live reply publishing remains intentionally untested. No deployment or sales-gate change was made.
+
+### Fresh Google OAuth and live read-only import completed
+
+On November 14, the owner authorized a separate QA OAuth client and live read-only testing of Norah Boutique. Created client `130192868056-uo57d81nb55uf9lqaoiai0dlqn5pjk8q.apps.googleusercontent.com` in the existing approved Google project with only `http://localhost:4184/api/admin/google-business/callback`. The production OAuth client was not edited. The new client's secret stays in ignored local QA configuration.
+
+Used the existing Google manager identity for this location, `hussam.alshalah@gmail.com`, through a fresh sign-in. Google confirmed the app already held the requested identity and Business Profile permissions. The local runner used production OAuth state/PKCE, encrypted token storage, token exchange and Google client code, with an exact QA database guard and a network allowlist. Only token exchange, user-info, location discovery in the selected account, and Norah Boutique review GET requests were permitted; reply writes and revocation were blocked. The production Tap Rater QA/main accounts were not used or modified by this local runner.
+
+Google returned HTTP 200 for token exchange, user-info, location discovery, and reviews retrieval. All 22 reviews were fetched in one actual Google API page. The fresh data then passed the isolated application import/draft/access tests, split into three replayed pages to exercise pagination. Both integration and network-guard tests passed, along with TypeScript. This verifies fresh provider authorization/read access and application import of live data; it is not a claim that the deployed customer wizard or public reply posting was tested.
+
+Removed the temporary QA OAuth connection after the read (verified zero remaining `qa:norah-readonly:` connections), cleaned the synthetic import records, and stopped the localhost runner. No production database writes or Google Business Profile writes occurred. The separate QA client remains available but has no test tokens retained in QA storage. A before/after fingerprint confirmed Norah's original customer assignment, connection, enabled state, AI/autopilot settings and settings version were unchanged. Packages still return 404, Growth redirects to `/shop`, and stand checkout returns 200. No deployment was required.
+
+Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/norah-live-google-read.jpg`; ignored local `.local-sandbox/google-live-readonly-result.json` contains the sanitized HTTP audit without tokens or review text.
 
 ## Reproduce
 
