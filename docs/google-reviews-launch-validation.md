@@ -52,9 +52,17 @@ Reproduce real acceptance by starting `node --env-file=.env.stripe-reviews-qa te
 
 ### Still required
 
-Fresh Google OAuth and live read-only retrieval now passed for Norah Boutique in isolated QA, as recorded below. The deployed customer setup wizard has not been exercised end to end with a separate location assignment. A reviewed public reply and observed scheduled opt-in execution remain unverified and were expressly excluded by the owner. The Stripe app connector still needs reconnection separately from the working Chrome session.
+Fresh Google OAuth, live Norah retrieval, deployed discovery/duplicate-assignment protection, and isolated onboarding completion/UI replay have passed, as recorded below. The deployed customer setup wizard has not been exercised end to end with a separate location assignment. A reviewed public reply and observed scheduled opt-in execution remain unverified and are expressly excluded by the owner. The Stripe app connector still needs reconnection separately from the working Chrome session; connector reauthentication is not a customer-service launch blocker.
+
+For a complete production acceptance run, obtain a legitimate Google Business Profile that is not assigned to an existing Tap Rater workspace, with owner permission and a Google account that manages it. A controlled live QA subscription purchase would require owner authorization for the $29 monthly charge plus any applicable tax and the owner completing payment; verify the genuine production subscription event, activation/access, setup/import, billing portal, and cancellation afterward. Keep public packages hidden during any private acceptance run. Existing real Stripe sandbox lifecycle tests already passed; this is the remaining production continuity check, not a claim that payments are broken.
+
+To verify the advertised posting features later, the owner must explicitly authorize the exact review and approved reply text on a designated business, plus a separate suitable 4–5-star unanswered review for scheduled autopilot verification. Inspect and restrict pending work before any opt-in so older reviews cannot be posted unintentionally. Until that authorization exists, do not post or enable automatic replies. A read-only/import-and-draft pilot would instead require appropriately reduced product promises and enforced publishing restrictions.
 
 Before opening packages, complete the remaining checks above with a designated Google test profile and confirm stand checkout in the release environment. Keep packages hidden until these checks pass. Review subscription tax requirements before launch; no tax collection settings were changed in this test.
+
+### Production portal wording — verified November 14
+
+The owner authorized correcting production portal wording. The Stripe connector required reauthentication, so the signed-in Sam Chrome Dashboard was used for live account `acct_1U1TpKJfXGmPO60V`. The live Portal header was blank (not “Google Growth”). Saved “Manage your Tap Rater Google Reviews subscription.” and verified persistence after reload in the Default configuration `bpc_1Ubo3uJfXGmPO60VUPJE4qhG`. Only the headline field was edited; no checkout, payment, cancellation, tax, or subscription controls were edited, and the public portal link was not activated. No payment or public reply was made. Packages remained 404, Growth 307 to `/shop`, and checkout 200. Evidence: parent-workspace `archives/google-reviews-fixes-2026-11-14/production-reviews-portal-wording.jpg`.
 
 No real customer payment, public Google reply, or Google Growth activation was performed. Production changes were limited to the authorized releases, a signed idempotent webhook replay, and the isolated activation-email QA account described below.
 
