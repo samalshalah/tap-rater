@@ -18,7 +18,7 @@ describe('Growth checkout',()=>{
   expect(marketingPurchaseSchema.safeParse({cadence:'month',locations:1,acceptedTerms:false}).success).toBe(false);
   expect(marketingPurchaseSchema.safeParse({cadence:'month',locations:1,acceptedTerms:true,price:1}).success).toBe(false);
   const p=addMarketingToCheckout({mode:'payment',customer_creation:'always',invoice_creation:{enabled:true},line_items:[{price:'stand',quantity:1}],metadata:{due_today_cents:'4000'}},{cadence:'month',locations:2,acceptedTerms:true},'account','attempt');
-  expect(p.mode).toBe('subscription');expect(p.line_items).toHaveLength(2);expect(p.line_items[1].price_data?.unit_amount).toBe(2900);expect(p.metadata.due_today_cents).toBe('9800');expect(p).not.toHaveProperty('customer_creation');expect(p).not.toHaveProperty('invoice_creation');
+  expect(p.subscription_data.metadata.reviews_mode).toBe('draft_only');expect(p.mode).toBe('subscription');expect(p.line_items).toHaveLength(2);expect(p.line_items[1].price_data?.unit_amount).toBe(2900);expect(p.metadata.due_today_cents).toBe('9800');expect(p).not.toHaveProperty('customer_creation');expect(p).not.toHaveProperty('invoice_creation');
  });
  it('does not silently combine two different subscription products',()=>expect(()=>addMarketingToCheckout({mode:'subscription'},{cadence:'month',locations:1,acceptedTerms:true},'a','b')).toThrow('Multi-Link'));
  it('refuses duplicate subscriptions before calling Stripe',async()=>{
@@ -57,4 +57,14 @@ describe('Growth entitlement lifecycle',()=>{
   await expect(syncMarketingSubscription({type:'customer.subscription.updated',data:{object:sub()}} as unknown as Stripe.Event)).rejects.toThrow('ownership');
  });
  it('extracts subscription ids from current invoice structure',()=>expect(subscriptionEventId({type:'invoice.paid',data:{object:{parent:{subscription_details:{subscription:'sub_123'}}}}} as unknown as Stripe.Event)).toBe('sub_123'));
+});
+
+it.each([true,false])('persists the new draft-only entitlement without rewriting existing accounts (%s)',async draftOnly=>{
+ const subscription=sub();if(draftOnly)subscription.metadata.reviews_mode='draft_only';
+ mocks.retrieve.mockResolvedValue(subscription);mocks.sql.mockResolvedValue([{stripe_subscription_id:'sub_growth',activation_email_sent_at:'2026-11-14'}]);
+ await syncMarketingSubscription({type:'customer.subscription.updated',data:{object:subscription}} as unknown as Stripe.Event);
+ const write=mocks.sql.mock.calls.find(c=>c[0].join('').includes('WITH saved'))!;
+ const policyParameter=write[0].findIndex((part:string)=>part.includes('SELECT customer_id FROM saved WHERE'))+1;
+ expect(write[policyParameter]).toBe(draftOnly);
+ expect(write[0].join('')).toContain('ON CONFLICT(customer_id) DO NOTHING');
 });

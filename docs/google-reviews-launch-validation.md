@@ -1,6 +1,14 @@
 # Google Reviews launch validation — November 14, 2026
 
-Status: deployed November 14, 2026 with owner authorization; packages remain hidden. Real provider acceptance is still required before launch.
+Status: owner authorized the imports-and-drafts-only public launch for new subscribers on November 14. Existing accounts, including the owner's main account, retain their reply features. The historical full-posting acceptance gaps below do not gate this reduced package; they remain requirements before offering posting/autopilot to new subscribers.
+
+## Imports-and-drafts-only release
+
+New Checkout subscriptions carry server-authored `reviews_mode=draft_only` metadata. The signed subscription handler atomically inserts a persistent customer policy with entitlement processing. Existing subscriptions without this metadata are not enrolled. Migration `supabase/2026-11-14-reviews-draft-only.sql` creates an empty policy table without updating customer, location, or reply settings; production verification confirmed the main account is not restricted.
+
+Both manual and worker publishing reject restricted accounts before accessing Google. Autopilot opt-in is rejected, scheduling excludes restricted customers, and the account UI hides posting, autopilot, and scheduling controls. Import, draft generation, saving, and copying remain available. The global publishing setting stays unchanged for existing accounts. Package, Stripe Checkout, and thank-you copy explicitly exclude posting/autopilot. The public header links to the standalone Reviews package; the stand checkout still excludes subscription add-ons. Google Growth/optimization/heatmaps remain paused.
+
+Release verification covers the changed policy, old-account behavior, subscription metadata/entitlements, and the standard build/cache/deployment checks. No repeated live customer journey, payments, Google account moves, or public replies were performed.
 
 Current production Worker version: `a454804e-3db1-4081-b0ff-c151c6ff05c0`. Build ID: `SX9CO3WA_GHhDM6WLbTsA` (verified against the live `/BUILD_ID` after pushing release `3c4c1cc`). Includes the cancellation correction and the admin activation-email action. Previous version for rollback: `c2db6d3c-6dec-4971-9bae-7329dabbace5` (cancellation correction only). Initial readiness release: `407657af-4eb5-4230-b6e6-3b8daa13d59a`.
 

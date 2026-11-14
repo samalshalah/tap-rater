@@ -10,7 +10,7 @@ function safeReviewFilter(value:string|undefined):ReviewFilterKey{if(value==='qu
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,filterValue='all') {
  const filter=safeReviewFilter(filterValue);
  const links=await sql`SELECT l.business_id,l.owner,l.title,l.enabled,l.synced_at,l.next_page,l.last_error,l.ai_consent,l.auto_enabled,l.auto_four,l.auto_five,l.auto_style,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.draft_error,l.draft_checked_at,l.draft_due_at,l.consent_at,l.initial_import_completed_at,
- b.business_name, l.review_total,
+ b.business_name, l.review_total, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only,
  (l.initial_import_completed_at IS NOT NULL OR (l.synced_at IS NOT NULL AND l.next_page IS NULL) OR
   (l.review_total IS NOT NULL AND (SELECT count(*) FROM google_live_reviews r WHERE r.business_id=l.business_id)>=l.review_total)) AS initial_import_completed,
  (l.next_page IS NOT NULL OR l.sync_lock_until>now()) AS sync_in_progress,
@@ -152,6 +152,7 @@ export const liveSettingsSchema=z.object({businessId:z.string().uuid(),aiConsent
 
 export async function saveLiveSettings(actor:ReviewActor,input:z.infer<typeof liveSettingsSchema>,sql=liveDb()){
  const v=liveSettingsSchema.parse(input);const settingsLink=await authorizedLink(actor,v.businessId,sql);
+ if(v.autoEnabled&&settingsLink.reviews_draft_only)throw new LiveReviewError('This package includes imports and drafts only. Autopilot is disabled.',403);
  if(v.autoEnabled && (!livePublishingEnabled() || !v.aiConsent || !v.confirmAutomaticPosting || (!v.four&&!v.five)))throw new LiveReviewError('Live publishing must be activated, AI allowed, and automatic posting expressly confirmed for selected ratings.');
  const rows=await sql`UPDATE google_review_links SET draft_low_stars=${v.lowStars??settingsLink.draft_low_stars??true},ai_consent=${v.aiConsent},auto_enabled=${v.autoEnabled},auto_four=${v.four},auto_five=${v.five},auto_style=${v.style},reply_delay_minutes=${v.delayMinutes??settingsLink.reply_delay_minutes??5},
  consent_at=CASE WHEN ${v.autoEnabled} THEN CASE WHEN auto_enabled AND auto_four=${v.four} AND auto_five=${v.five} THEN consent_at ELSE now() END ELSE NULL END,settings_version=settings_version+1

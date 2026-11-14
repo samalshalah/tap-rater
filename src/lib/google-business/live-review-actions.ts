@@ -37,6 +37,7 @@ export async function generateLiveReply(actor:ReviewActor,id:string,version:numb
 export async function publishLiveReply(actor:ReviewActor,id:string,version:number,automatic=false,sql=liveDb(),makeClient=clientFor,rebaseAttempted=false){
  if(!livePublishingEnabled())throw new LiveReviewError('Live Google publishing is locked until API approval and the activation check are complete.');
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
+ if(link.reviews_draft_only)throw new LiveReviewError('This package includes imports and drafts only. Posting to Google and autopilot are disabled.',403);
  if(Number(review.version)!==version || !String(review.draft).trim())throw new LiveReviewError('Save and review the latest draft before publishing.');
  if(automatic && (!link.auto_enabled || !link.ai_consent || !scheduledReplyEligible(review,link)))throw new LiveReviewError('Automatic posting is no longer eligible.');
  if(automatic&&review.old_reply_requested_at){

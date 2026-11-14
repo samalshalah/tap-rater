@@ -3,7 +3,7 @@ import {marketingCheckoutEnabled} from '@/lib/marketing-subscriptions';
 import {requireCustomerApi} from '@/lib/customer-auth';
 import {MarketingPurchaseCard} from '@/components/account/marketing-purchase';
 export const dynamic='force-dynamic';
-export const metadata={title:'Google Reviews package',robots:{index:false,follow:false}};
+export const metadata={title:'Google Reviews package',description:'Import Google reviews and prepare editable AI reply drafts. Posting and autopilot are not included.'};
 export default async function Page({searchParams}:{searchParams:Promise<{checkout?:string}>}){
  if(!marketingCheckoutEnabled())notFound();
  const auth=await requireCustomerApi();const params=await searchParams;

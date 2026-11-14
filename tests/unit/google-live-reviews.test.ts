@@ -131,3 +131,14 @@ it('does not call the provider when another request wins the sync claim',async()
  await expect(syncLiveReviews({kind:'admin'},id,sql,async()=>google)).rejects.toMatchObject({status:409});
  expect(google.listReviews).not.toHaveBeenCalled();
 });
+
+it.each([false,true])('blocks draft-only manual/automatic publishing (%s) before Google access',async automatic=>{
+ vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const factory=vi.fn();
+ await expect(publishLiveReply({kind:'admin'},id,2,automatic,sqlRows([review],[{...link,reviews_draft_only:true}]),factory)).rejects.toMatchObject({status:403});
+ expect(factory).not.toHaveBeenCalled();
+});
+it('blocks autopilot opt-in for draft-only subscribers',async()=>{
+ vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');const sql=sqlRows([{...link,reviews_draft_only:true}]);
+ await expect(saveLiveSettings({kind:'admin'},{businessId:id,aiConsent:true,autoEnabled:true,four:true,five:true,style:'friendly',version:1,confirmAutomaticPosting:true},sql)).rejects.toMatchObject({status:403});
+ expect(sql).toHaveBeenCalledTimes(1);
+});

@@ -26,7 +26,7 @@ export type LiveClient = ReturnType<typeof createGoogleBusinessClient>;
 export const clientFor = async(owner:string)=>createGoogleBusinessClient(await googleAccessToken(owner));
 
 export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liveDb()) {
- const rows=await sql`SELECT l.*, b.business_name FROM google_review_links l JOIN businesses b ON b.id=l.business_id
+ const rows=await sql`SELECT l.*, b.business_name, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only FROM google_review_links l JOIN businesses b ON b.id=l.business_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.id=${businessId} AND b.customer_id=l.customer_id AND c.account_status='active'
  AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;
@@ -72,6 +72,7 @@ export function scheduledReplyEligible(review:any,link:any,now=Date.now()):boole
 export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
  await sql`UPDATE google_live_reviews r SET scheduled_at=CASE WHEN r.old_reply_requested_at IS NOT NULL THEN greatest(now(),r.draft_generated_at+l.reply_delay_minutes*interval '1 minute') WHEN l.reply_delay_minutes=20 THEN greatest(now(),r.created_at+interval '20 minutes') ELSE now()+l.reply_delay_minutes*interval '1 minute' END,scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0
  FROM google_review_links l WHERE r.id=${id} AND r.version=${version} AND r.approved_version IS NULL AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled
+ AND NOT EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=l.customer_id)
  AND NOT r.auto_schedule_cancelled AND r.draft<>'' AND r.draft_generated_at IS NOT NULL AND NOT r.suspected_spam AND r.publish_state='idle' AND r.scheduled_at IS NULL
  AND coalesce(r.data->'reviewReply'->>'comment','')='' AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))
  AND (r.old_reply_requested_at IS NOT NULL OR NULLIF(r.data->>'createTime','')::timestamptz>l.consent_at)`;

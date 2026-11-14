@@ -1240,3 +1240,9 @@ create or replace function register_device_stand() returns trigger language plpg
 begin insert into customer_stand_registry(device_id) values(new.id) on conflict(device_id) do nothing;return new;end $$;
 create or replace trigger register_device_stand after insert on devices for each row execute function register_device_stand();
 commit;
+
+-- New subscriber policy. Existing customers and their saved settings are untouched.
+CREATE TABLE IF NOT EXISTS reviews_draft_only_customers (
+ customer_id uuid PRIMARY KEY REFERENCES customers(id) ON DELETE CASCADE,
+ created_at timestamptz NOT NULL DEFAULT now()
+);

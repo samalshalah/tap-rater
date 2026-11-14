@@ -1,4 +1,3 @@
-import {marketingSalesEnabled} from "@/lib/marketing-sales";
 import { enrollCheckoutReminder } from "@/lib/checkout-reminders";
 import {requireCustomerApi} from '@/lib/customer-auth';
 import {createMarketingCheckout,prepareMarketingBuyer} from '@/lib/marketing-subscriptions';
@@ -121,7 +120,7 @@ export async function handleCheckoutPost(
     );
   }
 
-  if (parsed.data.marketing && !marketingSalesEnabled) {
+  if (parsed.data.marketing) {
     return NextResponse.json({error:"New package subscriptions are currently unavailable."},{status:503});
   }
 
