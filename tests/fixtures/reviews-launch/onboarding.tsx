@@ -2,6 +2,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {FirstLoginSetup} from '../../../src/components/account/first-login-setup';
 import '../../../src/app/globals.css';
+import '../../../src/app/prismatic.css';
 // This browser harness replays only responses captured by the real onboarding
 // handlers in the isolated database test. It never accesses Google or production.
 const nativeFetch=window.fetch.bind(window);

@@ -111,7 +111,7 @@ export async function syncMarketingSubscription(event:Stripe.Event){
    const token=createCustomerActivationToken();
    const [pending]=await sql`UPDATE customers SET activation_token_hash=${token.tokenHash},activation_expires_at=now()+interval '7 days' WHERE id=${account}::uuid AND account_status='pending_activation' RETURNING email`;
    if(pending){
-    const delivery=await sendCustomerActivationEmail({to:String(pending.email),activationToken:token.token,customerId:account});
+    const delivery=await sendCustomerActivationEmail({to:String(pending.email),activationToken:token.token,customerId:account,reviews:true});
     if(!delivery.sent)throw Error('Paid account activation email could not be sent. Retry webhook delivery.');
     await sql`UPDATE marketing_subscriptions SET activation_email_sent_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt}`;
    }

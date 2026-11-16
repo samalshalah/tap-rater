@@ -12,18 +12,18 @@ export type HostedSetupEmailInput = {
   sendEmailFn?: SendEmailFn;
 };
 
-export function buildCustomerActivationEmailHtml(input: { activationUrl: string }) {
+export function buildCustomerActivationEmailHtml(input: { activationUrl: string; reviews?: boolean }) {
   return buildEmailHtml({
-    title: "Activate your account",
+    title: input.reviews ? "Set up Google Reviews" : "Activate your account",
     eyebrow: "WELCOME TO TAP RATER",
     body: [
-      "A new activation link was requested for your Tap Rater account.",
-      "Activate your account and set your password to purchase your package and manage your subscribed tools, stands, orders, and billing details.",
+      input.reviews ? "Your Google Reviews payment is confirmed. Let’s get your workspace ready." : "Your Tap Rater account activation link is ready.",
+      input.reviews ? "Create your password, connect your Google Business Profile, and import your reviews. Your plan includes imports and reply drafts; posting and autopilot are not included." : "Create your password to access your Tap Rater account and manage your services, stands, orders, and billing details.",
       "This activation link expires in 7 days. If you did not expect this email, you can ignore it.",
       "Support: https://taprater.com/support"
     ],
     cta: {
-      label: "Activate My Account",
+      label: input.reviews ? "Set up Google Reviews" : "Activate My Account",
       url: input.activationUrl
     }
   });
@@ -33,17 +33,18 @@ export async function sendCustomerActivationEmail(input: {
   to: string;
   activationToken: string;
   customerId?: string;
+  reviews?: boolean;
   sendEmailFn?: SendEmailFn;
 }): Promise<EmailResult> {
   try {
-    const activationUrl = createCustomerActivationUrl(input.activationToken);
+    const activationUrl = createCustomerActivationUrl(input.activationToken) + (input.reviews ? "&service=reviews" : "");
     const sendEmailFn = input.sendEmailFn ?? sendEmail;
 
     return await sendEmailFn({
       to: input.to,
-      subject: "Activate your Tap Rater account",
+      subject: input.reviews ? "Set up your Tap Rater Google Reviews" : "Activate your Tap Rater account",
       replyTo: getCustomerReplyToEmail(),
-      html: buildCustomerActivationEmailHtml({ activationUrl }),
+      html: buildCustomerActivationEmailHtml({ activationUrl, reviews: input.reviews }),
       delivery: {
         messageType: "customer_activation",
         audience: "customer",

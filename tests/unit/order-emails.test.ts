@@ -374,7 +374,8 @@ describe("paid order emails", () => {
     });
 
     expect(result).toEqual({ sent: true });
-    expect(html).toContain("A new activation link was requested");
+    expect(html).toContain("Your Tap Rater account activation link is ready");
+    expect(html).not.toContain("purchase your package");
     expect(html).toContain(activationUrl);
     expect(html).toContain("expires in 7 days");
     expect(html).not.toMatch(/password_hash|activation_token_hash|customer_id/i);
@@ -448,4 +449,15 @@ describe("paid order emails", () => {
     expect(secondDelivery?.idempotencyKey).toBe(firstDelivery?.idempotencyKey);
     expect(firstDelivery?.idempotencyKey).not.toContain("TRACK123");
   });
+});
+
+
+it("sends paid Reviews onboarding copy and a Reviews activation link", async () => {
+  const sendEmailFn=vi.fn().mockResolvedValue({sent:true});
+  await sendCustomerActivationEmail({to:'new@example.test',activationToken:'test-activation-token',reviews:true,sendEmailFn});
+  const message=sendEmailFn.mock.calls[0][0];
+  expect(message.subject).toBe('Set up your Tap Rater Google Reviews');
+  expect(message.html).toContain('Your Google Reviews payment is confirmed');
+  expect(message.html).toContain('service=reviews');
+  expect(message.html).not.toContain('purchase your package');
 });

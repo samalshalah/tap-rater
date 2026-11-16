@@ -1,0 +1,12 @@
+import {beforeEach,expect,it,vi} from 'vitest';
+const m=vi.hoisted(()=>({activate:vi.fn(),access:vi.fn()}));
+vi.mock('@/lib/customer-account',()=>({activateCustomerAccount:m.activate}));
+vi.mock('@/lib/customer-marketing-access',()=>({getCustomerMarketingState:m.access}));
+vi.mock('@/lib/customer-auth',()=>({customerCookieName:'customer',createCustomerSessionValue:()=> 'test-session'}));
+import {POST} from '@/app/api/account/activate/route';
+const request=()=>new Request('https://taprater.com/api/account/activate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:'a'.repeat(64),password:'test-password-only'})});
+beforeEach(()=>{vi.resetAllMocks();m.activate.mockResolvedValue({ok:true,email:'new@example.test'});});
+it('takes a newly activated Reviews customer directly to unfinished setup',async()=>{m.access.mockResolvedValue({allowed:true,onboardingCompleted:false});const response=await POST(request());expect(await response.json()).toEqual({ok:true,redirectTo:'/account/reviews'});expect(response.headers.get('set-cookie')).toContain('HttpOnly');});
+it.each([{allowed:false,onboardingCompleted:false},{allowed:true,onboardingCompleted:true}])('preserves the account destination for other activations: %j',async state=>{m.access.mockResolvedValue(state);expect(await (await POST(request())).json()).toEqual({ok:true,redirectTo:'/account'});});
+it('keeps successful activation usable when the access lookup fails',async()=>{m.access.mockRejectedValue(Error('Unavailable'));expect(await (await POST(request())).json()).toEqual({ok:true,redirectTo:'/account'});});
+it('never looks up access or starts a session for a rejected activation',async()=>{m.activate.mockResolvedValue({ok:false,status:401,error:'Invalid link'});const response=await POST(request());expect(response.status).toBe(401);expect(m.access).not.toHaveBeenCalled();expect(response.headers.get('set-cookie')).toBeNull();});

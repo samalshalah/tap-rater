@@ -9,6 +9,7 @@ export const metadata = {
 type AccountActivatePageProps = {
   searchParams?: Promise<{
     token?: string;
+    service?: string;
   }>;
 };
 
@@ -16,15 +17,17 @@ export default async function AccountActivatePage({ searchParams }: AccountActiv
   const params = await searchParams;
   const token = typeof params?.token === "string" ? params.token : "";
 
+  const reviews = params?.service === "reviews";
+
   return (
     <main className="min-h-screen bg-soft">
       <section className="tr-container grid min-h-[calc(100vh-220px)] items-center py-12">
         <div className="mx-auto grid w-full max-w-5xl gap-8 md:grid-cols-[0.85fr_1.15fr] md:items-center">
           <div className="space-y-4">
-            <p className="tr-eyebrow">Tap Rater account</p>
+            <p className="tr-eyebrow">{reviews ? "Google Reviews setup" : "Tap Rater account"}</p>
             <h1 className="tr-page-title">Activate your account</h1>
             <p className="tr-body max-w-md">
-              Create your password to purchase your package and manage your subscribed tools, stands, and orders.
+              {reviews ? "Create your password to connect your Google Business Profile and import your reviews." : "Create your password to access your services, stands, and orders."}
             </p>
           </div>
           {token ? (

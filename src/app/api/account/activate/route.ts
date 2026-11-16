@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { activateCustomerAccount } from "@/lib/customer-account";
 import { createCustomerSessionValue, customerCookieName } from "@/lib/customer-auth";
+import { getCustomerMarketingState } from "@/lib/customer-marketing-access";
 import { accountActivateSchema } from "@/lib/validators";
 
 const customerSessionMaxAgeSeconds = 30 * 24 * 60 * 60;
@@ -17,7 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  const response = NextResponse.json({ ok: true, redirectTo: "/account" });
+  // Only a newly activated account with unfinished Reviews access enters setup.
+  // A transient entitlement lookup must not undo successful activation.
+  let redirectTo = "/account";
+  try {
+    const reviews = await getCustomerMarketingState(result.email);
+    if (reviews.allowed && !reviews.onboardingCompleted) redirectTo = "/account/reviews";
+  } catch { /* The account dashboard remains available if access lookup fails. */ }
+  const response = NextResponse.json({ ok: true, redirectTo });
   response.cookies.set(customerCookieName, createCustomerSessionValue(result.email), {
     httpOnly: true,
     sameSite: "lax",

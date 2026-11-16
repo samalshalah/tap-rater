@@ -6,7 +6,7 @@ const root=fileURLToPath(new URL('.',import.meta.url)),repo=path.resolve(root,'.
 const states=JSON.parse(readFileSync(path.join(repo,'.local-sandbox/qa-onboarding-states.json'),'utf8'));
 if(!states.finished.completed||!states.importStates.length)throw Error('Run the isolated onboarding integration test first');
 let current=states.connected,index=0;
-const server=await createServer({root,resolve:{alias:{'@':path.join(repo,'src'),'next/navigation':path.join(root,'navigation.ts'),'next/link':path.join(root,'link.tsx')}},esbuild:{jsx:'automatic'},css:{postcss:repo},server:{host:'127.0.0.1',port:4183,strictPort:true,fs:{allow:[repo]}},plugins:[{name:'qa-onboarding-replay',configureServer(server){server.middlewares.use('/api/account/onboarding',async(req,res)=>{
+const server=await createServer({root,publicDir:path.join(repo,'public'),resolve:{alias:{'@':path.join(repo,'src'),'next/navigation':path.join(root,'navigation.ts'),'next/link':path.join(root,'link.tsx')}},esbuild:{jsx:'automatic'},css:{postcss:repo},server:{host:'127.0.0.1',port:4183,strictPort:true,fs:{allow:[repo]}},plugins:[{name:'qa-onboarding-replay',configureServer(server){server.middlewares.use('/api/account/onboarding',async(req,res)=>{
  res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');
  if(req.method==='POST'){
   let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>1000){res.statusCode=413;res.end('{}');return;}}
