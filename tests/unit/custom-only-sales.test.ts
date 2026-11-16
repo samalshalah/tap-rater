@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { migratedProducts } from "@/data/migrated-products";
 import { getProductPurchaseOptions, getPurchaseOption } from "@/lib/purchase-options";
@@ -13,6 +15,46 @@ import type { OrderLineItem } from "@/lib/orders";
 
 const google = migratedProducts.find(p => p.slug === "google-review-stand")!;
 describe("custom-only sales with historical orders", () => {
+  it("derives current custom assets without retaining retired standard photographs", () => {
+    const managedAssets = migratedProducts.filter(p => p.assetSet?.brandedAngledImageUrl?.includes("/taprater-"));
+    expect(managedAssets.length).toBeGreaterThan(40);
+    for (const product of managedAssets) {
+      expect(product.assetSet?.standardAngledImageUrl).toBeUndefined();
+      for (const url of [product.assetSet?.brandedAngledImageUrl, product.assetSet?.brandedFrontTemplateUrl]) {
+        expect(url).toContain("-custom-");
+        expect(existsSync(join(process.cwd(), "public", url!))).toBe(true);
+      }
+      if (product.assetSet?.standardFrontTemplateUrl) {
+        expect(product.assetSet.standardFrontTemplateUrl).toMatch(/\/(google|yelp)\/\1-standard-front\.png$/);
+      }
+    }
+  });
+  it("preserves both historical standard front artwork fallbacks", () => {
+    for (const [slug, folder] of [["google-review-stand", "google"], ["yelp-review-stand", "yelp"]]) {
+      const url = getOrderStandardDesignUrl({ productId: slug, optionId: "standard_direct" } as OrderLineItem);
+      expect(url).toBe(`/uploads/products/taprater-stands/${folder}/${folder}-standard-front.png`);
+      expect(existsSync(join(process.cwd(), "public", url!))).toBe(true);
+    }
+  });
+  it("keeps unsupported legacy seeds unsellable without generic artwork", () => {
+    for (const slug of ["justia-review-stand", "repairpal-review-stand", "surecritic-review-stand", "whatsapp-message-stand", "telegram-message-stand"]) {
+      const product = migratedProducts.find(p => p.slug === slug)!;
+      expect(product).toBeDefined();
+      expect(getProductPurchaseOptions(product)).toEqual([]);
+      expect(product.images[0].src).toBe("/uploads/products/no-photo-available.png");
+    }
+    for (const product of migratedProducts.filter(p => p.format === "plate")) {
+      expect(product.isActive).toBe(false);
+      expect(product.images[0].src).toBe("/uploads/products/no-photo-available.png");
+    }
+  });
+  it("updates legacy booking/menu imagery without enabling a new purchase offer", () => {
+    for (const slug of ["book-your-next-visit-stand", "view-our-menu-stand"]) {
+      const product = migratedProducts.find(p => p.slug === slug)!;
+      expect(product.images[0].src).toContain("-custom-angled.png");
+      expect(getProductPurchaseOptions(product)).toEqual([]);
+    }
+  });
   it("never sells standard even if database flags enable it", () => {
     for (const product of migratedProducts) expect(getProductPurchaseOptions(product).every(o => o.id === "branded_qr_direct")).toBe(true);
     expect(getProductPurchaseOptions({ ...google, assetSet: {} })).toEqual([]);

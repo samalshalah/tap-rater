@@ -41,13 +41,12 @@ export function createColorOption(index: number): ProductColorOption {
 export function buildInitialOptions(productKind: ProductKind, productOptions: ProductOption[], optionTemplates: ProductOption[], mode: "create" | "edit") {
   const templateMap = new Map([...getDefaultOptionsForProductKind(productKind), ...optionTemplates].map((option) => [option.optionCode, option]));
   const savedOptionMap = new Map(productOptions.map((option) => [option.optionCode, option]));
-  const codes: ProductOptionCode[] = ["standard_direct", "branded_qr_direct"];
+  const codes: ProductOptionCode[] = ["branded_qr_direct"];
 
   return codes.map((code) => ({
     ...(templateMap.get(code) ?? getDefaultOptionsForProductKind("normal_direct").find((option) => option.optionCode === code)!),
     ...(mode === "create" && code === "branded_qr_direct" ? { isActive: true } : {}),
-    ...(savedOptionMap.get(code) ?? {}),
-    ...(code === "standard_direct" ? { isActive: false } : {})
+    ...(savedOptionMap.get(code) ?? {})
   }));
 }
 
@@ -77,24 +76,7 @@ export function getOptionMediaRequirements(optionCode: ProductOptionCode, assetS
     ];
   }
 
-  return [
-    {
-      label: "Standard Direct angled image",
-      description: "Ready-made NFC stand image for Standard Direct.",
-      assetKey: "standardAngledImageUrl" as const,
-      role: "standard_angled" as const,
-      value: assetSet.standardAngledImageUrl,
-      required: true
-    },
-    {
-      label: "Standard front template",
-      description: "Optional locked front reference for standard stands.",
-      assetKey: "standardFrontTemplateUrl" as const,
-      role: "standard_front" as const,
-      value: assetSet.standardFrontTemplateUrl,
-      required: false
-    }
-  ];
+  return [];
 }
 
 export function getOrganizationIssues({
@@ -126,10 +108,10 @@ export function getOrganizationIssues({
 
 export function cleanAssetSet(assetSet: AssetSetState, mainImageSrc?: string) {
   return {
-    standardAngledImageUrl: readOptionalString(assetSet.standardAngledImageUrl) ?? readOptionalString(mainImageSrc),
-    brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl),
+    standardAngledImageUrl: undefined,
+    brandedAngledImageUrl: readOptionalString(assetSet.brandedAngledImageUrl) ?? readOptionalString(mainImageSrc),
     multiLinkAngledImageUrl: undefined,
-    standardFrontTemplateUrl: readOptionalString(assetSet.standardFrontTemplateUrl),
+    standardFrontTemplateUrl: undefined,
     brandedFrontTemplateUrl: readOptionalString(assetSet.brandedFrontTemplateUrl),
     multiLinkFrontTemplateUrl: undefined,
     centerAssetUrl: undefined,
@@ -153,8 +135,6 @@ export function collectImagesFromMedia(
 
 export function getAdminMediaWarnings(slug: string, mainImage: MediaItemState, galleryImages: MediaItemState[], assetSet: AssetSetState) {
   const warnings = new Set<string>();
-  const standardImage = readOptionalString(assetSet.standardAngledImageUrl) ?? readOptionalString(mainImage.src) ?? "";
-  const brandedImage = readOptionalString(assetSet.brandedAngledImageUrl) ?? "";
   const brandedTemplate = readOptionalString(assetSet.brandedFrontTemplateUrl) ?? "";
   const mediaText = [mainImage, ...galleryImages]
     .map((image) => `${image.src} ${image.alt}`)
@@ -167,10 +147,6 @@ export function getAdminMediaWarnings(slug: string, mainImage: MediaItemState, g
 
   if (mainImage.src.includes("/draft-product/")) {
     warnings.add("Main image still uses a draft product media path.");
-  }
-
-  if (brandedImage && standardImage && brandedImage === standardImage) {
-    warnings.add("Branded angled image currently matches the Standard Direct image.");
   }
 
   if (brandedTemplate.includes("/products/") && !brandedTemplate.includes(`/products/${slug}/`)) {

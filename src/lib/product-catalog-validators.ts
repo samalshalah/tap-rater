@@ -234,7 +234,7 @@ export const productContentSchema = z.object({
   defaultCtaText: z.string().trim().max(120).optional(),
   ctaEditable: z.boolean().default(false),
   assetReadinessStatus: z.enum(productAssetReadinessStatuses).default("draft_missing_assets"),
-  productOptions: z.array(productOptionSchema).default([]),
+  productOptions: z.array(productOptionSchema).default([]).transform((options) => options.filter((option) => option.optionCode !== "standard_direct")),
   images: z.array(productImageSchema).max(8).default([]),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),

@@ -112,7 +112,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "review-stands",
     title: "Review Stands",
     description: "Stands that send customers to a review destination.",
-    imageUrl: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png",
+    imageUrl: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png",
     sortOrder: 10,
     isActive: true
   },
@@ -120,7 +120,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "social-media-stands",
     title: "Social Media Stands",
     description: "Stands that open social profiles or follow links.",
-    imageUrl: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png",
+    imageUrl: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-custom-angled.png",
     sortOrder: 20,
     isActive: true
   },
@@ -128,7 +128,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "appointment-reservation-stands",
     title: "Appointment & Reservation Stands",
     description: "Stands that open booking, scheduling, reservation, or service links.",
-    imageUrl: "/uploads/products/book-next-visit-stand.png",
+    imageUrl: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png",
     sortOrder: 30,
     isActive: true
   },
@@ -136,7 +136,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "feedback-survey-stands",
     title: "Feedback & Survey Stands",
     description: "Stands that collect private feedback or survey responses.",
-    imageUrl: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png",
+    imageUrl: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png",
     sortOrder: 40,
     isActive: true
   },
@@ -144,7 +144,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "menu-info-stands",
     title: "Menu & Info Stands",
     description: "Stands that open menus, services, pricing, or information pages.",
-    imageUrl: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png",
+    imageUrl: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png",
     sortOrder: 50,
     isActive: true
   },
@@ -176,7 +176,7 @@ export const lockedStandTypes: StandType[] = [
     slug: "custom-stands",
     title: "Custom Stands",
     description: "Custom Tap Rater stand products and special solutions.",
-    imageUrl: "/uploads/products/business-google-white-stands-bundle.jpg",
+    imageUrl: "/uploads/products/branded-demo-river-cafe-stand.png",
     sortOrder: 90,
     isActive: true
   }
@@ -397,9 +397,8 @@ export const hostedMultiLinkProductOption: ProductOption = {
   sortOrder: 30
 };
 
-export const lockedNormalDirectProductOptions = [standardDirectProductOption, brandedQrDirectProductOption];
+export const lockedNormalDirectProductOptions = [brandedQrDirectProductOption];
 export const lockedProductOptionTemplates = [
-  standardDirectProductOption,
   brandedQrDirectProductOption,
   hostedMultiLinkProductOption
 ];
@@ -417,7 +416,7 @@ export function getDefaultOptionsForProductKind(productKind: ProductKind): Produ
     return [];
   }
 
-  return [standardDirectProductOption, brandedQrDirectProductOption];
+  return [brandedQrDirectProductOption];
 }
 
 export function getProductOrganization(product: MigratedProduct): ProductOrganization {

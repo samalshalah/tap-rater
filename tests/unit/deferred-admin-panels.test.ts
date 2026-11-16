@@ -19,7 +19,8 @@ describe('product table metadata',()=>{
  it('preserves readiness and media warnings separately',()=>{
   const product={...createBlankAdminProduct(),slug:'ready',title:'Ready Stand',images:[{src:'/main.png',alt:'Ready'}],assetSet:{standardAngledImageUrl:'/main.png',brandedAngledImageUrl:'/branded.png',brandedFrontTemplateUrl:'/template.svg'}};
   expect(buildProductTableMetadata(product).productReady).toBe(true);
-  expect(buildProductTableMetadata({...product,assetSet:{...product.assetSet,brandedAngledImageUrl:'/main.png'}}).productReady).toBe(false);
+  expect(buildProductTableMetadata({...product,assetSet:{...product.assetSet,brandedAngledImageUrl:'/main.png'}}).productReady).toBe(true);
+  expect(buildProductTableMetadata({...product,images:[{src:'/uploads/no-photo-available.png',alt:'Placeholder'}]}).productReady).toBe(false);
  });
  it('reflects updated searchable fields and publishing status',()=>{
   const original={...createBlankAdminProduct(),title:'Original',sku:'ABC'};const first=buildProductTableMetadata(original);

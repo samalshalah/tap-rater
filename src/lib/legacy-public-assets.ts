@@ -2,11 +2,11 @@
 export const legacyPublicAssetRewrites = [
   {
     source: "/uploads/products/social-media-stand.png",
-    destination: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png"
+    destination: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-custom-angled.png"
   },
   ...[160, 640, 1200].map((width) => ({
     source: `/uploads-optimized/products/social-media-stand-w${width}.webp`,
-    destination: `/uploads-optimized/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled-w${width}.webp`
+    destination: `/uploads-optimized/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-custom-angled-w${width}.webp`
   }))
 ];
 

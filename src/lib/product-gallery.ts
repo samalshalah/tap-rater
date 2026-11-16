@@ -101,6 +101,8 @@ export function getGalleryImages(product: MigratedProduct, optionId: PurchaseOpt
     // No standard-photo fallback: it would misrepresent the selected design.
     return src ? [{ src, alt: `${product.title} Multi-Link design`, caption: "Personalized layout example." }] : [];
   }
+  // A retired standard design must never borrow the current custom gallery.
+  if (!assets?.standardAngledImageUrl) return [];
   const excluded = new Set([assets?.standardFrontTemplateUrl, assets?.brandedFrontTemplateUrl, assets?.multiLinkFrontTemplateUrl,
     assets?.brandedAngledImageUrl, assets?.multiLinkAngledImageUrl].filter(Boolean));
   const main = assets?.standardAngledImageUrl ? { src: assets.standardAngledImageUrl, alt: `${product.title} standard design` } : getProductVisual(product);

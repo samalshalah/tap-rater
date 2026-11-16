@@ -76,7 +76,7 @@ describe("content phase 3 presentation standard", () => {
   });
 
   it("respects saved gallery photos, removes duplicate images, and excludes production templates", () => {
-    const images = getGalleryImages({ ...product, images: [
+    const images = getGalleryImages({ ...product, assetSet: { ...product.assetSet, standardAngledImageUrl: "/historical-standard.png" }, images: [
       ...product.images,
       { src: product.assetSet!.standardFrontTemplateUrl!, alt: "Legacy template with QR placeholder" },
       { src: product.assetSet!.brandedFrontTemplateUrl!, alt: "Production template" },

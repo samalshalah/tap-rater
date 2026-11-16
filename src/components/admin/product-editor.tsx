@@ -236,7 +236,6 @@ export function ProductEditor({
 
         <EditorCard title="Production Rules" description="Current storefront rules for each customer setup option.">
           <div className="grid gap-2 text-sm text-muted">
-            <RuleRow label="Standard Direct" value="NFC direct. No logo zone, business name zone, QR zone, or design step." />
             <RuleRow label="Branded + QR" value="Logo zone, business name zone, QR zone, and artwork review required." />
             <RuleRow label="Multi-Link add-on" value="Optional hosted page capability controlled in Services & Add-ons. It is not an operational product type." />
           </div>
@@ -400,7 +399,6 @@ export function ProductEditor({
 
         <SidebarCard title="Production Notes">
           <ul className="grid gap-2 text-xs leading-5 text-muted">
-            <li>Standard Direct includes NFC pointed to the customer-provided URL.</li>
             <li>Branded + QR requires logo collection, business name, QR generation, artwork review, and a branded front template before publishing.</li>
             <li>Multi-Link is an add-on capability. Enable it in Services & Add-ons for compatible physical products.</li>
           </ul>

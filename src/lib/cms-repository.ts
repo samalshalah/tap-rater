@@ -123,10 +123,10 @@ export async function saveProductContent(client: CmsDbClient, input: ProductCont
     design_mode: input.designMode,
     display_text: input.displayText ?? null,
     images: input.images,
-    standard_angled_image_url: input.assetSet.standardAngledImageUrl ?? null,
+    standard_angled_image_url: null,
     branded_angled_image_url: input.assetSet.brandedAngledImageUrl ?? null,
     multilink_angled_image_url: input.assetSet.multiLinkAngledImageUrl ?? null,
-    standard_front_template_url: input.assetSet.standardFrontTemplateUrl ?? null,
+    standard_front_template_url: null,
     branded_front_template_url: input.assetSet.brandedFrontTemplateUrl ?? null,
     multilink_front_template_url: input.assetSet.multiLinkFrontTemplateUrl ?? null,
     center_asset_url: input.assetSet.centerAssetUrl ?? null,
@@ -217,11 +217,12 @@ async function saveProductOptions(client: CmsDbClient, productSlug: string, prod
     throw new Error(deleteResult.error.message);
   }
 
-  if (productOptions.length === 0) {
+  const customOptions = productOptions.filter((option) => option.optionCode !== "standard_direct");
+  if (customOptions.length === 0) {
     return;
   }
 
-  const rows = productOptions.map((option) => ({
+  const rows = customOptions.map((option) => ({
     product_slug: productSlug,
     option_code: option.optionCode,
     title: option.title,

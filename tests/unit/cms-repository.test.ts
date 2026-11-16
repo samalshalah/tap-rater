@@ -234,7 +234,7 @@ describe("cms repository", () => {
       allows_logo_upload: true,
       allows_custom_design: true,
       design_mode: "standard",
-      standard_angled_image_url: "/uploads/products/google-review-stand.png",
+      standard_angled_image_url: null,
       branded_angled_image_url: "/uploads/products/google-review-stand-branded.png",
       branded_front_template_url: "/uploads/products/google-review-front-template.png",
       default_cta_text: "Review us on Google",
@@ -264,17 +264,8 @@ describe("cms repository", () => {
       }
     ]);
     expect(db.from).toHaveBeenCalledWith("product_options");
-    expect(db.upsert).toHaveBeenCalledWith(
-      [
-        expect.objectContaining({
-          product_slug: "google-review-white-stand",
-          option_code: "standard_direct",
-          price_cents: 3900,
-          is_active: true
-        })
-      ],
-      { onConflict: "product_slug,option_code" }
-    );
+    // Legacy standard input is discarded at the write boundary, never re-created.
+    expect(db.upsert.mock.calls.some(([rows]) => Array.isArray(rows) && rows.some(row => row.option_code === "standard_direct"))).toBe(false);
   });
 
   it("deletes products by slug through a filtered products-table delete", async () => {

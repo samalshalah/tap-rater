@@ -11,7 +11,7 @@ describe("design-specific galleries", () => {
     const custom = getGalleryImages(google, "branded_qr_direct");
     expect(custom).toHaveLength(7);
     const standard = getGalleryImages(google, "standard_direct");
-    expect(standard[0].src).toBe(google.assetSet!.standardAngledImageUrl);
+    expect(standard).toEqual([]);
     for (const image of custom) {
       expect(standard.some(i => i.src === image.src)).toBe(false);
       expect(existsSync(`public${image.src}`)).toBe(true);
@@ -37,7 +37,7 @@ describe("design-specific galleries", () => {
       }
       expect(images.filter(i => i.panel)).toHaveLength(0);
       const standard = getGalleryImages(product, "standard_direct");
-      expect(standard[0].src).toBe(product.assetSet!.standardAngledImageUrl);
+      expect(standard).toEqual([]);
       expect(standard.some(i => images.some(c => c.src === i.src))).toBe(false);
     }
   });

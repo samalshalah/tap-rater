@@ -345,78 +345,78 @@ export const catalogCategories: CatalogCategory[] = [
   }
 ];
 
-const googleStandImage = { src: "/uploads/products/taprater-stands/google/google-standard-angled.png", alt: "Tap Rater Google Review Stand" };
-const googlePlateImage = { src: "/uploads/products/google-review-plate.png", alt: "Tap Rater Google Review Plate" };
-const yelpStandImage = { src: "/uploads/products/taprater-stands/yelp/yelp-standard-angled.png", alt: "Tap Rater Yelp Review Stand" };
-const yelpPlateImage = { src: "/uploads/products/yelp-review-plate.png", alt: "Tap Rater Yelp Review Plate" };
-const facebookStandImage = { src: "/uploads/products/taprater-stands/facebook/facebook-standard-angled.png", alt: "Tap Rater Facebook Review Stand" };
-const facebookPlateImage = { src: "/uploads/products/facebook-review-plate.png", alt: "Tap Rater Facebook Review Plate" };
-const tripadvisorStandImage = { src: "/uploads/products/taprater-stands/tripadvisor/tripadvisor-standard-angled.png", alt: "Tap Rater TripAdvisor Review Stand" };
-const tripadvisorPlateImage = { src: "/uploads/products/tripadvisor-review-plate.png", alt: "Tap Rater TripAdvisor Review Plate" };
-const experienceStandImage = { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-standard-angled.png", alt: "Tap Rater Rate Your Experience Stand" };
-const experiencePlateImage = { src: "/uploads/products/rate-your-experience-plate.png", alt: "Tap Rater Rate Your Experience Plate" };
-const socialStandImage = { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-standard-angled.png", alt: "Tap Rater Follow Us on Social Media Stand" };
-const socialPlateImage = { src: "/uploads/products/social-media-plate.png", alt: "Tap Rater Follow Us on Social Media Plate" };
-const facebookFollowStandImage = { src: "/uploads/products/taprater-stands/facebook-follow/facebook-follow-standard-angled.png", alt: "Tap Rater Follow Us on Facebook Stand" };
-const instagramFollowStandImage = { src: "/uploads/products/taprater-stands/instagram-follow/instagram-follow-standard-angled.png", alt: "Tap Rater Follow Us on Instagram Stand" };
-const tiktokFollowStandImage = { src: "/uploads/products/taprater-stands/tiktok-follow/tiktok-follow-standard-angled.png", alt: "Tap Rater Follow Us on TikTok Stand" };
-const youtubeFollowStandImage = { src: "/uploads/products/taprater-stands/youtube-follow/youtube-follow-standard-angled.png", alt: "Tap Rater Follow Us on YouTube Stand" };
-const linkedinFollowStandImage = { src: "/uploads/products/taprater-stands/linkedin-follow/linkedin-follow-standard-angled.png", alt: "Tap Rater Follow Us on LinkedIn Stand" };
-const xFollowStandImage = { src: "/uploads/products/taprater-stands/x-follow/x-follow-standard-angled.png", alt: "Tap Rater Follow Us on X Stand" };
-const snapchatFollowStandImage = { src: "/uploads/products/taprater-stands/snapchat-follow/snapchat-follow-standard-angled.png", alt: "Tap Rater Follow Us on Snapchat Stand" };
-const pinterestFollowStandImage = { src: "/uploads/products/taprater-stands/pinterest-follow/pinterest-follow-standard-angled.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
-const ubereatsReviewStandImage = { src: "/uploads/products/taprater-stands/uber-eats/uber-eats-standard-angled.png", alt: "Tap Rater Uber Eats Review Stand" };
-const angiReviewStandImage = { src: "/uploads/products/taprater-stands/angi/angi-standard-angled.png", alt: "Tap Rater Angi Review Stand" };
-const dealerraterReviewStandImage = { src: "/uploads/products/taprater-stands/dealerrater/dealerrater-standard-angled.png", alt: "Tap Rater DealerRater Review Stand" };
-const autotraderReviewStandImage = { src: "/uploads/products/taprater-stands/autotrader/autotrader-standard-angled.png", alt: "Tap Rater Autotrader Review Stand" };
-const carfaxReviewStandImage = { src: "/uploads/products/taprater-stands/carfax/carfax-standard-angled.png", alt: "Tap Rater CARFAX Review Stand" };
-const edmundsReviewStandImage = { src: "/uploads/products/taprater-stands/edmunds/edmunds-standard-angled.png", alt: "Tap Rater Edmunds Review Stand" };
-const carsReviewStandImage = { src: "/uploads/products/taprater-stands/cars-com/cars-com-standard-angled.png", alt: "Tap Rater Cars.com Review Stand" };
-const cargurusReviewStandImage = { src: "/uploads/products/taprater-stands/cargurus/cargurus-standard-angled.png", alt: "Tap Rater CarGurus Review Stand" };
-const repairpalReviewStandImage = { src: "/uploads/products/repairpal-review-stand.png", alt: "Tap Rater RepairPal Review Stand" };
-const surecriticReviewStandImage = { src: "/uploads/products/surecritic-review-stand.png", alt: "Tap Rater SureCritic Review Stand" };
-const bbbReviewStandImage = { src: "/uploads/products/taprater-stands/bbb/bbb-standard-angled.png", alt: "Tap Rater BBB Review Stand" };
-const nextdoorReviewStandImage = { src: "/uploads/products/taprater-stands/nextdoor/nextdoor-standard-angled.png", alt: "Tap Rater Nextdoor Review Stand" };
-const avvoReviewStandImage = { src: "/uploads/products/taprater-stands/avvo/avvo-standard-angled.png", alt: "Tap Rater Avvo Review Stand" };
-const taskrabbitReviewStandImage = { src: "/uploads/products/taprater-stands/taskrabbit/taskrabbit-standard-angled.png", alt: "Tap Rater Taskrabbit Review Stand" };
-const martindaleReviewStandImage = { src: "/uploads/products/taprater-stands/martindale/martindale-standard-angled.png", alt: "Tap Rater Martindale Review Stand" };
-const justiaReviewStandImage = { src: "/uploads/products/justia-review-stand.png", alt: "Tap Rater Justia Review Stand" };
-const findlawReviewStandImage = { src: "/uploads/products/taprater-stands/findlaw/findlaw-standard-angled.png", alt: "Tap Rater FindLaw Review Stand" };
-const lawyersReviewStandImage = { src: "/uploads/products/taprater-stands/lawyers-com/lawyers-com-standard-angled.png", alt: "Tap Rater Lawyers.com Review Stand" };
-const zillowReviewStandImage = { src: "/uploads/products/taprater-stands/zillow/zillow-standard-angled.png", alt: "Tap Rater Zillow Review Stand" };
-const realtorReviewStandImage = { src: "/uploads/products/taprater-stands/realtor-com/realtor-com-standard-angled.png", alt: "Tap Rater Realtor.com Review Stand" };
-const homesReviewStandImage = { src: "/uploads/products/taprater-stands/homes-com/homes-com-standard-angled.png", alt: "Tap Rater Homes.com Review Stand" };
-const homeadvisorReviewStandImage = { src: "/uploads/products/taprater-stands/homeadvisor/homeadvisor-standard-angled.png", alt: "Tap Rater HomeAdvisor Review Stand" };
-const thumbtackReviewStandImage = { src: "/uploads/products/taprater-stands/thumbtack/thumbtack-standard-angled.png", alt: "Tap Rater Thumbtack Review Stand" };
-const houzzReviewStandImage = { src: "/uploads/products/taprater-stands/houzz/houzz-standard-angled.png", alt: "Tap Rater Houzz Review Stand" };
-const porchReviewStandImage = { src: "/uploads/products/taprater-stands/porch/porch-standard-angled.png", alt: "Tap Rater Porch Review Stand" };
-const airbnbReviewStandImage = { src: "/uploads/products/taprater-stands/airbnb/airbnb-standard-angled.png", alt: "Tap Rater Airbnb Review Stand" };
-const agodaReviewStandImage = { src: "/uploads/products/taprater-stands/agoda/agoda-standard-angled.png", alt: "Tap Rater Agoda Review Stand" };
-const vrboReviewStandImage = { src: "/uploads/products/taprater-stands/vrbo/vrbo-standard-angled.png", alt: "Tap Rater Vrbo Review Stand" };
-const hotelsReviewStandImage = { src: "/uploads/products/taprater-stands/hotels-com/hotels-com-standard-angled.png", alt: "Tap Rater Hotels.com Review Stand" };
-const healthgradesReviewStandImage = { src: "/uploads/products/taprater-stands/healthgrades/healthgrades-standard-angled.png", alt: "Tap Rater Healthgrades Review Stand" };
-const vitalsReviewStandImage = { src: "/uploads/products/taprater-stands/vitals/vitals-standard-angled.png", alt: "Tap Rater Vitals Review Stand" };
-const zocdocReviewStandImage = { src: "/uploads/products/taprater-stands/zocdoc/zocdoc-standard-angled.png", alt: "Tap Rater Zocdoc Review Stand" };
-const ratemdsReviewStandImage = { src: "/uploads/products/taprater-stands/ratemds/ratemds-standard-angled.png", alt: "Tap Rater RateMDs Review Stand" };
-const caredashReviewStandImage = { src: "/uploads/products/taprater-stands/caredash/caredash-standard-angled.png", alt: "Tap Rater CareDash Review Stand" };
-const opencareReviewStandImage = { src: "/uploads/products/taprater-stands/opencare/opencare-standard-angled.png", alt: "Tap Rater Opencare Review Stand" };
-const freshaReviewStandImage = { src: "/uploads/products/taprater-stands/fresha/fresha-standard-angled.png", alt: "Tap Rater Fresha Review Stand" };
-const booksyReviewStandImage = { src: "/uploads/products/taprater-stands/booksy/booksy-standard-angled.png", alt: "Tap Rater Booksy Review Stand" };
-const styleseatReviewStandImage = { src: "/uploads/products/taprater-stands/styleseat/styleseat-standard-angled.png", alt: "Tap Rater StyleSeat Review Stand" };
-const vagaroReviewStandImage = { src: "/uploads/products/taprater-stands/vagaro/vagaro-standard-angled.png", alt: "Tap Rater Vagaro Review Stand" };
-const apartmentsReviewStandImage = { src: "/uploads/products/taprater-stands/apartments-com/apartments-com-standard-angled.png", alt: "Tap Rater Apartments.com Review Stand" };
-const truliaReviewStandImage = { src: "/uploads/products/taprater-stands/trulia/trulia-standard-angled.png", alt: "Tap Rater Trulia Review Stand" };
-const whatsappMessageStandImage = { src: "/uploads/products/whatsapp-message-stand.png", alt: "Tap Rater WhatsApp Message Stand" };
-const telegramMessageStandImage = { src: "/uploads/products/telegram-message-stand.png", alt: "Tap Rater Telegram Message Stand" };
-const bookingStandImage = { src: "/uploads/products/book-next-visit-stand.png", alt: "Tap Rater Book Your Next Visit Stand" };
-const bookingPlateImage = { src: "/uploads/products/book-next-visit-plate.png", alt: "Tap Rater Book Your Next Visit Plate" };
-const menuStandImage = { src: "/uploads/products/view-menu-stand.png", alt: "Tap Rater View Our Menu Stand" };
-const menuPlateImage = { src: "/uploads/products/view-menu-plate.png", alt: "Tap Rater View Our Menu Plate" };
-const menuAndOrderStandImage = { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-standard-angled.png", alt: "Tap Rater Menu and Order Stand" };
-const patientResourcesStandImage = { src: "/uploads/products/taprater-text-stands/patient-resources/patient-resources-standard-angled.png", alt: "Tap Rater Patient Resources Stand" };
-const checkOurInformationStandImage = { src: "/uploads/products/taprater-text-stands/check-our-information/check-our-information-standard-angled.png", alt: "Tap Rater Check Our Information Stand" };
-const exploreOurServicesStandImage = { src: "/uploads/products/taprater-text-stands/explore-our-services/explore-our-services-standard-angled.png", alt: "Tap Rater Explore Our Services Stand" };
-const connectWithUsStandImage = { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-standard-angled.png", alt: "Tap Rater Connect With Us Stand" };
+const googleStandImage = { src: "/uploads/products/taprater-stands/google/google-custom-angled.png", alt: "Tap Rater Google Review Stand" };
+const googlePlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Google Review Plate" };
+const yelpStandImage = { src: "/uploads/products/taprater-stands/yelp/yelp-custom-angled.png", alt: "Tap Rater Yelp Review Stand" };
+const yelpPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Yelp Review Plate" };
+const facebookStandImage = { src: "/uploads/products/taprater-stands/facebook/facebook-custom-angled.png", alt: "Tap Rater Facebook Review Stand" };
+const facebookPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Facebook Review Plate" };
+const tripadvisorStandImage = { src: "/uploads/products/taprater-stands/tripadvisor/tripadvisor-custom-angled.png", alt: "Tap Rater TripAdvisor Review Stand" };
+const tripadvisorPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater TripAdvisor Review Plate" };
+const experienceStandImage = { src: "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png", alt: "Tap Rater Rate Your Experience Stand" };
+const experiencePlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Rate Your Experience Plate" };
+const socialStandImage = { src: "/uploads/products/taprater-text-stands/follow-us-on-social-media/follow-us-on-social-media-custom-angled.png", alt: "Tap Rater Follow Us on Social Media Stand" };
+const socialPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Follow Us on Social Media Plate" };
+const facebookFollowStandImage = { src: "/uploads/products/taprater-stands/facebook-follow/facebook-follow-custom-angled.png", alt: "Tap Rater Follow Us on Facebook Stand" };
+const instagramFollowStandImage = { src: "/uploads/products/taprater-stands/instagram-follow/instagram-follow-custom-angled.png", alt: "Tap Rater Follow Us on Instagram Stand" };
+const tiktokFollowStandImage = { src: "/uploads/products/taprater-stands/tiktok-follow/tiktok-follow-custom-angled.png", alt: "Tap Rater Follow Us on TikTok Stand" };
+const youtubeFollowStandImage = { src: "/uploads/products/taprater-stands/youtube-follow/youtube-follow-custom-angled.png", alt: "Tap Rater Follow Us on YouTube Stand" };
+const linkedinFollowStandImage = { src: "/uploads/products/taprater-stands/linkedin-follow/linkedin-follow-custom-angled.png", alt: "Tap Rater Follow Us on LinkedIn Stand" };
+const xFollowStandImage = { src: "/uploads/products/taprater-stands/x-follow/x-follow-custom-angled.png", alt: "Tap Rater Follow Us on X Stand" };
+const snapchatFollowStandImage = { src: "/uploads/products/taprater-stands/snapchat-follow/snapchat-follow-custom-angled.png", alt: "Tap Rater Follow Us on Snapchat Stand" };
+const pinterestFollowStandImage = { src: "/uploads/products/taprater-stands/pinterest-follow/pinterest-follow-custom-angled.png", alt: "Tap Rater Follow Us on Pinterest Stand" };
+const ubereatsReviewStandImage = { src: "/uploads/products/taprater-stands/uber-eats/uber-eats-custom-angled.png", alt: "Tap Rater Uber Eats Review Stand" };
+const angiReviewStandImage = { src: "/uploads/products/taprater-stands/angi/angi-custom-angled.png", alt: "Tap Rater Angi Review Stand" };
+const dealerraterReviewStandImage = { src: "/uploads/products/taprater-stands/dealerrater/dealerrater-custom-angled.png", alt: "Tap Rater DealerRater Review Stand" };
+const autotraderReviewStandImage = { src: "/uploads/products/taprater-stands/autotrader/autotrader-custom-angled.png", alt: "Tap Rater Autotrader Review Stand" };
+const carfaxReviewStandImage = { src: "/uploads/products/taprater-stands/carfax/carfax-custom-angled.png", alt: "Tap Rater CARFAX Review Stand" };
+const edmundsReviewStandImage = { src: "/uploads/products/taprater-stands/edmunds/edmunds-custom-angled.png", alt: "Tap Rater Edmunds Review Stand" };
+const carsReviewStandImage = { src: "/uploads/products/taprater-stands/cars-com/cars-com-custom-angled.png", alt: "Tap Rater Cars.com Review Stand" };
+const cargurusReviewStandImage = { src: "/uploads/products/taprater-stands/cargurus/cargurus-custom-angled.png", alt: "Tap Rater CarGurus Review Stand" };
+const repairpalReviewStandImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater RepairPal Review Stand" };
+const surecriticReviewStandImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater SureCritic Review Stand" };
+const bbbReviewStandImage = { src: "/uploads/products/taprater-stands/bbb/bbb-custom-angled.png", alt: "Tap Rater BBB Review Stand" };
+const nextdoorReviewStandImage = { src: "/uploads/products/taprater-stands/nextdoor/nextdoor-custom-angled.png", alt: "Tap Rater Nextdoor Review Stand" };
+const avvoReviewStandImage = { src: "/uploads/products/taprater-stands/avvo/avvo-custom-angled.png", alt: "Tap Rater Avvo Review Stand" };
+const taskrabbitReviewStandImage = { src: "/uploads/products/taprater-stands/taskrabbit/taskrabbit-custom-angled.png", alt: "Tap Rater Taskrabbit Review Stand" };
+const martindaleReviewStandImage = { src: "/uploads/products/taprater-stands/martindale/martindale-custom-angled.png", alt: "Tap Rater Martindale Review Stand" };
+const justiaReviewStandImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Justia Review Stand" };
+const findlawReviewStandImage = { src: "/uploads/products/taprater-stands/findlaw/findlaw-custom-angled.png", alt: "Tap Rater FindLaw Review Stand" };
+const lawyersReviewStandImage = { src: "/uploads/products/taprater-stands/lawyers-com/lawyers-com-custom-angled.png", alt: "Tap Rater Lawyers.com Review Stand" };
+const zillowReviewStandImage = { src: "/uploads/products/taprater-stands/zillow/zillow-custom-angled.png", alt: "Tap Rater Zillow Review Stand" };
+const realtorReviewStandImage = { src: "/uploads/products/taprater-stands/realtor-com/realtor-com-custom-angled.png", alt: "Tap Rater Realtor.com Review Stand" };
+const homesReviewStandImage = { src: "/uploads/products/taprater-stands/homes-com/homes-com-custom-angled.png", alt: "Tap Rater Homes.com Review Stand" };
+const homeadvisorReviewStandImage = { src: "/uploads/products/taprater-stands/homeadvisor/homeadvisor-custom-angled.png", alt: "Tap Rater HomeAdvisor Review Stand" };
+const thumbtackReviewStandImage = { src: "/uploads/products/taprater-stands/thumbtack/thumbtack-custom-angled.png", alt: "Tap Rater Thumbtack Review Stand" };
+const houzzReviewStandImage = { src: "/uploads/products/taprater-stands/houzz/houzz-custom-angled.png", alt: "Tap Rater Houzz Review Stand" };
+const porchReviewStandImage = { src: "/uploads/products/taprater-stands/porch/porch-custom-angled.png", alt: "Tap Rater Porch Review Stand" };
+const airbnbReviewStandImage = { src: "/uploads/products/taprater-stands/airbnb/airbnb-custom-angled.png", alt: "Tap Rater Airbnb Review Stand" };
+const agodaReviewStandImage = { src: "/uploads/products/taprater-stands/agoda/agoda-custom-angled.png", alt: "Tap Rater Agoda Review Stand" };
+const vrboReviewStandImage = { src: "/uploads/products/taprater-stands/vrbo/vrbo-custom-angled.png", alt: "Tap Rater Vrbo Review Stand" };
+const hotelsReviewStandImage = { src: "/uploads/products/taprater-stands/hotels-com/hotels-com-custom-angled.png", alt: "Tap Rater Hotels.com Review Stand" };
+const healthgradesReviewStandImage = { src: "/uploads/products/taprater-stands/healthgrades/healthgrades-custom-angled.png", alt: "Tap Rater Healthgrades Review Stand" };
+const vitalsReviewStandImage = { src: "/uploads/products/taprater-stands/vitals/vitals-custom-angled.png", alt: "Tap Rater Vitals Review Stand" };
+const zocdocReviewStandImage = { src: "/uploads/products/taprater-stands/zocdoc/zocdoc-custom-angled.png", alt: "Tap Rater Zocdoc Review Stand" };
+const ratemdsReviewStandImage = { src: "/uploads/products/taprater-stands/ratemds/ratemds-custom-angled.png", alt: "Tap Rater RateMDs Review Stand" };
+const caredashReviewStandImage = { src: "/uploads/products/taprater-stands/caredash/caredash-custom-angled.png", alt: "Tap Rater CareDash Review Stand" };
+const opencareReviewStandImage = { src: "/uploads/products/taprater-stands/opencare/opencare-custom-angled.png", alt: "Tap Rater Opencare Review Stand" };
+const freshaReviewStandImage = { src: "/uploads/products/taprater-stands/fresha/fresha-custom-angled.png", alt: "Tap Rater Fresha Review Stand" };
+const booksyReviewStandImage = { src: "/uploads/products/taprater-stands/booksy/booksy-custom-angled.png", alt: "Tap Rater Booksy Review Stand" };
+const styleseatReviewStandImage = { src: "/uploads/products/taprater-stands/styleseat/styleseat-custom-angled.png", alt: "Tap Rater StyleSeat Review Stand" };
+const vagaroReviewStandImage = { src: "/uploads/products/taprater-stands/vagaro/vagaro-custom-angled.png", alt: "Tap Rater Vagaro Review Stand" };
+const apartmentsReviewStandImage = { src: "/uploads/products/taprater-stands/apartments-com/apartments-com-custom-angled.png", alt: "Tap Rater Apartments.com Review Stand" };
+const truliaReviewStandImage = { src: "/uploads/products/taprater-stands/trulia/trulia-custom-angled.png", alt: "Tap Rater Trulia Review Stand" };
+const whatsappMessageStandImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater WhatsApp Message Stand" };
+const telegramMessageStandImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Telegram Message Stand" };
+const bookingStandImage = { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png", alt: "Tap Rater Book Your Next Visit Stand" };
+const bookingPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater Book Your Next Visit Plate" };
+const menuStandImage = { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png", alt: "Tap Rater View Our Menu Stand" };
+const menuPlateImage = { src: "/uploads/products/no-photo-available.png", alt: "Tap Rater View Our Menu Plate" };
+const menuAndOrderStandImage = { src: "/uploads/products/taprater-text-stands/menu-and-order/menu-and-order-custom-angled.png", alt: "Tap Rater Menu and Order Stand" };
+const patientResourcesStandImage = { src: "/uploads/products/taprater-text-stands/patient-resources/patient-resources-custom-angled.png", alt: "Tap Rater Patient Resources Stand" };
+const checkOurInformationStandImage = { src: "/uploads/products/taprater-text-stands/check-our-information/check-our-information-custom-angled.png", alt: "Tap Rater Check Our Information Stand" };
+const exploreOurServicesStandImage = { src: "/uploads/products/taprater-text-stands/explore-our-services/explore-our-services-custom-angled.png", alt: "Tap Rater Explore Our Services Stand" };
+const connectWithUsStandImage = { src: "/uploads/products/taprater-text-stands/connect-with-us/connect-with-us-custom-angled.png", alt: "Tap Rater Connect With Us Stand" };
 
 const standPriceCents = 3900;
 const platePriceCents = 3900;
@@ -428,7 +428,7 @@ const colors = [
 ];
 
 function createTapraterStandAssetSet(imageSrc: string): ProductAssetSet | undefined {
-  const match = imageSrc.match(/^\/uploads\/products\/taprater-stands\/([^/]+)\/\1-standard-angled\.png$/);
+  const match = imageSrc.match(/^\/uploads\/products\/taprater-stands\/([^/]+)\/\1-custom-angled\.png$/);
 
   if (!match) {
     return undefined;
@@ -438,17 +438,17 @@ function createTapraterStandAssetSet(imageSrc: string): ProductAssetSet | undefi
   const basePath = `/uploads/products/taprater-stands/${folder}`;
 
   return {
-    standardAngledImageUrl: `${basePath}/${folder}-standard-angled.png`,
     brandedAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
     multiLinkAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
-    standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png`,
+    // Retain the exact print assets used by historical paid orders.
+    ...(folder === "google" || folder === "yelp" ? { standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png` } : {}),
     brandedFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`,
     multiLinkFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`
   };
 }
 
 function createTapraterTextStandAssetSet(imageSrc: string): ProductAssetSet | undefined {
-  const match = imageSrc.match(/^\/uploads\/products\/taprater-text-stands\/([^/]+)\/\1-standard-angled\.png$/);
+  const match = imageSrc.match(/^\/uploads\/products\/taprater-text-stands\/([^/]+)\/\1-custom-angled\.png$/);
 
   if (!match) {
     return undefined;
@@ -458,10 +458,10 @@ function createTapraterTextStandAssetSet(imageSrc: string): ProductAssetSet | un
   const basePath = `/uploads/products/taprater-text-stands/${folder}`;
 
   return {
-    standardAngledImageUrl: `${basePath}/${folder}-standard-angled.png`,
     brandedAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
     multiLinkAngledImageUrl: `${basePath}/${folder}-custom-angled.png`,
-    standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png`,
+    // Retain the exact print assets used by historical paid orders.
+    ...(folder === "google" || folder === "yelp" ? { standardFrontTemplateUrl: `${basePath}/${folder}-standard-front.png` } : {}),
     brandedFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`,
     multiLinkFrontTemplateUrl: `${basePath}/${folder}-custom-front.png`
   };
@@ -646,7 +646,6 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     designMode: "standard",
     displayText: "Review us on Google",
     assetSet: {
-      standardAngledImageUrl: "/uploads/products/taprater-stands/google/google-standard-angled.png",
       brandedAngledImageUrl: "/uploads/products/taprater-stands/google/google-custom-angled.png",
       multiLinkAngledImageUrl: "/uploads/products/taprater-stands/google/google-custom-angled.png",
       standardFrontTemplateUrl: "/uploads/products/taprater-stands/google/google-standard-front.png",
@@ -2021,6 +2020,8 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     supportedDestinations: ["booking", "website", "custom"],
     displayText: "Book Your Next Visit",
     image: bookingStandImage,
+    // Updating imagery must not create a new sellable legacy alias.
+    assetSet: {},
     seoTitle: "Book Your Next Visit Stand | Appointment Booking NFC Stand",
     seoDescription: "Countertop NFC stand that opens a booking page, appointment form, calendar, or scheduling URL.",
     searchKeywords: ["book your next visit stand", "appointment booking nfc stand", "booking nfc stand"]
@@ -2053,6 +2054,8 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     supportedDestinations: ["menu", "website", "custom"],
     displayText: "View Our Menu",
     image: menuStandImage,
+    // Updating imagery must not create a new sellable legacy alias.
+    assetSet: {},
     seoTitle: "View Our Menu Stand | NFC Menu Stand",
     seoDescription: "Countertop NFC stand that opens a restaurant, cafe, or service menu with one tap.",
     searchKeywords: ["view our menu stand", "nfc menu stand", "restaurant menu nfc stand"]
@@ -2087,9 +2090,8 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     supportedDestinations: ["website", "custom"],
     displayText: "Visit Our Website",
     supportsMultiLink: true,
-    image: { src: "/uploads/products/visit-website-stand.png", alt: "Tap Rater Visit Our Website Stand" },
+    image: { src: "/uploads/products/visit-website-stand-branded-angled.png", alt: "Tap Rater Visit Our Website Stand" },
     assetSet: {
-      standardAngledImageUrl: "/uploads/products/visit-website-stand.png",
       brandedAngledImageUrl: "/uploads/products/visit-website-stand-branded-angled.png",
       brandedFrontTemplateUrl: "/uploads/products/visit-website-stand-branded-front-template.png"
     },
@@ -2123,7 +2125,7 @@ const migratedProductsWithoutMarketSort: MigratedProduct[] = [
     allowsCustomDesign: true,
     designMode: "custom",
     displayText: "Your message here",
-    images: [{ src: "/uploads/products/business-google-white-stand.jpg", alt: "Custom Tap Rater tabletop stand" }],
+    images: [{ src: "/uploads/products/branded-demo-river-cafe-stand.png", alt: "River Cafe custom stand example with logo and QR code" }],
     variants: colors.map((color) => ({
       id: color.id,
       label: color.label,

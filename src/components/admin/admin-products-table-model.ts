@@ -6,8 +6,6 @@ import { formatPrice } from "@/lib/products";
 export function getMediaWarnings(product: MigratedProduct) {
   const warnings = new Set<string>();
   const mainImage = product.images[0]?.src ?? "";
-  const standardImage = product.assetSet?.standardAngledImageUrl ?? mainImage;
-  const brandedImage = product.assetSet?.brandedAngledImageUrl ?? "";
   const brandedTemplate = product.assetSet?.brandedFrontTemplateUrl ?? "";
   const imageText = product.images.map((image) => `${image.src} ${image.alt}`).join(" ").toLowerCase();
 
@@ -17,10 +15,6 @@ export function getMediaWarnings(product: MigratedProduct) {
 
   if (mainImage.includes("/draft-product/")) {
     warnings.add("main image still uses draft media path");
-  }
-
-  if (brandedImage && standardImage && brandedImage === standardImage) {
-    warnings.add("branded angled image matches standard image");
   }
 
   if (brandedTemplate.includes("/api/media/product/products/") && !brandedTemplate.includes(`/products/${product.slug}/`)) {

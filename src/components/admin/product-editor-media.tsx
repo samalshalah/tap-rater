@@ -241,14 +241,6 @@ export function SetupOptionEditor({
           <NumberInput label="Price cents" value={option.priceCents} onChange={(priceCents) => onChange({ priceCents })} />
         </div>
 
-        {option.optionCode === "standard_direct" ? (
-          <div className="rounded-md border border-line bg-white px-3 py-3 text-sm text-muted">
-            <p className="font-bold text-ink">Standard Direct uses the main product image.</p>
-            <p className="mt-1 text-xs leading-5">
-              Upload or replace the first image in Product Media. Branded + QR uses separate branded media when that option is selected.
-            </p>
-          </div>
-        ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {mediaRequirements.map((requirement) => (
               <MediaUploadCard
@@ -266,7 +258,6 @@ export function SetupOptionEditor({
               />
             ))}
           </div>
-        )}
 
         <div className="flex flex-wrap gap-2">
           <RulePill active={option.requiresDestinationUrl} label="Destination link" />
