@@ -2,7 +2,9 @@
 
 ## Release scope
 
-Prepared 2026-11-16 on `fix/google-campaign-tracking`. Deployment is pending owner approval under `docs/deployment.md`.
+Deployed with owner approval on 2026-11-16 from `fix/google-campaign-tracking`, commit `5cfc5d0`, using `--keep-vars` under `docs/deployment.md`.
+
+Production Worker version: `7768e4d5-5ac1-42f8-b6d8-7850e47f9d4e` (100%). Verified `/BUILD_ID`: `gnz3ezEdnKsPgU4RQDhar`, matching the tested bundle.
 
 - First-time public visitors are offered the existing analytics consent controls once analytics configuration loads. Existing decisions, internal-browser exclusion and Global Privacy Control remain respected.
 - Google `gclid`, `gbraid` and `wbraid` arrivals are classified as `google / cpc`. Raw click identifiers are not stored in journey records or forwarded by this change.
@@ -41,6 +43,9 @@ This release does not create a Google Ads campaign, link an Ads account, or conf
 - TypeScript and Cloudflare production build passed.
 - Desktop and 390px mobile checks: first-visit prompt visible, reject hides it, rejection survives reload, footer preferences reopen, accept hides the prompt.
 - Public-cache integration passed using its isolated fake database; unauthenticated edits rejected and authenticated cache invalidation verified.
-- Wrangler deployment dry-run passed. No live changes were made.
+- Wrangler deployment dry-run and production deployment passed. Public production smoke checks passed; authenticated Store Analytics loaded successfully.
+- Live consented QA visit: site `view_item` and `page_view` requests returned 204. GA4 collection returned 204 with `google / cpc` and campaign `qa_tracking_20261116`. This confirms collection acceptance, not final processing in GA4 reports.
+- Store Analytics showed the matching campaign with one session and zero purchases. After restoring the testing-browser exclusion and rejecting consent, session revocation returned 204, the QA session disappeared from business reports, and a reload sent no tracking requests. GA4 may retain the clearly labeled QA visit; no purchase event was generated.
+- Live screenshot evidence: `artifacts/tracking-live-20261116.jpg` (local, untracked).
 
-After approval, deploy the final tested Worker bundle with `--keep-vars`, verify active Worker version and `/BUILD_ID`, and recheck the public consent flow. Reconcile the first genuine consented campaign order against the order ledger and GA4 after processing. Do not backfill old orders with guessed campaign labels.
+Reconcile the first genuine consented campaign order against the order ledger and GA4 after processing. No real purchase was made during deployment verification, so the complete production payment-to-GA4 path still needs that reconciliation. Do not backfill old orders with guessed campaign labels.
