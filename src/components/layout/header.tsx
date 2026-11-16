@@ -55,10 +55,10 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
 };
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
-  const enabledItems = items.filter(
+  const enabledItems = items.map(item=>item.href === "/google-reviews/packages" ? {...item,href:"/google-reviews"} : item).filter(
     (item) => item.enabled && item.label.toLowerCase() !== "custom branding" && item.href !== getCategoryHref("website-links"),
   );
-  if (!enabledItems.some(item => item.href === "/google-reviews/packages")) enabledItems.push({label:"Google Reviews",href:"/google-reviews/packages",order:45,enabled:true});
+  if (!enabledItems.some(item => item.href === "/google-reviews")) enabledItems.push({label:"Google Reviews",href:"/google-reviews",order:45,enabled:true});
   const hasShopByType = enabledItems.some(
     (item) => item.label.toLowerCase() === "shop by type",
   );

@@ -20,6 +20,7 @@ const staticRoutes = [
   "/nfc-vs-qr-google-review-stand",
   ...googleReviewStandGuides.map(({ href }) => href),
   "/multi-link",
+  "/google-reviews",
   "/pricing",
   "/stand-bundles",
   "/support",
