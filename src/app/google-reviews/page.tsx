@@ -4,7 +4,7 @@ import {ArrowRight, Check, Download, FilePenLine, Copy, Star} from 'lucide-react
 import {PageHero, SectionHeader, SectionShell} from '@/components/storefront/section';
 import {FaqList} from '@/components/storefront/faq-list';
 import {JsonLd, faqJsonLd} from '@/lib/seo';
-import {marketingPlan} from '@/lib/marketing-plan';
+import {ReviewsLandingPurchase} from '@/components/account/reviews-landing-purchase';
 import styles from './reviews-landing.module.css';
 
 const faqs=[
@@ -24,9 +24,11 @@ function DraftPreview(){return <div className={styles.preview} aria-label="Illus
  <div className={styles.draft}><div className={styles.draftLabel}><FilePenLine size={15} aria-hidden="true"/><strong>Reply draft</strong><span>Not published</span></div><p>Thank you for visiting! We’re glad our team could help you find the right fit. We’d love to welcome you back.</p><div className={styles.previewFooter}><span>Review & edit</span><span><Copy size={12} aria-hidden="true"/> Copy when ready</span></div></div>
  </div>}
 
-export default function GoogleReviewsLanding(){return <main className="tr-public-shell text-ink">
+export const dynamic='force-dynamic';
+export default async function GoogleReviewsLanding({searchParams}:{searchParams?:Promise<{checkout?:string}>}){const params=await searchParams;return <main className="tr-public-shell text-ink">
  <JsonLd data={faqJsonLd(faqs)}/>
- <PageHero eyebrow="Google Reviews · Imports & drafts" title={<>Your reviews.<br/>Your voice.</>} body="Bring your Google reviews into one workspace. Prepare thoughtful reply drafts, make them your own, and choose what to publish yourself." cta={{href:'#plan',label:'Explore the plan'}} media={<DraftPreview/>}/>
+ <PageHero eyebrow="Google Reviews · Imports & drafts" title={<>Your reviews.<br/>Your voice.</>} body="Bring your Google reviews into one workspace. Prepare thoughtful reply drafts, make them your own, and choose what to publish yourself." cta={{href:'#plan',label:'Choose your plan'}} media={<DraftPreview/>}/>
+ <ReviewsLandingPurchase cancelled={params?.checkout==='cancelled'}/>
  <div className={`tr-container ${styles.promiseStrip}`}><span><Check size={17} aria-hidden="true"/>You keep the final word</span><span><Check size={17} aria-hidden="true"/>No stand required</span><span><Check size={17} aria-hidden="true"/>Nothing posts automatically</span></div>
 
  <SectionShell><div className="tr-container"><SectionHeader eyebrow="A little help with every reply" title="Less time starting from scratch." body="Give each review the attention it deserves, with a clear place to read feedback and work on your response."/>
@@ -46,10 +48,6 @@ export default function GoogleReviewsLanding(){return <main className="tr-public
  <p className={styles.existing}>Already using Tap Rater Reviews? <Link href="/account/reviews">Open your workspace <ArrowRight size={15} aria-hidden="true"/></Link> Your existing account features stay as they are.</p>
  </div></SectionShell>
 
- <SectionShell id="plan"><div className={`tr-container ${styles.planLayout}`}><div><SectionHeader eyebrow="One focused plan" title="Imports and drafts. Clear and simple." body="A monthly service for preparing responses—not handing over your voice."/><div className={styles.boundary}><h3>You’re always the publisher.</h3><p>Posting to Google and autopilot are disabled for new subscribers. Google Growth and profile optimization are not included.</p><p>Have a location already connected to Tap Rater? <Link href="/contact-us">Contact us before buying</Link> so you don’t purchase access you already have.</p></div></div>
- <article className={styles.priceCard} aria-labelledby="plan-title"><p className="tr-eyebrow">GOOGLE REVIEWS</p><h2 id="plan-title">Imports & drafts</h2><p className={styles.price}><strong>${marketingPlan.monthlyCents/100}</strong><span>per location / month</span></p><ul>{['Google review imports',`${marketingPlan.replies.toLocaleString('en-US')} AI reply draft generations per month`,'Editable, saved reply drafts','Copy drafts for publishing yourself','Monthly subscription · cancel future renewals anytime'].map(item=><li key={item}><Check size={18} aria-hidden="true"/>{item}</li>)}</ul><Link href="/google-reviews/packages" className="tr-button-primary">Choose locations & continue <ArrowRight size={17} aria-hidden="true"/></Link><p className={styles.checkoutNote}>Choose locations and review your total before secure payment. Renews monthly until canceled. Applicable tax is shown at checkout.</p><Link href="/account/packages" className={styles.accountLink}>Already have access? Manage your service</Link></article>
- </div></SectionShell>
-
  <SectionShell tone="soft"><div className="tr-container"><SectionHeader align="center" eyebrow="Before you begin" title="A few things worth knowing."/><FaqList faqs={faqs}/></div></SectionShell>
- <SectionShell spacing="compact"><div className={`tr-container ${styles.closing}`}><div><h2>Make room for thoughtful replies.</h2><p>Start with your reviews. Finish with your own words.</p></div><Link href="/google-reviews/packages" className="tr-button-primary">Get started <ArrowRight size={17} aria-hidden="true"/></Link></div></SectionShell>
+ <SectionShell spacing="compact"><div className={`tr-container ${styles.closing}`}><div><h2>Make room for thoughtful replies.</h2><p>Start with your reviews. Finish with your own words.</p></div><Link href="#plan" className="tr-button-primary">Get started <ArrowRight size={17} aria-hidden="true"/></Link></div></SectionShell>
  </main>}

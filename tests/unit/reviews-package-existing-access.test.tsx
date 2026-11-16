@@ -5,23 +5,23 @@ vi.mock('@/lib/customer-auth',()=>({requireCustomerApi:m.auth}));
 vi.mock('@/lib/customer-marketing-access',()=>({hasCustomerMarketingAccess:m.access}));
 vi.mock('@/lib/marketing-subscriptions',()=>({marketingCheckoutEnabled:()=>true}));
 vi.mock('@/components/account/marketing-purchase',()=>({MarketingPurchaseCard:()=>null}));
-import Page from '@/app/google-reviews/packages/page';
+import {ReviewsLandingPurchase} from '@/components/account/reviews-landing-purchase';
 Object.assign(globalThis,{React});
 beforeEach(()=>vi.resetAllMocks());
 it.each([true,false])('uses service access independently of a Stripe subscription (%s)',async allowed=>{
  m.auth.mockResolvedValue({session:{email:'existing@example.test'}});m.access.mockResolvedValue(allowed);
- const page=await Page({searchParams:Promise.resolve({})});
- const card=page.props.children.props.children.at(-1);
+ const page=await ReviewsLandingPurchase();
+ const card=page!.props.children.props.children.at(-1);
  expect(card.props).toMatchObject({guest:false,serviceManaged:allowed});
  expect(m.access).toHaveBeenCalledExactlyOnceWith('existing@example.test');
 });
 it('keeps guest purchasing available without querying an account',async()=>{
  m.auth.mockResolvedValue({session:null});
- const page=await Page({searchParams:Promise.resolve({})});
- expect(page.props.children.props.children.at(-1).props).toMatchObject({guest:true,serviceManaged:false});
+ const page=await ReviewsLandingPurchase();
+ expect(page!.props.children.props.children.at(-1).props).toMatchObject({guest:true,serviceManaged:false});
  expect(m.access).not.toHaveBeenCalled();
 });
 it('does not present a new purchase when existing access cannot be checked',async()=>{
  m.auth.mockResolvedValue({session:{email:'existing@example.test'}});m.access.mockRejectedValue(Error('Access unavailable'));
- await expect(Page({searchParams:Promise.resolve({})})).rejects.toThrow('Access unavailable');
+ await expect(ReviewsLandingPurchase()).rejects.toThrow('Access unavailable');
 });
