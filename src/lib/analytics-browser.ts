@@ -3,6 +3,8 @@ import {
   captureAttribution,
   analyticsSessionKey,
   internalAnalyticsCookie,
+  campaignStorageKey,
+  readCampaign,
   type Attribution,
 } from "@/lib/analytics-attribution";
 import {
@@ -31,14 +33,16 @@ let loadedId: string | null = null;
 let tagReady = false;
 let enabled = false;
 let entry: { path: string; attribution: Attribution } | null = null;
+let entryPending = false;
 type Visit = {
   id: string;
   lastSeen: number;
   landing: string;
   attribution: Attribution;
+  gaAttribution?: Attribution;
 };
 export function captureAnalyticsEntry() {
-  if (!entry && analyticsPage(window.location.pathname))
+  if (!entry && analyticsPage(window.location.pathname)) {
     entry = {
       path: analyticsPage(window.location.pathname)!.path,
       attribution: captureAttribution(
@@ -46,6 +50,8 @@ export function captureAnalyticsEntry() {
         document.referrer,
       ),
     };
+    entryPending = true;
+  }
 }
 export function isInternalAnalyticsBrowser() {
   return document.cookie
@@ -60,26 +66,30 @@ function visit(): Visit | null {
     const saved = JSON.parse(
       sessionStorage.getItem(analyticsSessionKey) || "null",
     ) as Visit | null;
-    if (saved && Date.now() - saved.lastSeen >= 30 * 60 * 1000) {
-      entry = {
-        path: analyticsPage(window.location.pathname)?.path || "/",
-        attribution: { source: "direct", medium: "none" },
-      };
-    }
+    const fresh = saved && Date.now() >= saved.lastSeen && Date.now() - saved.lastSeen < 30 * 60 * 1000;
+    const incoming = entryPending && entry?.attribution.source !== "direct" ? entry?.attribution : null;
+    const changedCampaign = incoming && JSON.stringify(incoming) !== JSON.stringify(saved?.attribution);
+    // Keep the last consented non-direct source across returns for 30 days.
+    // A new campaign must not inherit a previous direct visit's database row.
+    const attribution = incoming ?? (fresh ? saved.attribution : readCampaign(localStorage.getItem(campaignStorageKey))) ?? { source: "direct", medium: "none" };
     const current =
-      saved && Date.now() - saved.lastSeen < 30 * 60 * 1000
+      fresh && !changedCampaign
         ? saved
         : {
             id: crypto.randomUUID(),
             lastSeen: Date.now(),
-            landing: entry?.path || "/",
-            attribution: entry?.attribution || {
-              source: "direct",
-              medium: "none",
-            },
+            landing: (entryPending ? entry?.path : analyticsPage(window.location.pathname)?.path) || "/",
+            attribution,
+            // Returning directly may inherit our 30-day order-source label,
+            // but it must not become a new paid arrival in GA4 acquisition.
+            gaAttribution: incoming ?? { source: "direct", medium: "none" },
           };
     current.lastSeen = Date.now();
     sessionStorage.setItem(analyticsSessionKey, JSON.stringify(current));
+    if (incoming) {
+      localStorage.setItem(campaignStorageKey, JSON.stringify({ version: 1, ...incoming, savedAt: Date.now() }));
+    }
+    entryPending = false;
     return current;
   } catch {
     return null;
@@ -135,9 +145,9 @@ export async function checkoutAnalyticsHeaders(): Promise<
         );
       });
     });
-  const [clientId, gaSessionId] = tagReady
-    ? await Promise.all([get("client_id"), get("session_id")])
-    : [];
+  // Queue the identity request even while the tag is loading. The bounded
+  // timeout still lets blocked Google scripts complete checkout normally.
+  const [clientId, gaSessionId] = await Promise.all([get("client_id"), get("session_id")]);
   if (!analyticsAvailable()) return {};
   return {
     "x-taprater-analytics": JSON.stringify({
@@ -180,6 +190,7 @@ export function saveBrowserConsent(choice: ConsentChoice) {
     choice +
     "; Path=/; Max-Age=15552000; SameSite=Lax; Secure";
   if (choice === "denied") {
+    try { localStorage.removeItem(campaignStorageKey); } catch {}
     try {
       const session = JSON.parse(
         sessionStorage.getItem(analyticsSessionKey) || "null",
@@ -230,7 +241,8 @@ function discardPendingEvents() {
 function context() {
   const page = analyticsPage(window.location.pathname);
   if (!page) return null;
-  const attribution = visit()?.attribution;
+  const session = visit();
+  const attribution = session?.gaAttribution ?? session?.attribution;
   return {
     ...(attribution && !(attribution.source === "direct" && attribution.medium === "none")
       ? {

@@ -1,5 +1,7 @@
 export const internalAnalyticsCookie = "taprater_analytics_internal";
 export const analyticsSessionKey = "taprater:analytics-session:v2";
+export const campaignStorageKey = "taprater:analytics-campaign:v1";
+export const campaignMaxAge = 30 * 24 * 60 * 60 * 1000;
 export type Attribution = { source: string; medium: string; campaign?: string };
 // Campaign labels only: never arbitrary query strings, IDs, email addresses, or free text.
 export function campaignLabel(value: unknown): string | undefined {
@@ -16,6 +18,13 @@ export function captureAttribution(
   const source = campaignLabel(params.get("utm_source"));
   const medium = campaignLabel(params.get("utm_medium"));
   const campaign = campaignLabel(params.get("utm_campaign"));
+  // Classify an auto-tagged Google arrival without storing or forwarding the
+  // click identifier. UTM labels identify the individual campaign in reports.
+  const googleClick = ["gclid", "gbraid", "wbraid"].some((key) =>
+    /^[A-Za-z0-9_-]{6,512}$/.test(params.get(key) ?? ""),
+  );
+  if (googleClick)
+    return { source: "google", medium: "cpc", ...(campaign ? { campaign } : {}) };
   if (source && medium)
     return { source, medium, ...(campaign ? { campaign } : {}) };
   try {
@@ -49,4 +58,16 @@ export function captureAttribution(
     if (host) return { source: "other-referral", medium: "referral" };
   } catch {}
   return { source: "direct", medium: "none" };
+}
+
+export function readCampaign(raw: string | null, now = Date.now()): Attribution | null {
+  try {
+    const value = JSON.parse(raw ?? "null");
+    if (value?.version !== 1 || !Number.isFinite(value.savedAt) ||
+      value.savedAt > now || now - value.savedAt >= campaignMaxAge) return null;
+    const source = campaignLabel(value.source), medium = campaignLabel(value.medium);
+    if (!source || !medium || source === "direct") return null;
+    const campaign = campaignLabel(value.campaign);
+    return { source, medium, ...(campaign ? { campaign } : {}) };
+  } catch { return null; }
 }

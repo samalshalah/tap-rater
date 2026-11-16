@@ -136,7 +136,7 @@ export default async function AdminAnalyticsPage({
           <Panel
             id="sources"
             title="Where customers come from"
-            subtitle="Source, medium, and campaign for each tracked session. Purchases are linked live orders from those sessions. Tag promotional links with utm_source, utm_medium, and utm_campaign using short labels (letters, numbers, hyphens, underscores)."
+            subtitle="Consented campaign attribution and linked live purchases. Direct return visits retain the last non-direct source for up to 30 days; this differs from GA4 session acquisition. Tag promotional links with utm_source, utm_medium, and utm_campaign using short labels (letters, numbers, hyphens, underscores)."
           >
             <Table
               columns={[

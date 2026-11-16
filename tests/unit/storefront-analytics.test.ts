@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { analyticsPage, analyticsReferrer, cartAnalyticsItems, consentMaxAge, consentStorageKey, ecommerceData, getAnalyticsConfig, readConsent, analyticsItemName } from "@/lib/storefront-analytics";
 import { verifiedPurchase } from "@/lib/analytics-purchase";
+import { analyticsSessionKey, campaignStorageKey, campaignMaxAge } from "@/lib/analytics-attribution";
 
 const order = () => ({
   id: "4cca14ff-8016-49c8-8c3b-b61a88b3a8e0", stripe_checkout_session_id: "cs_live_example123",
@@ -99,11 +100,75 @@ describe("browser analytics consent and dispatch", () => {
     vi.stubGlobal("window", target);
     vi.stubGlobal("navigator", {});
     vi.stubGlobal("document", { cookie: "", createElement: () => ({}), head: { appendChild: (script: typeof scripts[number]) => scripts.push(script) } });
-    vi.stubGlobal("localStorage", { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value) });
+    vi.stubGlobal("localStorage", { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) });
     client = await import("@/lib/analytics-browser");
   });
   afterEach(() => { vi.unstubAllGlobals(); });
   function grant() { client.saveBrowserConsent("granted"); client.syncAnalytics(config, () => {}); scripts[0]?.onload?.(); }
+
+  it("carries a paid campaign through navigation and a return visit, then forgets it on rejection", async () => {
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value), removeItem: (key: string) => sessions.delete(key) });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null)));
+    Object.assign(target.location, { pathname: "/product/google-review-stand", search: "?utm_source=google&utm_medium=cpc&utm_campaign=google_stands&gclid=test-click-123&email=private@example.com" });
+    client.captureAnalyticsEntry();
+    expect(storage.has(campaignStorageKey)).toBe(false);
+    grant();
+    client.trackPageView();
+    const firstSession = JSON.parse(sessions.get(analyticsSessionKey)!);
+    Object.assign(target.location, { pathname: "/checkout", search: "" });
+    client.trackCheckoutStep("payment_step");
+    expect(events().at(-1)?.[2]).toMatchObject({ campaign_source: "google", campaign_medium: "cpc", campaign_name: "google_stands" });
+    expect(JSON.stringify([...storage.values()])).not.toMatch(/test-click|private/);
+    sessions.clear();
+    vi.resetModules();
+    client = await import("@/lib/analytics-browser");
+    client.syncAnalytics(config);
+    client.trackPageView();
+    const returningSession = JSON.parse(sessions.get(analyticsSessionKey)!);
+    expect(returningSession.id).not.toBe(firstSession.id);
+    expect(returningSession.attribution).toEqual(firstSession.attribution);
+    expect(events().at(-1)?.[2]).not.toHaveProperty("campaign_source");
+    client.saveBrowserConsent("denied");
+    expect(storage.has(campaignStorageKey)).toBe(false);
+    expect(sessions.has(analyticsSessionKey)).toBe(false);
+    expect(client.trackPageView()).toBe(false);
+  });
+
+  it("replaces an active direct session when the visitor arrives from a new campaign", () => {
+    const sessions = new Map<string, string>();
+    const oldId = crypto.randomUUID();
+    sessions.set(analyticsSessionKey, JSON.stringify({ id: oldId, lastSeen: Date.now(), landing: "/", attribution: { source: "direct", medium: "none" } }));
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    Object.assign(target.location, { search: "?utm_source=google&utm_medium=cpc&utm_campaign=stands" });
+    grant();
+    const current = JSON.parse(sessions.get(analyticsSessionKey)!);
+    expect(current.id).not.toBe(oldId);
+    expect(current.attribution).toEqual({ source: "google", medium: "cpc", campaign: "stands" });
+  });
+
+  it("does not attribute a direct return to an expired campaign", () => {
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    storage.set(campaignStorageKey, JSON.stringify({ version: 1, source: "google", medium: "cpc", campaign: "old", savedAt: Date.now() - campaignMaxAge }));
+    grant();
+    expect(JSON.parse(sessions.get(analyticsSessionKey)!).attribution).toEqual({ source: "direct", medium: "none" });
+  });
+
+  it("waits for Google identity while its tag loads so the server purchase can join the campaign session", async () => {
+    const sessions = new Map<string, string>();
+    vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
+    Object.assign(target.location, { search: "?utm_source=google&utm_medium=cpc&utm_campaign=stands" });
+    client.saveBrowserConsent("granted");
+    client.syncAnalytics(config);
+    const pending = client.checkoutAnalyticsHeaders();
+    scripts[0].onload?.();
+    for (const args of commands().filter(args => args[0] === "get")) {
+      (args[3] as (value: string) => void)(args[2] === "client_id" ? "123.456" : "1791576000");
+    }
+    const identity = JSON.parse((await pending)["x-taprater-analytics"]);
+    expect(identity).toMatchObject({ clientId: "123.456", gaSessionId: "1791576000", entry: { source: "google", medium: "cpc", campaign: "stands" } });
+  });
 
   it("does not load Google or send events before consent, after rejection, or without configuration", () => {
     client.syncAnalytics(config, () => {});

@@ -45,6 +45,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const lastMetaPage = useRef<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const [ready, setReady] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
   const [storageError, setStorageError] = useState(false);
@@ -53,6 +54,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   const preferences = useRef<HTMLElement>(null);
   const configured = Boolean(config.measurementId);
   const publicPage = Boolean(analyticsPage(pathname));
+  const showPrompt = hydrated && publicPage && !config.internal && !gpc &&
+    configured && choice === null && !dismissed;
 
   useEffect(() => {
     captureAnalyticsEntry();
@@ -128,6 +131,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     }
     setStorageError(false);
     setChoice(next);
+    setDismissed(true);
     setOpen(false);
     // Revoke immediately, before React renders or another event can be dispatched.
     setReady(syncAnalytics(config, () => setGoogleReady(true)));
@@ -144,8 +148,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
   return (
     <AnalyticsContext.Provider value={{ ready, googleReady, metaReady, configured, openPreferences }}>
       {children}
-      {/* Preferences open only on request; missing consent still leaves tracking off. */}
-      {hydrated && open ? (
+      {/* Offer a choice to new visitors; collection still requires an opt-in. */}
+      {hydrated && (open || showPrompt) ? (
         <section
           ref={preferences}
           tabIndex={-1}
@@ -204,7 +208,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
               {open ? (
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={() => { setOpen(false); setDismissed(true); }}
                   className="min-h-11 px-3 text-sm underline"
                 >
                   Close

@@ -4,7 +4,7 @@ vi.mock("@neondatabase/serverless", () => ({ neon: () => ({ query }) }));
 vi.mock("@/lib/admin-auth", () => ({
   isValidAdminSession: (value: string) => value === "valid-admin",
 }));
-import { captureAttribution, campaignLabel } from "@/lib/analytics-attribution";
+import { captureAttribution, campaignLabel, readCampaign, campaignMaxAge } from "@/lib/analytics-attribution";
 import { analyticsPage } from "@/lib/storefront-analytics";
 import {
   analyticsEventSchema,
@@ -49,6 +49,21 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("attribution and exclusions", () => {
+  it.each(["gclid", "gbraid", "wbraid"])("recognizes %s as paid Google traffic without retaining the identifier", (key) => {
+    const result = captureAttribution(`?${key}=test-click-123&utm_campaign=google_stands&email=private@example.com`, "https://www.google.com/");
+    expect(result).toEqual({ source: "google", medium: "cpc", campaign: "google_stands" });
+    expect(JSON.stringify(result)).not.toMatch(/test-click|private/);
+    expect(captureAttribution(`?${key}=private@example.com`, "https://www.google.com/")).toEqual({ source: "google", medium: "organic" });
+  });
+  it("expires return-visit campaign labels and rejects corrupt storage", () => {
+    const now = Date.now();
+    const value = { version: 1, source: "google", medium: "cpc", campaign: "stands", savedAt: now };
+    expect(readCampaign(JSON.stringify(value), now)).toEqual({ source: "google", medium: "cpc", campaign: "stands" });
+    for (const patch of [{ savedAt: now - campaignMaxAge }, { savedAt: now + 1 }, { source: "private@example.com" }, { version: 0 }]) {
+      expect(readCampaign(JSON.stringify({ ...value, ...patch }), now)).toBeNull();
+    }
+    expect(readCampaign("bad", now)).toBeNull();
+  });
   it.each(["/category/reviews", "/category/website-link-stands", "/solutions/restaurant-food", "/solutions/healthcare-dental", "/category/new-category"])("accepts browser-generated landing attribution for %s", (url) => {
     const page = analyticsPage(url)!;
     expect(analyticsEventSchema.safeParse({
