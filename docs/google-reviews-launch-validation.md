@@ -158,3 +158,11 @@ npx wrangler deploy --dry-run
 ```
 
 The ignored `.env.reviews-qa` supplies only the dedicated QA database URL. The integration test rejects every other endpoint. Never commit credentials or use this test against production.
+
+## 2026-11-16 — Branded Reviews landing page
+
+Released `18be16c` to production: `/google-reviews` now uses the shared Prismatic PageHero, original approved wave, website typography/buttons, benefits, setup steps, $29/location monthly plan, and FAQs. Public navigation opens this landing page; package selection at `/google-reviews/packages` remains the next step. New-subscriber copy is imports and drafts only, with publishing and autopilot explicitly excluded. Existing-access messaging remains intact.
+
+Validation: TypeScript, 2,457 tests (31 skipped), Cloudflare build, public-cache integration, deployment dry run, desktop and 390px mobile visual checks, and live landing-to-package navigation passed. Live packages retained the active managed-access message for the existing signed-in session. No account, location, reply-setting, billing, or Google data mutations were performed. Stand checkout code remains unchanged; `/checkout` returns 200. Growth remains paused and `/growth` redirects to `/shop`.
+
+Production Worker version: `217dc4ab-7f0c-42f3-879f-d9059214e0c0`. Live BUILD_ID matches the tested build: `uxRopj99VDqz971PSQzc7`. Deployment list confirmed the version at 100% after pushing the release to `nextjs-commerce`. Screenshots: `../archives/google-reviews-landing-2026-11-16/desktop.jpg` and `mobile.jpg`.
