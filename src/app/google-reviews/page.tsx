@@ -1,11 +1,13 @@
 import type {Metadata} from 'next';
 import Link from 'next/link';
-import {ArrowRight, Check, Download, FilePenLine, Copy, Star} from 'lucide-react';
-import {PageHero, SectionHeader, SectionShell} from '@/components/storefront/section';
+import {ArrowRight, Check, Download, FilePenLine, Copy} from 'lucide-react';
+import {SectionHeader, SectionShell} from '@/components/storefront/section';
 import {FaqList} from '@/components/storefront/faq-list';
 import {JsonLd, faqJsonLd} from '@/lib/seo';
 import {ReviewsLandingPurchase} from '@/components/account/reviews-landing-purchase';
 import styles from './reviews-landing.module.css';
+import heroStyles from '@/components/storefront/business-pages.module.css';
+import {PrismaticWave} from '@/components/prismatic/motion';
 
 const faqs=[
  {question:'Will Tap Rater post replies to Google for me?',answer:'No. This package includes review imports and reply drafts only. Posting to Google and autopilot are disabled. If you want to publish a reply, copy your finished draft and post it yourself in Google Business Profile.'},
@@ -18,16 +20,17 @@ const faqs=[
 ];
 export const metadata:Metadata={title:'Google Reviews — Imports & AI Reply Drafts',description:'Bring your Google reviews into one workspace and prepare editable AI reply drafts. $29 per location per month. Posting and autopilot are not included.',alternates:{canonical:'/google-reviews'},openGraph:{title:'Google Reviews, in your own words | Tap Rater',description:'Import reviews. Prepare thoughtful drafts. Keep the final word.',url:'/google-reviews',type:'website'}};
 
-function DraftPreview(){return <div className={styles.preview} aria-label="Illustrative review and reply draft">
- <div className={styles.previewHeader}><span className={styles.previewDot}/><span>YOUR REVIEWS WORKSPACE</span><span className={styles.sample}>Example</span></div>
- <div className={styles.review}><div className={styles.reviewLabel}><span className={styles.avatar}>A</span><strong>Customer review</strong><span className={styles.stars} aria-label="5 out of 5 stars">{Array.from({length:5},(_,i)=><Star key={i} size={12} fill="currentColor" aria-hidden="true"/>)}</span></div><p>“Such a warm welcome. The team helped me find exactly what I needed!”</p></div>
- <div className={styles.draft}><div className={styles.draftLabel}><FilePenLine size={15} aria-hidden="true"/><strong>Reply draft</strong><span>Not published</span></div><p>Thank you for visiting! We’re glad our team could help you find the right fit. We’d love to welcome you back.</p><div className={styles.previewFooter}><span>Review & edit</span><span><Copy size={12} aria-hidden="true"/> Copy when ready</span></div></div>
- </div>}
-
 export const dynamic='force-dynamic';
 export default async function GoogleReviewsLanding({searchParams}:{searchParams?:Promise<{checkout?:string}>}){const params=await searchParams;return <main className="tr-public-shell text-ink">
  <JsonLd data={faqJsonLd(faqs)}/>
- <PageHero eyebrow="Google Reviews · Imports & drafts" title={<>Your reviews.<br/>Your voice.</>} body="Bring your Google reviews into one workspace. Prepare thoughtful reply drafts, make them your own, and choose what to publish yourself." cta={{href:'#plan',label:'Choose your plan'}} media={<DraftPreview/>}/>
+ <SectionShell tone="soft" spacing="compact" className={heroStyles.hero}>
+  <div className={`tr-container tr-prismatic-shop-intro ${heroStyles.banner} ${heroStyles.shopBanner}`}>
+   <PrismaticWave variant="banner"/>
+   <p className="tr-eyebrow">Google Reviews · Imports &amp; drafts</p>
+   <h1 className="tr-page-title mt-4">Your reviews. Your voice.</h1>
+   <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Bring your Google reviews into one workspace. Prepare thoughtful reply drafts, make them your own, and choose what to publish yourself.</p>
+  </div>
+ </SectionShell>
  <ReviewsLandingPurchase cancelled={params?.checkout==='cancelled'}/>
  <div className={`tr-container ${styles.promiseStrip}`}><span><Check size={17} aria-hidden="true"/>You keep the final word</span><span><Check size={17} aria-hidden="true"/>No stand required</span><span><Check size={17} aria-hidden="true"/>Nothing posts automatically</span></div>
 
