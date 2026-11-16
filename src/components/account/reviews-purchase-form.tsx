@@ -31,16 +31,16 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
   }catch(e){setError(e instanceof Error?e.message:'Checkout is unavailable. Please try again.');setBusy(false);}
  }
  return <form onSubmit={purchase} className="space-y-4" aria-label="Google Reviews package">
-  <h2 className="text-xl font-semibold">Google Reviews</h2>
-  <p><strong>$29 per location / month</strong>. Review imports and {marketingPlan.replies.toLocaleString('en-US')} AI reply draft generations per location each month. Edit and save drafts in your workspace.</p>
-  <p className="rounded border border-line bg-slate-50 p-3 text-sm"><strong>Imports and drafts only.</strong> Posting to Google and autopilot are disabled for this package. Nothing is posted automatically. You can copy a draft and publish it yourself in Google Business Profile.</p>
-  <p className="text-sm text-muted">Connect a Google Business Profile you own or manage after payment. A location already connected to another Tap Rater workspace cannot be connected again; contact support before buying for that location. AI drafting starts off and requires your opt-in. Google Growth is not included.</p>
+  <h2 className="text-xl font-semibold">Imports &amp; drafts</h2>
+  <p className="text-lg font-semibold">$29 <span className="text-sm font-normal text-muted">per location / month</span></p>
+  <p className="text-sm text-muted">Review imports + {marketingPlan.replies.toLocaleString('en-US')} AI reply drafts per location each month. No posting or autopilot.</p>
+  <details className="text-sm text-muted"><summary className="cursor-pointer text-ink">Setup requirements</summary><p className="mt-2">You’ll connect a Google Business Profile you own or manage after payment. If your location is already connected to Tap Rater, <Link href="/contact-us" className="underline">contact us</Link> before buying.</p></details>
   <fieldset disabled={busy} className="space-y-4">
-   {guest&&<><label className="block text-sm">Full name<input required maxLength={150} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><label className="block text-sm">Email<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><p className="text-sm">Already have an account? <Link href="/account/login" className="underline">Sign in before subscribing</Link>.</p></>}
+   {guest&&<><label className="block text-sm">Full name<input required maxLength={150} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><label className="block text-sm">Email<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><p className="text-sm">Have an account? <Link href="/account/login" className="underline">Sign in</Link>.</p></>}
    <label className="block text-sm">Locations<select value={locations} onChange={e=>setLocations(Number(e.target.value))} className="ml-3 rounded border border-line p-2">{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></label>
-   <p className="font-semibold">${(marketingAmount({cadence:'month',locations})/100).toFixed(2)} / month</p>
-   <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required className="mt-1"/><span>I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy-policy" className="underline">Privacy Policy</Link>, and authorize this monthly subscription to renew until canceled. I can cancel future renewals in Subscription management.</span></label>
-   <button type="submit" disabled={!accepted||busy} className="tr-button-primary">{busy?'Opening secure checkout…':'Continue to secure payment'}</button>
+   <p className="flex justify-between border-t border-line pt-4 font-semibold"><span>Monthly total</span><span>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</span></p>
+   <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required className="mt-1"/><span>I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy-policy" className="underline">Privacy Policy</Link>. Renews monthly until canceled. Cancel future renewals in your account.</span></label>
+   <button type="submit" disabled={!accepted||busy} className="tr-button-primary">{busy?'Opening secure checkout…':'Continue to checkout'}</button>
   </fieldset>
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
  </form>;
