@@ -575,7 +575,7 @@ a {
   }
 }
 /* Mobile storefront: shared thumb navigation and purchase action. */
-.tr-mobile-tabs, .tr-mobile-home, .tr-mobile-account { display: none; }
+.tr-mobile-tabs, .tr-mobile-home { display: none; }
 @media (max-width: 767px) {
   :root { --tr-mobile-nav-height: calc(68px + env(safe-area-inset-bottom, 0px)); }
   .tr-with-mobile-tabs { padding-bottom: var(--tr-mobile-nav-height); }
@@ -592,7 +592,6 @@ a {
   .tr-mobile-home .tr-mobile-home-title { color:var(--tr-color-ink)!important; font-size:34px!important; line-height:1.12!important; font-weight:750!important; letter-spacing:-1px; max-width:360px; }
   .tr-mobile-home > p { margin-top:12px; font-size:17px; color:#5F6B76; }
   .tr-mobile-home-image { position:relative; height:240px; margin:14px -20px; background:#F7F8F6; }
-  .tr-mobile-primary { display:flex; align-items:center; justify-content:center; gap:12px; min-height:52px; padding:12px 18px; border-radius:12px; background:#0B7A75; color:#fff; font-size:17px; font-weight:650; }
   .tr-mobile-actions { display:grid; grid-template-columns:repeat(3,1fr); padding:20px 0; gap:12px; }
   .tr-mobile-actions a { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:15px; font-weight:600; }
   .tr-mobile-actions a > span { display:grid; place-items:center; background:#F2F6F5; width:56px; height:52px; border-radius:12px; }
@@ -612,24 +611,11 @@ a {
   .tr-purchase-action button { min-height:52px; background:#0B7A75; border-color:#0B7A75; border-radius:12px; font-size:15px; }
   .tr-purchase-action[data-builder-open=true] { display:none; }
   .tr-account-desktop { display:none; }
-  .tr-mobile-account { display:block; }
   .tr-account-shell { background:#fff; }
   .tr-account-shell .tr-account-heading h1 { font-size:32px!important; font-weight:700!important; }
   .tr-account-heading > nav { flex-wrap:nowrap; overflow-x:auto; padding-bottom:6px; }
   .tr-account-heading > nav > * { flex-shrink:0; }
   .tr-account-heading[data-overview=true] > nav { display:none; }
-  .tr-mobile-order { border:1px solid #DFE5E3; border-radius:12px; padding:16px; }
-  .tr-mobile-order h2 { font-weight:700!important; font-size:21px!important; margin:10px 0; }
-  .tr-mobile-order-title { margin-top:12px; font-weight:650; }
-  .tr-order-steps { display:flex; justify-content:space-between; margin:22px 0; gap:8px; list-style:none; }
-  .tr-order-steps li { flex:1; border-top:3px solid #DFE5E3; padding-top:8px; color:#5F6B76; font-size:12px; text-align:center; }
-  .tr-order-steps li[data-complete=true] { border-color:#0B7A75; color:#0B7A75; }
-  .tr-account-manage { margin-top:26px; }
-  .tr-account-manage > h2 { font-size:23px!important; font-weight:700!important; }
-  .tr-account-manage > a { display:flex; gap:12px; align-items:center; border-bottom:1px solid #DFE5E3; padding:18px 0; }
-  .tr-account-manage > a > span { flex:1; }
-  .tr-account-manage strong { display:block; font-size:16px; }
-  .tr-account-manage small { display:block; margin-top:4px; font-size:13px; color:#5F6B76; }
 }
 @media (max-width:767px) {
   .tr-product-route > main > main { background:#fff; }
@@ -643,10 +629,6 @@ a {
   .tr-public-shell .tr-account-shell, .tr-public-shell .tr-account-shell > section,
   .tr-public-shell.tr-product-route main, .tr-public-shell.tr-product-route main > section { background:#fff!important; }
   .tr-account-heading > div > .tr-eyebrow { display:none; }
-  .tr-mobile-order p { font-size:15px; line-height:1.5; }
-  .tr-mobile-order > p:first-child { font-size:12px; }
-  .tr-account-shell .tr-mobile-order h2[class], .tr-account-shell .tr-mobile-order h2 { font-size:22px!important; font-weight:700!important; }
-  .tr-mobile-account .tr-account-manage h2 { font-size:25px!important; font-weight:700!important; }
   .tr-product-route .tr-product-hero h1[class] { font-size:26px!important; font-weight:700!important; }
   .tr-product-hero .tr-design-option > span > span:first-child span { font-weight:650!important; }
 }
@@ -655,8 +637,6 @@ a {
 }
 @media (max-width:767px) {
   .tr-account-shell > section { padding-top:24px; }
-  .tr-mobile-order-title { margin-top:0; }
-  .tr-mobile-order .tr-order-steps { margin-block:18px; }
 }
 @media (max-width:767px) {
   .tr-with-mobile-tabs > header { z-index:40; }

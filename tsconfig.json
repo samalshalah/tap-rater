@@ -44,6 +44,8 @@
     "tmp*",
     ".agents",
     ".open-next",
+    ".next-*",
+    ".local-sandbox",
     "apps/backend/dist"
   ]
 }
