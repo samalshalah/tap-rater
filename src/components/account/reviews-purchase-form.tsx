@@ -1,6 +1,7 @@
 'use client';
 import {useRef,useState,type FormEvent} from 'react';
 import Link from 'next/link';
+import styles from './reviews-checkout.module.css';
 import {marketingAmount,marketingPlan} from '@/lib/marketing-plan';
 
 /** Rendered only behind the server-side Reviews sales gate. */
@@ -30,18 +31,24 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
    window.location.assign(result.url);
   }catch(e){setError(e instanceof Error?e.message:'Checkout is unavailable. Please try again.');setBusy(false);}
  }
- return <form onSubmit={purchase} className="space-y-4" aria-label="Google Reviews package">
-  <h2 className="text-xl font-semibold">Imports &amp; drafts</h2>
-  <p className="text-lg font-semibold">$29 <span className="text-sm font-normal text-muted">per location / month</span></p>
-  <p className="text-sm text-muted">Review imports + {marketingPlan.replies.toLocaleString('en-US')} AI reply drafts per location each month. No posting or autopilot.</p>
-  <details className="text-sm text-muted"><summary className="cursor-pointer text-ink">Setup requirements</summary><p className="mt-2">You’ll connect a Google Business Profile you own or manage after payment. If your location is already connected to Tap Rater, <Link href="/contact-us" className="underline">contact us</Link> before buying.</p></details>
-  <fieldset disabled={busy} className="space-y-4">
-   {guest&&<><label className="block text-sm">Full name<input required maxLength={150} autoComplete="name" value={name} onChange={e=>setName(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><label className="block text-sm">Email<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} className="mt-1 w-full rounded border border-line p-3"/></label><p className="text-sm">Have an account? <Link href="/account/login" className="underline">Sign in</Link>.</p></>}
-   <label className="block text-sm">Locations<select value={locations} onChange={e=>setLocations(Number(e.target.value))} className="ml-3 rounded border border-line p-2">{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></label>
-   <p className="flex justify-between border-t border-line pt-4 font-semibold"><span>Monthly total</span><span>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</span></p>
-   <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required className="mt-1"/><span>I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy-policy" className="underline">Privacy Policy</Link>. Renews monthly until canceled. Cancel future renewals in your account.</span></label>
-   <button type="submit" disabled={!accepted||busy} className="tr-button-primary">{busy?'Opening secure checkout…':'Continue to checkout'}</button>
+ return <form onSubmit={purchase} className={styles.form} aria-label="Google Reviews package">
+  <aside className={styles.plan}>
+   <span className={styles.eyebrow}>GOOGLE REVIEWS</span>
+   <h2>Imports &amp; drafts</h2>
+   <p className={styles.price}><strong>$29</strong><span>per location<br/>per month</span></p>
+   <ul className={styles.features}><li>Google review imports</li><li>{marketingPlan.replies.toLocaleString('en-US')} AI reply drafts / month</li><li>Edit, save, and copy your drafts</li></ul>
+   <p className={styles.limit}>You choose what to publish.<br/>Posting and autopilot aren’t included.</p>
+   <details className={styles.requirements}><summary>Before you subscribe</summary><p>You’ll need a Google Business Profile you own or manage. If your location is already connected to Tap Rater, <Link href="/contact-us">contact us</Link> before buying.</p></details>
+  </aside>
+  <fieldset disabled={busy} className={styles.details}>
+   <div className={styles.detailsHeading}><h2>{guest?'Your details':'Your plan'}</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
+   {guest&&<div className={styles.fields}><label>Full name<input required maxLength={150} autoComplete="name" value={name} onChange={e=>setName(e.target.value)}/></label><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label></div>}
+   <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
+   <div className={styles.total}><span>Monthly total<small>Tax calculated at checkout</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
+   <label className={styles.consent}><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/><span>I agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy-policy">Privacy Policy</Link>. Renews monthly until canceled.</span></label>
+   <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to checkout'}<span aria-hidden="true">→</span></button>
+   <p className={styles.paymentNote}>Secure payment with Stripe · Cancel future renewals anytime</p>
+   {error&&<p role="alert" className={styles.error}>{error}</p>}
   </fieldset>
-  {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
  </form>;
 }

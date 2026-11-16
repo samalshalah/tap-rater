@@ -1,0 +1,48 @@
+.page { background:#f6f8ff; padding:40px 24px 64px; color:#090e36; }
+.container { max-width:920px; margin:auto; }
+.back { display:inline-block; font-size:13px; color:#4b536f; margin-bottom:24px; }
+.back:hover { color:#6035ff; }
+.heading { margin-bottom:28px; }
+.heading h1 { font-size:clamp(26px,3vw,36px); font-weight:650; letter-spacing:-.05em; line-height:1.2; }
+.heading p { margin-top:8px; color:#4b536f; font-size:15px; }
+.card { border:1px solid #e6e7f0; border-radius:20px; background:white; overflow:hidden; box-shadow:0 16px 48px #090e3608; }
+.statusCard { background:white; border:1px solid #e6e7f0; border-radius:20px; padding:32px; display:grid; gap:16px; }
+.form { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); }
+.plan { padding:36px; background:#090e36; color:white; }
+.eyebrow { font-size:10px; letter-spacing:.16em; font-weight:600; color:#c6bbf7; }
+.plan h2 { margin-top:16px; font-size:27px; letter-spacing:-.04em; font-weight:600; }
+.price { display:flex; align-items:center; gap:14px; margin:26px 0; }
+.price strong { font-size:64px; font-weight:600; letter-spacing:-.065em; line-height:1; }
+.price span { color:#d4d3e4; font-size:12px; line-height:1.7; }
+.features { display:grid; gap:16px; list-style:none; padding:26px 0; border-top:1px solid #ffffff24; font-size:13px; }
+.features li { display:flex; gap:12px; align-items:start; }
+.features li::before { content:'✓'; color:#c6bbf7; }
+.limit { color:#d4d3e4; font-size:12px; line-height:1.8; margin-top:10px; }
+.requirements { margin-top:28px; padding-top:18px; border-top:1px solid #ffffff24; font-size:12px; color:#d4d3e4; }
+.requirements summary { cursor:pointer; color:white; }
+.requirements p { margin-top:12px; line-height:1.8; }
+.requirements a,.consent a { text-decoration:underline; text-underline-offset:3px; }
+.details { min-width:0; border:0; padding:32px 36px; }
+.detailsHeading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:24px; }
+.detailsHeading h2 { font-size:20px; font-weight:650; letter-spacing:-.035em; }
+.detailsHeading p { font-size:12px; color:#4b536f; }
+.detailsHeading a { color:#6035ff; text-decoration:underline; text-underline-offset:3px; }
+.fields { display:grid; gap:16px; }
+.fields label { font-size:12px; font-weight:600; }
+.fields input { display:block; width:100%; margin-top:7px; padding:12px 14px; border:1px solid #dcdde9; border-radius:8px; min-height:46px; font-size:15px; font-weight:400; background:white; color:#090e36; }
+.fields input:focus,.locationRow select:focus { outline:2px solid #6035ff; outline-offset:2px; }
+.locationRow { display:flex; justify-content:space-between; gap:20px; align-items:center; padding:22px 0; }
+.locationRow label { font-size:14px; font-weight:600; }
+.locationRow label span { display:block; font-size:12px; font-weight:400; color:#4b536f; margin-top:3px; }
+.locationRow select { min-width:82px; border:1px solid #dcdde9; border-radius:8px; padding:10px 12px; background:white; font-size:15px; }
+.total { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px; border:1px solid #e8e2ff; background:#f8f6ff; border-radius:10px; margin-bottom:20px; }
+.total>span { font-size:13px; font-weight:600; }
+.total small { display:block; font-size:10px; font-weight:400; color:#4b536f; margin-top:4px; }
+.total strong { font-size:28px; letter-spacing:-.04em; font-weight:650; }
+.consent { display:flex; align-items:start; gap:10px; font-size:11px; line-height:1.7; color:#4b536f; }
+.consent input { margin-top:3px; width:15px; height:15px; flex-shrink:0; accent-color:#6035ff; }
+.submit { display:flex; justify-content:space-between; width:100%; margin-top:18px; min-height:48px; border-radius:8px; padding-inline:18px; }
+.submit:disabled { opacity:.6; cursor:not-allowed; }
+.paymentNote { text-align:center; font-size:10px; line-height:1.7; color:#4b536f; margin-top:12px; }
+.error { margin-top:16px; color:#b42318; font-size:13px; }
+@media(max-width:767px) { .page{padding:24px 18px 40px}.back{margin-bottom:20px}.heading{margin-bottom:22px}.form{grid-template-columns:1fr}.plan{padding:26px}.plan h2{font-size:24px;margin-top:10px}.price{margin:20px 0}.price strong{font-size:52px}.features{gap:10px;padding:18px 0}.limit{margin-top:0}.requirements{margin-top:18px;padding-top:14px}.details{padding:26px}.card{border-radius:16px}.detailsHeading{margin-bottom:20px} }
