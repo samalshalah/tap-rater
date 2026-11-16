@@ -160,6 +160,7 @@ export function EmailTemplatesForm({ initialTemplates }: EmailTemplatesFormProps
         <div className="rounded-md border border-line bg-white p-5 shadow-sm">
           <h3 className="text-lg font-black text-ink">Preview</h3>
           <div className="mt-4 rounded-md border border-line bg-[#f7f8fa] p-4 text-sm leading-6 text-ink">
+            <p className="font-black">TEST EMAIL ONLY. No purchase was made. Do not fulfill this sample order.</p>
             <p className="font-black">Subject: {selected.subject}</p>
             {selected.introText ? <p className="mt-3">{selected.introText}</p> : null}
             <PreviewContent templateKey={selected.key} />
@@ -277,8 +278,11 @@ function PreviewContent({ templateKey }: { templateKey: EmailTemplateKey }) {
     <div className="mt-3 space-y-1">
       <p>Order number: 7DXTE2XW0J</p>
       <p>Status: Paid</p>
-      <p>Total: $39.00</p>
-      <p>1 x Google Review Stand - Standard Direct - $39.00</p>
+      <p>Subtotal: $49.00</p>
+      <p>Shipping: $12.00</p>
+      <p>Tax: $2.94</p>
+      <p>Total: $63.94</p>
+      <p>1 x Google Review Stand - Branded + QR Direct - $49.00</p>
       <p>Destination URL: https://example.com/review</p>
       <p>Connection: QR and NFC direct to destination</p>
       <p>Support: https://taprater.com/support</p>

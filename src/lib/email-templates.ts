@@ -164,14 +164,22 @@ export function renderEmailTemplateHtml(
 }
 
 export function buildEmailTemplatePreviewHtml(template: EmailTemplateSettings) {
+  // Only synthetic previews/test sends receive this notice; customer mail uses the normal renderers.
+  return renderEmailTemplatePreviewHtml(template).replace(
+    /(<body\b[^>]*>)/i,
+    '$1<p style="padding:16px;text-align:center;background:#fff3cd;color:#493900;"><strong>TEST EMAIL ONLY. No purchase was made. Do not fulfill this sample order.</strong></p>'
+  );
+}
+
+function renderEmailTemplatePreviewHtml(template: EmailTemplateSettings) {
   if (template.key === "customer-order-confirmation") {
     return renderCustomerOrderEmail({
       stripe_checkout_session_id: "cs_test_email_preview", status: "paid", payment_status: "paid",
-      subtotal_cents: 3900, total_cents: 5334, shipping_amount_cents: 1200, currency: "usd",
+      subtotal_cents: 4900, total_cents: 6394, shipping_amount_cents: 1200, currency: "usd",
       production_status: "not_started", shipping_status: "not_shipped", internal_notes: "", admin_fulfillment_notes: "",
-      customer_details_json: { tax_summary: { amount_cents: 234 } },
+      customer_details_json: { tax_summary: { amount_cents: 294 } },
       line_items_json: [{ productId: "google-review-stand", title: "Google Review Stand", sku: "GRS",
-        optionId: "standard_direct", quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900,
+        optionId: "branded_qr_direct", optionLabel: "Branded + QR Direct Stand", quantity: 1, unitAmountCents: 4900, lineSubtotalCents: 4900,
         setup: { destinationUrl: "https://example.com/review" } }]
     }, template, {}, false);
   }
@@ -249,7 +257,7 @@ function getSampleRowsForTemplate(key: EmailTemplateKey) {
   return {
     "Order number": "TR-260901-AB12CD",
     Status: "Paid",
-    Total: "$39.00"
+    Total: "$49.00"
   };
 }
 
@@ -258,7 +266,7 @@ function getSampleBodyForTemplate(key: EmailTemplateKey) {
     return [
       "Fulfillment details:",
       "1 x Google Review Stand",
-      "Option: Standard Direct",
+      "Option: Branded + QR Direct Stand",
       "Connection: QR and NFC direct to destination",
       "Destination URL: https://example.com/review"
     ];
@@ -278,7 +286,7 @@ function getSampleBodyForTemplate(key: EmailTemplateKey) {
 
   return [
     "Order summary:",
-    "1 x Google Review Stand - Standard Direct - $39.00",
+    "1 x Google Review Stand - Branded + QR Direct Stand - $49.00",
     "Destination URL: https://example.com/review",
     "Connection: QR and NFC direct to destination",
     "Support: https://taprater.com/support",

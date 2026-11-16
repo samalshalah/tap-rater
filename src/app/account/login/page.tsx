@@ -1,8 +1,8 @@
 import { AccountLoginForm } from "@/components/account/account-login-form";
 
 export const metadata = {
-  title: "Customer Login",
-  description: "Log in to manage your Tap Rater Multi-Link page."
+  title: "Account Login",
+  description: "Log in to your Tap Rater account."
 };
 
 type LoginPageProps = {
@@ -20,10 +20,10 @@ export default async function AccountLoginPage({ searchParams }: LoginPageProps)
       <section className="tr-container grid min-h-[calc(100vh-220px)] items-center py-12">
         <div className="mx-auto grid w-full max-w-5xl gap-8 md:grid-cols-[0.85fr_1.15fr] md:items-center">
         <div className="space-y-4">
-          <p className="tr-eyebrow">Customer account</p>
+          <p className="tr-eyebrow">Your account</p>
           <h1 className="tr-page-title">Log in to Tap Rater</h1>
           <p className="tr-body max-w-md">
-            Use your account email and password to edit your business information, links, logo, style, and permanent Tap Rater page.
+            Use your email and password to access your Tap Rater workspace.
           </p>
         </div>
         <AccountLoginForm token={token} />

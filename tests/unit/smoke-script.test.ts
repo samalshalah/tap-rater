@@ -12,7 +12,7 @@ describe("smoke test script", () => {
     expect(checks.map((check) => check.path)).toEqual([
       "/",
       "/product/google-review-stand",
-      "/admin/login",
+      "/account/login",
       "/activate",
       "/r/TR-DEMO-GOOGLE"
     ]);

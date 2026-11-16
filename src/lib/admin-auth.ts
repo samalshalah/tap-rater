@@ -48,7 +48,7 @@ export async function requireAdmin() {
   const session = cookieStore.get(adminCookieName)?.value;
 
   if (!isValidAdminSession(session)) {
-    redirect("/admin/login");
+    redirect("/account/login");
   }
 }
 

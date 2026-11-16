@@ -20,9 +20,9 @@ export function createSmokeChecks(baseUrl = defaultBaseUrl) {
       acceptableStatuses: [200]
     },
     {
-      label: "Admin login route",
-      path: "/admin/login",
-      url: `${normalizedBaseUrl}/admin/login`,
+      label: "Account login route",
+      path: "/account/login",
+      url: `${normalizedBaseUrl}/account/login`,
       acceptableStatuses: [200]
     },
     {

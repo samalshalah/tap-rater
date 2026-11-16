@@ -78,7 +78,7 @@ export function AdminSidebar() {
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/");
+    router.push("/account/login");
     router.refresh();
   }
 
