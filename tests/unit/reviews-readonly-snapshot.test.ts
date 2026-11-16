@@ -27,7 +27,7 @@ describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google 
    const destination=new URL(typeof input==='string'?input:input instanceof URL?input.href:input.url);
    const headers=new Headers(init?.headers);
    const connection=headers.get('Neon-Connection-String');
-   if(destination.protocol!=='https:'||destination.hostname!==databaseApi||destination.pathname!=='/sql'||!connection||new URL(connection).hostname!==host){blocked.push(destination.hostname);throw Error('Only the exact QA database is allowed in snapshot test');}
+   if(destination.protocol!=='https:'||destination.hostname!==databaseApi||destination.pathname!=='/sql'||connection!==url){blocked.push(destination.hostname);throw Error('Only the exact QA database is allowed in snapshot test');}
    return originalFetch(input,init);
   });
   vi.stubEnv('DATABASE_URL',url);vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','false');
@@ -92,11 +92,15 @@ describe.skipIf(!enabled)('Existing location snapshot in isolated QA (no Google 
    expect(link).toMatchObject({ai_consent:false,auto_enabled:false});expect(publish).not.toHaveBeenCalled();expect(blocked).toEqual([]);
    expect((await sql`SELECT count(*)::int AS total FROM google_live_reviews WHERE business_id=${businessId} AND scheduled_at IS NOT NULL`)[0].total).toBe(0);
    writeFileSync('.local-sandbox/qa-onboarding-states.json',JSON.stringify({connected,importStates,finished}));
-   console.log(JSON.stringify({location:fixture.business_name,reviews:reviews.length,pages,onboardingCompleted:true,publishingCalls:publish.mock.calls.length,externalRequests:blocked.length,source:'previously retrieved live review snapshot; Google responses replayed'}));
+   console.log(JSON.stringify({location:fixture.business_name,reviews:reviews.length,pages,onboardingCompleted:true,publishingCalls:publish.mock.calls.length,externalRequests:blocked.length,source:fixture.source||'stored review snapshot',fetched_at:fixture.fetched_at||null,googleResponses:'replayed into isolated QA database'}));
   }finally{
    if(businessId)await sql`DELETE FROM businesses WHERE id=${businessId}`;
    if(owner)await sql`DELETE FROM google_business_connections WHERE owner=${owner}`;
    if(customerId)await sql`DELETE FROM customers WHERE id=${customerId}`;
+   if(customerId)expect(await sql`SELECT id FROM customers WHERE id=${customerId}`).toHaveLength(0);
+   if(businessId){expect(await sql`SELECT id FROM businesses WHERE id=${businessId}`).toHaveLength(0);expect(await sql`SELECT id FROM google_live_reviews WHERE business_id=${businessId}`).toHaveLength(0);}
+   if(owner)expect(await sql`SELECT owner FROM google_business_connections WHERE owner=${owner}`).toHaveLength(0);
+   console.log(JSON.stringify({cleanup:'verified',remainingOwnedRows:0}));
    vi.unstubAllGlobals();vi.unstubAllEnvs();
   }
  },60000);

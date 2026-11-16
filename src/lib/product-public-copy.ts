@@ -1,5 +1,6 @@
 import type {MigratedProduct,ProductPurchaseOptionSnapshot} from '@/data/migrated-products';
 import {correctKnownPurchaseCopy} from '@/lib/purchase-options';
+import {brandedProductDescription} from '@/lib/branded-product-description';
 export function sanitizePublicStorefrontProduct(product: MigratedProduct): MigratedProduct {
   if (isHostedProduct(product)) {
     return product;
@@ -7,6 +8,7 @@ export function sanitizePublicStorefrontProduct(product: MigratedProduct): Migra
 
   return {
     ...product,
+    ...(!product.catalogManaged ? brandedProductDescription(product) : {}),
     requiresAccount: false,
     requiresSubscription: false,
     requiresLandingPage: false,

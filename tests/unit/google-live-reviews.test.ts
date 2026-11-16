@@ -12,7 +12,7 @@ describe('live Google review safety',()=>{
   const google=client();google.listLocations.mockResolvedValue({locations:[{name:'locations/l',title:'Dubai Shawarma & Cafe',storefrontAddress:{addressLines:['10180 Lakeridge Pkwy'],locality:'Ashland',administrativeArea:'VA',postalCode:'23005'}}]} as any);
   const sql=sqlRows([{customer_id:id}],[{google_subject:'subject'}],[{business_id:id}]);
   expect(await bindGoogleLocation('customer:client@example.com',id,'accounts/a','locations/l',sql,async()=>google,'client@example.com')).toEqual({linked:true});
-  const write=sql.mock.calls[2];expect(write).toContain('Dubai Shawarma & Cafe');expect(write).toContain('10180 Lakeridge Pkwy, Ashland, VA, 23005');expect(write[0].join('?')).toContain('FROM linked l,customers c');expect(write[0].join('?')).toContain('c.marketing_onboarding_completed_at IS NULL');
+  const write=sql.mock.calls[2];expect(write).toContain('Dubai Shawarma & Cafe');expect(write).toContain('10180 Lakeridge Pkwy, Ashland, VA, 23005');expect(write[0].join('?')).toContain('FROM linked l,customers c');expect(write[0].join('?')).toContain('c.marketing_onboarding_completed_at IS NULL');expect(write[0].join('?')).not.toContain('google_place_id=NULL');expect(write[0].join('?')).not.toContain('google_review_url=NULL');
  });
  it('keeps pagination and progress totals scoped to the selected location',async()=>{
   const google=client();google.listReviews.mockResolvedValue({reviews:[data],nextPageToken:'next-page',totalReviewCount:605} as any);
@@ -89,7 +89,18 @@ describe('live Google review safety',()=>{
   const google=client();google.listReviews.mockResolvedValue({reviews:[{...data,name:'accounts/other/locations/other/reviews/r1'}]} as any);const sql=sqlRows([link],[{id}],[],[]);
   await expect(syncLiveReviews({kind:'admin'},id,sql,async()=>google)).rejects.toThrow('different location');expect(sql.mock.calls.some((c:any)=>c[0].join('?').includes('INSERT INTO'))).toBe(false);
  });
- it('requires AI consent and quota before transmitting real reviews',async()=>{
+ it.each([data,{...data,comment:''}])('requires AI consent before suggestions or quota use (%j)',async reviewData=>{
+  const generate=vi.fn(),sql=sqlRows([{...review,data:reviewData}],[{...link,ai_consent:false}]);
+  await expect(suggestLiveReply({kind:'customer',email:'owner@example.com'},id,sql,generate)).rejects.toThrow('Turn on AI replies');
+  expect(generate).not.toHaveBeenCalled();expect(sql).toHaveBeenCalledTimes(2);
+ });
+ it('generates suggestions only after consent and quota are confirmed',async()=>{
+  const suggestions={friendly:'Thanks for visiting'},generate=vi.fn().mockResolvedValue(suggestions);
+  const sql=sqlRows([review],[link],[{business_id:id}],[{allowed:true}]);
+  expect(await suggestLiveReply({kind:'customer',email:'owner@example.com'},id,sql,generate)).toEqual(suggestions);
+  expect(generate).toHaveBeenCalledWith('Norah',5,'Lovely dress',undefined,{businessId:id,customerId:id,service:'review_manual'});
+ });
+ it('requires quota before transmitting real reviews',async()=>{
   const generate=vi.fn();await expect(suggestLiveReply({kind:'admin'},id,sqlRows([review],[link],[]),generate)).rejects.toMatchObject({status:429});expect(generate).not.toHaveBeenCalled();
  });
  it('only auto-posts new selected positive reviews without drafts or existing replies',()=>{

@@ -28,3 +28,10 @@ it('rejects invalid dashboard scopes without querying reviews',async()=>{
  const response=await handleLiveReviews(new Request('https://taprater.com/api/account/reviews/live?locations=not-an-id'),'customer');
  expect(response.status).toBe(400);expect(list).not.toHaveBeenCalled();
 });
+
+it('does not classify a missing Google business as a retryable review import failure',async()=>{
+ const {GoogleBusinessError}=await import('@/lib/google-business/client');
+ auth.mockResolvedValue({session:{email:'owner@example.com'}});sync.mockRejectedValue(new GoogleBusinessError('not_found',404));
+ const response=await handleLiveReviews(request({action:'sync',businessId:id}),'customer');
+ expect(response.status).toBe(404);expect(await response.json()).toMatchObject({error:expect.stringContaining('reconnect and select the business again')});
+});

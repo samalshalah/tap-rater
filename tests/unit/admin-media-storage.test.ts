@@ -30,3 +30,22 @@ describe("uploaded image format detection", () => {
     expect(inspectUploadedImage(Uint8Array.from([255,216,255,255,255]).buffer)).toBeNull();
   });
 });
+
+
+describe("PNG upload completeness", () => {
+  it("rejects a signature and forged dimensions without image data", () => {
+    const bytes = new Uint8Array(24);
+    bytes.set([137,80,78,71,13,10,26,10]);
+    new DataView(bytes.buffer).setUint32(16,128);new DataView(bytes.buffer).setUint32(20,128);
+    expect(inspectUploadedImage(bytes.buffer)).toBeNull();
+  });
+  it("rejects missing/truncated PNG chunks while retaining real palette and metadata PNGs", async () => {
+    const png=await sharp({create:{width:128,height:128,channels:4,background:{r:96,g:53,b:255,alpha:0.5}}}).withMetadata().png({palette:true}).toBuffer();
+    expect(inspectUploadedImage(Uint8Array.from(png).buffer)).toMatchObject({contentType:'image/png',dimensions:{width:128,height:128}});
+    for(const size of [24,33,png.length-1])expect(inspectUploadedImage(Uint8Array.from(png.subarray(0,size)).buffer)).toBeNull();
+    const noImage=Buffer.from(png);const marker=noImage.indexOf('IDAT');expect(marker).toBeGreaterThan(0);noImage.write('tEXt',marker);
+    expect(inspectUploadedImage(Uint8Array.from(noImage).buffer)).toBeNull();
+    const invalidLength=Buffer.from(png);invalidLength.writeUInt32BE(0xffffffff,marker-4);
+    expect(inspectUploadedImage(Uint8Array.from(invalidLength).buffer)).toBeNull();
+  });
+});

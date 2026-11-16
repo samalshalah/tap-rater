@@ -726,7 +726,7 @@ describe("Stripe checkout helpers", () => {
           currency: "usd",
           product_data: {
             name: "Tap Rater Review Stand for Google Reviews",
-            description: `Custom Stand · Logo + QR - ${migratedProducts.find((product) => product.slug === "google-review-stand")!.shortDescription}`,
+            description: "Custom Stand · Logo + QR - Countertop Google Review Stand with NFC. Every custom stand includes NFC, a destination-generated QR, logo, and business name.",
             metadata: {
               product_id: "google-review-stand",
               option_id: "branded_qr_direct",

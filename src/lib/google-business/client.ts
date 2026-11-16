@@ -13,10 +13,10 @@ const reviewSchema = z.object({
   reviewReply: replySchema.optional(),
 });
 export type GoogleReview = z.infer<typeof reviewSchema>;
-export type GoogleBusinessErrorCode = "reconnect" | "access_denied" | "quota" | "unavailable" | "invalid_response";
+export type GoogleBusinessErrorCode = "reconnect" | "access_denied" | "not_found" | "quota" | "unavailable" | "invalid_response";
 export class GoogleBusinessError extends Error {
   constructor(public readonly code: GoogleBusinessErrorCode, public readonly status: number) {
-    super({ reconnect: "Reconnect your Google account.", access_denied: "Google denied access. Check API approval, enabled APIs, and business permissions.", quota: "Google request quota is unavailable or exhausted. Check the project quota before retrying.", unavailable: "Google Business Profile is temporarily unavailable.", invalid_response: "Google returned an unexpected response." }[code]);
+    super({ not_found: "Google could not find the requested business information. Check that your Google account owns or manages this business, then reconnect and select the business again.", reconnect: "Reconnect your Google account.", access_denied: "Google denied access. Check API approval, enabled APIs, and business permissions.", quota: "Google request quota is unavailable or exhausted. Check the project quota before retrying.", unavailable: "Google Business Profile is temporarily unavailable.", invalid_response: "Google returned an unexpected response." }[code]);
     this.name = "GoogleBusinessError";
   }
 }
@@ -47,7 +47,7 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
       });
     } catch { throw new GoogleBusinessError("unavailable", 0); }
     if (!response.ok) {
-      const code = response.status === 401 ? "reconnect" : response.status === 403 ? "access_denied" : response.status === 429 ? "quota" : "unavailable";
+      const code = response.status === 401 ? "reconnect" : response.status === 403 ? "access_denied" : response.status === 404 ? "not_found" : response.status === 429 ? "quota" : "unavailable";
       // Never surface Google's raw body: it can contain account or credential details.
       throw new GoogleBusinessError(code, response.status);
     }

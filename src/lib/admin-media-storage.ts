@@ -294,6 +294,23 @@ function readPngDimensions(bytes: ArrayBuffer) {
   const view = new DataView(bytes);
   const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
   if (!signature.every((byte, index) => view.getUint8(index) === byte)) return null;
+  // Dimensions alone are not an image: reject a forged/truncated header before
+  // storing it. Walk bounded chunks while preserving optional metadata/APNG
+  // chunks and the existing browser-side decoding/conversion behavior.
+  let offset = 8;
+  let hasImageData = false;
+  let complete = false;
+  while (offset + 12 <= view.byteLength) {
+    const length = view.getUint32(offset);
+    if (length > view.byteLength - offset - 12) return null;
+    const type = readAscii(view, offset + 4, 4);
+    if (offset === 8 && (type !== "IHDR" || length !== 13)) return null;
+    if (type === "IHDR" && offset !== 8) return null;
+    if (type === "IDAT" && length > 0) hasImageData = true;
+    if (type === "IEND") { complete = length === 0 && hasImageData; break; }
+    offset += length + 12;
+  }
+  if (!complete) return null;
 
   return {
     width: view.getUint32(16),

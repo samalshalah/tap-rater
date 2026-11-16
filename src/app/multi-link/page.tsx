@@ -5,7 +5,7 @@ import { FaqList } from "@/components/storefront/faq-list";
 import { JsonLd, faqJsonLd } from "@/lib/seo";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
-import { getStorefrontProducts, staticStorefrontProducts } from "@/lib/product-repository";
+import { getStorefrontProducts } from "@/lib/product-repository";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { formatPrice } from "@/lib/products";
 import { multiLinkDemoImage } from "@/lib/marketing-images";
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
 
 export default async function MultiLinkPage() {
   const databaseCompatibleProducts = (await getStorefrontProducts()).filter(productSupportsMultiLink);
-  const compatibleProducts = (databaseCompatibleProducts.length > 0 ? databaseCompatibleProducts : staticStorefrontProducts().filter(productSupportsMultiLink)).slice(0, 8);
+  const compatibleProducts = databaseCompatibleProducts.slice(0, 8);
 
   return (
     <main className="tr-public-shell text-ink">
@@ -159,6 +159,7 @@ export default async function MultiLinkPage() {
               <ProductCard key={product.slug} product={product} />
             ))}
           </div>
+          {compatibleProducts.length === 0 ? <p className="tr-body mt-6">No compatible stands are available right now. <Link href="/contact-us" className="tr-editorial-link">Contact us for help choosing a stand.</Link></p> : null}
         </div>
       </SectionShell>
       <SectionShell tone="soft">

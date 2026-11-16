@@ -1,6 +1,6 @@
 import { MultiLinkDemoVisual } from "./multi-link-demo-visual";
 import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
-import { singleStandPrice, type OffersSettings } from "@/lib/offers";
+import { type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
 import { ArrowRight, Bell, Check, ExternalLink, Smartphone } from "lucide-react";
 import type { MigratedProduct } from "@/data/migrated-products";
@@ -93,7 +93,8 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
               {design.image.caption ? <figcaption>{design.image.caption}</figcaption> : null}
             </figure>
             <div className={styles.designCopy}>
-              <div className={styles.designTitle}><h3>{design.name}</h3><strong>{compactPrice(singleStandPrice(comparisonProduct!.slug, design.option.id, design.option.priceCents, offers))}</strong></div>
+              <div className={styles.designTitle}><h3>{design.name}</h3><strong>{compactPrice(design.option.priceCents)}</strong></div>
+              <p>One-time purchase</p>
               <p>{design.detail}</p>
               <ul className={styles.checkList}>{design.points.map((point) => <li key={point}><Check size={16} aria-hidden="true" />{point}</li>)}</ul>
               <Link href={design.href} className={styles.textLink}>{design.cta}<ArrowRight size={17} aria-hidden="true" /></Link>

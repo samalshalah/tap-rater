@@ -58,3 +58,11 @@ it('rejects another customer credential even when the workspace belongs to this 
   expect(response.status).toBe(503);
   expect((await response.json()).error).not.toContain('private');
  });
+
+it('returns actionable missing-business recovery without a transient retry status',async()=>{
+ const {GoogleBusinessError}=await import('@/lib/google-business/client');
+ m.client.mockResolvedValue({listLocations:vi.fn().mockRejectedValue(new GoogleBusinessError('not_found',404))});
+ const response=await POST(req({action:'locations',account:'accounts/missing'}));
+ expect(response.status).toBe(404);
+ expect(await response.json()).toMatchObject({error:expect.stringContaining('reconnect and select the business again')});
+});

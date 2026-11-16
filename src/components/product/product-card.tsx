@@ -2,7 +2,7 @@ import { ResponsiveUpload } from "@/components/storefront/responsive-upload";
 import Link from "next/link";
 import customProductGalleries from "@/data/custom-product-galleries.json";
 import type { MigratedProduct } from "@/data/migrated-products";
-import { getReviewDestination } from "@/lib/product-page-content";
+import { getProductDestinationCopy, getReviewDestination } from "@/lib/product-page-content";
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
 import { getLowestPurchasePriceCents, getProductPurchaseOptions } from "@/lib/purchase-options";
@@ -18,6 +18,7 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
   const category = getCategoryBySlug(product.categorySlug);
   const purchaseLabel = getPurchaseLabel(product, design);
   const destination = getReviewDestination(product);
+  const outcome = `Tap or scan to open your ${getProductDestinationCopy(product).linkType}.`;
 
   return (
     <Link
@@ -36,6 +37,7 @@ export function ProductCard({ product, design }: { product: MigratedProduct; des
       <div className="flex flex-1 flex-col pt-2 [overflow-wrap:anywhere]">
         <p className="text-xs font-semibold text-accent">{category?.title ?? destination}</p>
         <p className="mb-2 mt-1.5 text-sm font-semibold leading-5 text-ink sm:text-base">{product.title}</p>
+        <p className="mb-3 text-xs leading-5 text-muted">{outcome}</p>
         <p className="mt-auto text-sm font-normal text-ink">{purchaseLabel}</p>
       </div>
     </Link>
@@ -50,7 +52,7 @@ function getPurchaseLabel(product: MigratedProduct, design?: "branded") {
 
   if (design === "branded") {
     const option = options.find((item) => item.id === "branded_qr_direct");
-    return option ? `Custom + QR: ${formatCompactPrice(option.priceCents)}` : "Custom unavailable";
+    return option ? `${formatCompactPrice(option.priceCents)} · One-time` : "Custom unavailable";
   }
 
   if (product.checkoutMode === "request_quote") {
@@ -65,7 +67,7 @@ function getPurchaseLabel(product: MigratedProduct, design?: "branded") {
     return "Subscription setup";
   }
 
-  return `${formatCompactPrice(getLowestPurchasePriceCents(product))}`;
+  return `${formatCompactPrice(getLowestPurchasePriceCents(product))} · One-time`;
 }
 
 function formatCompactPrice(cents: number) {
