@@ -33,6 +33,9 @@ it.skipIf(process.env.REVIEWS_PLAN_SANDBOX_TEST!=='1')('schedules, undoes and ap
   const unusedPreview=await previewReviewsPlan(email,unusedChoice);
   const unusedRequest={choice:unusedChoice,token:unusedPreview.token,operationId:randomUUID()};
   await confirmReviewsPlan(email,unusedRequest);
+  await sql`UPDATE reviews_billing_requests SET completed=false WHERE customer_id=${account}::uuid`;
+  expect((await reviewsBillingSnapshot(email)).retry).toBeTruthy();
+  await confirmReviewsPlan(email,unusedRequest);expect((await reviewsBillingSnapshot(email)).retry).toBeNull();
   expect((await reviewsBillingSnapshot(email)).nextQuantity).toBe(2);
   const locations:string[]=[];for(const name of ['First QA','Second QA','Third QA']){
    if(name==='Third QA'){

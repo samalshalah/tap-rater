@@ -96,7 +96,12 @@ export async function confirmReviewsPlan(email:string,input:unknown){
   const account=String(c.row.id),item=supportedReviewPlan(c.sub,account);
   const requestHash=hash({kind:data.choice.kind,ids:[...data.choice.removedIds].sort(),unused:data.choice.unusedToRemove,token:data.token});
   const [completed]=await c.sql`SELECT customer_id,request_hash FROM reviews_billing_completed WHERE operation_id=${data.operationId}::uuid`;
-  if(completed){if(completed.customer_id!==account||completed.request_hash!==requestHash)throw Error('This request was already used for another change.');return {ok:true as const};}
+  if(completed){
+   if(completed.customer_id!==account||completed.request_hash!==requestHash)throw Error('This request was already used for another change.');
+   // Recover a database interruption after Stripe succeeded and its receipt was saved.
+   await c.sql`UPDATE reviews_billing_requests SET completed=true WHERE customer_id=${account}::uuid AND operation_id=${data.operationId}::uuid`;
+   return {ok:true as const};
+  }
   const replay=c.request?.operation_id===data.operationId;
   if(replay&&c.request.completed)return {ok:true as const};
   if(c.request&&!c.request.completed&&!replay)throw Error('Retry your previous billing change first.');
