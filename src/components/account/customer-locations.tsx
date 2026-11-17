@@ -118,7 +118,7 @@ export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
         </div>
        </td>
        <td>
-        {data?.licenses?.period_locked&&location.google_assignment_exists&&(location.google_enabled||location.service_paused)&&<button type="button" className="tr-button-ghost tr-service-control mb-2 flex items-center gap-2 whitespace-nowrap" onClick={event=>{event.stopPropagation();setError('');setServiceTarget(location);}}>{location.service_paused?<Play size={14}/>:<Pause size={14}/>} {location.service_paused?'Resume service':'Pause service'}</button>}
+        {location.service_pause_available&&location.google_assignment_exists&&(location.google_enabled||location.service_paused)&&<button type="button" className="tr-button-ghost tr-service-control mb-2 flex items-center gap-2 whitespace-nowrap" onClick={event=>{event.stopPropagation();setError('');setServiceTarget(location);}}>{location.service_paused?<Play size={14}/>:<Pause size={14}/>} {location.service_paused?'Resume service':'Pause service'}</button>}
         {status==='connect'?<button type="button" className="tr-button-primary whitespace-nowrap" onClick={event=>{event.stopPropagation();setConnecting({id:location.id,name:info?.name||location.business_name,address:info?.address||location.address});}}>Connect Google</button>
          :<Link className="tr-button-ghost whitespace-nowrap" href={destination} onClick={event=>event.stopPropagation()}>{actionLabel}</Link>}
        </td>

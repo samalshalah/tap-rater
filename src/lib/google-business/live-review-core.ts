@@ -26,7 +26,7 @@ export type LiveClient = ReturnType<typeof createGoogleBusinessClient>;
 export const clientFor = async(owner:string)=>createGoogleBusinessClient(await googleAccessToken(owner));
 
 export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liveDb()) {
- const rows=await sql`SELECT l.*, b.business_name, EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) AS reviews_pause_available, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only FROM google_review_links l JOIN businesses b ON b.id=l.business_id
+ const rows=await sql`SELECT l.*, b.business_name, review_service_pause_allowed(b.customer_id) AS reviews_pause_available, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only FROM google_review_links l JOIN businesses b ON b.id=l.business_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.id=${businessId} AND b.customer_id=l.customer_id AND c.account_status='active'
  AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;

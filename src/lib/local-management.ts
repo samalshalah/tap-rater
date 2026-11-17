@@ -21,7 +21,7 @@ const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim(
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const locationsQuery = sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
-   l.title AS google_title,l.enabled,l.service_paused,EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) AS service_pause_available,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
+   l.title AS google_title,l.enabled,l.service_paused,review_service_pause_allowed(b.customer_id) AS service_pause_available,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
    (g.owner IS NOT NULL AND (l.enabled OR l.service_paused)) AS connected, (l.business_id IS NOT NULL) AS google_assignment_exists,coalesce(l.enabled,false) AS google_enabled,(g.owner IS NOT NULL) AS google_connection_available,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,

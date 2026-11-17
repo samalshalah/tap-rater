@@ -43,6 +43,20 @@ BEGIN
   SELECT settings_version INTO v FROM google_review_links WHERE business_id=old_b;
   SELECT count(*) INTO changed FROM set_review_service_paused(old_account||'@example.test',old_b,true,v);
   IF changed<>0 OR NOT EXISTS(SELECT 1 FROM google_review_links WHERE business_id=old_b AND enabled AND NOT service_paused) THEN RAISE EXCEPTION 'Existing subscriber changed'; END IF;
-  RAISE EXCEPTION USING ERRCODE='ZX001',MESSAGE='Discard all fixtures';
+  -- Explicitly opted-in existing accounts get controls without a licence policy.
+  INSERT INTO reviews_service_pause_accounts(customer_id) VALUES(old_account);
+  INSERT INTO google_business_connections(owner,google_subject,email,access_ciphertext,refresh_ciphertext,expires_at,scopes)
+   VALUES(old_account::text,'old','legacy@example.test','fixture','fixture',now()+interval '1 hour','fixture');
+  UPDATE google_review_links SET auto_enabled=true,auto_four=true,auto_five=true WHERE business_id=old_b;
+  SELECT settings_version INTO v FROM google_review_links WHERE business_id=old_b;
+  SELECT count(*) INTO changed FROM set_review_service_paused(old_account||'@example.test',old_b,true,v);
+  IF changed<>1 THEN RAISE EXCEPTION 'Opted-in legacy pause failed'; END IF;
+  INSERT INTO google_live_reviews(business_id,resource,data) VALUES(old_b,'accounts/qa/locations/'||old_b||'/reviews/late','{}');
+  IF EXISTS(SELECT 1 FROM google_live_reviews WHERE business_id=old_b) THEN RAISE EXCEPTION 'Opt-in late import bypassed pause'; END IF;
+  SELECT settings_version INTO v FROM google_review_links WHERE business_id=old_b;
+  SELECT count(*) INTO changed FROM set_review_service_paused(old_account||'@example.test',old_b,false,v);
+  IF changed<>1 OR NOT EXISTS(SELECT 1 FROM google_review_links WHERE business_id=old_b AND enabled AND NOT service_paused AND auto_enabled AND auto_four AND auto_five AND ai_consent) THEN RAISE EXCEPTION 'Opt-in resume changed reply preferences'; END IF;
+  IF EXISTS(SELECT 1 FROM reviews_period_licences WHERE customer_id=old_account) OR EXISTS(SELECT 1 FROM reviews_period_assignments WHERE customer_id=old_account) THEN RAISE EXCEPTION 'Opt-in changed licence policy'; END IF;
+  RAISE EXCEPTION USING ERRCODE='ZX001' ,MESSAGE='Discard all fixtures';
  EXCEPTION WHEN SQLSTATE 'ZX001' THEN NULL; END;
 END $$;
