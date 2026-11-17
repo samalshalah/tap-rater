@@ -22,3 +22,10 @@ Requested flow: find a business → connect Google → analyse unanswered review
 - No fresh live payment, live OAuth consent, public reply, or main-account mutation was performed for these checks.
 
 Deploy the additive `docs/sql/reviews-purchase-preview.sql` migration before the Worker. It was applied and exercised on the dedicated QA branch first. No existing table data is updated by the migration.
+
+## Final release
+
+- Combined production regression suite: 2,527 tests passed, 36 opt-in tests skipped. Isolated SQL preview-to-paid-setup journey passed separately. TypeScript, Worker build, cache regression, and Wrangler dry run passed.
+- Worker version: `9aa4d794-c4dd-4872-8f9b-ac7d05a3102a`; build ID: `YZfgEQM45O6y5yxEHa0jf`. Runtime variables preserved.
+- Live public form and Google Places search verified in Sam Chrome. No Google connection, subscription, account, or location was created in production during the UI check.
+- An initial release using the stale remote Git baseline was promptly rolled back; the final release retains the already-deployed owner-approved `4c45e1c` cleanup. Production Git is brought up to date with the actual deployed code.
