@@ -1216,38 +1216,3 @@ main.tr-client-shell .tr-locations-page > header > h1{font-size:24px!important;l
 
 /* Compact controls scoped to the new-subscriber service pause flow. */
 .tr-client-shell button.tr-service-control { width:auto!important; min-width:0!important; min-height:30px!important; padding:5px 10px!important; font-size:12px!important; line-height:18px!important; gap:5px!important; }
-
-/* Locations uses the approved compact account table, isolated from commerce. */
-.tr-client-shell .tr-locations-page > header { margin-bottom:14px; }
-.tr-client-shell .tr-locations-page > header h1 { font-size:26px!important; }
-.tr-client-shell .tr-locations-page > header p { font-size:12px!important; line-height:1.5; }
-.tr-client-shell .tr-locations-summary { gap:10px; margin-bottom:14px; }
-.tr-client-shell .tr-locations-summary > button { padding:10px 14px!important; border-radius:6px; min-height:0; }
-.tr-client-shell .tr-locations-summary > button > strong { font-size:22px; line-height:1.2; margin-top:3px; }
-.tr-client-shell .tr-locations-summary > button > span { font-size:11px!important; line-height:1.4; }
-.tr-client-shell .tr-locations-page .tr-client-table { border-collapse:collapse; width:100%; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td) { padding:8px 10px!important; vertical-align:middle; border-bottom:1px solid #e6e7f0; }
-.tr-client-shell .tr-locations-page .tr-client-table thead th { font-size:11px!important; font-weight:600!important; background:#f6f8ff; }
-.tr-client-shell .tr-locations-page .tr-client-table tbody :is(th,td) { font-size:12px!important; line-height:1.4; background:transparent; }
-.tr-client-shell .tr-locations-page .tr-client-table tbody p { font-size:11px!important; line-height:1.4; margin-top:3px; margin-bottom:0; }
-.tr-client-shell .tr-locations-page .tr-client-table tbody th { white-space:normal; }
-.tr-client-shell .tr-locations-page .tr-client-table tbody th p { max-width:360px; }
-.tr-client-shell .tr-locations-page .tr-client-table td:nth-child(2) > span { white-space:nowrap; padding:3px 7px; font-size:11px!important; }
-.tr-client-shell .tr-locations-page :is(.tr-button-primary,.tr-button-ghost) { min-height:30px!important; min-width:0!important; padding:5px 9px!important; font-size:12px!important; line-height:18px!important; }
-.tr-client-shell .tr-locations-page .tr-location-next > a { border:0!important; padding:4px 0!important; background:transparent!important; box-shadow:none!important; }
-.tr-client-shell .tr-locations-page .tr-location-manage { display:flex!important; width:auto!important; height:auto!important; align-items:center; gap:5px; white-space:nowrap; background:transparent!important; border:0!important; }
-.tr-client-shell .tr-locations-page .tr-location-manage > button[aria-label] { padding:5px!important; width:30px; }
-@media(max-width:640px) {
- .tr-client-shell .tr-locations-summary { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
- .tr-client-shell .tr-locations-summary > button { padding:8px!important; }
- .tr-client-shell .tr-locations-summary > button > span { font-size:10px!important; }
- .tr-client-shell .tr-locations-page > header { align-items:flex-start; }
-}
-
-.tr-client-shell .tr-locations-page .tr-client-table { table-layout:auto!important; min-width:900px; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td):first-child { width:auto!important; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td):nth-child(2) { width:155px; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td):nth-child(3) { width:110px; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td):nth-child(4) { width:130px!important; min-width:130px; }
-.tr-client-shell .tr-locations-page .tr-client-table :is(th,td):last-child { width:210px!important; min-width:210px; }
-.tr-client-shell .tr-locations-page .tr-client-table-wrap { overflow-x:auto; overflow-y:hidden; }
