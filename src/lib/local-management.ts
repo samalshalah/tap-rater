@@ -10,6 +10,7 @@ export const publicUrl = text(2048).refine(value => {
 }, 'Use a public http or https URL.');
 export const listingStatuses = ['not_checked','listed','needs_update','missing','unavailable'] as const;
 export const localMutation = z.discriminatedUnion('action', [
+  z.object({action:z.literal('setServicePaused'),businessId:z.string().uuid(),paused:z.boolean(),version:z.number().int().positive()}).strict(),
   z.object({action:z.literal('deleteLocation'),businessId:z.string().uuid(),version:z.number().int().positive()}).strict(),
   z.object({ action:z.literal('createLocation'), customerId:z.string().uuid().optional(), name:text(200).min(1), address:text(1000), phone:text(80), website:publicUrl }).strict(),
   z.object({ action:z.literal('updateLocation'), businessId:z.string().uuid(), name:text(200).min(1), address:text(1000), phone:text(80), website:publicUrl, category:text(100), description:text(750), hours:text(1000), version:z.number().int().positive() }).strict(),
@@ -20,8 +21,8 @@ const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim(
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const locationsQuery = sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
-   l.title AS google_title,l.enabled,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
-   (g.owner IS NOT NULL AND l.enabled) AS connected, (l.business_id IS NOT NULL) AS google_assignment_exists,coalesce(l.enabled,false) AS google_enabled,(g.owner IS NOT NULL) AS google_connection_available,
+   l.title AS google_title,l.enabled,l.service_paused,EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) AS service_pause_available,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
+   (g.owner IS NOT NULL AND (l.enabled OR l.service_paused)) AS connected, (l.business_id IS NOT NULL) AS google_assignment_exists,coalesce(l.enabled,false) AS google_enabled,(g.owner IS NOT NULL) AS google_connection_available,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND NOT r.auto_schedule_cancelled AND r.data->>'starRating' IN ('FOUR','FIVE') AND coalesce(r.data->'reviewReply'->>'comment','')='') AS positive_unanswered_count,
@@ -48,6 +49,12 @@ export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
 
 export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()) {
   const v=localMutation.parse(input);
+  if(v.action==='setServicePaused') {
+    if(actor.kind!=='customer')throw new LiveReviewError('Service pause is managed by the customer.',403);
+    const rows=await sql`SELECT * FROM set_review_service_paused(${email(actor)},${v.businessId}::uuid,${v.paused},${v.version})`;
+    if(!rows.length)throw new LiveReviewError('This service changed or cannot be resumed. Refresh and check your connection and subscription.',409);
+    return rows[0];
+  }
   if(v.action==='createLocation') {
     if(actor.kind==='customer' && v.customerId) throw new LiveReviewError('Customer assignment is managed by Tap Rater.',403);
     if(actor.kind==='admin' && !v.customerId) throw new LiveReviewError('Choose a customer.',400);

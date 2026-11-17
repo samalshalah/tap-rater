@@ -4,7 +4,7 @@ import path from 'node:path';
 const root=fileURLToPath(new URL('.',import.meta.url)),repo=path.resolve(root,'../../..');
 const selection={placeId:'fixture',name:'Cedar Studio',formattedAddress:'12 Market Street, New York',reviewUrl:''};
 let preview=null;
-const server=await createServer({root,publicDir:path.join(repo,'public'),resolve:{alias:{'@':path.join(repo,'src'),'next/link':path.join(root,'link.tsx')}},esbuild:{jsx:'automatic'},css:{postcss:repo},server:{host:'127.0.0.1',port:4186,strictPort:true,fs:{allow:[repo,path.resolve(repo,'../checkout-tracking/node_modules')]}},plugins:[{name:'preview-qa',configureServer(server){server.middlewares.use(async(req,res,next)=>{
+const server=await createServer({root,publicDir:path.join(repo,'public'),resolve:{alias:{'@':path.join(repo,'src'),'next/link':path.join(root,'link.tsx'),'next/navigation':path.join(root,'navigation.ts')}},esbuild:{jsx:'automatic'},css:{postcss:repo},server:{host:'127.0.0.1',port:4186,strictPort:true,fs:{allow:[repo,path.resolve(repo,'../checkout-tracking/node_modules')]}},plugins:[{name:'preview-qa',configureServer(server){server.middlewares.use(async(req,res,next)=>{
  if(req.url?.startsWith('/google-reviews/setup')){req.url='/preview.html';return next();}
  if(!req.url?.startsWith('/api/')&&!req.url?.startsWith('/qa-'))return next();
  res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');

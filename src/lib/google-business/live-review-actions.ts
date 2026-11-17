@@ -3,7 +3,7 @@ import { generateReviewSuggestions } from "../review-ai-provider";
 import { resolveReviewWorkerAlert } from "../review-worker-alerts";
 import { replyStyles } from "../review-ai-options";
 import type { ReviewActor } from "../review-workspaces";
-import { livePublishingEnabled, liveDb, LiveReviewError, actorEmail, reviewStars, clientFor, loadLiveReview, reserveAi, assertReviewNotSpam, scheduledReplyEligible } from "./live-review-core";
+import { livePublishingEnabled, liveDb, LiveReviewError, actorEmail, reviewStars, clientFor, loadLiveReview, reserveAi, assertReviewNotSpam, scheduledReplyEligible, assertReviewServiceStillRunning } from "./live-review-core";
 
 export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,version:number,sql=liveDb()){
  const {review}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
@@ -16,7 +16,9 @@ export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),
  const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
  if(!link.ai_consent)throw new LiveReviewError('Turn on AI replies for this location before generating a reply.');
  if(review.data.comment?.trim())await reserveAi(String(link.business_id),sql);
- return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
+ const suggestions=await generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
+ await assertReviewServiceStillRunning(link,sql);
+ return suggestions;
 }
 
 export async function generateLiveReply(actor:ReviewActor,id:string,version:number,sql=liveDb()){
@@ -27,6 +29,7 @@ export async function generateLiveReply(actor:ReviewActor,id:string,version:numb
  if(['publishing','uncertain'].includes(review.publish_state))throw new LiveReviewError('Check the current Google publish result before generating another reply.');
  await reserveAi(String(link.business_id),sql);
  const suggestions=await generateReviewSuggestions(String(link.business_name),reviewStars(review.data),review.data.comment||'',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
+ await assertReviewServiceStillRunning(link,sql);
  const style=Object.hasOwn(replyStyles,String(link.auto_style))?String(link.auto_style):'friendly';
  const draft=suggestions[style as keyof typeof replyStyles];
  const rows=await sql`UPDATE google_live_reviews SET draft=${draft},version=version+1,publish_state='idle',approved_version=NULL,auto_schedule_cancelled=true,scheduled_at=NULL,old_reply_requested_at=NULL

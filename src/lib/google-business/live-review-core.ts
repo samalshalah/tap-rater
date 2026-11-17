@@ -26,12 +26,19 @@ export type LiveClient = ReturnType<typeof createGoogleBusinessClient>;
 export const clientFor = async(owner:string)=>createGoogleBusinessClient(await googleAccessToken(owner));
 
 export async function authorizedLink(actor:ReviewActor,businessId:string,sql=liveDb()) {
- const rows=await sql`SELECT l.*, b.business_name, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only FROM google_review_links l JOIN businesses b ON b.id=l.business_id
+ const rows=await sql`SELECT l.*, b.business_name, EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) AS reviews_pause_available, EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=b.customer_id) AS reviews_draft_only FROM google_review_links l JOIN businesses b ON b.id=l.business_id
  JOIN customers c ON c.id=b.customer_id JOIN google_business_connections g ON g.owner=l.owner AND g.google_subject=l.google_subject
  WHERE b.id=${businessId} AND b.customer_id=l.customer_id AND c.account_status='active'
  AND marketing_location_allowed(b.id) AND (${actor.kind==='admin'} OR lower(c.email)=${actorEmail(actor)})`;
  if(!rows[0])throw new LiveReviewError('Business connection is unavailable. Ask Tap Rater to check the connection and business assignment.',404);
  return rows[0];
+}
+
+export async function assertReviewServiceStillRunning(link:{reviews_pause_available?:boolean;business_id?:unknown;settings_version?:unknown},sql=liveDb()){
+ if(!link.reviews_pause_available)return;
+ const [current]=await sql`SELECT enabled,service_paused,settings_version FROM google_review_links WHERE business_id=${String(link.business_id)}`;
+ if(!current?.enabled||current.service_paused||Number(current.settings_version)!==Number(link.settings_version))
+  throw new LiveReviewError('Service was paused or its settings changed. This draft was not saved.');
 }
 
 export async function loadLiveReview(actor:ReviewActor,id:string,sql=liveDb()){
