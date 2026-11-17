@@ -45,6 +45,19 @@
 .submit:disabled { opacity:.6; cursor:not-allowed; }
 .paymentNote { text-align:center; font-size:10px; line-height:1.7; color:#4b536f; margin-top:12px; }
 .error { margin-top:16px; color:#b42318; font-size:13px; }
+.preview h2 { font-size:24px; font-weight:650; letter-spacing:-.04em; margin:18px 0 14px; }
+.steps { display:flex; flex-wrap:wrap; gap:8px 16px; list-style:none; padding:0; font-size:10px; color:#4b536f; }
+.steps [aria-current] { color:#6035ff; font-weight:650; }
+.intro { font-size:14px; line-height:1.7; color:#4b536f; margin:14px 0; }
+.intro a { color:#6035ff; text-decoration:underline; }
+.smallPrint { font-size:11px; line-height:1.7; color:#4b536f; margin:10px 0; overflow-wrap:anywhere; }
+.selectedBusiness { display:grid; gap:5px; padding:14px 16px; border:1px solid #e6e7f0; border-radius:10px; background:#f6f8ff; margin:16px 0; overflow-wrap:anywhere; }
+.selectedBusiness strong { font-size:14px; font-weight:650; }.selectedBusiness span { font-size:12px; color:#4b536f; }
+.textButton { display:block; margin-top:18px; font-size:12px; color:#6035ff; text-decoration:underline; text-underline-offset:3px; text-align:left; }
+.fields select { width:100%; display:block; margin-top:7px; min-height:46px; padding:10px; border:1px solid #dcdde9; border-radius:8px; background:white; font-size:13px; }
+.metrics { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
+.metrics>div { display:grid; gap:5px; border:1px solid #e8e2ff; border-radius:10px; padding:16px; background:#f8f6ff; }.metrics strong { font-size:30px; font-weight:650; letter-spacing:-.04em; }.metrics span { font-size:11px; color:#4b536f; }
+.analysisTable { width:100%; font-size:12px; border-collapse:collapse; }.analysisTable caption { text-align:left; font-weight:600; padding-bottom:12px; }.analysisTable th,.analysisTable td { text-align:right; padding:9px 0; border-bottom:1px solid #e6e7f0; }.analysisTable th:first-child { text-align:left; }.analysisTable th { font-weight:500; }.analysisTable thead { color:#4b536f; font-size:11px; }
 @media(max-width:767px) { .page{padding:24px 18px 40px}.back{margin-bottom:20px}.heading{margin-bottom:22px}.form{grid-template-columns:1fr}.plan{padding:26px}.plan h2{font-size:24px;margin-top:10px}.price{margin:20px 0}.price strong{font-size:52px}.features{gap:10px;padding:18px 0}.limit{margin-top:0}.requirements{margin-top:18px;padding-top:14px}.details{padding:26px}.card{border-radius:16px}.detailsHeading{margin-bottom:20px} }
 
 .landingPlan { padding:24px 24px 40px; scroll-margin-top:88px; }

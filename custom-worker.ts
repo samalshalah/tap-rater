@@ -32,6 +32,11 @@ export default {
       method:'POST',headers:{'x-internal-secret':env.ADMIN_SESSION_SECRET,'Content-Type':'application/json'},body:JSON.stringify({action:'drain'}),
     }),env,context);if(!response.ok)throw new Error('Client failure monitor unavailable');return response.json();},sql);}catch{console.warn('Client failure alerts unavailable');}
     if(new Date(_controller.scheduledTime).getUTCMinutes()%15!==0)return;
+    // Expire only anonymous preview copies. Never revoke a shared Google grant.
+    try{
+      await sql`DELETE FROM google_business_connections g USING reviews_purchase_previews p WHERE g.owner='reviews-preview:'||p.id::text AND p.expires_at<now() AND NOT EXISTS(SELECT 1 FROM google_review_links l WHERE l.owner=g.owner)`;
+      await sql`DELETE FROM reviews_purchase_previews WHERE expires_at<now() AND purchase_attempt IS NULL`;
+    }catch{console.warn('Reviews preview expiry unavailable');}
     await invoke('analytics','analytics');
     await invoke('reminders','checkout-reminders');
     await invoke('sample-drafts','review-auto-drafts');

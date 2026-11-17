@@ -107,6 +107,11 @@ export async function syncMarketingSubscription(event:Stripe.Event){
   // A downgrade never exposes more locations than were paid for. Existing content is preserved.
   await sql`UPDATE marketing_location_access SET enabled=false WHERE business_id IN (SELECT business_id FROM marketing_location_access WHERE customer_id=${account}::uuid AND enabled ORDER BY created_at,business_id OFFSET ${state.locations})`;
   await sql`UPDATE local_heatmap_tracks SET active=false,version=version+1 WHERE customer_id=${account}::uuid AND slot>3 AND active`;
+  if(state.paid&&sub.metadata.reviews_preview_id){
+   // Only a signed, verified paid subscription can hand a preview to an account.
+   const claimed=await sql`UPDATE reviews_purchase_previews SET paid_at=coalesce(paid_at,now()),expires_at=greatest(expires_at,now()+interval '8 days') WHERE id=${sub.metadata.reviews_preview_id}::uuid AND customer_id=${account}::uuid AND purchase_attempt=${attempt}::uuid AND stripe_mode=${mode} AND complete RETURNING id`;
+   if(!claimed.length)throw Error('Paid business preview ownership could not be verified.');
+  }
   if(state.paid&&!row.activation_email_sent_at){
    const token=createCustomerActivationToken();
    const [pending]=await sql`UPDATE customers SET activation_token_hash=${token.tokenHash},activation_expires_at=now()+interval '7 days' WHERE id=${account}::uuid AND account_status='pending_activation' RETURNING email`;

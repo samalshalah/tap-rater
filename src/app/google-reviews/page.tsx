@@ -11,7 +11,7 @@ import {PrismaticWave} from '@/components/prismatic/motion';
 
 const faqs=[
  {question:'Will Tap Rater post replies to Google for me?',answer:'No. This package includes review imports and reply drafts only. Posting to Google and autopilot are disabled. If you want to publish a reply, copy your finished draft and post it yourself in Google Business Profile.'},
- {question:'What do I need to connect my business?',answer:'You need a Google account that owns or manages the Google Business Profile. After payment and account activation, sign in with that Google account, select your location, and import its reviews. You keep ownership of your profile.'},
+ {question:'What do I need to connect my business?',answer:'You need a Google account that owns or manages the Google Business Profile. Find your business and connect that Google account to see your unanswered-review breakdown before payment. Your selected location and connection are saved for setup after account activation. You keep ownership of your profile.'},
  {question:'I already have Reviews access. Should I buy again?',answer:'No. Sign in to your existing Tap Rater account to use your Reviews workspace or check Subscription management. If the location is already connected to another Tap Rater workspace, contact support before purchasing. A location cannot be connected to two workspaces.'},
  {question:'What does the monthly allowance include?',answer:'Each subscribed location includes 1,000 AI reply draft generations per month. You can edit and save drafts before deciding whether to use them. AI drafting requires your opt-in; check every draft for accuracy and tone.'},
  {question:'Do I need to buy a Tap Rater stand?',answer:'No. Google Reviews is a standalone subscription. A physical NFC or QR stand is a separate, optional purchase for helping customers open your review page. Your stand checkout is separate from this service.'},
@@ -44,8 +44,8 @@ export default async function GoogleReviewsLanding({searchParams}:{searchParams?
 
  <SectionShell tone="soft" id="how-it-works"><div className="tr-container"><SectionHeader eyebrow="From connected to considered" title="A simple path to a better draft."/>
  <ol className={styles.steps}>{[
-  ['Choose your locations','Subscribe for the locations you want to manage. New customers receive an activation email after payment is confirmed.'],
-  ['Connect and import','Sign in with the Google account that manages your business. Choose the right location and import its reviews.'],
+  ['Find and connect','Find your business, then connect the Google account that manages it. No payment is needed to see your review snapshot.'],
+  ['See your reviews, then subscribe','See unanswered reviews by star rating. Enter your email and pay when you’re ready. We’ll save your business for account setup.'],
   ['Draft, edit, decide','Opt in to AI drafting, review the suggested wording, and save your reply. Copy it to Google only when you’re ready.']
  ].map(([title,body],i)=><li key={title}><span className={styles.stepNumber}>0{i+1}</span><h3>{title}</h3><p>{body}</p></li>)}</ol>
  <p className={styles.existing}>Already using Tap Rater Reviews? <Link href="/account/reviews">Open your workspace <ArrowRight size={15} aria-hidden="true"/></Link> Your existing account features stay as they are.</p>

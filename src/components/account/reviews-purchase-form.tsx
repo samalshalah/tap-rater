@@ -3,15 +3,16 @@ import {useRef,useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import styles from './reviews-checkout.module.css';
 import {marketingAmount,marketingPlan} from '@/lib/marketing-plan';
+import {ReviewsBusinessPreview,type PurchasePreview} from './reviews-business-preview';
 
 /** Rendered only behind the server-side Reviews sales gate. */
 export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
- const [locations,setLocations]=useState(1),[name,setName]=useState(''),[email,setEmail]=useState('');
+ const [locations,setLocations]=useState(1),[email,setEmail]=useState(''),[preview,setPreview]=useState<PurchasePreview|null>(null);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const attempt=useRef<{selection:string;id:string}|null>(null);
+ const attempt=useRef<{selection:string;id:string;key:string}|null>(null);
  async function purchase(event:FormEvent){
-  event.preventDefault();if(busy||!accepted)return;setBusy(true);setError('');
-  const selection=JSON.stringify({locations,email:guest?email.trim().toLowerCase():''});
+  event.preventDefault();if(busy||!accepted||!preview)return;setBusy(true);setError('');
+  const selection=JSON.stringify({preview:preview.id,locations,email:guest?email.trim().toLowerCase():''});
   try{
    if(attempt.current?.selection!==selection){
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(selection));
@@ -23,10 +24,19 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
      if(saved?.expires>Date.now()&&typeof saved.id==='string')id=saved.id;
      else sessionStorage.setItem(key,JSON.stringify({id,expires:Date.now()+3600000}));
     }catch{/* Checkout remains usable when browser storage is unavailable. */}
-    attempt.current={selection,id};
+    attempt.current={selection,id,key};
    }
-   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,cadence:'month',locations,acceptedTerms:true,...(guest?{name:name.trim(),email:email.trim()}: {})})});
-   const result=await response.json();if(!response.ok)throw Error(result.error||'Checkout is unavailable. Please try again.');
+   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,cadence:'month',locations,acceptedTerms:true,...(guest?{email:email.trim()}: {})})});
+   const result=await response.json();
+   if(!response.ok){
+    // The server has confirmed this attempt is terminal; never reset on ambiguous network failures.
+    if(result.error==='Start a new purchase attempt.'){
+     try{sessionStorage.removeItem(attempt.current.key);}catch{/* Storage may be unavailable. */}
+     attempt.current=null;
+     throw Error('Your previous checkout has ended. Select Continue to checkout to try again.');
+    }
+    throw Error(result.error||'Checkout is unavailable. Please try again.');
+   }
    if(!result.url)throw Error('Checkout did not open. Please try again.');
    window.location.assign(result.url);
   }catch(e){setError(e instanceof Error?e.message:'Checkout is unavailable. Please try again.');setBusy(false);}
@@ -41,14 +51,18 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
    <details className={styles.requirements}><summary>Before you subscribe</summary><p>You’ll need a Google Business Profile you own or manage. If your location is already connected to Tap Rater, <Link href="/contact-us">contact us</Link> before buying.</p></details>
   </aside>
   <fieldset disabled={busy} className={styles.details}>
+   {!preview?<ReviewsBusinessPreview onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>:<>
    <div className={styles.detailsHeading}><h2>{guest?'Your details':'Your plan'}</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
-   {guest&&<div className={styles.fields}><label>Full name<input required maxLength={150} autoComplete="name" value={name} onChange={e=>setName(e.target.value)}/></label><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label></div>}
+   <div className={styles.selectedBusiness}><strong>{preview.name}</strong><span>{preview.address}</span></div>
+   {guest&&<div className={styles.fields}><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link here. Your selected business will be saved for setup.</p></div>}
    <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
-   <div className={styles.total}><span>Monthly total<small>Tax calculated at checkout</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
+   <div className={styles.total}><span>Monthly total<small>Renews monthly until canceled</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
    <label className={styles.consent}><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/><span>I agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy-policy">Privacy Policy</Link>. Renews monthly until canceled.</span></label>
    <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to checkout'}<span aria-hidden="true">→</span></button>
    <p className={styles.paymentNote}>Secure payment with Stripe · Cancel future renewals anytime</p>
    {error&&<p role="alert" className={styles.error}>{error}</p>}
+   <button type="button" className={styles.textButton} onClick={()=>setPreview(null)}>Back to review analysis</button>
+   </>}
   </fieldset>
  </form>;
 }

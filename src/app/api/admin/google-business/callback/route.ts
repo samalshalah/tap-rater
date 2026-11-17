@@ -7,8 +7,16 @@ import {googleCustomerIdentity,customerFlowCookie} from "@/lib/google-business/c
 import { NextResponse } from "next/server";
 import { completeGoogleConnection, googleConfig, GoogleTokenExchangeError, type GoogleConnectionStage } from "@/lib/google-business/connection";
 import { googleAdminIdentity } from "@/lib/google-business/http";
+import {isReviewPreviewCallback,completeReviewPreviewConnection,previewFlowCookie} from '@/lib/reviews-purchase-preview';
 
 export async function GET(request: Request) {
+  const previewQuery=new URL(request.url).searchParams;
+  if(await isReviewPreviewCallback(previewQuery.get('state'))){
+    let outcome='failed';
+    try{if(previewQuery.has('error'))outcome='cancelled';else{await completeReviewPreviewConnection(previewQuery.get('state')!,previewQuery.get('code')||'');outcome='connected';}}catch{/* Never expose OAuth codes, tokens, or provider details. */}
+    (await cookies()).delete(previewFlowCookie);
+    return NextResponse.redirect(`${new URL(googleConfig().redirectUri).origin}/google-reviews?preview=${outcome}#plan`,{status:303,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+  }
   const flow=(await cookies()).get(customerFlowCookie)?.value;
   const customerFlow=Boolean(flow);
   const flowLocation=(await cookies()).get(customerLocationFlowCookie)?.value;

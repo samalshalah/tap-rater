@@ -12,7 +12,7 @@ export function addMarketingToCheckout(params:Stripe.Checkout.SessionCreateParam
  if(params.mode==='subscription')throw Error('Buy the marketing package separately from a Multi-Link subscription.');
  const {payment_intent_data:_,invoice_creation:__,customer_creation:___,...base}=params;
  return {...base,mode:'subscription' as const,line_items:[...(params.line_items??[]),marketingLineItem(p)],
- subscription_data:{metadata:{tap_rater:'marketing_growth_v1',account_id:customerId,purchase_attempt:attempt,reviews_mode:'draft_only'}},
+ subscription_data:{metadata:{tap_rater:'marketing_growth_v1',account_id:customerId,purchase_attempt:attempt,reviews_mode:'draft_only',...(params.metadata?.reviews_preview_id?{reviews_preview_id:String(params.metadata.reviews_preview_id)}:{})}},
  metadata:{...params.metadata,due_today_cents:String(Number(params.metadata?.due_today_cents??0)+marketingAmount(p)),marketing_account:customerId,marketing_attempt:attempt,marketing_cadence:p.cadence,marketing_locations:String(p.locations),create_account:'true',marketing_only:params.metadata?.marketing_only==='true'?'true':'false'},
  custom_text:{submit:{message:'Renews automatically until canceled. Cancel future renewals in your account. Imports and drafts only: posting to Google and autopilot are disabled.'}}};
 }
