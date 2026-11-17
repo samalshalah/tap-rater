@@ -33,6 +33,7 @@ const securityHeaders = [
 ];
 
 const privateRoutePatterns = [
+  "/google-reviews/setup",
   "/admin/:path*",
   "/account/:path*",
   "/api/:path*",

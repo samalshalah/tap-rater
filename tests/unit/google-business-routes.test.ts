@@ -71,3 +71,10 @@ describe('missing OAuth browser session recovery',()=>{
   expect(mocks.complete).not.toHaveBeenCalled();
  });
 });
+
+it('returns a cancelled preview to focused setup without touching customer or admin connections',async()=>{
+ mocks.cookie.mockImplementation((name:string)=>name==='taprater_reviews_preview_flow'?{value:'preview-state'}:undefined);
+ const response=await callback(new Request('https://taprater.com/api/admin/google-business/callback?state=preview-state&error=access_denied'));
+ expect(response.headers.get('location')).toBe('https://taprater.com/google-reviews/setup?preview=cancelled');
+ expect(mocks.identity).not.toHaveBeenCalled();expect(mocks.customer).not.toHaveBeenCalled();expect(mocks.complete).not.toHaveBeenCalled();
+});

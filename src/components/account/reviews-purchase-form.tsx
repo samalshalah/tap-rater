@@ -6,9 +6,10 @@ import {marketingAmount,marketingPlan} from '@/lib/marketing-plan';
 import {ReviewsBusinessPreview,type PurchasePreview} from './reviews-business-preview';
 
 /** Rendered only behind the server-side Reviews sales gate. */
-export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
+export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest?:boolean;focused?:boolean;setupHref?:string}){
  const [locations,setLocations]=useState(1),[email,setEmail]=useState(''),[preview,setPreview]=useState<PurchasePreview|null>(null);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const [stage,setStage]=useState(0);
  const attempt=useRef<{selection:string;id:string;key:string}|null>(null);
  async function purchase(event:FormEvent){
   event.preventDefault();if(busy||!accepted||!preview)return;setBusy(true);setError('');
@@ -41,18 +42,18 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
    window.location.assign(result.url);
   }catch(e){setError(e instanceof Error?e.message:'Checkout is unavailable. Please try again.');setBusy(false);}
  }
- return <form onSubmit={purchase} className={styles.form} aria-label="Google Reviews package">
-  <aside className={styles.plan}>
+ return <><ol className={focused?styles.flowSteps:styles.hiddenSteps} aria-label="Setup progress">{['Business','Connect','Analysis','Plan'].map((label,i)=><li key={label} aria-current={(preview?3:stage)===i?'step':undefined} data-complete={i<(preview?3:stage)}><span>{i<(preview?3:stage)?'\u2713':i+1}</span>{label}</li>)}</ol><form onSubmit={purchase} className={`${styles.form} ${focused&&!preview?styles.focusedForm:''}`} aria-label="Google Reviews package">
+  {(!focused||preview)&&<aside className={styles.plan}>
    <span className={styles.eyebrow}>GOOGLE REVIEWS</span>
    <h2>Imports &amp; drafts</h2>
    <p className={styles.price}><strong>$29</strong><span>per location<br/>per month</span></p>
    <ul className={styles.features}><li>Google review imports</li><li>{marketingPlan.replies.toLocaleString('en-US')} AI reply drafts / month</li><li>Edit, save, and copy your drafts</li></ul>
    <p className={styles.limit}>You choose what to publish.<br/>Posting and autopilot aren’t included.</p>
    <details className={styles.requirements}><summary>Before you subscribe</summary><p>You’ll need a Google Business Profile you own or manage. If your location is already connected to Tap Rater, <Link href="/contact-us">contact us</Link> before buying.</p></details>
-  </aside>
+  </aside>}
   <fieldset disabled={busy} className={styles.details}>
-   {!preview?<ReviewsBusinessPreview onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>:<>
-   <div className={styles.detailsHeading}><h2>{guest?'Your details':'Your plan'}</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
+   {!preview?<ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>:<>
+   <div className={styles.detailsHeading}><h2>Your plan</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
    <div className={styles.selectedBusiness}><strong>{preview.name}</strong><span>{preview.address}</span></div>
    {guest&&<div className={styles.fields}><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link here. Your selected business will be saved for setup.</p></div>}
    <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
@@ -65,5 +66,5 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
    <button type="button" className={styles.textButton} onClick={()=>setPreview(null)}>Back to review analysis</button>
    </>}
   </fieldset>
- </form>;
+ </form></>;
 }

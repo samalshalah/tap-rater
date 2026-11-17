@@ -62,3 +62,26 @@
 
 .landingPlan { padding:24px 24px 40px; scroll-margin-top:88px; }
 @media(max-width:767px){.landingPlan{padding:12px 18px 28px;scroll-margin-top:76px}}
+
+/* Focused Reviews onboarding: no storefront distractions between selection and checkout. */
+.hiddenSteps { display:none; }
+.setupShell { min-height:100vh; background:#f6f8ff; color:#090e36; }
+.setupHeader { height:80px; padding:16px max(24px,calc((100vw - 1100px)/2)); display:flex; align-items:center; gap:24px; background:white; border-bottom:1px solid #e6e7f0; }
+.setupHeader img { display:block; width:76px; height:auto; }
+.setupHeader>span { border-left:1px solid #e6e7f0; padding-left:24px; font-size:13px; font-weight:600; }
+.setupHeader>a:last-child { margin-left:auto; font-size:12px; color:#4b536f; }
+.setupIntro { max-width:920px; margin:32px auto 24px; padding:0 24px; }
+.setupIntro>a { font-size:12px; color:#4b536f; }
+.setupIntro h1 { margin-top:24px; font-size:clamp(24px,3vw,32px); letter-spacing:-.045em; font-weight:600; }
+.setupSection { padding:0 24px 64px; }
+.setupSection .card { overflow:hidden; }
+.focusedForm { grid-template-columns:minmax(0,1fr); }
+.focusedForm .details { width:100%; max-width:680px; margin:0 auto; padding:32px 40px 40px; }
+.flowSteps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; list-style:none; padding:24px 32px; margin:0; border-bottom:1px solid #e6e7f0; background:white; }
+.flowSteps li { display:flex; align-items:center; justify-content:center; gap:8px; color:#4b536f; font-size:12px; }
+.flowSteps li>span { display:grid; place-items:center; width:25px; height:25px; border:1px solid #e6e7f0; border-radius:50%; font-size:11px; }
+.flowSteps li[aria-current] { color:#6035ff; font-weight:600; }
+.flowSteps li[aria-current]>span { background:#6035ff; color:white; border-color:#6035ff; }
+.flowSteps li[data-complete="true"]>span { background:#f1edff; color:#6035ff; border-color:#e8e2ff; }
+.focusedForm .preview h2 { margin-top:0; font-size:28px; }
+@media(max-width:600px){.setupHeader{height:68px;padding:12px 18px;gap:14px}.setupHeader>span{padding-left:14px;font-size:12px}.setupHeader img{width:64px}.setupIntro{margin:24px auto 20px;padding:0 18px}.setupSection{padding:0 14px 32px}.flowSteps{padding:20px 12px;gap:6px}.flowSteps li{flex-direction:column;gap:6px;font-size:10px}.focusedForm .details{padding:24px 20px 28px}.focusedForm .preview h2{font-size:24px}}

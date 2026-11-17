@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     let outcome='failed';
     try{if(previewQuery.has('error'))outcome='cancelled';else{await completeReviewPreviewConnection(previewQuery.get('state')!,previewQuery.get('code')||'');outcome='connected';}}catch{/* Never expose OAuth codes, tokens, or provider details. */}
     (await cookies()).delete(previewFlowCookie);
-    return NextResponse.redirect(`${new URL(googleConfig().redirectUri).origin}/google-reviews?preview=${outcome}#plan`,{status:303,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+    return NextResponse.redirect(`${new URL(googleConfig().redirectUri).origin}/google-reviews/setup?preview=${outcome}`,{status:303,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
   }
   const flow=(await cookies()).get(customerFlowCookie)?.value;
   const customerFlow=Boolean(flow);

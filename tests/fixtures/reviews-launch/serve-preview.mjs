@@ -5,9 +5,10 @@ const root=fileURLToPath(new URL('.',import.meta.url)),repo=path.resolve(root,'.
 const selection={placeId:'fixture',name:'Cedar Studio',formattedAddress:'12 Market Street, New York',reviewUrl:''};
 let preview=null;
 const server=await createServer({root,publicDir:path.join(repo,'public'),resolve:{alias:{'@':path.join(repo,'src'),'next/link':path.join(root,'link.tsx')}},esbuild:{jsx:'automatic'},css:{postcss:repo},server:{host:'127.0.0.1',port:4186,strictPort:true,fs:{allow:[repo,path.resolve(repo,'../checkout-tracking/node_modules')]}},plugins:[{name:'preview-qa',configureServer(server){server.middlewares.use(async(req,res,next)=>{
+ if(req.url?.startsWith('/google-reviews/setup')){req.url='/preview.html';return next();}
  if(!req.url?.startsWith('/api/')&&!req.url?.startsWith('/qa-'))return next();
  res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');
- if(req.url.startsWith('/qa-connect')){preview.connected=true;preview.googleEmail='qa@example.test';res.statusCode=302;res.setHeader('Location','/preview.html?preview=connected');res.end();return;}
+ if(req.url.startsWith('/qa-connect')){preview.connected=true;preview.googleEmail='qa@example.test';res.statusCode=302;res.setHeader('Location','/google-reviews/setup?preview=connected');res.end();return;}
  if(req.url.startsWith('/qa-checkout')){res.setHeader('Content-Type','text/html');res.end('<h1>QA checkout handoff passed</h1><p>Selected business retained. No payment or email was sent.</p>');return;}
  if(req.url.startsWith('/api/setup/google-places')){res.end(JSON.stringify({ok:true,configured:true,results:[selection]}));return;}
  let raw='';for await(const chunk of req)raw+=chunk;const body=raw?JSON.parse(raw):{};

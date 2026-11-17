@@ -1,5 +1,6 @@
 "use client";
 
+import {ReviewsSetupShell} from '@/components/account/reviews-setup-shell';
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
 import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
@@ -16,6 +17,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   if (pathname.startsWith("/admin") || (pathname.startsWith("/account") && !["/account/login", "/account/activate", "/account/forgot-password", "/account/reset-password"].includes(pathname))) {
     return <div className={`min-h-screen bg-soft ${pathname.startsWith("/account") ? "tr-prismatic-account" : ""}`}>{children}</div>;
   }
+
+  if(pathname==='/google-reviews/setup')return <ReviewsSetupShell>{children}</ReviewsSetupShell>;
 
   const mobileTabs = !pathname.startsWith("/checkout") && !pathname.startsWith("/p/");
   return (

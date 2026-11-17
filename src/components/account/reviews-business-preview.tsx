@@ -6,7 +6,7 @@ import type {reviewPreviewSummary} from '@/lib/reviews-preview-analysis';
 import styles from './reviews-checkout.module.css';
 export type PurchasePreview={id:string;selection:GoogleBusinessSelection;connected:boolean;googleEmail:string|null;name:string|null;address:string|null;selected:boolean;complete:boolean;locked:boolean;alreadyAssigned:boolean;analysis:ReturnType<typeof reviewPreviewSummary>|null};
 import type {PreviewMatch} from '@/lib/reviews-preview-match';
-export function ReviewsBusinessPreview({onReady,onChange}:{onReady:(preview:PurchasePreview)=>void;onChange:()=>void}){
+export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onReady:(preview:PurchasePreview)=>void;onChange:()=>void;onStage?:(stage:number)=>void;setupHref?:string}){
  const [preview,setPreview]=useState<PurchasePreview|null>(null),[selection,setSelection]=useState<GoogleBusinessSelection|null>(null),[loaded,setLoaded]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [matches,setMatches]=useState<PreviewMatch[]|null>(null);
  const matching=useRef(false);
@@ -14,18 +14,19 @@ export function ReviewsBusinessPreview({onReady,onChange}:{onReady:(preview:Purc
  async function run(fn:()=>Promise<void>){setBusy(true);setError('');try{await fn();}catch(e){setError(e instanceof Error?e.message:'Please try again.');}finally{setBusy(false);}}
  useEffect(()=>{let active=true;request().then(()=>{if(new URLSearchParams(window.location.search).get('preview')==='cancelled')setError('Google connection was cancelled. You can try again.');else if(new URLSearchParams(window.location.search).get('preview')==='failed')setError('Google could not connect. Please try again.');}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoaded(true);});return()=>{active=false;};},[]);
  async function matchBusiness(){await run(async()=>{const data=await request({action:'match'});if(data.matches)setMatches(data.matches);});}
- useEffect(()=>{if(preview?.connected&&!preview.selected&&!matching.current){matching.current=true;void matchBusiness();}},[preview?.id,preview?.connected,preview?.selected]);
+ useEffect(()=>{if(!setupHref&&preview?.connected&&!preview.selected&&!matching.current){matching.current=true;void matchBusiness();}},[preview?.id,preview?.connected,preview?.selected]);
  useEffect(()=>{
-  if(!preview?.selected||preview.complete||error||busy)return;
+  if(setupHref||!preview?.selected||preview.complete||error||busy)return;
   const timer=window.setTimeout(()=>void run(async()=>{await request({action:'analyse'});}),1000);
   return()=>window.clearTimeout(timer);
  },[preview,busy,error]);
+ useEffect(()=>{onStage?.(!preview?0:!preview.connected?1:2);},[preview?.id,preview?.connected,onStage]);
  const analysis=preview?.analysis;
  if(!loaded)return <p role="status">Loading your business preview…</p>;
+ if(setupHref&&preview)return <div className={styles.preview}><h2>Continue with your business</h2><div className={styles.selectedBusiness}><strong>{preview.name||preview.selection.name}</strong><span>{preview.address||preview.selection.formattedAddress}</span></div><p className={styles.intro}>Your progress is saved. Continue to your review preview.</p><a className={`tr-button-primary ${styles.submit}`} href={setupHref}>Continue <span aria-hidden="true">&rarr;</span></a><button type="button" className={styles.textButton} onClick={()=>{setPreview(null);setSelection(null);onChange();}}>Find a different business</button></div>;
  return <div className={styles.preview}>
-  <ol className={styles.steps} aria-label="Subscription steps">{['Business','Review analysis','Subscribe'].map((s,i)=><li key={s} aria-current={(preview?.selected?1:0)===i?'step':undefined}>{i+1}. {s}</li>)}</ol>
   <h2>{!preview?'Find your business':!preview.connected?'Connect your Google account':!preview.selected?(matches?'Confirm your business':'Finding your business'):'Your review snapshot'}</h2>
-  {!preview&&<><p className={styles.intro}>See which reviews need a reply before you subscribe.</p><SetupBusinessPicker onChange={setSelection}/><button type="button" className={`tr-button-primary ${styles.submit}`} disabled={!selection||busy} onClick={()=>void run(async()=>{if(selection)await request({action:'start',selection:{placeId:selection.placeId,name:selection.name,formattedAddress:selection.formattedAddress}});})}>Continue with this business <span aria-hidden="true">→</span></button></>}
+  {!preview&&<><p className={styles.intro}>See which reviews need a reply before you subscribe.</p><SetupBusinessPicker onChange={setSelection}/><button type="button" className={`tr-button-primary ${styles.submit}`} disabled={!selection||busy} onClick={()=>void run(async()=>{if(selection){await request({action:'start',selection:{placeId:selection.placeId,name:selection.name,formattedAddress:selection.formattedAddress}});if(setupHref)window.location.assign(setupHref);}})}>Continue with this business <span aria-hidden="true">→</span></button></>}
   {preview&&<div className={styles.selectedBusiness}><strong>{preview.name||preview.selection.name}</strong><span>{preview.address||preview.selection.formattedAddress}</span></div>}
   {preview&&!preview.connected&&<><p className={styles.intro}>Connect the Google account that manages this business to see how many reviews have no reply.</p><p className={styles.smallPrint}>This preview only reads your reviews. Google’s permission screen also covers management access; Tap Rater will not post replies or change your profile.</p><button type="button" className={`tr-button-primary ${styles.submit}`} disabled={busy} onClick={()=>void run(async()=>{const data=await request({action:'connect'});window.location.assign(data.url);})}>Connect Google <span aria-hidden="true">→</span></button><p className={styles.paymentNote}>No payment required for the preview</p></>}
   {preview?.connected&&!preview.selected&&<div className={styles.fields}>
