@@ -4,7 +4,7 @@ Requested flow: find a business → connect Google → analyse unanswered review
 
 ## Scope
 
-- Production baseline: `9d392de` on `origin/nextjs-commerce`. Release worktree: `reviews-preview-release`. Unrelated unpublished catalog, login, and cleanup commits in the other checkout are excluded.
+- Production baseline: deployed owner-approved cleanup `4c45e1c` (Worker `721f7aa8-48df-437f-a064-15bf6b412bdc`). The remote production Git branch was behind the actual deployment; its missing approved commits are retained in this release. Release worktree: `reviews-preview-release`.
 - Reuses the approved Reviews card, typography, colors, and hero. Full name is no longer requested before checkout. The verified business name supplies the new customer reservation label.
 - Anonymous previews use a random, HttpOnly browser capability and independent `reviews-preview:<uuid>` encrypted Google credentials. Existing Google callbacks retain their existing authentication path.
 - Public Places selection must match the connected Google location's place ID. Google review pages are read without assigning a workspace or publishing anything. The preview stores review identifiers, star ratings, and reply-presence flags, not review text or reviewer names.
@@ -16,7 +16,7 @@ Requested flow: find a business → connect Google → analyse unanswered review
 
 ## Validation
 
-- 2,480 automated tests passed; 32 opt-in integration tests skipped in the default run.
+- Automated regression suite and focused preview security tests passed; see the final release record below for the combined production test count.
 - Dedicated QA branch `qa-reviews-launch-20261114`: actual SQL preview storage, pagination, pending account, checkout metadata, unpaid/paid webhook state, activation boundary, saved selection, credential handoff, draft-only policy, and idempotent setup passed. Google, Stripe, and email were simulated; external network was restricted to that QA database. Synthetic records were cleaned up.
 - Browser fixture uses the real purchase components with synthetic Google/Stripe responses: search, selection, Google return, account/location discovery, analysis, email and checkout handoff passed. Desktop and 390-pixel phone layouts inspected.
 - No fresh live payment, live OAuth consent, public reply, or main-account mutation was performed for these checks.

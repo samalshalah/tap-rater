@@ -25,7 +25,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Google Reviews is
   const c=accounts.find(a=>a.email===email)!;
   activationMail.mockClear();
   await prepareMarketingBuyer(email,'QA new buyer');
-  let subscription:Stripe.Subscription|undefined,product:string|undefined;const sessions:Stripe.Checkout.Session[]=[];
+  let subscription:Stripe.Subscription|undefined,product:string|undefined,createdCustomer:string|undefined;const sessions:Stripe.Checkout.Session[]=[];
   try{
    const attempt=randomUUID(),params={mode:'payment' as const,ui_mode:'hosted_page' as const,success_url:'https://taprater.com/account/packages',cancel_url:'https://taprater.com/growth',metadata:{marketing_only:'true'}};
    const monthly=await createMarketingCheckout(email,{cadence:'month',locations:2,acceptedTerms:true},attempt,params);sessions.push(monthly);
@@ -39,6 +39,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Google Reviews is
    expect(activationMail).not.toHaveBeenCalled();
    product=(await stripe.products.create({name:'Growth sandbox lifecycle QA',metadata:{test_only:'true'}})).id;
    const customer=await stripe.customers.create({email,name:'Growth sandbox QA',payment_method:'pm_card_visa',invoice_settings:{default_payment_method:'pm_card_visa'}});
+   createdCustomer=customer.id;
    subscription=await stripe.subscriptions.create({customer:customer.id,items:[{price_data:{currency:'usd',unit_amount:2900,recurring:{interval:'month'},product},quantity:2}],metadata:{tap_rater:'marketing_growth_v1',account_id:String(c.id),purchase_attempt:attempt}});
    const configuration=process.env.MARKETING_PORTAL_CONFIGURATION_ID;
    const portal=await stripe.billingPortal.sessions.create({customer:customer.id,...(configuration&&configuration!=='default'?{configuration}:{}),return_url:'https://taprater.com/account/packages'});
@@ -70,6 +71,7 @@ describe.skipIf(process.env.GROWTH_STRIPE_SANDBOX_TEST!=='1')('Google Reviews is
    expect((await sql`SELECT marketing_location_allowed(${loc}::uuid) AS ok`)[0].ok).toBe(false);
   }finally{
    if(subscription&&subscription.status!=='canceled')await stripe.subscriptions.cancel(subscription.id);
+   if(createdCustomer)await stripe.customers.del(createdCustomer);
    if(product)await stripe.products.update(product,{active:false});
    for(const session of sessions)await stripe.checkout.sessions.expire(session.id).catch(()=>{});
    for(const account of accounts){await sql`DELETE FROM businesses WHERE customer_id=${account.id}`;await sql`DELETE FROM customers WHERE id=${account.id}`;}

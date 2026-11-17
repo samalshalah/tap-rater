@@ -53,7 +53,7 @@ async function marketingPOST(request:Request){
   if(databaseError.code==='23505'&&['google_review_links_parent_key','google_review_links_location'].includes(databaseError.constraint||'')){
    return NextResponse.json({error:'This Google business is already connected to another workspace. Contact Tap Rater to arrange access. Signing in again will not resolve this.'},{status:409});
   }
-  return NextResponse.json({error:databaseError.code==='P0001'?'Your package has no available location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Could not complete Google setup. Reconnect or try again.'},{status:e instanceof LiveReviewError?e.status:503});
+  return NextResponse.json({error:databaseError.code==='P0001'?'Your package has no available location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:'Could not complete Google setup. Reconnect or try again.'},{status:e instanceof LiveReviewError?e.status:e instanceof GoogleBusinessError&&e.code==='not_found'?404:503});
  }
 }
 

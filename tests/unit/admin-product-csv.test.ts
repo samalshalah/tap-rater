@@ -49,7 +49,7 @@ describe("admin product CSV", () => {
       brandedFrontTemplateUrl: "/uploads/templates/google-branded-2026-08-27.3.svg"
     });
     expect(plan.products[0].assetSet.landingPagePreviewConfig).toBeUndefined();
-    expect(plan.products[0].productOptions).toHaveLength(2);
+    expect(plan.products[0].productOptions.map(option => option.optionCode)).toEqual(["branded_qr_direct"]);
     expect(plan.products[0].images).toEqual([{ src: "/uploads/products/google-review-stand.png", alt: "Google Review Stand" }]);
     expect(plan.products[0].sizeOptions?.[0]).toMatchObject({ code: "regular", skuSuffix: "REG", priceAdjustmentCents: 0 });
     expect(plan.products[0].sizeOptions?.[1]).toMatchObject({ code: "a4", skuSuffix: "A4", priceAdjustmentCents: null });

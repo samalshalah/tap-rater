@@ -23,10 +23,19 @@ describe("Google Business transport", () => {
     expect(await client.listLocations("accounts/1")).toEqual({ locations: [] });
     expect(new URL(String(fetcher.mock.calls[1][0])).searchParams.get("readMask")).toBe("name,title,storefrontAddress");
   });
-  it.each([[401, "reconnect"], [403, "access_denied"], [429, "quota"], [503, "unavailable"]])("classifies HTTP %s without exposing raw errors or retrying", async (status, code) => {
+  it.each([[401, "reconnect"], [403, "access_denied"], [404, "not_found"], [429, "quota"], [503, "unavailable"]])("classifies HTTP %s without exposing raw errors or retrying", async (status, code) => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(new Response("secret internal error", { status: Number(status) }));
     await expect(createGoogleBusinessClient("token", fetcher).listAccounts()).rejects.toMatchObject({ code, status });
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("gives actionable recovery for a missing Google business without exposing provider details", async () => {
+    const response = new Response(JSON.stringify({error:{status:'NOT_FOUND',message:'PRIVATE_ACCOUNT_DETAILS'}}), {status:404});
+    const readBody=vi.spyOn(response,'json');
+    const fetcher=vi.fn<typeof fetch>().mockResolvedValue(response);
+    const error=await createGoogleBusinessClient('PRIVATE_TOKEN',fetcher).listLocations('accounts/missing').catch(error=>error);
+    expect(error).toMatchObject({code:'not_found',status:404,message:expect.stringContaining('reconnect and select the business again')});
+    expect(error.message).not.toMatch(/PRIVATE|temporarily unavailable/);
+    expect(readBody).not.toHaveBeenCalled();expect(fetcher).toHaveBeenCalledTimes(1);
   });
   it("rejects redirects without forwarding the access token", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://example.com" } }));

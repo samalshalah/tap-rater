@@ -38,13 +38,13 @@ describe("content phase 3 presentation standard", () => {
     expect(html).toContain("mt-auto text-sm");
     expect(html).not.toContain("aspect-[4/5]");
     expect(html).not.toContain("line-clamp");
-    expect(html).toContain(">$49</p>");
+    expect(html).toContain(">$49 · One-time</p>");
   });
 
   it("identifies a Standard photo when advertising the available Branded price", () => {
     const html = renderToStaticMarkup(createElement(ProductCard, { product, design: "branded" }));
     expect(html).not.toContain("Standard design shown");
-    expect(html).toContain("Custom + QR: $49");
+    expect(html).toContain("$49 · One-time");
     const merchantPhoto = { ...product, images: [{ src: "/uploads/custom-scene.png", alt: "Custom scene" }] };
     expect(renderToStaticMarkup(createElement(ProductCard, { product: merchantPhoto, design: "branded" }))).not.toContain("Standard design shown");
   });
@@ -76,7 +76,7 @@ describe("content phase 3 presentation standard", () => {
   });
 
   it("respects saved gallery photos, removes duplicate images, and excludes production templates", () => {
-    const images = getGalleryImages({ ...product, images: [
+    const images = getGalleryImages({ ...product, assetSet: { ...product.assetSet, standardAngledImageUrl: "/historical-standard.png" }, images: [
       ...product.images,
       { src: product.assetSet!.standardFrontTemplateUrl!, alt: "Legacy template with QR placeholder" },
       { src: product.assetSet!.brandedFrontTemplateUrl!, alt: "Production template" },

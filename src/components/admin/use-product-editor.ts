@@ -53,13 +53,13 @@ export function useProductEditor({
   const [publishStatus, setPublishStatus] = useState(product.status ?? (product.isActive ? "active" : "draft"));
 
   const [assetSet, setAssetSet] = useState<AssetSetState>(() => ({
-    standardAngledImageUrl: product.assetSet?.standardAngledImageUrl ?? product.images[0]?.src ?? "",
-    brandedAngledImageUrl: product.assetSet?.brandedAngledImageUrl ?? product.images[1]?.src ?? product.assetSet?.standardAngledImageUrl ?? "",
-    standardFrontTemplateUrl: product.assetSet?.standardFrontTemplateUrl ?? "",
+    standardAngledImageUrl: "",
+    brandedAngledImageUrl: product.assetSet?.brandedAngledImageUrl ?? product.images[0]?.src ?? "",
+    standardFrontTemplateUrl: "",
     brandedFrontTemplateUrl: product.assetSet?.brandedFrontTemplateUrl ?? ""
   }));
 
-  const [mainImage, setMainImage] = useState<MediaItemState>(() => product.images[0] ?? { src: product.assetSet?.standardAngledImageUrl ?? "", alt: product.title });
+  const [mainImage, setMainImage] = useState<MediaItemState>(() => product.images[0] ?? { src: product.assetSet?.brandedAngledImageUrl ?? "", alt: product.title });
 
   const [galleryImages, setGalleryImages] = useState<MediaItemState[]>(() => product.images.slice(1));
 
@@ -90,7 +90,7 @@ export function useProductEditor({
   const effectiveAssetSet = useMemo(
     () => ({
       ...assetSet,
-      standardAngledImageUrl: assetSet.standardAngledImageUrl || mainImage.src
+      brandedAngledImageUrl: assetSet.brandedAngledImageUrl || mainImage.src
     }),
     [assetSet, mainImage.src]
   );

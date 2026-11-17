@@ -7,7 +7,6 @@ import {
   lockedPlatforms,
   lockedProductOptionTemplates,
   lockedStandTypes,
-  standardDirectProductOption,
   type BusinessUse,
   type BusinessUseSlug,
   type PlatformDestination,
@@ -107,7 +106,7 @@ export async function getPlatforms(): Promise<PlatformDestination[]> {
 
 export async function getProductOptionTemplates(): Promise<ProductOption[]> {
   noStore();
-  return readArchitectureRows("product_option_templates", productOptionTemplateColumns, normalizeProductOptionRow, lockedProductOptionTemplates);
+  return (await readArchitectureRows("product_option_templates", productOptionTemplateColumns, normalizeProductOptionRow, lockedProductOptionTemplates)).filter((option) => option.optionCode !== "standard_direct");
 }
 
 export async function getProductOptions(productSlug: string): Promise<ProductOption[]> {
@@ -155,7 +154,7 @@ export function getDefaultOptionsForProductKind(productKind: "normal_direct" | "
     return [];
   }
 
-  return [standardDirectProductOption, brandedQrDirectProductOption];
+  return [brandedQrDirectProductOption];
 }
 
 async function readArchitectureRows<T>(

@@ -100,7 +100,7 @@ export function FilterSelect({
 }
 
 export function ProductThumbnail({ product }: { product: MigratedProduct }) {
-  const image = product.images[0]?.src ?? product.assetSet?.standardAngledImageUrl ?? product.assetSet?.brandedAngledImageUrl;
+  const image = product.images[0]?.src ?? product.assetSet?.brandedAngledImageUrl;
 
   return image ? (
     <img src={image} alt={product.images[0]?.alt || product.title} className="h-16 w-16 rounded-lg border border-line bg-white object-contain" loading="lazy" />

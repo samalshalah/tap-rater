@@ -101,7 +101,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
         <p className="tr-eyebrow">Choose setup</p>
         <h2 className="mt-3 text-2xl font-black text-ink">Checkout is not available yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          This stand does not have an active backend purchase option. Please contact support or choose another ready stand.
+          This stand is currently unavailable. Contact support or choose another stand.
         </p>
       </div>
     );
@@ -258,6 +258,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
             ? "Multi-Link Checkout Coming Soon"
             : `${setupButtonLabel}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
         </button>
+        {standQuote && standQuote.discountCents > 0 ? <p className="mt-2 text-center text-xs text-muted">Price includes {formatPrice(standQuote.discountCents)} in savings on your selected stands.</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
           {selectedLinkExperience === "multilink" ? (

@@ -6,6 +6,7 @@ import {
   getEmailTemplateWithClient,
   mergeEmailTemplatePayload,
   saveEmailTemplate,
+  renderEmailTemplateHtml,
   sendEmailTemplateTest
 } from "@/lib/email-templates";
 
@@ -78,6 +79,42 @@ describe("email template settings", () => {
     expect(html).toContain("&lt;script&gt;alert(&#039;x&#039;)&lt;/script&gt;");
     expect(html).toContain("Fish &amp; chips");
     expect(html).not.toContain("<script>");
+  });
+
+  it("previews the current $49 QR and NFC stand with coherent synthetic totals", () => {
+    const html = buildEmailTemplatePreviewHtml(defaultEmailTemplates["customer-order-confirmation"]);
+    expect(html).toContain("Branded + QR Direct");
+    expect(html).toContain("Connection: QR and NFC open the destination link directly");
+    for (const amount of ["$49.00", "$12.00", "$2.94", "$63.94"]) expect(html).toContain(amount);
+    expect(html).not.toContain("Standard Direct");
+    expect(html).not.toContain("$39.00");
+    expect(html).not.toContain("$53.34");
+  });
+
+  it("visibly marks every synthetic preview without marking normal customer rendering", () => {
+    for (const template of Object.values(defaultEmailTemplates)) {
+      const html = buildEmailTemplatePreviewHtml(template);
+      expect(html).toMatch(/<body[^>]*>\s*<p[^>]*><strong>TEST EMAIL ONLY/);
+      expect(html).toContain("No purchase was made. Do not fulfill this sample order.");
+      expect(html).not.toContain("Standard Direct");
+      expect(html).not.toContain("$39.00");
+    }
+    expect(renderEmailTemplateHtml(defaultEmailTemplates["customer-order-confirmation"], {}))
+      .not.toContain("TEST EMAIL ONLY");
+  });
+
+  it("sends the visibly labeled current sample through the injected delivery function", async () => {
+    const sendEmailFn = vi.fn().mockResolvedValue({ sent: true });
+    await sendEmailTemplateTest({
+      template: defaultEmailTemplates["customer-order-confirmation"],
+      to: "admin@example.com",
+      sendEmailFn
+    });
+    expect(sendEmailFn).toHaveBeenCalledWith(expect.objectContaining({
+      subject: expect.stringMatching(/^\[Test\]/),
+      html: buildEmailTemplatePreviewHtml(defaultEmailTemplates["customer-order-confirmation"]),
+      delivery: expect.objectContaining({ messageType: "template_test" })
+    }));
   });
 
   it("loads all templates with defaults merged against persisted rows", async () => {

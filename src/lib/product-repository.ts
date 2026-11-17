@@ -118,7 +118,7 @@ const STOREFRONT_PRODUCT_OPTION_COLUMNS = [
 ].join(",");
 
 export function staticStorefrontProducts(): MigratedProduct[] {
-  return migratedProducts.filter(isPublicLaunchStorefrontProduct).map(sanitizePublicStorefrontProduct).sort(compareStorefrontProducts);
+  return migratedProducts.filter(isPublicLaunchStorefrontProduct).filter((product) => !Object.hasOwn(retiredProductRedirects, product.slug)).map(sanitizePublicStorefrontProduct).sort(compareStorefrontProducts);
 }
 
 export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
@@ -130,7 +130,9 @@ export async function getStorefrontProducts(): Promise<MigratedProduct[]> {
 
   try {
     const databaseProducts = await readPublicCatalog();
-    return databaseProducts;
+    // Keep legacy records available to server checkout/order lookups, but do not
+    // advertise product URLs that already redirect to another catalog entry.
+    return databaseProducts.filter((product) => !Object.hasOwn(retiredProductRedirects, product.slug));
   } catch (error) {
     console.warn("[product-repository] storefront_unavailable", {
       reason: error instanceof Error ? error.message : "unknown database query failure"

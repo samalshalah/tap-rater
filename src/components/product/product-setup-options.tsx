@@ -61,7 +61,7 @@ export function ProductSetupOptions({product, setupOptions, selectedOptionId, ch
                         {size.frontWidthMm} x {size.frontHeightMm} mm
                     </span>
                     <span className={pending ? "pl-6 text-[11px] font-semibold leading-4 text-muted" : "pl-6 text-[11px] font-semibold leading-4 text-brand"}>
-                      {pending ? "Coming soon" : "Included"}
+                      {pending ? "Coming soon" : size.priceAdjustmentCents === 0 ? "Included" : `${size.priceAdjustmentCents! > 0 ? "+" : ""}${formatPrice(size.priceAdjustmentCents!)}`}
                     </span>
                   </label>
                 );

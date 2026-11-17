@@ -13,7 +13,9 @@ export async function saveLiveDraft(actor:ReviewActor,id:string,draft:string,ver
 }
 
 export async function suggestLiveReply(actor:ReviewActor,id:string,sql=liveDb(),generate=generateReviewSuggestions){
- const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);if(review.data.comment?.trim())await reserveAi(String(link.business_id),sql);
+ const {review,link}=await loadLiveReview(actor,id,sql);assertReviewNotSpam(review);
+ if(!link.ai_consent)throw new LiveReviewError('Turn on AI replies for this location before generating a reply.');
+ if(review.data.comment?.trim())await reserveAi(String(link.business_id),sql);
  return generate(String(link.business_name),reviewStars(review.data),review.data.comment || '',undefined,{businessId:String(link.business_id),customerId:String(link.customer_id),service:'review_manual'});
 }
 

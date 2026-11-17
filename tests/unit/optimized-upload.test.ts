@@ -17,7 +17,7 @@ describe("optimized upload paths", () => {
 
 describe("responsive upload candidates", () => {
   it("offers smaller product images and preserves cache query strings", () => {
-    const candidates = optimizedUploadSrcSet("/uploads/products/taprater-stands/google/google-standard-angled.png?v=2");
+    const candidates = optimizedUploadSrcSet("/uploads/products/taprater-stands/google/google-custom-angled.png?v=2");
     expect(candidates).toContain("-w320.webp?v=2 320w");
     expect(candidates).toContain("-w480.webp?v=2 480w");
     expect(candidates).toContain("-w1200.webp?v=2 1200w");

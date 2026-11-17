@@ -1,6 +1,7 @@
 .worktrees/
 node_modules/
 .next/
+.next-*/
 .open-next/
 .wrangler/
 apps/backend/dist/

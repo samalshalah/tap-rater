@@ -18,3 +18,33 @@ describe('first login setup',()=>{
 });
 
 it('finishes a complete review import even without a profile snapshot',async()=>{m.sql.mockResolvedValue([{...ready,profile_synced:null}]);expect((await POST(request('finish'))).status).toBe(200);expect(m.profile).not.toHaveBeenCalled();});
+
+const existingId='9fb3ee3b-0920-4db5-a03d-7245987a8751';
+const existingRequest=(body:unknown={action:'chooseExisting',businessId:existingId})=>new Request('https://taprater.com/api/account/onboarding',{method:'POST',headers:{origin:'https://taprater.com'},body:JSON.stringify(body)});
+describe('existing stand owner onboarding',()=>{
+ it('lists only active account-owned locations before setup starts',async()=>{
+  m.sql.mockResolvedValueOnce([{business_id:null,completed:null}]).mockResolvedValueOnce([{id:existingId,business_name:'Existing stand business'}]);
+  const response=await GET(new Request('https://taprater.com/api/account/onboarding'));
+  expect(await response.json()).toMatchObject({businesses:[{id:existingId}]});
+  const [query,...values]=m.sql.mock.calls[1];
+  expect(query.join('?')).toContain('c.id=b.customer_id');expect(query.join('?')).toContain("c.account_status='active'");expect(query.join('?')).toContain("b.status IS DISTINCT FROM 'marketing_removed'");expect(values).toEqual(['buyer@example.test']);
+ });
+ it('reuses an owned location through the existing license allocator without creating hardware or another business',async()=>{
+  m.sql.mockResolvedValueOnce([{id:existingId}]).mockResolvedValueOnce([{...ready,business_id:existingId}]);
+  const response=await POST(existingRequest());expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({business_id:existingId});
+  const [query,...values]=m.sql.mock.calls[0],statement=query.join('?');
+  expect(values).toEqual(['buyer@example.test',existingId]);
+  expect(statement).toContain('FOR UPDATE');expect(statement).toContain('b JOIN account c ON c.id=b.customer_id');
+  expect(statement).toContain('claim_marketing_location(id,customer_id)');expect(statement).toContain('c.marketing_onboarding_business_id=b.id');
+  expect(statement).not.toContain('create_marketing_business');expect(statement).not.toContain('INSERT INTO businesses');
+  expect(m.sync).not.toHaveBeenCalled();expect(m.profile).not.toHaveBeenCalled();
+ });
+ it('does not advance onboarding when the tenant-owned licensed selection returns no match',async()=>{
+  m.sql.mockResolvedValueOnce([]);const response=await POST(existingRequest());expect(response.status).toBe(400);
+  expect(await response.json()).toMatchObject({error:expect.stringContaining('from your account')});expect(m.sql).toHaveBeenCalledTimes(1);expect(m.sync).not.toHaveBeenCalled();
+ });
+ it.each([{action:'chooseExisting',businessId:existingId,email:'other@example.test'},{action:'chooseExisting',businessId:'not-a-uuid'}])('rejects injected identity or invalid selection before storage',async body=>{
+  expect((await POST(existingRequest(body))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();
+ });
+});

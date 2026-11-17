@@ -64,7 +64,7 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const [proofLogoSizePercent, setProofLogoSizePercent] = useState(100);
 
-  const [printBusinessName, setShowBusinessNameOnProof] = useState(false);
+  const [printBusinessName, setShowBusinessNameOnProof] = useState(true);
   const showBusinessNameOnProof = Boolean(businessName.trim()) && printBusinessName;
 
   const [logoBackgroundMode, setLogoBackgroundMode] = useState<LogoBackgroundMode>("auto_crop");

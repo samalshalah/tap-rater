@@ -101,7 +101,7 @@ export async function runLiveReviews(request:Request,actor:ReviewActor,owner:str
   return NextResponse.json(result,{headers:{'Cache-Control':'no-store'}});
  }catch(e){
   const message=(e as {code?:string}).code==='P0001'?'This account has no available marketing location slot. Contact Tap Rater to adjust access.':e instanceof LiveReviewError||e instanceof GoogleBusinessError?e.message:e instanceof GoogleTokenExchangeError?'Reconnect the managing Google account.':'Google reviews could not complete this request. Check the connection and try again.';
-  return NextResponse.json({error:message},{status:e instanceof LiveReviewError?e.status:503});
+  return NextResponse.json({error:message},{status:e instanceof LiveReviewError?e.status:e instanceof GoogleBusinessError&&e.code==='not_found'?404:503});
  }
 }
 

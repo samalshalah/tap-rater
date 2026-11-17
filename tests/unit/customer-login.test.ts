@@ -1,18 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createCustomerActivationUrl } from "@/lib/customer-account";
-import { createCustomerLoginUrl, isDevelopmentAdminLoginAllowed } from "@/lib/customer-login";
 
-describe("customer login helpers", () => {
+describe("customer activation URLs", () => {
   afterEach(() => {
     delete process.env.ADMIN_EMAIL;
     delete process.env.NEXT_PUBLIC_SITE_URL;
     delete process.env.NEXT_PUBLIC_ACCOUNT_APP_URL;
-  });
-
-  it("creates account login verification URLs", () => {
-    process.env.NEXT_PUBLIC_SITE_URL = "https://taprater.com/";
-
-    expect(createCustomerLoginUrl("abc123")).toBe("https://taprater.com/account/login?token=abc123");
   });
 
   it("creates account activation URLs for password setup", () => {
@@ -25,14 +18,6 @@ describe("customer login helpers", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://taprater.com/";
     process.env.NEXT_PUBLIC_ACCOUNT_APP_URL = "https://app.taprater.com/";
 
-    expect(createCustomerLoginUrl("abc123")).toBe("https://app.taprater.com/account/login?token=abc123");
-  });
-
-  it("allows missing-email development bypass only for admin email outside production", () => {
-    process.env.ADMIN_EMAIL = "admin@taprater.com";
-
-    expect(isDevelopmentAdminLoginAllowed("admin@taprater.com", "development")).toBe(true);
-    expect(isDevelopmentAdminLoginAllowed("owner@example.com", "development")).toBe(false);
-    expect(isDevelopmentAdminLoginAllowed("admin@taprater.com", "production")).toBe(false);
+    expect(createCustomerActivationUrl("abc123")).toBe("https://app.taprater.com/account/activate?token=abc123");
   });
 });

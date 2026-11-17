@@ -193,12 +193,15 @@ export function getDefaultProductColor(product: Pick<MigratedProduct, "colorOpti
 }
 
 export function getConfiguredUnitPriceCents(product: Pick<MigratedProduct, "sizeOptions" | "colorOptions">, option: Pick<PurchaseOption, "priceCents">, selection: Pick<ProductVariantSelection, "sizeCode" | "colorCode">) {
+  const color = product.colorOptions?.find((item) => item.code === selection.colorCode) ?? getDefaultProductColor(product);
+  if (product.colorOptions?.length && !color?.isActive) {
+    return null;
+  }
   if (!product.sizeOptions?.length) {
-    return option.priceCents;
+    return option.priceCents + (color?.priceAdjustmentCents ?? 0);
   }
 
   const size = product.sizeOptions?.find((item) => item.code === selection.sizeCode) ?? getDefaultProductSize(product);
-  const color = product.colorOptions?.find((item) => item.code === selection.colorCode) ?? getDefaultProductColor(product);
   if (!size?.isActive || size.priceAdjustmentCents === null) {
     return null;
   }

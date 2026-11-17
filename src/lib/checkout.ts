@@ -13,7 +13,7 @@ import {
   type CustomizationLevel,
   type DestinationMode
 } from "@/lib/product-model";
-import { getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
+import { correctKnownPurchaseCopy, getProductPurchaseOptions, isHostedPurchaseOptionEnabled, type PurchaseOption, type PurchaseOptionId } from "@/lib/purchase-options";
 import { buildDirectProductionTargets, isHttpUrl, isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { brandedStandComposition } from "@/lib/branded-composition";
@@ -213,7 +213,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
       unitAmountCents: unitPriceCents,
       lineSubtotalCents: unitPriceCents * item.quantity,
       monthlyAmountCents: hasMultiLinkAddon ? hostedMultiLinkServiceAddon.monthlyPriceCents : option.monthlyPriceCents,
-      shortDescription: product.shortDescription,
+      shortDescription: correctKnownPurchaseCopy(product.shortDescription),
       setup: rowSetup,
       logoRequired,
       logoStatus: logoRequired ? logoReference ? "uploaded" : "manual_collection_required" : "not_required",

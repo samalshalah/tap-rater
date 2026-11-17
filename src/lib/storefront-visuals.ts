@@ -62,7 +62,7 @@ const categoryVisuals: Record<CatalogCategorySlug, StorefrontVisual> = {
   },
   "custom-stands": {
     src: "/uploads/products/taprater-stands/google/google-custom-angled.png",
-    alt: "Custom Tap Rater Stands"
+    alt: "River Cafe custom stand example with logo and QR code"
   }
 };
 
@@ -172,8 +172,8 @@ export function getCategoryVisual(category: Pick<CatalogCategory, "slug" | "titl
 export function getProductVisual(product: Pick<MigratedProduct, "slug" | "title" | "images" | "assetSet" | "catalogManaged">): StorefrontVisual {
   if (product.slug === "custom-direct-stand") {
     return {
-      src: "/uploads/products/business-google-white-stands-bundle.jpg",
-      alt: "Custom Tap Rater Stands"
+      src: "/uploads/products/branded-demo-river-cafe-stand.png",
+      alt: "River Cafe custom stand example with logo and QR code"
     };
   }
 

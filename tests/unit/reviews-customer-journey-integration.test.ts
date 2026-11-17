@@ -14,11 +14,18 @@ import {bindGoogleLocation,syncLiveReviews,listLiveWorkspaces,saveLiveDraft,appr
 import {customerLocationConnection} from '@/lib/google-business/customer-location-connection';
 
 const url=process.env.REVIEWS_JOURNEY_DATABASE_URL;
-afterEach(()=>vi.unstubAllEnvs());
+afterEach(()=>{vi.unstubAllEnvs();vi.unstubAllGlobals();});
 describe.skipIf(!url)('Google Reviews journey on the dedicated QA database (external services simulated)',()=>{
  it('purchases, activates, imports, edits, confirms posting, reconciles, enforces limits and revokes canceled access',async()=>{
   // Deliberately exact: this can never run against either production endpoint.
   if(new URL(url!).hostname!=='ep-cold-voice-atmq1yn4-pooler.c-9.us-east-1.aws.neon.tech')throw Error('Dedicated Reviews launch QA branch required');
+  const originalFetch=globalThis.fetch;
+  vi.stubGlobal('fetch',async(input:RequestInfo|URL,init?:RequestInit)=>{
+   const target=new URL(input instanceof Request?input.url:String(input));
+   const headers=new Headers(init?.headers||(input instanceof Request?input.headers:undefined));
+   if(target.protocol!=='https:'||target.hostname!=='api.c-9.us-east-1.aws.neon.tech'||target.pathname!=='/sql'||headers.get('Neon-Connection-String')!==url)throw Error('External network blocked in Reviews journey QA');
+   return originalFetch(input,init);
+  });
   vi.stubEnv('DATABASE_URL',url!);vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL','');vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','');
   vi.stubEnv('MARKETING_CHECKOUT_ENABLED','true');vi.stubEnv('MARKETING_PORTAL_CONFIGURATION_ID','default');vi.stubEnv('MARKETING_TEST_ENTITLEMENTS','true');vi.stubEnv('GOOGLE_REVIEWS_PUBLISHING_ENABLED','true');
   const sql=neon(url!),uid=randomUUID(),email=`reviews-journey-${uid}@example.test`,actor={kind:'customer' as const,email};
