@@ -43,7 +43,7 @@ function needsAttention(location: Location) {
 
 export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
  const router=useRouter(),params=useSearchParams();
- const [data,setData]=useState<Snapshot|null>(null),[items,setItems]=useState(businesses),[query,setQuery]=useState(''),[view,setView]=useState<'attention'|'tasks'|'all'>('attention'),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
+ const [data,setData]=useState<Snapshot|null>(null),[items,setItems]=useState(businesses),[query,setQuery]=useState(''),[view,setView]=useState<'attention'|'tasks'|'all'>('all'),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false);
  const [connecting,setConnecting]=useState<{id:string;name:string;address:string}|null>(null);
  const [selection,setSelection]=useState<GoogleBusinessSelection|null>(null);
  const [serviceTarget,setServiceTarget]=useState<Location|null>(null);
