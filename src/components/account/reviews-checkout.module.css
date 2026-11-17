@@ -123,3 +123,10 @@
 .profileNames label { min-width:0; }
 .optional { color:#4b536f; font-weight:400; }
 @media(max-width:380px){.profileNames{grid-template-columns:1fr}}
+
+/* The final plan uses one centred form, with the purchase details shown once. */
+.planForm .details { max-width:680px; }
+.planIncludes { color:#4b536f; font-size:12px; line-height:1.7; margin:0 0 20px; }
+.planTitle { display:none; }
+.setupShell:has(.planForm) .setupTitle { display:none; }
+.setupShell:has(.planForm) .planTitle { display:inline; }

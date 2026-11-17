@@ -43,8 +43,8 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    window.location.assign(result.url);
   }catch(e){setError(e instanceof Error?e.message:'Checkout is unavailable. Please try again.');setBusy(false);}
  }
- return <><ol className={focused?styles.flowSteps:styles.hiddenSteps} aria-label="Setup progress">{['Business','Connect','Analysis','Plan'].map((label,i)=><li key={label} aria-current={(preview?3:stage)===i?'step':undefined} data-complete={i<(preview?3:stage)}><span>{i<(preview?3:stage)?'\u2713':i+1}</span>{label}</li>)}</ol><form onSubmit={purchase} className={`${styles.form} ${focused&&!preview?styles.focusedForm:''}`} aria-label="Google Reviews package">
-  {(!focused||preview)&&<aside className={styles.plan}>
+ return <><ol className={focused?styles.flowSteps:styles.hiddenSteps} aria-label="Setup progress">{['Business','Connect','Analysis','Plan'].map((label,i)=><li key={label} aria-current={(preview?3:stage)===i?'step':undefined} data-complete={i<(preview?3:stage)}><span>{i<(preview?3:stage)?'\u2713':i+1}</span>{label}</li>)}</ol><form onSubmit={purchase} className={`${styles.form} ${focused||preview?styles.focusedForm:''} ${preview?styles.planForm:''}`} aria-label="Google Reviews package">
+  {(!focused&&!preview)&&<aside className={styles.plan}>
    <span className={styles.eyebrow}>GOOGLE REVIEWS</span>
    <h2>Spend less time writing review replies</h2>
    <p className={styles.price}><strong>$29</strong><span>per location<br/>per month</span></p>
@@ -60,8 +60,9 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
    {locations>1&&<p className={styles.smallPrint}>Your previewed business is your first location. Add the remaining locations after setup.</p>}
    <div className={styles.total}><span>Monthly total<small>Renews monthly until canceled</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
+   <p className={styles.planIncludes}>Review imports · {marketingPlan.replies.toLocaleString('en-US')} reply drafts per location/month. You publish on Google yourself.</p>
    <label className={styles.consent}><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/><span>I agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy-policy">Privacy Policy</Link>. Renews monthly until canceled.</span></label>
-   <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to checkout'}<span aria-hidden="true">→</span></button>
+   <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to secure checkout'}<span aria-hidden="true">→</span></button>
    <p className={styles.paymentNote}>Secure payment with Stripe · Cancel future renewals anytime</p>
    {error&&<p role="alert" className={styles.error}>{error}</p>}
    <button type="button" className={styles.textButton} onClick={()=>setPreview(null)}>Back to review analysis</button>
