@@ -111,6 +111,14 @@ export async function syncMarketingSubscription(event:Stripe.Event){
   if(!row||row.stripe_subscription_id&&row.stripe_subscription_id!==id)throw Error('Subscription ownership could not be verified.');
   await assertActive();
   if(mode==='test'&&process.env.MARKETING_TEST_ENTITLEMENTS!=='true')throw Error('Test entitlements require an isolated test database.');
+  // Stripe phase metadata becomes active only after the scheduled renewal transition.
+  const removalAt=Number(sub.metadata.reviews_remove_at||0);
+  if(sub.metadata.reviews_plan_owner===account && removalAt>0 && sub.items.data[0].current_period_start>=removalAt){
+   const ids=JSON.parse(sub.metadata.reviews_remove_ids||'[]');
+   if(!Array.isArray(ids)||ids.length>10||ids.some((value:unknown)=>typeof value!=='string'||!/^[-a-f0-9]{36}$/.test(value)))throw Error('Invalid scheduled removal metadata.');
+   await sql`SELECT apply_reviews_plan_removals(${account}::uuid,${id},${removalAt},${JSON.stringify(ids)}::jsonb)`;
+  }
+
   await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${state.renewalCanceled},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), policy AS (INSERT INTO reviews_draft_only_customers(customer_id) SELECT customer_id FROM saved WHERE ${sub.metadata.reviews_mode==='draft_only'} ON CONFLICT(customer_id) DO NOTHING), access AS (
    INSERT INTO customer_marketing_access(customer_id,status,source,expires_at,location_limit,ai_monthly_limit,heatmap_monthly_points)
    SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},${marketingPlan.replies},588 FROM saved

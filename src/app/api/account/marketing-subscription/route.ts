@@ -10,7 +10,7 @@ import {liveDb} from '@/lib/google-business/live-reviews';
 import {getCustomerReviewSubscription} from '@/lib/customer-review-subscription';
 import {currentReviewPreview,reserveReviewPreview} from '@/lib/reviews-purchase-preview';
 import {hasCustomerMarketingAccess} from '@/lib/customer-marketing-access';
-import {reviewsPeriodPortalConfiguration} from '@/lib/reviews-period-portal';
+import {reviewsManagementPortalConfiguration} from '@/lib/reviews-period-portal';
 const headers={'Cache-Control':'private, no-store'};
 export async function GET(){
  const auth=await requireCustomerApi();if(auth.response)return auth.response;
@@ -28,7 +28,7 @@ export async function POST(request:Request){
    const [s]=await liveDb()`SELECT m.stripe_customer_id,EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=c.id) AS period_locked FROM marketing_subscriptions m JOIN customers c ON c.id=m.customer_id WHERE lower(c.email)=${auth.session.email.toLowerCase()} AND c.account_status='active' AND m.stripe_mode=${getStripeMode()}`;
    if(!s?.stripe_customer_id)throw Error('No subscription is available to manage.');
    if(!process.env.MARKETING_PORTAL_CONFIGURATION_ID)throw Error('Billing management is temporarily unavailable. Contact support.');
-   const configuration=s.period_locked?await reviewsPeriodPortalConfiguration():process.env.MARKETING_PORTAL_CONFIGURATION_ID;
+   const configuration=s.period_locked?await reviewsManagementPortalConfiguration():process.env.MARKETING_PORTAL_CONFIGURATION_ID;
    const portal=await getStripeClient().billingPortal.sessions.create({...(configuration==='default'?{}:{configuration}),customer:s.stripe_customer_id,return_url:`${site}/account/packages`});
    return NextResponse.json({url:portal.url},{headers});
   }

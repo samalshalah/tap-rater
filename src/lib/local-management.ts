@@ -21,7 +21,7 @@ const email = (actor:ReviewActor) => actor.kind==='customer' ? actor.email.trim(
 
 export async function localSnapshot(actor:ReviewActor, sql=liveDb()) {
   const locationsQuery = sql`SELECT b.id,b.customer_id,b.business_name,b.address,b.phone,b.website_url,b.local_profile_version,b.local_category,b.local_description,b.local_hours,c.email,
-   l.title AS google_title,l.enabled,l.service_paused,review_service_pause_allowed(b.customer_id) AS service_pause_available,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
+   EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) AS plan_managed,marketing_location_allowed(b.id) AS plan_active,l.title AS google_title,l.enabled,l.service_paused,review_service_pause_allowed(b.customer_id) AS service_pause_available,l.synced_at,l.next_page,l.last_error,l.draft_error,l.draft_due_at,l.ai_consent,l.auto_style,l.auto_enabled,l.auto_four,l.auto_five,l.draft_low_stars,l.reply_delay_minutes,l.settings_version,l.profile_ai_enabled,
    (g.owner IS NOT NULL AND (l.enabled OR l.service_paused)) AS connected, (l.business_id IS NOT NULL) AS google_assignment_exists,coalesce(l.enabled,false) AS google_enabled,(g.owner IS NOT NULL) AS google_connection_available,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days') AS review_count,
    (SELECT count(*)::int FROM google_live_reviews r WHERE r.business_id=l.business_id AND r.fetched_at>now()-interval '30 days' AND NOT r.suspected_spam AND coalesce(r.data->'reviewReply'->>'comment','')='') AS unanswered_count,
@@ -69,7 +69,7 @@ export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()
       UPDATE businesses b SET status='marketing_removed',local_profile_version=local_profile_version+1
       FROM customers c WHERE b.id=${v.businessId} AND c.id=b.customer_id AND c.account_status='active'
       AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND b.local_profile_version=${v.version}
-      AND b.status IS DISTINCT FROM 'marketing_removed' RETURNING b.id,b.customer_id
+      AND b.status IS DISTINCT FROM 'marketing_removed' AND (${actor.kind==='admin'} OR NOT EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) OR NOT marketing_location_allowed(b.id)) RETURNING b.id,b.customer_id
     ), links AS (
       UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,profile_ai_enabled=false,settings_version=settings_version+1
       FROM removed r WHERE l.business_id=r.id AND l.customer_id=r.customer_id RETURNING l.business_id

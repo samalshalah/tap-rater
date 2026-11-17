@@ -15,3 +15,17 @@ export async function reviewsPeriodPortalConfiguration(){
   ON CONFLICT(stripe_mode) DO UPDATE SET stripe_mode=EXCLUDED.stripe_mode RETURNING configuration_id`;
  return String(row.configuration_id);
 }
+
+/** Plan changes happen in Tap Rater; this portal only manages invoices and payment details. */
+export async function reviewsManagementPortalConfiguration(){
+ const sql=liveDb(),mode=getStripeMode();
+ const [saved]=await sql`SELECT configuration_id FROM reviews_management_portal_configs WHERE stripe_mode=${mode}`;
+ if(saved?.configuration_id)return String(saved.configuration_id);
+ const configuration=await getStripeClient().billingPortal.configurations.create({
+  business_profile:{headline:'Google Reviews payment details and invoices'},
+  features:{invoice_history:{enabled:true},payment_method_update:{enabled:true},subscription_cancel:{enabled:false},subscription_update:{enabled:false}}
+ },{idempotencyKey:`reviews-management-portal-v1:${mode}`});
+ const [row]=await sql`INSERT INTO reviews_management_portal_configs(stripe_mode,configuration_id) VALUES(${mode},${configuration.id})
+  ON CONFLICT(stripe_mode) DO UPDATE SET stripe_mode=EXCLUDED.stripe_mode RETURNING configuration_id`;
+ return String(row.configuration_id);
+}
