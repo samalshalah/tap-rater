@@ -71,7 +71,7 @@ export async function reserveReviewPreview(email:string,attempt:string,mode:stri
  const sql=liveDb();
  const [assigned]=await sql`SELECT business_id FROM google_review_links WHERE split_part(parent,'/',4)=split_part(${row.google_location},'/',2) LIMIT 1`;
  if(assigned)throw Error('This location already has a Tap Rater connection. Sign in to its existing account or contact support. No new subscription is needed.');
- const [reserved]=await sql`UPDATE reviews_purchase_previews p SET customer_id=c.id,purchase_attempt=${attempt}::uuid,stripe_mode=${mode},expires_at=now()+interval '8 days' FROM customers c WHERE p.id=${row.id} AND p.complete AND lower(c.email)=${email.toLowerCase()} AND (p.purchase_attempt IS NULL OR (p.purchase_attempt=${attempt}::uuid AND p.customer_id=c.id AND p.stripe_mode=${mode})) RETURNING p.id,p.verified_name`;
+ const [reserved]=await sql`UPDATE reviews_purchase_previews p SET customer_id=c.id,purchase_attempt=${attempt}::uuid,stripe_mode=${mode},expires_at=now()+interval '8 days' FROM customers c WHERE p.id=${row.id} AND p.complete AND lower(c.email)=${email.toLowerCase()} AND (p.purchase_attempt IS NULL OR (p.customer_id=c.id AND p.stripe_mode=${mode} AND (p.purchase_attempt=${attempt}::uuid OR (p.paid_at IS NULL AND EXISTS(SELECT 1 FROM marketing_subscriptions m WHERE m.customer_id=c.id AND m.stripe_mode=p.stripe_mode AND m.attempt=p.purchase_attempt::text AND m.status='incomplete_expired'))))) RETURNING p.id,p.verified_name`;
  if(!reserved)throw Error('This preview belongs to another checkout. Start a new business preview.');
  return reserved;
 }

@@ -26,7 +26,7 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
     }catch{/* Checkout remains usable when browser storage is unavailable. */}
     attempt.current={selection,id,key};
    }
-   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,cadence:'month',locations,acceptedTerms:true,...(guest?{email:email.trim()}: {})})});
+   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,previewId:preview.id,cadence:'month',locations,acceptedTerms:true,...(guest?{email:email.trim()}: {})})});
    const result=await response.json();
    if(!response.ok){
     // The server has confirmed this attempt is terminal; never reset on ambiguous network failures.
@@ -56,6 +56,7 @@ export function ReviewsPurchaseForm({guest=false}:{guest?:boolean}){
    <div className={styles.selectedBusiness}><strong>{preview.name}</strong><span>{preview.address}</span></div>
    {guest&&<div className={styles.fields}><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link here. Your selected business will be saved for setup.</p></div>}
    <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
+   {locations>1&&<p className={styles.smallPrint}>Your previewed business is your first location. Add the remaining locations after setup.</p>}
    <div className={styles.total}><span>Monthly total<small>Renews monthly until canceled</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
    <label className={styles.consent}><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/><span>I agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy-policy">Privacy Policy</Link>. Renews monthly until canceled.</span></label>
    <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to checkout'}<span aria-hidden="true">→</span></button>

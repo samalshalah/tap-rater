@@ -6,7 +6,7 @@ export function addReviewPreviewPage(previous:ReviewPreviewAnalysis,page:{review
  for(const review of page.reviews){
   if(!/^[A-Za-z0-9_-]+$/.test(review.reviewId)||review.name&&review.name!==`${parent}/reviews/${review.reviewId}`)throw Error('Google returned a review from a different location.');
   // Store counts and identifiers only, never reviewer names or review text in a preview.
-  result.reviews[review.reviewId]={stars:stars[review.starRating]||0,unanswered:!review.reviewReply?.comment?.trim()};
+  Object.defineProperty(result.reviews,review.reviewId,{value:{stars:stars[review.starRating]||0,unanswered:!review.reviewReply?.comment?.trim()},enumerable:true,writable:true,configurable:true});
  }
  if(page.nextPageToken){if(result.pages.includes(page.nextPageToken)||result.pages.length>=1000)throw Error('Google could not finish the review analysis. Please restart the preview.');result.pages.push(page.nextPageToken);}
  result.total=page.totalReviewCount??result.total;result.average=page.averageRating??result.average;return result;

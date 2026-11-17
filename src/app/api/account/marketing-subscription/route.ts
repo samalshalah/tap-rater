@@ -31,10 +31,11 @@ export async function POST(request:Request){
    return NextResponse.json({url:portal.url},{headers});
   }
   if(!marketingCheckoutEnabled())return NextResponse.json({error:'New package subscriptions are currently unavailable.'},{status:503,headers});
-  const {attempt,email,name,...p}=z.object({attempt:z.string().uuid(),email:z.string().email().max(254).optional(),name:z.string().trim().min(1).max(150).optional(),...marketingPurchaseSchema.shape}).strict().parse(data);
+  const {attempt,email,previewId,...p}=z.object({attempt:z.string().uuid(),previewId:z.string().uuid(),email:z.string().email().max(254).optional(),...marketingPurchaseSchema.shape}).strict().parse(data);
   const buyerEmail=auth.session?.email||email;if(!buyerEmail)throw Error('Enter your email.');
   if(auth.session&&await hasCustomerMarketingAccess(auth.session.email))throw Error('Your account already has Reviews access. Open Reviews in your account.');
   const preview=await currentReviewPreview();if(!preview?.complete||!preview.verified_name)throw Error('Connect Google and finish your review analysis before checkout.');
+  if(preview.id!==previewId)throw Error('Your business preview changed in another tab. Return to review analysis before continuing.');
   const limit=await checkLoginRateLimit({headers:request.headers,identifier:buyerEmail,scope:'customer_recovery'});
   if(!limit.context.configured||limit.limited)return NextResponse.json({error:'Please wait before trying checkout again.'},{status:429,headers});
   await recordLoginAttempt(limit.context,false);
