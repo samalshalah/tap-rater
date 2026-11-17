@@ -22,6 +22,7 @@ export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onR
  },[preview,busy,error]);
  useEffect(()=>{onStage?.(!preview?0:!preview.connected?1:2);},[preview?.id,preview?.connected,onStage]);
  const analysis=preview?.analysis;
+ const percent=preview?.complete?100:analysis?.total&&analysis.total>0?Math.min(99,Math.floor(analysis.reviewCount/analysis.total*100)):undefined;
  if(!loaded)return <p role="status">Loading your business preview…</p>;
  if(setupHref&&preview)return <div className={styles.preview}><h2>Continue with your business</h2><div className={styles.selectedBusiness}><strong>{preview.name||preview.selection.name}</strong><span>{preview.address||preview.selection.formattedAddress}</span></div><p className={styles.intro}>Your progress is saved. Continue to your review preview.</p><a className={`tr-button-primary ${styles.submit}`} href={setupHref}>Continue <span aria-hidden="true">&rarr;</span></a><button type="button" className={styles.textButton} onClick={()=>{setPreview(null);setSelection(null);onChange();}}>Find a different business</button></div>;
  return <div className={styles.preview}>
@@ -37,7 +38,8 @@ export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onR
    {error&&<button type="button" className="tr-button-ghost" disabled={busy} onClick={()=>void matchBusiness()}>Try finding my business again</button>}
   </div>}
   {preview?.selected&&analysis&&<>
-   {!preview.complete?<p role="status" className={styles.intro}>Analysing reviews… {analysis.reviewCount}{analysis.total!==null?` of ${analysis.total}`:''} checked. Your results will appear when all pages finish.</p>:<>
+   <div className={styles.analysisProgress}><progress aria-label="Review analysis progress" max={100} value={percent}/><span aria-live="polite">{percent===undefined?'':`${percent}%`}</span></div>
+   {preview.complete&&<>
     <div className={styles.metrics}><div><strong>{analysis.reviewCount.toLocaleString()}</strong><span>Reviews analysed</span></div><div><strong>{analysis.unanswered.toLocaleString()}</strong><span>Without a reply</span></div></div>
     <table className={styles.analysisTable}><caption>Reviews without a reply, by star rating</caption><thead><tr><th scope="col">Rating</th><th scope="col">No reply</th><th scope="col">Total</th></tr></thead><tbody>{analysis.byStars.map(r=><tr key={r.stars}><th scope="row">{r.stars} {r.stars===1?'star':'stars'}</th><td>{r.unanswered}</td><td>{r.total}</td></tr>)}</tbody></table>
     {analysis.unknownStars>0&&<p className={styles.smallPrint}>{analysis.unknownStars} unanswered reviews have no star rating supplied by Google.</p>}
@@ -46,7 +48,7 @@ export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onR
    </>}
   </>}
   {error&&<div role="alert" className={styles.error}><p>{error}</p>{preview?.selected&&!preview.complete&&<button type="button" className="tr-button-ghost" disabled={busy} onClick={()=>setError('')}>Resume analysis</button>}</div>}
-  {busy&&<p role="status" className={styles.smallPrint}>Please wait…</p>}
+  {busy&&!preview?.selected&&<p role="status" className={styles.smallPrint}>Please wait…</p>}
   {preview&&<button type="button" className={styles.textButton} disabled={busy} onClick={()=>{setPreview(null);setSelection(null);setMatches(null);matching.current=false;setError('');onChange();}}>Start with another business</button>}
  </div>;
 }
