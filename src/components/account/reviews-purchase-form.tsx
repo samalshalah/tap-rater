@@ -46,10 +46,11 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
  return <><ol className={focused?styles.flowSteps:styles.hiddenSteps} aria-label="Setup progress">{['Business','Connect','Analysis','Plan'].map((label,i)=><li key={label} aria-current={(preview?3:stage)===i?'step':undefined} data-complete={i<(preview?3:stage)}><span>{i<(preview?3:stage)?'\u2713':i+1}</span>{label}</li>)}</ol><form onSubmit={purchase} className={`${styles.form} ${focused&&!preview?styles.focusedForm:''}`} aria-label="Google Reviews package">
   {(!focused||preview)&&<aside className={styles.plan}>
    <span className={styles.eyebrow}>GOOGLE REVIEWS</span>
-   <h2>Imports &amp; drafts</h2>
+   <h2>Spend less time writing review replies</h2>
    <p className={styles.price}><strong>$29</strong><span>per location<br/>per month</span></p>
-   <ul className={styles.features}><li>Google review imports</li><li>{marketingPlan.replies.toLocaleString('en-US')} AI reply drafts / month</li><li>Edit, save, and copy your drafts</li></ul>
-   <p className={styles.limit}>You choose what to publish.<br/>Posting and autopilot aren’t included.</p>
+   <ul className={styles.features}><li>Your Google reviews, organised in one place</li><li>Reply drafts you can personalise</li><li>Edit, copy, and publish on Google when ready</li></ul>
+   <p className={styles.limit}>{marketingPlan.replies.toLocaleString('en-US')} reply drafts per location each month</p>
+   <p className={styles.limit}>You publish on Google yourself.<br/>Automatic posting isn’t included.</p>
   </aside>}
   <fieldset disabled={busy} className={styles.details}>
    {!preview?<ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>:<>
