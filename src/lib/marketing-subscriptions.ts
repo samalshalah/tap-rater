@@ -51,6 +51,12 @@ export async function createMarketingCheckout(email:string,purchase:MarketingPur
   await sql`INSERT INTO marketing_subscriptions(customer_id,stripe_mode,attempt,request_fingerprint,cadence,locations,checkout_expires_at)
    VALUES(${customer.id},${mode},${attempt},${fingerprint},${p.cadence},${p.locations},${expires.toISOString()}::timestamptz)
    ON CONFLICT(customer_id,stripe_mode) DO UPDATE SET attempt=EXCLUDED.attempt,request_fingerprint=EXCLUDED.request_fingerprint,cadence=EXCLUDED.cadence,locations=EXCLUDED.locations,status='checkout',checkout_expires_at=EXCLUDED.checkout_expires_at,stripe_subscription_id=NULL,checkout_session_id=NULL,updated_at=now()`;
+  // Enrol only a new subscriber with no prior Reviews entitlement or locations.
+  // Existing accounts, including previously paid or manually granted accounts, remain untouched.
+  await sql`INSERT INTO reviews_period_licences(customer_id) SELECT c.id FROM customers c
+   WHERE c.id=${customer.id} AND NOT EXISTS(SELECT 1 FROM customer_marketing_access a WHERE a.customer_id=c.id)
+   AND NOT EXISTS(SELECT 1 FROM marketing_location_access m WHERE m.customer_id=c.id)
+   ON CONFLICT(customer_id) DO NOTHING`;
   const stripe=getStripeClient();
   const session=await stripe.checkout.sessions.create(addMarketingToCheckout({...params,integration_identifier:'taprater_growth_hjksapqw',expires_at:Math.floor(expires.getTime()/1000),customer:undefined,customer_email:customer.email},p,String(customer.id),attempt),{idempotencyKey:`marketing:${mode}:${customer.id}:${attempt}`});
   await assertActive();
@@ -110,6 +116,15 @@ export async function syncMarketingSubscription(event:Stripe.Event){
    SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},${marketingPlan.replies},588 FROM saved
    ON CONFLICT(customer_id) DO UPDATE SET status=EXCLUDED.status,source='paid',expires_at=EXCLUDED.expires_at,location_limit=EXCLUDED.location_limit,ai_monthly_limit=EXCLUDED.ai_monthly_limit,heatmap_monthly_points=588,version=customer_marketing_access.version+1,updated_at=now()
   ) SELECT customer_id FROM saved`;
+  if(state.paid){
+   // Use the actual Stripe billing window, never the calendar month or webhook arrival time.
+   const item=sub.items.data[0];
+   const [locked]=await sql`SELECT customer_id FROM reviews_period_licences WHERE customer_id=${account}::uuid`;
+   if(locked?.customer_id){
+    if(!Number.isFinite(item.current_period_start))throw Error('Paid subscription period is unavailable.');
+    await sql`SELECT sync_review_licence_period(${account}::uuid,${id},${new Date(item.current_period_start*1000).toISOString()}::timestamptz,${new Date(item.current_period_end*1000).toISOString()}::timestamptz,${state.locations})`;
+   }
+  }
   // A downgrade never exposes more locations than were paid for. Existing content is preserved.
   await sql`UPDATE marketing_location_access SET enabled=false WHERE business_id IN (SELECT business_id FROM marketing_location_access WHERE customer_id=${account}::uuid AND enabled ORDER BY created_at,business_id OFFSET ${state.locations})`;
   await sql`UPDATE local_heatmap_tracks SET active=false,version=version+1 WHERE customer_id=${account}::uuid AND slot>3 AND active`;

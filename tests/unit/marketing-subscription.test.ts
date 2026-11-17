@@ -68,3 +68,19 @@ it.each([true,false])('persists the new draft-only entitlement without rewriting
  expect(write[policyParameter]).toBe(draftOnly);
  expect(write[0].join('')).toContain('ON CONFLICT(customer_id) DO NOTHING');
 });
+
+it('advances the licence window only from a verified paid subscription using Stripe dates',async()=>{
+ const subscription=sub();subscription.items.data[0].current_period_start=1897408000;
+ mocks.retrieve.mockResolvedValue(subscription);
+ mocks.sql.mockImplementation(async(strings:TemplateStringsArray)=>strings.join('').includes('SELECT customer_id FROM reviews_period_licences')?[{customer_id:subscription.metadata.account_id}]:[{stripe_subscription_id:'sub_growth',activation_email_sent_at:'2026-11-14'}]);
+ await syncMarketingSubscription({type:'customer.subscription.updated',data:{object:subscription}} as unknown as Stripe.Event);
+ const call=mocks.sql.mock.calls.find(c=>c[0].join('').includes('sync_review_licence_period'))!;
+ expect(call.slice(1)).toEqual([subscription.metadata.account_id,'sub_growth',new Date(1897408000*1000).toISOString(),new Date(1900000000*1000).toISOString(),2]);
+});
+
+it.each(['past_due','canceled'])('does not renew location reservations for %s subscriptions',async status=>{
+ mocks.retrieve.mockResolvedValue(sub({status}));
+ mocks.sql.mockResolvedValue([{customer_id:'account',stripe_subscription_id:'sub_growth',activation_email_sent_at:'2026-11-14'}]);
+ await syncMarketingSubscription({type:'customer.subscription.updated',data:{object:sub({status})}} as unknown as Stripe.Event);
+ expect(mocks.sql.mock.calls.some(c=>c[0].join('').includes('sync_review_licence_period'))).toBe(false);
+});
