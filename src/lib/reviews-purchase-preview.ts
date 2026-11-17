@@ -1,3 +1,4 @@
+import {findPreviewMatches} from './reviews-preview-match';
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {cookies} from 'next/headers';
 import {z} from 'zod';
@@ -74,4 +75,12 @@ export async function reserveReviewPreview(email:string,attempt:string,mode:stri
  const [reserved]=await sql`UPDATE reviews_purchase_previews p SET customer_id=c.id,purchase_attempt=${attempt}::uuid,stripe_mode=${mode},expires_at=now()+interval '8 days' FROM customers c WHERE p.id=${row.id} AND p.complete AND lower(c.email)=${email.toLowerCase()} AND (p.purchase_attempt IS NULL OR (p.customer_id=c.id AND p.stripe_mode=${mode} AND (p.purchase_attempt=${attempt}::uuid OR (p.paid_at IS NULL AND EXISTS(SELECT 1 FROM marketing_subscriptions m WHERE m.customer_id=c.id AND m.stripe_mode=p.stripe_mode AND m.attempt=p.purchase_attempt::text AND m.status='incomplete_expired'))))) RETURNING p.id,p.verified_name`;
  if(!reserved)throw Error('This preview belongs to another checkout. Start a new business preview.');
  return reserved;
+}
+
+export async function matchReviewPreview(){
+ const row=await currentReviewPreview();if(!row||row.purchase_attempt)throw Error('Start a new preview to choose a business.');
+ if(row.google_location)return reviewPreviewSnapshot();
+ const matches=await findPreviewMatches(await clientFor(previewOwner(row.id)),row.selection.placeId);
+ if(matches.length===1)return selectReviewPreview(matches[0].account,matches[0].location);
+ return {matches};
 }

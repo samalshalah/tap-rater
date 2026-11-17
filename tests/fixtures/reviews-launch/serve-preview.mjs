@@ -18,6 +18,7 @@ const server=await createServer({root,publicDir:path.join(repo,'public'),resolve
  case 'connect':result={url:'http://127.0.0.1:4186/qa-connect'};break;
  case 'accounts':result={accounts:[{name:'accounts/fixture',accountName:'Cedar Studio account'}]};break;
  case 'locations':result={locations:[{name:'locations/fixture',title:selection.name,storefrontAddress:{addressLines:['12 Market Street'],locality:'New York'}}]};break;
+ case 'match':
  case 'select':preview={...preview,name:selection.name,address:selection.formattedAddress,selected:true,analysis:{reviewCount:50,total:126,unanswered:0,byStars:[],unknownStars:0}};break;
  case 'analyse':preview={...preview,complete:true,analysis:{reviewCount:126,total:126,average:4.5,unanswered:43,unknownStars:0,byStars:[{stars:1,total:6,unanswered:4},{stars:2,total:4,unanswered:3},{stars:3,total:8,unanswered:5},{stars:4,total:24,unanswered:9},{stars:5,total:84,unanswered:22}]}};break;
  }

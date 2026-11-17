@@ -4,7 +4,7 @@ import {marketingCheckoutEnabled} from '@/lib/marketing-subscriptions';
 import {checkLoginRateLimit,recordLoginAttempt} from '@/lib/auth-rate-limit';
 import {clientFor,liveDb} from '@/lib/google-business/live-reviews';
 import {GoogleBusinessError} from '@/lib/google-business/client';
-import {currentReviewPreview,previewOwner,previewSelectionSchema,reviewPreviewSnapshot,startReviewPreview,connectReviewPreview,selectReviewPreview,continueReviewPreview} from '@/lib/reviews-purchase-preview';
+import {matchReviewPreview,currentReviewPreview,previewOwner,previewSelectionSchema,reviewPreviewSnapshot,startReviewPreview,connectReviewPreview,selectReviewPreview,continueReviewPreview} from '@/lib/reviews-purchase-preview';
 const headers={'Cache-Control':'private, no-store','Referrer-Policy':'no-referrer'};
 const account=z.string().regex(/^accounts\/[A-Za-z0-9_-]+$/),pageToken=z.string().max(2048).optional();
 const input=z.discriminatedUnion('action',[
@@ -13,6 +13,7 @@ const input=z.discriminatedUnion('action',[
  z.object({action:z.literal('accounts'),pageToken,parentAccount:account.optional()}).strict(),
  z.object({action:z.literal('locations'),account,pageToken}).strict(),
  z.object({action:z.literal('select'),account,location:z.string().regex(/^locations\/[A-Za-z0-9_-]+$/)}).strict(),
+ z.object({action:z.literal('match')}).strict(),
  z.object({action:z.literal('analyse')}).strict()
 ]);
 export async function GET(){
@@ -37,6 +38,7 @@ export async function POST(request:Request){
   }
   if(v.action==='start')result=await startReviewPreview(v.selection);
   else if(v.action==='connect')result=await connectReviewPreview();
+  else if(v.action==='match')result=await matchReviewPreview();
   else if(v.action==='select')result=await selectReviewPreview(v.account,v.location);
   else if(v.action==='analyse')result=await continueReviewPreview();
   else{

@@ -126,12 +126,12 @@ export function createGoogleBusinessClient(accessToken: string, fetcher: typeof 
       if (pageToken) url.searchParams.set("pageToken", pageToken);
       return request(url, z.object({ accounts: z.array(accountSchema).default([]), nextPageToken: z.string().optional() }));
     },
-    listLocations(account: string, pageToken?: string) {
+    listLocations(account: string, pageToken?: string, includePlaceId = false) {
       const url = new URL(`https://mybusinessbusinessinformation.googleapis.com/v1/${resource(account, /^accounts\/[A-Za-z0-9_-]+$/)}/locations`);
-      url.searchParams.set("readMask", "name,title,storefrontAddress");
+      url.searchParams.set("readMask", includePlaceId ? "name,title,storefrontAddress,metadata" : "name,title,storefrontAddress");
       url.searchParams.set("pageSize", "100");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
-      return request(url, z.object({ locations: z.array(locationSchema).default([]), nextPageToken: z.string().optional() }));
+      return request(url, z.object({ locations: z.array(locationSchema.extend({metadata:z.object({placeId:z.string().optional()}).optional()})).default([]), nextPageToken: z.string().optional() }));
     },
     listReviews(parent: string, pageToken?: string) {
       const url = new URL(`https://mybusiness.googleapis.com/v4/${resource(parent, /^accounts\/[A-Za-z0-9_-]+\/locations\/[A-Za-z0-9_-]+$/)}/reviews`);
