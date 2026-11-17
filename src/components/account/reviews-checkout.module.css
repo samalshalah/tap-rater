@@ -93,3 +93,31 @@
 .analysisProgress progress::-moz-progress-bar { background:#6035ff; border-radius:999px; }
 .analysisProgress span { min-width:42px; text-align:right; font-size:14px; font-weight:600; color:#6035ff; font-variant-numeric:tabular-nums; }
 @media(prefers-reduced-motion:reduce){.analysisProgress progress::-webkit-progress-value{transition:none}}
+
+/* Keep the completed snapshot within the same focused setup card. */
+.compactReport .selectedBusiness { margin:10px 0; padding:10px 12px; gap:3px; }
+.compactReport .analysisProgress { margin:12px 0 16px; }
+.reportGrid { display:grid; grid-template-columns:160px minmax(0,1fr); align-items:start; gap:24px; }
+.reportGrid .metrics { grid-template-columns:1fr; gap:8px; margin:0; }
+.reportGrid .metrics>div { padding:12px; gap:3px; }
+.reportGrid .metrics strong { font-size:26px; line-height:1.1; }
+.reportGrid .analysisTable caption { padding-bottom:6px; font-size:11px; }
+.reportGrid .analysisTable th,.reportGrid .analysisTable td { padding:5px 0; }
+.reportNotes { margin-top:10px; color:#4b536f; font-size:10px; line-height:1.6; }
+.reportNotes summary { cursor:pointer; }
+.reportNotes p { margin-top:6px; }
+.compactReport .submit { margin-top:14px; }
+.compactReport>.textButton { margin-top:12px; }
+@media(max-width:600px){.reportGrid{grid-template-columns:1fr;gap:14px}.reportGrid .metrics{grid-template-columns:1fr 1fr}.reportGrid .metrics>div{padding:10px 12px}.reportGrid .metrics strong{font-size:24px}.compactReport .analysisProgress{margin:10px 0 12px}.reportGrid .analysisTable th,.reportGrid .analysisTable td{padding:4px 0}}
+
+.focusedForm:has(.compactReport) .details { padding:20px 32px 24px; }
+.focusedForm .compactReport h2 { font-size:24px; margin-bottom:8px; }
+.compactReport .selectedBusiness { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; padding:8px 12px; gap:4px 12px; }
+.compactReport .analysisProgress { margin:10px 0 12px; }
+.reportGrid .analysisTable { line-height:1.3; }
+.reportGrid .analysisTable th,.reportGrid .analysisTable td { padding:3px 0; }
+.reportGrid .metrics>div { padding:10px 12px; }
+.reportGrid .metrics strong { font-size:24px; }
+.compactReport .submit { min-height:44px; margin-top:12px; }
+.compactReport>.textButton { margin-top:8px; }
+@media(max-width:600px){.focusedForm:has(.compactReport) .details{padding:20px}.focusedForm .compactReport h2{font-size:22px}.reportGrid{gap:10px}}
