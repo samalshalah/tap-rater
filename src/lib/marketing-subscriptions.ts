@@ -1,3 +1,4 @@
+import {reviewsBuyerProfileSchema,type ReviewsBuyerProfile} from './reviews-buyer-profile';
 import {marketingSalesEnabled} from './marketing-sales';
 import type Stripe from 'stripe';
 import {createHash} from 'node:crypto';
@@ -10,12 +11,17 @@ import {createCustomerActivationToken} from './customer-account';
 import {sendCustomerActivationEmail} from './hosted-setup-email';
 
 /** A guest reservation never grants access or sends an activation email. */
-export async function prepareMarketingBuyer(email:string,name:string,authenticatedEmail?:string){
+export async function prepareMarketingBuyer(email:string,name:string,authenticatedEmail?:string,profile?:ReviewsBuyerProfile){
+ const details=profile?reviewsBuyerProfileSchema.parse(profile):undefined;
  const normalized=email.trim().toLowerCase(),sql=liveDb();
  const [existing]=await sql`SELECT id,account_status FROM customers WHERE lower(email)=${normalized}`;
  if(existing?.account_status==='disabled')throw Error('Contact support about this account.');
  if(existing?.account_status==='active'&&authenticatedEmail?.toLowerCase()!==normalized)throw Error('This email already has an account. Sign in to continue.');
- if(!existing)await sql`INSERT INTO customers(email,name,account_status,sessions_invalid_before) VALUES(${normalized},${name},'pending_activation',now()) ON CONFLICT(email) DO NOTHING`;
+ // Only new customers receive submitted profile details. Never overwrite an existing account.
+ if(!existing){
+  if(details)await sql`INSERT INTO customers(email,name,first_name,last_name,phone,account_status,sessions_invalid_before) VALUES(${normalized},${details.firstName+' '+details.lastName},${details.firstName},${details.lastName},${details.phone||null},'pending_activation',now()) ON CONFLICT(email) DO NOTHING`;
+  else await sql`INSERT INTO customers(email,name,account_status,sessions_invalid_before) VALUES(${normalized},${name},'pending_activation',now()) ON CONFLICT(email) DO NOTHING`;
+ }
  // Recheck races with signup/activation; never treat an active account as a guest.
  const [buyer]=await sql`SELECT account_status FROM customers WHERE lower(email)=${normalized}`;
  if(buyer?.account_status!=='pending_activation'&&!(buyer?.account_status==='active'&&authenticatedEmail?.toLowerCase()===normalized))throw Error('Sign in to continue.');

@@ -1,3 +1,4 @@
+import {reviewsBuyerProfileSchema} from '@/lib/reviews-buyer-profile';
 import {NextResponse} from 'next/server';
 import {z} from 'zod';
 import {requireCustomerApi} from '@/lib/customer-auth';
@@ -31,7 +32,8 @@ export async function POST(request:Request){
    return NextResponse.json({url:portal.url},{headers});
   }
   if(!marketingCheckoutEnabled())return NextResponse.json({error:'New package subscriptions are currently unavailable.'},{status:503,headers});
-  const {attempt,email,previewId,...p}=z.object({attempt:z.string().uuid(),previewId:z.string().uuid(),email:z.string().email().max(254).optional(),...marketingPurchaseSchema.shape}).strict().parse(data);
+  const {attempt,email,previewId,firstName,lastName,phone,...p}=z.object({attempt:z.string().uuid(),previewId:z.string().uuid(),email:z.string().trim().email().max(254).optional(),firstName:z.string().optional(),lastName:z.string().optional(),phone:z.string().optional(),...marketingPurchaseSchema.shape}).strict().parse(data);
+  const profile=auth.session?undefined:reviewsBuyerProfileSchema.parse({firstName,lastName,phone});
   const buyerEmail=auth.session?.email||email;if(!buyerEmail)throw Error('Enter your email.');
   if(auth.session&&await hasCustomerMarketingAccess(auth.session.email))throw Error('Your account already has Reviews access. Open Reviews in your account.');
   const preview=await currentReviewPreview();if(!preview?.complete||!preview.verified_name)throw Error('Connect Google and finish your review analysis before checkout.');
@@ -39,9 +41,9 @@ export async function POST(request:Request){
   const limit=await checkLoginRateLimit({headers:request.headers,identifier:buyerEmail,scope:'customer_recovery'});
   if(!limit.context.configured||limit.limited)return NextResponse.json({error:'Please wait before trying checkout again.'},{status:429,headers});
   await recordLoginAttempt(limit.context,false);
-  await prepareMarketingBuyer(buyerEmail,String(preview.verified_name).slice(0,150),auth.session?.email);
+  await prepareMarketingBuyer(buyerEmail,profile?profile.firstName+' '+profile.lastName:String(preview.verified_name).slice(0,150),auth.session?.email,profile);
   const reserved=await reserveReviewPreview(buyerEmail,attempt,getStripeMode());
   const session=await createMarketingCheckout(buyerEmail,p,attempt,{mode:'payment',ui_mode:'hosted_page',integration_identifier:'taprater_growth_hjksapqw',success_url:`${site}/google-reviews/thank-you`,cancel_url:`${site}/google-reviews?checkout=cancelled#plan`,metadata:{marketing_only:'true',reviews_preview_id:String(reserved.id)},billing_address_collection:'required'});
   return NextResponse.json({url:session.url},{headers});
- }catch(e){return NextResponse.json({error:e instanceof z.ZodError?'Check your plan selection.':e instanceof Error?e.message:'Checkout is unavailable.'},{status:400,headers});}
+ }catch(e){return NextResponse.json({error:e instanceof z.ZodError?'Enter your first name, last name, a valid email, and a valid phone number if provided.':e instanceof Error?e.message:'Checkout is unavailable.'},{status:400,headers});}
 }

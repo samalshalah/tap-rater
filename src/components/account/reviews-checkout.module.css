@@ -121,3 +121,8 @@
 .compactReport .submit { min-height:44px; margin-top:12px; }
 .compactReport>.textButton { margin-top:8px; }
 @media(max-width:600px){.focusedForm:has(.compactReport) .details{padding:20px}.focusedForm .compactReport h2{font-size:22px}.reportGrid{gap:10px}}
+
+.profileNames { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.profileNames label { min-width:0; }
+.optional { color:#4b536f; font-weight:400; }
+@media(max-width:380px){.profileNames{grid-template-columns:1fr}}

@@ -10,6 +10,7 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
  const [locations,setLocations]=useState(1),[email,setEmail]=useState(''),[preview,setPreview]=useState<PurchasePreview|null>(null);
  const [accepted,setAccepted]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [stage,setStage]=useState(0);
+ const [firstName,setFirstName]=useState(''),[lastName,setLastName]=useState(''),[phone,setPhone]=useState('');
  const attempt=useRef<{selection:string;id:string;key:string}|null>(null);
  async function purchase(event:FormEvent){
   event.preventDefault();if(busy||!accepted||!preview)return;setBusy(true);setError('');
@@ -27,7 +28,7 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
     }catch{/* Checkout remains usable when browser storage is unavailable. */}
     attempt.current={selection,id,key};
    }
-   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,previewId:preview.id,cadence:'month',locations,acceptedTerms:true,...(guest?{email:email.trim()}: {})})});
+   const response=await fetch('/api/account/marketing-subscription',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({attempt:attempt.current.id,previewId:preview.id,cadence:'month',locations,acceptedTerms:true,...(guest?{email:email.trim(),firstName:firstName.trim(),lastName:lastName.trim(),phone:phone.trim()}: {})})});
    const result=await response.json();
    if(!response.ok){
     // The server has confirmed this attempt is terminal; never reset on ambiguous network failures.
@@ -55,7 +56,7 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    {!preview?<ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>:<>
    <div className={styles.detailsHeading}><h2>Your plan</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
    <div className={styles.selectedBusiness}><strong>{preview.name}</strong><span>{preview.address}</span></div>
-   {guest&&<div className={styles.fields}><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link here. Your selected business will be saved for setup.</p></div>}
+   {guest&&<div className={styles.fields}><div className={styles.profileNames}><label>First name<input required type="text" maxLength={50} autoComplete="given-name" value={firstName} onChange={e=>setFirstName(e.target.value)}/></label><label>Last name<input required type="text" maxLength={50} autoComplete="family-name" value={lastName} onChange={e=>setLastName(e.target.value)}/></label></div><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Phone <span className={styles.optional}>(optional)</span><input type="tel" maxLength={40} autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link to your email. Your selected business will be saved for setup.</p></div>}
    <div className={styles.locationRow}><label htmlFor="reviews-locations">Locations<span>$29 each / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
    {locations>1&&<p className={styles.smallPrint}>Your previewed business is your first location. Add the remaining locations after setup.</p>}
    <div className={styles.total}><span>Monthly total<small>Renews monthly until canceled</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>

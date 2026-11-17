@@ -1,7 +1,7 @@
 import React from 'react';
 import {afterEach,beforeEach,expect,it,vi} from 'vitest';
 const state=vi.hoisted(()=>({cursor:0,attempt:{current:null as any},error:vi.fn()}));
-vi.mock('react',async original=>({...await original<object>(),useRef:()=>state.attempt,useState:()=>{const values=[1,'buyer@example.test',{id:'preview-qa'},true,false,'',3];const index=state.cursor++;return [values[index],index===5?state.error:()=>{}];}}));
+vi.mock('react',async original=>({...await original<object>(),useRef:()=>state.attempt,useState:()=>{const values=[1,'buyer@example.test',{id:'preview-qa'},true,false,'',3,'Jane','Doe',''];const index=state.cursor++;return [values[index],index===5?state.error:()=>{}];}}));
 import {ReviewsPurchaseForm} from '@/components/account/reviews-purchase-form';
 beforeEach(()=>{state.cursor=0;state.attempt.current=null;state.error.mockClear();vi.stubGlobal('sessionStorage',{getItem:vi.fn(()=>null),setItem:vi.fn(),removeItem:vi.fn()});});
 afterEach(()=>vi.unstubAllGlobals());

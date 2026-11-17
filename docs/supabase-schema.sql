@@ -10,6 +10,8 @@ create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
   email text unique not null,
   name text,
+  first_name text,
+  last_name text,
   phone text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
