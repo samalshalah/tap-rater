@@ -142,7 +142,7 @@
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td):nth-child(2) { width:155px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td):nth-child(3) { width:110px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td):nth-child(4) { width:130px!important; min-width:130px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td):last-child { width:210px!important; min-width:210px!important; }
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td):last-child { width:110px!important; min-width:110px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table-wrap { overflow-x:auto!important; overflow-y:hidden!important; }
 
 /* Reviews billing: explicit renewal choices using the approved account theme. */
