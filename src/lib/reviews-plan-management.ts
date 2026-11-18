@@ -37,9 +37,10 @@ const priceAmount=(item:Stripe.SubscriptionItem)=>item.price.unit_amount!;
 
 async function context(email:string){
  const sql=liveDb(),mode=getStripeMode();
- const [row]=await sql`SELECT c.id,m.stripe_subscription_id,m.stripe_customer_id,p.customer_id AS period_policy FROM customers c
+ const [row]=await sql`SELECT c.id,m.stripe_subscription_id,m.stripe_customer_id,p.customer_id AS period_policy,a.source AS access_source,a.status AS access_status,a.expires_at AS access_expires_at,a.location_limit AS access_locations,a.unlimited_locations,a.ai_monthly_limit,EXISTS(SELECT 1 FROM marketing_subscriptions other WHERE other.customer_id=c.id AND other.stripe_subscription_id IS NOT NULL) AS has_subscription FROM customers c
  LEFT JOIN marketing_subscriptions m ON m.customer_id=c.id AND m.stripe_mode=${mode}
  LEFT JOIN reviews_period_licences p ON p.customer_id=c.id
+ LEFT JOIN customer_marketing_access a ON a.customer_id=c.id
  WHERE lower(c.email)=${email.toLowerCase()} AND c.account_status='active'`;
  if(!row?.stripe_subscription_id||!row.period_policy)return {sql,mode,row,supported:false as const};
  const stripe=getStripeClient(),sub=await stripe.subscriptions.retrieve(String(row.stripe_subscription_id));
@@ -58,7 +59,10 @@ async function context(email:string){
 
 export async function reviewsBillingSnapshot(email:string){
  const c=await context(email);
- if(!c.supported)return {selfServe:false,reason:'Your service is managed by Tap Rater. Contact support to change or cancel it.'};
+ if(!c.supported){
+  if(!c.row?.has_subscription&&['manual','test'].includes(String(c.row?.access_source)))return {selfServe:false,access:{kind:'complimentary' as const,status:c.row.access_status,expiresAt:c.row.access_expires_at,locations:c.row.unlimited_locations?null:Number(c.row.access_locations),drafts:Number(c.row.ai_monthly_limit)}};
+  return {selfServe:false,reason:'Your service has a managed plan. Contact support for billing changes.'};
+ }
  let reason='';try{supportedReviewPlan(c.sub,String(c.row.id));if(!c.owned)throw Error('A custom billing schedule is in place. Contact support to change it.');}catch(e){reason=(e as Error).message;}
  const item=c.sub.items.data[0];
  const cancelling=Boolean(c.sub.cancel_at_period_end||c.sub.cancel_at||(c.owned&&c.schedule?.end_behavior==='cancel'));

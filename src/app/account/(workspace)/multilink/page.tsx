@@ -1,3 +1,4 @@
+import {CustomerOrdersManager} from '@/components/account/customer-orders-manager';
 import {customerStandRegistry,attachStandRegistry} from '@/lib/customer-stand-registry';
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
@@ -7,7 +8,8 @@ import type {CustomerPortalStand} from "@/lib/customer-portal";
 import {redirect} from 'next/navigation';
 import { getHostedPageEditorContext } from "@/lib/hosted-page-editor";
 
-export default async function AccountMultiLinkPage() {
+export default async function AccountMultiLinkPage({searchParams}:{searchParams?:Promise<{billing_error?:string}>}) {
+  const params=await searchParams;
   const session = await requireCustomer();
   const {portal,multilink}=await getCustomerExperience(session.email);
   if(!multilink)redirect('/account');
@@ -45,6 +47,8 @@ export default async function AccountMultiLinkPage() {
         </section>
 
         <CustomerStandsManager stands={registeredStands} hostedPages={hostedPages} businesses={portal.businesses.map(b=>({id:b.id,name:b.businessName}))} />
+        {params?.billing_error&&<p role="alert" className="text-sm">{params.billing_error}</p>}
+        <CustomerOrdersManager orders={[]} invoices={[]} subscriptions={portal.subscriptions} licences={[]}/>
       </div>
     </AccountShell>
   );

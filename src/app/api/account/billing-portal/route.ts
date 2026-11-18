@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const siteUrl = getCheckoutSiteUrl(origin).replace(/\/+$/, "");
     const session = await getStripeClient().billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: `${siteUrl}/account/orders`
+      return_url: `${siteUrl}${billingReturnPath(request)}`
     });
 
     if (!session.url) {
@@ -73,7 +73,11 @@ async function readSubscriptionSelection(request: Request): Promise<
 }
 
 function redirectWithError(request: Request, message: string) {
-  const url = new URL("/account/orders", request.url);
+  const url = new URL(billingReturnPath(request), request.url);
   url.searchParams.set("billing_error", message);
   return NextResponse.redirect(url, { status: 303 });
+}
+
+function billingReturnPath(request: Request) {
+  return new URL(request.url).searchParams.get("return_to") === "multilink" ? "/account/multilink" : "/account/orders";
 }

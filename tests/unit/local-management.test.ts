@@ -19,7 +19,8 @@ it('removes only the owned location and stops its automation atomically',async()
  expect(query).toContain('lower(c.email)=');expect(values).toContain('owner@example.com');
  expect(query).toContain('b.local_profile_version=');expect(values).toContain(2);
  expect(query).toContain('UPDATE google_review_links');expect(query).toContain('UPDATE local_rank_schedules');expect(query).toContain('UPDATE marketing_location_access');
- expect(query).not.toMatch(/DELETE FROM|UPDATE orders|UPDATE devices/);
+ expect(query).not.toMatch(/DELETE FROM|UPDATE orders|UPDATE devices|UPDATE reviews_period_assignments|DELETE.*reviews_period_assignments|UPDATE marketing_subscriptions/);
+ expect(query).not.toContain('NOT marketing_location_allowed');
  expect(sql).toHaveBeenCalledTimes(1);
 });
 it('rejects deleting an unavailable, foreign or stale location',async()=>{

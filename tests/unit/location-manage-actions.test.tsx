@@ -12,12 +12,12 @@ it.each([false,true])('keeps service controls icon-only with accessible hover la
  expect(button.props['aria-label']).toBe(`${label} for QA business`);expect(button.props.children.type).toBeTypeOf('object');
  expect(find(tree,n=>n.type==='button'&&n.props.title==='Delete location')).toBeTruthy();
 });
-it('explains renewal removal instead of allowing immediate deletion of an active paid location',()=>{
+it('keeps location deletion separate from subscription changes',()=>{
  m.removing=true;const tree=CustomerLocations({businesses:[]});
- expect(find(tree,n=>n.props?.href==='/account/packages'&&n.props.children==='Subscription & Billing')).toBeTruthy();
- expect(find(tree,n=>n.type==='button'&&n.props.children==='Delete location')).toBeFalsy();
+ expect(find(tree,n=>n.props?.href==='/account/packages')).toBeFalsy();
+ expect(find(tree,n=>n.type==='button'&&n.props.children==='Delete location')).toBeTruthy();
 });
 it('keeps deletion confirmation available after service ends',()=>{
  m.removing=true;m.active=false;const tree=CustomerLocations({businesses:[]});
- expect(find(tree,n=>n.type==='button'&&n.props.children==='Archive location')).toBeTruthy();
+ expect(find(tree,n=>n.type==='button'&&n.props.children==='Delete location')).toBeTruthy();
 });

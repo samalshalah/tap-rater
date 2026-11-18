@@ -31,7 +31,7 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
           </div>
         </section>}
 
-        <div className="flex gap-2"><Link href="/account/stands" className="tr-button-primary">My Stands</Link><Link href="/account/orders" className="tr-button-ghost">Orders & billing</Link></div>
+        <div className="flex gap-2"><Link href="/account/stands" className="tr-button-primary">My Stands</Link><Link href="/account/orders" className="tr-button-ghost">Orders</Link></div>
 
         {latestOrder ? (
           <section className="tr-card p-5">
@@ -43,7 +43,7 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
                   {latestOrder.itemCount} configured stand{latestOrder.itemCount === 1 ? "" : "s"}
                 </p>
               </div>
-              <Link href="/account/orders" className="tr-button-ghost self-start md:self-auto">Orders & billing</Link>
+              <Link href="/account/orders" className="tr-button-ghost self-start md:self-auto">Orders</Link>
             </div>
           </section>
         ) : null}

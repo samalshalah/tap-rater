@@ -69,7 +69,7 @@ export async function mutateLocal(actor:ReviewActor, input:unknown, sql=liveDb()
       UPDATE businesses b SET status='marketing_removed',local_profile_version=local_profile_version+1
       FROM customers c WHERE b.id=${v.businessId} AND c.id=b.customer_id AND c.account_status='active'
       AND (${actor.kind==='admin'} OR lower(c.email)=${email(actor)}) AND b.local_profile_version=${v.version}
-      AND b.status IS DISTINCT FROM 'marketing_removed' AND (${actor.kind==='admin'} OR NOT EXISTS(SELECT 1 FROM reviews_period_licences p WHERE p.customer_id=b.customer_id) OR NOT marketing_location_allowed(b.id)) RETURNING b.id,b.customer_id
+      AND b.status IS DISTINCT FROM 'marketing_removed' RETURNING b.id,b.customer_id
     ), links AS (
       UPDATE google_review_links l SET enabled=false,auto_enabled=false,ai_consent=false,profile_ai_enabled=false,settings_version=settings_version+1
       FROM removed r WHERE l.business_id=r.id AND l.customer_id=r.customer_id RETURNING l.business_id

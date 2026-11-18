@@ -38,7 +38,7 @@ export function StandDetailModal({
             <p className="tr-eyebrow">{isMultiLink && hostedPage ? "Multi-Link page" : "Stand details"}</p>
             <h2 id={headingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-base font-medium text-ink focus:outline-none">{stand.title}</h2>
           </div>
-          <div className="flex shrink-0 items-center gap-2"><Link href="/account/orders" onClick={event=>{if(dirty||busy){event.preventDefault();if(dirty)setConfirmClose(true);}else onClose();}} className="tr-button-ghost">Orders &amp; Billing</Link>
+          <div className="flex shrink-0 items-center gap-2"><Link href="/account/orders" onClick={event=>{if(dirty||busy){event.preventDefault();if(dirty)setConfirmClose(true);}else onClose();}} className="tr-button-ghost">Orders</Link>
           <button type="button" onClick={requestClose} disabled={busy} className="tr-icon-button shrink-0" aria-label="Close stand details">
             <X size={18} />
           </button></div>

@@ -73,7 +73,7 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
       <p className="mt-2 text-sm text-muted">Your products, service activity, and updates in one place.</p>
 
       <div className="mt-5 grid items-stretch gap-4 lg:grid-cols-2">
-        <OverviewPanel title="Products" icon={<Layers size={18} aria-hidden="true" />}>
+        {(portal.orders.length>0||portal.stands.length>0||portal.devices.length>0||!reviewsEnabled)&&<OverviewPanel title="Products" icon={<Layers size={18} aria-hidden="true" />}>
           {paidStands + complimentaryStands > 0 || portal.devices.length > 0 ? (
             <dl className="flex flex-wrap gap-x-7 gap-y-3">
               <Metric label="Paid stands" value={number.format(paidStands)} />
@@ -88,9 +88,9 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
           </p>}
           <div className="mt-auto flex flex-wrap gap-x-4 gap-y-2">
             {(portal.stands.length > 0 || portal.devices.length > 0) && <OverviewLink href="/account/stands">My Stands</OverviewLink>}
-            <OverviewLink href="/account/orders">Orders &amp; Billing</OverviewLink>
+            <OverviewLink href="/account/orders">Orders</OverviewLink>
           </div>
-        </OverviewPanel>
+        </OverviewPanel>}
 
         <OverviewPanel title="Notifications" icon={<Bell size={18} aria-hidden="true" />}>
           {alerts.length > 0 ? (
@@ -125,7 +125,7 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
                   {plan.cancel_at_period_end && ' · Renewal canceled'}</>
               ) : reviewSubscription === undefined ? 'Service access active · Billing details unavailable' : 'Active · Managed by Tap Rater'}</p>
             </div>
-            <OverviewLink href="/account/packages">View service access</OverviewLink>
+            <OverviewLink href="/account/packages">View subscription</OverviewLink>
           </div>}
           {multiLinkPages > 0 && <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -135,7 +135,7 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
                 {Array.from(multiLinkStatuses, ([label, count]) => ` · ${number.format(count)} ${label.toLowerCase()}`).join('')}
               </p>
             </div>
-            <OverviewLink href={multiLinkEnabled ? '/account/multilink' : '/account/orders'}>
+            <OverviewLink href={'/account/multilink'}>
               {multiLinkEnabled ? 'Manage Multi-Link' : 'View service history'}
             </OverviewLink>
           </div>}

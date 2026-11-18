@@ -23,10 +23,10 @@ it.each([{service:false,stands:true},{service:true,stands:false},{service:true,s
  m.experience.mockResolvedValue({portal,...access,unavailable:false});
  const html=renderToStaticMarkup(await AccountPage());
  expect(html).toContain('<h1>Overview</h1>');
- expect(html).toContain('Products</h2>');
+ expect(html.includes('Products</h2>')).toBe(!access.service);
  expect(html).toContain('Notifications</h2>');
  expect(html.includes('Google Reviews performance</h2>')).toBe(access.service);
- expect(html).not.toContain('service-setup');
+ expect(html.includes('service-setup')).toBe(access.service);
  expect(m.snapshot).toHaveBeenCalledTimes(Number(access.service));
  expect(html).not.toContain('<details');
  const links=navigationForPurchases(access).map(l=>l.href);
@@ -34,7 +34,7 @@ it.each([{service:false,stands:true},{service:true,stands:false},{service:true,s
  expect(links.includes('/account/reviews')).toBe(access.service);
  expect(links.includes('/account/locations')).toBe(access.service);
  expect(links).not.toContain('/account/heatmap');
- expect(links).toContain('/account/orders');
+ expect(links.includes('/account/orders')).toBe(access.stands);
 });
 it('does not mount Google setup when service access is unavailable',async()=>{
  m.experience.mockResolvedValue({portal,service:false,stands:true,unavailable:true});
@@ -87,7 +87,7 @@ it('groups both products with one shared account section and one active stand li
  expect(groups.map(g=>g.label)).toEqual(['Overview','Google Reviews','Stands','Multi-Link','Account']);
  expect(groups[0].links.map(l=>l.href)).toEqual(['/account']);
  expect(groups[1].links.map(l=>l.href)).toContain(reviewPerformancePath);
- expect(groups[2].links.map(l=>l.href)).toEqual(['/account/stands']);
+ expect(groups[2].links.map(l=>l.href)).toEqual(['/account/stands','/account/orders']);
  expect(groups[3].links.map(l=>l.href)).toEqual(['/account/multilink']);
  expect(isNavigationActive(reviewPerformancePath,'/account/reviews')).toBe(false);
  expect(isNavigationActive('/account/stands/overview','/account/stands')).toBe(false);

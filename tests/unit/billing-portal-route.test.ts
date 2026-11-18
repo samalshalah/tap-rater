@@ -44,6 +44,12 @@ describe("customer billing portal route", () => {
     });
   });
 
+  it.each(['multilink','https://outside.example'])('returns only to a supported workspace destination: %s',async destination=>{
+    const original=createRequest('subscription-1');
+    await POST(new Request(original.url+'?return_to='+encodeURIComponent(destination),original));
+    expect(mocks.createPortalSession).toHaveBeenCalledWith(expect.objectContaining({return_url:'https://taprater.com/account/'+(destination==='multilink'?'multilink':'orders')}));
+  });
+
   it("rejects a selected subscription owned by another customer", async () => {
     const response = await POST(createRequest("subscription-2"));
 

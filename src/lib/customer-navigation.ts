@@ -5,11 +5,11 @@ export const customerNavigation = [
   {href:reviewPerformancePath,label:'Performance'},
   {href:'/account/reviews',label:'Reviews'},
   {href:'/account/notifications',label:'Notifications'},
-  {href:'/account/locations',label:'Manage Locations'},
+  {href:'/account/locations',label:'Locations'},
   {href:'/account/stands',label:'My Stands'},
   {href:'/account/multilink',label:'Multi-Link'},
-  {href:'/account/orders',label:'Orders & Billing'},
-  {href:'/account/settings',label:'Account'},
+  {href:'/account/orders',label:'Orders'},
+  {href:'/account/settings',label:'Account Settings'},
 ];
 
 export function isNavigationActive(pathname: string, href: string) {
@@ -20,14 +20,14 @@ export function isNavigationActive(pathname: string, href: string) {
 
 export function navigationForPurchases({service=false,stands=false,multilink=false}:{service?:boolean;stands?:boolean;multilink?:boolean}){
  return customerNavigation.filter(link=>{
-  if(link.href==='/account/stands')return stands;
+  if(link.href==='/account/stands'||link.href==='/account/orders')return stands;
   if(link.href==='/account/multilink')return multilink;
   return !isLocationTool(link.href)||service;
  });
 }
 
 export function groupCustomerNavigation(links:typeof customerNavigation){
- const group=(href:string)=>href==='/account'?'overview':isLocationTool(href)?'reviews':href==='/account/stands'?'stands':href==='/account/multilink'?'multilink':'account';
+ const group=(href:string)=>href==='/account'?'overview':isLocationTool(href)?'reviews':(href==='/account/stands'||href==='/account/orders')?'stands':href==='/account/multilink'?'multilink':'account';
  return ([['overview','Overview'],['reviews','Google Reviews'],['stands','Stands'],['multilink','Multi-Link'],['account','Account']] as const).map(([id,label])=>({id,label,links:links.filter(link=>group(link.href)===id)})).filter(section=>section.links.length);
 }
 

@@ -12,7 +12,7 @@ type Choice={kind:'locations'|'cancel'|'keep';removedIds:string[];unusedToRemove
 
 type Location={id:string;name:string;address:string;removing:boolean};
 
-type Snapshot={selfServe:boolean;reason?:string;quantity?:number;currency?:string;subtotal?:number;nextQuantity?:number;nextSubtotal?:number;periodEnd?:string;cancelling?:boolean;locations?:Location[];pendingIds?:string[];pendingUnused?:number;unused?:number;retry?:{operationId:string;choice:Choice;token:string}};
+type Snapshot={access?:{kind:'complimentary';status:string;expiresAt:string|null;locations:number|null;drafts:number};selfServe:boolean;reason?:string;quantity?:number;currency?:string;subtotal?:number;nextQuantity?:number;nextSubtotal?:number;periodEnd?:string;cancelling?:boolean;locations?:Location[];pendingIds?:string[];pendingUnused?:number;unused?:number;retry?:{operationId:string;choice:Choice;token:string}};
 
 type Preview={token:string;kind:Choice['kind'];removedIds:string[];unusedToRemove?:number;currentQuantity:number;nextQuantity:number;currentSubtotal:number;nextSubtotal:number;currency:string;effectiveAt:string};
 
@@ -40,7 +40,7 @@ export function ReviewsBillingPlan(){
 
  return <section className="tr-reviews-billing-plan">
 
-  <header><h2>Google Reviews plan</h2><p>Manage paid locations and renewal. Pause service separately in <Link href="/account/locations?location=">Locations</Link>.</p></header>
+  <header><h2>Google Reviews plan</h2><p>Manage your Reviews plan and access. Manage locations and pause service in <Link href="/account/locations?location=">Locations</Link>.</p></header>
 
   {notice&&<p role="status" className="tr-billing-notice">{notice}</p>}
 
@@ -49,6 +49,8 @@ export function ReviewsBillingPlan(){
   {!data&&!error&&<p role="status">Loading billing details…</p>}
 
   {data?.quantity!=null&&<div className="tr-billing-summary"><div><span>Paid locations</span><strong>{data.quantity}</strong></div><div><span>Monthly subtotal</span><strong>{money(data.subtotal!,data.currency)}</strong></div><div><span>{data.cancelling?'Service ends':'Next renewal'}</span><strong>{date(data.periodEnd!)}</strong></div></div>}
+
+  {data?.access&&<div className="tr-billing-access"><h3>Complimentary access</h3><p>No payment is due. There is no recurring subscription to cancel.</p><div className="tr-billing-summary"><div><span>Location allowance</span><strong>{data.access.locations===null?'Unlimited':data.access.locations}</strong></div><div><span>Access {data.access.expiresAt&&Date.parse(data.access.expiresAt)<=Date.now()?'ended':'until'}</span><strong>{data.access.expiresAt?date(data.access.expiresAt):'No expiry'}</strong></div><div><span>Status</span><strong>{data.access.status}</strong></div></div><Link className="tr-button-ghost" href="/account/locations?location=">Manage locations</Link></div>}
 
   {data?.reason&&<p>{data.reason} <Link href="/contact-us">Contact support</Link></p>}
 
