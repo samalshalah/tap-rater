@@ -1,3 +1,4 @@
+import {MarketingGate} from '@/components/account/marketing-gate';
 import {getInitialDashboardSnapshot} from '@/lib/initial-dashboard-snapshot';
 import {getCustomerWorkspaceExperience} from '@/lib/customer-workspace-experience';
 import {getCustomerPortal} from '@/lib/customer-portal';
@@ -19,6 +20,6 @@ export default async function AccountPage(){
   return <AccountShell overview>
     {!configured && <p role="alert">Your account is temporarily unavailable. Please try again shortly.</p>}
     {unavailable && <p role="alert">Google Reviews access is temporarily unavailable.</p>}
-    <CustomerOverview portal={portal} reviewsEnabled={service} reviews={reviews} reviewSubscription={reviewSubscription} multiLinkEnabled={multilink} />
+    {service ? <MarketingGate email={email}><CustomerOverview portal={portal} reviewsEnabled={service} reviews={reviews} reviewSubscription={reviewSubscription} multiLinkEnabled={multilink} /></MarketingGate> : <CustomerOverview portal={portal} reviewsEnabled={service} reviews={reviews} reviewSubscription={reviewSubscription} multiLinkEnabled={multilink} />}
   </AccountShell>;
 }
