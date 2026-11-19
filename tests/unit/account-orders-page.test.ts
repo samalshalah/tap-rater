@@ -45,7 +45,8 @@ describe("compact customer billing",()=>{
   portal.orders.push({...portal.orders[0],id:"second-order",reference:"cs_second"});
   portal.invoices.push({...portal.invoices[0],id:"second-invoice",orderId:"second-order",invoiceNumber:"SECOND",invoicePdfUrl:"https://example.test/second.pdf"});
   const html=renderToStaticMarkup(await AccountOrdersPage({}));
-  const rows=html.match(/<tr(?:\s[^>]*)?>.*?<\/tr>/g)!;
+  // Orders are cards now; index 0 stays a placeholder so rows[1] is the first order.
+  const rows=["",...html.split("<article").slice(1)];
   expect(rows[1]).toContain("/api/account/orders/qa-order/invoice");
   expect(rows[1]).not.toContain("/api/account/orders/second-order/invoice");
   expect(rows[2]).toContain("/api/account/orders/second-order/invoice");
