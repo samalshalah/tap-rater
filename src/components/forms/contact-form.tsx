@@ -3,7 +3,7 @@
 import { type FormEvent, useState } from "react";
 import { FormSecurity, useFormSecurity } from "@/components/forms/form-security";
 
-export function ContactForm({ productFeedback = false }: { productFeedback?: boolean }) {
+export function ContactForm({ productFeedback = false, defaultName, defaultEmail }: { productFeedback?: boolean; defaultName?: string; defaultEmail?: string }) {
   const security = useFormSecurity();
   const [status, setStatus] = useState("");
   const [statusType, setStatusType] = useState<"success" | "error">("success");
@@ -47,11 +47,11 @@ export function ContactForm({ productFeedback = false }: { productFeedback?: boo
     <form className="grid gap-4" onSubmit={submit}>
       <label className="tr-field-label">
         Name
-        <input className="tr-input" name="name" autoComplete="name" required />
+        <input className="tr-input" name="name" autoComplete="name" defaultValue={defaultName} required />
       </label>
       <label className="tr-field-label">
         Email
-        <input className="tr-input" name="email" type="email" autoComplete="email" required />
+        <input className="tr-input" name="email" type="email" autoComplete="email" defaultValue={defaultEmail} required />
       </label>
       {productFeedback ? <>
         <label className="tr-field-label">Order number<input className="tr-input" name="orderNumber" maxLength={100} required /></label>

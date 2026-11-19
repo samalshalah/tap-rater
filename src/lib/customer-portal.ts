@@ -189,10 +189,14 @@ export async function getCustomerPortal(email: string): Promise<CustomerPortalDa
     return emptyPortal(false);
   }
 
-  try {
-    return await getCustomerPortalFromClient(getSupabaseAdmin() as CustomerPortalDbClient, email);
-  } catch {
-    return emptyPortal(true);
+  // A database failure must not look like an empty account; let the workspace error page offer a retry.
+  return getCustomerPortalFromClient(getSupabaseAdmin() as CustomerPortalDbClient, email);
+}
+
+export class CustomerPortalLoadError extends Error {
+  constructor(table: string) {
+    super(`Could not load customer ${table}.`);
+    this.name = "CustomerPortalLoadError";
   }
 }
 
@@ -203,12 +207,13 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     .eq("email", email.trim().toLowerCase())
     .maybeSingle();
 
+  if (customerError) throw new CustomerPortalLoadError("account");
   const customer = normalizeCustomer(customerRow);
-  if (customerError || !customer) {
+  if (!customer) {
     return emptyPortal(true);
   }
 
-  const [{ data: businessRows }, { deviceRows, eventRows }, { data: orderRows }, { data: subscriptionRows }, invoiceResult, accessResult] = await Promise.all([
+  const [{ data: businessRows, error: businessError }, { deviceRows, eventRows, deviceError }, { data: orderRows, error: orderError }, { data: subscriptionRows, error: subscriptionError }, invoiceResult, accessResult] = await Promise.all([
     client.from("businesses").select("*").eq("customer_id", customer.id).order("created_at", { ascending: false }),
     loadCustomerDevices(client, customer.id),
     client.from("orders").select("*").eq("email", customer.email).order("created_at", { ascending: false }),
@@ -216,6 +221,11 @@ export async function getCustomerPortalFromClient(client: CustomerPortalDbClient
     loadCustomerInvoices(client, customer),
     client.from("customer_marketing_access").select("*").eq("customer_id", customer.id)
   ]);
+
+  if (businessError) throw new CustomerPortalLoadError("businesses");
+  if (deviceError) throw new CustomerPortalLoadError("devices");
+  if (orderError) throw new CustomerPortalLoadError("orders");
+  if (subscriptionError) throw new CustomerPortalLoadError("subscriptions");
 
   const tapCounts = new Map<string, number>();
   if (Array.isArray(eventRows)) {
@@ -260,9 +270,10 @@ async function loadCustomerInvoices(client: CustomerPortalDbClient, customer: Cu
 
 // Keep tap-event transfers proportional to this account, not the whole installation.
 async function loadCustomerDevices(client: CustomerPortalDbClient, customerId: string) {
-  const {data: deviceRows} = await client.from("devices").select("*").eq("customer_id", customerId).order("created_at", {ascending: false});
+  const {data: deviceRows, error: deviceError} = await client.from("devices").select("*").eq("customer_id", customerId).order("created_at", {ascending: false});
   const ids = Array.isArray(deviceRows) ? deviceRows.map(row => readString(readRecord(row).id)).filter(Boolean) : [];
-  if (!ids.length) return {deviceRows, eventRows: []};
+  if (!ids.length) return {deviceRows, eventRows: [], deviceError};
+  // Tap counts are secondary; a failed read shows zero taps rather than blocking the account.
   const {data: eventRows} = await client.from("tap_events").select("device_id").in("device_id", ids);
-  return {deviceRows, eventRows};
+  return {deviceRows, eventRows, deviceError};
 }

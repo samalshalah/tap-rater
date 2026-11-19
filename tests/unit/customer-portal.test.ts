@@ -416,3 +416,21 @@ it("skips event reads for an account with no devices",async()=>{
  const db=createCustomerPortalDb({customers:[{id:'a',email:'owner@example.test'}],businesses:[],devices:[],tap_events:[{device_id:'other'}],orders:[],hosted_subscriptions:[],billing_invoices:[]});
  const from=vi.spyOn(db.client,'from');expect((await getCustomerPortalFromClient(db.client,'owner@example.test')).devices).toEqual([]);expect(from).not.toHaveBeenCalledWith('tap_events');
 });
+
+describe("customer portal load failures", () => {
+  function failingClient(failTable: string) {
+    const result = (table: string) => table === failTable ? { data: null, error: { message: "db down" } } : { data: table === "customers" ? { id: "customer-1", email: "owner@example.com" } : [], error: null };
+    const query = (table: string): any => {
+      const chain: any = { select: () => chain, eq: () => chain, in: () => chain, order: () => chain, maybeSingle: () => Promise.resolve(result(table)), then: (resolve: any, reject: any) => Promise.resolve(result(table)).then(resolve, reject) };
+      return chain;
+    };
+    return { from: query } as CustomerPortalDbClient;
+  }
+  it.each(["customers", "orders", "businesses", "hosted_subscriptions", "devices"])("throws instead of showing an empty account when %s fails", async table => {
+    await expect(getCustomerPortalFromClient(failingClient(table), "owner@example.com")).rejects.toThrow(/Could not load customer/);
+  });
+  it("still returns an empty portal for an email with no customer record", async () => {
+    const client = { from: () => { const chain: any = { select: () => chain, eq: () => chain, maybeSingle: () => Promise.resolve({ data: null, error: null }) }; return chain; } } as CustomerPortalDbClient;
+    await expect(getCustomerPortalFromClient(client, "nobody@example.com")).resolves.toMatchObject({ customer: null, orders: [] });
+  });
+});
