@@ -10,6 +10,8 @@ export const statusText=(value:string)=>({
 export const date=(value?:string)=>value ? new Date(value).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : '';
 export function money(cents:number,currency='usd'){return new Intl.NumberFormat('en-US',{style:'currency',currency:currency.toUpperCase()}).format(cents/100);}
 
-export function Badge({status}:{status:string}){return <span className="rounded-full bg-soft px-2 py-1 text-xs capitalize text-muted">{statusText(status)}</span>;}
+// One badge colour per meaning, shared by Orders, My Stands and Multi-Link.
+export function badgeTone(status?:string|null){const s=(status||'').toLowerCase();if(['paid','active','reactivated'].includes(s))return 'is-success';if(s==='complimentary')return 'is-brand';if(['manual_unpaid','pending_payment','past_due','unpaid','cancelled_at_period_end'].includes(s))return 'is-warning';if(['failed'].includes(s)||s.includes('refund'))return 'is-danger';return '';}
+export function Badge({status}:{status:string}){return <span className={`tr-badge ${badgeTone(status)}`}>{statusText(status)}</span>;}
 export function Detail({label,value}:{label:ReactNode;value:ReactNode}){return <div className="flex justify-between gap-4"><dt className="text-muted">{label}</dt><dd className="text-right">{value}</dd></div>;}
 export function DocumentLink({href,children}:{href:string;children:ReactNode}){return <a href={href} target="_blank" rel="noreferrer" className="tr-button-ghost">{children}</a>;}

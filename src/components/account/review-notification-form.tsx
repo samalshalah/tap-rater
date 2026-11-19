@@ -15,7 +15,7 @@ export function ReviewNotificationForm({initial,name,email,endpoint='/api/accoun
  }
  const zones=Array.from(new Set([v.zone,'UTC',...Intl.supportedValuesOf('timeZone')])).sort();
  const timed=v.weekly||v.monthly||v.highMode==='daily'||v.lowMode==='daily';
- return <form className="space-y-5 rounded-xl border border-line bg-white p-5" onSubmit={e=>{e.preventDefault();void save();}}>
+ return <form className="tr-card space-y-5 p-5" onSubmit={e=>{e.preventDefault();void save();}}>
  <div><h2 className="text-xl font-bold">{name}</h2><p>Email delivery to {email}</p></div>
  <fieldset disabled={busy} className="space-y-3"><legend className="font-semibold">New review alerts</legend>
  {(['lowMode','highMode'] as const).map(k=><label className="block" key={k}>{k==='lowMode'?'1–3-star reviews':'4–5-star reviews'}<select className="tr-input ml-2" value={v[k]} onChange={e=>field(k,e.target.value as ReviewEmailSettings[typeof k])}><option value="off">Off</option><option value="immediate">As reviews arrive</option><option value="daily">Daily digest</option></select></label>)}

@@ -67,7 +67,7 @@ export function ContactForm({ productFeedback = false, defaultName, defaultEmail
         <span className="text-xs font-medium leading-5 text-muted">Optional. PNG, JPG, or WEBP up to 10 MB.</span>
       </label>}
       <FormSecurity action="contact" attempt={security.attempt} onToken={security.setToken} />
-      <button className="tr-button-secondary" disabled={isSubmitting || !security.token}>
+      <button className={productFeedback ? "tr-button-primary" : "tr-button-secondary"} disabled={isSubmitting || !security.token}>
         {isSubmitting ? "Sending..." : productFeedback ? "Send product feedback" : "Send message"}
       </button>
       {status ? <p className={statusType === "success" ? "tr-status-success" : "tr-status-error"} role="status">{status}</p> : null}

@@ -91,7 +91,7 @@ function buildDashboardActions(portal: CustomerPortalData) {
 
 function ActionRow({ title, body, href, cta }: { title: string; body: string; href: string; cta: string }) {
   return (
-    <article className="flex flex-col gap-3 rounded-md border border-line bg-white p-4 md:flex-row md:items-center md:justify-between">
+    <article className="tr-card flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-medium text-ink">{title}</h3>
         <p className="text-sm text-muted">{body}</p>

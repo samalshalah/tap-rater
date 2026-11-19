@@ -16,7 +16,7 @@ export function summarizeOverview(locations:OverviewLocation[],now=new Date()){
 export function ReviewOverview({locations,onReviews,onProfile,onIssues,onSaved}:{onSaved:()=>Promise<void>;locations:OverviewLocation[];onReviews:()=>void;onProfile:()=>void;onIssues:()=>void}){
  const [range,setRange]=useState(12);
  const summary=summarizeOverview(locations),months=summary.months.slice(-range),max=Math.max(1,...months.map(m=>m.counts.reduce((a,b)=>a+b,0))),auto=locations.filter(l=>l.ai_consent&&l.connected&&l.auto_enabled&&(l.auto_four||l.auto_five));
- const panel='rounded-lg border border-line bg-white overflow-hidden';
+ const panel='tr-card overflow-hidden';
  return <div className="tr-review-overview space-y-3" aria-label="Review overview">
  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted"><span>{locations.length===1?(locations[0].connected?'● Google connected':'Google not connected'):`${locations.filter(l=>l.connected).length} of ${locations.length} locations connected`}</span><button onClick={onReviews} className="inline-flex items-center gap-1 text-teal-700">View reviews <ArrowUpRight size={14}/></button></div>
  <WorkspaceMetrics items={[{label:"Total reviews",value:summary.total.toLocaleString()},{label:"Average rating",value:summary.average===null?"—":summary.average.toFixed(1),note:"Out of 5 stars"},{label:"Unanswered reviews",value:summary.unanswered},{label:"Saved drafts",value:summary.drafts}]}/>

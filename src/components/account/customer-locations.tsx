@@ -16,15 +16,15 @@ type Location={plan_managed?:boolean;plan_active?:boolean;service_pause_availabl
 type Snapshot={locations:Location[];listings:{business_id:string;status:string}[];licenses?:{unlimited_locations:boolean;location_limit:number;used:number;period_locked?:boolean;reserved_until?:string|null}};
 
 const locationStatuses = {
- ended: {label:'Service ended', icon:Clock3, className:'border-slate-200 bg-slate-50 text-slate-700'},
- serviceActive: {label:'Service active', icon:CheckCircle2, className:'border-emerald-200 bg-emerald-50 text-emerald-700'},
- servicePaused: {label:'Service paused', icon:Pause, className:'border-slate-200 bg-slate-50 text-slate-700'},
- connect: {label:'Connect Google', icon:AlertCircle, className:'border-red-200 bg-red-50 text-red-700'},
- import: {label:'Review import failed', icon:AlertCircle, className:'border-red-200 bg-red-50 text-red-700'},
- draft: {label:'Automatic drafting will retry', icon:AlertTriangle, className:'border-amber-200 bg-amber-50 text-amber-800'},
- updating: {label:'Updating reviews', icon:Clock3, className:'border-violet-200 bg-violet-50 text-violet-800'},
- paused: {label:'Reply automation off', icon:AlertTriangle, className:'border-slate-200 bg-slate-50 text-slate-700'},
- connected: {label:'Connected', icon:CheckCircle2, className:'border-emerald-200 bg-emerald-50 text-emerald-700'},
+ ended: {label:'Service ended', icon:Clock3, className:''},
+ serviceActive: {label:'Service active', icon:CheckCircle2, className:'is-success'},
+ servicePaused: {label:'Service paused', icon:Pause, className:''},
+ connect: {label:'Connect Google', icon:AlertCircle, className:'is-danger'},
+ import: {label:'Review import failed', icon:AlertCircle, className:'is-danger'},
+ draft: {label:'Automatic drafting will retry', icon:AlertTriangle, className:'is-warning'},
+ updating: {label:'Updating reviews', icon:Clock3, className:'is-brand'},
+ paused: {label:'Reply automation off', icon:AlertTriangle, className:''},
+ connected: {label:'Connected', icon:CheckCircle2, className:'is-success'},
 };
 const statusOrder = Object.keys(locationStatuses);
 
@@ -111,7 +111,7 @@ export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
         </div>
        </th>
        <td>
-        <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-semibold ${className}`}><StatusIcon size={14} className="shrink-0" aria-hidden="true"/>{statusLabel}</span>
+        <span className={`tr-badge ${className}`}><StatusIcon size={14} className="shrink-0" aria-hidden="true"/>{statusLabel}</span>
         {detail && <p className="mt-1 max-w-52 text-xs text-muted">{detail}</p>}
        </td>
        <td>

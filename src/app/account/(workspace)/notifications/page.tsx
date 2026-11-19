@@ -11,8 +11,8 @@ export default async function Page({searchParams}:{searchParams:Promise<{locatio
  const [locations,{location}]=await Promise.all([emailLocations(session.email),searchParams]);
  const selectedLocation=locations.find(row=>row.id===location);
  const active=selectedLocation||locations[0];
- return <AccountShell><WorkspacePageHeader title="Review notifications" subtitle={`Choose which emails you receive ${selectedLocation?'for this location.':'for each location.'}`}/><div className="max-w-3xl space-y-5">
- {locations.length>1&&!selectedLocation&&<nav className="tr-notification-locations flex flex-wrap gap-2" aria-label="Notification locations">{locations.map(row=><Link aria-current={row.id===active?.id?'page':undefined} className="tr-button-ghost" key={row.id} href={'/account/notifications?location='+row.id}>{row.business_name}</Link>)}</nav>}
+ return <AccountShell><WorkspacePageHeader title="Review notifications" subtitle="Choose which review emails you receive for each location."/><div className="max-w-3xl space-y-5">
+ {locations.length>1&&!selectedLocation&&active&&<p className="text-sm text-muted">Showing {active.business_name}. Choose another location from the Workspace menu at the top.</p>}
  {active?<ReviewNotificationForm key={active.id} name={active.business_name} email={session.email} initial={{businessId:active.id,
  version:active.version??0,lowMode:active.low_mode??'off',highMode:active.high_mode??'off',weekly:active.weekly??false,
  monthly:active.monthly??false,hour:active.delivery_hour??9,zone:active.zone??'America/New_York'}}/>:

@@ -28,12 +28,12 @@
 .tr-prismatic-account .tr-app-page-header{margin-bottom:28px!important;gap:20px!important}
 .tr-prismatic-account .tr-app-shell .tr-account-page-header{padding:0 0 26px!important}
 .tr-prismatic-account :is(.tr-app-title-row,.tr-app-title){gap:12px!important}
-.tr-prismatic-account main.tr-app-shell.tr-client-shell :is(.tr-button-primary,.tr-button-ghost,.tr-button-outline){font-family:inherit!important;font-size:12px!important;font-weight:600!important;min-height:40px!important;padding:10px 16px!important;border-radius:5px!important;gap:8px!important;box-shadow:none!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell :is(.tr-button-primary,.tr-button-ghost,.tr-button-outline){font-family:inherit!important;font-size:12px!important;font-weight:600!important;min-height:40px!important;padding:10px 16px!important;border-radius:6px!important;gap:8px!important;box-shadow:none!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-button-primary{background:#6035ff!important;border-color:#6035ff!important;color:white!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-button-primary:hover{background:#4c20e2!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell :is(.tr-button-ghost,.tr-button-outline){background:white!important;border:1px solid #d8cff2!important;color:#6035ff!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell :is(input,select,textarea,button,a):focus-visible{outline:3px solid #845cff!important;outline-offset:3px!important}
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card,.rounded-lg,.rounded-xl,.rounded-2xl){border-color:#e6e7f0!important;border-radius:14px!important;box-shadow:0 3px 14px #25204703!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card,.rounded-lg,.rounded-xl,.rounded-2xl){border-color:#e6e7f0!important;border-radius:12px!important;box-shadow:0 1px 3px #25204708!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.p-4,.p-5,.p-6){padding:24px!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.gap-3,.gap-4,.gap-5,.gap-6){gap:18px!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.text-sm,.text-base){font-size:13px!important;line-height:1.7!important}
@@ -95,7 +95,7 @@
 .tr-prismatic-account main:not(.tr-app-shell) *{font-family:TapRaterJakarta,sans-serif!important}
 .tr-prismatic-account main:not(.tr-app-shell) .tr-button-secondary{background:#6035ff!important;border-color:#6035ff!important;color:white!important;border-radius:5px!important;min-height:48px!important}
 /* Remaining account surfaces: shared visual skin only. No handlers or data changes. */
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card.max-w-2xl.p-3{padding:26px!important;max-width:780px!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card.max-w-2xl.p-3{padding:24px!important;max-width:780px!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-field-label{font-size:13px!important;line-height:1.6!important;color:#090e36!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell :is(.tr-listing-tabs,.tr-listing-filters) button[aria-pressed=true]{color:#6035ff!important;border-color:#6035ff!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-listing-filters button[aria-pressed=true]{background:#eee8ff!important}
@@ -112,21 +112,15 @@
 /* Locations uses the approved compact account table, isolated from commerce. */
 
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary { gap:10px!important; margin-bottom:14px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button { padding:10px 14px!important; border-radius:6px!important; min-height:0!important; }
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button { padding:10px 14px!important; min-height:0!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button > strong { font-size:22px!important; line-height:1.2!important; margin-top:3px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button > span { font-size:11px!important; line-height:1.4!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table { border-collapse:collapse!important; width:100%!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table :is(th,td) { padding:8px 10px!important; vertical-align:middle!important; border-bottom:1px solid #e6e7f0!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table thead th { font-size:11px!important; font-weight:600!important; background:#f6f8ff!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table tbody :is(th,td) { font-size:12px!important; line-height:1.4!important; background:transparent!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table tbody p { font-size:11px!important; line-height:1.4!important; margin-top:3px!important; margin-bottom:0!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table tbody th { white-space:normal!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table tbody th p { max-width:360px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table td:nth-child(2) > span { white-space:nowrap!important; padding:3px 7px!important; font-size:11px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page :is(.tr-button-primary,.tr-button-ghost) { min-height:30px!important; min-width:0!important; padding:5px 9px!important; font-size:12px!important; line-height:18px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-location-next > a { border:0!important; padding:4px 0!important; background:transparent!important; box-shadow:none!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-location-manage { display:flex!important; width:auto!important; height:auto!important; align-items:center!important; gap:5px!important; white-space:nowrap!important; background:transparent!important; border:0!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-location-manage > button[aria-label] { padding:5px!important; width:30px!important; }
 @media(max-width:640px) {
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:6px!important; }
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button { padding:8px!important; }
@@ -178,5 +172,40 @@
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-billing-locations :is(th,td) {display:block;width:100%!important;min-width:0!important;white-space:normal!important;border:0!important;padding:6px 12px!important;}
  .tr-prismatic-account .tr-billing-locations td[data-label="Plan status"]::before {content:'Plan status: ';font-weight:600;}
 }
-/* Selected location in the notification location list matches other selected filters. */
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-notification-locations a[aria-current=page]{color:#6035ff!important;border-color:#6035ff!important;background:#eee8ff!important}
+
+/* ── Client workspace UI kit ────────────────────────────────────────────────
+   One look per element type across every /account page:
+   card · section title · table · badge · button · input.
+   Pages opt in with shared classes (tr-card, tr-badge + tone); plain
+   elements (tables, h2/h3, inputs) are styled here once. */
+
+/* Card: white surface, 12px corners, hairline border, faint shadow. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card,.tr-stand-row,.tr-location-card,.tr-overview-reply-toolbar,.tr-billing-summary>div,.tr-locations-summary>button,.tr-client-table-wrap){border:1px solid #e6e7f0!important;border-radius:12px!important;box-shadow:0 1px 3px #25204708!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-card,.tr-stand-row,.tr-location-card,.tr-overview-reply-toolbar,.tr-billing-summary>div,.tr-client-table-wrap){background-color:#fff!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-summary>button.border-brand{border-color:#6035ff!important}
+/* A table inside a card uses the card's frame, not a second one. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-card .tr-client-table-wrap{border:0!important;border-radius:0!important;box-shadow:none!important}
+
+/* Section title inside the page (the page title is the h1 in WorkspacePageHeader). */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(h2,h3):not(.sr-only){font-size:15px!important;font-weight:650!important;line-height:1.4!important;color:#090e36!important;letter-spacing:0!important}
+
+/* Table */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content table thead th{background:#f8f9ff!important;color:#4b536f!important;font-size:11px!important;font-weight:600!important;padding:10px 14px!important;border-bottom:1px solid #e6e7f0!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content table tbody :is(td,th){font-size:12px!important;line-height:1.45!important;padding:12px 14px!important;border-bottom:1px solid #eef0f6!important;vertical-align:middle!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content table tbody tr:last-child :is(td,th){border-bottom:0!important}
+
+/* Badge: one pill shape; colour carries meaning. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-badge,.tr-review-status,.tr-card-status){display:inline-flex!important;align-items:center!important;gap:4px!important;border-radius:999px!important;font-size:11px!important;font-weight:500!important;line-height:16px!important;padding:3px 9px!important;white-space:nowrap!important;width:auto!important;height:auto!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge{background:#f1f3f9!important;color:#4b536f!important;border:1px solid #e6e7f0!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge.is-success{background:#ecfdf5!important;color:#047857!important;border-color:#a7f3d0!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge.is-warning{background:#fffbeb!important;color:#92400e!important;border-color:#fde68a!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge.is-danger{background:#fef2f2!important;color:#b91c1c!important;border-color:#fecaca!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge.is-brand{background:#f1edff!important;color:#6035ff!important;border-color:#ddd3ff!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-badge svg{width:13px!important;height:13px!important}
+
+/* Buttons: 40px everywhere, 32px inside table rows. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content table :is(.tr-button-primary,.tr-button-ghost,.tr-button-outline){min-height:32px!important;padding:5px 10px!important;min-width:0!important}
+
+/* Inputs */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),select,textarea){border-radius:6px!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),select){min-height:40px!important}
