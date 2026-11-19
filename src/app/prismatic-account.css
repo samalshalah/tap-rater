@@ -136,7 +136,7 @@
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table-wrap { overflow-x:auto!important; overflow-y:hidden!important; }
 
 /* Reviews billing: explicit renewal choices using the approved account theme. */
-.tr-prismatic-account .tr-reviews-billing-plan { max-width:1100px; }
+.tr-prismatic-account .tr-reviews-billing-plan { display:grid; gap:12px; }
 .tr-prismatic-account .tr-reviews-billing-plan > header { margin-bottom:18px; }
 .tr-prismatic-account .tr-reviews-billing-plan :is(p,small) { color:#4b536f; font-size:12px; line-height:1.6; }
 .tr-prismatic-account .tr-reviews-billing-plan a { color:#6035ff; text-decoration:underline; }
@@ -146,7 +146,7 @@
 .tr-prismatic-account .tr-billing-summary strong { display:block; margin-top:6px; font-size:18px; }
 .tr-prismatic-account .tr-billing-next { padding:12px 14px; background:#f0ebff; border:1px solid #ded4ff; border-radius:6px; color:#090e36!important; }
 .tr-prismatic-account .tr-billing-caption { margin:10px 0 18px; }
-.tr-prismatic-account .tr-reviews-billing-plan h3 { margin:16px 0 10px; }
+.tr-prismatic-account .tr-reviews-billing-plan h3:not(:is(.tr-stand-row,.tr-billing-cancel) h3) { margin:16px 0 0; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-billing-locations :is(th,td) { padding:10px!important; vertical-align:middle; }
 .tr-prismatic-account .tr-billing-locations { min-width:650px; }
 .tr-prismatic-account .tr-billing-locations small { display:block; margin-top:3px; font-weight:400; white-space:normal; }
@@ -221,3 +221,7 @@
 /* Search boxes that wrap an icon + bare input match the 40px input height. */
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content label:has(>input.bg-transparent){min-height:40px!important;border-radius:6px!important;border-color:#dcdde9!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content input.bg-transparent{min-height:0!important}
+/* Buttons inside the plan text area keep button styling, not link underline. */
+.tr-prismatic-account .tr-reviews-billing-plan a:is(.tr-button-primary,.tr-button-ghost){text-decoration:none!important}
+.tr-prismatic-account .tr-reviews-billing-plan .tr-stand-row h3{margin:0!important}
+.tr-prismatic-account .tr-reviews-billing-plan .tr-billing-cancel{margin-top:0}
