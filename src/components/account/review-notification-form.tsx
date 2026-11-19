@@ -1,8 +1,8 @@
 'use client';
 import {useState} from 'react';
 import type {ReviewEmailSettings} from '@/lib/review-email-preferences';
-type Props={endpoint?:string;initial:ReviewEmailSettings;name:string;email:string};
-export function ReviewNotificationForm({initial,name,email,endpoint='/api/account/review-notifications'}:Props){
+type Props={endpoint?:string;initial:ReviewEmailSettings;name:string;email:string;headingId?:string;onClose?:()=>void};
+export function ReviewNotificationForm({initial,name,email,endpoint='/api/account/review-notifications',headingId,onClose}:Props){
  const [v,setV]=useState(initial),[saved,setSaved]=useState(initial),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
  function field<K extends keyof ReviewEmailSettings>(key:K,value:ReviewEmailSettings[K]){setV({...v,[key]:value});setMessage('');}
  async function save(){
@@ -16,7 +16,7 @@ export function ReviewNotificationForm({initial,name,email,endpoint='/api/accoun
  const zones=Array.from(new Set([v.zone,'UTC',...Intl.supportedValuesOf('timeZone')])).sort();
  const timed=v.weekly||v.monthly||v.highMode==='daily'||v.lowMode==='daily';
  return <form className="tr-card space-y-5 p-5" onSubmit={e=>{e.preventDefault();void save();}}>
- <div><h2 className="text-xl font-bold">{name}</h2><p>Email delivery to {email}</p></div>
+ <div className="flex items-start justify-between gap-3"><div><h2 id={headingId} data-dialog-heading={headingId?'':undefined} tabIndex={headingId?-1:undefined} className="text-xl font-bold">{name}</h2><p>Email delivery to {email}</p></div>{onClose&&<button type="button" className="tr-button-ghost" disabled={busy} onClick={onClose}>Close</button>}</div>
  <fieldset disabled={busy} className="space-y-3"><legend className="font-semibold">New review alerts</legend>
  {(['lowMode','highMode'] as const).map(k=><label className="block" key={k}>{k==='lowMode'?'1–3-star reviews':'4–5-star reviews'}<select className="tr-input ml-2" value={v[k]} onChange={e=>field(k,e.target.value as ReviewEmailSettings[typeof k])}><option value="off">Off</option><option value="immediate">As reviews arrive</option><option value="daily">Daily digest</option></select></label>)}
  <p className="text-sm text-muted">Alerts start with reviews written after you save. Daily digests arrive only when there are new reviews.</p></fieldset>
