@@ -29,3 +29,8 @@ export async function saveEmailPrefs(email:string,v:ReviewEmailSettings,sql=live
  WHERE p.customer_id=excluded.customer_id AND p.version=${v.version} RETURNING version`;
  return rows[0]?.version;
 }
+/** Saved preference row (or none yet) → the settings the notification form edits. Unsaved locations start with every email off. */
+export function notificationSettingsFromRow(row:{id:string;low_mode?:string|null;high_mode?:string|null;weekly?:boolean|null;monthly?:boolean|null;delivery_hour?:number|null;zone?:string|null;version?:number|null}):ReviewEmailSettings{
+ return {businessId:row.id,version:row.version??0,lowMode:(row.low_mode??'off') as ReviewEmailSettings['lowMode'],highMode:(row.high_mode??'off') as ReviewEmailSettings['highMode'],
+  weekly:row.weekly??false,monthly:row.monthly??false,hour:row.delivery_hour??9,zone:row.zone??'America/New_York'};
+}

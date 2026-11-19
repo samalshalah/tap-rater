@@ -99,7 +99,7 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
           ) : <p className="text-sm text-muted">
             {(reviewsEnabled && !reviews) || !portal.customer ? 'Some updates are unavailable.' : 'You’re all caught up.'}
           </p>}
-          {reviewsEnabled && <OverviewLink href="/account/notifications">Review notification settings</OverviewLink>}
+          {reviewsEnabled && <OverviewLink href="/account/locations">Notification settings (bell icon in Locations)</OverviewLink>}
         </OverviewPanel>
 
         {reviewsEnabled && <OverviewPanel title="Google Reviews performance" icon={<BarChart3 size={18} aria-hidden="true" />}>

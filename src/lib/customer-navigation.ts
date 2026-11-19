@@ -4,7 +4,6 @@ export const customerNavigation = [
   {href:'/account',label:'Overview'},
   {href:reviewPerformancePath,label:'Performance'},
   {href:'/account/reviews',label:'Reviews'},
-  {href:'/account/notifications',label:'Notifications'},
   {href:'/account/locations',label:'Locations'},
   {href:'/account/stands',label:'My Stands'},
   {href:'/account/multilink',label:'Multi-Link'},
@@ -31,7 +30,7 @@ export function groupCustomerNavigation(links:typeof customerNavigation){
  return ([['overview','Overview'],['reviews','Google Reviews'],['stands','Stands'],['multilink','Multi-Link'],['account','Account']] as const).map(([id,label])=>({id,label,links:links.filter(link=>group(link.href)===id)})).filter(section=>section.links.length);
 }
 
-export const locationTools=customerNavigation.filter(link=>[reviewPerformancePath,'/account/reviews','/account/notifications','/account/locations'].includes(link.href));
+export const locationTools=customerNavigation.filter(link=>[reviewPerformancePath,'/account/reviews','/account/locations'].includes(link.href));
 export function isLocationTool(href:string){return locationTools.some(tool=>tool.href===href);}
 export function locationToolHref(href:string,id:string){return `${href}?location=${encodeURIComponent(id)}`;}
 export function activeLocationId(requested:string|null,locations:{id:string}[]){return locations.some(l=>l.id===requested)?requested!:'';}
