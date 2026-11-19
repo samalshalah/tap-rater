@@ -1,5 +1,6 @@
 import {ExternalLink} from 'lucide-react';
 import type {CustomerPortalStand} from '@/lib/customer-portal';
+import {statusText} from './billing-display';
 export function DetailLine({ label, value }: { label: string; value: string }) {
   return (
     <p className="rounded-md bg-soft px-3 py-2">
@@ -33,7 +34,7 @@ export function formatKind(kind: CustomerPortalStand["kind"]) {
 }
 
 export function formatPaymentStatus(status?: string) {
-  if (status === "manual_unpaid") return "Payment pending review";
-  if (!status || status === "unpaid" || status === "pending_payment") return "Payment pending";
-  return status.replaceAll("_", " ");
+  // Same wording as the Orders page badges.
+  if (!status || status === "unpaid") return statusText("pending_payment");
+  return statusText(status);
 }

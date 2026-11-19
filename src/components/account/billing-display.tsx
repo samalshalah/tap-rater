@@ -3,7 +3,7 @@ import type {CustomerPortalSubscription} from '@/lib/customer-portal';
 export const subscriptionStatus=(subscription:CustomerPortalSubscription)=>subscription.source==='admin'&&subscription.currentPeriodEnd&&Date.parse(subscription.currentPeriodEnd)<=Date.now()?'expired':subscription.lifecycleStatus;
 export const statusText=(value:string)=>({
   manual_unpaid:'Payment review',pending_payment:'Payment pending',incomplete:'Checkout not completed',
-  incomplete_expired:'Checkout expired',expired:'Checkout expired',paid:'Paid',complimentary:'Complimentary',
+  incomplete_expired:'Checkout expired',expired:'Checkout expired',paid:'Paid',complimentary:'Complimentary',refunded:'Refunded',partially_refunded:'Partially refunded',failed:'Payment failed',
   active:'Active',ACTIVE:'Active',cancelled:'Cancelled',canceled:'Cancelled',past_due:'Payment needs attention',unpaid:'Payment due',
   PAST_DUE:'Payment needs attention',CANCELLED_AT_PERIOD_END:'Ends at the current period',EXPIRED:'Expired',REACTIVATED:'Active'
 } as Record<string,string>)[value]||value.replaceAll('_',' ');

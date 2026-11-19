@@ -209,3 +209,15 @@
 /* Inputs */
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),select,textarea){border-radius:6px!important}
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),select){min-height:40px!important}
+
+/* Summary tiles (Performance metrics) use the card surface too. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-workspace-metrics>div{border:1px solid #e6e7f0!important;border-radius:12px!important;box-shadow:0 1px 3px #25204708!important;background-color:#fff!important}
+
+/* Small controls: filters, view tabs and inline tools share one size and one selected state. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-segmented{border:0!important;padding:0!important;background:transparent!important;gap:6px!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-segmented button,.tr-review-filter-options button,.tr-workspace-details-trigger:not(.tr-app-title-row>*)){min-height:32px!important;height:auto!important;padding:5px 12px!important;border-radius:6px!important;font-size:12px!important;font-weight:500!important;color:#4b536f!important;background:#fff!important;border:1px solid #e6e7f0!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content :is(.tr-segmented button,.tr-review-filter-options button)[aria-pressed=true]{background:#f1edff!important;color:#6035ff!important;border-color:#6035ff!important}
+
+/* Search boxes that wrap an icon + bare input match the 40px input height. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content label:has(>input.bg-transparent){min-height:40px!important;border-radius:6px!important;border-color:#dcdde9!important}
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content input.bg-transparent{min-height:0!important}

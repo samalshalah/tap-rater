@@ -75,8 +75,8 @@ describe("customer stand history", () => {
   });
 
   it.each([
-    ["unpaid", "Payment pending"], ["manual_unpaid", "Payment pending review"],
-    ["refunded", "refunded"], ["paid", "paid"]
+    ["unpaid", "Payment pending"], ["manual_unpaid", "Payment review"],
+    ["refunded", "Refunded"], ["paid", "Paid"]
   ])("retains the %s stand with its payment status", (paymentStatus, label) => {
     const html = renderToStaticMarkup(createElement(CustomerStandsManager, { stands: [{ ...stand, paymentStatus }] }));
     expect(html).toContain(label);
