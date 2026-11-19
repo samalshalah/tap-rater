@@ -11,9 +11,17 @@ describe("customer Multi-Link pages", () => {
   });
 
   it.each([
-    ["pending_payment", "unpaid"], ["pending_payment", "manual_unpaid"],
-    ["pending_payment", "expired"], ["failed", "failed"],
-    ["canceled", "paid"], ["failed", "paid"],
+    ["pending_payment", "unpaid"], ["pending_payment", "expired"],
+    ["failed", "failed"], ["failed", "paid"]
+  ])("keeps %s/%s checkout in order history but creates no stand", async (status, payment_status) => {
+    const portal = await multiLinkPortal({ status, payment_status });
+    expect(portal.orders).toHaveLength(1);
+    expect(portal.stands).toHaveLength(0);
+    expect(countMultiLinkPages(portal.subscriptions)).toBe(0);
+  });
+
+  it.each([
+    ["pending_payment", "manual_unpaid"], ["canceled", "paid"],
     ["paid", "refunded"], ["paid", "partially_refunded"]
   ])("retains %s/%s history without promising page setup", async (status, payment_status) => {
     const portal = await multiLinkPortal({ status, payment_status });
@@ -112,7 +120,7 @@ describe("customer portal repository", () => {
 
   it.each([{ generated: false }, { approved: false }, { paid: false }])("does not present a template or expired checkout image as final branded artwork: %j", async state => {
     const portal = await previewPortal(state);
-    expect(portal.stands[0].proofPreviewUrl).toBeUndefined();
+    expect(portal.stands[0]?.proofPreviewUrl).toBeUndefined();
   });
 
   it("preserves the original order line index when malformed items are skipped", async () => {

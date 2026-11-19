@@ -30,3 +30,24 @@ describe("customer stand product-image lookup", () => {
     expect(getProductBySlug).toHaveBeenCalledTimes(2);
   });
 });
+describe("customer stands from unfinished checkouts", () => {
+  function withStatus(status: string, payment_status: string | null) {
+    return normalizeOrder({ id: `order-${status}-${payment_status}`, stripe_checkout_session_id: `s-${status}-${payment_status}`, status, payment_status, production_status: "not_started", shipping_status: "not_shipped", line_items_json: [{ productId: "google-review-stand", standLineId: "line-1", optionId: "standard_direct", title: "Review stand", sku: "TEST", quantity: 1, unitAmountCents: 3900, lineSubtotalCents: 3900, setup: { destinationUrl: "https://example.com" } }] })!;
+  }
+  it("hides open, expired and failed Stripe checkouts", () => {
+    expect(buildCustomerStands([
+      withStatus("pending_payment", "unpaid"),
+      withStatus("canceled", "expired"),
+      withStatus("failed", "failed")
+    ], [])).toHaveLength(0);
+  });
+  it("keeps paid, complimentary, manual-payment and refunded orders", () => {
+    const stands = buildCustomerStands([
+      withStatus("paid", "paid"),
+      withStatus("paid", "complimentary"),
+      withStatus("pending_payment", "manual_unpaid"),
+      withStatus("canceled", "refunded")
+    ], []);
+    expect(stands.map(s => s.paymentStatus)).toEqual(["paid", "complimentary", "manual_unpaid", "refunded"]);
+  });
+});

@@ -4,7 +4,7 @@ import { importReviewPages } from '@/lib/google-business/import-pages';
 import { useCallback,useEffect,useMemo,useRef,useState } from 'react';
 import {usePathname,useRouter,useSearchParams} from 'next/navigation';
 import { Discovery } from './google-live-review-discovery';
-import {GoogleLiveReviewWorkspace} from './google-live-review-workspace';
+import {GoogleLiveReviewWorkspace,ReviewFilterBar} from './google-live-review-workspace';
 import { appendUnseenReviews,countReviewFilters,mergeReviewSnapshot,reviewFilters,scopeReviewWorkspaces } from './google-live-review-model';
 import type { Post,Row,Snapshot,Workspace } from './google-live-review-types';
 export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=false,managed=false,promoteActions=false}:{managed?:boolean;admin?:boolean;businessId?:string;businessIds?:string[];draftOnly?:boolean;promoteActions?:boolean}){
@@ -42,7 +42,9 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
   if(action==='remove'&&!window.confirm('Remove this stopped assignment and its cached reviews and drafts?'))return;
   setBusy(true);setError('');try{if(action==='sync'){if(importing.current)return;importing.current=true;const workspace=snapshot?.workspaces.find(w=>w.business_id===businessId);setImportStatus({id:businessId,name:workspace?.title||workspace?.business_name||'your business',done:false});await importReviewPages(async()=>{const result=await post({action,businessId}) as {imported:number;more:boolean};if(mounted.current)await refresh();return result;},()=>{},undefined,()=>!mounted.current);if(mounted.current)setImportStatus(current=>current?.id===businessId?{...current,done:true}:current);}else await post({action,businessId});if(mounted.current)await refresh();}catch(e){if(mounted.current)setError(e instanceof Error?e.message:'Request failed.');}finally{importing.current=false;if(mounted.current)setBusy(false);}
  }
- const importWorkspace=snapshot?.workspaces.find(w=>inScope(w.business_id)&&(importStatus?w.business_id===importStatus.id:true));
+ const multipleLocations=scopedWorkspaces.length>1;
+ // Report the location that is actually importing, syncing or failing, not simply the first one in the list.
+ const importWorkspace=importStatus?scopedWorkspaces.find(w=>w.business_id===importStatus.id):scopedWorkspaces.find(w=>w.sync_in_progress||!w.initial_import_completed||w.last_error)||scopedWorkspaces[0];
  const imported=Number(importWorkspace?.imported_count||0),total=importWorkspace?.review_total;
  const initialComplete=Boolean(importWorkspace?.initial_import_completed||importStatus?.done);
  const importError=error||importWorkspace?.last_error;
@@ -51,7 +53,7 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
  return <section aria-label="Live Google reviews" className="tr-review-list"><h2 className="sr-only">Google reviews</h2>
  {importWorkspace&&(!initialComplete||checking||importError)&&<div role="status" aria-live="polite" className="mb-2 flex items-center gap-2 text-xs text-muted" title={importWorkspace.business_name}>
  {checking&&!importError&&<span aria-hidden="true" className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-teal-600/25 border-t-teal-600 motion-reduce:animate-none"/>}
- <span>{initialComplete?(importError?'Update check paused':'Checking for updates…'):`${importError?'Import paused':'Importing'} · ${imported}${typeof total==='number'?` / ${total}`:''} reviews${!importError&&percent!==null?` · ${percent}%`:''}`}</span>
+ <span>{(initialComplete?(importError?'Update check paused':'Checking for updates…'):`${importError?'Import paused':'Importing'} · ${imported}${typeof total==='number'?` / ${total}`:''} reviews${!importError&&percent!==null?` · ${percent}%`:''}`)+(multipleLocations?` · ${importWorkspace.title||importWorkspace.business_name}`:'')}</span>
  </div>}
 
  <p className="sr-only">{draftOnly?'Draft-only workspace. Approve saved drafts for review; nothing is published.':snapshot?.publishingEnabled?'Live publishing activated. Publishing a saved reply requires your confirmation.':'Live publishing disabled. Saved and approved replies remain drafts.'}</p>
@@ -59,7 +61,9 @@ export function GoogleLiveReviews({admin=false,businessId,businessIds,draftOnly=
 
  {admin&&!draftOnly&&snapshot&&<Discovery post={post} refresh={refresh} businesses={snapshot.businesses || []}/>}
  {snapshot?.workspaces.length===0&&<p className="mt-4 text-sm">No live Google business assigned yet. {admin?'After approval, load the managing account’s locations and assign the correct customer.':managed?'The client can connect this location in their account.':'Connect your Google business below to import reviews.'}</p>}
- {scopedWorkspaces.map((w,index)=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} allowGoogleConnection={!admin&&!managed} promoteActions={promoteActions&&index===0} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={index===0} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)}
+ {multipleLocations&&<ReviewFilterBar idSuffix="all-locations" reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter}/>}
+ {/* With several locations in view, each keeps its own sync/settings buttons beside its name; only a single location's buttons move into the page header. */}
+ {scopedWorkspaces.map(w=><GoogleLiveReviewWorkspace key={w.business_id} w={w} businessId={businessId} admin={admin} allowGoogleConnection={!admin&&!managed} promoteActions={promoteActions&&!multipleLocations} busy={busy} draftOnly={draftOnly} publishingEnabled={Boolean(snapshot?.publishingEnabled)} reviewFilter={reviewFilter} ratingFilter={ratingFilter} filterCounts={filterCounts} showFilters={!multipleLocations} onFilter={selectReviewFilter} onRatingFilter={setRatingFilter} post={post} refresh={refresh} businessAction={businessAction} moreReviews={moreReviews}/>)}
 
  </section>;
 }

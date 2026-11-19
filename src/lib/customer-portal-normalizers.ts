@@ -271,11 +271,18 @@ export function normalizeOrderItems(value: unknown): CustomerPortalOrderItem[] {
   });
 }
 
+// A Stripe checkout the customer never completed (still open, expired or failed) produces no stand.
+// Manual-payment orders (manual_unpaid), complimentary and paid orders still do.
+export function isUnfinishedCheckout(order: Pick<CustomerPortalOrder, "status" | "paymentStatus">) {
+  if (order.paymentStatus === "expired" || order.paymentStatus === "failed" || order.status === "failed") return true;
+  return order.status === "pending_payment" && (!order.paymentStatus || order.paymentStatus === "unpaid");
+}
+
 export function buildCustomerStands(orders: CustomerPortalOrder[], subscriptions: CustomerPortalSubscription[]): CustomerPortalStand[] {
   const subscriptionByCode = new Map(subscriptions.map((subscription) => [subscription.permanentCode, subscription]));
   const subscriptionByUrl = new Map(subscriptions.map((subscription) => [subscription.hostedPageUrl, subscription]));
 
-  return orders.flatMap((order) =>
+  return orders.filter((order) => !isUnfinishedCheckout(order)).flatMap((order) =>
     order.items.flatMap((item) => {
       const index = Number(item.id) - 1;
       const rawItem = item.lineItem;
