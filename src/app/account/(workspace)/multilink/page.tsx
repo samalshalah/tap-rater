@@ -1,4 +1,5 @@
 import {CustomerOrdersManager} from '@/components/account/customer-orders-manager';
+import {WorkspacePageHeader} from '@/components/account/workspace-ui';
 import {customerStandRegistry,attachStandRegistry} from '@/lib/customer-stand-registry';
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
@@ -42,9 +43,7 @@ export default async function AccountMultiLinkPage({searchParams}:{searchParams?
   return (
     <AccountShell>
       <div className="grid gap-5">
-        <section className="tr-account-page-header">
-          <h1 className="text-xl font-semibold text-ink">Multi-Link</h1>
-        </section>
+        <WorkspacePageHeader title="Multi-Link"/>
 
         <CustomerStandsManager stands={registeredStands} hostedPages={hostedPages} businesses={portal.businesses.map(b=>({id:b.id,name:b.businessName}))} />
         {params?.billing_error&&<p role="alert" className="text-sm">{params.billing_error}</p>}

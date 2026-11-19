@@ -3,8 +3,10 @@ import type {ReactNode} from 'react';
 export function WorkspaceMetrics({items}:{items:{label:string;value:ReactNode;note?:string}[]}) {
  return <dl className="tr-workspace-metrics">{items.map(item=><div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd>{item.note&&<small>{item.note}</small>}</div>)}</dl>;
 }
-export function WorkspacePageHeader({title,description,actions}:{title:string;description?:string;actions?:ReactNode}) {
- return <header className="tr-app-page-header"><div className="tr-app-title-row"><h1>{title}</h1>{description&&<WorkspaceDetails label="?" title={title+" help"}><p>{description}</p></WorkspaceDetails>}</div>{actions&&<div className="tr-app-page-actions">{actions}</div>}</header>;
+/** The one page header for every client workspace page: title, optional "?" help, optional one-line subtitle, optional actions on the right. */
+export function WorkspacePageHeader({title,description,subtitle,actions}:{title:string;description?:string;subtitle?:ReactNode;actions?:ReactNode}) {
+ const titleRow=<div className="tr-app-title-row"><h1>{title}</h1>{description&&<WorkspaceDetails label="?" title={title+" help"}><p>{description}</p></WorkspaceDetails>}</div>;
+ return <header className="tr-app-page-header">{subtitle?<div className="tr-app-page-heading">{titleRow}<p className="tr-app-page-subtitle">{subtitle}</p></div>:titleRow}{actions&&<div className="tr-app-page-actions">{actions}</div>}</header>;
 }
 export function WorkspaceToolbar({children,label}:{children:ReactNode;label:string}) {
  return <div className="tr-app-toolbar" role="group" aria-label={label}>{children}</div>;

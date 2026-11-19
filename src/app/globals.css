@@ -805,7 +805,7 @@ a {
 .tr-review-dialog>header p{font-size:12px;color:#52616c;margin-top:4px;}
 .tr-review-dialog .tr-card{border:0;box-shadow:none;border-radius:0;padding:18px;}
 .tr-review-dialog textarea{font-size:14px;}
-.tr-client-shell .tr-workspace-content>section:not(.tr-local-workspace){max-width:1480px;margin-inline:auto;}
+/* Client pages share one full-width, left-aligned content column (no per-element centering). */
 @media(min-width:1024px){.tr-client-shell .tr-workspace-sidebar{top:0;height:100dvh;padding:18px 10px;}.tr-client-shell{grid-template-columns:200px minmax(0,1fr);}}
 @media(max-width:1023px){.tr-client-shell .tr-client-brand{margin:0 0 10px;}.tr-client-shell .tr-client-brand img{width:110px;}.tr-client-shell .tr-workspace-sidebar{padding:10px 12px;}.tr-client-shell .tr-workspace-sidebar form{display:none;}.tr-client-shell .tr-workspace-content{padding:14px;}}
 @media(max-width:640px){.tr-review-reply{display:none;}.tr-review-table th:first-child{width:27%;}.tr-review-table th:nth-child(2){width:14%;}.tr-review-table th:nth-child(3){width:33%;}.tr-review-table th:nth-child(4){width:13%;}.tr-review-table th:nth-child(5){width:13%;}.tr-review-table th,.tr-review-table td{padding:8px 6px;}.tr-client-shell h1{font-size:21px!important;}.tr-review-dialog .tr-card{padding:12px;}}
@@ -1165,7 +1165,7 @@ main.tr-client-shell nav.tr-account-navigation > section > h2{font-size:11px!imp
 main.tr-client-shell .tr-stands-overview > h1{font-size:24px!important;line-height:1.3!important;margin:0;font-weight:600;}
 main.tr-client-shell .tr-stands-overview h2{font-size:18px!important;line-height:1.4!important;font-weight:500!important;}
 
-main.tr-client-shell .tr-locations-page > header > h1{font-size:24px!important;line-height:1.3!important;margin:0;font-weight:600;}
+
 /* One location branch at a time, separate from stand navigation. */
 .tr-location-tree{margin:4px 0 4px 8px;padding-left:8px;border-left:1px solid #dce5ef;min-width:0;}
 .tr-tree-search{display:flex;align-items:center;gap:5px;margin:6px 0;padding:6px;border:1px solid #dce5ef;border-radius:5px;background:white;}

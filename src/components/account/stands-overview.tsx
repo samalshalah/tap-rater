@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import {WorkspacePageHeader} from './workspace-ui';
 import {WorkspaceDetails} from './workspace-details';
 import {WorkspaceMetrics} from './workspace-ui';
 import {countMultiLinkPages,countPaidStandQuantity,type CustomerPortalData} from '@/lib/customer-portal';
@@ -7,9 +8,9 @@ export function StandsOverview({portal}:{portal:CustomerPortalData}){
  const firstName=portal.customer?.name?.trim().split(/\s+/)[0]??'there';
  const actions=buildDashboardActions(portal),latestOrder=portal.orders[0],multiLinkPages=countMultiLinkPages(portal.subscriptions);
  return (
-      <section aria-label="Stands overview" className="tr-stands-overview mt-4">
-      <h1 className="text-2xl font-semibold">Stands overview</h1>
-      <div className="mt-4 grid gap-3">
+      <section aria-label="Stands overview" className="tr-stands-overview">
+      <WorkspacePageHeader title="Stands overview"/>
+      <div className="grid gap-3">
         <WorkspaceDetails label="About this workspace"><p>Welcome, {firstName}. Manage your stands, orders and billing here.</p></WorkspaceDetails>
 
         <WorkspaceMetrics items={[

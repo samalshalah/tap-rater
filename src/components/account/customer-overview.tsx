@@ -69,10 +69,9 @@ export function CustomerOverview({ portal, reviewsEnabled, reviews, reviewSubscr
 
   return (
     <section aria-label="Customer overview">
-      <WorkspacePageHeader title="Overview" />
-      <p className="mt-2 text-sm text-muted">Your products, service activity, and updates in one place.</p>
+      <WorkspacePageHeader title="Overview" subtitle="Your products, service activity, and updates in one place." />
 
-      <div className="mt-5 grid items-stretch gap-4 lg:grid-cols-2">
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
         {(portal.orders.length>0||portal.stands.length>0||portal.devices.length>0||!reviewsEnabled)&&<OverviewPanel title="Products" icon={<Layers size={18} aria-hidden="true" />}>
           {paidStands + complimentaryStands > 0 || portal.devices.length > 0 ? (
             <dl className="flex flex-wrap gap-x-7 gap-y-3">

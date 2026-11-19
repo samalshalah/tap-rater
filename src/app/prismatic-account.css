@@ -111,9 +111,6 @@
 
 /* Locations uses the approved compact account table, isolated from commerce. */
 
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page > header { margin-bottom:14px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page > header h1 { font-size:26px!important; }
-.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page > header p { font-size:12px!important; line-height:1.5!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary { gap:10px!important; margin-bottom:14px!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button { padding:10px 14px!important; border-radius:6px!important; min-height:0!important; }
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button > strong { font-size:22px!important; line-height:1.2!important; margin-top:3px!important; }
@@ -134,7 +131,6 @@
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary { grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:6px!important; }
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button { padding:8px!important; }
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-locations-summary > button > span { font-size:10px!important; }
- .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page > header { align-items:flex-start!important; }
 }
 
 .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-locations-page .tr-client-table { table-layout:auto!important; min-width:900px!important; }
@@ -182,3 +178,5 @@
  .tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-billing-locations :is(th,td) {display:block;width:100%!important;min-width:0!important;white-space:normal!important;border:0!important;padding:6px 12px!important;}
  .tr-prismatic-account .tr-billing-locations td[data-label="Plan status"]::before {content:'Plan status: ';font-weight:600;}
 }
+/* Selected location in the notification location list matches other selected filters. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-notification-locations a[aria-current=page]{color:#6035ff!important;border-color:#6035ff!important;background:#eee8ff!important}

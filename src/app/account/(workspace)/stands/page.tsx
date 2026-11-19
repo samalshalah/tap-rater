@@ -1,4 +1,5 @@
 import {customerStandRegistry,attachStandRegistry} from '@/lib/customer-stand-registry';
+import {WorkspacePageHeader} from '@/components/account/workspace-ui';
 import { AccountShell } from "@/components/account/account-shell";
 import { CustomerStandsManager } from "@/components/account/customer-stands-manager";
 import { requireCustomer } from "@/lib/customer-auth";
@@ -34,9 +35,7 @@ export default async function AccountStandsPage() {
   return (
     <AccountShell>
       <div className="grid gap-5">
-        <section className="tr-account-page-header">
-          <h1 className="text-xl font-semibold text-ink">My Stands</h1>
-        </section>
+        <WorkspacePageHeader title="My Stands"/>
 
         <CustomerStandsManager stands={registeredStands} hostedPages={hostedPages} businesses={portal.businesses.map(b=>({id:b.id,name:b.businessName}))} />
       </div>
