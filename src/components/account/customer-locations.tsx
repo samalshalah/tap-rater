@@ -80,11 +80,7 @@ export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
  <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><label className="flex w-full max-w-sm items-center gap-2 rounded-md border border-line bg-white px-3"><Search size={16}/><input aria-label="Search locations" className="w-full bg-transparent text-sm outline-none" placeholder="Search locations" value={query} onChange={e=>setQuery(e.target.value)}/></label>{data&&!selectedLocationId&&<div className="tr-segmented flex text-sm" role="group" aria-label="Location view"><button type="button" aria-pressed={view==='attention'} className={`rounded px-3 py-1.5 `} onClick={()=>setView('attention')}>Location health</button><button type="button" aria-pressed={view==='tasks'} className={`rounded px-3 py-1.5 `} onClick={()=>setView('tasks')}>Reply tasks</button><button type="button" aria-pressed={view==='all'} className={`rounded px-3 py-1.5 `} onClick={()=>setView('all')}>All locations</button></div>}</div>
  {data&&<p className="mb-3 text-xs text-muted">{selectedLocation?`Showing ${selectedLocation.business_name}`:view==='attention'?`${visible.length} ${visible.length===1?'location needs':'locations need'} attention`:view==='tasks'?`${visible.length} locations with current reply tasks`:`${visible.length} of ${data.locations.length} locations`}{summary.history>0&&<> · {summary.history.toLocaleString()} older draft{summary.history===1?'':'s'} are kept in review history</>}</p>}
  {!data&&!error&&<p role="status">Loading locations...</p>}
-  <div className="tr-client-table-wrap">
-   <table className="tr-client-table min-w-[760px]">
-    <caption className="sr-only">Google review locations, their health, current tasks, and actions.</caption>
-    <thead><tr><th>Location</th><th>Health</th><th>Reviews</th><th className="w-px">Next step</th><th className="w-px">Manage</th></tr></thead>
-    <tbody>
+  <div className="grid gap-3" role="list" aria-label="Google review locations">
      {visible.map(location => {
       const business = items.find(item => item.id === location.id);
       const info = business?.draft || business?.current;
@@ -99,42 +95,31 @@ export function CustomerLocations({businesses}:{businesses:AccountBusiness[]}){
       const destination = status!=='ended'&&!location.service_paused&&taskCount > 0 ? `${reviewHref}&view=tasks` : reviewHref;
       const actionLabel = (status==='ended'||location.service_paused)?'View review history':taskCount > 0 ? `Review ${taskCount} ${taskCount===1?'task':'tasks'}`
        : status === 'paused' ? 'Manage replies' : status === 'draft' || status === 'import' ? 'Open Reviews' : 'View review history';
-      return <tr key={location.id} data-dashboard-row onClick={event=>activateListRow(event,()=>router.push(destination))}>
-       <th scope="row">
-        <div className="flex min-w-[250px] items-center gap-2">
-         <span className="rounded-full bg-slate-100 p-1.5 text-slate-500"><Building2 size={16} aria-hidden="true"/></span>
+      const name=info?.name||location.business_name, address=info?.address||location.address||'Address not added';
+      return <article key={location.id} role="listitem" data-dashboard-row onClick={event=>activateListRow(event,()=>router.push(destination))} className="tr-stand-row tr-card tr-location-row p-4">
+       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+         <div className="tr-stand-thumbnail flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-white p-1"><Building2 size={22} className="text-muted" aria-hidden="true"/></div>
          <div className="min-w-0">
-          <Link className="font-semibold text-blue-700" href={`/account/profile?location=${location.id}`} onClick={event=>event.stopPropagation()}>{info?.name||location.business_name}</Link>
-          <p className="mt-0.5 truncate text-xs font-normal text-muted" title={info?.address||location.address||'Address not added'}>{info?.address||location.address||'Address not added'}</p>
+          <div className="flex flex-wrap items-center gap-2">
+           <h3 className="text-base font-medium text-ink"><Link className="text-left hover:underline" href={`/account/profile?location=${location.id}`} onClick={event=>event.stopPropagation()}>{name}</Link></h3>
+           <span className={`tr-badge ${className}`}><StatusIcon size={14} className="shrink-0" aria-hidden="true"/>{statusLabel}</span>
+           {business?.draft&&<span className="tr-badge is-brand">Draft</span>}
+          </div>
+          <p className="mt-1 truncate text-xs text-muted" title={address}>{address}</p>
+          <p className="mt-1 text-xs text-muted">{reviewCount.toLocaleString()} review{reviewCount===1?'':'s'} · <span className={taskCount>0?'text-amber-800':''}>{taskCount>0?`${taskCount} current ${taskCount===1?'task':'tasks'}`:'No current tasks'}</span>{detail&&<> · {detail}</>}</p>
          </div>
-         {business?.draft&&<span className="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-semibold text-blue-700">Draft</span>}
         </div>
-       </th>
-       <td>
-        <span className={`tr-badge ${className}`}><StatusIcon size={14} className="shrink-0" aria-hidden="true"/>{statusLabel}</span>
-        {detail && <p className="mt-1 max-w-52 text-xs text-muted">{detail}</p>}
-       </td>
-       <td>
-        <div className="whitespace-nowrap">
-         <strong>{reviewCount.toLocaleString()}</strong><span className="ml-1 text-xs text-muted">review{reviewCount===1?'':'s'}</span>
-         <p className={`mt-1 text-xs ${taskCount>0?'text-amber-800':'text-muted'}`}>{taskCount>0?`${taskCount} current ${taskCount===1?'task':'tasks'}`:'No current tasks'}</p>
+        <div className="tr-location-manage flex shrink-0 flex-wrap items-center gap-2">
+         {status!=='ended'&&location.service_pause_available&&location.google_assignment_exists&&(location.google_enabled||location.service_paused)&&<button type="button" className="tr-button-ghost tr-service-control" title={location.service_paused?'Resume service':'Pause service'} aria-label={`${location.service_paused?'Resume service':'Pause service'} for ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setServiceTarget(location);}}>{location.service_paused?<Play size={14} aria-hidden="true"/>:<Pause size={14} aria-hidden="true"/>}</button>}
+         <button className="tr-button-ghost" title="Edit location" aria-label={`Edit ${location.business_name}`} disabled={!business} onClick={event=>{event.stopPropagation();setNotice('');setEditing(business||null);}}><Pencil size={14}/></button>
+         <button className="tr-button-ghost" title="Delete location" aria-label={`Delete ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setRemoving(location);}}><Trash2 size={14}/></button>
+         {status==='connect'?<button type="button" className="tr-button-primary whitespace-nowrap" onClick={event=>{event.stopPropagation();setConnecting({id:location.id,name,address:info?.address||location.address});}}>Connect Google</button>
+          :<Link className="tr-button-primary whitespace-nowrap" href={destination} onClick={event=>event.stopPropagation()}>{actionLabel}</Link>}
         </div>
-       </td>
-       <td className="tr-location-next">
-        {status==='connect'?<button type="button" className="tr-button-primary whitespace-nowrap" onClick={event=>{event.stopPropagation();setConnecting({id:location.id,name:info?.name||location.business_name,address:info?.address||location.address});}}>Connect Google</button>
-         :<Link className="tr-button-ghost whitespace-nowrap" href={destination} onClick={event=>event.stopPropagation()}>{actionLabel}</Link>}
-       </td>
-       <td>
-        <div className="tr-location-manage flex items-center gap-1">
-        {status!=='ended'&&location.service_pause_available&&location.google_assignment_exists&&(location.google_enabled||location.service_paused)&&<button type="button" className="tr-button-ghost tr-service-control" title={location.service_paused?'Resume service':'Pause service'} aria-label={`${location.service_paused?'Resume service':'Pause service'} for ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setServiceTarget(location);}}>{location.service_paused?<Play size={14} aria-hidden="true"/>:<Pause size={14} aria-hidden="true"/>}</button>}
-         <button className="tr-button-ghost" aria-label={`Edit ${location.business_name}`} disabled={!business} onClick={event=>{event.stopPropagation();setNotice('');setEditing(business||null);}}><Pencil size={14}/></button>
-         {<button className="tr-button-ghost" title="Delete location" aria-label={`Delete ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setRemoving(location);}}><Trash2 size={14}/></button>}
-        </div>
-       </td>
-      </tr>;
+       </div>
+      </article>;
      })}
-    </tbody>
-   </table>
   </div>
  {data&&!visible.length&&<div className="rounded-lg border border-line bg-white p-8 text-center text-sm text-muted">{query?'No matching locations.':view==='attention'&&data.locations.length?'No locations need attention.':view==='tasks'&&data.locations.length?'No current reply tasks.':'Add your first location to get started.'}</div>}
  {editing&&<BusinessEditor business={editing} onClose={()=>setEditing(null)} onSaved={(draft,version)=>{setItems(old=>old.map(b=>b.id===editing.id?{...b,draft,version}:b));setEditing(null);setNotice('Business draft saved.');}}/>}
