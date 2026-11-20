@@ -18,7 +18,7 @@ export function buildCustomerActivationEmailHtml(input: { activationUrl: string;
     eyebrow: "WELCOME TO TAP RATER",
     body: [
       input.reviews ? "Your Google Reviews payment is confirmed. Let’s get your workspace ready." : "Your Tap Rater account activation link is ready.",
-      input.reviews ? "Create your password, continue with your selected business, and import your reviews. Your plan includes imports and reply drafts; posting and autopilot are not included." : "Create your password to access your Tap Rater account and manage your services, stands, orders, and billing details.",
+      input.reviews ? "Create your password, continue with your selected business, and import your reviews. Then turn on AI replies and choose your 4–5-star autopilot settings." : "Create your password to access your Tap Rater account and manage your services, stands, orders, and billing details.",
       "This activation link expires in 7 days. If you did not expect this email, you can ignore it.",
       "Support: https://taprater.com/support"
     ],

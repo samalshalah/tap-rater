@@ -1,6 +1,6 @@
 import type {Metadata} from 'next';
 import Link from 'next/link';
-import {ArrowRight, Check, Download, FilePenLine, Copy} from 'lucide-react';
+import {ArrowRight, Check, Download, FilePenLine, Send} from 'lucide-react';
 import {SectionHeader, SectionShell} from '@/components/storefront/section';
 import {FaqList} from '@/components/storefront/faq-list';
 import {JsonLd, faqJsonLd} from '@/lib/seo';
@@ -10,7 +10,7 @@ import heroStyles from '@/components/storefront/business-pages.module.css';
 import {PrismaticWave} from '@/components/prismatic/motion';
 
 const faqs=[
- {question:'Will Tap Rater post replies to Google for me?',answer:'No. This package includes review imports and reply drafts only. Posting to Google and autopilot are disabled. If you want to publish a reply, copy your finished draft and post it yourself in Google Business Profile.'},
+ {question:'Will Tap Rater post replies to Google for me?',answer:'Only when you choose. Submit any reply to Google in one click, or turn on 4–5-star autopilot during setup to post positive replies automatically after your chosen delay. Replies to 1–3-star reviews always wait for you.'},
  {question:'What do I need to connect my business?',answer:'You need a Google account that owns or manages the Google Business Profile. Find your business and connect that Google account to see your unanswered-review breakdown before payment. Your selected location and connection are saved for setup after account activation. You keep ownership of your profile.'},
  {question:'I already have Reviews access. Should I buy again?',answer:'No. Sign in to your existing Tap Rater account to use your Reviews workspace or check Subscription management. If the location is already connected to another Tap Rater workspace, contact support before purchasing. A location cannot be connected to two workspaces.'},
  {question:'What does the monthly allowance include?',answer:'Each subscribed location includes 1,000 reply drafts per month. You can edit and save drafts before deciding whether to use them. AI drafting requires your opt-in; check every draft for accuracy and tone.'},
@@ -18,7 +18,7 @@ const faqs=[
  {question:'Can I cancel my subscription?',answer:'Yes. Cancel future renewals in Subscription management. The subscription renews monthly until canceled, and access continues through the paid period. Final pricing and any applicable tax are shown before payment.'},
  {question:'Does this include Google Growth?',answer:'No. Google Growth, profile optimization, and ranking scans are not included. This package focuses on importing reviews and preparing reply drafts.'}
 ];
-export const metadata:Metadata={title:'Google Reviews — Imports & Reply Drafts',description:'Bring your Google reviews into one workspace and prepare editable reply drafts. $29 per location per month. Posting and autopilot are not included.',alternates:{canonical:'/google-reviews'},openGraph:{title:'Google Reviews, in your own words | Tap Rater',description:'Import reviews. Prepare thoughtful drafts. Keep the final word.',url:'/google-reviews',type:'website'}};
+export const metadata:Metadata={title:'Google Reviews — Imports & Reply Drafts',description:'Bring your Google reviews into one workspace, prepare AI reply drafts and post them to Google, with optional 4–5-star autopilot. $29 per location per month.',alternates:{canonical:'/google-reviews'},openGraph:{title:'Google Reviews, in your own words | Tap Rater',description:'Import reviews. Prepare thoughtful drafts. Keep the final word.',url:'/google-reviews',type:'website'}};
 
 export const dynamic='force-dynamic';
 export default async function GoogleReviewsLanding({searchParams}:{searchParams?:Promise<{checkout?:string}>}){const params=await searchParams;return <main className="tr-public-shell text-ink">
@@ -32,13 +32,13 @@ export default async function GoogleReviewsLanding({searchParams}:{searchParams?
   </div>
  </SectionShell>
  <ReviewsLandingPurchase cancelled={params?.checkout==='cancelled'}/>
- <div className={`tr-container ${styles.promiseStrip}`}><span><Check size={17} aria-hidden="true"/>You keep the final word</span><span><Check size={17} aria-hidden="true"/>No stand required</span><span><Check size={17} aria-hidden="true"/>Nothing posts automatically</span></div>
+ <div className={`tr-container ${styles.promiseStrip}`}><span><Check size={17} aria-hidden="true"/>You keep the final word</span><span><Check size={17} aria-hidden="true"/>No stand required</span><span><Check size={17} aria-hidden="true"/>You choose what posts</span></div>
 
  <SectionShell><div className="tr-container"><SectionHeader eyebrow="A little help with every reply" title="Less time starting from scratch." body="Give each review the attention it deserves, with a clear place to read feedback and work on your response."/>
  <div className={styles.features}>{[
   {icon:Download,title:'Bring your reviews together',body:'Connect a Google Business Profile you manage and import its reviews into your Tap Rater workspace.'},
   {icon:FilePenLine,title:'Find the words, then refine them',body:'Generate reply drafts using the review text and rating. Adjust the wording and tone before saving.'},
-  {icon:Copy,title:'Keep publishing in your hands',body:'Copy a finished draft when you’re ready. Publish it yourself in Google Business Profile—nothing is sent from this package.'}
+  {icon:Send,title:'Publish on your terms',body:'Submit a reply to Google in one click, or let 4–5-star autopilot reply to positive reviews for you.'}
  ].map(({icon:Icon,title,body})=><article className={styles.feature} key={title}><span className={styles.icon}><Icon size={24} strokeWidth={1.5} aria-hidden="true"/></span><h3>{title}</h3><p>{body}</p></article>)}</div>
  </div></SectionShell>
 
@@ -46,7 +46,7 @@ export default async function GoogleReviewsLanding({searchParams}:{searchParams?
  <ol className={styles.steps}>{[
   ['Find and connect','Find your business, then connect the Google account that manages it. No payment is needed to see your review snapshot.'],
   ['See your reviews, then subscribe','See unanswered reviews by star rating. Enter your email and pay when you’re ready. We’ll save your business for account setup.'],
-  ['Draft, edit, decide','Opt in to AI drafting, review the suggested wording, and save your reply. Copy it to Google only when you’re ready.']
+  ['Draft, edit, decide','Turn on AI replies, set your preferences, and choose 4–5-star autopilot. Review and submit everything else when you’re ready.']
  ].map(([title,body],i)=><li key={title}><span className={styles.stepNumber}>0{i+1}</span><h3>{title}</h3><p>{body}</p></li>)}</ol>
  <p className={styles.existing}>Already using Tap Rater Reviews? <Link href="/account/reviews">Open your workspace <ArrowRight size={15} aria-hidden="true"/></Link> Your existing account features stay as they are.</p>
  </div></SectionShell>

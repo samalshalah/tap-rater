@@ -24,8 +24,9 @@ export function AiRepliesButton({name,location,onOpen}:{name:string;location:AiS
  return <button type="button" className={`tr-button-ghost tr-ai-replies-button${location.ai_consent?' is-on':''}`} title={`AI replies: ${state}`} aria-label={`AI replies for ${name}`} onClick={event=>{event.stopPropagation();onOpen();}}><Sparkles size={14} aria-hidden="true"/></button>;
 }
 
-/** The existing per-location AI reply controls (Reviews › Settings) opened as a popup from Locations. */
-export function AiRepliesDialog({businessId,name,onClose,onSaved}:{businessId:string;name:string;onClose:()=>void;onSaved?:()=>void}){
+/** Per-location AI reply controls (AI replies, autopilot, 1–3-star drafts, reply preferences, schedule). Used by the
+ * Locations popup and by the "Activate replies" step of first-login setup. */
+export function AiRepliesPanel({businessId,onSaved,showUsage=true}:{businessId:string;onSaved?:()=>void;showUsage?:boolean}){
  const endpoint=useReviewEndpoint();
  const [workspace,setWorkspace]=useState<Workspace|null>(null),[error,setError]=useState('');
  const load=useCallback(async()=>{
@@ -37,14 +38,21 @@ export function AiRepliesDialog({businessId,name,onClose,onSaved}:{businessId:st
  useEffect(()=>{load().catch(e=>setError(e instanceof Error?e.message:'Could not load AI reply settings.'));},[load]);
  async function saved(){await load();onSaved?.();}
  const used=Number(workspace?.ai_monthly_used||0),limit=workspace?.ai_monthly_limit;
- return <ModalDialog labelledBy="ai-replies-title" onClose={onClose}><div className="tr-card w-[min(560px,calc(100vw-32px))] max-h-[90dvh] space-y-4 overflow-auto p-5">
-  <header className="flex items-start justify-between gap-3"><div><h2 id="ai-replies-title" data-dialog-heading tabIndex={-1} className="flex items-center gap-2 text-xl font-bold"><Sparkles size={18} className="text-brand" aria-hidden="true"/>AI replies</h2><p className="mt-1 text-sm text-muted">{name}</p></div><button type="button" className="tr-button-ghost" aria-label="Close AI replies" onClick={onClose}><X size={16}/></button></header>
+ return <div className="space-y-4">
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   {!workspace&&!error&&<p role="status" className="text-sm text-muted">Loading AI reply settings…</p>}
   {workspace&&<>
    <ReviewAutomationControls location={{...workspace,id:workspace.business_id,connected:workspace.connected&&workspace.enabled}} onSaved={saved}/>
    {!workspace.reviews_draft_only&&<div className="flex flex-wrap items-center gap-3"><ReviewScheduleSettings businessId={workspace.business_id}/></div>}
-   <p className="text-sm text-muted">AI usage this month: {limit!=null?`${used} / ${Number(limit)}`:used}.</p>
+   {showUsage&&<p className="text-sm text-muted">AI usage this month: {limit!=null?`${used} / ${Number(limit)}`:used}.</p>}
   </>}
+ </div>;
+}
+
+/** The AI reply controls opened as a popup from a Locations card. */
+export function AiRepliesDialog({businessId,name,onClose,onSaved}:{businessId:string;name:string;onClose:()=>void;onSaved?:()=>void}){
+ return <ModalDialog labelledBy="ai-replies-title" onClose={onClose}><div className="tr-card w-[min(560px,calc(100vw-32px))] max-h-[90dvh] space-y-4 overflow-auto p-5">
+  <header className="flex items-start justify-between gap-3"><div><h2 id="ai-replies-title" data-dialog-heading tabIndex={-1} className="flex items-center gap-2 text-xl font-bold"><Sparkles size={18} className="text-brand" aria-hidden="true"/>AI replies</h2><p className="mt-1 text-sm text-muted">{name}</p></div><button type="button" className="tr-button-ghost" aria-label="Close AI replies" onClick={onClose}><X size={16}/></button></header>
+  <AiRepliesPanel businessId={businessId} onSaved={onSaved}/>
  </div></ModalDialog>;
 }

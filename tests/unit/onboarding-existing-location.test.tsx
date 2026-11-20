@@ -32,8 +32,10 @@ it.each([
  const tree=FirstLoginSetup({children:null});
  expect(find(tree,node=>node.type==='h1').props.children).toBe('Continue your setup');
  if(patch.drafts_only){
-  expect(find(tree,node=>node.type==='p'&&node.props.children==='Edit and copy your drafts, then publish them on Google yourself. Automatic posting is not included.')).toBeTruthy();
-  expect(find(tree,node=>node.type==='button'&&node.props.children==='Open Reviews')).toBeTruthy();
+  // After a complete import, setup asks the customer to activate replies before opening Reviews.
+  expect(find(tree,node=>node.type==='h2'&&node.props.children==='Activate your replies')).toBeTruthy();
+  expect(find(tree,node=>node.type==='button'&&node.props.children==='Activate replies')).toBeTruthy();
+  expect(find(tree,node=>node.type==='button'&&node.props.children==='Open Reviews')).toBeFalsy();
  }
 });
 it('leaves completed customers on their existing workspace',()=>{

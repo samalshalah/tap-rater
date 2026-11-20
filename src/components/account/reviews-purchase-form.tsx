@@ -53,9 +53,9 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    <span className={styles.eyebrow}>GOOGLE REVIEWS</span>
    <h2>Spend less time writing review replies</h2>
    <p className={styles.price}><strong>$29</strong><span>per location<br/>per month</span></p>
-   <ul className={styles.features}><li>Your Google reviews, organised in one place</li><li>Reply drafts you can personalise</li><li>Edit, copy, and publish on Google when ready</li></ul>
+   <ul className={styles.features}><li>Your Google reviews, organised in one place</li><li>Reply drafts you can personalise</li><li>Submit replies to Google in one click</li><li>Optional 4–5-star autopilot</li></ul>
    <p className={styles.limit}>{marketingPlan.replies.toLocaleString('en-US')} reply drafts per location each month</p>
-   <p className={styles.limit}>You publish on Google yourself.<br/>Automatic posting isn’t included.</p>
+   <p className={styles.limit}>1–3-star replies always wait for your approval.</p>
   </aside>}
   <fieldset disabled={busy} className={styles.details}>
    {!planReady?<><ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onAssigned={setAssigned} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>{!setupHref&&!assigned&&<p className={styles.smallPrint}>Can't connect Google right now? <button type="button" className={styles.textButton} onClick={()=>{setConnectLater(true);setAccepted(false);setError('');}}>Subscribe now and connect Google after payment</button></p>}</>:<>
@@ -65,7 +65,7 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    <div className={styles.locationRow}><label htmlFor="reviews-locations">How many locations do you want to subscribe?<span>$29 per location / month</span></label><select id="reviews-locations" value={locations} onChange={e=>setLocations(Number(e.target.value))}>{Array.from({length:10},(_,i)=><option key={i+1} value={i+1}>{i+1}</option>)}</select></div>
    {locations>1&&<p className={styles.smallPrint}>{preview?'Your selected business is location 1. ':''} {preview?'Add your other locations after activation.':'Add your locations after activation.'} Your subscription includes all selected locations from the date of payment.</p>}
    <div className={styles.total}><span>Monthly total<small>Renews monthly until canceled</small></span><strong>${(marketingAmount({cadence:'month',locations})/100).toFixed(2)}</strong></div>
-   <p className={styles.planIncludes}>Review imports · {marketingPlan.replies.toLocaleString('en-US')} reply drafts per location/month. You publish on Google yourself. Each licence stays with its location for the paid period, even if removed. Change locations after renewal.</p>
+   <p className={styles.planIncludes}>Review imports · {marketingPlan.replies.toLocaleString('en-US')} reply drafts per location/month. Optional 4–5-star autopilot. Each licence stays with its location for the paid period, even if removed. Change locations after renewal.</p>
    <label className={styles.consent}><input type="checkbox" checked={accepted} onChange={e=>setAccepted(e.target.checked)} required/><span>I agree to the <Link href="/terms">Terms</Link> and <Link href="/privacy-policy">Privacy Policy</Link>. Renews monthly until canceled.</span></label>
    <button type="submit" disabled={!accepted||busy} className={`tr-button-primary ${styles.submit}`}>{busy?'Opening secure checkout…':'Continue to secure checkout'}<span aria-hidden="true">→</span></button>
    <p className={styles.paymentNote}>Secure payment with Stripe · Cancel future renewals anytime</p>

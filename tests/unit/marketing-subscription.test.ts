@@ -18,7 +18,7 @@ describe('Growth checkout',()=>{
   expect(marketingPurchaseSchema.safeParse({cadence:'month',locations:1,acceptedTerms:false}).success).toBe(false);
   expect(marketingPurchaseSchema.safeParse({cadence:'month',locations:1,acceptedTerms:true,price:1}).success).toBe(false);
   const p=addMarketingToCheckout({mode:'payment',customer_creation:'always',invoice_creation:{enabled:true},line_items:[{price:'stand',quantity:1}],metadata:{due_today_cents:'4000'}},{cadence:'month',locations:2,acceptedTerms:true},'account','attempt');
-  expect(p.subscription_data.metadata.reviews_mode).toBe('draft_only');expect(p.mode).toBe('subscription');expect(p.line_items).toHaveLength(2);expect(p.line_items[1].price_data?.unit_amount).toBe(2900);expect(p.metadata.due_today_cents).toBe('9800');expect(p).not.toHaveProperty('customer_creation');expect(p).not.toHaveProperty('invoice_creation');
+  expect(p.subscription_data.metadata.reviews_mode).toBe('standard');expect(p.mode).toBe('subscription');expect(p.line_items).toHaveLength(2);expect(p.line_items[1].price_data?.unit_amount).toBe(2900);expect(p.metadata.due_today_cents).toBe('9800');expect(p).not.toHaveProperty('customer_creation');expect(p).not.toHaveProperty('invoice_creation');
  });
  it('does not silently combine two different subscription products',()=>expect(()=>addMarketingToCheckout({mode:'subscription'},{cadence:'month',locations:1,acceptedTerms:true},'a','b')).toThrow('Multi-Link'));
  it('refuses duplicate subscriptions before calling Stripe',async()=>{
