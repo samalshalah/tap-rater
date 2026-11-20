@@ -1,4 +1,4 @@
-import {describe,expect,it} from 'vitest';
+import {describe,expect,it,vi} from 'vitest';
 import {replyQualityIssues,reviewerFirstName,generateAutomaticReviewReply} from '@/lib/review-ai-provider';
 
 describe('reviewer first name',()=>{
@@ -39,4 +39,26 @@ it('gives the automatic writer the reviewer first name and the variety rules',as
  expect(input!.messages[0].content).toContain('reviewerFirstName');
  expect(input!.messages[0].content).toContain('Do not open with');
  expect(JSON.parse(input!.messages[1].content).reviewerFirstName).toBe('Omar');
+});
+
+describe('automatic reply fallback',()=>{
+ const reply=(text:string)=>({response:JSON.stringify({reply:text})});
+ it('tries three times before giving up',async()=>{
+  const run=vi.fn().mockResolvedValue(reply('Thank you for your review. Our team strives to provide excellent service to everyone who visits.'));
+  await generateAutomaticReviewReply('Shop',5,'Great place, amazing haircuts and very timely service','friendly',run);
+  expect(run).toHaveBeenCalledTimes(3);
+ });
+ it('keeps a reply that only fails style checks for the owner instead of the generic star-rating line',async()=>{
+  const styleOnly='We appreciate your kind words about the timely service and the cut. It was great having you in the chair today.';
+  const result=await generateAutomaticReviewReply('Shop',5,'Great place, amazing haircuts and very timely service','friendly',vi.fn().mockResolvedValue(reply(styleOnly)));
+  expect(result).toEqual({text:styleOnly,reason:'quality_check'});
+ });
+ it('leaves the draft empty when no attempt is usable',async()=>{
+  const result=await generateAutomaticReviewReply('Shop',5,'Great place, amazing haircuts','friendly',vi.fn().mockResolvedValue({response:'not json'}));
+  expect(result).toEqual({text:'',reason:'invalid_output'});
+ });
+ it('accepts a natural short mention of what the customer liked',async()=>{
+  const ok='Thanks, Michael! A great fade with no appointment needed is exactly the visit we hope for. See you next time you are in Gainesville.';
+  expect(await generateAutomaticReviewReply('Shop',5,"Best fade I've gotten in Gainesville. No appointment needed, quick and clean",'friendly',vi.fn().mockResolvedValue(reply(ok)),undefined,'Michael')).toBe(ok);
+ });
 });

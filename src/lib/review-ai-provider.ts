@@ -112,17 +112,21 @@ export async function generateAutomaticReviewReply(businessName:string,rating:nu
  })};
  let repair = '';
  let reason: AutomaticReplyForReview['reason'] = 'invalid_output';
- for (let attempt = 0; attempt < 2; attempt++) {
+ // A reply that only fails style checks (wording, openings, repetition) still answers this review, so it is kept
+ // for the owner to review if every attempt fails. It is never posted automatically.
+ let usable = '';
+ for (let attempt = 0; attempt < 3; attempt++) {
    const messages = [{role:'system', content:system + repair}, source];
    const result = await invoke(reviewAiModel, {
      messages, response_format:{type:'json_object'}, max_tokens:style==='short'?160:640,
-     temperature:attempt===0?0.7:0.4
+     temperature:[0.7,0.5,0.3][attempt]
    });
    const reply = parseAutomaticReply((result as {response?:unknown})?.response);
    const cleaned = reply && removeUnsupportedReplyClaims(reply);
    if (cleaned) {
      const issues = singleReplyQualityIssues(cleaned, style, knowledge?.recentReplies || [], true, rating>=4?comment:undefined);
      if (!issues.length) return cleaned;
+     if (!usable && issues.every(issue => styleOnlyIssues.has(issue))) usable = cleaned;
      reason = 'quality_check';
      repair = `\nWrite a fresh reply that fixes these checks: ${issues.join(', ')}. ${length}`;
    } else {
@@ -130,14 +134,31 @@ export async function generateAutomaticReviewReply(businessName:string,rating:nu
      repair = `\nReturn one JSON object with a nonempty "reply" string. Avoid promises or descriptions of staff actions. ${length}`;
    }
  }
- // A vetted acknowledgment can help the owner reply, but it does not address the written review.
- const language = knowledge?.preferences.language;
- return {text:ratingOnlyReviewSuggestions(rating, language)[style], reason};
+ // Held for the owner (never auto-posted): the best reply that answers this review, or an empty draft so the
+ // review is clearly left for a person. A generic "thanks for the stars" line would ignore what they wrote.
+ return {text:usable, reason};
 }
+const styleOnlyIssues=new Set(['reply echoes descriptive wording from the review','uses a stock opening or phrase','starts the same way as a recent reply','reply repeats a recent response']);
 
 const unsupportedClaim=/\b(?:(?:will|shall|going to|plan to|promise to|commit to|pledge to|aim to|strive to|intend to|hope to|look forward to|want to|like to|need to|must|should)\s+(?:review|investigate|improve|ensure|make sure|take|address|fix|correct|refund|replace|notify|look into|do better)|(?:we|i|our team)(?:['’](?:ll|re|ve)|\s+(?:will|are|am|have|has))\s+(?:review|investigate|improve|ensure|make sure|take|address|fix|correct|refund|replace|notify|look into|do better|strive|reviewing|investigating|taking|addressing|fixing|correcting|refunding|replacing|notifying|addressed|fixed|corrected|notified|resolved)|our team works hard)\b/i;
 /** "Haidar and Ibrahim": staff names may be repeated from the review when the reply writes them as names. */
 function namePair(chunk:string[],reply:string){const cap=(w:string)=>w.charAt(0).toUpperCase()+w.slice(1);return chunk[1]==='and'&&reply.includes(`${cap(chunk[0])} and ${cap(chunk[2])}`);}
+const echoStop=new Set(['the','a','an','and','or','is','was','are','were','it','i','we','you','our','your','to','for','of','in','at','with']);
+/**
+ * True when a reply parrots the review: a copied run of four words, or a copied adjective pair such as
+ * "fresh and tasty" (in either order). A short natural mention like "a great fade" is allowed, and so are
+ * staff names written as names ("Haidar and Ibrahim").
+ */
+function echoesReview(review:string,reply:string){
+ const source=tokens(review),words=tokens(reply),phrase=words.join(' ');
+ for(let i=0;i+2<source.length;i++){
+  const pair=source.slice(i,i+3);
+  if(pair[1]==='and'&&!echoStop.has(pair[0])&&!echoStop.has(pair[2])&&!namePair(pair,reply)&&(phrase.includes(pair.join(' '))||phrase.includes(`${pair[2]} and ${pair[0]}`)))return true;
+  const run=source.slice(i,i+4);
+  if(run.length===4&&!namePair(run,reply)&&run.filter(w=>!echoStop.has(w)).length>=2&&phrase.includes(run.join(' ')))return true;
+ }
+ return false;
+}
 /** True when two replies share their first four words, the most visible sign of a templated reply. */
 function sameOpening(a:string,b:string){const x=tokens(a).slice(0,4),y=tokens(b).slice(0,4);return x.length===4&&x.join(' ')===y.join(' ');}
 const tokens=(s:string)=>s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu,'').split(/\s+/).filter(Boolean);
@@ -149,7 +170,7 @@ function singleReplyQualityIssues(text:string,style:ReplyStyle,previous:string[]
  if(previous.some(prior=>sameOpening(text,prior)))issues.push('starts the same way as a recent reply');
  if(style!=='short'&&(words.length<(hasComment?20:12)||(text.match(/[.!?](?:\s|$)/g)||[]).length<2))issues.push('reply is incomplete or too brief');
  if(style==='short'&&words.length>35)issues.push('short reply is too long');
- if(positiveReview){const source=tokens(positiveReview),stop=new Set(['the','a','an','and','or','is','was','are','were','it','i','we','you','our','your','to','for','of','in','at','with']),phrase=words.join(' ');for(let i=0;i+2<source.length;i++){const chunk=source.slice(i,i+3);if(namePair(chunk,text))continue;if(chunk.filter(w=>!stop.has(w)).length>=2&&phrase.includes(chunk.join(' '))){issues.push('reply echoes descriptive wording from the review');break;}}}
+ if(positiveReview&&echoesReview(positiveReview,text))issues.push('reply echoes descriptive wording from the review');
  for(const prior of previous){const other=tokens(prior),a=new Set(words),b=new Set(other),overlap=[...a].filter(w=>b.has(w)).length/Math.max(1,new Set([...a,...b]).size);if(words.join(' ')===other.join(' ')||(words.length>=12&&other.length>=12&&overlap>=0.85)){issues.push('reply repeats a recent response');break;}}
  return issues;
 }
@@ -161,14 +182,7 @@ export function replyQualityIssues(replies:ReplySuggestions,previous:string[],ha
   if(cannedPhrase.test(text.trim()))issues.push(style+': uses a stock opening or phrase');
   if([...previous,...seen].some(prior=>sameOpening(text,prior)))issues.push(style+': starts the same way as another reply');
   const words=tokens(text);
-  if(positiveReview){
-   const source=tokens(positiveReview),stop=new Set(['the','a','an','and','or','is','was','are','were','it','i','we','you','our','your','to','for','of','in','at','with']);
-   const phrase=words.join(' ');
-   for(let i=0;i+2<source.length;i++){
-    const chunk=source.slice(i,i+3);if(namePair(chunk,text))continue;
-    if(chunk.filter(w=>!stop.has(w)).length>=2&&phrase.includes(chunk.join(' '))){issues.push(style+': echoes descriptive wording from the review');break;}
-   }
-  }
+  if(positiveReview&&echoesReview(positiveReview,text))issues.push(style+': echoes descriptive wording from the review');
   if(style!=='short'&&(words.length<(hasComment?20:12)||(text.match(/[.!?](?:\s|$)/g)||[]).length<2))issues.push(style+': incomplete or too brief');
   for(const prior of [...previous,...seen]){
    const other=tokens(prior),a=new Set(words),b=new Set(other);

@@ -86,13 +86,14 @@ it('repairs an automatic reply that is too brief', async () => {
  expect(run.mock.calls[1][1].messages).toHaveLength(2);
 });
 
-it('offers a starter draft after malformed output and a failed quality retry', async () => {
+it('leaves an empty draft for the owner after malformed output and failed quality retries', async () => {
  const run = vi.fn()
   .mockResolvedValueOnce({response:'malformed'})
   .mockResolvedValueOnce({response:{reply:'Thanks!'}});
  await expect(generateAutomaticReviewReply('Example',5,'Wonderful experience','friendly',run)).resolves.toEqual({
-  text:expect.stringContaining('Thank you'), reason:'quality_check'
+  text:'', reason:expect.any(String)
  });
+ expect(run).toHaveBeenCalledTimes(3);
 });
 
 it('lets provider failures reach the worker retry handling', async () => {
