@@ -9,6 +9,7 @@ import {withStripeResourceLock} from './stripe-processing';
 import {addMarketingToCheckout,marketingPlan,marketingPurchaseSchema,type MarketingPurchase} from './marketing-plan';
 import {createCustomerActivationToken} from './customer-account';
 import {sendCustomerActivationEmail} from './hosted-setup-email';
+import {notifyNewReviewsSubscription} from './reviews-subscription-admin';
 
 /** A guest reservation never grants access or sends an activation email. */
 export async function prepareMarketingBuyer(email:string,name:string,authenticatedEmail?:string,profile?:ReviewsBuyerProfile){
@@ -150,9 +151,11 @@ export async function syncMarketingSubscription(event:Stripe.Event){
     await sql`UPDATE marketing_subscriptions SET activation_email_sent_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt}`;
    }
   }
-  return {ok:true as const};
+  return {ok:true as const,paid:state.paid,locations:state.locations};
  });
  if(!result.ok)throw Error(result.error);
+ // Tell order@taprater.com about each new paid subscription (sent once per subscription; never blocks the webhook).
+ if(result.paid){try{await notifyNewReviewsSubscription({subscriptionId:id,account,locations:result.locations,mode,sql});}catch{console.warn('Reviews subscription admin email unavailable');}}
  const obj=event.data.object as unknown as {metadata?:Record<string,string>};
  return {handled:true,standalone:event.type.startsWith('invoice.')||event.type.startsWith('customer.subscription.')||obj.metadata?.marketing_only==='true'};
 }
