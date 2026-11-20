@@ -7,6 +7,8 @@ import { freeShippingCountries,quoteOffers } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
 import { Minus, Plus, X } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { usDeliveryEstimate } from "@/lib/delivery-estimates";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { ProductSetupOptions } from "./product-setup-options";
 import { useProductSetupState } from "./use-product-setup-state";
@@ -258,6 +260,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
             ? "Multi-Link Checkout Coming Soon"
             : `${setupButtonLabel}${selectedLinkExperience === "multilink" ? ` + ${formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo` : ""}`}
         </button>
+        {shipping?.shippingMode !== "manual" && <p className="mt-2 text-center text-xs text-muted"><Link href="/shipping" className="underline underline-offset-2">{usDeliveryEstimate.purchaseText}</Link></p>}
         {standQuote && standQuote.discountCents > 0 ? <p className="mt-2 text-center text-xs text-muted">Price includes {formatPrice(standQuote.discountCents)} in savings on your selected stands.</p> : null}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">

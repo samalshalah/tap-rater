@@ -1,5 +1,6 @@
 // Owner-confirmed US fulfillment estimates, October 10, 2026.
 export const usDeliveryEstimate = {
+  purchaseText: "Estimated US delivery: 4–6 business days after payment and setup approval.",
   preparationText: "Custom stands are prepared in 1 business day after payment and setup details, including any artwork approval, are complete.",
   transitText: "US shipping typically takes 3–5 business days after dispatch. Allow approximately 4–6 business days including preparation. These are estimates, not guaranteed delivery dates.",
   structuredData: {

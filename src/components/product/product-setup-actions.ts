@@ -18,6 +18,7 @@ export function createProductSetupActions({
   onSelectedOptionChange,
   setUncontrolledSelectedOptionId,
   selectedLinkExperience,
+  isGoogleReviewProduct,
   step,
   setStep,
   destinationUrl,
@@ -155,7 +156,7 @@ export function createProductSetupActions({
     }
 
     if (selectedLinkExperience === "direct" && !isHttpUrl(destinationUrl)) {
-      setError("Enter a valid destination link starting with http or https.");
+      setError(isGoogleReviewProduct ? "Select your business from the search results, or paste your Google review link." : "Enter a valid destination link starting with http or https.");
       return;
     }
 
@@ -273,7 +274,7 @@ export function createProductSetupActions({
     }
 
     if (selectedLinkExperience === "direct" && !directTargets) {
-      setError("Enter a valid destination link starting with http or https.");
+      setError(isGoogleReviewProduct ? "Select your business from the search results, or paste your Google review link." : "Enter a valid destination link starting with http or https.");
       setStep("destination");
       return;
     }
