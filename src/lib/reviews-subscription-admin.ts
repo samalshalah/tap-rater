@@ -68,7 +68,7 @@ export async function notifyReviewsCancellationChange({change,subscriptionId,acc
  const canceled=change==='canceled';
  const client=buildEmailHtml({eyebrow:'Google Reviews',title:canceled?'Your subscription is canceled':'Your subscription will renew',
   intro:`${firstName?`Hi ${firstName}, `:''}${canceled?`your Google Reviews subscription will end on ${endDate}. It will not renew and you will not be charged again.`:`your Google Reviews subscription will keep renewing as usual.`}`,
-  body:canceled?[`Everything keeps working until ${endDate}: review imports, AI replies and alerts.`,'After that, your reviews and drafts stay available for 30 days.','Changed your mind? Choose "Keep your subscription" on your Subscription page before that date.']:[`Your next renewal is on ${endDate}.`],
+  body:canceled?[`Everything keeps working until ${endDate}: review imports, AI replies and alerts.`,'After that, your reviews and drafts stay available for 30 days.','Changed your mind? Choose "Keep your subscription" on your Subscription page before that date.',"Need to end sooner or have a billing question? Reply to this email and we'll look at it case by case."]:[`Your next renewal is on ${endDate}.`],
   cta:{label:'Open Subscription',url:`${site}/account/packages`}});
  const results:EmailResult[]=[];
  results.push(await send({to:email,from:getDefaultFromEmail(env),replyTo:getOrderReplyToEmail(env),subject:canceled?'Your Google Reviews subscription is canceled':'Your Google Reviews subscription will renew',html:client,
