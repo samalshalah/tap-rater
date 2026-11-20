@@ -225,3 +225,6 @@
 .tr-prismatic-account .tr-reviews-billing-plan a:is(.tr-button-primary,.tr-button-ghost){text-decoration:none!important}
 .tr-prismatic-account .tr-reviews-billing-plan .tr-stand-row h3{margin:0!important}
 .tr-prismatic-account .tr-reviews-billing-plan .tr-billing-cancel{margin-top:0}
+
+/* AI replies sparkle on Locations cards: purple when AI replies are on for that location. */
+.tr-prismatic-account main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-ai-replies-button.is-on{color:#6035ff!important;background:#f1edff!important;border-color:#d9d0ff!important}

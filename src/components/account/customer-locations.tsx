@@ -6,6 +6,7 @@ import {useRouter,useSearchParams} from 'next/navigation';
 import {Building2,Plus,Search,Pencil,Trash2,X,AlertCircle,AlertTriangle,CheckCircle2,Clock3,Pause,Play} from 'lucide-react';
 import {ModalDialog} from '@/components/ui/modal-dialog';
 import {NotificationBellButton,NotificationSettingsDialog} from './review-notification-locations';
+import {AiRepliesButton,AiRepliesDialog} from './ai-reply-locations';
 import type {ReviewEmailSettings} from '@/lib/review-email-preferences';
 import {WorkspacePageHeader} from './workspace-ui';
 import {GoogleConnectionWizard} from './google-connection-wizard';
@@ -14,7 +15,7 @@ import {SetupBusinessPicker} from './setup-business-picker';
 import type {GoogleBusinessSelection} from '@/lib/google-places-client';
 import type {AccountBusiness} from '@/lib/account-business-drafts';
 import {draftHealth} from '@/lib/customer-location-health';
-type Location={plan_managed?:boolean;plan_active?:boolean;service_pause_available?:boolean;service_paused?:boolean;settings_version:number;id:string;business_name:string;address:string;connected:boolean;google_assignment_exists:boolean;google_enabled:boolean;google_connection_available:boolean;synced_at:string|null;last_error:string|null;draft_error:string|null;draft_due_at:string|null;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;draft_low_stars:boolean;unanswered_count:number;positive_unanswered_count:number;review_count:number;draft_count:number;manual_draft_count:number;active_draft_count:number;historical_draft_count:number;local_profile_version:number;rating_summary:{sum:number;count:number}};
+type Location={plan_managed?:boolean;plan_active?:boolean;service_pause_available?:boolean;service_paused?:boolean;settings_version:number;id:string;business_name:string;address:string;connected:boolean;google_assignment_exists:boolean;google_enabled:boolean;google_connection_available:boolean;synced_at:string|null;last_error:string|null;draft_error:string|null;draft_due_at:string|null;ai_consent?:boolean;auto_enabled:boolean;auto_four:boolean;auto_five:boolean;draft_low_stars:boolean;unanswered_count:number;positive_unanswered_count:number;review_count:number;draft_count:number;manual_draft_count:number;active_draft_count:number;historical_draft_count:number;local_profile_version:number;rating_summary:{sum:number;count:number}};
 type Snapshot={locations:Location[];listings:{business_id:string;status:string}[];licenses?:{unlimited_locations:boolean;location_limit:number;used:number;period_locked?:boolean;reserved_until?:string|null}};
 
 const locationStatuses = {
@@ -54,6 +55,8 @@ export function CustomerLocations({businesses,notifications={},email=''}:{busine
  const [serviceTarget,setServiceTarget]=useState<Location|null>(null);
  const [editing,setEditing]=useState<AccountBusiness|null>(null),[adding,setAdding]=useState(false),[removing,setRemoving]=useState<Location|null>(null);
  const [notifying,setNotifying]=useState<string|null>(()=>params.get('notify'));
+ const [aiTarget,setAiTarget]=useState<{id:string;name:string}|null>(()=>{const id=params.get('ai');return id?{id,name:''}:null;});
+ function closeAi(){setAiTarget(null);if(typeof window!=='undefined'&&new URLSearchParams(window.location.search).get('ai')){const next=new URLSearchParams(window.location.search);next.delete('ai');window.history.replaceState(null,'',window.location.pathname+(next.size?'?'+next.toString():''));}}
  function closeNotifications(){setNotifying(null);if(typeof window!=='undefined'&&params.get('notify')){const next=new URLSearchParams(window.location.search);next.delete('notify');window.history.replaceState(null,'',window.location.pathname+(next.size?'?'+next.toString():''));}router.refresh?.();}
  async function refresh(){const r=await fetch('/api/account/local',{cache:'no-store'});const value=await r.json();if(!r.ok)throw Error(value.error);setData(value);}
  useEffect(()=>{refresh().catch(e=>setError(e.message));},[]);
@@ -116,6 +119,7 @@ export function CustomerLocations({businesses,notifications={},email=''}:{busine
         </div>
         <div className="tr-location-manage flex shrink-0 flex-wrap items-center gap-2">
          {status!=='ended'&&location.service_pause_available&&location.google_assignment_exists&&(location.google_enabled||location.service_paused)&&<button type="button" className="tr-button-ghost tr-service-control" title={location.service_paused?'Resume service':'Pause service'} aria-label={`${location.service_paused?'Resume service':'Pause service'} for ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setServiceTarget(location);}}>{location.service_paused?<Play size={14} aria-hidden="true"/>:<Pause size={14} aria-hidden="true"/>}</button>}
+         {location.connected&&status!=='ended'&&<AiRepliesButton name={name} location={location} onOpen={()=>setAiTarget({id:location.id,name})}/>}
          {notifications[location.id]&&<NotificationBellButton name={name} settings={notifications[location.id]} onOpen={()=>setNotifying(location.id)}/>}
          <button className="tr-button-ghost" title="Edit location" aria-label={`Edit ${location.business_name}`} disabled={!business} onClick={event=>{event.stopPropagation();setNotice('');setEditing(business||null);}}><Pencil size={14}/></button>
          <button className="tr-button-ghost" title="Delete location" aria-label={`Delete ${location.business_name}`} onClick={event=>{event.stopPropagation();setError('');setRemoving(location);}}><Trash2 size={14}/></button>
@@ -127,6 +131,7 @@ export function CustomerLocations({businesses,notifications={},email=''}:{busine
      })}
   </div>
  {data&&!visible.length&&<div className="rounded-lg border border-line bg-white p-8 text-center text-sm text-muted">{query?'No matching locations.':view==='attention'&&data.locations.length?'No locations need attention.':view==='tasks'&&data.locations.length?'No current reply tasks.':'Add your first location to get started.'}</div>}
+ {aiTarget&&<AiRepliesDialog businessId={aiTarget.id} name={aiTarget.name||data?.locations.find(l=>l.id===aiTarget.id)?.business_name||'Location'} onClose={closeAi} onSaved={()=>{refresh().catch(()=>{});}}/>}
  {notifying&&notifications[notifying]&&<NotificationSettingsDialog name={data?.locations.find(l=>l.id===notifying)?.business_name||items.find(b=>b.id===notifying)?.current?.name||'Location'} email={email} settings={notifications[notifying]} onClose={closeNotifications}/>}
  {editing&&<BusinessEditor business={editing} onClose={()=>setEditing(null)} onSaved={(draft,version)=>{setItems(old=>old.map(b=>b.id===editing.id?{...b,draft,version}:b));setEditing(null);setNotice('Business draft saved.');}}/>}
  {adding&&modal('Add location',canAdd?<form className="tr-account-form grid gap-4" onSubmit={add}><fieldset disabled={busy}><SetupBusinessPicker label="Business name" onChange={setSelection}/></fieldset><footer className="flex justify-end gap-2"><button type="button" className="tr-button-ghost" disabled={busy} onClick={()=>setAdding(false)}>Cancel</button><button className="tr-button-primary" disabled={busy||!selection}>{busy?'Adding...':'Add location'}</button></footer></form>:<><p className="mb-4 text-sm">{data?.licenses?.period_locked?`All licences are reserved for this paid period${data.licenses.reserved_until?` until ${new Date(data.licenses.reserved_until).toLocaleDateString()}`:''}. Removed locations keep their licence until a successful renewal. Add a replacement after renewal.`:'All location licences are in use.'}</p><Link className="tr-button-primary" href="/account/packages">Manage licences</Link></>,()=>setAdding(false))}

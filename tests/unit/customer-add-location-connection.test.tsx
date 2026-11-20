@@ -3,7 +3,7 @@ const m=vi.hoisted(()=>({index:0,setters:[] as ReturnType<typeof vi.fn>[],router
 vi.mock('next/navigation',()=>({useRouter:()=>m.router,useSearchParams:()=>({get:()=>null})}));
 vi.mock('react',async original=>({...await original<object>(),useEffect:vi.fn(),useMemo:(factory:()=>unknown)=>factory(),useState:(initial:unknown)=>{
  const i=m.index++;const setter=vi.fn();m.setters[i]=setter;
- const overrides:Record<number,unknown>={0:{locations:[],listings:[],licenses:{unlimited_locations:true,used:0,location_limit:1}},8:{name:'New Business',formattedAddress:'123 Main St'},10:true};
+ const overrides:Record<number,unknown>={0:{locations:[],listings:[],licenses:{unlimited_locations:true,used:0,location_limit:1}},8:{name:'New Business',formattedAddress:'123 Main St'},11:true};
  return [i in overrides?overrides[i]:initial,setter];
 }}));
 import {CustomerLocations} from '@/components/account/customer-locations';
@@ -12,7 +12,7 @@ beforeEach(()=>{m.index=0;m.setters=[];vi.clearAllMocks();});afterEach(()=>vi.un
 it('opens the Google popup for exactly the newly created business',async()=>{
  const fetcher=vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({id:'new-location'}))).mockResolvedValueOnce(new Response(JSON.stringify({locations:[],listings:[]})));vi.stubGlobal('fetch',fetcher);
  const form=findForm(CustomerLocations({businesses:[]}));await form.props.onSubmit({preventDefault:vi.fn()});
- expect(m.setters[7]).toHaveBeenCalledWith({id:'new-location',name:'New Business',address:'123 Main St'});expect(m.setters[10]).toHaveBeenCalledWith(false);
+ expect(m.setters[7]).toHaveBeenCalledWith({id:'new-location',name:'New Business',address:'123 Main St'});expect(m.setters[11]).toHaveBeenCalledWith(false);
  expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({action:'createLocation',name:'New Business'});
 });
 it('does not open a connection when adding is denied',async()=>{
