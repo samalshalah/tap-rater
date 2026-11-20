@@ -26,7 +26,7 @@ export function AiRepliesButton({name,location,onOpen}:{name:string;location:AiS
 
 /** Per-location AI reply controls (AI replies, autopilot, 1–3-star drafts, reply preferences, schedule). Used by the
  * Locations popup and by the "Activate replies" step of first-login setup. */
-export function AiRepliesPanel({businessId,onSaved,showUsage=true}:{businessId:string;onSaved?:()=>void;showUsage?:boolean}){
+export function AiRepliesPanel({businessId,onSaved,showUsage=true,compact=false}:{businessId:string;onSaved?:()=>void;showUsage?:boolean;compact?:boolean}){
  const endpoint=useReviewEndpoint();
  const [workspace,setWorkspace]=useState<Workspace|null>(null),[error,setError]=useState('');
  const load=useCallback(async()=>{
@@ -42,8 +42,8 @@ export function AiRepliesPanel({businessId,onSaved,showUsage=true}:{businessId:s
   {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   {!workspace&&!error&&<p role="status" className="text-sm text-muted">Loading AI reply settings…</p>}
   {workspace&&<>
-   <ReviewAutomationControls location={{...workspace,id:workspace.business_id,connected:workspace.connected&&workspace.enabled}} onSaved={saved}/>
-   {!workspace.reviews_draft_only&&<div className="flex flex-wrap items-center gap-3"><ReviewScheduleSettings businessId={workspace.business_id}/></div>}
+   <ReviewAutomationControls location={{...workspace,id:workspace.business_id,connected:workspace.connected&&workspace.enabled}} onSaved={saved} compact={compact}/>
+   {!compact&&!workspace.reviews_draft_only&&<div className="flex flex-wrap items-center gap-3"><ReviewScheduleSettings businessId={workspace.business_id}/></div>}
    {showUsage&&<p className="text-sm text-muted">AI usage this month: {limit!=null?`${used} / ${Number(limit)}`:used}.</p>}
   </>}
  </div>;
