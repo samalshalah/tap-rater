@@ -25,3 +25,15 @@ describe('shared workspace navigation',()=>{
 });
 
 it('places business identity in one shared location picker',()=>{const html=renderToStaticMarkup(createElement(AccountContext,{locations,enabled:true}));expect(html).toContain('aria-label="Business location"');expect(html.match(/First Street/g)).toHaveLength(2);expect(html).toContain('<span>First Business</span>');});
+
+describe('workspace location picker',()=>{
+ it('hides the picker when the client has only one location',()=>{
+  state.id='';
+  const html=renderToStaticMarkup(createElement(AccountContext,{locations:[locations[0]],enabled:true}));
+  expect(html).not.toContain('aria-label="Business location"');expect(html).not.toContain('All locations');
+ });
+ it('still shows the picker if locations could not be loaded',()=>{
+  state.id='';
+  expect(renderToStaticMarkup(createElement(AccountContext,{locations:[],enabled:true,locationsError:true}))).toContain('aria-label="Business location"');
+ });
+});
