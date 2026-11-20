@@ -6,7 +6,7 @@ import type {reviewPreviewSummary} from '@/lib/reviews-preview-analysis';
 import styles from './reviews-checkout.module.css';
 export type PurchasePreview={id:string;selection:GoogleBusinessSelection;connected:boolean;googleEmail:string|null;name:string|null;address:string|null;selected:boolean;complete:boolean;locked:boolean;alreadyAssigned:boolean;analysis:ReturnType<typeof reviewPreviewSummary>|null};
 import type {PreviewMatch} from '@/lib/reviews-preview-match';
-export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onReady:(preview:PurchasePreview)=>void;onChange:()=>void;onStage?:(stage:number)=>void;setupHref?:string}){
+export function ReviewsBusinessPreview({onReady,onChange,onStage,onAssigned,setupHref}:{onReady:(preview:PurchasePreview)=>void;onChange:()=>void;onStage?:(stage:number)=>void;onAssigned?:(assigned:boolean)=>void;setupHref?:string}){
  const [preview,setPreview]=useState<PurchasePreview|null>(null),[selection,setSelection]=useState<GoogleBusinessSelection|null>(null),[loaded,setLoaded]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
  const [matches,setMatches]=useState<PreviewMatch[]|null>(null);
  const matching=useRef(false);
@@ -21,6 +21,7 @@ export function ReviewsBusinessPreview({onReady,onChange,onStage,setupHref}:{onR
   return()=>window.clearTimeout(timer);
  },[preview,busy,error]);
  useEffect(()=>{onStage?.(!preview?0:!preview.connected?1:2);},[preview?.id,preview?.connected,onStage]);
+ useEffect(()=>{onAssigned?.(Boolean(preview?.alreadyAssigned));},[preview?.alreadyAssigned,onAssigned]);
  const analysis=preview?.analysis;
  const percent=preview?.complete?100:analysis?.total&&analysis.total>0?Math.min(99,Math.floor(analysis.reviewCount/analysis.total*100)):undefined;
  if(!loaded)return <p role="status">Loading your business preview…</p>;

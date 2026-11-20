@@ -14,6 +14,8 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
  // Buyers who cannot (or prefer not to) connect Google yet can pay first and connect after activation.
  const [connectLater,setConnectLater]=useState(false);
  const planReady=Boolean(preview)||connectLater;
+ // A business already in a Tap Rater workspace cannot be bought again, so never offer to pay around that check.
+ const [assigned,setAssigned]=useState(false);
  const attempt=useRef<{selection:string;id:string;key:string}|null>(null);
  async function purchase(event:FormEvent){
   event.preventDefault();if(busy||!accepted||!planReady)return;setBusy(true);setError('');
@@ -56,7 +58,7 @@ export function ReviewsPurchaseForm({guest=false,focused=false,setupHref}:{guest
    <p className={styles.limit}>You publish on Google yourself.<br/>Automatic posting isn’t included.</p>
   </aside>}
   <fieldset disabled={busy} className={styles.details}>
-   {!planReady?<><ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>{!setupHref&&<p className={styles.smallPrint}>Can't connect Google right now? <button type="button" className={styles.textButton} onClick={()=>{setConnectLater(true);setAccepted(false);setError('');}}>Subscribe now and connect Google after payment</button></p>}</>:<>
+   {!planReady?<><ReviewsBusinessPreview setupHref={setupHref} onStage={setStage} onAssigned={setAssigned} onReady={setPreview} onChange={()=>{setAccepted(false);setError('');}}/>{!setupHref&&!assigned&&<p className={styles.smallPrint}>Can't connect Google right now? <button type="button" className={styles.textButton} onClick={()=>{setConnectLater(true);setAccepted(false);setError('');}}>Subscribe now and connect Google after payment</button></p>}</>:<>
    <div className={styles.detailsHeading}><h2>Your plan</h2>{guest&&<p>Have an account? <Link href="/account/login">Sign in</Link></p>}</div>
    {preview?<div className={styles.selectedBusiness}><strong>{preview.name}</strong><span>{preview.address}</span></div>:<div className={styles.selectedBusiness}><strong>Connect Google after payment</strong><span>After you activate your account, add your business in Locations and connect the Google account that manages it.</span></div>}
    {guest&&<div className={styles.fields}><div className={styles.profileNames}><label>First name<input required type="text" maxLength={50} autoComplete="given-name" value={firstName} onChange={e=>setFirstName(e.target.value)}/></label><label>Last name<input required type="text" maxLength={50} autoComplete="family-name" value={lastName} onChange={e=>setLastName(e.target.value)}/></label></div><label>Email address<input required type="email" maxLength={254} autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)}/></label><label>Phone <span className={styles.optional}>(optional)</span><input type="tel" maxLength={40} autoComplete="tel" value={phone} onChange={e=>setPhone(e.target.value)}/></label><p className={styles.smallPrint}>We’ll send your account activation link to your email. Your selected business will be saved for setup.</p></div>}
