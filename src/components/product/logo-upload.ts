@@ -1,3 +1,4 @@
+import { sharpLogoSizePercent } from "@/lib/branded-composition";
 import { openLogoImage } from "./logo-image";
 import type { UploadedLogo } from "./product-setup-types";
 export async function uploadLogoAsset(file: File, productSlug: string): Promise<UploadedLogo> {
@@ -161,22 +162,37 @@ export async function prepareStandLogo(file: File, store: (file: File) => Promis
   const printable = await printableLogo(file);
   const original = await store(printable);
   let asset = original;
+  let printedFile = printable;
   let trimApplied = false;
   let blankMarginPercent = 0;
   try {
     const prepared = await prepareLogoUpload(printable);
     if (prepared.file !== printable) {
       asset = await store(prepared.file);
+      printedFile = prepared.file;
       trimApplied = prepared.trimApplied;
       blankMarginPercent = prepared.blankMarginPercent;
     }
   } catch {
     // A valid original remains printable if optional cropping fails.
   }
+  const size = await imageSize(printedFile);
   return {
     logo: { ...asset, originalMediaUrl: original.mediaUrl, originalStorageKey: original.storageKey,
       originalFilename: original.filename, trimApplied, blankMarginPercent },
     backgroundMode: trimApplied ? "auto_crop" as const : "original" as const,
-    logoSizePercent: trimApplied ? 135 : 125
+    // Start at the largest size that still prints sharply, so small logos never block the preview.
+    logoSizePercent: sharpLogoSizePercent(size.width, size.height, trimApplied ? 135 : 125)
   };
+}
+
+async function imageSize(file: File) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  } catch {
+    return { width: 0, height: 0 };
+  }
 }

@@ -188,11 +188,18 @@ export function ProductSetupDestinationStep({
                   {selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
                     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center gap-4 border-t border-line pt-3 sm:grid-cols-[minmax(0,1fr)_7rem]">
                       <div className="min-w-0">
+                        {/* A Multi-Link page only exists after checkout, so opening it now would show "not found". */}
+                        {selectedLinkExperience === "multilink" ? <>
+                          <p className="text-sm font-semibold text-ink">Your permanent page address</p>
+                          <p className="mt-1 text-xs leading-5 text-muted">Your QR code and NFC tag will open this page. It goes live after checkout, and you can add or change its links any time.</p>
+                          <p className="mt-2 text-xs font-medium text-ink [overflow-wrap:anywhere]">{proofQrValue.replace(/^https?:\/\//, "")}</p>
+                        </> : <>
                         <p className="text-sm font-semibold text-ink">{googlePlaceName || (isGoogleReviewProduct ? "Check your review link" : "Check your link")}</p>
                         <p className="mt-1 text-xs leading-5 text-muted">Open the link or scan the QR to confirm.</p>
                         <a href={proofQrValue} target="_blank" rel="noopener noreferrer" aria-label="Check link (opens in a new tab)" className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-line bg-white px-3 text-xs font-semibold text-brand transition hover:bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                           Check link <ExternalLink size={14} aria-hidden="true" />
                         </a>
+                        </>}
                       </div>
                       <div className="h-24 w-24 sm:h-28 sm:w-28"><QrPreview value={proofQrValue} variant="template" /></div>
                     </div>

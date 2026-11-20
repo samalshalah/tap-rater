@@ -250,7 +250,7 @@ export async function composeProductionArtworkDocument(
   if (logoAsset.dimensions) {
     const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent, logoOffsetYPercent });
     const ratio = logoFitMode === "fill" ? Math.max(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height) : Math.min(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height);
-    if (ratio > 1.01) throw new Error("The logo is too small for 300 DPI printing at this size. Upload a higher-resolution logo or reduce its size.");
+    if (ratio > 1.01) throw new Error("This logo file is too small to print sharply. Upload a larger version of your logo (at least 1000 pixels wide works best), or reduce the logo size.");
   }
 
   const svg = await renderPrintArtwork({

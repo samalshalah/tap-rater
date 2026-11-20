@@ -130,7 +130,7 @@ describe("Branded approval and printing", () => {
   it("rejects low-resolution logos and never creates an approval receipt", async () => {
     const { storage, values } = memoryStore();
     const lowResolution: ProductionArtworkAssetResolver = async (url) => ({ ...await resolver(url), ...(url.includes("customer-setup-") ? { dimensions: { width: 64, height: 64 } } : {}) });
-    await expect(createBrandedProof(product, setup, storage, lowResolution)).rejects.toThrow("300 DPI");
+    await expect(createBrandedProof(product, setup, storage, lowResolution)).rejects.toThrow("too small to print sharply");
     expect(values.size).toBe(0);
   });
 });

@@ -45,3 +45,18 @@ export function regionToPixels(
     height: Math.round((region.heightPercent / 100) * heightPx)
   };
 }
+
+/**
+ * Largest logo size (in the editor's 5% steps, from `preferred` down to 50%) at which a
+ * logo of this pixel size still prints at 300 DPI with the default "contain" fit.
+ * Mirrors the check in production-artwork so the first preview never fails on resolution.
+ */
+export function sharpLogoSizePercent(logoWidthPx: number, logoHeightPx: number, preferred: number) {
+  if (!(logoWidthPx > 0 && logoHeightPx > 0)) return preferred;
+  const region = regionToPixels(brandedStandComposition.logoRegion);
+  for (let size = preferred; size >= 50; size -= 5) {
+    const width = Math.round(region.width * size / 100), height = Math.round(region.height * size / 100);
+    if (Math.min(width / logoWidthPx, height / logoHeightPx) <= 1.01) return size;
+  }
+  return 50;
+}

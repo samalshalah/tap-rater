@@ -26,3 +26,9 @@ it('uses the signed-in identity and does not accept guest profile changes for it
  expect(m.prepare).toHaveBeenCalledWith('signed-in@example.test','Verified business','signed-in@example.test',undefined);
 });
 it('does not open Stripe if pending-profile storage fails',async()=>{m.prepare.mockRejectedValue(Error('Storage unavailable'));expect((await POST(request())).status).toBe(400);expect(m.checkout).not.toHaveBeenCalled();});
+it('lets a buyer pay before connecting Google, with no preview reserved or passed to Stripe',async()=>{
+ expect((await POST(request({previewId:undefined}))).status).toBe(200);
+ expect(m.preview).not.toHaveBeenCalled();expect(m.reserve).not.toHaveBeenCalled();
+ expect(m.prepare).toHaveBeenCalledWith('buyer@example.test','Jane Doe',undefined,{firstName:'Jane',lastName:'Doe',phone:''});
+ expect(m.checkout.mock.calls[0][3].metadata).toEqual({marketing_only:'true'});
+});

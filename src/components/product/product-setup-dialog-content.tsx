@@ -229,28 +229,31 @@ export function ProductSetupDialogContent({
                     }}
                   />
                   <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
-                  <label className="flex items-start gap-3 border-t border-line py-4 text-sm font-semibold text-ink">
-                    <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
-                      checked={proofIsApproved} onChange={(event) => {
-                        const receipt = event.target.checked ? readyProof?.proofReceiptId ?? "" : "";
-                        setApprovedProofId(receipt);
-                        if (receipt && configuredUnitPriceCents !== null) {
-                          trackEcommerce("stand_design_approved", ecommerceData([{
-                            item_id: product.slug,
-                            item_variant: selectedOption.id,
-                            price: configuredUnitPriceCents / 100,
-                            quantity: selectedQuantity,
-                          }]));
-                        }
-                      }} />
-                    I approve this artwork and QR destination for printing.
-                  </label>
                 </div>
               ) : null}
             </div>
 
             <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
               {error ? <p className="tr-status-error mb-3" role="alert">{error}</p> : null}
+              {/* Approval sits beside Add to cart so it is always visible, not below the preview. */}
+              {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (<>
+                <label className="mb-3 flex items-start gap-3 text-sm font-semibold text-ink">
+                  <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
+                    checked={proofIsApproved} onChange={(event) => {
+                      const receipt = event.target.checked ? readyProof?.proofReceiptId ?? "" : "";
+                      setApprovedProofId(receipt);
+                      if (receipt && configuredUnitPriceCents !== null) {
+                        trackEcommerce("stand_design_approved", ecommerceData([{
+                          item_id: product.slug,
+                          item_variant: selectedOption.id,
+                          price: configuredUnitPriceCents / 100,
+                          quantity: selectedQuantity,
+                        }]));
+                      }
+                    }} />
+                  I approve this artwork and QR destination for printing.
+                </label>
+              </>) : null}
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
