@@ -22,7 +22,7 @@ export async function currentReviewPreview(sql=liveDb()){
 export async function reviewPreviewSnapshot(){
  const row=await currentReviewPreview();if(!row)return {preview:null};
  const connection=await googleConnectionSummary(previewOwner(row.id));
- const [assigned]=row.google_location?await liveDb()`SELECT business_id FROM google_review_links WHERE split_part(parent,'/',4)=split_part(${row.google_location},'/',2) LIMIT 1`:[];
+ const [assigned]=row.google_location?await liveDb()`SELECT business_id FROM google_review_links WHERE reconnected_to IS NULL AND split_part(parent,'/',4)=split_part(${row.google_location},'/',2) LIMIT 1`:[];
  return {preview:{id:row.id,selection:row.selection,connected:Boolean(connection),googleEmail:connection?.email||null,name:row.verified_name,address:row.verified_address,selected:Boolean(row.google_location),complete:row.complete,locked:Boolean(row.purchase_attempt),alreadyAssigned:Boolean(assigned),analysis:row.analysis?reviewPreviewSummary(row.analysis):null}};
 }
 export async function startReviewPreview(selection:z.infer<typeof previewSelectionSchema>){
@@ -70,7 +70,7 @@ export async function continueReviewPreview(){
 export async function reserveReviewPreview(email:string,attempt:string,mode:string){
  const row=await currentReviewPreview();if(!row?.complete||!row.google_location)throw Error('Connect Google and finish your review analysis before checkout.');
  const sql=liveDb();
- const [assigned]=await sql`SELECT business_id FROM google_review_links WHERE split_part(parent,'/',4)=split_part(${row.google_location},'/',2) LIMIT 1`;
+ const [assigned]=await sql`SELECT business_id FROM google_review_links WHERE reconnected_to IS NULL AND split_part(parent,'/',4)=split_part(${row.google_location},'/',2) LIMIT 1`;
  if(assigned)throw Error('This location already has a Tap Rater connection. Sign in to its existing account or contact support. No new subscription is needed.');
  const [reserved]=await sql`UPDATE reviews_purchase_previews p SET customer_id=c.id,purchase_attempt=${attempt}::uuid,stripe_mode=${mode},expires_at=now()+interval '8 days' FROM customers c WHERE p.id=${row.id} AND p.complete AND lower(c.email)=${email.toLowerCase()} AND (p.purchase_attempt IS NULL OR (p.customer_id=c.id AND p.stripe_mode=${mode} AND (p.purchase_attempt=${attempt}::uuid OR (p.paid_at IS NULL AND EXISTS(SELECT 1 FROM marketing_subscriptions m WHERE m.customer_id=c.id AND m.stripe_mode=p.stripe_mode AND m.attempt=p.purchase_attempt::text AND m.status='incomplete_expired'))))) RETURNING p.id,p.verified_name`;
  if(!reserved)throw Error('This preview belongs to another checkout. Start a new business preview.');

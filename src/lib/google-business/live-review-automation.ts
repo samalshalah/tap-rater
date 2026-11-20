@@ -1,3 +1,4 @@
+import {releaseEndedReviewsAccess} from "../reviews-access-release";
 import {businessOptimizationEnabled} from '../business-optimization-feature';
 import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-alerts';
 import {checkNextReviewPolicy} from '../review-policy-worker';
@@ -113,6 +114,8 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
  if(!lease.length)return {synced:0,drafted:0,published:0,busy:true};
  let synced=0,drafted=0,published=0,reconciled=0,requeued=0;
  try {
+ // Every 15 minutes, free the Google locations of customers whose Reviews access has ended so they can reconnect.
+ if(new Date().getUTCMinutes()%15===0){try{await releaseEndedReviewsAccess(sql);}catch{console.warn('Ended Reviews access release unavailable');}}
  if(new Date().getUTCHours()===0&&new Date().getUTCMinutes()===0)await sql`DELETE FROM google_live_reviews WHERE fetched_at<now()-interval '30 days'`;
  // Resolve ambiguous Google writes before choosing new work. A reply is retried only
  // after Google confirms it is absent; replies already on Google are never duplicated.
