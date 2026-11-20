@@ -5,6 +5,11 @@ export const reviewKnowledgeSchema=z.object({
  enabled:z.boolean().default(true),
  policies:z.string().trim().max(2000).default(defaultReviewPolicies),complaints:text,services:text,rules:text,
  contact:z.string().trim().max(300).default(''),
+ // Staff names and roles the AI may use when a reviewer mentions someone (also fixes misspellings).
+ team:z.string().trim().max(1000).default(''),
+ // Added to the end of every reply exactly as written, e.g. "— Haidar & the University Barber team".
+ signOff:z.string().trim().max(120).default(''),
+ greetByName:z.boolean().default(true),
  language:z.enum(['match','English','Arabic','Spanish','French']).default('match'),
  length:z.enum(['standard','detailed']).default('standard'),
  style:z.enum(['friendly','professional','personal','short']).default('friendly')
