@@ -34,3 +34,17 @@ export function notificationSettingsFromRow(row:{id:string;low_mode?:string|null
  return {businessId:row.id,version:row.version??0,lowMode:(row.low_mode??'off') as ReviewEmailSettings['lowMode'],highMode:(row.high_mode??'off') as ReviewEmailSettings['highMode'],
   weekly:row.weekly??false,monthly:row.monthly??false,hour:row.delivery_hour??9,zone:row.zone??'America/New_York'};
 }
+
+/** Alerts switched on when a new subscriber finishes setup: instant emails for 1–3-star reviews and a
+ * Monday report. Never overwrites settings the customer already saved (ON CONFLICT DO NOTHING). */
+export const defaultReviewAlerts={lowMode:'immediate',highMode:'off',weekly:true,monthly:false,hour:9} as const;
+export async function applyDefaultReviewAlerts(email:string,zone:string|undefined,sql=liveDb()){
+ const d=defaultReviewAlerts;
+ await sql`INSERT INTO review_email_preferences(business_id,customer_id,low_mode,high_mode,weekly,monthly,zone,delivery_hour)
+ SELECT b.id,c.id,${d.lowMode},${d.highMode},${d.weekly},${d.monthly},
+  COALESCE((SELECT name FROM pg_timezone_names WHERE name=${zone??''} LIMIT 1),'America/New_York'),${d.hour}
+ FROM businesses b JOIN customers c ON c.id=b.customer_id JOIN google_review_links l ON l.business_id=b.id AND l.customer_id=c.id
+ WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active'
+ AND b.status IS DISTINCT FROM 'marketing_removed' AND l.enabled AND marketing_location_allowed(b.id)
+ ON CONFLICT(business_id) DO NOTHING`;
+}

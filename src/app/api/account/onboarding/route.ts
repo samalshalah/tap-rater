@@ -4,11 +4,12 @@ import {requireCustomerApi} from '@/lib/customer-auth';
 import {withMarketingAccess} from '@/lib/customer-marketing-access';
 import {liveDb,syncLiveReviews} from '@/lib/google-business/live-reviews';
 import {paidReviewPreview,resumePaidReviewPreview} from '@/lib/reviews-preview-setup';
+import {applyDefaultReviewAlerts} from '@/lib/review-email-preferences';
 const input=z.discriminatedUnion('action',[
  z.object({action:z.literal('resumePreview')}).strict(),
  z.object({action:z.literal('chooseExisting'),businessId:z.string().uuid()}).strict(),
  z.object({action:z.literal('choose'),name:z.string().trim().min(1).max(200),address:z.string().max(1000),placeId:z.string().max(500).optional()}).strict(),
- z.object({action:z.literal('import')}).strict(),z.object({action:z.literal('finish')}).strict()
+ z.object({action:z.literal('import')}).strict(),z.object({action:z.literal('finish'),zone:z.string().max(64).optional()}).strict()
 ]);
 async function handle(request:Request){
  const auth=await requireCustomerApi();if(auth.response)return auth.response;
@@ -40,6 +41,8 @@ async function handle(request:Request){
    }else{
     if(!row.synced_at||row.next_page||row.last_error)throw Error('Wait for all review pages to finish importing.');
     await sql`UPDATE customers SET marketing_onboarding_completed_at=now() WHERE lower(email)=${email}`;
+    // New subscribers get 1–3-star alerts and a weekly report by default; setup never fails over emails.
+    try{await applyDefaultReviewAlerts(email,v.action==='finish'?v.zone:undefined,sql);}catch{console.warn('Default review alerts unavailable');}
    }
   }
   return NextResponse.json(await snapshot(),{headers:{'Cache-Control':'no-store'}});

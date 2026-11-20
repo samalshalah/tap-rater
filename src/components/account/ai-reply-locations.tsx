@@ -7,11 +7,13 @@ import type {Workspace} from './google-live-review-types';
 import {ReviewAutomationControls} from './review-automation-controls';
 import {ReviewScheduleSettings} from './review-schedule-settings';
 
-type AiState={ai_consent?:boolean;auto_enabled?:boolean;auto_four?:boolean;auto_five?:boolean};
+type AiState={reviews_draft_only?:boolean;ai_consent?:boolean;auto_enabled?:boolean;auto_four?:boolean;auto_five?:boolean};
 
 /** Short state for the sparkle button title. */
 export function aiReplyState(l:AiState){
  if(!l.ai_consent)return 'off';
+ // Draft-only packages never post, whatever the stored autopilot flags say.
+ if(l.reviews_draft_only)return 'drafts only';
  if(l.auto_enabled&&(l.auto_four||l.auto_five))return `autopilot on · ${l.auto_four&&l.auto_five?'4–5 stars':l.auto_five?'5 stars':'4 stars'}`;
  return 'drafts only';
 }

@@ -48,3 +48,15 @@ describe('existing stand owner onboarding',()=>{
   expect((await POST(existingRequest(body))).status).toBe(400);expect(m.sql).not.toHaveBeenCalled();
  });
 });
+
+it('switches on default review alerts for the finishing account without overwriting saved settings',async()=>{
+ const r=new Request('https://taprater.com/api/account/onboarding',{method:'POST',headers:{origin:'https://taprater.com'},body:JSON.stringify({action:'finish',zone:'America/Chicago'})});
+ expect((await POST(r)).status).toBe(200);
+ const insert=m.sql.mock.calls.find(c=>c[0].join('').includes('INSERT INTO review_email_preferences'));
+ expect(insert).toBeDefined();expect(insert![0].join('')).toContain('ON CONFLICT(business_id) DO NOTHING');
+ expect(insert).toEqual(expect.arrayContaining(['immediate','off',true,false,'America/Chicago',9,'buyer@example.test']));
+});
+it('still finishes setup if default alerts cannot be saved',async()=>{
+ m.sql.mockImplementation(async(strings:TemplateStringsArray)=>{if(strings.join('').includes('INSERT INTO review_email_preferences'))throw Error('db down');return [ready];});
+ expect((await POST(request('finish'))).status).toBe(200);
+});
