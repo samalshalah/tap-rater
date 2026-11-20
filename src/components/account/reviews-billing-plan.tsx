@@ -74,7 +74,7 @@ export function ReviewsBillingPlan(){
 
     {!data.locations?.length&&<p>Your plan has {data.quantity} paid {data.quantity===1?'licence':'licences'}. Add a business in Locations to use them.</p>}
 
-    <p className="tr-billing-caption">Removing a location takes effect at renewal. Its reviews and drafts stay saved. You can keep it on the plan again before that date.</p>
+    <p className="tr-billing-caption">Removing a location takes effect at renewal. Its reviews and drafts stay available for 30 days after that. You can keep it on the plan again before that date.</p>
 
     <footer className="tr-billing-cancel tr-card flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between"><div><h3>{data.cancelling?'Keep your subscription':'Cancel entire subscription'}</h3><p>{data.cancelling?'Restore renewal for all currently paid locations.':'End Google Reviews for every location on this subscription at the end of your paid period.'}</p></div><button className="tr-button-ghost" disabled={busy} onClick={()=>preview({kind:data.cancelling?'keep':'cancel',removedIds:[]})}>{data.cancelling?'Keep subscription':'Cancel entire subscription'}</button></footer>
 
@@ -88,7 +88,7 @@ export function ReviewsBillingPlan(){
 
    <div className="tr-billing-confirm-total"><span>Next monthly subtotal</span><strong>{money(confirmation.preview.currentSubtotal,confirmation.preview.currency)} → {money(confirmation.preview.nextSubtotal,confirmation.preview.currency)}</strong></div>
 
-   <p>Service continues through the paid period. Your saved reviews and drafts are kept. No charge or credit today; applicable tax is calculated on your invoice.</p>
+   <p>Service continues through the paid period. Your reviews and drafts stay available for 30 days after service ends. No charge or credit today; applicable tax is calculated on your invoice.</p>
 
    {error&&<p role="alert">{error}</p>}<footer><button className="tr-button-ghost" disabled={busy} onClick={()=>setConfirmation(null)}>Go back</button><button className="tr-button-primary" disabled={busy} onClick={()=>confirm({choice:confirmation.choice,token:confirmation.preview.token,operationId:confirmation.operationId})}>{busy?'Saving…':confirmation.choice.kind==='cancel'?'Confirm cancellation':'Confirm change'}</button></footer>
 

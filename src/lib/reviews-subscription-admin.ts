@@ -1,4 +1,4 @@
-import {buildEmailHtml,getOrderFromEmail,type SendEmailInput,type EmailResult} from './email';
+import {buildEmailHtml,getDefaultFromEmail,getOrderFromEmail,getOrderReplyToEmail,type SendEmailInput,type EmailResult} from './email';
 import {sendCommerceEmail} from './commerce-email-outbox';
 import {liveDb} from './google-business/live-reviews';
 import {marketingPlan} from './marketing-plan';
@@ -51,4 +51,36 @@ export async function listMultiLinkSubscriptions(sql:Sql=liveDb()):Promise<Multi
  FROM hosted_subscriptions h LEFT JOIN customers c ON c.id=h.customer_id LEFT JOIN businesses b ON b.id=h.business_id
  ORDER BY h.created_at DESC LIMIT 200`;
  return rows as MultiLinkSubscriptionRow[];
+}
+
+export type CancellationChange='canceled'|'resumed';
+/**
+ * Emails the client and ORDER_NOTIFICATION_EMAIL when a Google Reviews subscription is set to cancel at the end of its
+ * paid period, or when that cancellation is undone. Keyed by the Stripe event, so webhook retries send nothing twice.
+ */
+export async function notifyReviewsCancellationChange({change,subscriptionId,account,end,eventId,mode,sql=liveDb(),send=sendCommerceEmail,env=process.env}:{change:CancellationChange;subscriptionId:string;account:string;end:string;eventId:string;mode:string;sql?:Sql;send?:SendFn;env?:Record<string,string|undefined>}){
+ const [customer]=await sql`SELECT c.email,c.name,c.first_name FROM customers c WHERE c.id=${account}::uuid`;
+ if(!customer?.email)return [];
+ const email=String(customer.email),name=String(customer.name||email);
+ const firstName=String(customer.first_name||'').trim();
+ const site=(env.NEXT_PUBLIC_SITE_URL||'https://taprater.com').replace(/\/$/,'');
+ const endDate=new Date(end).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});
+ const canceled=change==='canceled';
+ const client=buildEmailHtml({eyebrow:'Google Reviews',title:canceled?'Your subscription is canceled':'Your subscription will renew',
+  intro:`${firstName?`Hi ${firstName}, `:''}${canceled?`your Google Reviews subscription will end on ${endDate}. It will not renew and you will not be charged again.`:`your Google Reviews subscription will keep renewing as usual.`}`,
+  body:canceled?[`Everything keeps working until ${endDate}: review imports, AI replies and alerts.`,'After that, your reviews and drafts stay available for 30 days.','Changed your mind? Choose "Keep your subscription" on your Subscription page before that date.']:[`Your next renewal is on ${endDate}.`],
+  cta:{label:'Open Subscription',url:`${site}/account/packages`}});
+ const results:EmailResult[]=[];
+ results.push(await send({to:email,from:getDefaultFromEmail(env),replyTo:getOrderReplyToEmail(env),subject:canceled?'Your Google Reviews subscription is canceled':'Your Google Reviews subscription will renew',html:client,
+  delivery:{messageType:`reviews_${change}_customer`,audience:'customer',entityType:'marketing_subscription',entityId:subscriptionId,retryable:true,idempotencyKey:`reviews_${change}_customer:${eventId}`}}));
+ const to=env.ORDER_NOTIFICATION_EMAIL?.trim();
+ if(to){
+  const admin=buildEmailHtml({eyebrow:'Subscription change',title:canceled?'Google Reviews subscription canceled':'Google Reviews cancellation undone',
+   intro:canceled?`${name} canceled Google Reviews. Service ends on ${endDate}.`:`${name} chose to keep Google Reviews. It renews on ${endDate}.`,
+   rows:{Customer:name,Email:email,'Ends / renews':endDate,Mode:mode==='live'?'Live':'Test','Stripe subscription':subscriptionId},
+   cta:{label:'View subscriptions',url:`${site}/admin/subscriptions`}});
+  results.push(await send({to,from:getOrderFromEmail(env),replyTo:email,subject:`${canceled?'Canceled':'Kept'}: Google Reviews · ${name}`,html:admin,
+   delivery:{messageType:`reviews_${change}_admin`,audience:'admin',entityType:'marketing_subscription',entityId:subscriptionId,retryable:true,idempotencyKey:`reviews_${change}_admin:${eventId}`}}));
+ }
+ return results;
 }

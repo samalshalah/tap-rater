@@ -10,7 +10,9 @@ export function marketingAccessAllowed(access:MarketingAccess|undefined,now=Date
 export const getCustomerMarketingState=cache(async(email:string)=>requestRead(`marketing:${email.trim().toLowerCase()}`,async()=>{
  const sql=neon(process.env.DATABASE_URL||process.env.NEON_DATABASE_URL!);
  const rows=await sql`SELECT a.status,a.expires_at,c.marketing_onboarding_completed_at FROM customer_marketing_access a JOIN customers c ON c.id=a.customer_id WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active'`;
- return {allowed:marketingAccessAllowed(rows[0] as MarketingAccess|undefined),onboardingCompleted:Boolean(rows[0]?.marketing_onboarding_completed_at)};
+ const allowed=marketingAccessAllowed(rows[0] as MarketingAccess|undefined);
+ // A past customer has an access row that no longer allows the service; its expiry is when the subscription ended.
+ return {allowed,onboardingCompleted:Boolean(rows[0]?.marketing_onboarding_completed_at),endedAt:!allowed&&rows[0]?.expires_at?new Date(String(rows[0].expires_at)).toISOString():null};
 }));
 export async function hasCustomerMarketingAccess(email:string){return (await getCustomerMarketingState(email)).allowed;}
 async function marketingResponse(request:Request,handler:(request:Request)=>Promise<Response>){
