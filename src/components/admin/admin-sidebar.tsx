@@ -27,7 +27,8 @@ import {
   Tags,
   Truck,
   Users,
-  WalletCards
+  WalletCards,
+  Repeat
 } from "lucide-react";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 
@@ -36,7 +37,8 @@ const icons = {
   Requests: ClipboardList,
   Orders: ShoppingBag,
   "Production Queue": Hammer,
-  "Customers & Licences": Users,
+  Customers: Users,
+  Subscriptions: Repeat,
   Usage: Activity,
   "Workers & Health": Activity,
   "Review Operations": MessageSquareText,

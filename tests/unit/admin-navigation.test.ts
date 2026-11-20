@@ -15,6 +15,7 @@ describe("admin navigation", () => {
         "/admin/products",
         "/admin/inventory",
         "/admin/customers",
+        "/admin/subscriptions",
         "/admin/usage",
         "/admin/ai-agent",
         "/admin/google-connection",
@@ -66,5 +67,14 @@ describe("admin navigation", () => {
       "Operations",
       "System",
     ]);
+  });
+});
+
+describe("commerce navigation", () => {
+  it("lists Customers and Subscriptions under Commerce, not Client Operations", () => {
+    const group = (label: string) => adminNavigationGroups.find((g) => g.label === label)!.items.map((i) => i.label);
+    expect(group("Commerce")).toEqual(expect.arrayContaining(["Orders", "Subscriptions", "Customers"]));
+    expect(group("Client Operations")).not.toContain("Customers");
+    expect(group("Client Operations")).not.toContain("Customers & Licences");
   });
 });

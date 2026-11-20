@@ -34,7 +34,17 @@ export async function notifyNewReviewsSubscription({subscriptionId,account,locat
  const html=buildEmailHtml({eyebrow:'New subscription',title:'New Google Reviews subscription',
   intro:`${name} subscribed to Google Reviews.`,
   rows:{Customer:name,Email:customer?.email?String(customer.email):'—',Business:customer?.business?String(customer.business):'Chosen during setup',Locations:locations,'Monthly total':`$${total}`,Mode:mode==='live'?'Live':'Test','Stripe subscription':subscriptionId},
-  cta:{label:'View subscriptions',url:`${site}/admin/orders#reviews-subscriptions`}});
+  cta:{label:'View subscriptions',url:`${site}/admin/subscriptions`}});
  return send({to,from:getOrderFromEmail(env),...(customer?.email?{replyTo:String(customer.email)}:{}),subject:`New Google Reviews subscription · ${name}`,html,
   delivery:{messageType:'reviews_subscription_admin',audience:'admin',entityType:'marketing_subscription',entityId:subscriptionId,retryable:true,idempotencyKey:`reviews_subscription_admin:${subscriptionId}`}});
+}
+
+export type MultiLinkSubscriptionRow={id:string;permanent_code:string;hosted_page_url:string;status:string;lifecycle_status:string;current_period_end:string|null;cancel_at_period_end:boolean;created_at:string;email:string|null;name:string|null;business_name:string|null};
+/** Hosted Multi-Link page subscriptions ($9.99/month each), newest first. */
+export async function listMultiLinkSubscriptions(sql:Sql=liveDb()):Promise<MultiLinkSubscriptionRow[]>{
+ const rows=await sql`SELECT h.id,h.permanent_code,h.hosted_page_url,h.status,h.lifecycle_status,h.current_period_end,h.cancel_at_period_end,h.created_at,
+  c.email,c.name,b.business_name
+ FROM hosted_subscriptions h LEFT JOIN customers c ON c.id=h.customer_id LEFT JOIN businesses b ON b.id=h.business_id
+ ORDER BY h.created_at DESC LIMIT 200`;
+ return rows as MultiLinkSubscriptionRow[];
 }

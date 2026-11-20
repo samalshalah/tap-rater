@@ -10,8 +10,6 @@ import {
   type OrderRecord
 } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
-import { listReviewsSubscriptions, type ReviewsSubscriptionRow } from "@/lib/reviews-subscription-admin";
-import { marketingPlan } from "@/lib/marketing-plan";
 
 type AdminOrdersPageProps = {
   searchParams?: Promise<{ filter?: string }>;
@@ -22,8 +20,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   const params = await searchParams;
   const { configured, orders } = await getAdminOrders();
   const workspaceOrders = orders.filter((order) => Boolean(order.id)).map(toWorkspaceOrder);
-  // Google Reviews subscriptions are billed separately from stand orders; list them here so every sale is visible.
-  const subscriptions = await listReviewsSubscriptions().catch(() => null);
 
   return (
     <AdminShell>
@@ -47,7 +43,6 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
 
         <AdminOrdersWorkspace configured={configured} orders={workspaceOrders} initialFilter={params?.filter} />
       </section>
-      <ReviewsSubscriptions rows={subscriptions} />
     </AdminShell>
   );
 }
@@ -110,33 +105,3 @@ function formatPaymentBadge(order: OrderRecord) {
   return "Unfinished checkout";
 }
 
-const subscriptionTone: Record<string, "success" | "warning" | "danger" | "neutral"> = { active: "success", trialing: "success", past_due: "warning", incomplete: "warning", unpaid: "danger", canceled: "neutral", cancelled: "neutral", incomplete_expired: "neutral" };
-
-function ReviewsSubscriptions({ rows }: { rows: ReviewsSubscriptionRow[] | null }) {
-  return (
-    <section id="reviews-subscriptions" className="tr-admin-section">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-ink">Google Reviews subscriptions</h2>
-          <p className="mt-1 text-sm text-muted">Monthly service subscriptions. They are not stand orders and need no fulfillment.</p>
-        </div>
-        {rows ? <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">{rows.length} subscriptions</div> : null}
-      </div>
-      {rows === null ? <p className="mt-4 text-sm text-muted">Subscriptions could not be loaded.</p>
-        : rows.length === 0 ? <p className="mt-4 text-sm text-muted">No Google Reviews subscriptions yet.</p>
-        : <div className="tr-admin-card mt-4 overflow-x-auto"><table className="w-full text-left text-sm">
-          <thead><tr className="text-xs uppercase text-muted"><th className="px-4 py-3">Customer</th><th className="px-4 py-3">Business</th><th className="px-4 py-3">Locations</th><th className="px-4 py-3">Monthly</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Renews / ends</th></tr></thead>
-          <tbody>{rows.map((row) => (
-            <tr key={row.stripe_subscription_id} className="border-t border-line align-top">
-              <td className="px-4 py-3"><strong className="block text-ink">{row.name || row.email}</strong><span className="text-xs text-muted">{row.email}</span></td>
-              <td className="px-4 py-3">{row.businesses || <span className="text-muted">Not set up yet</span>}</td>
-              <td className="px-4 py-3">{row.locations}</td>
-              <td className="px-4 py-3">{formatPrice(marketingPlan.monthlyCents * row.locations)}</td>
-              <td className="px-4 py-3"><AdminBadge tone={subscriptionTone[row.status] ?? "neutral"}>{row.status.replaceAll("_", " ")}</AdminBadge>{row.stripe_mode === "test" ? <span className="ml-2"><AdminBadge>Test</AdminBadge></span> : null}{row.cancel_at_period_end ? <span className="mt-1 block text-xs text-muted">Renewal canceled</span> : null}</td>
-              <td className="px-4 py-3">{row.current_period_end ? new Date(row.current_period_end).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—"}</td>
-            </tr>
-          ))}</tbody>
-        </table></div>}
-    </section>
-  );
-}

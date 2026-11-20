@@ -24,7 +24,6 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Client Operations",
     items: [
-      { label: "Customers & Licences", href: "/admin/customers", description: "Customers, Google Reviews and Multi-Link licences" },
       { label: "Client Failures", href: "/admin/client-failures", description: "Client failures and support email notifications" },
       { label: "Workers & Health", href: "/admin/workers", description: "Worker activity, client integrations and location health" },
       { label: "Review Operations", href: "/admin/review-operations", description: "Google review performance, reply queues and timing controls" },
@@ -42,6 +41,8 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         href: "/admin/orders",
         description: "Paid, pending, production, and shipping fulfillment",
       },
+      { label: "Subscriptions", href: "/admin/subscriptions", description: "Google Reviews and Multi-Link monthly subscriptions" },
+      { label: "Customers", href: "/admin/customers", description: "Customer accounts, licences and replacement stands" },
       {
         label: "Products",
         href: "/admin/products",

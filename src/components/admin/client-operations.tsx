@@ -6,7 +6,7 @@ import {AdminLinkButton} from './admin-ui';
 import {CustomerActivationButton} from './customer-activation-button';
 
 type View = 'all'|'accounts'|'usage'|'ai'|'google';
-const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Customers & Licences',usage:'Service usage',ai:'AI agent',google:'Google connection'};
+const titles:Record<View,string>={all:'Accounts & service usage',accounts:'Customers',usage:'Service usage',ai:'AI agent',google:'Google connection'};
 const columns:{label:string; views:View[]; value:(a:ClientOperation)=>string|number}[]=[
   {label:'Account',views:['accounts','usage','ai','google'],value:a=>a.accountName},
   {label:'Status',views:['accounts'],value:a=>a.status.replaceAll('_',' ')},
