@@ -98,7 +98,7 @@ describe('live Google review safety',()=>{
   const suggestions={friendly:'Thanks for visiting'},generate=vi.fn().mockResolvedValue(suggestions);
   const sql=sqlRows([review],[link],[{business_id:id}],[{allowed:true}]);
   expect(await suggestLiveReply({kind:'customer',email:'owner@example.com'},id,sql,generate)).toEqual(suggestions);
-  expect(generate).toHaveBeenCalledWith('Norah',5,'Lovely dress',undefined,{businessId:id,customerId:id,service:'review_manual'});
+  expect(generate).toHaveBeenCalledWith('Norah',5,'Lovely dress',undefined,{businessId:id,customerId:id,service:'review_manual'},undefined);
  });
  it('requires quota before transmitting real reviews',async()=>{
   const generate=vi.fn();await expect(suggestLiveReply({kind:'admin'},id,sqlRows([review],[link],[]),generate)).rejects.toMatchObject({status:429});expect(generate).not.toHaveBeenCalled();

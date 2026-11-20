@@ -3,7 +3,7 @@ import { reviewWorkerFailure, resolveReviewWorkerAlert } from '../review-worker-
 import {checkNextReviewPolicy} from '../review-policy-worker';
 import { randomUUID } from "node:crypto";
 import { GoogleBusinessError } from "./client";
-import { generateAutomaticReviewReply, type AutomaticReplyForReview } from "../review-ai-provider";
+import { generateAutomaticReviewReply, reviewerFirstName, type AutomaticReplyForReview } from "../review-ai-provider";
 import type { ReplyStyle } from "../review-ai-options";
 import type { ReplySuggestions } from "../review-ai-options";
 import type { AiUsageContext } from "../ai-usage-meter";
@@ -12,7 +12,7 @@ import { syncLiveReviews } from "./live-review-workspaces";
 import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear, verifyAndRecoverLiveReply } from "./live-review-actions";
 import { reviewTaskBoundary } from './review-task-boundary';
 
-type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext)=>Promise<string|ReplySuggestions|AutomaticReplyForReview>;
+type AutomaticReplyGenerator=(businessName:string,rating:number,comment:string,style:ReplyStyle,run?:((model:string,input:unknown)=>Promise<unknown>),meter?:AiUsageContext,reviewerName?:string)=>Promise<string|ReplySuggestions|AutomaticReplyForReview>;
 export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),generate:AutomaticReplyGenerator=generateAutomaticReviewReply,publish?:(id:string,version:number)=>Promise<{published:boolean}>){
  const link=await authorizedLink({kind:'admin'},businessId,sql);
  if(!link.enabled||!link.ai_consent)return {drafted:false};
@@ -52,7 +52,7 @@ export async function prepareAutomaticDraft(businessId:string,sql=liveDb(),gener
  let stage: 'generation' | 'save' | 'schedule' = 'generation';
  try{
   if(review.data.comment?.trim())await reserveAi(businessId,sql);
-  const generated=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',link.auto_style as ReplyStyle,undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'});
+  const generated=await generate(String(link.business_name),reviewStars(review.data),review.data.comment||'',link.auto_style as ReplyStyle,undefined,{businessId,customerId:String(link.customer_id),service:'review_automatic'},reviewerFirstName(review.data.reviewer));
   const fallback = typeof generated === 'object' && 'reason' in generated ? generated : null;
   const reply = typeof generated === 'string' ? generated
    : 'reason' in generated ? generated.text : generated[link.auto_style as ReplyStyle];
