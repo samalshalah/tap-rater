@@ -3,7 +3,7 @@ import { AdminBadge } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import { marketingPlan } from "@/lib/marketing-plan";
 import { formatPrice } from "@/lib/products";
-import { listMultiLinkSubscriptions, listReviewsSubscriptions } from "@/lib/reviews-subscription-admin";
+import { listMultiLinkSubscriptions, listReviewsSubscriptions, multiLinkBilling } from "@/lib/reviews-subscription-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,12 +44,24 @@ export default async function AdminSubscriptionsPage() {
           <><strong className="block text-ink">{row.name || row.email || "Customer"}</strong>{row.email ? <span className="text-xs text-muted">{row.email}</span> : null}</>,
           row.business_name || "—",
           <a className="text-brand underline" href={row.hosted_page_url} target="_blank" rel="noopener noreferrer">{row.permanent_code}</a>,
-          formatPrice(multiLinkMonthlyCents),
-          <Status status={row.status} canceling={row.cancel_at_period_end} />,
-          date(row.current_period_end)
+          ...multiLinkCells(row)
         ]} rowKey={(row) => row.id} />
     </AdminShell>
   );
+}
+
+const lifecycleTone: Record<string, Tone> = { ACTIVE: "success", REACTIVATED: "success", PAST_DUE: "warning", CANCELLED_AT_PERIOD_END: "warning", EXPIRED: "neutral", RETIRED_INTERNAL: "neutral" };
+
+/** Stripe pages show billing status; manual and complimentary pages show the page status, with no monthly charge. */
+function multiLinkCells(row: { stripe_subscription_id: string; status: string; lifecycle_status: string; cancel_at_period_end: boolean; current_period_end: string | null }) {
+  const billing = multiLinkBilling(row.stripe_subscription_id);
+  if (billing === "stripe") return [formatPrice(multiLinkMonthlyCents), <Status key="s" status={row.status} canceling={row.cancel_at_period_end} />, date(row.current_period_end)];
+  const lifecycle = row.lifecycle_status === "RETIRED_INTERNAL" ? "archived" : row.lifecycle_status.replaceAll("_", " ").toLowerCase();
+  return [
+    <span key="m" className="text-muted" title="Not billed through Stripe">—</span>,
+    <span key="s"><AdminBadge tone="brand">{billing === "manual" ? "Manual order" : "Complimentary"}</AdminBadge><span className="ml-2"><AdminBadge tone={lifecycleTone[row.lifecycle_status] ?? "neutral"}>{lifecycle}</AdminBadge></span></span>,
+    <span key="d" className="text-muted">No renewal</span>
+  ];
 }
 
 function Status({ status, test = false, canceling }: { status: string; test?: boolean; canceling: boolean }) {

@@ -16,3 +16,11 @@ it('does nothing when no order notification address is configured',async()=>{
  expect(await notifyNewReviewsSubscription({subscriptionId:'sub_123',account:'11111111-1111-4111-8111-111111111111',locations:1,mode:'live',sql,send,env:{}})).toMatchObject({sent:false});
  expect(send).not.toHaveBeenCalled();
 });
+
+import {multiLinkBilling} from '@/lib/reviews-subscription-admin';
+it('tells Stripe, manual-order and complimentary Multi-Link pages apart',()=>{
+ expect(multiLinkBilling('sub_1Q2w3e')).toBe('stripe');
+ expect(multiLinkBilling('manual:TR-260901-07ABC')).toBe('manual');
+ expect(multiLinkBilling('manual:comp_123')).toBe('complimentary');
+ expect(multiLinkBilling('admin:grant-9')).toBe('complimentary');
+});
