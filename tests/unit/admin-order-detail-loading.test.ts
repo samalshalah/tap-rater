@@ -17,7 +17,7 @@ vi.mock("@/components/admin/order-detail-components", () => ({ InfoCard: () => n
 vi.mock("@/components/admin/email-delivery-history", () => ({ EmailDeliveryHistory: () => null }));
 vi.mock("@/components/admin/order-customer-email", () => ({ OrderCustomerEmail: () => null }));
 vi.mock("@/components/admin/admin-shell", () => ({ AdminShell: () => null }));
-vi.mock("@/components/admin/admin-ui", () => ({ AdminAlert: () => null, AdminLinkButton: () => null }));
+vi.mock("@/components/admin/admin-ui", () => ({ AdminAlert: () => null, AdminLinkButton: () => null, AdminBadge: () => null }));
 vi.mock("@/components/admin/order-fulfillment-form", () => ({ OrderFulfillmentForm: () => null }));
 vi.mock("@/components/admin/order-production-actions", () => ({ OrderProductionActions: () => null }));
 vi.mock("@/components/admin/order-refund-form", () => ({ OrderRefundForm: () => null }));

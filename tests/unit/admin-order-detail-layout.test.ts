@@ -86,12 +86,29 @@ describe("admin order detail wrapping", () => {
       line_items_json: [], customer_details_json: {}, shipping_address_json: {}
     } });
     const html = renderToStaticMarkup(await AdminOrderDetailPage({ params: Promise.resolve({ id: "qa-order" }) }));
-    expect(html).toContain('class="min-w-0 flex-1"');
-    expect(html).toContain(`class="mt-2 break-all font-mono text-xs text-muted">${sessionId}</p>`);
-    expect(html).toContain("tr-admin-title mt-2 break-words");
-    expect(html).toContain("xl:grid-cols-[minmax(0,1fr)_420px]");
+    // Shared header: short order reference as the title, customer and total underneath, in a shrinkable column.
+    expect(html).toContain('class="tr-admin-page-header"');
+    expect(html).toContain('<div class="min-w-0"><h1 class="tr-admin-title">Order ');
+    expect(html).toContain("A long customer business name");
     expect(html).toContain("$82.68");
+    // The full checkout reference stays visible in Details and wraps instead of overflowing.
+    expect(html).toContain(`class="break-all text-ink">${sessionId}</p>`);
+    expect(html).toContain("xl:grid-cols-[minmax(0,1fr)_420px]");
     expect(html).toContain("Customer emails &amp; notifications");
-    expect(html).toContain("View customer email history");
+    expect(html).toContain('href="#customer-email-history"');
+    // Payment is collected, so no payment invitation and no "Create complimentary order" on an order page.
+    expect(html).not.toContain("Create complimentary order");
+  });
+
+  it("never offers a payment invitation once payment was collected, even after a refund cancels the order", async () => {
+    for (const payment of [{ status: "canceled", payment_status: "refunded" }, { status: "pending_payment", payment_status: "unpaid" }]) {
+      getOrder.mockResolvedValue({ configured: true, order: {
+        id: "qa-refund", customer_name: "Refunded customer", email: "r@example.com", stripe_checkout_session_id: "cs_test_refund",
+        total_cents: 4600, shipping_amount_cents: 0, production_status: "ready_for_production", shipping_status: "not_shipped",
+        line_items_json: [], customer_details_json: {}, shipping_address_json: {}, ...payment
+      } });
+      const html = renderToStaticMarkup(await AdminOrderDetailPage({ params: Promise.resolve({ id: "qa-refund" }) }));
+      expect(html.includes("Send customer email"), payment.payment_status).toBe(payment.payment_status === "unpaid");
+    }
   });
 });

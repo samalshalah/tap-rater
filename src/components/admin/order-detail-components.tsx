@@ -217,14 +217,14 @@ function readRecordString(record: Record<string, unknown> | null, key: string) {
 
 export function formatPaymentStatus(order: Pick<OrderRecord, "status" | "payment_status" | "customer_details_json">) {
   if (isEtsyOrder(order)) return "Etsy";
-  if (order.payment_status === "complimentary") return "Complimentary â€” no payment due";
+  if (order.payment_status === "complimentary") return "Complimentary — no payment due";
   if (order.payment_status === "refunded") return "Refunded";
   if (order.payment_status === "refund_pending") return "Refund pending";
   if (order.payment_status === "refund_failed") return "Refund needs review";
   if (order.payment_status === "partially_refunded") return "Partially refunded";
   if (order.payment_status === "manual_unpaid") return "Submitted - payment pending review";
   if (order.status === "paid" || order.payment_status === "paid") return "Paid";
-  if (order.status === "pending_payment") return "Unfinished checkout â€” awaiting payment";
+  if (order.status === "pending_payment") return "Unfinished checkout — awaiting payment";
   return order.status.replaceAll("_", " ");
 }
 
