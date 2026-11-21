@@ -28,7 +28,8 @@ import {
   Truck,
   Users,
   WalletCards,
-  Repeat
+  Repeat,
+  ChevronDown
 } from "lucide-react";
 import { adminNavigationGroups } from "@/lib/admin-navigation";
 
@@ -67,6 +68,17 @@ export function AdminSidebar() {
   const menu = useRef<HTMLDialogElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => { menu.current?.close(); setMenuOpen(false); };
+  // Desktop groups fold so the whole menu fits on screen. The group holding the current page is always open;
+  // groups the admin opens stay open on this browser.
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem("tr-admin-open-groups") || "[]"); if (Array.isArray(saved)) setOpenGroups(saved.filter((v): v is string => typeof v === "string")); } catch { /* use defaults */ }
+  }, []);
+  const toggleGroup = (label: string) => setOpenGroups((current) => {
+    const next = current.includes(label) ? current.filter((value) => value !== label) : [...current, label];
+    try { localStorage.setItem("tr-admin-open-groups", JSON.stringify(next)); } catch { /* not saved */ }
+    return next;
+  });
   useEffect(() => { menu.current?.close(); }, [pathname, searchParams]);
   useEffect(() => {
     if (!menuOpen) return;
@@ -86,10 +98,21 @@ export function AdminSidebar() {
 
   const navigation = (mobile: boolean) => (
       <nav aria-label={mobile ? "Admin menu" : "Admin navigation"} className={mobile ? "tr-admin-mobile-menu-links" : "tr-admin-desktop-nav lg:space-y-3"}>
-        {adminNavigationGroups.map((group) => (
-          <div key={group.label} className={mobile ? "tr-admin-menu-group" : "contents lg:block"}>
-            <p className="tr-admin-menu-group-label mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{group.label}</p>
-            <div className="grid gap-1">
+        {adminNavigationGroups.map((group) => {
+          const activeHere = group.items.some((item) => isAdminNavigationItemActive({ itemHref: item.href, itemPathname: item.href.split("?")[0], itemSearch: item.href.includes("?") ? new URLSearchParams(item.href.split("?")[1]) : null, pathname, currentFilter: searchParams.get("filter") }));
+          const single = group.items.length === 1 && group.items[0].label === group.label;
+          const open = mobile || single || activeHere || openGroups.includes(group.label);
+          const listId = `admin-nav-${group.label.toLowerCase().replace(/[^a-z]+/g, "-")}${mobile ? "-mobile" : ""}`;
+          return (
+          <div key={group.label} className={mobile ? "tr-admin-menu-group" : "tr-admin-nav-group"} data-open={open ? "true" : "false"}>
+            {single && !mobile ? null : mobile ? (
+              <p className="tr-admin-menu-group-label mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{group.label}</p>
+            ) : (
+              <button type="button" className="tr-admin-nav-group-toggle" aria-expanded={open} aria-controls={listId} disabled={activeHere} onClick={() => toggleGroup(group.label)}>
+                <span>{group.label}</span><ChevronDown aria-hidden="true" />
+              </button>
+            )}
+            <div id={listId} className="grid gap-1" hidden={!open}>
               {group.items.map((item) => {
                 const Icon = icons[item.label as keyof typeof icons] ?? Megaphone;
                 const itemPathname = item.href.split("?")[0];
@@ -121,7 +144,8 @@ export function AdminSidebar() {
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
   );
 

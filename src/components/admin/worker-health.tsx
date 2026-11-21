@@ -1,5 +1,6 @@
 'use client';
 
+import {AdminPageHeader} from './admin-page-header';
 import {useState,useEffect} from 'react';
 
 import {useRouter} from 'next/navigation';
@@ -25,7 +26,7 @@ export function WorkerHealth({data}:{data:WorkerHealthData}){
 
  const account=data.accounts.find(a=>a.id===selected),locations=data.locations.filter(l=>l.customer_id===selected);
 
- return <section className="tr-admin-section"><div className="flex items-center justify-between"><div><h1 className="tr-admin-title">Workers & Health</h1><p className="mt-1 text-sm text-muted">Updated {date(data.checkedAt)} ET · Refreshes every minute</p></div><div className="flex items-center gap-2"><AdminLinkButton href="/admin/client-failures">Client failures &amp; support alerts</AdminLinkButton><AdminButton onClick={()=>router.refresh()}>Refresh</AdminButton></div></div>
+ return <section className="tr-admin-section"><AdminPageHeader title="Workers & Health" description={<>Background workers and integrations. Updated {date(data.checkedAt)} ET, refreshes every minute.</>} actions={<><AdminLinkButton href="/admin/client-failures">Client failures</AdminLinkButton><AdminButton onClick={()=>router.refresh()}>Refresh</AdminButton></>}/>
 
  <div className="my-4 grid gap-3 md:grid-cols-4">{[
  ['Client accounts',data.accounts.length],['Active locations',data.locations.length],['Import / draft eligible',`${data.locations.filter(l=>l.importEligible).length} / ${data.locations.filter(l=>l.draftEligible).length}`],['Autopilot eligible',data.locations.filter(l=>l.publishEligible).length],

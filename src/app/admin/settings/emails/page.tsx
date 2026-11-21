@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { CheckoutReminderSettings } from "@/components/admin/checkout-reminder-settings";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
@@ -19,13 +20,7 @@ export default async function AdminEmailTemplatesPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <p className="tr-eyebrow">Settings</p>
-        <div className="mt-3">
-          <h1 className="tr-admin-title">Emails &amp; notifications</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            Review sent emails and delivery status. Template previews are available separately below.
-          </p>
-        </div>
+        <AdminPageHeader title="Emails & Notifications" description="Sent emails and their delivery status, with template previews below." />
         <div className="mt-12 border-t border-line pt-10">
           <p className="tr-eyebrow">Operations</p>
           <h2 className="tr-admin-title mt-3">Email delivery</h2>

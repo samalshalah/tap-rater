@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminBadge, AdminCard, AdminLinkButton, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -15,14 +16,7 @@ export default async function AdminSettingsPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="tr-eyebrow">System</p>
-            <h1 className="tr-admin-title mt-2">Settings and configuration</h1>
-            <p className="tr-body mt-3 max-w-3xl">{process.env.NODE_ENV === "development" ? "Local development environment. " : ""}Current server configuration only, not overall project completion or live-launch approval.</p>
-          </div>
-          <AdminLinkButton href="/admin/settings/emails" variant="secondary">Email templates</AdminLinkButton>
-        </div>
+        <AdminPageHeader title="Settings" description={<>{process.env.NODE_ENV === "development" ? "Local development environment. " : ""}Current server configuration only, not overall project completion or live-launch approval.</>} actions={<AdminLinkButton href="/admin/settings/emails" variant="secondary">Email templates</AdminLinkButton>} />
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           <AdminSummaryCard label="Configuration coverage" value={`${readinessPercent}%`} description="Ready = 1 point; warning = half; blocked = 0. Valid TEST keys count as configured." />

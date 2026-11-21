@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminDataTable } from "@/components/admin/admin-ui";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { OffersForm } from "@/components/admin/offers-form";
@@ -15,11 +16,7 @@ export default async function OffersPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section space-y-4">
-        <h1 className="tr-admin-title">Offers</h1>
-        <p>
-          Manage automatic discounts, mixed-product bundles, eligibility, dates,
-          and free shipping.
-        </p>
+        <AdminPageHeader title="Offers" description="Automatic discounts, mixed-product bundles, eligibility, dates and free shipping." />
         <OffersForm
           initial={settings}
           products={products.map((p) => ({ slug: p.slug, title: p.title }))}

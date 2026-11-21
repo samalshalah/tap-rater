@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminLinkButton } from "@/components/admin/admin-ui";
 import { InventoryAvailability } from "@/components/admin/inventory-availability";
@@ -19,14 +20,7 @@ export default async function AdminInventoryPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="tr-eyebrow">Commerce</p>
-            <h1 className="tr-admin-title mt-2">Inventory availability</h1>
-            <p className="tr-body mt-3 max-w-3xl">Checkout accepts only active products marked in stock. Change availability directly below.</p>
-          </div>
-          <AdminLinkButton href="/admin/products" variant="secondary">Manage products</AdminLinkButton>
-        </div>
+        <AdminPageHeader title="Inventory" description="Checkout accepts only active products marked in stock. Change availability below." actions={<AdminLinkButton href="/admin/products" variant="secondary">Manage products</AdminLinkButton>} />
 
         <InventoryAvailability initialRows={inventoryRows} />
       </section>

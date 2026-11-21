@@ -1,5 +1,6 @@
 'use client';
 
+import {AdminPageHeader} from './admin-page-header';
 import {useEffect,useMemo,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {CircleAlert,CircleCheck,CircleX,ChevronRight} from 'lucide-react';
@@ -25,7 +26,7 @@ export function ReviewOperations({data}:{data:WorkerHealthData}){
   return {label:'Healthy',Icon:CircleCheck,color:'text-emerald-600',surface:'border-emerald-200 bg-emerald-50/40'};
  };
  return <section className="tr-admin-section">
-  <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="tr-admin-title">Review Operations</h1><p className="mt-1 max-w-3xl text-sm text-muted">Monitor each Google Reviews queue, change reply settings, and open any location to diagnose or recover it. Data refreshes every minute.</p></div><AdminButton onClick={()=>router.refresh()}>Refresh now</AdminButton></header>
+  <AdminPageHeader title="Review Operations" description="Each location's Google Reviews queue and reply settings. Open a location to diagnose or recover it. Refreshes every minute." actions={<AdminButton onClick={()=>router.refresh()}>Refresh now</AdminButton>}/>
   <div className="my-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
    <AdminSummaryCard label="Active locations" value={String(locations.length)} description="Connected and licensed"/>
    <AdminSummaryCard label="4–5 star replies on Google" value={`${sum('positive_answered')} / ${sum('positive_total')}`} description="All replies currently present on Google"/>

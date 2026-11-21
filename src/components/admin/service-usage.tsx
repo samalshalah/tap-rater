@@ -1,3 +1,4 @@
+import {AdminPageHeader} from './admin-page-header';
 import {MarketingAccessEditor} from './marketing-access-editor';
 import {MarketingAccessSummary} from './marketing-access-summary';
 import {adminLocationCosts} from '@/lib/admin-location-costs';
@@ -34,11 +35,7 @@ export async function ServiceUsage() {
   })})):null;
   return <section className="tr-admin-section">
 
-    <p className="tr-eyebrow">Client operations</p>
-
-    <h1 className="tr-admin-title mt-1">Service usage & costs</h1>
-
-    <p className="mt-2 text-sm text-muted">Account-level usage and internal provider costs. Customer content stays private. Customer pricing is inactive.</p>
+    <AdminPageHeader title="Usage" description="Account-level usage and internal provider costs. Customer content stays private."/>
 
     <MarketingAccessSummary/><MarketingAccessEditor/>
     <div className="my-4 rounded-lg border border-line bg-white p-4 text-sm">

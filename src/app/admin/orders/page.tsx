@@ -1,8 +1,9 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { isEtsyOrder } from "@/lib/complimentary-order-types";
 import { Plus } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminOrdersWorkspace, type AdminOrdersWorkspaceOrder } from "@/components/admin/admin-orders-workspace";
-import { AdminBadge, AdminLinkButton } from "@/components/admin/admin-ui";
+import { AdminLinkButton } from "@/components/admin/admin-ui";
 import { requireAdmin } from "@/lib/admin-auth";
 import {
   getAdminOrders,
@@ -24,22 +25,12 @@ export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageP
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <p className="tr-eyebrow">Commerce</p>
-        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="tr-admin-title">Orders</h1>
-              <AdminLinkButton href="/admin/orders/new" variant="primary"><Plus size={14} aria-hidden="true" />Create complimentary order</AdminLinkButton>
-            </div>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-              Manage paid and complimentary orders from creation through production, tracking, shipment, delivery, and fulfillment notes.
-            </p>
-          </div>
-          <div className="tr-admin-card px-4 py-3 text-sm font-semibold text-ink">
-            {workspaceOrders.length} orders
-            {params?.filter === "production" ? <span className="ml-2"><AdminBadge tone="warning">Production queue</AdminBadge></span> : null}
-          </div>
-        </div>
+        <AdminPageHeader
+          title={params?.filter === "production" ? "Production queue" : "Orders"}
+          section={params?.filter === "production" ? "Operations" : "Commerce"}
+          description="Paid and complimentary stand orders, from payment through production, shipping and delivery."
+          actions={<AdminLinkButton href="/admin/orders/new" variant="primary"><Plus size={14} aria-hidden="true" />Create complimentary order</AdminLinkButton>}
+        />
 
         <AdminOrdersWorkspace configured={configured} orders={workspaceOrders} initialFilter={params?.filter} />
       </section>

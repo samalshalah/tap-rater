@@ -11,6 +11,7 @@ import "./admin-workspace.css";
 import "./prismatic.css";
 import "./prismatic-account.css";
 import "./prismatic-admin.css";
+import "./admin-template.css";
 
 export const metadata: Metadata = {
   ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),

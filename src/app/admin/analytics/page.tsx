@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AnalyticsControls } from "@/components/admin/analytics-controls";
@@ -28,7 +29,7 @@ export default async function AdminAnalyticsPage({
     return (
       <AdminShell>
         <section className="tr-admin-section">
-          <h1 className="tr-admin-title">Analytics</h1>
+          <AdminPageHeader title="Store Analytics" />
           <p role="alert" className="mt-6 tr-status-warning">
             Reports are temporarily unavailable. Please retry; no zero totals
             are being substituted for missing data.
@@ -55,16 +56,10 @@ export default async function AdminAnalyticsPage({
   return (
     <AdminShell>
       <section className="tr-admin-section space-y-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="tr-eyebrow">Store performance</p>
-            <h1 className="tr-admin-title mt-2">Analytics</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted">
-              See where visitors come from, what they shop for, and where their
-              journey stops. Sales come from confirmed live orders; visitor
-              reports include consented sessions only.
-            </p>
-          </div>
+        <AdminPageHeader
+          title="Store Analytics"
+          description="Where visitors come from, what they shop for, and where they stop. Sales come from confirmed live orders; visitor reports use consented sessions only."
+          actions={
           <form className="flex items-center gap-2">
             <label htmlFor="days" className="text-sm">
               Period
@@ -82,8 +77,8 @@ export default async function AdminAnalyticsPage({
               ))}
             </select>
             <button className="tr-button-outline">Apply</button>
-          </form>
-        </div>
+          </form>}
+        />
         <nav
           className="flex flex-wrap gap-4 text-sm font-semibold text-brand"
           aria-label="Analytics reports"

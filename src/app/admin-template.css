@@ -1,0 +1,48 @@
+/* Shared admin page template: one page header, a sidebar that fits the screen, and a clean top bar.
+   Loaded after prismatic-admin.css so these rules win over older per-page spacing. */
+
+/* Page header */
+.tr-prismatic-admin .tr-admin-page-header{margin:0 0 20px}
+.tr-prismatic-admin .tr-admin-page-back{display:inline-block;margin-bottom:10px;font-size:12px;color:#6035ff}
+.tr-prismatic-admin .tr-admin-page-back:hover{text-decoration:underline}
+.tr-prismatic-admin .tr-admin-page-header-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.tr-prismatic-admin .tr-admin-page-section{margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#5364b5}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content .tr-admin-page-header .tr-admin-title{margin:0!important;font-size:28px!important}
+.tr-prismatic-admin .tr-admin-page-description{margin:6px 0 0;max-width:760px;font-size:13px;line-height:1.55;color:#4b536f}
+.tr-prismatic-admin .tr-admin-page-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px}
+.tr-prismatic-admin .tr-admin-page-actions>*{margin:0!important}
+@media(max-width:640px){
+ .tr-prismatic-admin .tr-admin-page-header-row{flex-direction:column;align-items:stretch}
+ .tr-prismatic-admin .tr-admin-page-actions{justify-content:flex-start}
+ .tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content .tr-admin-page-header .tr-admin-title{font-size:24px!important}
+}
+
+/* Top bar */
+.tr-prismatic-admin .tr-admin-context{min-height:56px;padding:10px 24px}
+
+/* Desktop sidebar: compact rows and folding groups so the whole menu fits without its own scrollbar. */
+@media(min-width:1024px){
+ .tr-prismatic-admin .tr-admin-sidebar{width:220px;display:flex;flex-direction:column;overflow:hidden}
+ .tr-prismatic-admin .tr-admin-brand{padding:16px 20px 8px}
+ .tr-prismatic-admin .tr-admin-brand img{width:84px;height:52px}
+ .tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-desktop-nav{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;padding:4px 12px 8px}
+ .tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-desktop-nav>div+div{margin-top:6px;padding-top:6px;border-top:1px solid #eef0f6}
+ .tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-desktop-nav a{min-height:32px;padding:6px 10px;font-size:12px;gap:10px}
+ .tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-desktop-nav svg{width:16px;height:16px}
+ .tr-prismatic-admin .tr-admin-sidebar nav.tr-admin-desktop-nav .grid{gap:1px}
+ .tr-prismatic-admin .tr-admin-sidebar>div:last-child{padding:10px 16px 14px;border-top:1px solid #eef0f6}
+ .tr-prismatic-admin .tr-admin-sidebar>div:last-child button{min-height:34px;padding:6px 12px}
+}
+.tr-prismatic-admin button.tr-admin-nav-group-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;min-height:28px;padding:4px 10px;border:0;border-radius:6px;background:none;color:#4b536f;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.tr-prismatic-admin button.tr-admin-nav-group-toggle:hover:not(:disabled){background:#f5f2ff;color:#6035ff}
+.tr-prismatic-admin button.tr-admin-nav-group-toggle:disabled{cursor:default;opacity:1;color:#090e36}
+.tr-prismatic-admin button.tr-admin-nav-group-toggle svg{width:14px;height:14px;transition:transform .15s}
+.tr-prismatic-admin .tr-admin-nav-group[data-open=true]>button.tr-admin-nav-group-toggle svg{transform:rotate(180deg)}
+.tr-prismatic-admin .tr-admin-nav-group[data-open=true]>button.tr-admin-nav-group-toggle{margin-bottom:2px}
+@media(max-width:1023px){.tr-prismatic-admin .tr-admin-nav-group{display:none}}
+
+/* Tables: a name and the email under it stay readable on one line, separated. */
+.tr-prismatic-admin .tr-admin-person{display:inline-flex;align-items:baseline;gap:8px}
+.tr-prismatic-admin .tr-admin-person>span{color:#4b536f;font-size:11px}
+.tr-prismatic-admin .tr-admin-page-help{display:inline-block;margin-top:6px}
+.tr-prismatic-admin .tr-admin-nav-group>[hidden]{display:none!important}

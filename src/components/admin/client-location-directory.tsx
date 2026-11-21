@@ -50,7 +50,7 @@ export function ClientLocationDirectory({selection}:{selection?:DirectorySelecti
   const filtered=accountId?accounts.filter(account=>account.id===accountId):accounts;
   const locations=filtered.flatMap(account=>account.locations.map(location=>({...location,account:account.email,accountId:account.id})));
   return <div className="tr-client-directory">
-    <button type="button" popoverTarget="admin-client-directory" className="tr-directory-trigger"><Building2 size={16} aria-hidden="true"/> <span>{selection?.label||'Clients & locations'}</span> <ChevronDown size={14} aria-hidden="true"/></button>
+    <button type="button" popoverTarget="admin-client-directory" className="tr-directory-trigger"><Building2 size={16} aria-hidden="true"/> <span>{selection?.label||'Find a client'}</span> <ChevronDown size={14} aria-hidden="true"/></button>
     <section id="admin-client-directory" popover="auto" ref={panel} aria-label="Client accounts and locations" className="tr-directory-panel">
       <h2>Client accounts &amp; locations</h2>
       {loading?<p role="status">Loading accounts…</p>:error?<p role="alert">Accounts could not be loaded. <button onClick={()=>setAttempt(a=>a+1)}>Retry</button></p>:<>

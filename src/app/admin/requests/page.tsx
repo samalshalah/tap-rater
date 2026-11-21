@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminAlert, AdminSummaryCard } from "@/components/admin/admin-ui";
 import { RequestInbox } from "@/components/admin/request-inbox";
@@ -16,19 +17,7 @@ export default async function AdminRequestsPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <p className="tr-eyebrow">Admin</p>
-        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="tr-admin-title">Requests</h1>
-            <p className="mt-3 max-w-3xl leading-7 text-muted">
-              Track customer questions, setup submissions, and Tap Rater link changes from intake through resolution.
-            </p>
-          </div>
-          <div className="tr-admin-card p-4 text-sm">
-            <p className="font-semibold text-ink">{allRequests.length}</p>
-            <p className="mt-1 text-muted">total requests</p>
-          </div>
-        </div>
+        <AdminPageHeader title="Requests" description="Customer questions, setup submissions and link changes, from intake through resolution." />
 
         {!isConfigured ? (
           <AdminAlert className="mt-6" tone="warning">

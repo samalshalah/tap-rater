@@ -19,8 +19,7 @@ export async function AdminStoreOperations() {
       <details className="mx-4 mb-4 rounded-xl border border-line bg-white lg:mx-6">
       <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">Store operations · {productionOrders.length} need production · {artworkFailures.length} artwork failures · {readyToShip.length} ready to ship</summary>
       <section className="tr-admin-section">
-        <p className="tr-eyebrow">Admin</p>
-        <h1 className="tr-admin-title mt-1">Operations dashboard</h1>
+        <h2 className="tr-admin-title">Store operations</h2>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
           Review the orders, production work, fulfillment status, and sellable product readiness that staff need today.
         </p>

@@ -38,7 +38,7 @@ export function OrderRow({
           <input type="checkbox" checked={selected} onChange={onToggleSelected} disabled={!canOperate} className="h-4 w-4 disabled:cursor-not-allowed disabled:opacity-40" aria-label={`Select ${itemSummary.title}`} />
         </td>
         <td className="px-4 py-4 align-top">
-          <p className="max-w-[240px] truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
+          <p className="max-w-[360px] truncate font-semibold text-ink" title={itemSummary.title}>{itemSummary.title}</p>
           <p className="mt-1 text-xs font-semibold text-muted">{itemSummary.count}</p>
           <p className="mt-1 font-mono text-xs text-muted">{formatOrderReference(order.checkoutSessionId || order.id)}</p>
         </td>
@@ -64,13 +64,12 @@ export function OrderRow({
         </td>
         <td className="px-4 py-4 align-top">
           <div className="flex flex-wrap items-center gap-2">
+            {/* Statuses already show in the Total, Production and Shipping columns; only real next steps appear here. */}
             {primaryAction.kind === "action" ? (
               <QuickActionButton disabled={saving} onClick={() => onApplyAction(primaryAction.action)}>
                 {primaryAction.label}
               </QuickActionButton>
-            ) : (
-              <StatusPill tone={primaryAction.tone}>{primaryAction.label}</StatusPill>
-            )}
+            ) : null}
             <AdminButton type="button" onClick={onToggleEditor} className="min-h-8 px-3 py-1.5 text-xs" variant="outline">
               {editorOpen ? "Close" : "Edit"}
             </AdminButton>

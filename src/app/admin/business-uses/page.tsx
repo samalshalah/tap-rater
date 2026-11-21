@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireAdmin } from "@/lib/admin-auth";
@@ -10,16 +11,7 @@ export default async function AdminBusinessUsesPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="tr-eyebrow">Catalog</p>
-            <h1 className="tr-admin-title mt-2">Business Uses</h1>
-            <p className="mt-2 text-sm leading-6 text-muted">Manage Shop by Use cards, landing content, SEO, images, status, order, and assigned products.</p>
-          </div>
-          <Link href="/admin/business-uses/new" className="rounded-md bg-brand px-5 py-3 text-sm font-bold text-white">
-            Create business use
-          </Link>
-        </div>
+        <AdminPageHeader title="Business Uses" description="Shop by Use cards, landing content, SEO, images, order and assigned products." actions={<Link href="/admin/business-uses/new" className="tr-button-primary">Create business use</Link>} />
 
         <div className="tr-admin-table-shell mt-8 overflow-x-auto">
           <table className="w-full min-w-[920px] border-collapse text-left text-sm">

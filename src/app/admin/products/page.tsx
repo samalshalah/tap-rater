@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminProducts } from "@/lib/admin-products";
 import { hasSupabaseAdminConfig } from "@/lib/db";
@@ -20,16 +21,7 @@ export default async function AdminProductsPage() {
   return (
     <AdminShell>
       <section className="tr-admin-section">
-        <p className="tr-eyebrow">Commerce</p>
-        <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="tr-admin-title">Products</h1>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              Manage sellable products, DIRECT/HOSTED mode, Standard/Branded availability, pricing, and production template readiness.
-            </p>
-          </div>
-          <AdminProductCsvActions canImportExport={canSave} />
-        </div>
+        <AdminPageHeader title="Products" description="Sellable stands, prices, Standard and Branded availability, and production readiness." actions={<AdminProductCsvActions canImportExport={canSave} />} />
         {!canSave ? (
           <AdminAlert className="mt-6" tone="warning">
             Database persistence is not configured yet. Product edits cannot be saved.
