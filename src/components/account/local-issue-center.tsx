@@ -1,6 +1,7 @@
 'use client';
 import {heatmapFeatureEnabled} from '@/lib/heatmap-feature';
 import {useEffect,useMemo,useState} from 'react';
+import {startVisiblePolling} from '@/lib/visible-polling';
 import {filterLocalIssues,countUnreadIssues,type Draft,type Issue,type Snapshot} from './local-issue-model';
 import {LocalIssueSummary} from './local-issue-summary';
 import {LocalIssueGrid} from './local-issue-grid';
@@ -10,7 +11,7 @@ export function LocalIssueCenter({businessId,admin=false,compact=false,profileOn
  const [opened,setOpened]=useState('');
  const endpoint=admin?'/api/admin/local/issues':'/api/account/local/issues';
  async function refresh(){const r=await fetch(endpoint+(businessId?`?businessId=${businessId}`:''),{cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Unable to load notifications.');setData(d);}
- useEffect(()=>{let active=true;const load=async()=>{try{const r=await fetch(endpoint+(businessId?`?businessId=${businessId}`:''),{cache:'no-store'}),d=await r.json();if(!r.ok)throw new Error(d.error);if(active){setData(d);setError('');}}catch(e){if(active)setError(e instanceof Error?e.message:'Unable to load notifications.');}};setData(null);setConfirm('');setOpened('');load();const timer=setInterval(load,60000);return()=>{active=false;clearInterval(timer);};},[endpoint,businessId]);
+ useEffect(()=>{let active=true;const load=async()=>{try{const r=await fetch(endpoint+(businessId?`?businessId=${businessId}`:''),{cache:'no-store'}),d=await r.json();if(!r.ok)throw new Error(d.error);if(active){setData(d);setError('');}}catch(e){if(active)setError(e instanceof Error?e.message:'Unable to load notifications.');}};setData(null);setConfirm('');setOpened('');const stop=startVisiblePolling(load,60000,true);return()=>{active=false;stop();};},[endpoint,businessId]);
  async function act(issue:Issue,action:string,edits?:{draft:Draft;expectedDraft:Draft}){setBusy(issue.id);setError('');setNotice('');try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,businessId:issue.business_id,id:issue.id,fingerprint:issue.fingerprint,...edits})});const d=await r.json();if(!r.ok)throw new Error(d.error);setConfirm('');await refresh();setNotice(action==='editDraft'?'Draft edits saved. Nothing published.':action==='preview'?'AI draft prepared. No charge and nothing published.':action==='approveDraft'?'Draft approved for later use. Nothing was applied or published.':action==='request'?'Request saved. You have not been charged.':'Notification marked reviewed.');return true;}catch(e){setError(e instanceof Error?e.message:'Unable to save.');return false;}finally{setBusy('');}}
  const issues=useMemo(()=>filterLocalIssues(data?.issues||[],location,profileOnly,heatmapFeatureEnabled),[data,location,profileOnly]);
  const unread=useMemo(()=>countUnreadIssues(issues),[issues]);

@@ -3,6 +3,7 @@
 import {AdminPageHeader} from './admin-page-header';
 import {useEffect,useMemo,useState} from 'react';
 import {useRouter} from 'next/navigation';
+import {startVisiblePolling} from '@/lib/visible-polling';
 import {CircleAlert,CircleCheck,CircleX,ChevronRight} from 'lucide-react';
 import {AdminAlert,AdminButton,AdminSummaryCard} from './admin-ui';
 import type {WorkerHealthData} from '@/lib/admin-worker-health';
@@ -15,7 +16,7 @@ export function ReviewOperations({data}:{data:WorkerHealthData}){
  const [search,setSearch]=useState('');
  const [selected,setSelected]=useState<WorkerHealthData['locations'][number]|null>(null);
  const [focusReviewId,setFocusReviewId]=useState<string|null>(null);
- useEffect(()=>{const timer=setInterval(()=>router.refresh(),60000);return()=>clearInterval(timer);},[router]);
+ useEffect(()=>startVisiblePolling(()=>router.refresh(),60000),[router]);
  useEffect(()=>{setSelected(current=>current?data.locations.find(l=>l.id===current.id)||current:null);},[data.locations]);
  const locations=useMemo(()=>data.locations.filter(l=>(l.enabled||l.review_total!=null||count(l.imported)>0)&&`${l.name} ${l.google_email||''} ${l.customer_id}`.toLowerCase().includes(search.toLowerCase())),[data.locations,search]);
  const sum=(field:keyof WorkerHealthData['locations'][number])=>locations.reduce((total,l)=>total+count(l[field]),0);

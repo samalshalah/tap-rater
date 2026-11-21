@@ -4,6 +4,7 @@ import {AdminPageHeader} from './admin-page-header';
 import {useState,useEffect} from 'react';
 
 import {useRouter} from 'next/navigation';
+import {startVisiblePolling} from '@/lib/visible-polling';
 
 import {ModalDialog} from '@/components/ui/modal-dialog';
 import {AdminBadge,AdminButton,AdminLinkButton,AdminSummaryCard,AdminDataTable} from './admin-ui';
@@ -22,7 +23,7 @@ export function WorkerHealth({data}:{data:WorkerHealthData}){
 
  const router=useRouter(),[search,setSearch]=useState(''),[selected,setSelected]=useState<string|null>(null);
 
- useEffect(()=>{const timer=setInterval(()=>router.refresh(),60000);return()=>clearInterval(timer);},[router]);
+ useEffect(()=>startVisiblePolling(()=>router.refresh(),60000),[router]);
 
  const account=data.accounts.find(a=>a.id===selected),locations=data.locations.filter(l=>l.customer_id===selected);
 

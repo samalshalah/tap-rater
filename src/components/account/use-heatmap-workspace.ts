@@ -1,4 +1,5 @@
 'use client';
+import {startVisiblePolling} from '@/lib/visible-polling';
 import {useEffect,useMemo,useState,useRef,useCallback,type FormEvent} from 'react';
 import {buildGrid,mapLayout,type GridSettings,type HeatmapTrack} from '@/lib/heatmap-data';
 import {indexFirstMeasurements,sameGrid,keywordPoints,matchingScan,selectedScan,sameAnchor} from '@/lib/heatmap-results';
@@ -54,7 +55,7 @@ export function useHeatmapWorkspace({businessId,admin=false}:{businessId:string;
  function choose(t:HeatmapTrack){setQuote(null);setScanId('');setSelected(t.id);setForm({keyword:t.keyword,size:t.size,spacingKm:t.spacingKm,language:t.language});setEditing(false);setDirty(false);setPoint(null);setNotice('');}
  async function save(body:unknown){setQuote(null);setScanId('');setBusy(true);setError('');setNotice('');try{const result=await request(body),fresh=await request();setData(fresh);if(result.id){const t=fresh.tracks.find((x:HeatmapTrack)=>x.id===result.id);if(t)choose(t);}setNotice('Tracking setup saved in Tap Rater. No Google profile changes or replies were published.');setDirty(false);return true;}catch(e){setError(e instanceof Error?e.message:'Unable to save.');return false;}finally{setBusy(false);}}
  async function scanAction(approve=false){if(!track)return;setBusy(true);setError('');try{const result=await request(approve?{action:'approve',businessId,quoteId:quote?.id}:{action:'quote',businessId,id:track.id,version:track.version});if(approve){setQuote(null);setScanId('');setData(await request());setNotice(result.queued===false?'Sample scan complete.':'Scan approved and queued. Processing starts within 15 minutes. Refresh to see progress.');}else setQuote(result.quote);}catch(e){setQuote(null);setError(e instanceof Error?e.message:'Unable to prepare scan.');}finally{setBusy(false);}}
- useEffect(()=>{if(!pending)return;const timer=setInterval(()=>request().then(setData).catch(()=>{}),15000);return()=>clearInterval(timer);},[pending,businessId,endpoint]);
+ useEffect(()=>{if(!pending)return;return startVisiblePolling(()=>request().then(setData).catch(()=>{}),15000);},[pending,businessId,endpoint]);
  function closeEditor(){if(busy)return;if(dirty&&!window.confirm('Discard unsaved keyword changes?'))return;if(track)choose(track);else if(data?.tracks[0])choose(data.tracks[0]);else{setEditing(false);setDirty(false);}setError('');}
  async function submit(e:FormEvent){e.preventDefault();await save(track?{action:'update',businessId,id:track.id,version:track.version,settings:form,active:track.active}:{action:'create',businessId,settings:form});}
  function change<K extends keyof GridSettings>(key:K,value:GridSettings[K]){setQuote(null);setForm({...form,[key]:value});setDirty(true);setPoint(null);}
