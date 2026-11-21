@@ -2,6 +2,7 @@ import { getStripeClient } from "@/lib/checkout";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { getAdminOrderById, type OrderRecord, type OrdersDbClient } from "@/lib/orders";
 import { withStripeResourceLock, type StripeProcessingGuard } from "@/lib/stripe-processing";
+import { sendOrderRefundedEmails } from "@/lib/order-refund-emails";
 
 export type StripeRefundState = {
   id: string;
@@ -86,7 +87,8 @@ export async function findOrderCheckoutForPayment(paymentIntentId: string, strip
     (typeof session.invoice === "string" ? session.invoice : session.invoice?.id) === invoice.id) ?? null;
 }
 
-export async function saveOrderRefundSummaryWithClient(client: OrdersDbClient, order: OrderRecord, refunds: StripeRefundState[]) {
+export type RefundedOrderNotifier = (order: OrderRecord, refundedCents: number) => Promise<unknown>;
+export async function saveOrderRefundSummaryWithClient(client: OrdersDbClient, order: OrderRecord, refunds: StripeRefundState[], notify: RefundedOrderNotifier = sendOrderRefundedEmails) {
   const summary = summarizeRefunds(order, refunds);
   const now = new Date().toISOString();
   const saved = await client.from("orders").update({
@@ -101,6 +103,10 @@ export async function saveOrderRefundSummaryWithClient(client: OrdersDbClient, o
     updated_at: now,
   }).eq("id", order.id).eq("stripe_payment_intent_id", order.stripe_payment_intent_id).select("id").maybeSingle();
   if (saved.error || !saved.data) throw new Error(saved.error?.message ?? "Refund order could not be updated.");
+  // Tell the customer once, when the order first becomes fully refunded. The outbox key also stops repeats.
+  if (summary.paymentStatus === "refunded" && order.payment_status !== "refunded") {
+    await notify({ ...order, payment_status: "refunded", stripe_refund_id: summary.refundId }, summary.refundedAmountCents).catch(() => undefined);
+  }
   return summary;
 }
 
