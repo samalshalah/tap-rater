@@ -85,6 +85,27 @@ export async function scheduleSavedReply(id:string,version:number,sql=liveDb()){
  AND (r.old_reply_requested_at IS NOT NULL OR NULLIF(r.data->>'createTime','')::timestamptz>l.consent_at)`;
 }
 
+const DRAFT_ONLY_BLOCK='This package includes imports and drafts only.%';
+/**
+ * Queues autopilot drafts that could not be scheduled when they were written, for example while the account was
+ * drafts-only or autopilot was off. Uses the same rules as scheduleSavedReply. Drafts that failed to post for any
+ * other reason stay unscheduled, so a real Google error is never retried in a loop.
+ */
+export async function scheduleStrandedReplies(sql=liveDb(),limit=200){
+ return sql`UPDATE google_live_reviews r SET scheduled_at=CASE WHEN r.old_reply_requested_at IS NOT NULL THEN greatest(now(),r.draft_generated_at+l.reply_delay_minutes*interval '1 minute') WHEN l.reply_delay_minutes=20 THEN greatest(now(),r.created_at+interval '20 minutes') ELSE now()+l.reply_delay_minutes*interval '1 minute' END,scheduled_version=r.version,schedule_consent_at=l.consent_at,schedule_failures=0,last_publish_error=NULL
+ FROM google_review_links l WHERE r.id IN (
+  SELECT s.id FROM google_live_reviews s WHERE s.scheduled_at IS NULL AND s.publish_state='idle' AND s.draft<>'' AND s.draft_generated_at IS NOT NULL
+   AND s.approved_version IS NULL AND NOT s.auto_schedule_cancelled AND NOT s.suspected_spam AND s.data->>'starRating' IN ('FOUR','FIVE')
+   AND (s.last_publish_error IS NULL OR s.last_publish_error LIKE ${DRAFT_ONLY_BLOCK})
+  ORDER BY s.draft_generated_at LIMIT ${limit})
+ AND r.business_id=l.business_id AND l.enabled AND l.ai_consent AND l.auto_enabled AND l.reconnected_to IS NULL
+ AND NOT EXISTS(SELECT 1 FROM reviews_draft_only_customers policy WHERE policy.customer_id=l.customer_id)
+ AND r.scheduled_at IS NULL AND r.publish_state='idle' AND coalesce(r.data->'reviewReply'->>'comment','')=''
+ AND ((r.data->>'starRating'='FOUR' AND l.auto_four) OR (r.data->>'starRating'='FIVE' AND l.auto_five))
+ AND (r.old_reply_requested_at IS NOT NULL OR NULLIF(r.data->>'createTime','')::timestamptz>l.consent_at)
+ RETURNING r.id`;
+}
+
 export async function queueHistoricalPositives(businessId:string,sql=liveDb()){
  await sql`UPDATE google_live_reviews r SET old_reply_requested_at=now() FROM google_review_links l
  WHERE r.business_id=${businessId} AND l.business_id=r.business_id AND l.enabled AND l.ai_consent

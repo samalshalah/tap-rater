@@ -120,7 +120,10 @@ export async function syncMarketingSubscription(event:Stripe.Event){
    await sql`SELECT apply_reviews_plan_removals(${account}::uuid,${id},${removalAt},${JSON.stringify(ids)}::jsonb)`;
   }
 
-  await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${state.renewalCanceled},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), policy AS (INSERT INTO reviews_draft_only_customers(customer_id) SELECT customer_id FROM saved WHERE ${sub.metadata.reviews_mode==='draft_only'} ON CONFLICT(customer_id) DO NOTHING), access AS (
+  await sql`WITH saved AS (UPDATE marketing_subscriptions SET stripe_subscription_id=${id},stripe_customer_id=${stripeId(sub.customer)},status=${sub.status},cadence=${state.cadence},locations=${state.locations},current_period_end=${state.end}::timestamptz,cancel_at_period_end=${state.renewalCanceled},updated_at=now() WHERE customer_id=${account}::uuid AND stripe_mode=${mode} AND attempt=${attempt} RETURNING customer_id), policy AS (INSERT INTO reviews_draft_only_customers(customer_id) SELECT customer_id FROM saved WHERE ${sub.metadata.reviews_mode==='draft_only'}
+   -- Only when this subscription is first linked. Later Stripe updates (renewals, cancellations) must not re-add a policy staff removed.
+   AND NOT EXISTS(SELECT 1 FROM marketing_subscriptions m WHERE m.customer_id=${account}::uuid AND m.stripe_mode=${mode} AND m.attempt=${attempt} AND m.stripe_subscription_id=${id})
+   ON CONFLICT(customer_id) DO NOTHING), access AS (
    INSERT INTO customer_marketing_access(customer_id,status,source,expires_at,location_limit,ai_monthly_limit,heatmap_monthly_points)
    SELECT customer_id,${state.paid?'active':'inactive'},'paid',${state.end}::timestamptz,${state.locations},${marketingPlan.replies},588 FROM saved
    ON CONFLICT(customer_id) DO UPDATE SET status=EXCLUDED.status,source='paid',expires_at=EXCLUDED.expires_at,location_limit=EXCLUDED.location_limit,ai_monthly_limit=EXCLUDED.ai_monthly_limit,heatmap_monthly_points=588,version=customer_marketing_access.version+1,updated_at=now()

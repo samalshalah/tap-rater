@@ -8,7 +8,7 @@ import { generateAutomaticReviewReply, reviewerFirstName, type AutomaticReplyFor
 import type { ReplyStyle } from "../review-ai-options";
 import type { ReplySuggestions } from "../review-ai-options";
 import type { AiUsageContext } from "../ai-usage-meter";
-import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, queueHistoricalPositives } from "./live-review-core";
+import { liveDb, LiveReviewError, ReviewAiWaitError, reviewStars, clientFor, authorizedLink, reserveAi, scheduleSavedReply, scheduleStrandedReplies, queueHistoricalPositives } from "./live-review-core";
 import { syncLiveReviews } from "./live-review-workspaces";
 import { publishLiveReply, reconcileLiveReply, resolvePublishAlertIfClear, verifyAndRecoverLiveReply } from "./live-review-actions";
 import { reviewTaskBoundary } from './review-task-boundary';
@@ -149,6 +149,8 @@ export async function runLiveReviewMaintenance(sql=liveDb(),makeClient=clientFor
   if(result.queued)requeued++;
   if(result.published||result.alreadyReplied)await resolvePublishAlertIfClear(sql,String(row.business_id));
  }catch{await reviewWorkerFailure(sql,String(row.business_id),'publish',true);}}
+ // Every 5 minutes, queue autopilot drafts that could not be scheduled when written (e.g. while drafts-only or autopilot was off).
+ if(new Date().getUTCMinutes()%5===0){try{await scheduleStrandedReplies(sql);}catch{console.warn('Stranded reply scheduling unavailable');}}
  const due=await sql`SELECT id,version,business_id FROM (SELECT r.*,row_number() OVER(PARTITION BY business_id ORDER BY scheduled_at) AS turn FROM google_live_reviews r WHERE scheduled_at<=now() AND publish_state='idle' AND NOT auto_schedule_cancelled AND (old_reply_requested_at IS NULL OR (SELECT count(*) FROM google_live_reviews prior WHERE prior.business_id=r.business_id AND prior.old_reply_requested_at IS NOT NULL AND prior.attempted_at>now()-interval '1 hour' AND prior.publish_state IN ('published','publishing','uncertain'))<60)) fair ORDER BY turn,scheduled_at LIMIT 40`;
  for(const row of due){if(Date.now()>=publishDeadline)break;try{const result=await publishLiveReply({kind:'admin'},String(row.id),Number(row.version),true,sql,makeClient);if(result.published){published++;await resolvePublishAlertIfClear(sql,String(row.business_id));}}catch(error){
  const failure=error instanceof Error?error.message:'Automatic publishing did not complete.';
