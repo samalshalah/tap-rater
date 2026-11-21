@@ -485,3 +485,8 @@ async function getOrderByStripeCheckoutSessionId(client: OrdersDbClient, stripeC
     return null;
   }
 }
+
+/** Production artwork is served only for confirmed, unreversed payments (paid or complimentary, never refunded). */
+export function isOrderArtworkAvailable(order: Pick<OrderRecord, "status" | "payment_status" | "stripe_refund_id" | "refund_status">) {
+  return order.status === "paid" && ["paid", "complimentary"].includes(order.payment_status ?? "") && !order.stripe_refund_id && !order.refund_status;
+}
