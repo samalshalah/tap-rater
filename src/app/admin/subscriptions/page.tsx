@@ -40,7 +40,7 @@ export default async function AdminSubscriptionsPage() {
       <Table id="multi-link" title="Multi-Link pages" rows={multiLink} empty="No Multi-Link subscriptions yet."
         head={["Customer", "Business", "Page", "Monthly", "Status", "Renews / ends"]}
         render={(row) => [
-          <><strong className="block text-ink">{row.name || row.email || "Customer"}</strong>{row.email ? <span className="text-xs text-muted">{row.email}</span> : null}</>,
+          <span className="tr-admin-person"><strong className="text-ink">{row.name || row.email || "Customer"}</strong>{row.name && row.email ? <span>{row.email}</span> : null}</span>,
           row.business_name || "—",
           <a className="text-brand underline" href={row.hosted_page_url} target="_blank" rel="noopener noreferrer">{row.permanent_code}</a>,
           ...multiLinkCells(row)
