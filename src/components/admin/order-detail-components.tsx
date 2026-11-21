@@ -5,7 +5,7 @@ import { AdminAlert, AdminBadge, AdminCard, AdminSoftPanel } from "@/components/
 import { OrderDesignFiles } from "@/components/admin/order-design-files";
 import type { ReactNode } from "react";
 import { canAdvanceOrderFulfillment } from "@/lib/order-fulfillment-rules";
-import { getOrderLineItemProductionSummary, type OrderLineItem, type OrderRecord } from "@/lib/orders";
+import { getOrderLineItemProductionSummary, isOrderArtworkAvailable, type OrderLineItem, type OrderRecord } from "@/lib/orders";
 import { formatPrice } from "@/lib/products";
 import { getAdminOrderDesignAssetUrl, getOrderLogoStorageKey, getOrderStandardDesignUrl } from "@/lib/order-design-assets";
 
@@ -62,8 +62,11 @@ export function AddressBlock({ address }: { address?: Record<string, unknown> | 
   );
 }
 
-export function LineItemDetail({ item, artworkUrl, order, index, standIds }: { standIds:string[]; item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
+export function LineItemDetail({ item, artworkUrl: requestedArtworkUrl, order, index, standIds }: { standIds:string[]; item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
   const summary = getOrderLineItemProductionSummary(item);
+  // The artwork route refuses refunded or unpaid orders, so never show a preview or download that would fail.
+  const artworkLocked = !isOrderArtworkAvailable(order);
+  const artworkUrl = artworkLocked ? undefined : requestedArtworkUrl;
   const originalLogo = getOrderLogoStorageKey(item);
   const printLogo = getOrderLogoStorageKey(item, false);
 
@@ -114,7 +117,7 @@ export function LineItemDetail({ item, artworkUrl, order, index, standIds }: { s
         textUrl={getAdminOrderDesignAssetUrl(order, index, "text")}
         businessName={summary.businessName}
       />
-      <LineItemVisuals item={item} downloadUrl={artworkUrl} complimentary={order.payment_status === "complimentary"} />
+      <LineItemVisuals item={item} downloadUrl={artworkUrl} complimentary={order.payment_status === "complimentary"} lockedReason={artworkLocked && summary.productionArtwork?.status === "generated" ? (order.payment_status?.includes("refund") || order.stripe_refund_id ? "Production artwork is locked because this order was refunded." : "Production artwork unlocks after confirmed payment.") : undefined} />
       {Boolean(item.setup?.customerProofCorrection)&&<AdminAlert tone="warning" className="mt-4"><p className="font-semibold">Customer requested corrections</p><p className="whitespace-pre-wrap">{readSetupString(item.setup?.customerProofCorrection as Record<string,unknown>,"notes")}</p></AdminAlert>}
       {!!publicProofHistory(item).length&&<details className="mt-4 text-sm"><summary className="cursor-pointer font-medium">Customer proof history</summary><ol className="mt-2 divide-y">{publicProofHistory(item).map(event=><li key={event.id} className="py-2"><p>{event.action==='uploaded'?'Proof uploaded':event.action==='approved'?'Design approved':'Corrections requested'} - {event.at}</p>{event.notes&&<p className="whitespace-pre-wrap text-muted">{event.notes}</p>}</li>)}</ol></details>}
       {summary.warnings.length ? (
@@ -131,7 +134,7 @@ export function LineItemDetail({ item, artworkUrl, order, index, standIds }: { s
   );
 }
 
-function LineItemVisuals({ item, downloadUrl, complimentary }: { item: OrderLineItem; downloadUrl?: string; complimentary: boolean }) {
+function LineItemVisuals({ item, downloadUrl, complimentary, lockedReason }: { item: OrderLineItem; downloadUrl?: string; complimentary: boolean; lockedReason?: string }) {
   const standardDesignUrl = getOrderStandardDesignUrl(item);
   const summary = getOrderLineItemProductionSummary(item);
   const previewData = readSetupRecord(item.setup, "proofPreviewData");
@@ -153,6 +156,8 @@ function LineItemVisuals({ item, downloadUrl, complimentary }: { item: OrderLine
       ) : null}
       {artworkUrl ? (
         <PreviewAsset title="Production artwork" src={`${artworkUrl}?preview=1`} downloadUrl={artworkUrl} alt={`${item.title} production artwork`} />
+      ) : lockedReason ? (
+        <div className="rounded-lg border border-dashed border-line bg-white p-4 text-sm leading-6 text-muted">{lockedReason}</div>
       ) : item.optionId === "branded_qr_direct" ? (
         <div className="rounded-lg border border-dashed border-amber-300 bg-amber-50 p-4 text-sm font-semibold leading-6 text-amber-900">
           {complimentary ? "Review the personalized preview in Edit stand. Final artwork appears here after manual approval." : "Final artwork is generated after confirmed payment. Check production warnings if the file is unavailable."}

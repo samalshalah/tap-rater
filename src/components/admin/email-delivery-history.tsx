@@ -142,7 +142,7 @@ export function EmailDeliveryHistory({ overview, orderScoped = false }: { overvi
                   <tr key={delivery.id}>
                     <td className="py-3 pr-4 text-muted">{formatDate(delivery.createdAt)}</td>
                     <td className="max-w-72 py-3 pr-4">
-                      <button type="button" className="block text-left text-brand underline disabled:opacity-50" disabled={previewLoading} onClick={() => openPreview(delivery.id)} aria-label={`Preview ${delivery.subject}`}>
+                      <button type="button" title={delivery.subject} className="tr-admin-email-message block text-left text-brand underline disabled:opacity-50" disabled={previewLoading} onClick={() => openPreview(delivery.id)} aria-label={`Preview ${delivery.subject}`}>
                         <strong className="block font-semibold">{formatMessageType(delivery.messageType)}</strong>
                         <span className="mt-1 block text-xs">{delivery.subject}</span>
                       </button>

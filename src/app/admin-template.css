@@ -50,3 +50,7 @@
 /* Order detail: status badges under the order title. */
 .tr-prismatic-admin .tr-admin-order-status{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:12px;color:#4b536f}
 .tr-prismatic-admin .tr-admin-order-status>span{display:inline-flex;align-items:center;gap:8px}
+
+/* Email history: keep the message name and subject inside their column (the subject is cut with "…"; full text on hover). */
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table td button.tr-admin-email-message{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:2px!important;max-width:300px;min-width:0;overflow:hidden;height:auto!important;min-height:0!important;padding:0!important;border:0;background:none;white-space:nowrap}
+.tr-prismatic-admin .tr-admin-shell.tr-admin-compact .tr-admin-content table td button.tr-admin-email-message>*{display:block!important;max-width:100%;overflow:hidden;text-overflow:ellipsis}
