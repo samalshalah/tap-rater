@@ -20,7 +20,12 @@ for (const [index, config] of appConfigs.entries()) {
   assert(hasRoute(config, "www.taprater.com/*"), `${label} must route www.taprater.com.`);
   assert(hasBinding(config.r2_buckets, "PRODUCT_MEDIA_BUCKET"), `${label} is missing product media storage.`);
   assert(hasBinding(config.r2_buckets, "RECOVERY_BACKUPS"), `${label} is missing private recovery backup storage.`);
-  assert(config.triggers?.crons?.includes("* * * * *"), `${label} is missing the minute scheduler for review queues and resumable daily media backups.`);
+  const crons = config.triggers?.crons;
+  const minuteField = crons?.length === 1 && crons[0].match(/^([\d,]+) \* \* \* \*$/u)?.[1];
+  const minutes = minuteField ? [...new Set(minuteField.split(",").map(Number))].sort((a, b) => a - b) : [];
+  assert(minutes.length > 0 && minutes.length <= 8 && minutes.every((minute) => minute >= 0 && minute < 60), `${label} must keep the approved low-frequency background schedule.`);
+  assert([0, 15, 30, 45].every((minute) => minutes.includes(minute)), `${label} must preserve quarter-hour recovery and commerce jobs.`);
+  assert(minutes.every((minute, i) => (minutes[i + 1] ?? minutes[0] + 60) - minute <= 10), `${label} must check review queues and support alerts at least every 10 minutes.`);
   assert(hasBinding(config.r2_buckets, "HOSTED_PAGE_SNAPSHOTS"), `${label} is missing hosted-page snapshot storage.`);
   assert(hasRateLimit(config, "PUBLIC_FORM_RATE_LIMITER", 10), `${label} is missing the public form rate limit.`);
   assert(hasRateLimit(config, "SUPPORT_FORM_RATE_LIMITER", 3), `${label} is missing the support form rate limit.`);
