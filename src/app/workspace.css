@@ -515,3 +515,6 @@ main.tr-app-shell.tr-client-shell .tr-review-status { border-radius:4px; padding
 @media(max-width:700px){.tr-profile-suggestion-grid{grid-template-columns:1fr}}
 
 .tr-client-shell .tr-review-status.status-queued { white-space:nowrap; background:#eee9ff; color:#4e35ae; }
+
+/* Multi-Link editor: thumb-sized move/delete buttons. */
+.tr-multilink-editor .tr-icon-button, main.tr-app-shell.tr-client-shell .tr-workspace-content .tr-multilink-editor .tr-icon-button { width:40px; height:40px; min-height:40px; }

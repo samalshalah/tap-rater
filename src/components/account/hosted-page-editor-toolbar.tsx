@@ -13,10 +13,10 @@ export function HostedPageEditorToolbar({permanentUrl,page,status,message,isDirt
           <a href={permanentUrl} target="_blank" rel="noreferrer" className="tr-button-ghost min-h-9 px-2 py-1 text-xs">
             <ExternalLink size={14} /> Open
           </a>
-          <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-secondary min-h-9 px-3 py-1 text-xs">
+          <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-ghost hidden min-h-10 px-3 py-1 text-xs lg:inline-flex">
             <Save size={14} /> {status === "saving" ? "Saving..." : "Save Draft"}
           </button>
-          <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-9 px-3 py-1 text-xs">
+          <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary hidden min-h-10 px-4 py-1 text-sm lg:inline-flex">
             <Check size={14} /> {status === "publishing" ? "Publishing..." : "Publish"}
           </button>
         </div>

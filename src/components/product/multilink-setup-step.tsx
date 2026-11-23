@@ -1,8 +1,9 @@
 "use client";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
-import { Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import type { MultiLinkDraftButton } from "./product-setup-chooser-types";
-import { createMultiLinkButtonId, formatPreviewUrl, getHostedButtonLabel, getHostedButtonSymbol } from "./product-setup-model";
+import { createMultiLinkButtonId, formatPreviewUrl, getHostedButtonLabel } from "./product-setup-model";
 export function MultiLinkSetupStep({
   businessName,
   buttons,
@@ -12,6 +13,7 @@ export function MultiLinkSetupStep({
   buttons: MultiLinkDraftButton[];
   onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
 }) {
+  const [logoPickerFor, setLogoPickerFor] = useState<string | null>(null);
   const previewButtons = buttons
     .map((button, index) => ({
       ...button,
@@ -57,23 +59,20 @@ export function MultiLinkSetupStep({
         <div className="grid gap-3">
           {buttons.map((button, index) => (
             <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-white p-3 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-end">
-              <label className="grid gap-2 text-sm font-semibold text-ink">
-                Icon
-                <select
-                  className="tr-input"
-                  value={button.type}
-                  onChange={(event) => {
-                    const type = event.target.value as HostedPageEditorButtonType;
-                    const previousDefaultLabel = getHostedButtonLabel(button.type);
-                    updateButton(button.id, { type, label: !button.label.trim() || button.label.trim() === previousDefaultLabel ? getHostedButtonLabel(type) : button.label });
-                  }}
-                  aria-label={`Choose icon for link ${index + 1}`}
+              <div className="grid gap-2 text-sm font-semibold text-ink">
+                Logo
+                <button
+                  type="button"
+                  className="flex min-h-11 items-center gap-2 rounded-md border border-line bg-white px-2 text-left hover:border-ink"
+                  aria-label={`Choose logo for link ${index + 1}`}
+                  aria-expanded={logoPickerFor === button.id}
+                  onClick={() => setLogoPickerFor((current) => (current === button.id ? null : button.id))}
                 >
-                  {supportedHostedPageButtons.map((option) => (
-                    <option key={option.type} value={option.type}>{getHostedButtonSymbol(option.type)} {option.label}</option>
-                  ))}
-                </select>
-              </label>
+                  <MultiLinkButtonMark type={button.type} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{getHostedButtonLabel(button.type)}</span>
+                  <ChevronDown size={16} aria-hidden="true" />
+                </button>
+              </div>
 
               <label className="grid gap-2 text-sm font-semibold text-ink">
                 Button label
@@ -99,6 +98,28 @@ export function MultiLinkSetupStep({
               <button type="button" className="tr-icon-button" onClick={() => removeButton(button.id)} aria-label={`Remove link ${index + 1}`}>
                 <Trash2 size={16} />
               </button>
+              {logoPickerFor === button.id ? (
+                <div role="listbox" aria-label="Choose a logo" className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-soft p-2 sm:col-span-4 sm:grid-cols-3 lg:grid-cols-4">
+                  {supportedHostedPageButtons.map((option) => (
+                    <button
+                      key={option.type}
+                      type="button"
+                      role="option"
+                      aria-selected={option.type === button.type}
+                      className={`flex min-h-11 items-center gap-2 rounded-md border px-2 text-left text-xs font-medium ${option.type === button.type ? "border-ink bg-white ring-2 ring-ink" : "border-line bg-white hover:border-ink"}`}
+                      onClick={() => {
+                        const type = option.type as HostedPageEditorButtonType;
+                        const previousDefaultLabel = getHostedButtonLabel(button.type);
+                        updateButton(button.id, { type, label: !button.label.trim() || button.label.trim() === previousDefaultLabel ? getHostedButtonLabel(type) : button.label });
+                        setLogoPickerFor(null);
+                      }}
+                    >
+                      <MultiLinkButtonMark type={option.type} />
+                      <span className="truncate">{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
@@ -164,7 +185,7 @@ export function MultiLinkButtonMark({ type }: { type: HostedPageEditorButtonType
       style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
       aria-label={mark.brand}
     >
-      {mark.text}
+      {mark.icon === "website" ? <Globe size={16} /> : mark.icon === "calendar" ? <CalendarDays size={16} /> : mark.icon === "menu" ? <Menu size={16} /> : mark.icon === "contact" ? <Mail size={16} /> : mark.icon === "link" ? <LinkIcon size={16} /> : mark.text}
     </span>
   );
 }

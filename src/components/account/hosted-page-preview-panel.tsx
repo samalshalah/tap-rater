@@ -1,7 +1,7 @@
 "use client";
 import {Eye} from 'lucide-react';
 type Props={previewHtml:string;previewMessage:string;refreshPreview:()=>Promise<void>};
-export function HostedPagePreviewPanel({previewHtml,previewMessage,refreshPreview}:Props){return <aside className="grid h-fit gap-3 lg:sticky lg:top-3">
+export function HostedPagePreviewPanel({previewHtml,previewMessage,refreshPreview}:Props){return <aside className="hidden h-fit gap-3 lg:sticky lg:top-3 lg:grid">
         <div className="tr-card p-3">
           <div className="mb-2 flex items-center justify-between">
             <div>

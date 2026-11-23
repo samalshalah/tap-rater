@@ -4,6 +4,7 @@ import {HostedPagePreviewPanel} from './hosted-page-preview-panel';
 
 import { hostedPageButtonLimit,supportedHostedPageButtons,type HostedPageEditorButton,type HostedPageEditorDraft,type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 import { useRouter } from "next/navigation";
+import { Check, Eye, Save, X } from "lucide-react";
 import { memo,useCallback,useEffect,useMemo,useState,type ChangeEvent } from "react";
 
 import { HostedPageBusinessFields as HostedPageBusinessFieldsComponent } from "./hosted-page-business-fields";
@@ -26,6 +27,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
   const [status, setStatus] = useState<EditorStatus>("idle");
   const [message, setMessage] = useState("");
   const [showLinkChoices, setShowLinkChoices] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const {previewHtml,previewMessage,refreshPreview}=useHostedPagePreview(page,draft);
 
@@ -185,7 +187,7 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
   },[draft,updateDraft]);
 
   return (
-    <fieldset disabled={status==="saving"||status==="publishing"} className="grid min-h-0 min-w-0 gap-3">
+    <fieldset disabled={status==="saving"||status==="publishing"} className="tr-multilink-editor grid min-h-0 min-w-0 gap-3">
       <HostedPageEditorToolbar permanentUrl={permanentUrl} page={page} status={status} message={message} isDirty={isDirty} saveDraft={saveDraft} publish={publish}/>
 
       <div className="grid min-h-0 min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_390px]">
@@ -199,6 +201,30 @@ export function HostedPageEditor({ initialPage,onDirtyChange,onBusyChange }: { i
 
         <HostedPagePreviewPanel previewHtml={previewHtml} previewMessage={previewMessage} refreshPreview={refreshPreview}/>
       </div>
+
+      {/* Phones: keep Preview and Publish in reach while editing further down the page. */}
+      <div className="sticky -bottom-3 z-10 -mx-3 -mb-3 grid gap-1.5 border-t border-line bg-white px-3 py-2 shadow-[0_-4px_12px_rgba(15,23,42,0.08)] lg:hidden">
+        {message || isDirty ? <p className={`truncate text-xs ${status === "error" ? "text-red-700" : "text-muted"}`}>{message || "Unsaved changes"}</p> : null}
+        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] gap-2">
+          <button type="button" onClick={() => { setPreviewOpen(true); void refreshPreview(); }} className="tr-button-ghost min-h-11 px-3 text-sm"><Eye size={16} /> Preview</button>
+          <button type="button" onClick={saveDraft} disabled={status === "saving" || status === "publishing"} className="tr-button-ghost min-h-11 px-3 text-sm"><Save size={16} /> {status === "saving" ? "Saving..." : "Save draft"}</button>
+          <button type="button" onClick={publish} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-11 px-3 text-sm"><Check size={16} /> {status === "publishing" ? "Publishing..." : "Publish"}</button>
+        </div>
+      </div>
+
+      {previewOpen ? (
+        <div role="dialog" aria-modal="true" aria-label="Page preview" className="fixed inset-0 z-[80] flex flex-col bg-soft lg:hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-line bg-white px-3 py-2">
+            <p className="text-sm font-semibold text-ink">Preview</p>
+            <button type="button" onClick={() => setPreviewOpen(false)} className="tr-button-ghost min-h-11 px-3 text-sm" autoFocus><X size={16} /> Close</button>
+          </div>
+          {previewMessage ? <p className="mx-3 mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">{previewMessage}</p> : null}
+          <iframe title="Page preview" srcDoc={previewHtml} className="min-h-0 w-full flex-1 border-0 bg-white" />
+          <div className="border-t border-line bg-white p-2">
+            <button type="button" onClick={() => { setPreviewOpen(false); void publish(); }} disabled={status === "publishing" || status === "saving"} className="tr-button-primary min-h-11 w-full text-sm"><Check size={16} /> Publish</button>
+          </div>
+        </div>
+      ) : null}
     </fieldset>
   );
 }

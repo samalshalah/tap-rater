@@ -47,7 +47,7 @@ return (<div className="tr-card grid gap-2 p-3">
                       key={option.value}
                       type="button"
                       aria-label={option.label}
-                      className={logoAlign === option.value ? "grid h-8 w-8 place-items-center rounded bg-ink text-white" : "grid h-8 w-8 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
+                      className={logoAlign === option.value ? "grid h-10 w-10 place-items-center rounded bg-ink text-white" : "grid h-10 w-10 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
                       onClick={() => updateDraft({ ...draft, appearance: { ...draft.appearance, logoAlign: option.value as "left" | "center" | "right" } })}
                     >
                       <Icon size={16} />
@@ -70,7 +70,7 @@ return (<div className="tr-card grid gap-2 p-3">
                         key={option.value}
                         type="button"
                         aria-label={option.label}
-                        className={textAlign === option.value ? "grid h-8 w-8 place-items-center rounded bg-ink text-white" : "grid h-8 w-8 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
+                        className={textAlign === option.value ? "grid h-10 w-10 place-items-center rounded bg-ink text-white" : "grid h-10 w-10 place-items-center rounded text-muted hover:bg-soft hover:text-ink"}
                         onClick={() => updateDraft({ ...draft, appearance: { ...draft.appearance, textAlign: option.value as "left" | "center" | "right" } })}
                       >
                         <Icon size={16} />

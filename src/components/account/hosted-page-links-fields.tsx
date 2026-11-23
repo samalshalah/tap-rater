@@ -45,7 +45,7 @@ return (<div className="tr-card grid gap-2 p-3">
               <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_auto] md:items-center">
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
-                      <button type="button" aria-label={`Change logo for ${button.label || labelFor(button.type)}`} aria-expanded={logoPickerFor===button.id} onClick={() => setLogoPickerFor((current) => current===button.id ? null : button.id)} className="flex shrink-0 items-center gap-0.5 rounded-md border border-line bg-white p-0.5 hover:border-ink">
+                      <button type="button" aria-label={`Change logo for ${button.label || labelFor(button.type)}`} aria-expanded={logoPickerFor===button.id} onClick={() => setLogoPickerFor((current) => current===button.id ? null : button.id)} className="flex min-h-10 shrink-0 items-center gap-0.5 rounded-md border border-line bg-white px-1 hover:border-ink">
                         <HostedButtonMark type={button.type} />
                         <ChevronDown size={14} aria-hidden="true" />
                       </button>
