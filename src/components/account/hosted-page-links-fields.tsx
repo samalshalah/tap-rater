@@ -23,7 +23,7 @@ return (<div className="tr-card grid gap-2 p-3">
             </button>
           </div>
           {showLinkChoices && draft.buttons.length < hostedPageButtonLimit ? (
-            <div className="grid max-h-32 gap-1.5 overflow-y-auto rounded-lg border border-line bg-soft p-2 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-soft p-2 sm:grid-cols-3 lg:grid-cols-5">
               {supportedHostedPageButtons.map((button) => (
                 <button key={button.type} type="button" className="tr-button-ghost min-h-9 justify-start gap-2 bg-white px-2 py-1.5 text-xs" onClick={() => addButton(button.type)}>
                   <HostedButtonMark type={button.type} />
@@ -32,7 +32,7 @@ return (<div className="tr-card grid gap-2 p-3">
               ))}
             </div>
           ) : null}
-          <div className="grid max-h-[260px] gap-1.5 overflow-y-auto pr-1">
+          <div className="grid gap-1.5">
             {orderedButtons.map((button, index) => (
               <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_auto] md:items-center">
                   <label className="min-w-0">
