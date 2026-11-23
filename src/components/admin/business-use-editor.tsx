@@ -136,6 +136,22 @@ export function BusinessUseEditor({ businessUse, mode, products }: BusinessUseEd
           </fieldset>)}
           <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={form.guide.recommendations.length >= 3} onClick={() => updateGuide({ ...form.guide, recommendations: [...form.guide.recommendations, { productSlug: "", goal: "", reason: "", placement: "" }] })}>Add recommendation</button>
         </Panel>
+        <Panel title="Who it’s for">
+          <p className="text-sm text-muted">Optional. Short cards for each type of business in this industry, each with a suggested first stand.</p>
+          <TextInput label="Who it’s for heading (H2)" value={form.guide.audiencesTitle ?? ""} onChange={(audiencesTitle) => updateGuide({ ...form.guide, audiencesTitle })} />
+          <GuideSectionEditor items={form.guide.audiences ?? []} limit={8} label="Business type" products={products} onChange={(audiences) => updateGuide({ ...form.guide, audiences })} />
+        </Panel>
+        <Panel title="Challenges">
+          <p className="text-sm text-muted">Optional. The problems this business faces that a stand helps with. Keep claims honest: no promised reviews, ratings, or sales.</p>
+          <TextInput label="Challenges heading (H2)" value={form.guide.challengesTitle ?? ""} onChange={(challengesTitle) => updateGuide({ ...form.guide, challengesTitle })} />
+          <TextArea label="Challenges introduction" rows={2} value={form.guide.challengesIntro ?? ""} onChange={(challengesIntro) => updateGuide({ ...form.guide, challengesIntro })} />
+          <GuideSectionEditor items={form.guide.challenges ?? []} limit={6} label="Challenge" onChange={(challenges) => updateGuide({ ...form.guide, challenges })} />
+        </Panel>
+        <Panel title="Product groups">
+          <p className="text-sm text-muted">Optional. Lists stands as cards in named groups after the featured recommendations. Assigned products not in any group appear under “More stands”.</p>
+          <TextInput label="Product groups heading (H3)" value={form.guide.productGroupsTitle ?? ""} onChange={(productGroupsTitle) => updateGuide({ ...form.guide, productGroupsTitle })} />
+          <ProductGroupsEditor groups={form.guide.productGroups ?? []} products={products} onChange={(productGroups) => updateGuide({ ...form.guide, productGroups })} />
+        </Panel>
         <Panel title="Placement guide">
           <TextInput label="Placement heading (H2)" value={form.guide.placementTitle ?? ""} onChange={(placementTitle) => updateGuide({ ...form.guide, placementTitle })} />
           <GuideSectionEditor items={form.guide.placements ?? []} limit={6} label="Placement" products={products} onChange={(placements) => updateGuide({ ...form.guide, placements })} />
@@ -222,6 +238,26 @@ function GuideSectionEditor({ items, limit, label, products, onChange }: {
       <div className="flex gap-4"><button type="button" className="text-sm underline disabled:opacity-40" disabled={index === 0} onClick={() => { const next = [...items]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; onChange(next); }}>Move up</button><button type="button" className="text-sm text-red-700 underline" onClick={() => onChange(items.filter((_, i) => i !== index))}>Remove {label.toLowerCase()}</button></div>
     </fieldset>)}
     <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={items.length >= limit} onClick={() => onChange([...items, { title: "", body: "" }])}>Add {label.toLowerCase()}</button>
+  </div>;
+}
+
+type ProductGroup = { title: string; body: string; productSlugs: string[] };
+
+function ProductGroupsEditor({ groups, products, onChange }: { groups: ProductGroup[]; products: MigratedProduct[]; onChange: (groups: ProductGroup[]) => void }) {
+  const updateGroup = (index: number, patch: Partial<ProductGroup>) => onChange(groups.map((group, i) => i === index ? { ...group, ...patch } : group));
+  return <div className="space-y-4">
+    {groups.map((group, index) => <fieldset key={index} className="space-y-3 rounded-lg border border-line p-4">
+      <legend className="px-2 font-semibold">Group {index + 1}</legend>
+      <TextInput label="Group title (H4)" value={group.title} onChange={(title) => updateGroup(index, { title })} />
+      <TextArea label="Group description" rows={2} value={group.body} onChange={(body) => updateGroup(index, { body })} />
+      <ProductSelect products={products.filter((product) => !group.productSlugs.includes(product.slug))} onAdd={(slug) => updateGroup(index, { productSlugs: [...group.productSlugs, slug] })} />
+      <ul className="grid gap-2">{group.productSlugs.map((slug) => <li key={slug} className="flex items-center justify-between gap-3 rounded-md border border-line bg-white px-3 py-2 text-sm">
+        <span className="font-bold text-ink">{products.find((product) => product.slug === slug)?.title ?? slug}</span>
+        <button type="button" className="text-xs text-red-700 underline" onClick={() => updateGroup(index, { productSlugs: group.productSlugs.filter((item) => item !== slug) })}>Remove</button>
+      </li>)}</ul>
+      <div className="flex gap-4"><button type="button" className="text-sm underline disabled:opacity-40" disabled={index === 0} onClick={() => { const next = [...groups]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; onChange(next); }}>Move up</button><button type="button" className="text-sm text-red-700 underline" onClick={() => onChange(groups.filter((_, i) => i !== index))}>Remove group</button></div>
+    </fieldset>)}
+    <button type="button" className="text-sm font-semibold underline disabled:opacity-40" disabled={groups.length >= 5} onClick={() => onChange([...groups, { title: "", body: "", productSlugs: [] }])}>Add product group</button>
   </div>;
 }
 

@@ -13,7 +13,7 @@ import { getStorefrontProducts } from "@/lib/product-repository";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { getBusinessUseGuide } from "@/lib/business-use-guide-store";
-import { orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
+import { groupBusinessUseProducts, orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
 import { googleReviewStandGuides } from "@/lib/google-review-stand-guides";
 
 type BusinessUsePageProps = {
@@ -64,7 +64,8 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   const recommendations = resolveRecommendations(guide, products);
   const googleReviewRecommendation = recommendations.find((item) => item.productSlug === "google-review-stand");
   const reviewStandGuide = googleReviewStandGuides.find((item) => item.solution === businessUse.slug);
-  const remainingProducts = assignedProducts.filter((product) => !recommendations.some((item) => item.product.slug === product.slug));
+  const { groups: productGroups, ungrouped: remainingProducts } = groupBusinessUseProducts(guide, products, assignedProducts, recommendations.map((item) => item.product.slug));
+  const hasGrowthSections = Boolean(guide.audiences?.length || guide.challenges?.length);
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
   const copy = getBusinessUsePageCopy(businessUse);
 
@@ -85,7 +86,27 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         }}
       />
 
-      <SectionShell tone="soft" spacing="compact">
+      {guide.audiences?.length ? <SectionShell spacing="compact"><div className="tr-container">
+        <SectionHeader eyebrow="Who it’s for" title={guide.audiencesTitle || `Stands for every kind of ${businessUse.title.toLowerCase()} business`} />
+        <div className="mt-7 tr-mobile-card-grid grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{guide.audiences.map((item, index) => {
+          const product = item.productSlug ? products.find((candidate) => candidate.slug === item.productSlug) : undefined;
+          return <article key={index} className="rounded-xl border border-line bg-white p-5">
+            <h3 className="text-lg font-semibold">{item.title}</h3>
+            <p className="tr-body-sm mt-2">{item.body}</p>
+            {product ? <Link href={`/product/${product.slug}`} className="tr-editorial-link mt-4">Start with the {product.title} <span aria-hidden="true">→</span></Link> : null}
+          </article>;
+        })}</div>
+      </div></SectionShell> : null}
+      {guide.challenges?.length ? <SectionShell tone="soft" spacing="compact"><div className="tr-container">
+        <SectionHeader eyebrow="What gets in the way" title={guide.challengesTitle || "Common challenges"} body={guide.challengesIntro} />
+        <div className="mt-7 tr-mobile-card-grid grid gap-5 md:grid-cols-2">{guide.challenges.map((item, index) => <article key={index} className="rounded-xl border border-line bg-white p-6">
+          <p className="tr-eyebrow">0{index + 1}</p>
+          <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>
+          <p className="tr-body-sm mt-3">{item.body}</p>
+        </article>)}</div>
+      </div></SectionShell> : null}
+
+      <SectionShell tone={hasGrowthSections ? "white" : "soft"} spacing="compact">
         <div className="tr-container scroll-mt-28" id="recommended-stands">
           <SectionHeader
             eyebrow="Choose your customer’s next step"
@@ -106,7 +127,15 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
               <Link href={`/product/${item.product.slug}`} className="tr-editorial-link mt-4">View {item.product.title} <span aria-hidden="true">→</span></Link>
             </article>)}
           </div> : null}
-          {remainingProducts.length > 0 ? <h3 className="mt-10 text-xl font-semibold">{recommendations.length ? "More options for your business" : "Explore your stands"}</h3> : null}
+          {productGroups.length ? <>
+            <h3 className="mt-12 text-2xl font-semibold">{guide.productGroupsTitle || `All stands for ${businessUse.title}`}</h3>
+            {productGroups.map((group) => <div key={group.title} className="mt-8">
+              <h4 className="text-xl font-semibold">{group.title}</h4>
+              {group.body ? <p className="tr-body-sm mt-2 max-w-3xl">{group.body}</p> : null}
+              <div className="tr-product-grid mt-5">{group.products.map((product) => <ProductCard key={product.slug} product={product} />)}</div>
+            </div>)}
+          </> : null}
+          {remainingProducts.length > 0 ? <h3 className="mt-10 text-xl font-semibold">{productGroups.length ? "More stands" : recommendations.length ? "More options for your business" : "Explore your stands"}</h3> : null}
         <div className="tr-product-grid mt-6">
           {remainingProducts.length > 0 ? (
             remainingProducts.map((product) => <ProductCard key={product.slug} product={product} />)
@@ -127,7 +156,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
           </Link>
         </div>
       </SectionShell>
-      {guide.placements?.length ? <SectionShell spacing="compact"><div className="tr-container">
+      {guide.placements?.length ? <SectionShell tone={hasGrowthSections ? "soft" : "white"} spacing="compact"><div className="tr-container">
         <SectionHeader title={guide.placementTitle || "Where to Place Your Stands"} />
         <div className="mt-7 tr-mobile-card-grid grid gap-6 md:grid-cols-3">{guide.placements.map((item, index) => {
           const product = products.find((candidate) => candidate.slug === item.productSlug);
