@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getHostedButtonMark, supportedHostedPageButtons } from "@/lib/hosted-page-editor-shared";
 import { buildSnapshotFromDraft, renderHostedPageDraftPreview } from "@/lib/hosted-page-editor-draft";
@@ -5,6 +7,7 @@ import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
 const dealerTypes = ["dealerrater", "cars_com", "cargurus", "edmunds", "autotrader", "carfax", "bbb"] as const;
 const socialTypes = ["youtube", "tiktok", "x", "linkedin"] as const;
+const typesWithLogos = ["dealerrater", "cars_com", "cargurus", "edmunds", "carfax", "youtube", "tiktok", "x", "linkedin"] as const;
 
 function page(types: readonly string[]): HostedPageEditorRecord {
   return {
@@ -30,12 +33,22 @@ describe("dealer and social Multi-Link buttons", () => {
     }
   });
 
-  it("publishes a dealer page with the brand label and icon key kept", () => {
+  it("uses the official logo file for each brand that has one", () => {
+    for (const type of typesWithLogos) {
+      const logo = getHostedButtonMark(type).logo ?? "";
+      expect(logo).toMatch(/^\/brand\/multilink\/[a-z-]+\.png$/);
+      expect(existsSync(join(process.cwd(), "public", logo))).toBe(true);
+    }
+    expect(getHostedButtonMark("bbb").logo).toBeUndefined();
+  });
+
+  it("publishes a dealer page with the brand label, icon key and logo kept", () => {
     const snapshot = buildSnapshotFromDraft(page(["google_review", "dealerrater", "cars_com", "cargurus"]));
     expect(snapshot.buttons.map((button) => button.iconKey)).toEqual(["google_review", "dealerrater", "cars_com", "cargurus"]);
     expect(snapshot.buttons[1]).toMatchObject({ label: "DealerRater", type: "review" });
     const html = renderHostedPageDraftPreview(page(["dealerrater", "youtube"]));
     expect(html).toContain('aria-label="DealerRater"');
+    expect(html).toContain('src="/brand/multilink/dealerrater.png"');
     expect(html).toContain('aria-label="YouTube"');
   });
 });
