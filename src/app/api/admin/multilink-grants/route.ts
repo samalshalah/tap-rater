@@ -4,15 +4,25 @@ import {requireAdminApi} from '@/lib/admin-auth';
 import {liveDb} from '@/lib/google-business/live-reviews';
 import {createHostedPageCode} from '@/lib/hosted-pages/codes';
 import {validateHostedPageEditorDraft} from '@/lib/hosted-page-editor';
-const inputSchema=z.object({customerId:z.string().uuid(),requestId:z.string().uuid(),businessName:z.string().trim().min(2).max(120),expiresAt:z.string().datetime().nullable()});
+import {grantedStandReference,multiLinkGrantStands} from '@/lib/multilink-granted-stand';
+const inputSchema=z.object({customerId:z.string().uuid(),requestId:z.string().uuid(),businessName:z.string().trim().min(2).max(120),expiresAt:z.string().datetime().nullable(),standSlug:z.string().trim().max(120).nullable().optional()});
 const headers={'Cache-Control':'private, no-store'};
+// Multi-Link stands an admin can grant a licence for.
+export async function GET(){
+ const denied=await requireAdminApi();if(denied)return denied;
+ return NextResponse.json({stands:multiLinkGrantStands().map(({slug,title,headline})=>({slug,title,headline}))},{headers});
+}
 export async function POST(request:Request){
  const denied=await requireAdminApi();if(denied)return denied;
  if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request origin.'},{status:403,headers});
  const parsed=inputSchema.safeParse(await request.json().catch(()=>null));
  if(!parsed.success||(parsed.data.expiresAt&&Date.parse(parsed.data.expiresAt)<=Date.now()))return NextResponse.json({error:'Choose an account, business name and future expiry.'},{status:400,headers});
  const input=parsed.data,reference=`admin:${input.requestId}`,code=createHostedPageCode();
- const draft=validateHostedPageEditorDraft({businessName:input.businessName,buttons:[],appearance:{theme:'light',accentColor:'#0f766e'}});
+ const stand=input.standSlug?multiLinkGrantStands().find(item=>item.slug===input.standSlug):undefined;
+ if(input.standSlug&&!stand)return NextResponse.json({error:'Choose a Multi-Link stand.'},{status:400,headers});
+ // The chosen stand sets the page heading and shows on the client's licence card.
+ const productRef=stand?grantedStandReference(stand.slug,input.requestId):reference;
+ const draft=validateHostedPageEditorDraft({businessName:input.businessName,headline:stand?.headline,buttons:[],appearance:{theme:'light',accentColor:'#0f766e'}});
  try{
   const sql=liveDb();
   const rows=await sql`WITH target AS (
@@ -22,7 +32,7 @@ export async function POST(request:Request){
   ), page_code AS (
    -- Every page code must be registered before a page or subscription can use it.
    INSERT INTO hosted_page_codes(code,physical_product_ref,assigned_by)
-   SELECT ${code},${reference},'admin-multilink-grant' FROM target WHERE NOT EXISTS(SELECT 1 FROM existing) RETURNING code
+   SELECT ${code},${productRef},'admin-multilink-grant' FROM target WHERE NOT EXISTS(SELECT 1 FROM existing) RETURNING code
   ), business AS (
    INSERT INTO businesses(customer_id,business_name,status)
    SELECT id,${input.businessName},'active' FROM target WHERE NOT EXISTS(SELECT 1 FROM existing) RETURNING id,customer_id

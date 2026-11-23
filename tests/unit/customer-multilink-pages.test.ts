@@ -91,16 +91,20 @@ describe("customer Multi-Link dashboard and editor mapping", () => {
   });
 });
 
-it("the dedicated Multi-Link page loads only owned page editors",async()=>{
- getCustomerPortal.mockResolvedValue(portal([{...stand,kind:"standard"}]));
- getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code}}));
- const html=renderToStaticMarkup(await AccountMultiLinkPage({}));expect(html).toContain("Multi-Link");
- expect(manager.mock.calls[0][0].stands).toHaveLength(2);expect(manager.mock.calls[0][0].stands.every((s:CustomerPortalStand)=>s.kind==='multilink')).toBe(true);
+it('the dedicated Multi-Link page shows one licence card per page, loading only owned editors',async()=>{
+ getCustomerPortal.mockResolvedValue(portal([{...stand,kind:'standard'}]));
+ getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code,businessName:'Biz',draft:{businessName:'Biz',headline:'Rate Your Experience',buttons:[],appearance:{}}}}));
+ const html=renderToStaticMarkup(await AccountMultiLinkPage({}));
+ expect(html).toContain('2 licences · 0 live');
+ expect(html.match(/Multi-Link licence"/g)).toHaveLength(2);
+ expect(html).toContain('Rate Your Experience');expect(html).toContain('Add your links');
  expect(getHostedPageEditorContext.mock.calls.every(([email])=>email==='owner@example.com')).toBe(true);
 });
 
-it('shows a single Multi-Link editor when several stand units share a page',async()=>{
+it('shows a single card when several stand units share a page',async()=>{
  getCustomerPortal.mockResolvedValue(portal([{...stand,id:'unit1',hostedPageCode:'PAGE1'},{...stand,id:'unit2',hostedPageCode:'PAGE1'}]));
- getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code}}));
- renderToStaticMarkup(await AccountMultiLinkPage({}));expect(manager.mock.calls[0][0].stands).toHaveLength(2);expect(getHostedPageEditorContext.mock.calls.filter(([,code])=>code==='PAGE1')).toHaveLength(1);
+ getHostedPageEditorContext.mockImplementation(async(_email,code)=>({configured:true,page:{code,businessName:'Biz',draft:{businessName:'Biz',buttons:[],appearance:{}}}}));
+ const html=renderToStaticMarkup(await AccountMultiLinkPage({}));
+ expect(html.match(/Multi-Link licence"/g)).toHaveLength(2);expect(html).toContain('2 stands');
+ expect(getHostedPageEditorContext.mock.calls.filter(([,code])=>code==='PAGE1')).toHaveLength(1);
 });

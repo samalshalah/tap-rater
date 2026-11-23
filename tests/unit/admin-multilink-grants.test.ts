@@ -11,3 +11,11 @@ it('rejects cross-origin requests',async()=>{expect((await POST(request(body,'ht
 it('rejects expired grants',async()=>{expect((await POST(request({...body,expiresAt:'2000-01-01T00:00:00Z'}))).status).toBe(400);expect(mocks.sql).not.toHaveBeenCalled();});
 it('creates an owner-scoped draft with an idempotent admin reference',async()=>{expect((await POST(request())).status).toBe(200);const [strings,...values]=mocks.sql.mock.calls[0];expect(strings.join(' ')).toContain('draft_json');expect(strings.join(' ')).toContain('customer_id=');expect(values).toContain(body.customerId);expect(values).toContain(`admin:${body.requestId}`);expect(strings.join(' ')).not.toContain('published_at');expect(strings.join(' ')).toContain('INSERT INTO hosted_page_codes');expect(strings.join(' ')).toContain('CROSS JOIN page_code');});
 it('rejects unavailable accounts and other-account retries',async()=>{mocks.sql.mockResolvedValue([]);expect((await POST(request())).status).toBe(409);});
+it('records the chosen stand and uses its wording as the page heading',async()=>{
+ expect((await POST(request({...body,standSlug:'rate-your-experience-stand'} as typeof body))).status).toBe(200);
+ const values=mocks.sql.mock.calls[0].slice(1);
+ expect(values).toContain(`admin-stand:rate-your-experience-stand:${body.requestId}`);
+ expect(values).toContain(`admin:${body.requestId}`);
+ expect(values.find(value=>typeof value==='string'&&value.includes('"headline"'))).toContain('Rate Your Experience');
+});
+it('rejects a stand that is not a Multi-Link stand',async()=>{expect((await POST(request({...body,standSlug:'not-a-stand'} as typeof body))).status).toBe(400);expect(mocks.sql).not.toHaveBeenCalled();});
