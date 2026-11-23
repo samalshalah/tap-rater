@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { businessUseGuideSchema, defaultBusinessUseGuide, orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
+import { businessUseGuideSchema, defaultBusinessUseGuide, groupBusinessUseProducts, orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
 import { staticStorefrontProducts } from "@/lib/product-repository";
 import { saveBusinessUseContent } from "@/lib/admin-business-uses";
 import { businessUseContentSchema } from "@/lib/validators";
@@ -10,13 +10,16 @@ describe("business buying guides", () => {
     const guide = defaultBusinessUseGuide(slug);
     expect(businessUseGuideSchema.safeParse(guide).success).toBe(true);
     expect(resolveRecommendations(guide, staticStorefrontProducts())).toHaveLength(3);
-    expect(guide.placements).toHaveLength(3);
+    expect(guide.placements?.length).toBeGreaterThanOrEqual(3);
     const publicSlugs = new Set(staticStorefrontProducts().map((product) => product.slug));
     for (const placement of guide.placements ?? []) {
       expect(publicSlugs.has(placement.productSlug ?? "")).toBe(true);
     }
     expect(guide.steps).toHaveLength(3);
-    expect(guide.faqs).toHaveLength(5);
+    expect(guide.faqs.length).toBeGreaterThanOrEqual(5);
+    for (const item of [...(guide.audiences ?? []), ...(guide.productGroups ?? []).flatMap((group) => group.productSlugs.map((productSlug) => ({ productSlug })))]) {
+      if (item.productSlug) expect(publicSlugs.has(item.productSlug)).toBe(true);
+    }
     expect(guide.seoTitle).toBeTruthy();
     expect(guide.seoDescription).toBeTruthy();
   });
@@ -27,6 +30,19 @@ describe("business buying guides", () => {
     }
     const bodies = guides.flatMap((guide) => [...(guide.placements ?? []), ...(guide.steps ?? [])].map((item) => item.body));
     expect(new Set(bodies).size).toBe(bodies.length);
+  });
+  it("groups automotive stands as cards without repeating featured picks", () => {
+    const products = staticStorefrontProducts();
+    const guide = defaultBusinessUseGuide("automotive");
+    const featured = resolveRecommendations(guide, products).map((item) => item.product.slug);
+    const assigned = products.filter((product) => ["google-review-stand", "cars-review-stand", "rate-your-experience-stand"].includes(product.slug));
+    const { groups, ungrouped } = groupBusinessUseProducts(guide, products, assigned, featured);
+    const grouped = groups.flatMap((group) => group.products.map((product) => product.slug));
+    expect(grouped).toContain("cars-review-stand");
+    expect(grouped.some((slug) => featured.includes(slug))).toBe(false);
+    expect(new Set(grouped).size).toBe(grouped.length);
+    expect(ungrouped).toEqual([]);
+    expect(groupBusinessUseProducts(defaultBusinessUseGuide("legal"), products, assigned, []).groups).toEqual([]);
   });
   it("resolves every restaurant recommendation to a public catalog product", () => {
     const guide = defaultBusinessUseGuide("restaurant-food");

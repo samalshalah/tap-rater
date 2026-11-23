@@ -7,6 +7,24 @@ export const businessUseGuideSchema = z.object({
   introduction: z.string().trim().max(600).default(""),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
+  audiencesTitle: z.string().trim().max(160).optional(),
+  audiences: z.array(z.object({
+    title: z.string().trim().min(2).max(100),
+    body: z.string().trim().min(2).max(400),
+    productSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/).optional()
+  })).max(8).optional(),
+  challengesTitle: z.string().trim().max(160).optional(),
+  challengesIntro: z.string().trim().max(400).optional(),
+  challenges: z.array(z.object({
+    title: z.string().trim().min(2).max(100),
+    body: z.string().trim().min(2).max(600)
+  })).max(6).optional(),
+  productGroupsTitle: z.string().trim().max(160).optional(),
+  productGroups: z.array(z.object({
+    title: z.string().trim().min(2).max(100),
+    body: z.string().trim().max(400).default(""),
+    productSlugs: z.array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/)).min(1).max(12)
+  })).max(5).optional(),
   recommendationsTitle: z.string().trim().max(160).optional(),
   placementTitle: z.string().trim().max(160).optional(),
   placements: z.array(z.object({
@@ -69,6 +87,22 @@ export function defaultBusinessUseGuide(slug: string): BusinessUseGuide {
       { question: "Can different restaurant locations use different links?", answer: "Yes. Supply the correct destination for each stand when configuring your order. Check that each menu, ordering page, and Google review link belongs to the intended location. For multiple tables or counters, compare stand bundles and keep a record of which destination is assigned to each stand." }
     ]
   };
+}
+
+// Group the business's stands into the editor-defined sections. Products already featured
+// above are skipped, and anything left ungrouped is returned so it can still be listed.
+export function groupBusinessUseProducts(guide: BusinessUseGuide, allProducts: MigratedProduct[], assignedProducts: MigratedProduct[], excludeSlugs: string[] = []) {
+  const used = new Set(excludeSlugs);
+  const groups = (guide.productGroups ?? []).map((group) => {
+    const items = group.productSlugs.flatMap((slug) => {
+      const product = allProducts.find((candidate) => candidate.slug === slug);
+      if (!product || used.has(slug)) return [];
+      used.add(slug);
+      return [product];
+    });
+    return { title: group.title, body: group.body, products: items };
+  }).filter((group) => group.products.length > 0);
+  return { groups, ungrouped: assignedProducts.filter((product) => !used.has(product.slug)) };
 }
 
 export function orderBusinessUseProducts(products: MigratedProduct[], slug: string, assignedSlugs: string[]) {

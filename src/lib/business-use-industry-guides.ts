@@ -3,35 +3,64 @@ import type { BusinessUseGuide } from "@/lib/business-use-guide";
 // Each industry owns its copy. The storefront supplies only the shared design comparison.
 export const industryBusinessGuides: Record<string, BusinessUseGuide> = {
   automotive: {
-    headline: "NFC & QR Stands for Dealerships & Auto Shops",
-    seoTitle: "NFC & QR Stands for Dealerships & Auto Repair Shops",
-    seoDescription: "Connect drivers to Google reviews, dealership profiles, and service information. Explore automotive NFC stands, Branded + QR designs, and counter placement tips.",
-    introduction: "Make the next step easy for drivers at your dealership, repair shop, or service center. A Tap Rater stand opens an existing online destination from a sales desk or service counter, helping customers find the right branch without typing a business name. Choose a review profile or useful dealership information, then match the stand to that action. Your custom stand includes NFC, your business identity and a printed QR code for customers who prefer scanning.",
+    headline: "NFC & QR Stands for Dealerships, Auto Shops & Car Washes",
+    seoTitle: "NFC & QR Stands for Car Dealers, Auto Repair Shops & Car Washes",
+    seoDescription: "Review, feedback and social stands for dealerships, repair shops, tire shops, body shops, detailers and car washes. See where to place them and which stands fit.",
+    introduction: "Most drivers who had a good visit leave without saying so, and the ones who didn’t often tell the internet before they tell you. A Tap Rater stand puts your review page, feedback form or social profile one tap or scan away at the desk where customers already stop. Every custom stand includes NFC, your logo and a printed QR code. It makes the next step easier; it can’t promise reviews, ratings or sales, and customers always decide what to do.",
+    audiencesTitle: "Built for Every Kind of Automotive Business",
+    audiences: [
+      { title: "Car dealerships", productSlug: "dealerrater-review-stand", body: "Sales and service often share one building but use different profiles. Put a dealer review stand at delivery and a Google stand at service checkout." },
+      { title: "Auto repair shops", productSlug: "google-review-stand", body: "Local drivers search for a mechanic nearby and compare reviews. Make your shop’s Google review page easy to reach when customers pay and collect their keys." },
+      { title: "Tire shops", productSlug: "google-review-stand", body: "Fitting and alignment visits are quick, so the moment is short. A stand by the till lets customers open your review page while you finish the paperwork." },
+      { title: "Body & collision shops", productSlug: "rate-your-experience-stand", body: "Repairs can take days and involve insurers. A feedback stand at collection helps you hear about anything that went wrong while you can still put it right." },
+      { title: "Detailers", productSlug: "instagram-follow-stand", body: "Before-and-after photos sell detailing. Point customers to your Instagram so they can see your work and come back for the next clean." },
+      { title: "Car washes", productSlug: "rate-your-experience-stand", body: "Customers pass through fast. A stand at the pay station or vacuum bays gives them a quick way to share feedback or find your review page." }
+    ],
+    challengesTitle: "What Holds Automotive Businesses Back Online",
+    challengesIntro: "These are everyday gaps between a good visit and what drivers see when they search for you. A stand helps with the step customers take, not the outcome.",
+    challenges: [
+      { title: "Happy customers drive off in silence", body: "A smooth oil change or a clean handover rarely prompts a review on its own. Customers mean to, then forget once they’re back on the road. A stand at the desk gives them the link while the visit is still fresh." },
+      { title: "Drivers can’t find the right branch", body: "Dealer groups and chains often have several listings with similar names. Typing a business name into a phone can land on the wrong location. Each stand opens the exact page you set for that branch." },
+      { title: "Problems surface too late", body: "If a repair or detail wasn’t right, you want to hear it at the counter, not in a one-star post. A feedback stand gives every customer a simple way to tell you directly, alongside your public review page." },
+      { title: "Waiting time goes unused", body: "Customers in your lounge or at the wash bay are already on their phones. A social stand lets them follow your shop for service reminders, offers and new stock, without staff having to ask." }
+    ],
     recommendationsTitle: "Recommended Stands for Automotive Businesses",
-    placementTitle: "Where to Place Stands in Your Dealership or Shop",
+    placementTitle: "Where to Place Stands in Your Dealership, Shop or Wash",
     howItWorksTitle: "How Your Automotive Stand Works",
     faqTitle: "Automotive Stand FAQs",
+    productGroupsTitle: "All Stands for Automotive Businesses",
+    productGroups: [
+      { title: "Dealer and car-buying review sites", body: "For dealerships and used car lots. Choose the sites where your dealership already has a profile.", productSlugs: ["dealerrater-review-stand", "cars-review-stand", "cargurus-review-stand", "edmunds-review-stand", "autotrader-review-stand", "carfax-review-stand"] },
+      { title: "Other review sites", body: "Useful for repair, tire and body shops whose customers also check Yelp, Facebook or the BBB.", productSlugs: ["yelp-review-stand", "facebook-review-stand", "bbb-review-stand"] },
+      { title: "Social and follow stands", body: "Help customers keep up with offers, new stock and finished work.", productSlugs: ["instagram-follow-stand", "facebook-follow-stand", "youtube-follow-stand", "tiktok-follow-stand", "linkedin-follow-stand", "x-follow-stand"] },
+      { title: "Information", body: "Share opening hours, service menus or aftercare details from a public page.", productSlugs: ["check-our-information-stand"] }
+    ],
     recommendations: [
-      { productSlug: "google-review-stand", goal: "Open your branch’s Google review page", reason: "Help customers find the review destination for the shop that serviced their vehicle. Keep the choice to review separate from payment, warranty discussions, and any request for a particular rating.", placement: "At the vehicle collection or service checkout desk." },
-      { productSlug: "dealerrater-review-stand", goal: "Connect shoppers with your DealerRater profile", reason: "Give customers a clear route to the dealership profile you already maintain. Check the public destination and its available actions before configuring the stand for your showroom.", placement: "On a sales consultant’s desk or delivery counter." },
-      { productSlug: "check-our-information-stand", goal: "Share useful dealership information", reason: "Point drivers to a public page with opening hours, service details, or aftercare information. A stable branch information page can serve visitors throughout their ownership experience.", placement: "Beside service reception or in the customer lounge." }
+      { productSlug: "google-review-stand", goal: "Make your Google review page one tap away", reason: "Google is where most drivers check a shop before they book. The stand opens the review page for the exact branch that did the work. Customers choose whether to leave a review and what to write.", placement: "At the service desk or checkout, where keys are handed back." },
+      { productSlug: "rate-your-experience-stand", goal: "Hear about problems before they go public", reason: "Opens the feedback form or page you choose, so customers can tell you directly how the visit went. Offer it to every customer, alongside your review page, not instead of it.", placement: "In the waiting room or at vehicle collection." },
+      { productSlug: "follow-us-social-media-stand", goal: "Stay in touch after the visit", reason: "Opens your social profile or a Multi-Link page with all of them, so customers can follow you for service reminders, offers and new stock.", placement: "In the customer lounge or at the wash pay station." }
     ],
     placements: [
-      { title: "Service collection desk", productSlug: "google-review-stand", body: "Let drivers open your repair shop’s Google review page after collecting their keys. Place the stand beside the service advisor’s checkout area, clear of card terminals and repair paperwork. Use the serviced branch’s review link and keep feedback optional for every customer." },
-      { title: "Showroom and delivery area", productSlug: "dealerrater-review-stand", body: "Give vehicle buyers a direct route to your dealership’s DealerRater profile at the sales desk or handover counter. Verify that the page identifies your dealership and offers the actions you want customers to find. Keep the stand facing the customer with room for a phone to approach." },
-      { title: "Waiting lounge", productSlug: "check-our-information-stand", body: "Help drivers waiting for a service find your opening hours, maintenance information, and contact options on a public branch page. Place the stand beside lounge seating or service brochures. Individual repair orders and vehicle records should stay in your existing private customer systems." }
+      { title: "Service desk", productSlug: "google-review-stand", body: "The busiest counter in most shops. Place the stand on the customer side, clear of the card terminal and repair paperwork, so drivers can tap while the advisor closes out the job." },
+      { title: "Waiting room and lounge", productSlug: "follow-us-social-media-stand", body: "Customers waiting for an oil change or tire fitting are already on their phones. A stand beside the coffee or seating invites them to follow you or share feedback." },
+      { title: "Checkout and cashier", productSlug: "google-review-stand", body: "Payment is the natural end of the visit. A stand next to the till, a little away from the payment terminal, keeps the review page in reach without getting in the way." },
+      { title: "Key drop and vehicle pickup", productSlug: "rate-your-experience-stand", body: "When customers collect their car they know how the job went. A feedback stand at pickup gives them an easy way to tell you, good or bad, before they leave." },
+      { title: "Vehicle delivery and handover", productSlug: "dealerrater-review-stand", body: "For dealerships, the handover is the moment buyers remember. Place a dealer review stand on the delivery desk so the salesperson can mention it as part of the handover." },
+      { title: "Car wash pay station and exit", productSlug: "rate-your-experience-stand", body: "Place the stand where drivers stop to pay or vacuum, within easy reach of a phone. Keep it under cover and out of the way of traffic where possible." }
     ],
     steps: [
-      { title: "Choose the desk and action", body: "Decide whether the stand belongs at service collection, a sales desk, or the waiting area. Select a product whose invitation matches the destination. Explore custom logo and QR options on its product page before choosing quantities for multiple departments." },
-      { title: "Check the branch destination", body: "Open the proposed link on a phone outside your staff account. Confirm the dealership name, address, and available actions. For a Branded order, review the logo and branch details in the design preview so visitors recognize the location they have just visited." },
-      { title: "Test after installation", body: "Place the stand on a clear surface and try the guest journey yourself. Test NFC and, where included, the printed QR. Let service advisors know which page opens, and check the destination again whenever a branch profile or website address changes." }
+      { title: "Pick the desk and the action", body: "Start with the counter customers visit most, usually the service desk or checkout, and choose one action for it: review, feedback or follow. You can add more stands for other desks later." },
+      { title: "Set the right branch link", body: "Open the link on a phone that isn’t signed into your accounts and check the business name and address. For Branded stands, approve your logo and design in the preview before you pay." },
+      { title: "Place it and tell your team", body: "Put the stand on a clear surface facing customers and test a tap and a scan. Let advisors and cashiers know what it opens so they can point customers to it." }
     ],
     faqs: [
-      { question: "Should an auto shop choose Google or DealerRater?", answer: "Choose the destination your business actually maintains. Google can suit a local repair shop’s review page, while a dealership may also use a DealerRater profile. You do not need both on the same desk. Start with the profile that matches the customer action you want to make available." },
-      { question: "Can each dealership branch have its own link?", answer: "Yes. Configure each stand with the destination for its intended branch. Check the address on the destination page and record where each stand will be installed. A service department and a sales department may need different links even when they share the same building and business branding." },
-      { question: "Will a stand automatically collect a review?", answer: "No. It opens the destination you provide; the customer decides whether to leave a review and what to say. The review platform may ask them to sign in. Make the opportunity available consistently and do not promise incentives or a particular rating as part of using the stand." },
-      { question: "Can I share service information instead of a review link?", answer: "Yes. Choose an information stand and supply a public page with your service details, hours, or contact options. Tap Rater does not manage repair bookings or vehicle records. If the page includes a booking link, your existing provider continues to handle scheduling and customer information." },
-      { question: "What if a driver prefers scanning to NFC?", answer: "Choose Branded + QR to offer both options on the stand. A printed QR gives visitors another way to reach the destination using their phone camera. Confirm the available design and current price on the product page before ordering stands for your showroom or service desks." }
+      { question: "Will a stand get my shop more reviews?", answer: "We can’t promise that. A stand makes your review page easier to reach at the right moment; customers decide whether to leave a review and what to say. Results vary from business to business." },
+      { question: "Should I use Google or a dealer review site?", answer: "Use the site your customers actually check. Most repair, tire and body shops start with Google. Dealerships often add DealerRater, Cars.com or CarGurus at the delivery desk. You don’t need every site on the same counter." },
+      { question: "Can each branch or department have its own link?", answer: "Yes. Each stand opens the link you set for it. Sales and service can use different pages, and each branch can point to its own listing. Keep a note of which stand sits where." },
+      { question: "Can I send only unhappy customers to the feedback stand?", answer: "No. Offer the feedback stand and your review page to everyone, not only to some customers. Review sites don’t allow screening customers or offering rewards for reviews. The feedback stand is an extra way for customers to reach you directly." },
+      { question: "Will it work at an outdoor car wash?", answer: "Stands are made for counters and desks. Place one under cover, such as at the pay station or attendant booth, rather than fully exposed to rain and spray." },
+      { question: "What if a customer’s phone doesn’t support NFC?", answer: "Every custom stand also has a printed QR code, so customers can scan with their phone camera instead of tapping." },
+      { question: "Do automotive stands need a subscription?", answer: "A stand that opens one link is a one-time purchase. Optional hosted Multi-Link, which puts several links on one page, has a separate monthly charge." }
     ]
   },
   "hotel-travel": {
