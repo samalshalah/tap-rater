@@ -39,7 +39,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       body: `
         <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
         <p class="tr-copy">${escapeHtml(snapshot.description ?? "This Tap Rater page is being set up. The permanent URL is active and will keep working after the business publishes its links.")}</p>
-        <p class="tr-footer">Powered by Tap Rater</p>
+        <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
       `,
       statusCode: "setup"
     });
@@ -65,10 +65,11 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
     logoAlign: snapshot.appearance?.logoAlign,
     textAlign: snapshot.appearance?.textAlign,
     body: `
+      ${snapshot.headline && snapshot.headline !== snapshot.businessName ? `<p class="tr-business">${escapeHtml(snapshot.businessName)}</p>` : ""}
       <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
       ${snapshot.description ? `<p class="tr-copy">${escapeHtml(snapshot.description)}</p>` : ""}
       <nav class="tr-buttons" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
-      <p class="tr-footer">Powered by Tap Rater</p>
+      <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
     `,
     statusCode: "available"
   });
@@ -112,8 +113,9 @@ function renderShell({
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
     .tr-card { border: 1px solid var(--line); border-radius: 8px; background: var(--card); padding: clamp(24px, 7vw, 42px); text-align: ${contentAlign}; box-shadow: var(--shadow); }
-    .tr-logo { display: block; width: 72px; height: 72px; object-fit: contain; border-radius: 8px; margin: ${logoMargin}; }
-    h1 { margin: 0; font-size: clamp(2rem, 10vw, 3rem); line-height: 1; letter-spacing: 0; }
+    .tr-logo { display: block; width: auto; max-width: min(220px, 70%); height: auto; max-height: 96px; object-fit: contain; border-radius: 8px; margin: ${logoMargin}; }
+    .tr-business { margin: 0 0 8px; color: var(--muted); font-size: 0.95rem; font-weight: 600; }
+    h1 { margin: 0; font-size: clamp(1.75rem, 8vw, 2.5rem); line-height: 1.1; letter-spacing: 0; }
     .tr-copy { margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
     .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: var(--button-text); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
@@ -124,6 +126,8 @@ function renderShell({
     .tr-button-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .tr-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), white 55%); outline-offset: 3px; }
     .tr-footer { margin: 28px 0 0; color: var(--muted); font-size: 0.82rem; }
+    .tr-footer a { color: inherit; text-decoration: none; }
+    .tr-footer a:hover, .tr-footer a:focus-visible { text-decoration: underline; }
   </style>
 </head>
 <body>

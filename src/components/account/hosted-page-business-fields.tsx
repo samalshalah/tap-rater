@@ -14,6 +14,11 @@ return (<div className="tr-card grid gap-2 p-3">
             Business name
             <input className="tr-input min-h-10 px-3 py-2" value={draft.businessName} onChange={(event) => updateDraft({ ...draft, businessName: event.target.value })} />
           </label>
+          <label className="grid gap-1.5 text-sm font-medium text-ink sm:col-span-2">
+            Page heading
+            <input className="tr-input min-h-10 px-3 py-2" maxLength={140} placeholder="Rate Your Experience" value={draft.headline ?? ""} onChange={(event) => updateDraft({ ...draft, headline: event.target.value })} />
+            <span className="text-xs font-normal text-muted">Shown under your logo. Match the wording on your stand.</span>
+          </label>
           <label className="grid gap-1.5 text-sm font-medium text-ink">
             Supporting text
             <input className="tr-input min-h-10 px-3 py-2" value={draft.description ?? ""} onChange={(event) => updateDraft({ ...draft, description: event.target.value })} />

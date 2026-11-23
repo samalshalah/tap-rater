@@ -9,7 +9,7 @@ import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { type ManualCustomerAccountProvisioningInput, type ManualCustomerAccountProvisioningResult, type PaidCustomerAccountProvisioningResult, type HostedSubscriptionProvisioningDependencies } from "./hosted-provisioning-types";
 import { resolveClientDependency, upsertCustomer, createBusiness, updateBusiness, upsertHostedEditorPage, upsertHostedPageCode, upsertHostedSubscription, findHostedSubscriptionForProvisioning } from "./hosted-provisioning-repository";
-import { buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readManualOrderBusinessName, readManualOrderLogoUrl, readCustomerPhone, orderRequestsAccount, readInitialMultiLinkButtons, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, resolvePublicSiteUrl, resolvePublicAssetUrl } from "./hosted-provisioning-model";
+import { buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readManualOrderBusinessName, readManualOrderLogoUrl, readCustomerPhone, orderRequestsAccount, readInitialMultiLinkButtons, readHostedPageHeadline, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, resolvePublicSiteUrl, resolvePublicAssetUrl } from "./hosted-provisioning-model";
 
 export async function provisionManualCustomerAccountFromOrder(
   input: ManualCustomerAccountProvisioningInput,
@@ -77,6 +77,7 @@ export async function provisionManualCustomerAccountFromOrder(
     const itemBusinessName = readString(setup.businessName) ?? businessName;
     const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order) ?? undefined, publicSiteUrl);
     const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
+    const headline = readHostedPageHeadline(hostedItem, itemBusinessName);
     const lineSessionId = hostedItemIndexes.length > 1 ? `${input.order.stripe_checkout_session_id}:line:${hostedItemIndex + 1}` : input.order.stripe_checkout_session_id;
     const existingMatch = await findHostedSubscriptionForProvisioning(client, {
       customerId: customer.customerId,
@@ -136,6 +137,7 @@ export async function provisionManualCustomerAccountFromOrder(
         businessName: itemBusinessName,
         logoUrl: logoUrl ?? null,
         initialButtons,
+        headline,
         now
       });
     if (!page.ok) return page;
@@ -168,7 +170,7 @@ export async function provisionManualCustomerAccountFromOrder(
       lifecycleStatus: "ACTIVE",
       businessName: itemBusinessName,
       logoUrl: logoUrl ?? undefined,
-      headline: itemBusinessName,
+      headline,
       buttons: buildSnapshotButtons(initialButtons),
       description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
       appearance: { theme: "light", accentColor: "#0f766e" }

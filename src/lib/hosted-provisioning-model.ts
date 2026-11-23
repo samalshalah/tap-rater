@@ -4,6 +4,16 @@ import type { OrderLineItem, OrderRecord, StripeCheckoutSessionLike } from "@/li
 import { createHash } from "node:crypto";
 import { mapSubscriptionLifecycle } from "@/lib/hosted-subscription-lifecycle";
 import { type HostedSubscriptionStatus, type StripeSubscriptionLike, type ExistingHostedSubscription } from "./hosted-provisioning-types";
+import { migratedProducts } from "@/data/migrated-products";
+
+// The Multi-Link page heading matches the wording printed on the stand: custom stand text first,
+// then the product's display text (e.g. "Rate Your Experience"), then the business name.
+export function readHostedPageHeadline(item: OrderLineItem, businessName: string) {
+  const customText = readString(readSetup(item).headline);
+  if (customText) return customText.slice(0, 140);
+  const displayText = migratedProducts.find((product) => product.slug === item.productId)?.displayText?.trim();
+  return displayText ? displayText.slice(0, 140) : businessName;
+}
 
 export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike, order: Pick<OrderRecord, "line_items_json">) {
   const metadataIntent = session.metadata?.checkout_intent;
@@ -105,11 +115,11 @@ export function orderRequestsAccount(order: OrderRecord) {
   return Boolean(details && typeof details === "object" && (details as Record<string, unknown>).create_account === true);
 }
 
-export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = []) {
+export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = [], headline?: string) {
   return {
     businessName,
     logoUrl,
-    headline: businessName,
+    headline: headline || businessName,
     description: buttons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
     appearance: { theme: "light" as const, accentColor: "#0f766e" as const },
     buttons
