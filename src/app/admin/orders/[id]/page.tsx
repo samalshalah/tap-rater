@@ -9,6 +9,8 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { OrderFulfillmentForm } from "@/components/admin/order-fulfillment-form";
 import { OrderProductionActions } from "@/components/admin/order-production-actions";
 import { OrderRefundForm } from "@/components/admin/order-refund-form";
+import { OrderCancelForm } from "@/components/admin/order-cancel-form";
+import { orderCancelBlock } from "@/lib/order-admin-cancel";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getSupabaseAdmin } from "@/lib/db";
@@ -111,6 +113,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
                 refundFailureReason={order.refund_failure_reason}
               />
             ) : null}
+            {order.id && order.status !== "canceled" ? <OrderCancelForm orderId={order.id} blockedReason={orderCancelBlock(order)} /> : null}
             {typeof order.customer_details_json?.recovery_original_order_id === "string" ? <InfoCard title="Recovered checkout"><a className="text-sm underline" href={`/admin/orders/${order.customer_details_json.recovery_original_order_id}`}>View original order and email history</a></InfoCard> : order.id && awaitingPayment && <OrderCustomerEmail orderId={order.id} />}
             {order.id && canRunOrderProductionActions(order) ? <OrderProductionActions orderId={order.id} customItems={order.line_items_json.flatMap((item,index)=>getOrderLineItemProductionSummary(item).fulfillmentKind==='custom'?[{index,title:item.title,quantity:item.quantity}]:[])} /> : null}
             <InfoCard title="Details">

@@ -272,8 +272,9 @@ export function normalizeOrderItems(value: unknown): CustomerPortalOrderItem[] {
 }
 
 // A Stripe checkout the customer never completed (still open, expired or failed) produces no stand.
-// Manual-payment orders (manual_unpaid), complimentary and paid orders still do.
+// Manual-payment orders (manual_unpaid), complimentary and paid orders still do; orders an admin cancelled never do.
 export function isUnfinishedCheckout(order: Pick<CustomerPortalOrder, "status" | "paymentStatus">) {
+  if (order.paymentStatus === "canceled") return true; // set only by the admin Cancel order action
   if (order.paymentStatus === "expired" || order.paymentStatus === "failed" || order.status === "failed") return true;
   return order.status === "pending_payment" && (!order.paymentStatus || order.paymentStatus === "unpaid");
 }
