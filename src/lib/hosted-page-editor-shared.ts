@@ -12,6 +12,17 @@ export type HostedPageEditorButtonType =
   | "menu"
   | "contact"
   | "whatsapp"
+  | "dealerrater"
+  | "cars_com"
+  | "cargurus"
+  | "edmunds"
+  | "autotrader"
+  | "carfax"
+  | "bbb"
+  | "youtube"
+  | "tiktok"
+  | "x"
+  | "linkedin"
   | "custom_link";
 export type HostedPageEditorAppearance = {
   theme: "light" | "warm" | "bold";
@@ -53,8 +64,19 @@ export type HostedPageEditorRecord = {
 export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonType; label: string; snapshotType: HostedPageButtonType }> = [
   { type: "google_review", label: "Google Review", snapshotType: "review" },
   { type: "yelp", label: "Yelp", snapshotType: "review" },
+  { type: "dealerrater", label: "DealerRater", snapshotType: "review" },
+  { type: "cars_com", label: "Cars.com", snapshotType: "review" },
+  { type: "cargurus", label: "CarGurus", snapshotType: "review" },
+  { type: "edmunds", label: "Edmunds", snapshotType: "review" },
+  { type: "autotrader", label: "Autotrader", snapshotType: "review" },
+  { type: "carfax", label: "Carfax", snapshotType: "review" },
+  { type: "bbb", label: "BBB", snapshotType: "review" },
   { type: "facebook", label: "Facebook", snapshotType: "social" },
   { type: "instagram", label: "Instagram", snapshotType: "social" },
+  { type: "youtube", label: "YouTube", snapshotType: "social" },
+  { type: "tiktok", label: "TikTok", snapshotType: "social" },
+  { type: "x", label: "X", snapshotType: "social" },
+  { type: "linkedin", label: "LinkedIn", snapshotType: "social" },
   { type: "website", label: "Website", snapshotType: "website" },
   { type: "appointment", label: "Appointment", snapshotType: "booking" },
   { type: "menu", label: "Menu", snapshotType: "menu" },
@@ -74,6 +96,17 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     menu: { text: "Menu", icon: "menu", brand: "Menu", background: "#f97316", color: "#ffffff", border: "#f97316" },
     contact: { text: "@", icon: "contact", brand: "Contact", background: "#334155", color: "#ffffff", border: "#334155" },
     whatsapp: { text: "WhatsApp", icon: "whatsapp", brand: "WhatsApp", background: "#25d366", color: "#0b1f14", border: "#25d366" },
+    dealerrater: { text: "DR", icon: "text", brand: "DealerRater", background: "#f36f21", color: "#ffffff", border: "#f36f21" },
+    cars_com: { text: "cars", icon: "text", brand: "Cars.com", background: "#5b2c86", color: "#ffffff", border: "#5b2c86" },
+    cargurus: { text: "CG", icon: "text", brand: "CarGurus", background: "#00a0dd", color: "#ffffff", border: "#00a0dd" },
+    edmunds: { text: "E", icon: "text", brand: "Edmunds", background: "#0069bf", color: "#ffffff", border: "#0069bf" },
+    autotrader: { text: "AT", icon: "text", brand: "Autotrader", background: "#f15a24", color: "#ffffff", border: "#f15a24" },
+    carfax: { text: "CFX", icon: "text", brand: "Carfax", background: "#ffffff", color: "#111111", border: "#111111" },
+    bbb: { text: "BBB", icon: "text", brand: "BBB", background: "#005a78", color: "#ffffff", border: "#005a78" },
+    youtube: { text: "\u25B6", icon: "youtube", brand: "YouTube", background: "#ff0000", color: "#ffffff", border: "#ff0000" },
+    tiktok: { text: "TikTok", icon: "tiktok", brand: "TikTok", background: "#000000", color: "#ffffff", border: "#000000" },
+    x: { text: "X", icon: "text", brand: "X", background: "#000000", color: "#ffffff", border: "#000000" },
+    linkedin: { text: "in", icon: "text", brand: "LinkedIn", background: "#0a66c2", color: "#ffffff", border: "#0a66c2" },
     custom_link: { text: "Link", icon: "link", brand: "Custom link", background: "#ffffff", color: "#17211f", border: "#dfe7e3" },
     review: { text: "G", icon: "google", brand: "Review", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
     social: { text: "f", icon: "facebook", brand: "Social", background: "#1877f2", color: "#ffffff", border: "#1877f2" },

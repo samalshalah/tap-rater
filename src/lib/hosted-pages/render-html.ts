@@ -207,6 +207,8 @@ function hostedButtonIconSvg(icon: string, fallbackText: string) {
   if (icon === "menu") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   if (icon === "contact") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
   if (icon === "link") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (icon === "youtube") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 7.5v9l7-4.5-7-4.5Z" fill="currentColor"/></svg>`;
+  if (icon === "tiktok") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4v10.2a3.2 3.2 0 1 1-3.2-3.2M14 4c.4 2.3 1.9 3.8 4.2 4.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   if (icon === "whatsapp") return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a7.7 7.7 0 0 0-6.6 11.7L4.7 20l4.4-1.1A7.8 7.8 0 1 0 12 4Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.2 8.9c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3 0 .5-.2.7l-.4.5c.6 1.1 1.4 1.9 2.6 2.5l.5-.6c.2-.2.4-.3.7-.2l1.6.7c.3.1.4.3.4.6v.4c0 .4-.2.7-.5.9-.4.2-.9.3-1.4.3-3.1-.2-6.9-3.8-7.1-7 0-.4.1-.9.4-1.3Z" fill="currentColor"/></svg>`;
   return `<span>${escapeHtml(fallbackText)}</span>`;
 }

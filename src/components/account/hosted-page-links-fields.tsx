@@ -70,12 +70,12 @@ function HostedButtonMark({ type }: { type: HostedPageEditorButton["type"] }) {
       style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
       aria-label={mark.brand}
     >
-      <HostedButtonIcon icon={mark.icon} />
+      <HostedButtonIcon icon={mark.icon} text={mark.text} />
     </span>
   );
 }
 
-function HostedButtonIcon({ icon }: { icon: string }) {
+function HostedButtonIcon({ icon, text }: { icon: string; text: string }) {
   if (icon === "google") {
     return (
       <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -106,6 +106,9 @@ function HostedButtonIcon({ icon }: { icon: string }) {
       </svg>
     );
   }
+  if (icon === "youtube") return <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><path d="M9.5 7.5v9l7-4.5-7-4.5Z" fill="currentColor" /></svg>;
+  if (icon === "tiktok") return <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><path d="M14 4v10.2a3.2 3.2 0 1 1-3.2-3.2M14 4c.4 2.3 1.9 3.8 4.2 4.1" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>;
+  if (icon === "text") return <span className="text-[9px] font-bold leading-none">{text}</span>;
   if (icon === "website") return <Globe size={15} />;
   if (icon === "calendar") return <CalendarDays size={15} />;
   if (icon === "menu") return <Menu size={15} />;

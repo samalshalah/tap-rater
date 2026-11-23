@@ -1,5 +1,5 @@
 export { renderHostedPageHtml } from "./render-html";
-import { type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
+import { supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { assertHostedPageCode, isValidHostedPageCode } from "./codes";
 
 export type HostedPageLifecycleStatus =
@@ -229,18 +229,7 @@ export function isSafePublicUrl(value: string | undefined): value is string {
 }
 
 function isHostedButtonIconKey(value: unknown): value is HostedPageEditorButtonType {
-  return (
-    value === "google_review" ||
-    value === "yelp" ||
-    value === "facebook" ||
-    value === "instagram" ||
-    value === "website" ||
-    value === "appointment" ||
-    value === "menu" ||
-    value === "contact" ||
-    value === "whatsapp" ||
-    value === "custom_link"
-  );
+  return typeof value === "string" && supportedHostedPageButtons.some((button) => button.type === value);
 }
 
 function isLifecycleStatus(value: unknown): value is HostedPageLifecycleStatus {
