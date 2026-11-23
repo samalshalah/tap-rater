@@ -45,4 +45,6 @@ export type ProductSetupChooserProps = {
   onSelectedOptionChange?: (optionId: PurchaseOptionId) => void;
   onSelectedPriceChange?: (priceCents: number | null) => void;
   onSelectedMonthlyPriceChange?: (priceCents: number) => void;
+  /** Opens the chooser with Multi-Link already selected, e.g. from a bundle link. */
+  initialLinkExperience?: LinkExperienceId;
 };

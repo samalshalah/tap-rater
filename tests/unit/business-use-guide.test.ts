@@ -4,12 +4,21 @@ import { staticStorefrontProducts } from "@/lib/product-repository";
 import { saveBusinessUseContent } from "@/lib/admin-business-uses";
 import { businessUseContentSchema } from "@/lib/validators";
 import { lockedBusinessUses } from "@/lib/catalog-architecture";
+import { supportedHostedPageButtons } from "@/lib/hosted-page-editor-shared";
 
 describe("business buying guides", () => {
   it.each(lockedBusinessUses.map((business) => business.slug))("provides a complete validated guide with public products for %s", (slug) => {
     const guide = defaultBusinessUseGuide(slug);
     expect(businessUseGuideSchema.safeParse(guide).success).toBe(true);
-    expect(resolveRecommendations(guide, staticStorefrontProducts())).toHaveLength(3);
+    if (guide.bundle) {
+      const publicProducts = staticStorefrontProducts();
+      for (const item of guide.bundle.items) {
+        expect(publicProducts.some((product) => product.slug === item.productSlug && product.supportsMultiLink)).toBe(true);
+        for (const type of item.linkTypes) expect(supportedHostedPageButtons.some((button) => button.type === type)).toBe(true);
+      }
+    } else {
+      expect(resolveRecommendations(guide, staticStorefrontProducts())).toHaveLength(3);
+    }
     expect(guide.placements?.length).toBeGreaterThanOrEqual(3);
     const publicSlugs = new Set(staticStorefrontProducts().map((product) => product.slug));
     for (const placement of guide.placements ?? []) {
@@ -34,7 +43,7 @@ describe("business buying guides", () => {
   it("groups automotive stands as cards without repeating featured picks", () => {
     const products = staticStorefrontProducts();
     const guide = defaultBusinessUseGuide("automotive");
-    const featured = resolveRecommendations(guide, products).map((item) => item.product.slug);
+    const featured = [...resolveRecommendations(guide, products).map((item) => item.product.slug), ...(guide.bundle?.items.map((item) => item.productSlug) ?? [])];
     const assigned = products.filter((product) => ["google-review-stand", "cars-review-stand", "rate-your-experience-stand"].includes(product.slug));
     const { groups, ungrouped } = groupBusinessUseProducts(guide, products, assigned, featured);
     const grouped = groups.flatMap((group) => group.products.map((product) => product.slug));

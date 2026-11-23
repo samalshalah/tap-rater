@@ -21,9 +21,10 @@ type ProductHeroProps = {
   initialOptionId?: PurchaseOptionId;
   introduction?: string;
   shipping?: ShippingSettingsInput;
+  initialLinkExperience?: "direct" | "multilink";
 };
 
-export function ProductHero({ product, category, initialOptionId, offers, introduction, shipping }: ProductHeroProps) {
+export function ProductHero({ product, category, initialOptionId, offers, introduction, shipping, initialLinkExperience }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "branded_qr_direct");
@@ -67,6 +68,7 @@ export function ProductHero({ product, category, initialOptionId, offers, introd
           selectedOptionId={effectiveSelectedOptionId}
           onSelectedOptionChange={setSelectedOptionId}
           onSelectedPriceChange={setSelectedPriceCents}
+          initialLinkExperience={initialLinkExperience}
         />
       </div>
     </div>

@@ -83,6 +83,8 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const query = await searchParams;
   const design = Array.isArray(query?.design) ? query.design[0] : query?.design;
   const initialOptionId = "branded_qr_direct";
+  const addon = Array.isArray(query?.addon) ? query.addon[0] : query?.addon;
+  const initialLinkExperience = addon === "multilink" ? "multilink" as const : "direct" as const;
 
   if (slug === "multi-link-stand") {
     permanentRedirect("/multi-link");
@@ -139,7 +141,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
-        <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}`} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
+        <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}:${initialLinkExperience}`} initialLinkExperience={initialLinkExperience} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
       {highlights.length > 0 || specifications.length > 0 || !buyingGuide ? <SectionShell tone="soft" spacing="compact">

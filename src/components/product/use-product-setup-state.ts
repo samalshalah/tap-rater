@@ -16,12 +16,12 @@ import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/ser
 import { useProductSetupVariants } from "./use-product-setup-variants";
 import { useProductGoogleSearch } from "./use-product-google-search";
 
-export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
+export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, initialLinkExperience = "direct", onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
 
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "branded_qr_direct");
 
-  const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>("direct");
+  const [selectedLinkExperience, setSelectedLinkExperience] = useState<LinkExperienceId>(() => initialLinkExperience === "multilink" && productSupportsMultiLink(product) ? "multilink" : "direct");
 
   const [step, setStep] = useState<SetupStep>("choose");
 

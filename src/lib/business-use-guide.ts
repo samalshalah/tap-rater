@@ -7,12 +7,29 @@ export const businessUseGuideSchema = z.object({
   introduction: z.string().trim().max(600).default(""),
   seoTitle: z.string().trim().max(180).optional(),
   seoDescription: z.string().trim().max(320).optional(),
+  heroBody: z.string().trim().max(400).optional(),
+  bundle: z.object({
+    eyebrow: z.string().trim().max(80).default(""),
+    title: z.string().trim().min(2).max(160),
+    body: z.string().trim().max(400).default(""),
+    ctaLabel: z.string().trim().max(60).default(""),
+    note: z.string().trim().max(400).default(""),
+    items: z.array(z.object({
+      productSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
+      label: z.string().trim().max(60).default(""),
+      title: z.string().trim().min(2).max(100),
+      body: z.string().trim().min(2).max(300),
+      ctaLabel: z.string().trim().max(60).default(""),
+      linkTypes: z.array(z.string().trim().min(1).max(40)).min(1).max(10)
+    })).min(1).max(3)
+  }).optional(),
   audiencesTitle: z.string().trim().max(160).optional(),
   audiences: z.array(z.object({
     title: z.string().trim().min(2).max(100),
     body: z.string().trim().min(2).max(400),
     productSlug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/).optional()
   })).max(8).optional(),
+  challengesEyebrow: z.string().trim().max(80).optional(),
   challengesTitle: z.string().trim().max(160).optional(),
   challengesIntro: z.string().trim().max(400).optional(),
   challenges: z.array(z.object({
@@ -26,6 +43,7 @@ export const businessUseGuideSchema = z.object({
     productSlugs: z.array(z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/)).min(1).max(12)
   })).max(5).optional(),
   recommendationsTitle: z.string().trim().max(160).optional(),
+  recommendationsBody: z.string().trim().max(300).optional(),
   placementTitle: z.string().trim().max(160).optional(),
   placements: z.array(z.object({
     title: z.string().trim().min(2).max(100),
