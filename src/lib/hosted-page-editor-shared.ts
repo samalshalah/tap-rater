@@ -86,22 +86,22 @@ export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonTyp
 ];
 
 export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
-  // logo: official brand icon from the brand's own website, served from /public/brand/multilink. wide: logo is a wordmark.
-  const marks: Record<string, { text: string; icon: string; brand: string; background: string; color: string; border: string; logo?: string; wide?: boolean }> = {
-    google_review: { text: "G", icon: "google", brand: "Google", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
-    yelp: { text: "Yelp", icon: "yelp", brand: "Yelp", background: "#d32323", color: "#ffffff", border: "#d32323" },
-    facebook: { text: "f", icon: "facebook", brand: "Facebook", background: "#1877f2", color: "#ffffff", border: "#1877f2" },
-    instagram: { text: "Instagram", icon: "instagram", brand: "Instagram", background: "#ffffff", color: "#e4405f", border: "#f4c6d1" },
+  // logo: the brand's official app icon (square, same size for every brand), served from /public/brand/multilink.
+  const marks: Record<string, { text: string; icon: string; brand: string; background: string; color: string; border: string; logo?: string }> = {
+    google_review: { logo: "/brand/multilink/google.png", text: "G", icon: "google", brand: "Google", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
+    yelp: { logo: "/brand/multilink/yelp.png", text: "Yelp", icon: "yelp", brand: "Yelp", background: "#d32323", color: "#ffffff", border: "#d32323" },
+    facebook: { logo: "/brand/multilink/facebook.png", text: "f", icon: "facebook", brand: "Facebook", background: "#1877f2", color: "#ffffff", border: "#1877f2" },
+    instagram: { logo: "/brand/multilink/instagram.png", text: "Instagram", icon: "instagram", brand: "Instagram", background: "#ffffff", color: "#e4405f", border: "#f4c6d1" },
     website: { text: "WWW", icon: "website", brand: "Website", background: "#111827", color: "#ffffff", border: "#111827" },
-    appointment: { text: "Cal", icon: "calendar", brand: "Appointment", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
+    appointment: { text: "Cal", icon: "calendar", brand: "Appointment", background: "#ffffff", color: "#0f766e", border: "#dfe7e3" },
     menu: { text: "Menu", icon: "menu", brand: "Menu", background: "#f97316", color: "#ffffff", border: "#f97316" },
     contact: { text: "@", icon: "contact", brand: "Contact", background: "#334155", color: "#ffffff", border: "#334155" },
-    whatsapp: { text: "WhatsApp", icon: "whatsapp", brand: "WhatsApp", background: "#25d366", color: "#0b1f14", border: "#25d366" },
-    dealerrater: { logo: "/brand/multilink/dealerrater.png", wide: true, text: "DR", icon: "text", brand: "DealerRater", background: "#f36f21", color: "#ffffff", border: "#f36f21" },
+    whatsapp: { logo: "/brand/multilink/whatsapp.png", text: "WhatsApp", icon: "whatsapp", brand: "WhatsApp", background: "#25d366", color: "#0b1f14", border: "#25d366" },
+    dealerrater: { logo: "/brand/multilink/dealerrater.png", text: "DR", icon: "text", brand: "DealerRater", background: "#f36f21", color: "#ffffff", border: "#f36f21" },
     cars_com: { logo: "/brand/multilink/cars-com.png", text: "cars", icon: "text", brand: "Cars.com", background: "#5b2c86", color: "#ffffff", border: "#5b2c86" },
     cargurus: { logo: "/brand/multilink/cargurus.png", text: "CG", icon: "text", brand: "CarGurus", background: "#00a0dd", color: "#ffffff", border: "#00a0dd" },
     edmunds: { logo: "/brand/multilink/edmunds.png", text: "E", icon: "text", brand: "Edmunds", background: "#0069bf", color: "#ffffff", border: "#0069bf" },
-    autotrader: { text: "AT", icon: "text", brand: "Autotrader", background: "#f15a24", color: "#ffffff", border: "#f15a24" },
+    autotrader: { logo: "/brand/multilink/autotrader.png", text: "AT", icon: "text", brand: "Autotrader", background: "#f15a24", color: "#ffffff", border: "#f15a24" },
     carfax: { logo: "/brand/multilink/carfax.png", text: "CFX", icon: "text", brand: "Carfax", background: "#ffffff", color: "#111111", border: "#111111" },
     bbb: { text: "BBB", icon: "text", brand: "BBB", background: "#005a78", color: "#ffffff", border: "#005a78" },
     youtube: { logo: "/brand/multilink/youtube.png", text: "\u25B6", icon: "youtube", brand: "YouTube", background: "#ff0000", color: "#ffffff", border: "#ff0000" },
@@ -109,8 +109,8 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     x: { logo: "/brand/multilink/x.png", text: "X", icon: "text", brand: "X", background: "#000000", color: "#ffffff", border: "#000000" },
     linkedin: { logo: "/brand/multilink/linkedin.png", text: "in", icon: "text", brand: "LinkedIn", background: "#0a66c2", color: "#ffffff", border: "#0a66c2" },
     custom_link: { text: "Link", icon: "link", brand: "Custom link", background: "#ffffff", color: "#17211f", border: "#dfe7e3" },
-    review: { text: "G", icon: "google", brand: "Review", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
-    social: { text: "f", icon: "facebook", brand: "Social", background: "#1877f2", color: "#ffffff", border: "#1877f2" },
+    review: { logo: "/brand/multilink/google.png", text: "G", icon: "google", brand: "Review", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
+    social: { logo: "/brand/multilink/facebook.png", text: "f", icon: "facebook", brand: "Social", background: "#1877f2", color: "#ffffff", border: "#1877f2" },
     booking: { text: "Cal", icon: "calendar", brand: "Booking", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
     custom: { text: "Link", icon: "link", brand: "Custom link", background: "#ffffff", color: "#17211f", border: "#dfe7e3" }
   };

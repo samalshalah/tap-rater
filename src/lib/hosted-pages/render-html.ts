@@ -50,7 +50,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       (button) => {
         const mark = getHostedButtonMark(button.iconKey ?? button.type);
         if (mark.logo) {
-          return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark tr-button-logo${mark.wide ? " tr-button-logo-wide" : ""}" aria-label="${escapeAttribute(mark.brand)}"><img src="${escapeAttribute(mark.logo)}" alt=""></span><span>${escapeHtml(button.label)}</span></a>`;
+          return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark tr-button-logo" aria-label="${escapeAttribute(mark.brand)}"><img src="${escapeAttribute(mark.logo)}" alt=""></span><span>${escapeHtml(button.label)}</span></a>`;
         }
         return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark" style="background:${escapeAttribute(mark.background)};border-color:${escapeAttribute(mark.border)};color:${escapeAttribute(mark.color)}" aria-label="${escapeAttribute(mark.brand)}">${hostedButtonIconSvg(mark.icon, mark.text)}</span><span>${escapeHtml(button.label)}</span></a>`;
       }
@@ -117,13 +117,11 @@ function renderShell({
     .tr-copy { margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
     .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: var(--button-text); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
-    .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 999px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
+    .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
     .tr-button-mark svg { width: 18px; height: 18px; display: block; }
     .tr-button-mark span { display: block; font-size: 0.62rem; font-weight: 700; line-height: 1; }
-    .tr-button-logo { overflow: hidden; border-radius: 9px; background: #ffffff; }
+    .tr-button-logo { overflow: hidden; background: #ffffff; border: 0; }
     .tr-button-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .tr-button-logo-wide { width: 84px; flex-basis: 84px; padding: 0 7px; }
-    .tr-button-logo-wide img { object-fit: contain; }
     .tr-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent), white 55%); outline-offset: 3px; }
     .tr-footer { margin: 28px 0 0; color: var(--muted); font-size: 0.82rem; }
   </style>

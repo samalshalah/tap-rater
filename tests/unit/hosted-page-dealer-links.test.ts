@@ -7,7 +7,7 @@ import type { HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 
 const dealerTypes = ["dealerrater", "cars_com", "cargurus", "edmunds", "autotrader", "carfax", "bbb"] as const;
 const socialTypes = ["youtube", "tiktok", "x", "linkedin"] as const;
-const typesWithLogos = ["dealerrater", "cars_com", "cargurus", "edmunds", "carfax", "youtube", "tiktok", "x", "linkedin"] as const;
+const typesWithLogos = ["google_review", "yelp", "facebook", "instagram", "whatsapp", "dealerrater", "cars_com", "cargurus", "edmunds", "autotrader", "carfax", "youtube", "tiktok", "x", "linkedin"] as const;
 
 function page(types: readonly string[]): HostedPageEditorRecord {
   return {

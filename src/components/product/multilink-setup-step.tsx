@@ -153,14 +153,14 @@ export function MultiLinkButtonMark({ type }: { type: HostedPageEditorButtonType
   const mark = getHostedButtonMark(type);
   if (mark.logo) {
     return (
-      <span className={`grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-white ${mark.wide ? "!w-20 px-1.5" : ""}`} aria-label={mark.brand}>
-        <img src={mark.logo} alt="" className={mark.wide ? "h-full w-full object-contain" : "h-full w-full object-cover"} />
+      <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-white" aria-label={mark.brand}>
+        <img src={mark.logo} alt="" className="h-full w-full object-cover" />
       </span>
     );
   }
   return (
     <span
-      className="grid h-9 w-9 shrink-0 place-items-center rounded-full border text-xs font-medium"
+      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border text-xs font-medium"
       style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
       aria-label={mark.brand}
     >
