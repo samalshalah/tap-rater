@@ -19,12 +19,16 @@ export async function POST(request:Request){
    SELECT id FROM customers WHERE id=${input.customerId}::uuid AND account_status='active'
   ), existing AS (
    SELECT id,customer_id FROM hosted_subscriptions WHERE stripe_checkout_session_id=${reference}
+  ), page_code AS (
+   -- Every page code must be registered before a page or subscription can use it.
+   INSERT INTO hosted_page_codes(code,physical_product_ref,assigned_by)
+   SELECT ${code},${reference},'admin-multilink-grant' FROM target WHERE NOT EXISTS(SELECT 1 FROM existing) RETURNING code
   ), business AS (
    INSERT INTO businesses(customer_id,business_name,status)
    SELECT id,${input.businessName},'active' FROM target WHERE NOT EXISTS(SELECT 1 FROM existing) RETURNING id,customer_id
   ), page AS (
    INSERT INTO hosted_page_editor_pages(customer_id,business_id,code,lifecycle_status,draft_json)
-   SELECT customer_id,id,${code},'ACTIVE',${JSON.stringify(draft)}::jsonb FROM business RETURNING id,business_id,customer_id
+   SELECT business.customer_id,business.id,page_code.code,'ACTIVE',${JSON.stringify(draft)}::jsonb FROM business CROSS JOIN page_code RETURNING id,business_id,customer_id
   ), granted AS (
    INSERT INTO hosted_subscriptions(customer_id,business_id,hosted_page_id,stripe_checkout_session_id,stripe_subscription_id,permanent_code,hosted_page_url,status,lifecycle_status,current_period_end,cancel_at_period_end,provisioning_status)
    SELECT customer_id,business_id,id,${reference},${reference},${code},${`https://taprater.com/p/${code}`},'active','ACTIVE',${input.expiresAt}::timestamptz,${Boolean(input.expiresAt)},'ready_for_customer_setup' FROM page RETURNING id,customer_id
