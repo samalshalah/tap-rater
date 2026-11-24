@@ -1,5 +1,7 @@
 "use client";
-import {useEffect,useState} from 'react';
+import {useEffect,useId,useState} from 'react';
+import {X} from 'lucide-react';
+import {ModalDialog} from '@/components/ui/modal-dialog';
 import type {HostedPageInsights,InsightRange} from '@/lib/hosted-page-insights';
 import {supportedHostedPageButtons} from '@/lib/hosted-page-editor-shared';
 
@@ -19,7 +21,7 @@ function Bars({rows}:{rows:{label:string;value:number;note?:string}[]}){
 }
 
 function Section({title,children}:{title:string;children:React.ReactNode}){
-  return <section className="grid gap-2 rounded-lg border border-line bg-white p-3"><h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{title}</h4>{children}</section>;
+  return <section className="grid content-start gap-2 rounded-lg border border-line bg-white p-3"><h4 className="text-xs font-semibold uppercase tracking-wide text-muted">{title}</h4>{children}</section>;
 }
 
 // Page opens, taps vs scans, link clicks and stand activity for one Multi-Link page.
@@ -68,4 +70,18 @@ export function MultiLinkInsights({endpoint}:{endpoint:string}){
       <p className="text-xs text-muted">Anonymous counts only: no cookies or personal details. Firefox doesn’t report link clicks.</p>
     </>}
   </div>;
+}
+
+// Insights in a popup, opened from a Multi-Link card.
+export function MultiLinkInsightsDialog({title,endpoint,onClose}:{title:string;endpoint:string;onClose:()=>void}){
+  const headingId=useId();
+  return <ModalDialog labelledBy={headingId} onClose={onClose} className="px-3 py-2">
+    <div className="flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+      <div className="flex items-center justify-between gap-4 border-b border-line px-4 py-3">
+        <div className="min-w-0"><p className="tr-eyebrow">Multi-Link insights</p><h2 id={headingId} tabIndex={-1} data-dialog-heading className="mt-1 truncate text-base font-semibold text-ink focus:outline-none">{title}</h2></div>
+        <button type="button" onClick={onClose} className="tr-icon-button shrink-0" aria-label="Close insights"><X size={18}/></button>
+      </div>
+      <div className="min-h-0 overflow-y-auto p-3"><MultiLinkInsights endpoint={endpoint}/></div>
+    </div>
+  </ModalDialog>;
 }

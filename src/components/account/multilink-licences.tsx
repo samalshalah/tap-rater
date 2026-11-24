@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import {useId,useState} from 'react';
 import {BarChart3,Check,Circle,Copy,Download,ExternalLink,Link2,Pencil} from 'lucide-react';
-import {MultiLinkInsights} from './multilink-insights';
+import {MultiLinkInsightsDialog} from './multilink-insights';
 import {downloadQrFiles} from './qr-download';
 import type {MultiLinkLicence} from './multilink-licence-model';
 import type {Selection} from './billing-model';
@@ -78,9 +78,9 @@ function LicenceCard({licence,onEdit,onBilling}:{licence:MultiLinkLicence;onEdit
       {licence.page?<button type="button" className="tr-button-primary" onClick={onEdit}><Pencil size={15} aria-hidden="true"/>{published?'Edit links':licence.steps[0]?.done?'Review & publish':'Add your links'}</button>
         :<p className="text-sm text-muted">Your page is being prepared.</p>}
       {published&&<a href={licence.subscription.hostedPageUrl} target="_blank" rel="noreferrer" className="tr-button-ghost"><ExternalLink size={15} aria-hidden="true"/>Open page</a>}
-      <button type="button" className="tr-button-ghost" aria-expanded={insightsOpen} onClick={()=>setInsightsOpen(open=>!open)}><BarChart3 size={15} aria-hidden="true"/>{insightsOpen?'Hide insights':'Insights'}</button>
+      <button type="button" className="tr-button-ghost" aria-haspopup="dialog" onClick={()=>setInsightsOpen(true)}><BarChart3 size={15} aria-hidden="true"/>Insights</button>
       <button type="button" className="tr-button-ghost" onClick={onBilling}>Licence &amp; billing</button>
     </footer>
-    {insightsOpen&&<MultiLinkInsights endpoint={`/api/account/hosted-page/insights?code=${licence.code}`}/>}
+    {insightsOpen&&<MultiLinkInsightsDialog title={licence.heading?`${licence.name} — ${licence.heading}`:licence.name} endpoint={`/api/account/hosted-page/insights?code=${licence.code}`} onClose={()=>setInsightsOpen(false)}/>}
   </article>;
 }
