@@ -106,6 +106,19 @@ describe("browser analytics consent and dispatch", () => {
   afterEach(() => { vi.unstubAllGlobals(); });
   function grant() { client.saveBrowserConsent("granted"); client.syncAnalytics(config, () => {}); scripts[0]?.onload?.(); }
 
+  it("records the landing page before a child product effect and does not duplicate its page view", () => {
+    target.location.pathname = "/product/google-review-stand";
+    grant();
+    const stand = ecommerceData([{ item_id: "google-review-stand", item_variant: "branded_qr_direct", price: 49, quantity: 1 }]);
+    client.trackEcommerce("view_item", stand);
+    client.trackPageView();
+    expect(events().map(([, name]) => name)).toEqual(["page_view", "view_item"]);
+    target.location.pathname = "/cart";
+    client.trackEcommerce("view_cart", stand);
+    client.trackPageView();
+    expect(events().map(([, name]) => name)).toEqual(["page_view", "view_item", "page_view", "view_cart"]);
+  });
+
   it("carries a paid campaign through navigation and a return visit, then forgets it on rejection", async () => {
     const sessions = new Map<string, string>();
     vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value), removeItem: (key: string) => sessions.delete(key) });
@@ -207,7 +220,7 @@ describe("browser analytics consent and dispatch", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null)));
     grant();
     client.trackEcommerce("view_item", {currency:"USD",value:39,items:[{item_id:"google-review-stand",item_name:"private@example.com",item_variant:"standard_direct",price:39,quantity:1}]});
-    expect(events()[0][2]).toMatchObject({campaign_source:"etsy",campaign_medium:"referral",campaign_name:"shop",items:[{item_name:analyticsItemName("google-review-stand")}]});
+    expect(events().find(([, name]) => name === "view_item")?.[2]).toMatchObject({campaign_source:"etsy",campaign_medium:"referral",campaign_name:"shop",items:[{item_name:analyticsItemName("google-review-stand")}]});
     expect(JSON.stringify(commands())).not.toContain("private@example.com");
   });
   it("records the consented stand journey and links checkout while the Google tag is unavailable", async () => {
@@ -232,7 +245,7 @@ describe("browser analytics consent and dispatch", () => {
     client.trackCheckoutStep("payment_step", stand);
     client.trackCheckoutStep("add_payment_info", stand);
     const recorded = post.mock.calls.map(([, request]) => JSON.parse(request.body));
-    expect(recorded.map(event => event.name)).toEqual(["page_view", "view_item", "stand_setup_started", "stand_design_approved", "add_to_cart", "begin_checkout", "add_shipping_info", "payment_step", "add_payment_info"]);
+    expect(recorded.map(event => event.name)).toEqual(["page_view", "view_item", "stand_setup_started", "stand_design_approved", "add_to_cart", "page_view", "begin_checkout", "add_shipping_info", "payment_step", "add_payment_info"]);
     expect(recorded.at(-1)).toMatchObject({ itemId: "google-review-stand", page: "/checkout", landing: "/product/google-review-stand" });
     expect(new Set(recorded.map(event => event.sessionId))).toEqual(new Set([JSON.parse(headers["x-taprater-analytics"]).sessionId]));
     expect(events().find(([, name]) => name === "add_payment_info")?.[2]).toMatchObject({ items: [{ item_id: "google-review-stand" }], value: 49, currency: "USD" });

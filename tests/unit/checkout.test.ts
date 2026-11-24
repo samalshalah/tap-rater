@@ -739,6 +739,22 @@ describe("Stripe checkout helpers", () => {
     ]);
   });
 
+  it("keeps Stripe parameters identical when retrying the same checkout attempt", () => {
+    const cart = validateCheckoutCart([configuredCustomItem], migratedProducts);
+    if (!cart.ok) throw new Error(cart.message);
+    const input = { cart, customer: checkoutCustomer, shippingAddress: checkoutShippingAddress,
+      siteUrl: "https://taprater.com", idempotencyKey: "checkout-repeat-attempt-123" };
+    expect(createCheckoutSessionParams(input)).toEqual(createCheckoutSessionParams(input));
+  });
+
+  it("preserves the payment methods enabled in Stripe in live and test mode", () => {
+    const cart = validateCheckoutCart([configuredCustomItem], migratedProducts);
+    if (!cart.ok) throw new Error(cart.message);
+    const input = { cart, siteUrl: "https://taprater.com" };
+    expect(createCheckoutSessionParams({ ...input, stripeMode: "live" }).payment_method_configuration).toBeUndefined();
+    expect(createCheckoutSessionParams({ ...input, stripeMode: "test" }).payment_method_configuration).toBeUndefined();
+  });
+
   it("creates embedded Checkout Session params with dynamic price_data and mode metadata", () => {
     const result = validateCheckoutCart([configuredCustomItem], migratedProducts);
 

@@ -76,7 +76,7 @@ export function StripePaymentForm({ analytics }: { analytics?: EcommerceData }) 
               name: "never",
               email: "never",
               phone: "never",
-              address: "never",
+              address: "auto",
             },
           },
         }}

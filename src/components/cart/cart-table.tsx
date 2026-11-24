@@ -32,7 +32,7 @@ export function CartTable({
   stripeCheckoutEnabled?: boolean;
   taxSettings: TaxSettingsInput;
 }) {
-  const { clearCart, decreaseItem, increaseItem, items, removeItem } = useCart();
+  const { clearCart, decreaseItem, increaseItem, items, removeItem, storageUnavailable } = useCart();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
@@ -147,6 +147,7 @@ export function CartTable({
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="tr-card grid gap-0 p-4 sm:p-6">
+        {storageUnavailable ? <p role="status" className="mb-4 rounded-md border border-line bg-soft p-3 text-sm text-ink">Your browser could not save this cart. Keep this tab open until you finish checkout.</p> : null}
         <CartItemList rows={rows} decreaseItem={decreaseItem} increaseItem={increaseItem} removeItem={removeItem} />
         {offers.enabled ? (
           <aside className="rounded-xl border border-brand/20 bg-brand/5 p-4 text-sm">

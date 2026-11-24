@@ -32,6 +32,7 @@ let activeConfig: AnalyticsConfig = {
 let loadedId: string | null = null;
 let tagReady = false;
 let enabled = false;
+let lastTrackedPage: string | null = null;
 let entry: { path: string; attribution: Attribution } | null = null;
 let entryPending = false;
 type Visit = {
@@ -123,9 +124,13 @@ export function trackCheckoutStep(
   name: CheckoutAnalyticsEvent,
   data?: EcommerceData,
 ) {
-  if (!analyticsAvailable()) return false;
-  sendEvent(name, data);
-  return true;
+  try {
+    if (!analyticsAvailable()) return false;
+    sendEvent(name, data);
+    return true;
+  } catch {
+    return false;
+  }
 }
 export async function checkoutAnalyticsHeaders(): Promise<
   Record<string, string>
@@ -207,6 +212,7 @@ export function saveBrowserConsent(choice: ConsentChoice) {
   }
   forcedDenied = true;
   enabled = false;
+  lastTrackedPage = null;
   if (!tagReady) discardPendingEvents();
   if (loadedId)
     (window as unknown as AnalyticsWindow)[`ga-disable-${loadedId}`] = true;
@@ -296,6 +302,7 @@ export function syncAnalytics(config: AnalyticsConfig, onTagReady: () => void = 
   if (id) target[`ga-disable-${id}`] = !permitted;
   if (loadedId && loadedId !== id) target[`ga-disable-${loadedId}`] = true;
   if (!permitted || !id) {
+    lastTrackedPage = null;
     if (browserConsent() !== "granted" && !tagReady) discardPendingEvents();
     if (loadedId)
       command("consent", "update", {
@@ -360,7 +367,10 @@ export function syncAnalytics(config: AnalyticsConfig, onTagReady: () => void = 
 
 export function trackPageView() {
   if (!analyticsAvailable()) return false;
+  const path = analyticsPage(window.location.pathname)!.path;
+  if (lastTrackedPage === path) return true;
   sendEvent("page_view");
+  lastTrackedPage = path;
   return true;
 }
 
@@ -372,6 +382,9 @@ export function trackEcommerce(name: EcommerceEvent, data: EcommerceData) {
 }
 
 function sendEvent(name: string, data?: EcommerceData) {
+  // Child commerce effects can run before the provider's page-view effect.
+  // Start the page first so GA4 can place commerce events in its ordered funnel.
+  if (name !== "page_view") trackPageView();
   const itemIds = new Set(data?.items.map(({ item_id }) => item_id));
   if (!itemIds.size) recordJourney(name);
   for (const itemId of itemIds) recordJourney(name, itemId);

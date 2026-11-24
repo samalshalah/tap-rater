@@ -23,6 +23,7 @@ type CartContextValue = {
   removeItem: (productId: string) => void;
   clearCart: () => void;
   count: number;
+  storageUnavailable: boolean;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -30,10 +31,15 @@ const CartContext = createContext<CartContextValue | null>(null);
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isRestored, setIsRestored] = useState(false);
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
   const currentItems = useRef<CartItem[]>([]);
 
   useEffect(() => {
-    currentItems.current = parseStoredCart(window.localStorage.getItem(cartStorageKey));
+    try {
+      currentItems.current = parseStoredCart(window.localStorage.getItem(cartStorageKey));
+    } catch {
+      setStorageUnavailable(true);
+    }
     setItems(currentItems.current);
     setIsRestored(true);
   }, []);
@@ -43,12 +49,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    window.localStorage.setItem(cartStorageKey, JSON.stringify(items));
+    try {
+      window.localStorage.setItem(cartStorageKey, JSON.stringify(items));
+      setStorageUnavailable(false);
+    } catch {
+      // Keep the in-memory cart usable when storage is blocked or full.
+      setStorageUnavailable(true);
+    }
   }, [isRestored, items]);
 
   const value = useMemo<CartContextValue>(
     () => ({
       items,
+      storageUnavailable,
       count: items.reduce((sum, item) => sum + item.quantity, 0),
       addItem: (item) => changeItems(mergeCartItem(currentItems.current, item)),
       decreaseItem: (productId) => changeItems(updateCartQuantity(currentItems.current, productId, -1)),
@@ -56,7 +69,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeItem: (productId) => changeItems(removeCartItem(currentItems.current, productId)),
       clearCart: () => { currentItems.current = []; setItems([]); }
     }),
-    [items]
+    [items, storageUnavailable]
   );
 
   function changeItems(next: CartItem[]) {
@@ -64,13 +77,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     currentItems.current = next;
     setItems(next);
     // User actions only: restoration and clearing a paid cart are not cart-removal events.
-    for (const item of next) {
-      const quantity = item.quantity - (before.find((old) => getCartItemKey(old) === getCartItemKey(item))?.quantity ?? 0);
-      if (quantity > 0) trackEcommerce("add_to_cart", ecommerceData(cartAnalyticsItems([{ ...item, quantity }])));
-    }
-    for (const item of before) {
-      const quantity = item.quantity - (next.find((entry) => getCartItemKey(entry) === getCartItemKey(item))?.quantity ?? 0);
-      if (quantity > 0) trackEcommerce("remove_from_cart", ecommerceData(cartAnalyticsItems([{ ...item, quantity }])));
+    try {
+      for (const item of next) {
+        const quantity = item.quantity - (before.find((old) => getCartItemKey(old) === getCartItemKey(item))?.quantity ?? 0);
+        if (quantity > 0) trackEcommerce("add_to_cart", ecommerceData(cartAnalyticsItems([{ ...item, quantity }])));
+      }
+      for (const item of before) {
+        const quantity = item.quantity - (next.find((entry) => getCartItemKey(entry) === getCartItemKey(item))?.quantity ?? 0);
+        if (quantity > 0) trackEcommerce("remove_from_cart", ecommerceData(cartAnalyticsItems([{ ...item, quantity }])));
+      }
+    } catch {
+      // Optional measurement must not interrupt a cart action or navigation.
     }
   }
 

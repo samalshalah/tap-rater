@@ -437,6 +437,7 @@ const checkoutRouteDependencies: CheckoutRouteDependencies = {
     const params=createCheckoutSessionParams({
         cart,
         customer,
+        idempotencyKey,
         shippingAddress,
         siteUrl,
         stripeCustomerId,
