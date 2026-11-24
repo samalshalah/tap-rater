@@ -41,6 +41,7 @@ const StripePaymentPanel = dynamic(() => import('./stripe-payment-panel').then(m
 
 import {CheckoutDetailsForm} from './checkout-details-form';
 import type {CustomerForm,ShippingForm} from './checkout-details-types';
+import { readCheckoutStorage, saveCheckoutStorage } from "@/lib/checkout-browser-storage";
 
 type EmbeddedCheckoutSession = {
   clientSecret: string;
@@ -187,7 +188,7 @@ export function EmbeddedCheckoutClient({
 
   useEffect(() => {
     if (!sessionId) return;
-    const stored = window.sessionStorage.getItem(
+    const stored = readCheckoutStorage(
       `taprater:embedded-checkout:${sessionId}`,
     );
 
@@ -304,14 +305,14 @@ export function EmbeddedCheckoutClient({
           ? `taprater:branded-checkout-attempt:${reservations.join(":")}:${marketing ? `${marketing.cadence}:${marketing.locations}` : 'stand-only'}`
           : undefined;
         checkoutAttemptId.current =
-          (attemptKey ? window.sessionStorage.getItem(attemptKey) : null) ||
+          (attemptKey ? readCheckoutStorage(attemptKey) : null) ||
           createCheckoutAttemptId();
         if (attemptKey)
-          window.sessionStorage.setItem(attemptKey, checkoutAttemptId.current);
+          saveCheckoutStorage(attemptKey, checkoutAttemptId.current);
       }
 
       trackCheckoutStep("add_shipping_info", checkoutAnalytics);
-      const analyticsHeaders = await checkoutAnalyticsHeaders();
+      const analyticsHeaders = await checkoutAnalyticsHeaders().catch(() => ({}));
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...analyticsHeaders },
@@ -350,11 +351,11 @@ export function EmbeddedCheckoutClient({
         sessionId: body.sessionId,
         createdAt: Date.now(),
       };
-      window.sessionStorage.setItem(
+      const saved = saveCheckoutStorage(
         `taprater:embedded-checkout:${body.sessionId}`,
         JSON.stringify(nextSession),
       );
-      window.history.replaceState(
+      if (saved) window.history.replaceState(
         null,
         "",
         `/checkout?session_id=${encodeURIComponent(body.sessionId)}`,

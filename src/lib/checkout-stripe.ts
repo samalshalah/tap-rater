@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { createHash } from "node:crypto";
 import { getDefaultShippingSettings, type ShippingSettingsInput } from "@/lib/shipping-settings";
 import { resolveCheckoutShippingRule } from "@/lib/shipping-rules";
 import { getCheckoutTaxableAmountCents, getCheckoutTaxAmountCents } from "@/lib/tax-rules";
@@ -150,6 +151,7 @@ export function createCheckoutSessionParams({
   shippingAddress,
   siteUrl,
   stripeCustomerId,
+  idempotencyKey,
   stripeMode = getStripeMode(),
   shippingSettings = getDefaultShippingSettings(),
   taxSettings = getDefaultTaxSettings()
@@ -159,6 +161,7 @@ export function createCheckoutSessionParams({
   shippingAddress?: CheckoutShippingAddressInput;
   siteUrl: string;
   stripeCustomerId?: string | null;
+  idempotencyKey?: string;
   stripeMode?: StripeMode;
   shippingSettings?: ShippingSettingsInput;
   taxSettings?: TaxSettingsInput;
@@ -181,7 +184,7 @@ export function createCheckoutSessionParams({
   return {
     mode: cart.checkoutMode,
     ui_mode: "elements",
-    integration_identifier: createStripeIntegrationIdentifier(),
+    integration_identifier: createStripeIntegrationIdentifier(idempotencyKey),
     line_items: buildStripeCheckoutLineItems(cart.rows, shippingRule.amountCents, taxAmountCents, taxSettings.taxLabel),
     return_url: `${normalizedSiteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
     ...(stripeCustomerId ? { customer: stripeCustomerId } : customer?.email ? { customer_email: customer.email } : {}),
@@ -222,8 +225,10 @@ export function createCheckoutSessionParams({
   };
 }
 
-function createStripeIntegrationIdentifier() {
-  return `taprater_checkout_${crypto.randomUUID().replaceAll("-", "").slice(0, 8)}`;
+function createStripeIntegrationIdentifier(idempotencyKey?: string) {
+  // Stripe rejects a retry if any parameter changes under the same key.
+  const suffix = createHash("sha256").update(idempotencyKey ?? crypto.randomUUID()).digest("hex").slice(0, 8);
+  return `taprater_checkout_${suffix}`;
 }
 
 export function isStripeTestSecretKey(value: string | undefined) {
