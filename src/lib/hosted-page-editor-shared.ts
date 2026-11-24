@@ -24,9 +24,30 @@ export type HostedPageEditorButtonType =
   | "x"
   | "linkedin"
   | "custom_link";
+// Car-brand (OEM) colours for the button outline. Buttons are always very light gray.
+export const hostedPageBrandColors = [
+  { value: "#6b7280", label: "Neutral gray" },
+  { value: "#eb0a1e", label: "Toyota" },
+  { value: "#1a1a1a", label: "Lexus, Mercedes-Benz, Mazda (black)" },
+  { value: "#cc0000", label: "Honda, GMC" },
+  { value: "#003478", label: "Ford" },
+  { value: "#cd9834", label: "Chevrolet" },
+  { value: "#c3002f", label: "Nissan" },
+  { value: "#002c5f", label: "Hyundai" },
+  { value: "#05141f", label: "Kia" },
+  { value: "#013c74", label: "Subaru" },
+  { value: "#001e50", label: "Volkswagen" },
+  { value: "#1c69d4", label: "BMW" },
+  { value: "#bb0a30", label: "Audi" },
+  { value: "#e60012", label: "Mitsubishi" },
+  { value: "#003057", label: "Volvo" }
+] as const;
+// Earlier accent choices stay valid so existing pages keep working.
+export const hostedPageLegacyAccentColors = ["#0f766e", "#1d4ed8", "#7c3aed", "#be123c", "#e5e7eb"] as const;
+export type HostedPageAccentColor = (typeof hostedPageBrandColors)[number]["value"] | (typeof hostedPageLegacyAccentColors)[number];
 export type HostedPageEditorAppearance = {
   theme: "light" | "warm" | "bold";
-  accentColor: "#0f766e" | "#1d4ed8" | "#7c3aed" | "#be123c" | "#e5e7eb" | "#6b7280";
+  accentColor: HostedPageAccentColor;
   logoAlign?: "left" | "center" | "right";
   textAlign?: "left" | "center" | "right";
 };

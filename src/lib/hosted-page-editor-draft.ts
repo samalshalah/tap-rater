@@ -1,11 +1,11 @@
-import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorAppearance, type HostedPageEditorButton, type HostedPageEditorButtonType, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
+import { getHostedButtonMark, hostedPageBrandColors, hostedPageButtonLimit, hostedPageLegacyAccentColors, supportedHostedPageButtons, type HostedPageEditorAppearance, type HostedPageEditorButton, type HostedPageEditorButtonType, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 import { isSafePublicUrl, renderHostedPageHtml, resolveHostedPageLifecycle, validateHostedPageSnapshot, type HostedPageSnapshot } from "@/lib/hosted-pages/snapshots";
 
 const supportedButtonTypes = new Set(supportedHostedPageButtons.map((button) => button.type));
 
 const supportedThemes = new Set(["light", "warm", "bold"]);
 
-const supportedAccentColors = new Set(["#0f766e", "#1d4ed8", "#7c3aed", "#be123c", "#e5e7eb", "#6b7280"]);
+const supportedAccentColors = new Set<string>([...hostedPageBrandColors.map((color) => color.value), ...hostedPageLegacyAccentColors]);
 
 const supportedAlignments = new Set(["left", "center", "right"]);
 
@@ -74,7 +74,7 @@ export function validateHostedPageEditorDraft(input: unknown): HostedPageEditorD
   const buttons = buttonsRaw.map(normalizeButton).sort((a, b) => a.position - b.position);
   const appearanceRecord = readRecord(value.appearance);
   const themeValue = appearanceRecord.theme ?? "light";
-  const accentValue = appearanceRecord.accentColor ?? "#0f766e";
+  const accentValue = appearanceRecord.accentColor ?? "#6b7280";
   const logoAlignValue = appearanceRecord.logoAlign ?? "center";
   const textAlignValue = appearanceRecord.textAlign ?? "center";
   if (!supportedThemes.has(String(themeValue))) throw new HostedPageEditorError("Unsupported page style.", 400);

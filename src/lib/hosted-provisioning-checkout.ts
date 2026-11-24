@@ -193,7 +193,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           headline,
           buttons: buildSnapshotButtons(initialButtons),
           description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
-          appearance: { theme: "light", accentColor: "#0f766e" },
+          appearance: { theme: "light", accentColor: "#6b7280" },
           subscriptionPaidThrough: itemPaidThrough ?? undefined,
           subscriptionPastDueSince: pastDueSince ?? undefined
         }));

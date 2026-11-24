@@ -121,7 +121,7 @@ export function buildInitialDraft(businessName: string, logoUrl?: string, button
     logoUrl,
     headline: headline || businessName,
     description: buttons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
-    appearance: { theme: "light" as const, accentColor: "#0f766e" as const },
+    appearance: { theme: "light" as const, accentColor: "#6b7280" as const },
     buttons
   };
 }

@@ -30,6 +30,7 @@ return (<div className="tr-card grid gap-2 p-3">
             <div>
               <p className="tr-eyebrow">Buttons / links</p>
               <h2 className="tr-card-title mt-1">Your Links</h2>
+              <p className="mt-1 text-xs text-muted">Add 1 to {hostedPageButtonLimit} links. One link with a web address is enough to publish.</p>
               {missingUrls>0?<p className="mt-1 text-xs text-amber-800">{missingUrls} of {draft.buttons.length} link{draft.buttons.length===1?"":"s"} need{missingUrls===1?"s":""} a web address. Links without one stay hidden on your page.</p>:null}
             </div>
             <button

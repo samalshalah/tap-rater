@@ -1,5 +1,5 @@
 "use client";
-import type { HostedPageEditorDraft } from "@/lib/hosted-page-editor-shared";
+import { hostedPageBrandColors, type HostedPageEditorDraft } from "@/lib/hosted-page-editor-shared";
 
 export function HostedPageStyleFields({draft, updateDraft}:{draft:HostedPageEditorDraft; updateDraft:(draft:HostedPageEditorDraft)=>void;}){
 
@@ -17,15 +17,12 @@ return (<div className="tr-card grid gap-2 p-3">
               </select>
             </label>
             <label className="grid gap-1.5 text-sm font-medium text-ink">
-              Accent
+              Brand colour
               <select className="tr-input min-h-10 px-3 py-2" value={draft.appearance.accentColor} onChange={(event) => updateDraft({ ...draft, appearance: { ...draft.appearance, accentColor: event.target.value as HostedPageEditorDraft["appearance"]["accentColor"] } })}>
-                <option value="#0f766e">Teal</option>
-                <option value="#1d4ed8">Blue</option>
-                <option value="#7c3aed">Violet</option>
-                <option value="#be123c">Rose</option>
-                <option value="#e5e7eb">Light gray</option>
-                <option value="#6b7280">Gray</option>
+                {hostedPageBrandColors.some((color) => color.value === draft.appearance.accentColor) ? null : <option value={draft.appearance.accentColor}>Current colour</option>}
+                {hostedPageBrandColors.map((color) => <option key={color.value} value={color.value}>{color.label}</option>)}
               </select>
+              <span className="flex items-center gap-2 text-xs font-normal text-muted"><span aria-hidden="true" className="inline-block h-4 w-8 rounded border-[1.5px] bg-[#f4f5f7]" style={{ borderColor: draft.appearance.accentColor }} />Buttons are light gray with this colour as the outline.</span>
             </label>
           </div>
         </div>);

@@ -251,7 +251,7 @@ function createDefaultLocalStore(): LocalHostedPageEditorStore {
     businessName: "Tap Rater Hosted QA",
     headline: "Choose your next step",
     description: "QA hosted page draft.",
-    appearance: { theme: "light", accentColor: "#0f766e" },
+    appearance: { theme: "light", accentColor: "#6b7280" },
     buttons: [
       { id: "google-review", type: "google_review", label: "Google Review", url: "https://example.com/google-review", enabled: true, position: 0 },
       { id: "website", type: "website", label: "Website", url: "https://example.com", enabled: true, position: 1 },

@@ -24,7 +24,7 @@ export async function POST(request:Request){
  if(input.standSlug&&!stand)return NextResponse.json({error:'Choose a Multi-Link stand.'},{status:400,headers});
  // The chosen stand sets the page heading and shows on the client's licence card.
  const productRef=stand?grantedStandReference(stand.slug,input.requestId):reference;
- const draft=validateHostedPageEditorDraft({businessName:input.businessName,headline:stand?.headline,buttons:[],appearance:{theme:'light',accentColor:'#0f766e'}});
+ const draft=validateHostedPageEditorDraft({businessName:input.businessName,headline:stand?.headline,buttons:[],appearance:{theme:'light',accentColor:'#6b7280'}});
  try{
   const sql=liveDb();
   const rows=await sql`WITH target AS (

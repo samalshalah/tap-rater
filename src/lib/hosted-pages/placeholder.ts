@@ -39,7 +39,7 @@ export async function ensureHostedPagePlaceholder(storage: HostedPageTextStorage
     logoUrl: input.logoUrl,
     headline: input.headline || input.businessName,
     buttons: [],
-    appearance: { theme: "light", accentColor: "#0f766e" }
+    appearance: { theme: "light", accentColor: "#6b7280" }
   }));
   return "published";
 }

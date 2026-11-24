@@ -108,7 +108,7 @@ function renderShell({
   <meta name="robots" content="noindex">
   <title>${stripTags(title)}</title>
   <style>
-    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; --button-text: ${buttonText}; --shadow: ${themeTokens.shadow}; }
+    :root { color-scheme: ${themeTokens.colorScheme}; --accent: ${accent}; --ink: ${themeTokens.ink}; --muted: ${themeTokens.muted}; --line: ${themeTokens.line}; --soft: ${themeTokens.soft}; --card: ${themeTokens.card}; --button-bg: ${themeTokens.buttonBg}; --button-text: ${buttonText}; --shadow: ${themeTokens.shadow}; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--soft); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     main { width: min(100%, 560px); padding: 24px; }
@@ -118,7 +118,7 @@ function renderShell({
     h1 { margin: 0; font-size: clamp(1.75rem, 8vw, 2.5rem); line-height: 1.1; letter-spacing: 0; }
     .tr-copy { margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.65; }
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
-    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 8px; background: var(--accent); color: var(--button-text); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
+    .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 10px; background: var(--button-bg); color: var(--ink); border: 1.5px solid var(--accent); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
     .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
     .tr-button-mark svg { width: 18px; height: 18px; display: block; }
     .tr-button-mark span { display: block; font-size: 0.62rem; font-weight: 700; line-height: 1; }
@@ -163,6 +163,7 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
       line: "#eadfd6",
       soft: "#fbf6f0",
       card: "#fffaf5",
+      buttonBg: "#f7f2ec",
       buttonText: "#ffffff",
       shadow: "0 18px 50px rgba(80, 45, 17, 0.12)"
     };
@@ -177,6 +178,7 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
       line: "#334155",
       soft: "#0f172a",
       card: "#111827",
+      buttonBg: "#1f2937",
       buttonText: "#061311",
       shadow: "0 18px 50px rgba(0, 0, 0, 0.28)"
     };
@@ -190,6 +192,7 @@ function getThemeTokens(theme: HostedPageAppearance["theme"] | undefined) {
     line: "#dfe7e3",
     soft: "#f6f8f6",
     card: "#ffffff",
+    buttonBg: "#f4f5f7",
     buttonText: "#ffffff",
     shadow: "0 18px 50px rgba(23, 33, 31, 0.08)"
   };
