@@ -135,7 +135,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
 
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["Destination", "Links", "Logo", "Preview"]
+      ? ["Destination", "Logo", "Links", "Preview"]
       : selectedLinkExperience === "multilink"
         ? ["Business", "Links", "Confirm"]
         : selectedOption.id === "branded_qr_direct"
@@ -153,7 +153,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
 
   const stepOrder: SetupStep[] =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["destination", "links", "design", "confirmation"]
+      ? ["destination", "design", "links", "confirmation"]
       : selectedLinkExperience === "multilink"
         ? ["destination", "links", "review"]
         : selectedOption.id === "branded_qr_direct"

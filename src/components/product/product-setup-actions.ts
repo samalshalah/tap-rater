@@ -176,7 +176,7 @@ export function createProductSetupActions({
         return;
       } finally { setIsReservingDestination(false); }
     }
-    setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "review");
+    setStep(selectedOption.id === "branded_qr_direct" ? "design" : selectedLinkExperience === "multilink" ? "links" : "review");
   }
 
   function continueFromMultiLinkLinks({ skip = false }: { skip?: boolean } = {}) {
@@ -192,7 +192,7 @@ export function createProductSetupActions({
       }
     }
 
-    setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
+    setStep(selectedOption.id === "branded_qr_direct" ? "confirmation" : "review");
   }
 
   async function uploadLogo(file: File | undefined) {
@@ -229,7 +229,7 @@ export function createProductSetupActions({
       return;
     }
 
-    setStep("confirmation");
+    setStep(selectedLinkExperience === "multilink" ? "links" : "confirmation");
   }
 
   function continueFromProof() {
@@ -246,7 +246,7 @@ export function createProductSetupActions({
   function goToPreviousStep() {
     setError("");
     if (step === "confirmation") {
-      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "review");
+      setStep(selectedOption.id !== "branded_qr_direct" ? "review" : selectedLinkExperience === "multilink" ? "links" : "design");
       return;
     }
 
@@ -256,12 +256,12 @@ export function createProductSetupActions({
     }
 
     if (step === "design") {
-      setStep(selectedLinkExperience === "multilink" ? "links" : "destination");
+      setStep("destination");
       return;
     }
 
     if (step === "links") {
-      setStep("destination");
+      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination");
     }
   }
 

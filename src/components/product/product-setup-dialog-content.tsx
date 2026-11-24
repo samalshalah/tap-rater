@@ -136,6 +136,8 @@ export function ProductSetupDialogContent({
                   selectedQuantity={selectedQuantity}
                   standQuote={standQuote}
                   configuredUnitPriceCents={configuredUnitPriceCents}
+                  multiLinkButtons={multiLinkButtons}
+                  setMultiLinkButtons={setMultiLinkButtons}
                 /> : null}
 
               {step === "links" && selectedLinkExperience === "multilink" ? (
@@ -151,7 +153,7 @@ export function ProductSetupDialogContent({
                   <div>
                     <p className="text-sm font-semibold text-ink">Stand design</p>
                     <p className="mt-1 text-sm leading-6 text-muted">
-                      Upload your logo. You can also print your business name.
+                      {selectedLinkExperience === "multilink" ? "Upload your logo. It goes on your stand and at the top of your Multi-Link page." : "Upload your logo. You can also print your business name."}
                     </p>
                   </div>
 
@@ -267,7 +269,7 @@ export function ProductSetupDialogContent({
                 </button>
                 {step === "destination" ? (
                   <button type="button" className="tr-button-primary" disabled={isReservingDestination} onClick={continueFromDestination}>
-                    {isReservingDestination ? "Reserving destination..." : selectedLinkExperience === "multilink" && selectedOption.hasQr && !hostedReservation ? "Generate page QR" : selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                    {isReservingDestination ? "Reserving destination..." : selectedLinkExperience === "multilink" && selectedOption.hasQr && !hostedReservation ? "Generate page QR" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : selectedLinkExperience === "multilink" ? "Continue to links" : "Review setup"}
                   </button>
                 ) : null}
                 {step === "links" ? (
@@ -276,13 +278,13 @@ export function ProductSetupDialogContent({
                       Skip for later
                     </button>
                     <button type="button" className="tr-button-primary" onClick={() => continueFromMultiLinkLinks()}>
-                      {selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
+                      {selectedOption.id === "branded_qr_direct" ? "Preview stand" : "Review setup"}
                     </button>
                   </div>
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
-                    Preview stand
+                    {selectedLinkExperience === "multilink" ? "Continue to links" : "Preview stand"}
                   </button>
                 ) : null}
                 {step === "review" && selectedOption.id !== "branded_qr_direct" ? (

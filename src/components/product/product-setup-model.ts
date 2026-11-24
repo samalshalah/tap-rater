@@ -147,3 +147,11 @@ export function isHttpUrl(value: string) {
     return false;
   }
 }
+
+/** Puts a Google review link on the page's Google button, adding one at the top if there is none. */
+export function applyGoogleReviewUrl(buttons: MultiLinkDraftButton[], url: string): MultiLinkDraftButton[] {
+  const index = buttons.findIndex((button) => button.type === "google_review");
+  if (index >= 0) return buttons.map((button, i) => (i === index ? { ...button, url, enabled: true } : button));
+  if (buttons.length >= hostedPageButtonLimit) return buttons;
+  return [createMultiLinkButton("google_review", 0), ...buttons].map((button, position) => (position === 0 ? { ...button, url } : { ...button, position }));
+}

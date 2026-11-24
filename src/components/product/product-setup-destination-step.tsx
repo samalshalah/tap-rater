@@ -3,8 +3,9 @@
 import { ExternalLink, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { ProductSetupDialogProps } from "./product-setup-dialog-types";
-import { isHttpUrl } from "./product-setup-model";
+import { applyGoogleReviewUrl, isHttpUrl } from "./product-setup-model";
 import { BuilderSummary } from "./product-setup-summary";
+import { MultiLinkBusinessSearch } from "./multilink-business-search";
 
 const QrPreview = dynamic(() => import("./qr-preview").then(m => m.QrPreview));
 
@@ -31,6 +32,8 @@ type DestinationStepProps = Pick<ProductSetupDialogProps,
   | "selectedQuantity"
   | "standQuote"
   | "configuredUnitPriceCents"
+  | "multiLinkButtons"
+  | "setMultiLinkButtons"
 >;
 
 export function ProductSetupDestinationStep({
@@ -55,7 +58,9 @@ export function ProductSetupDestinationStep({
   product,
   selectedQuantity,
   standQuote,
-  configuredUnitPriceCents
+  configuredUnitPriceCents,
+  multiLinkButtons,
+  setMultiLinkButtons
 }: DestinationStepProps) {
   return <div className="grid gap-4">
                   {selectedLinkExperience === "multilink" ? (
@@ -63,21 +68,15 @@ export function ProductSetupDestinationStep({
                       <div>
                         <p className="text-sm font-semibold text-ink">Multi-Link page</p>
                         <p className="mt-1 text-sm leading-6 text-muted">
-                          Enter the business or page name for the hosted Tap Rater page. You can add and edit the links after checkout.
+                          Find your business on Google. Its name goes on your page and its review link is added for you. You can edit the links after checkout too.
                         </p>
                       </div>
 
-                      <label className="grid gap-2 text-sm font-semibold text-ink">
-                        Business or page name
-                        <input
-                          className="tr-input"
-                          value={businessName}
-                          onChange={(event) => {
-                            setBusinessName(event.target.value);
-                          }}
-                          placeholder="Your business name"
-                        />
-                      </label>
+                      <MultiLinkBusinessSearch
+                        businessName={businessName}
+                        setBusinessName={setBusinessName}
+                        onPickGoogleReview={(reviewUrl) => setMultiLinkButtons(applyGoogleReviewUrl(multiLinkButtons, reviewUrl))}
+                      />
 
                       <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
                         {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page."}

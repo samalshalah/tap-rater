@@ -1,9 +1,16 @@
 "use client";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
-import { CalendarDays, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Search, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { GoogleReviewLinkFinder } from "@/components/account/google-review-link-finder";
 import type { MultiLinkDraftButton } from "./product-setup-chooser-types";
 import { createMultiLinkButtonId, formatPreviewUrl, getHostedButtonLabel } from "./product-setup-model";
+
+// Every link shows its standard name (Google Review, Website…); only a plain custom link is named by hand.
+function hasStandardName(type: HostedPageEditorButtonType) {
+  return type !== "custom_link";
+}
+
 export function MultiLinkSetupStep({
   businessName,
   buttons,
@@ -14,10 +21,11 @@ export function MultiLinkSetupStep({
   onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
 }) {
   const [logoPickerFor, setLogoPickerFor] = useState<string | null>(null);
+  const [finderFor, setFinderFor] = useState<string | null>(null);
   const previewButtons = buttons
     .map((button, index) => ({
       ...button,
-      label: button.label.trim() || getHostedButtonLabel(button.type),
+      label: hasStandardName(button.type) ? getHostedButtonLabel(button.type) : button.label.trim() || getHostedButtonLabel(button.type),
       position: index
     }))
     .filter((button) => button.label || button.url.trim());
@@ -52,54 +60,72 @@ export function MultiLinkSetupStep({
         <div>
           <p className="text-sm font-semibold text-ink">Multi-Link page links</p>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Add the first links now to preview the customer page, or skip and finish them from your account after payment.
+            Add 1 to {hostedPageButtonLimit} links now to preview the customer page, or skip and finish them from your account after payment.
           </p>
         </div>
 
         <div className="grid gap-3">
           {buttons.map((button, index) => (
-            <div key={button.id} className="grid gap-3 rounded-lg border border-line bg-white p-3 sm:grid-cols-[150px_minmax(0,1fr)_minmax(0,1.5fr)_auto] sm:items-end">
-              <div className="grid gap-2 text-sm font-semibold text-ink">
+            <div key={button.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-3 gap-y-2 rounded-lg border border-line bg-white p-3 sm:grid-cols-[200px_minmax(0,1fr)_auto]">
+              <div className="col-span-2 grid gap-2 text-sm font-semibold text-ink sm:col-span-1">
                 Logo
                 <button
                   type="button"
-                  className="flex min-h-11 items-center gap-2 rounded-md border border-line bg-white px-2 text-left hover:border-ink"
+                  className="flex min-h-11 w-full min-w-0 items-center gap-2 rounded-md border border-line bg-white px-2 text-left hover:border-ink"
                   aria-label={`Choose logo for link ${index + 1}`}
                   aria-expanded={logoPickerFor === button.id}
                   onClick={() => setLogoPickerFor((current) => (current === button.id ? null : button.id))}
                 >
                   <MultiLinkButtonMark type={button.type} />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{getHostedButtonLabel(button.type)}</span>
-                  <ChevronDown size={16} aria-hidden="true" />
+                  <ChevronDown size={16} className="shrink-0" aria-hidden="true" />
                 </button>
               </div>
 
-              <label className="grid gap-2 text-sm font-semibold text-ink">
-                Button label
+              <div className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
+                <span className="flex items-center justify-between gap-2">
+                  <label htmlFor={`link-url-${button.id}`}>Link URL</label>
+                  {button.type === "google_review" ? (
+                    <button type="button" className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:text-ink" aria-expanded={finderFor === button.id} onClick={() => setFinderFor((current) => (current === button.id ? null : button.id))}>
+                      <Search size={13} aria-hidden="true" />
+                      Find on Google
+                    </button>
+                  ) : null}
+                </span>
                 <input
-                  className="tr-input"
-                  value={button.label}
-                  onChange={(event) => updateButton(button.id, { label: event.target.value })}
-                  placeholder={getHostedButtonLabel(button.type)}
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-semibold text-ink">
-                Link URL
-                <input
+                  id={`link-url-${button.id}`}
                   className="tr-input"
                   type="url"
                   value={button.url}
                   onChange={(event) => updateButton(button.id, { url: event.target.value })}
-                  placeholder="https://example.com"
+                  placeholder={button.type === "google_review" ? "Find on Google or paste the review link" : "https://example.com"}
                 />
-              </label>
+              </div>
 
               <button type="button" className="tr-icon-button" onClick={() => removeButton(button.id)} aria-label={`Remove link ${index + 1}`}>
                 <Trash2 size={16} />
               </button>
+
+              {hasStandardName(button.type) ? null : (
+                <label className="col-span-2 grid gap-2 text-sm font-semibold text-ink sm:col-span-1 sm:col-start-2">
+                  Link name
+                  <input
+                    className="tr-input"
+                    value={button.label}
+                    onChange={(event) => updateButton(button.id, { label: event.target.value })}
+                    placeholder={getHostedButtonLabel(button.type)}
+                  />
+                </label>
+              )}
+
+              {finderFor === button.id ? (
+                <div className="col-span-2 grid sm:col-span-3">
+                  <GoogleReviewLinkFinder initialQuery={businessName} onPick={(url) => updateButton(button.id, { url })} onClose={() => setFinderFor(null)} />
+                </div>
+              ) : null}
+
               {logoPickerFor === button.id ? (
-                <div role="listbox" aria-label="Choose a logo" className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-soft p-2 sm:col-span-4 sm:grid-cols-3 lg:grid-cols-4">
+                <div role="listbox" aria-label="Choose a logo" className="col-span-2 grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-soft p-2 sm:col-span-3 sm:grid-cols-3 lg:grid-cols-4">
                   {supportedHostedPageButtons.map((option) => (
                     <button
                       key={option.type}
@@ -110,7 +136,8 @@ export function MultiLinkSetupStep({
                       onClick={() => {
                         const type = option.type as HostedPageEditorButtonType;
                         const previousDefaultLabel = getHostedButtonLabel(button.type);
-                        updateButton(button.id, { type, label: !button.label.trim() || button.label.trim() === previousDefaultLabel ? getHostedButtonLabel(type) : button.label });
+                        const keepCustomName = !hasStandardName(type) && button.label.trim() && button.label.trim() !== previousDefaultLabel;
+                        updateButton(button.id, { type, label: keepCustomName ? button.label : getHostedButtonLabel(type) });
                         setLogoPickerFor(null);
                       }}
                     >
