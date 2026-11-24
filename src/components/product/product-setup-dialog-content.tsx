@@ -123,7 +123,7 @@ export function ProductSetupDialogContent({
               </ol>
             </div>
 
-            <div ref={builderContentRef} className="overflow-y-auto px-4 py-3 sm:px-6">
+            <div ref={builderContentRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6">
               {step !== "destination" ? (
                 <button type="button" className="mb-3 text-sm font-semibold text-brand hover:text-ink" onClick={goToPreviousStep}>
                   Back to previous step
@@ -234,11 +234,6 @@ export function ProductSetupDialogContent({
 
               {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Your printed stand</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">This is the artwork we print on your stand (4.26 × 6.5 in).{selectedLinkExperience === "multilink" ? " Your Multi-Link page is separate." : ""} Check it, then approve it for printing.</p>
-                    <p className="mt-1 text-xs text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
-                  </div>
                   <StandDesignEditor productSlug={product.slug} setup={proofSetup} onReady={setReadyProof}
                     controls={{
                       canAutoCrop: Boolean(logo?.trimApplied), logoBackgroundMode, logoFitMode,
@@ -247,7 +242,12 @@ export function ProductSetupDialogContent({
                       onLogoOffsetXPercentChange: setLogoOffsetXPercent, onLogoOffsetYPercentChange: setLogoOffsetYPercent,
                       onProofFontSizePercentChange: setProofFontSizePercent, onProofLogoSizePercentChange: setProofLogoSizePercent,
                       showBusinessNameOnProof, isUploadingLogo, onUploadLogo: uploadLogo,
-                      footer: <div className="mt-1.5 grid gap-2 rounded-lg border border-line bg-soft p-2.5">
+                      header: <div className="mb-0.5">
+                        <p className="text-sm font-semibold text-ink">Your printed stand</p>
+                        <p className="mt-1 text-sm leading-6 text-muted">The artwork we print on your stand, 4.26 × 6.5 in.{selectedLinkExperience === "multilink" ? " Your Multi-Link page is separate." : ""}</p>
+                        <p className="mt-0.5 text-xs text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
+                      </div>,
+                      footer: <div className="grid gap-2 rounded-lg border border-line bg-soft p-2.5">
                         <p className="text-xs text-muted [overflow-wrap:anywhere]"><span className="font-semibold text-ink">QR opens:</span> {proofQrValue}</p>
                         {approvalCheckbox("hidden md:flex")}
                       </div>

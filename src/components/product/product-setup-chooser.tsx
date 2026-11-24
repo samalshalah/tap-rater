@@ -286,7 +286,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
 
       {isBuilderOpen ? (
         <ModalDialog labelledBy={builderHeadingId} onClose={closeBuilder} className="px-3 py-4 backdrop:backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden bg-white" style={{ borderRadius: "var(--tr-radius-card)", boxShadow: "var(--tr-shadow-elevated)" }}>
+          <div className="flex h-[min(92dvh,780px)] w-full max-w-5xl flex-col overflow-hidden bg-white" style={{ borderRadius: "var(--tr-radius-card)", boxShadow: "var(--tr-shadow-elevated)" }}>
             <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
               <div className="min-w-0">
                 <p className="tr-eyebrow">{product.title}</p>

@@ -4,18 +4,15 @@ import type { ReactNode } from "react";
 import type { LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
 
 // Same small square buttons as the Multi-Link link rows, so both steps look alike.
-const iconButton = "grid h-9 w-9 shrink-0 place-items-center rounded-md border border-line bg-white text-ink hover:border-brand hover:text-brand disabled:cursor-default disabled:opacity-35 disabled:hover:border-line disabled:hover:text-ink";
+const iconButton = "grid h-8 w-8 shrink-0 place-items-center rounded-md border border-line bg-white text-ink hover:border-brand hover:text-brand disabled:cursor-default disabled:opacity-35 disabled:hover:border-line disabled:hover:text-ink";
 const positionStep = 2;
 const positionLimit = 20;
 
-function ControlRow({ label, children, note }: { label: string; children: ReactNode; note?: string }) {
+function ControlRow({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
   return (
-    <div className="grid gap-1.5 rounded-lg border border-line bg-white p-2">
-      <div className="flex min-h-9 items-center justify-between gap-2">
-        <span className="text-sm font-semibold text-ink">{label}</span>
-        {children}
-      </div>
-      {note ? <p className="text-xs text-muted">{note}</p> : null}
+    <div className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-line bg-white px-2 py-1" title={hint}>
+      <span className="text-sm font-semibold text-ink">{label}</span>
+      {children}
     </div>
   );
 }
@@ -28,7 +25,7 @@ function SizeStepper({ label, value, min, max, disabled = false, onChange }: {
       <button type="button" className={iconButton} aria-label={`Decrease ${label.toLowerCase()}`} disabled={disabled || value <= min} onClick={() => onChange(Math.max(min, value - 5))}>
         <Minus size={15} aria-hidden="true" />
       </button>
-      <output aria-live="polite" className={`w-12 text-center text-sm font-semibold tabular-nums ${disabled ? "text-muted" : "text-ink"}`}>{value}%</output>
+      <output aria-live="polite" className={`w-11 text-center text-sm font-semibold tabular-nums ${disabled ? "text-muted" : "text-ink"}`}>{value}%</output>
       <button type="button" className={iconButton} aria-label={`Increase ${label.toLowerCase()}`} disabled={disabled || value >= max} onClick={() => onChange(Math.min(max, value + 5))}>
         <Plus size={15} aria-hidden="true" />
       </button>
@@ -48,7 +45,7 @@ function Choice({ label, value, options, disabled = false, onChange }: {
           disabled={disabled}
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
-          className={`h-9 rounded-md border px-2.5 text-xs font-semibold disabled:cursor-default disabled:opacity-45 ${value === option.value ? "border-ink bg-soft text-ink" : "border-line bg-white text-muted hover:border-ink hover:text-ink"}`}
+          className={`h-8 rounded-md border px-2 text-xs font-semibold disabled:cursor-default disabled:opacity-45 ${value === option.value ? "border-ink bg-soft text-ink" : "border-line bg-white text-muted hover:border-ink hover:text-ink"}`}
         >
           {option.label}
         </button>
@@ -74,6 +71,7 @@ export function ProofControls({
   proofFontSizePercent,
   proofLogoSizePercent,
   showBusinessNameOnProof,
+  header,
   footer
 }: {
   isUploadingLogo: boolean;
@@ -92,20 +90,22 @@ export function ProofControls({
   proofFontSizePercent: number;
   proofLogoSizePercent: number;
   showBusinessNameOnProof: boolean;
+  /** Shown above the controls, e.g. the step heading. */
+  header?: ReactNode;
   /** Shown at the bottom of the panel, e.g. the QR destination and the approval checkbox. */
   footer?: ReactNode;
 }) {
   const nudge = (value: number, step: number) => Math.max(-positionLimit, Math.min(positionLimit, value + step));
   const centred = logoOffsetXPercent === 0 && logoOffsetYPercent === 0;
   return (
-    <div className="grid min-w-0 content-start gap-1.5" aria-label="Print design controls">
-      <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted">Adjust the print</p>
+    <div className="grid min-w-0 content-start gap-1.5 sm:grid-cols-2" aria-label="Print design controls">
+      {header ? <div className="sm:col-span-2">{header}</div> : null}
 
       <ControlRow label="Logo size">
         <SizeStepper label="Logo size" value={proofLogoSizePercent} min={50} max={250} onChange={onProofLogoSizePercentChange} />
       </ControlRow>
 
-      <ControlRow label="Name size" note={showBusinessNameOnProof ? undefined : "Business name isn’t printed."}>
+      <ControlRow label="Name size" hint={showBusinessNameOnProof ? undefined : "Business name isn’t printed."}>
         <SizeStepper label="Name size" value={proofFontSizePercent} min={50} max={160} disabled={!showBusinessNameOnProof} onChange={onProofFontSizePercentChange} />
       </ControlRow>
 
@@ -123,11 +123,11 @@ export function ProofControls({
         <Choice label="Logo fit" value={logoFitMode} options={[{ label: "Fit", value: "contain" }, { label: "Fill", value: "fill" }]} onChange={(value) => onLogoFitModeChange(value as LogoFitMode)} />
       </ControlRow>
 
-      <ControlRow label="Background" note={canAutoCrop ? "Auto-crop removes the white around your logo." : "Your logo has no background to remove."}>
+      <ControlRow label="Background" hint={canAutoCrop ? "Auto-crop removes the white around your logo." : "Your logo has no background to remove."}>
         <Choice label="Logo background" value={logoBackgroundMode} disabled={!canAutoCrop} options={[{ label: "Auto-crop", value: "auto_crop" }, { label: "Original", value: "original" }]} onChange={(value) => onLogoBackgroundModeChange(value as LogoBackgroundMode)} />
       </ControlRow>
 
-      <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white px-3 text-sm font-semibold text-brand hover:border-brand">
+      <label className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border border-line bg-white px-2 text-sm font-semibold text-brand hover:border-brand" title="Best results: transparent PNG, 1200 px wide or larger.">
         <ImageUp size={16} aria-hidden="true" />
         {isUploadingLogo ? "Uploading…" : "Replace logo"}
         <input
@@ -142,9 +142,8 @@ export function ProofControls({
           }}
         />
       </label>
-      <p className="px-1 text-xs text-muted">Best results: transparent PNG, 1200 px wide or larger.</p>
 
-      {footer}
+      {footer ? <div className="sm:col-span-2">{footer}</div> : null}
     </div>
   );
 }
