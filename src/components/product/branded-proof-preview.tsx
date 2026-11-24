@@ -76,6 +76,6 @@ export function BrandedProofPreview({ productSlug, setup, onReady, onProblem, en
       {image && !isCurrent && !error ? <p role="status" className="absolute inset-x-0 bottom-0 bg-white/95 px-1 py-2 text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     </div>
     {error && !onProblem ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
-    <p className="text-center text-[10px] leading-4 text-muted md:text-xs">Front artwork · 4.26 × 6.50 in</p>
+    <p className="text-center text-[10px] leading-4 text-muted md:text-xs">Actual print size: 4.26 × 6.5 in (108 × 165 mm)</p>
   </div>;
 }
