@@ -85,6 +85,23 @@ export function ProductSetupDialogContent({
     builderContentRef.current.scrollTop = 0;
     builderHeadingRef.current?.focus({ preventScroll: true });
   }, [step, builderContentRef, builderHeadingRef]);
+  // One approval control, shown in the print panel on wide screens and beside Add to cart on phones.
+  const approvalCheckbox = (className: string) => <label className={`items-start gap-3 text-sm font-semibold text-ink ${className}`}>
+                  <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
+                    checked={proofIsApproved} onChange={(event) => {
+                      const receipt = event.target.checked ? readyProof?.proofReceiptId ?? "" : "";
+                      setApprovedProofId(receipt);
+                      if (receipt && configuredUnitPriceCents !== null) {
+                        trackEcommerce("stand_design_approved", ecommerceData([{
+                          item_id: product.slug,
+                          item_variant: selectedOption.id,
+                          price: configuredUnitPriceCents / 100,
+                          quantity: selectedQuantity,
+                        }]));
+                      }
+                    }} />
+                  I approve this artwork and QR destination for printing.
+                </label>;
   return <><div className="border-b border-line px-4 py-3 sm:px-6">
               <ol className={`grid gap-2 text-[10px] font-semibold uppercase text-muted sm:text-xs ${stepGridClassName}`}>
                 {stepLabels.map((label, index) => (
@@ -218,8 +235,9 @@ export function ProductSetupDialogContent({
               {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (
                 <div className="grid gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-ink">Approve your stand</p>
-                    <p className="mt-1 text-sm leading-6 text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
+                    <p className="text-sm font-semibold text-ink">Your printed stand</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">This is the artwork we print on your stand (4.26 × 6.5 in).{selectedLinkExperience === "multilink" ? " Your Multi-Link page is separate." : ""} Check it, then approve it for printing.</p>
+                    <p className="mt-1 text-xs text-muted">{showBusinessNameOnProof && `${businessName.trim()} · `}Qty {selectedQuantity} · {configuredUnitPriceCents === null ? "Price pending" : formatPrice(standQuote?.subtotalCents ?? configuredUnitPriceCents * selectedQuantity)}</p>
                   </div>
                   <StandDesignEditor productSlug={product.slug} setup={proofSetup} onReady={setReadyProof}
                     controls={{
@@ -228,10 +246,13 @@ export function ProductSetupDialogContent({
                       onLogoBackgroundModeChange: setLogoBackgroundMode, onLogoFitModeChange: setLogoFitMode,
                       onLogoOffsetXPercentChange: setLogoOffsetXPercent, onLogoOffsetYPercentChange: setLogoOffsetYPercent,
                       onProofFontSizePercentChange: setProofFontSizePercent, onProofLogoSizePercentChange: setProofLogoSizePercent,
-                      showBusinessNameOnProof, isUploadingLogo, onUploadLogo: uploadLogo
+                      showBusinessNameOnProof, isUploadingLogo, onUploadLogo: uploadLogo,
+                      footer: <div className="mt-1.5 grid gap-2 rounded-lg border border-line bg-soft p-2.5">
+                        <p className="text-xs text-muted [overflow-wrap:anywhere]"><span className="font-semibold text-ink">QR opens:</span> {proofQrValue}</p>
+                        {approvalCheckbox("hidden md:flex")}
+                      </div>
                     }}
                   />
-                  <p className="text-sm text-muted [overflow-wrap:anywhere]">QR destination: {proofQrValue}</p>
                 </div>
               ) : null}
             </div>
@@ -239,24 +260,7 @@ export function ProductSetupDialogContent({
             <div className="border-t border-line bg-white px-4 py-4 sm:px-6">
               {error ? <p className="tr-status-error mb-3" role="alert">{error}</p> : null}
               {/* Approval sits beside Add to cart so it is always visible, not below the preview. */}
-              {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? (<>
-                <label className="mb-3 flex items-start gap-3 text-sm font-semibold text-ink">
-                  <input type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-brand" disabled={!proofIsReady}
-                    checked={proofIsApproved} onChange={(event) => {
-                      const receipt = event.target.checked ? readyProof?.proofReceiptId ?? "" : "";
-                      setApprovedProofId(receipt);
-                      if (receipt && configuredUnitPriceCents !== null) {
-                        trackEcommerce("stand_design_approved", ecommerceData([{
-                          item_id: product.slug,
-                          item_variant: selectedOption.id,
-                          price: configuredUnitPriceCents / 100,
-                          quantity: selectedQuantity,
-                        }]));
-                      }
-                    }} />
-                  I approve this artwork and QR destination for printing.
-                </label>
-              </>) : null}
+              {step === "confirmation" && selectedOption.id === "branded_qr_direct" ? approvalCheckbox("mb-3 flex md:hidden") : null}
               <div className="flex items-center justify-between gap-3">
                 <button
                   type="button"
@@ -279,13 +283,13 @@ export function ProductSetupDialogContent({
                       Skip for later
                     </button>
                     <button type="button" className="tr-button-primary" onClick={() => continueFromMultiLinkLinks()}>
-                      {selectedOption.id === "branded_qr_direct" ? "Preview stand" : "Review setup"}
+                      {selectedOption.id === "branded_qr_direct" ? "See print preview" : "Review setup"}
                     </button>
                   </div>
                 ) : null}
                 {step === "design" && selectedOption.id === "branded_qr_direct" ? (
                   <button type="button" className="tr-button-primary" onClick={continueFromDesign}>
-                    {selectedLinkExperience === "multilink" ? "Continue to links" : "Preview stand"}
+                    {selectedLinkExperience === "multilink" ? "Continue to links" : "See print preview"}
                   </button>
                 ) : null}
                 {step === "review" && selectedOption.id !== "branded_qr_direct" ? (

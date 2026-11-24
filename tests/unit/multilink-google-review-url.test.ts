@@ -19,3 +19,18 @@ describe('applyGoogleReviewUrl',()=>{
     expect(applyGoogleReviewUrl(full,review)).toBe(full);
   });
 });
+
+import {normalizeMultiLinkButtonsForSetup} from '@/components/product/product-setup-model';
+describe('normalizeMultiLinkButtonsForSetup',()=>{
+  it('skips rows without a web address instead of blocking',()=>{
+    const rows=createInitialMultiLinkButtons();
+    rows[1]={...rows[1],url:'https://example.com/review'};
+    const result=normalizeMultiLinkButtonsForSetup(rows);
+    expect(result.error).toBeUndefined();
+    expect(result.buttons.map(button=>[button.type,button.position])).toEqual([['google_review',0]]);
+  });
+  it('still rejects an address that is not a web link',()=>{
+    const rows=[{...createMultiLinkButton('website',0),url:'not a link'}];
+    expect(normalizeMultiLinkButtonsForSetup(rows).error).toBe('Enter a valid URL for Multi-Link row 1.');
+  });
+});

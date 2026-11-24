@@ -98,13 +98,10 @@ export function normalizeMultiLinkButtonsForSetup(buttons: MultiLinkDraftButton[
   const normalized: MultiLinkDraftButton[] = [];
 
   for (const [index, button] of buttons.entries()) {
-    const label = button.label.trim();
     const url = button.url.trim();
-
-    if (!label && !url) continue;
-    if (!label || !url) {
-      return { buttons: [], error: `Complete or remove Multi-Link row ${index + 1}.` };
-    }
+    // Rows without a web address are simply left off the page; every link has a standard name.
+    if (!url) continue;
+    const label = button.label.trim() || getHostedButtonLabel(button.type);
     if (!isHttpUrl(url)) {
       return { buttons: [], error: `Enter a valid URL for Multi-Link row ${index + 1}.` };
     }

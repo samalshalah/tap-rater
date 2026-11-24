@@ -135,11 +135,11 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
 
   const stepLabels =
     selectedLinkExperience === "multilink" && selectedOption.id === "branded_qr_direct"
-      ? ["Destination", "Logo", "Links", "Preview"]
+      ? ["Destination", "Logo", "Links", "Print"]
       : selectedLinkExperience === "multilink"
         ? ["Business", "Links", "Confirm"]
         : selectedOption.id === "branded_qr_direct"
-          ? ["Destination", "Logo", "Preview"]
+          ? ["Destination", "Logo", "Print"]
         : ["Destination", "Confirm"];
 
   const stepGridClassName =
