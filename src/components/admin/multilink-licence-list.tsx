@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useState} from 'react';
 import type {AdminMultiLinkLicence} from '@/lib/admin-multilink-licences';
 import {downloadQrFiles} from '@/components/account/qr-download';
+import {MultiLinkInsights} from '@/components/account/multilink-insights';
 
 const sourceLabel={admin:'Granted by admin',manual:'Set up by Tap Rater',subscription:'Paid subscription'} as const;
 
@@ -13,6 +14,7 @@ export function MultiLinkLicenceList({customerId,refreshKey=0}:{customerId:strin
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
   const [qrFor,setQrFor]=useState<string|null>(null);
+  const [insightsFor,setInsightsFor]=useState<string|null>(null);
 
   async function downloadQr(code:string){
     setQrFor(code);setMessage('');
@@ -47,6 +49,7 @@ export function MultiLinkLicenceList({customerId,refreshKey=0}:{customerId:strin
           <p className="text-xs text-muted">taprater.com/p/{licence.code} · {sourceLabel[licence.source]} · {licence.published?'Published':'Not published'} · {licence.links} link{licence.links===1?'':'s'}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="tr-button-ghost" aria-expanded={insightsFor===licence.code} onClick={()=>setInsightsFor(current=>current===licence.code?null:licence.code)}>{insightsFor===licence.code?'Hide insights':'Insights'}</button>
         <button type="button" className="tr-button-ghost" disabled={qrFor===licence.code} onClick={()=>downloadQr(licence.code)}>{qrFor===licence.code?'Preparing…':'Download QR'}</button>
         {licence.removable
           ?confirming===licence.code
@@ -55,6 +58,7 @@ export function MultiLinkLicenceList({customerId,refreshKey=0}:{customerId:strin
           :<span className="text-xs text-muted">{licence.blockedReason}</span>}
         </div>
       </div>
+      {insightsFor===licence.code&&<div className="mt-3"><MultiLinkInsights endpoint={`/api/admin/multilink-licences/insights?customerId=${customerId}&code=${licence.code}`}/></div>}
       {confirming===licence.code&&<div className="mt-3 grid gap-2 rounded-md bg-soft p-3">
         <p>Remove <strong>{licence.businessName}</strong> ({licence.code})? The page and its draft links are deleted and the client loses this licence. This can’t be undone.</p>
         <div className="flex gap-2"><button type="button" className="tr-button-primary" disabled={busy} onClick={()=>remove(licence.code)}>{busy?'Removing…':'Yes, remove'}</button><button type="button" className="tr-button-ghost" disabled={busy} onClick={()=>setConfirming(null)}>Cancel</button></div>

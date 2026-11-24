@@ -20,6 +20,7 @@ export type PublicRateLimitScope =
   | "change-link"
   | "contact"
   | "hosted-click"
+  | "hosted-page-event"
   | "hosted-submit"
   | "manual-checkout"
   | "setup"

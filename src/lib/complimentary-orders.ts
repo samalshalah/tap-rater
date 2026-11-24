@@ -2,6 +2,7 @@ import { complimentaryOrderTypes } from "@/lib/complimentary-order-types";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { isSafeProductMediaKey } from "@/lib/admin-media-storage";
 import { z } from "zod";
+import { standTargetUrl } from "@/lib/hosted-pages/tracking";
 import type { MigratedProduct } from "@/data/migrated-products";
 import type { OrderRecord } from "@/lib/orders";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
@@ -92,8 +93,9 @@ export function buildComplimentaryOrder(input: z.infer<typeof complimentaryOrder
       productionStatus: branded ? "pending_branded_proof_review" : "ready_for_direct_fulfillment",
       productionWarningCodes: branded ? ["pending_manual_proof", "do_not_print_until_manual_review"] : [],
       setup: { ...input.design, productSlug: p.slug, optionCode: option.id, businessName: input.businessName, destinationUrl: input.destinationUrl,
-        nfcTargetUrl: input.destinationUrl, qrTargetUrl: branded ? input.destinationUrl : undefined,
-        generatedQrValue: branded ? input.destinationUrl : undefined, hasQr: branded, nfcOnly: !branded,
+        // Tap Rater page links are tagged so page insights can tell taps (NFC) from scans (QR).
+        nfcTargetUrl: standTargetUrl(input.destinationUrl, "nfc"), qrTargetUrl: branded ? standTargetUrl(input.destinationUrl, "qr") : undefined,
+        generatedQrValue: branded ? standTargetUrl(input.destinationUrl, "qr") : undefined, hasQr: branded, nfcOnly: !branded,
         logoStorageKey: branded ? input.logoStorageKey : undefined,
         logoMediaUrl: branded ? `/api/media/product/${input.logoStorageKey}` : undefined,
         frontTemplateUrl: branded ? p.assetSet?.brandedFrontTemplateUrl : p.assetSet?.standardFrontTemplateUrl,

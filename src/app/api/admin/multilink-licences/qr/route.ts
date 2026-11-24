@@ -6,6 +6,7 @@ import {getHostedPageStorage} from '@/lib/hosted-pages/app-storage';
 import {ensureHostedPagePlaceholder} from '@/lib/hosted-pages/placeholder';
 import type {HostedPageLifecycleStatus} from '@/lib/hosted-pages/snapshots';
 import {createQrSvg} from '@/lib/qr-code';
+import {standTargetUrl} from '@/lib/hosted-pages/tracking';
 
 const headers={'Cache-Control':'private, no-store'};
 const schema=z.object({customerId:z.string().uuid(),code:z.string().regex(/^[A-HJKMNPQRSTVWXYZ2-9]{12}$/)});
@@ -32,6 +33,6 @@ export async function POST(request:Request){
       lifecycleStatus:(page.lifecycle_status||'ACTIVE') as HostedPageLifecycleStatus
     });
     const url=`https://taprater.com/p/${code}`;
-    return NextResponse.json({url,svg:await createQrSvg(url)},{headers});
+    return NextResponse.json({url,svg:await createQrSvg(standTargetUrl(url,'qr'))},{headers});
   }catch(error){console.error('Admin Multi-Link QR failed',error);return NextResponse.json({error:'The QR code couldn’t be created. Try again.'},{status:500,headers});}
 }

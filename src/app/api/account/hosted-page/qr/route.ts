@@ -4,6 +4,7 @@ import { getHostedPageEditorContext } from "@/lib/hosted-page-editor";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
 import { ensureHostedPagePlaceholder } from "@/lib/hosted-pages/placeholder";
 import { createQrSvg } from "@/lib/qr-code";
+import { standTargetUrl } from "@/lib/hosted-pages/tracking";
 
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "private, no-store" };
@@ -35,7 +36,8 @@ export async function POST(request: Request) {
       logoUrl: /^https?:\/\//.test(page.draft.logoUrl ?? "") ? page.draft.logoUrl : undefined,
       lifecycleStatus: page.lifecycleStatus
     });
-    return NextResponse.json({ url, svg: await createQrSvg(url) }, { headers });
+    // The QR carries ?s=qr so page insights count it as a scan.
+    return NextResponse.json({ url, svg: await createQrSvg(standTargetUrl(url, "qr")) }, { headers });
   } catch (error) {
     console.error("Multi-Link QR failed", error);
     return NextResponse.json({ error: "The QR code couldn’t be created. Try again." }, { status: 500, headers });

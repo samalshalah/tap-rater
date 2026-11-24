@@ -1,6 +1,7 @@
 import { isValidHostedPageCode } from "../../../src/lib/hosted-pages/codes";
 import { readCurrentHostedPageSnapshot } from "../../../src/lib/hosted-pages/repository";
 import { createR2HostedPageStorage } from "../../../src/lib/hosted-pages/r2-storage";
+import { readHostedPageTracking, type HostedPageTracking } from "../../../src/lib/hosted-pages/tracking";
 import {
   hostedPageResponseStatus,
   renderHostedPageHtml,
@@ -9,7 +10,7 @@ import {
 } from "../../../src/lib/hosted-pages/snapshots";
 
 const securityHeaders = {
-  "Content-Security-Policy": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'",
+  "Content-Security-Policy": "default-src 'none'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; img-src 'self' data: https:; style-src 'unsafe-inline'",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "X-Content-Type-Options": "nosniff",
@@ -48,7 +49,7 @@ export async function handleHostedPageRequest(request: Request, env: Env, ctx: E
     const storage = createR2HostedPageStorage(env.HOSTED_PAGE_SNAPSHOTS);
     const snapshot = await readCurrentHostedPageSnapshot(storage, code);
     const resolution = snapshot ? resolveHostedPageLifecycle(snapshot) : { state: "not_found" as const };
-    const response = htmlResponse(resolution, request.method);
+    const response = htmlResponse(resolution, request.method, undefined, readHostedPageTracking(new URL(request.url)));
 
     if (cache && request.method === "GET" && response.status === 200) {
       ctx.waitUntil(cache.put(cacheKey, response.clone()));
@@ -80,7 +81,7 @@ export async function handleHostedPageRequest(request: Request, env: Env, ctx: E
   }
 }
 
-function htmlResponse(resolution: HostedPageResolution, method: string, extraHeaders?: Record<string, string>) {
+function htmlResponse(resolution: HostedPageResolution, method: string, extraHeaders?: Record<string, string>, tracking?: HostedPageTracking) {
   const headers = new Headers(htmlHeaders);
   headers.set("X-Tap-Rater-Hosted-Page-State", resolution.state);
 
@@ -88,7 +89,7 @@ function htmlResponse(resolution: HostedPageResolution, method: string, extraHea
     headers.set(key, value);
   }
 
-  return new Response(method === "HEAD" ? null : renderHostedPageHtml(resolution), {
+  return new Response(method === "HEAD" ? null : renderHostedPageHtml(resolution, { tracking }), {
     status: hostedPageResponseStatus(resolution),
     headers
   });

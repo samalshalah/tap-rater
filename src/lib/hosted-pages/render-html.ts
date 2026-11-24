@@ -1,7 +1,11 @@
 import { getHostedButtonMark } from "@/lib/hosted-page-editor-shared";
 import type { HostedPageResolution, HostedPageAppearance } from "./snapshots";
+import { hostedPageEventUrl, type HostedPageTracking } from "./tracking";
 
-export function renderHostedPageHtml(resolution: HostedPageResolution) {
+// Only the live public page passes tracking; editor previews never record activity.
+export type HostedPageRenderOptions = { tracking?: HostedPageTracking };
+
+export function renderHostedPageHtml(resolution: HostedPageResolution, options: HostedPageRenderOptions = {}) {
   if (resolution.state === "not_found") {
     return renderShell({
       title: "Tap Rater page not found",
@@ -28,6 +32,11 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
   }
 
   const visibleButtons = snapshot.buttons.filter((button) => button.isVisible !== false);
+  const tracking = options.tracking;
+  // A 1x1 image records the page open; only browsers that load the page fetch it.
+  const viewPixel = tracking ? `<img class="tr-pixel" src="${escapeAttribute(hostedPageEventUrl({ type: "view", code: snapshot.code, tracking }))}" alt="" width="1" height="1">` : "";
+  // Clicks are reported with the link ping attribute, so the button still goes straight to the site.
+  const ping = (button: { id: string; iconKey?: string; type: string }) => tracking ? ` ping="${escapeAttribute(hostedPageEventUrl({ type: "click", code: snapshot.code, tracking, buttonId: button.id, buttonType: button.iconKey ?? button.type }))}"` : "";
   if (visibleButtons.length === 0) {
     return renderShell({
       title: escapeHtml(snapshot.businessName),
@@ -40,6 +49,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
         <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
         <p class="tr-copy">${escapeHtml(snapshot.description ?? "This Tap Rater page is being set up. The permanent URL is active and will keep working after the business publishes its links.")}</p>
         <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
+        ${viewPixel}
       `,
       statusCode: "setup"
     });
@@ -50,9 +60,9 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       (button) => {
         const mark = getHostedButtonMark(button.iconKey ?? button.type);
         if (mark.logo) {
-          return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark tr-button-logo" aria-label="${escapeAttribute(mark.brand)}"><img src="${escapeAttribute(mark.logo)}" alt=""></span><span>${escapeHtml(button.label)}</span></a>`;
+          return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"${ping(button)}><span class="tr-button-mark tr-button-logo" aria-label="${escapeAttribute(mark.brand)}"><img src="${escapeAttribute(mark.logo)}" alt=""></span><span>${escapeHtml(button.label)}</span></a>`;
         }
-        return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"><span class="tr-button-mark" style="background:${escapeAttribute(mark.background)};border-color:${escapeAttribute(mark.border)};color:${escapeAttribute(mark.color)}" aria-label="${escapeAttribute(mark.brand)}">${hostedButtonIconSvg(mark.icon, mark.text)}</span><span>${escapeHtml(button.label)}</span></a>`;
+        return `<a class="tr-button" href="${escapeAttribute(button.url)}" rel="noopener noreferrer nofollow" data-type="${escapeAttribute(button.type)}"${ping(button)}><span class="tr-button-mark" style="background:${escapeAttribute(mark.background)};border-color:${escapeAttribute(mark.border)};color:${escapeAttribute(mark.color)}" aria-label="${escapeAttribute(mark.brand)}">${hostedButtonIconSvg(mark.icon, mark.text)}</span><span>${escapeHtml(button.label)}</span></a>`;
       }
     )
     .join("");
@@ -70,6 +80,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution) {
       ${snapshot.description ? `<p class="tr-copy">${escapeHtml(snapshot.description)}</p>` : ""}
       <nav class="tr-buttons" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
       <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
+      ${viewPixel}
     `,
     statusCode: "available"
   });
@@ -120,6 +131,7 @@ function renderShell({
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
     .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 10px; background: var(--button-bg); color: var(--ink); border: 1.5px solid var(--accent); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
     .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
+    .tr-pixel { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     .tr-button-mark svg { width: 18px; height: 18px; display: block; }
     .tr-button-mark span { display: block; font-size: 0.62rem; font-weight: 700; line-height: 1; }
     .tr-button-logo { overflow: hidden; background: #ffffff; border: 0; }

@@ -6,6 +6,7 @@ import { getCheckoutProducts } from "@/lib/product-repository";
 import { isSafeProductMediaKey } from "@/lib/admin-media-storage";
 import { composeProductionArtworkDocument, getProductionArtworkTemplate } from "@/lib/production-artwork";
 import type { OrderLineItem } from "@/lib/orders";
+import { standTargetUrl } from "@/lib/hosted-pages/tracking";
 
 const schema = z.object({ item: z.object({ productId: z.string(), setup: complimentaryDesignSchema.extend({
   businessName: z.string().trim().max(120).default(""),
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     const entry = complimentaryCatalog(await getCheckoutProducts()).find(e => e.product.slug === productId && e.options.some(o => o.id === "branded_qr_direct"));
     if (!entry) return NextResponse.json({ error: "This branded stand is unavailable." }, { status: 400 });
     const item: OrderLineItem = { productId, title: entry.product.title, sku: entry.product.sku, optionId: "branded_qr_direct", quantity: 1, unitAmountCents: 0, lineSubtotalCents: 0,
-      setup: { ...setup, frontTemplateUrl: entry.product.assetSet?.brandedFrontTemplateUrl, logoMediaUrl: `/api/media/product/${setup.logoStorageKey}`, qrTargetUrl: setup.destinationUrl } };
+      setup: { ...setup, frontTemplateUrl: entry.product.assetSet?.brandedFrontTemplateUrl, logoMediaUrl: `/api/media/product/${setup.logoStorageKey}`, qrTargetUrl: standTargetUrl(setup.destinationUrl, "qr") } };
     const template = getProductionArtworkTemplate(item);
     if (!template) throw new Error("Template unavailable.");
     const result = await composeProductionArtworkDocument(item, template, "preview", new Date().toISOString());
