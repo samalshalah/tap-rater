@@ -28,7 +28,11 @@ export async function POST(request: Request) {
     if (!template) throw new Error("Template unavailable.");
     const result = await composeProductionArtworkDocument(item, template, "preview", new Date().toISOString());
     return NextResponse.json({ svg: result.svg, snapshot: setup, proofReceiptId: crypto.randomUUID() }, { headers: { "Cache-Control": "private, no-store" } });
-  } catch {
+  } catch (error) {
+    // Show the real reason for problems the admin can fix (logo too small, name too long); log the rest.
+    const message = error instanceof Error ? error.message : "";
+    if (/logo file is too small|business name|stand template/i.test(message)) return NextResponse.json({ error: message }, { status: 400 });
+    console.error("Complimentary stand preview failed", error);
     return NextResponse.json({ error: "Could not render this design. Check the logo and retry." }, { status: 400 });
   }
 }

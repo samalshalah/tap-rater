@@ -250,7 +250,18 @@ export async function composeProductionArtworkDocument(
   if (logoAsset.dimensions) {
     const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: Boolean(businessName.trim()) && showBusinessNameOnProof });
     const ratio = logoFitMode === "fill" ? Math.max(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height) : Math.min(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height);
-    if (ratio > 1.01) throw new Error("This logo file is too small to print sharply. Upload a larger version of your logo (at least 1000 pixels wide works best), or reduce the logo size.");
+    if (ratio > 1.01) {
+      const dims = logoAsset.dimensions;
+      const showName = Boolean(businessName.trim()) && showBusinessNameOnProof;
+      // Largest size, in the editor's 5% steps, that still prints this logo at 300 DPI.
+      let sharpest = 0;
+      for (let size = Math.round(logoSizePercent / 5) * 5; size >= 50; size -= 5) {
+        const box = getPrintLogoRegion(template.logoRegion, { logoSizePercent: size, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: showName });
+        const fit = logoFitMode === "fill" ? Math.max(box.width / dims.width, box.height / dims.height) : Math.min(box.width / dims.width, box.height / dims.height);
+        if (fit <= 1.01) { sharpest = size; break; }
+      }
+      throw new Error(`This logo file is too small to print sharply at ${logoSizePercent}%. ${sharpest ? `The largest sharp size for this logo is ${sharpest}%. ` : ""}Upload a larger version of the logo (at least 1000 pixels wide works best) to go bigger.`);
+    }
   }
 
   const svg = await renderPrintArtwork({
