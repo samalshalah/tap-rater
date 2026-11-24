@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Search } from "lucide-react";
+import { ExternalLink, ImageUp, Search } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { ProductSetupDialogProps } from "./product-setup-dialog-types";
 import { applyGoogleReviewUrl, isHttpUrl } from "./product-setup-model";
@@ -34,6 +34,11 @@ type DestinationStepProps = Pick<ProductSetupDialogProps,
   | "configuredUnitPriceCents"
   | "multiLinkButtons"
   | "setMultiLinkButtons"
+  | "logo"
+  | "isUploadingLogo"
+  | "uploadLogo"
+  | "printBusinessName"
+  | "setShowBusinessNameOnProof"
 >;
 
 export function ProductSetupDestinationStep({
@@ -60,27 +65,54 @@ export function ProductSetupDestinationStep({
   standQuote,
   configuredUnitPriceCents,
   multiLinkButtons,
-  setMultiLinkButtons
+  setMultiLinkButtons,
+  logo,
+  isUploadingLogo,
+  uploadLogo,
+  printBusinessName,
+  setShowBusinessNameOnProof
 }: DestinationStepProps) {
+  const multiLink = selectedLinkExperience === "multilink";
   return <div className="grid gap-4">
                   {selectedLinkExperience === "multilink" ? (
                     <>
-                      <div>
-                        <p className="text-sm font-semibold text-ink">Multi-Link page</p>
-                        <p className="mt-1 text-sm leading-6 text-muted">
-                          Find your business on Google. Its name goes on your page and its review link is added for you. You can edit the links after checkout too.
-                        </p>
-                      </div>
-
                       <MultiLinkBusinessSearch
                         businessName={businessName}
                         setBusinessName={setBusinessName}
                         onPickGoogleReview={(reviewUrl) => setMultiLinkButtons(applyGoogleReviewUrl(multiLinkButtons, reviewUrl))}
                       />
 
-                      <p className="rounded-md border border-dashed border-line bg-soft p-3 text-sm leading-6 text-muted">
-                        {selectedOption.hasQr ? "QR and NFC will open your permanent Multi-Link page." : "NFC will open your Multi-Link page."}
-                      </p>
+                      {selectedOption.id === "branded_qr_direct" ? (
+                        <div className="grid gap-2">
+                          <span className="text-sm font-semibold text-ink">Logo</span>
+                          <div className="flex items-center gap-3 rounded-lg border border-line bg-white p-2">
+                            <span className="grid h-14 w-24 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-soft">
+                              {logo?.mediaUrl ? <img src={logo.mediaUrl} alt="Your logo" className="h-full w-full object-contain p-1" /> : <ImageUp size={20} className="text-muted" aria-hidden="true" />}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm text-muted" role="status">
+                              {isUploadingLogo ? "Uploading…" : logo ? logo.filename : "PNG, JPG, SVG or PDF"}
+                            </span>
+                            <label className="tr-button-outline shrink-0 cursor-pointer">
+                              {logo ? "Replace" : "Upload logo"}
+                              <input
+                                className="sr-only"
+                                type="file"
+                                accept="image/*,.heic,.heif,.avif,.svg,.pdf,.ai,.eps,.ps,.psd,.psb,.tif,.tiff,.ico,.tga,.jp2,.j2k,.jxl,.pcx,.ppm,.pgm,.pbm,.dds"
+                                disabled={isUploadingLogo}
+                                onChange={(event) => {
+                                  const file = event.currentTarget.files?.[0];
+                                  event.currentTarget.value = "";
+                                  void uploadLogo(file);
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <label className="flex items-center gap-2 text-sm text-ink">
+                            <input type="checkbox" className="h-4 w-4 accent-brand" checked={printBusinessName} onChange={(event) => setShowBusinessNameOnProof(event.target.checked)} />
+                            Print the business name on the stand
+                          </label>
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <>
@@ -184,26 +216,19 @@ export function ProductSetupDestinationStep({
                       )}
                     </>
                   )}
-                  {selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
+                  {!multiLink && selectedOption.hasQr && isHttpUrl(proofQrValue) ? (
                     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_6rem] items-center gap-4 border-t border-line pt-3 sm:grid-cols-[minmax(0,1fr)_7rem]">
                       <div className="min-w-0">
-                        {/* A Multi-Link page only exists after checkout, so opening it now would show "not found". */}
-                        {selectedLinkExperience === "multilink" ? <>
-                          <p className="text-sm font-semibold text-ink">Your permanent page address</p>
-                          <p className="mt-1 text-xs leading-5 text-muted">Your QR code and NFC tag will open this page. It goes live after checkout, and you can add or change its links any time.</p>
-                          <p className="mt-2 text-xs font-medium text-ink [overflow-wrap:anywhere]">{proofQrValue.replace(/^https?:\/\//, "")}</p>
-                        </> : <>
                         <p className="text-sm font-semibold text-ink">{googlePlaceName || (isGoogleReviewProduct ? "Check your review link" : "Check your link")}</p>
                         <p className="mt-1 text-xs leading-5 text-muted">Open the link or scan the QR to confirm.</p>
                         <a href={proofQrValue} target="_blank" rel="noopener noreferrer" aria-label="Check link (opens in a new tab)" className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-md border border-line bg-white px-3 text-xs font-semibold text-brand transition hover:bg-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                           Check link <ExternalLink size={14} aria-hidden="true" />
                         </a>
-                        </>}
                       </div>
                       <div className="h-24 w-24 sm:h-28 sm:w-28"><QrPreview value={proofQrValue} variant="template" /></div>
                     </div>
                   ) : null}
-                  <BuilderSummary
+                  {multiLink ? null : <BuilderSummary
                     className="sm:order-first"
                     image={selectedImage}
                     option={selectedOption}
@@ -211,6 +236,6 @@ export function ProductSetupDestinationStep({
                     quantity={selectedQuantity}
                     unitPriceCents={standQuote ? Math.round(standQuote.subtotalCents / selectedQuantity) : configuredUnitPriceCents}
                     linkExperience={selectedLinkExperience}
-                  />
+                  />}
                 </div>;
 }

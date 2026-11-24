@@ -160,23 +160,30 @@ export function createProductSetupActions({
       return;
     }
 
+    // Multi-Link stands take the logo on this first step, so there is no separate Logo step.
+    if (selectedOption.id === "branded_qr_direct" && selectedLinkExperience === "multilink" && !logo) {
+      setError("Upload your logo to continue.");
+      return;
+    }
+
     if (selectedOption.id === "branded_qr_direct") {
       try {
         if (selectedLinkExperience === "multilink" && !hostedReservation) {
+          // Reserve the permanent page link (the QR target) and carry straight on.
           setIsReservingDestination(true);
           const response = await fetch("/api/setup/proof", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "reserve", item: { productId: product.slug, optionId: "branded_qr_direct", quantity: 1, setup: { serviceAddon: hostedMultiLinkServiceAddon.code } } }) });
           const result = await response.json();
           if (!response.ok || !result.reservation?.url) throw new Error(result.error || "The Multi-Link destination could not be reserved.");
           setHostedReservation(result.reservation);
-          return;
+        } else {
+          await (await import("@/lib/qr-code")).createQrSvg(proofQrValue);
         }
-        await (await import("@/lib/qr-code")).createQrSvg(proofQrValue);
       } catch (error) {
         setError(error instanceof Error ? error.message : QR_CODE_ERROR_MESSAGE);
         return;
       } finally { setIsReservingDestination(false); }
     }
-    setStep(selectedOption.id === "branded_qr_direct" ? "design" : selectedLinkExperience === "multilink" ? "links" : "review");
+    setStep(selectedLinkExperience === "multilink" ? "links" : selectedOption.id === "branded_qr_direct" ? "design" : "review");
   }
 
   function continueFromMultiLinkLinks({ skip = false }: { skip?: boolean } = {}) {
@@ -261,7 +268,7 @@ export function createProductSetupActions({
     }
 
     if (step === "links") {
-      setStep(selectedOption.id === "branded_qr_direct" ? "design" : "destination");
+      setStep("destination");
     }
   }
 
@@ -296,7 +303,7 @@ export function createProductSetupActions({
 
       if (!logo) {
         setError("Upload your business logo before adding this stand to cart.");
-        setStep("design");
+        setStep(selectedLinkExperience === "multilink" ? "destination" : "design");
         return;
       }
 

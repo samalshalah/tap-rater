@@ -155,6 +155,11 @@ export function ProductSetupDialogContent({
                   configuredUnitPriceCents={configuredUnitPriceCents}
                   multiLinkButtons={multiLinkButtons}
                   setMultiLinkButtons={setMultiLinkButtons}
+                  logo={logo}
+                  isUploadingLogo={isUploadingLogo}
+                  uploadLogo={uploadLogo}
+                  printBusinessName={printBusinessName}
+                  setShowBusinessNameOnProof={setShowBusinessNameOnProof}
                 /> : null}
 
               {step === "links" && selectedLinkExperience === "multilink" ? (
@@ -274,7 +279,7 @@ export function ProductSetupDialogContent({
                 </button>
                 {step === "destination" ? (
                   <button type="button" className="tr-button-primary" disabled={isReservingDestination} onClick={continueFromDestination}>
-                    {isReservingDestination ? "Reserving destination..." : selectedLinkExperience === "multilink" && selectedOption.hasQr && !hostedReservation ? "Generate page QR" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : selectedLinkExperience === "multilink" ? "Continue to links" : "Review setup"}
+                    {isReservingDestination ? "Saving…" : selectedLinkExperience === "multilink" ? "Continue to links" : selectedOption.id === "branded_qr_direct" ? "Continue to logo" : "Review setup"}
                   </button>
                 ) : null}
                 {step === "links" ? (

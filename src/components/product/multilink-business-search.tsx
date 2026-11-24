@@ -58,7 +58,7 @@ export function MultiLinkBusinessSearch({
   return (
     <div className="grid gap-2">
       <label className="grid gap-2 text-sm font-semibold text-ink">
-        Business or page name
+        Business name
         <span className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
           <input
@@ -80,7 +80,7 @@ export function MultiLinkBusinessSearch({
           </span>
         </p>
       ) : null}
-      {searching && status === "idle" ? <p className="text-xs text-muted">Type your business name to find it on Google. We’ll add your Google review link for you.</p> : null}
+      {searching && status === "idle" ? <p className="text-xs text-muted">Pick your business to add its Google review link.</p> : null}
       {searching && status === "loading" ? <p className="text-xs text-muted" role="status">Searching Google…</p> : null}
       {searching && status === "fallback" ? <p className="text-xs text-muted" role="status">Google search is unavailable right now. You can add the review link on the Links step.</p> : null}
       {searching && status === "ready" && !results.length ? <p className="text-xs text-muted" role="status">No match on Google. Add the city, or keep the name as typed.</p> : null}
