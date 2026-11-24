@@ -143,6 +143,7 @@ export function ProductSetupDialogContent({
               {step === "links" && selectedLinkExperience === "multilink" ? (
                 <MultiLinkSetupStep
                   businessName={businessName}
+                  logoUrl={logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl}
                   buttons={multiLinkButtons}
                   onButtonsChange={setMultiLinkButtons}
                 />

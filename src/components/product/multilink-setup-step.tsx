@@ -15,10 +15,12 @@ function hasStandardName(type: HostedPageEditorButtonType) {
 
 export function MultiLinkSetupStep({
   businessName,
+  logoUrl,
   buttons,
   onButtonsChange
 }: {
   businessName: string;
+  logoUrl?: string;
   buttons: MultiLinkDraftButton[];
   onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
 }) {
@@ -183,20 +185,24 @@ export function MultiLinkSetupStep({
         </button>
       </div>
 
-      <MultiLinkMobilePreview businessName={businessName} buttons={previewButtons} />
+      <MultiLinkMobilePreview businessName={businessName} logoUrl={logoUrl} buttons={previewButtons} />
     </div>
   );
 }
 
-export function MultiLinkMobilePreview({ businessName, buttons }: { businessName: string; buttons: MultiLinkDraftButton[] }) {
+export function MultiLinkMobilePreview({ businessName, logoUrl, buttons }: { businessName: string; logoUrl?: string; buttons: MultiLinkDraftButton[] }) {
   return (
     <div className="rounded-2xl border border-line bg-ink p-2 shadow-sm lg:sticky lg:top-4">
       <div className="min-h-[520px] rounded-xl bg-white p-4">
         <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-line" aria-hidden="true" />
         <div className="grid justify-items-center gap-2 text-center">
-          <span className="grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-xl font-black text-brand">
-            {(businessName.trim()[0] ?? "T").toUpperCase()}
-          </span>
+          {logoUrl ? (
+            <img src={logoUrl} alt={`${businessName.trim() || "Business"} logo`} className="h-16 max-w-[180px] object-contain" />
+          ) : (
+            <span className="grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-xl font-black text-brand">
+              {(businessName.trim()[0] ?? "T").toUpperCase()}
+            </span>
+          )}
           <p className="text-lg font-black leading-6 text-ink">{businessName.trim() || "Your business"}</p>
           <p className="max-w-[190px] text-sm leading-6 text-muted">Choose the link you need below.</p>
         </div>
