@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {ensureHostedPagePlaceholder} from '@/lib/hosted-pages/placeholder';
+import {ensureHostedPagePlaceholder,retireHostedPage} from '@/lib/hosted-pages/placeholder';
 import {readCurrentHostedPageSnapshot,type HostedPageTextStorage} from '@/lib/hosted-pages/repository';
 import {renderHostedPageHtml,resolveHostedPageLifecycle} from '@/lib/hosted-pages/snapshots';
 
@@ -37,5 +37,22 @@ describe('permanent link placeholder',()=>{
     const {storage}=memoryStorage();
     await storage.putText(`hosted-pages/${input.code}/assignment.json`,JSON.stringify({code:input.code,physicalProductRef:'stripe-checkout:x:order:y:line:1',assignedAt:new Date().toISOString()}));
     expect(await ensureHostedPagePlaceholder(storage,input)).toBe('published');
+  });
+});
+
+describe('retiring a removed page',()=>{
+  it('replaces the live page with a not-active page',async()=>{
+    const {storage}=memoryStorage();
+    await ensureHostedPagePlaceholder(storage,input);
+    expect(await retireHostedPage(storage,input.code)).toBe('retired');
+    const snapshot=await readCurrentHostedPageSnapshot(storage,input.code);
+    expect(snapshot?.lifecycleStatus).toBe('RETIRED_INTERNAL');
+    const html=renderHostedPageHtml(resolveHostedPageLifecycle(snapshot!));
+    expect(html).toContain('not active');
+    expect(await retireHostedPage(storage,input.code)).toBe('already_retired');
+  });
+  it('does nothing when the page was never published',async()=>{
+    const {storage}=memoryStorage();
+    expect(await retireHostedPage(storage,input.code)).toBe('nothing_published');
   });
 });

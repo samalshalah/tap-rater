@@ -24,7 +24,8 @@ export async function POST(request: Request) {
 
     const asset = await uploadProductMedia({
       file,
-      productSlug: `hosted-page-${auth.session.email.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`,
+      // Neutral folder: this path appears in the public page, so it must not identify the customer.
+      productSlug: "hosted-page-logos",
       role: "center_asset"
     });
 

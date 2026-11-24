@@ -1,5 +1,7 @@
 import {beforeEach,describe,expect,it,vi} from 'vitest';
-const mocks=vi.hoisted(()=>({auth:vi.fn(),sql:vi.fn()}));
+const mocks=vi.hoisted(()=>({auth:vi.fn(),sql:vi.fn(),storage:vi.fn(),retire:vi.fn()}));
+vi.mock('@/lib/hosted-pages/app-storage',()=>({getHostedPageStorage:mocks.storage}));
+vi.mock('@/lib/hosted-pages/placeholder',()=>({retireHostedPage:mocks.retire}));
 vi.mock('@/lib/admin-auth',()=>({requireAdminApi:mocks.auth}));
 vi.mock('@/lib/google-business/live-reviews',()=>({liveDb:()=>mocks.sql}));
 import {DELETE,GET} from '@/app/api/admin/multilink-licences/route';
@@ -29,9 +31,11 @@ describe('admin Multi-Link licences',()=>{
     expect(mocks.sql.mock.calls[0].slice(1)).toContain(customerId);
   });
   it('removes one owned licence with guards in the same statement',async()=>{
-    mocks.sql.mockResolvedValue([{code:'GDGKSG8TVYAG'}]);
+    mocks.sql.mockResolvedValue([{code:'GDGKSG8TVYAG'}]);mocks.storage.mockResolvedValue({});mocks.retire.mockResolvedValue('retired');
     const response=await del({customerId,code:'GDGKSG8TVYAG'});
     expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({removed:'GDGKSG8TVYAG',pageRetired:true});
+    expect(mocks.retire).toHaveBeenCalledWith({},'GDGKSG8TVYAG');
     const [strings,...values]=mocks.sql.mock.calls[0];const text=strings.join(' ');
     expect(values).toEqual(expect.arrayContaining([customerId,'GDGKSG8TVYAG']));
     for(const guard of ["LIKE 'admin:%'","published_at IS NULL",'hosted_page_snapshots','billing_invoices','billing_invoice_items','retired_at=now()'])expect(text).toContain(guard);

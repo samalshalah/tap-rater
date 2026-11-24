@@ -3,6 +3,8 @@ import {z} from 'zod';
 import {requireAdminApi} from '@/lib/admin-auth';
 import {liveDb} from '@/lib/google-business/live-reviews';
 import {licenceSource,removalBlock,type AdminMultiLinkLicence} from '@/lib/admin-multilink-licences';
+import {getHostedPageStorage} from '@/lib/hosted-pages/app-storage';
+import {retireHostedPage} from '@/lib/hosted-pages/placeholder';
 
 const headers={'Cache-Control':'private, no-store'};
 const customerId=z.string().uuid();
@@ -58,6 +60,10 @@ export async function DELETE(request:Request){
     ) SELECT retired.code FROM retired`;
     // The business record stays: other data (locations, reviews) may hang off it.
     if(!(rows as unknown[]).length)return NextResponse.json({error:'This licence can’t be removed. It may be paid, published, invoiced or already gone.'},{status:409,headers});
-    return NextResponse.json({removed:code},{headers});
+    // Take the public page offline too, so the link shows "not active" instead of the old page.
+    let pageRetired=false;
+    try{const storage=await getHostedPageStorage();if(storage){await retireHostedPage(storage,code);pageRetired=true;}}
+    catch(error){console.error('Multi-Link page retire failed',code,error);}
+    return NextResponse.json({removed:code,pageRetired},{headers});
   }catch{return NextResponse.json({error:'Could not remove the licence. Try again.'},{status:503,headers});}
 }

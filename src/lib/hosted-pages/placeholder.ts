@@ -43,3 +43,21 @@ export async function ensureHostedPagePlaceholder(storage: HostedPageTextStorage
   }));
   return "published";
 }
+
+/**
+ * Takes a removed page off the public web: publishes a retired copy of the current page so the
+ * link shows "not active" instead of the old content. Does nothing if nothing was ever published.
+ */
+export async function retireHostedPage(storage: HostedPageTextStorage, code: string, now = new Date()): Promise<"retired" | "nothing_published" | "already_retired"> {
+  const current = await readCurrentHostedPageSnapshot(storage, code);
+  if (!current) return "nothing_published";
+  if (current.lifecycleStatus === "RETIRED_INTERNAL") return "already_retired";
+  await publishHostedPageSnapshot(storage, validateHostedPageSnapshot({
+    ...current,
+    version: `retired-${now.getTime()}-${crypto.randomUUID().slice(0, 8)}`,
+    publishedAt: now.toISOString(),
+    lifecycleStatus: "RETIRED_INTERNAL",
+    buttons: []
+  }));
+  return "retired";
+}
