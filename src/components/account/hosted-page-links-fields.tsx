@@ -1,12 +1,22 @@
 "use client";
 import type { HostedPageEditorButton,HostedPageEditorDraft } from "@/lib/hosted-page-editor-shared";
 import { getHostedButtonMark,hostedPageButtonLimit,supportedHostedPageButtons } from "@/lib/hosted-page-editor-shared";
-import { ArrowDown,ArrowUp,CalendarDays,ChevronDown,Globe,LinkIcon,Mail,Menu,Plus,Trash2 } from "lucide-react";
+import { ArrowDown,ArrowUp,CalendarDays,ChevronDown,ExternalLink,Globe,LinkIcon,Mail,Menu,Plus,Search,Trash2 } from "lucide-react";
+import { GoogleReviewLinkFinder } from "./google-review-link-finder";
+
+// Sites with no lookup we can call: open a Google search for the business on that site instead.
+const profileSearchSites: Partial<Record<HostedPageEditorButton["type"], string>> = {
+  yelp: "yelp.com", dealerrater: "dealerrater.com", cars_com: "cars.com", cargurus: "cargurus.com", edmunds: "edmunds.com",
+  autotrader: "autotrader.com", carfax: "carfax.com", bbb: "bbb.org", facebook: "facebook.com", instagram: "instagram.com",
+  youtube: "youtube.com", tiktok: "tiktok.com", x: "x.com", linkedin: "linkedin.com"
+};
 import { useState,type Dispatch,type SetStateAction } from "react";
 
 export function HostedPageLinksFields({draft, orderedButtons, showLinkChoices, setShowLinkChoices, addButton, updateButton, moveButton, removeButton}:{draft:HostedPageEditorDraft; orderedButtons:HostedPageEditorButton[]; showLinkChoices:boolean; setShowLinkChoices:Dispatch<SetStateAction<boolean>>; addButton:(type:HostedPageEditorButton["type"])=>void; updateButton:(id:string,patch:Partial<HostedPageEditorButton>)=>void; moveButton:(id:string,direction:-1|1)=>void; removeButton:(id:string)=>void;}){
 
 const [logoPickerFor,setLogoPickerFor]=useState<string|null>(null);
+const [findGoogleFor,setFindGoogleFor]=useState<string|null>(null);
+const businessQuery=draft.businessName.trim();
 const missingUrls=draft.buttons.filter((button)=>!button.url.trim()).length;
 const labelFor=(type:HostedPageEditorButton["type"])=>supportedHostedPageButtons.find((item)=>item.type===type)?.label??"Custom Link";
 const changeLogo=(button:HostedPageEditorButton,type:HostedPageEditorButton["type"])=>{
@@ -44,22 +54,29 @@ return (<div className="tr-card grid gap-2 p-3">
           ) : null}
           <div className="grid gap-1.5">
             {orderedButtons.map((button, index) => (
-              <div key={button.id} className="grid gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[minmax(0,210px)_minmax(0,1fr)_auto] md:items-center">
+              <div key={button.id} className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-2 rounded-lg border border-line bg-soft p-2 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center">
                   <div className="min-w-0">
                     <div className="flex min-w-0 items-center gap-2">
                       <button type="button" aria-label={`Change logo for ${button.label || labelFor(button.type)}`} aria-expanded={logoPickerFor===button.id} onClick={() => setLogoPickerFor((current) => current===button.id ? null : button.id)} className="flex min-h-10 shrink-0 items-center gap-0.5 rounded-md border border-line bg-white px-1 hover:border-ink">
                         <HostedButtonMark type={button.type} />
                         <ChevronDown size={14} aria-hidden="true" />
                       </button>
-                      <input aria-label="Link label" className="tr-input min-h-9 min-w-0 px-3 py-1.5 text-sm" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />
+                      {/* Branded links use the brand name automatically; only generic links need a name. */}
+                      {getHostedButtonMark(button.type).logo ? null : <input aria-label="Link name" placeholder="Button name" className="tr-input min-h-9 w-40 min-w-0 px-3 py-1.5 text-sm md:w-44" value={button.label} onChange={(event) => updateButton(button.id, { label: event.target.value })} />}
                     </div>
                   </div>
-                  <label className="min-w-0">
-                    <span className="sr-only">Destination URL</span>
-                    <input className={`tr-input min-h-9 px-3 py-1.5 text-sm ${button.url.trim()?"":"border-amber-400 bg-amber-50"}`} value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="Add web address (https://…)" aria-describedby={button.url.trim()?undefined:`url-missing-${button.id}`} />
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 gap-1.5">
+                    <input aria-label={`${button.label || labelFor(button.type)} web address`} className={`tr-input min-h-9 min-w-0 flex-1 px-3 py-1.5 text-sm ${button.url.trim()?"":"border-amber-400 bg-amber-50"}`} value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="Add web address (https://…)" aria-describedby={button.url.trim()?undefined:`url-missing-${button.id}`} />
+                    {button.type === "google_review" ? (
+                      <button type="button" className="tr-button-ghost min-h-9 shrink-0 px-2.5 text-xs" aria-expanded={findGoogleFor===button.id} onClick={() => setFindGoogleFor((current) => current===button.id ? null : button.id)}><Search size={14} aria-hidden="true" />Find on Google</button>
+                    ) : profileSearchSites[button.type] && businessQuery ? (
+                      <a className="tr-button-ghost min-h-9 shrink-0 px-2.5 text-xs" target="_blank" rel="noopener noreferrer" title={`Search Google for ${businessQuery} on ${profileSearchSites[button.type]}`} href={`https://www.google.com/search?q=${encodeURIComponent(`"${businessQuery}" site:${profileSearchSites[button.type]}`)}`}><ExternalLink size={14} aria-hidden="true" />Find</a>
+                    ) : null}
+                    </div>
                     {button.url.trim()?null:<span id={`url-missing-${button.id}`} className="mt-1 block text-xs text-amber-800">Hidden until you add a web address</span>}
-                  </label>
-                  <div className="flex gap-1">
+                  </div>
+                  <div className="col-span-2 flex justify-end gap-1 md:col-span-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">
                       <ArrowUp size={16} />
                     </button>
@@ -70,8 +87,9 @@ return (<div className="tr-card grid gap-2 p-3">
                       <Trash2 size={16} />
                     </button>
                   </div>
+                  {findGoogleFor===button.id ? <GoogleReviewLinkFinder initialQuery={businessQuery} onPick={(url) => updateButton(button.id, { url })} onClose={() => setFindGoogleFor(null)} /> : null}
                   {logoPickerFor===button.id ? (
-                    <div role="listbox" aria-label="Choose a logo" className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-white p-2 sm:grid-cols-3 md:col-span-3 lg:grid-cols-5">
+                    <div role="listbox" aria-label="Choose a logo" className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-white p-2 col-span-2 sm:grid-cols-3 md:col-span-3 lg:grid-cols-5">
                       {supportedHostedPageButtons.map((choice) => (
                         <button key={choice.type} type="button" role="option" aria-selected={choice.type===button.type} className={`tr-button-ghost min-h-9 justify-start gap-2 px-2 py-1.5 text-xs ${choice.type===button.type ? "bg-soft ring-2 ring-ink" : "bg-white"}`} onClick={() => changeLogo(button, choice.type)}>
                           <HostedButtonMark type={choice.type} />
