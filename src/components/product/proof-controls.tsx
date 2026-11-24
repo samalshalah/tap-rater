@@ -148,8 +148,8 @@ export function ProofControls({
       </label>
 
       {problem ? (
-        <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-800 sm:col-span-2">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-xs leading-5 text-red-800 sm:col-span-2">
+          <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
           <p className="min-w-0 flex-1">{problem.message}</p>
           <button type="button" className="shrink-0 text-xs font-semibold text-red-800 underline" onClick={problem.retry}>Retry</button>
         </div>

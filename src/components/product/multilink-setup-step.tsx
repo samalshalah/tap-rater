@@ -1,8 +1,9 @@
 "use client";
 import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
-import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Search, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, Smartphone, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GoogleReviewLinkFinder } from "@/components/account/google-review-link-finder";
+import { SetupPreviewFrame } from "./setup-preview-frame";
 import type { MultiLinkDraftButton } from "./product-setup-chooser-types";
 import { createMultiLinkButtonId, formatPreviewUrl, getHostedButtonLabel } from "./product-setup-model";
 
@@ -17,12 +18,20 @@ export function MultiLinkSetupStep({
   businessName,
   logoUrl,
   buttons,
-  onButtonsChange
+  onButtonsChange,
+  title,
+  onTitleChange,
+  description,
+  onDescriptionChange
 }: {
   businessName: string;
   logoUrl?: string;
   buttons: MultiLinkDraftButton[];
   onButtonsChange: (buttons: MultiLinkDraftButton[]) => void;
+  title: string;
+  onTitleChange: (value: string) => void;
+  description: string;
+  onDescriptionChange: (value: string) => void;
 }) {
   const [logoPickerFor, setLogoPickerFor] = useState<string | null>(null);
   const [finderFor, setFinderFor] = useState<string | null>(null);
@@ -82,8 +91,20 @@ export function MultiLinkSetupStep({
         <div>
           <p className="text-sm font-semibold text-ink">Multi-Link page links</p>
           <p className="mt-1 text-sm leading-6 text-muted">
-            Add 1 to {hostedPageButtonLimit} links now to preview the customer page, or skip and finish them from your account after payment.
+            Add 1 to {hostedPageButtonLimit} links. You can change them after checkout.
           </p>
+        </div>
+
+        {/* Optional page text: either box can be left empty. */}
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label className="grid gap-1 text-xs font-semibold text-muted">
+            Page title (optional)
+            <input className="tr-input py-2" maxLength={140} value={title} onChange={(event) => onTitleChange(event.target.value)} placeholder={businessName.trim() || "e.g. Rate your experience"} />
+          </label>
+          <label className="grid gap-1 text-xs font-semibold text-muted">
+            Text under the title (optional)
+            <input className="tr-input py-2" maxLength={300} value={description} onChange={(event) => onDescriptionChange(event.target.value)} placeholder="e.g. Choose an option below." />
+          </label>
         </div>
 
         <div className="grid gap-1.5">
@@ -185,47 +206,51 @@ export function MultiLinkSetupStep({
         </button>
       </div>
 
-      <MultiLinkMobilePreview businessName={businessName} logoUrl={logoUrl} buttons={previewButtons} />
+      <MultiLinkMobilePreview businessName={businessName} logoUrl={logoUrl} buttons={previewButtons} title={title} description={description} />
     </div>
   );
 }
 
-export function MultiLinkMobilePreview({ businessName, logoUrl, buttons }: { businessName: string; logoUrl?: string; buttons: MultiLinkDraftButton[] }) {
+export function MultiLinkMobilePreview({ businessName, logoUrl, buttons, title = "", description = "" }: { businessName: string; logoUrl?: string; buttons: MultiLinkDraftButton[]; title?: string; description?: string }) {
+  // Same rules as the live page: the business name sits above a custom title; an empty title shows the name.
+  const name = businessName.trim() || "Your business";
+  const heading = title.trim() || name;
   return (
-    <div className="rounded-2xl border border-line bg-ink p-2 shadow-sm lg:sticky lg:top-4">
-      <div className="min-h-[520px] rounded-xl bg-white p-4">
-        <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-line" aria-hidden="true" />
-        <div className="grid justify-items-center gap-2 text-center">
+    <SetupPreviewFrame label="Page preview" icon={<Smartphone size={13} aria-hidden="true" />}>
+      {/* The page scrolls inside the frame when it has many links; the popup itself never scrolls. */}
+      <div className="h-full overflow-y-auto rounded-xl border border-line bg-white px-3 pb-3 pt-10">
+        <div className="grid justify-items-center gap-1.5 text-center">
           {logoUrl ? (
-            <img src={logoUrl} alt={`${businessName.trim() || "Business"} logo`} className="h-16 max-w-[180px] object-contain" />
+            <img src={logoUrl} alt={`${businessName.trim() || "Business"} logo`} className="h-14 max-w-[180px] object-contain" />
           ) : (
-            <span className="grid h-14 w-14 place-items-center rounded-full bg-brand/10 text-xl font-black text-brand">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-brand/10 text-lg font-black text-brand">
               {(businessName.trim()[0] ?? "T").toUpperCase()}
             </span>
           )}
-          <p className="text-lg font-black leading-6 text-ink">{businessName.trim() || "Your business"}</p>
-          <p className="max-w-[190px] text-sm leading-6 text-muted">Choose the link you need below.</p>
+          {heading !== name ? <p className="text-xs font-semibold text-muted">{name}</p> : null}
+          <p className="text-base font-semibold leading-5 text-ink [overflow-wrap:anywhere]">{heading}</p>
+          {description.trim() ? <p className="text-xs text-muted [overflow-wrap:anywhere]">{description.trim()}</p> : null}
         </div>
 
-        <div className="mt-6 grid gap-2">
+        <div className="mt-4 grid gap-1.5">
           {buttons.length ? (
             buttons.map((button) => (
-              <div key={button.id} className="flex min-h-14 items-center gap-3 rounded-lg border border-line bg-white px-3 py-2 text-left shadow-sm">
-                <MultiLinkButtonMark type={button.type} />
+              <div key={button.id} className="flex min-h-11 items-center gap-2.5 rounded-lg border border-line bg-white px-2.5 py-1.5 text-left">
+                <MultiLinkButtonMark type={button.type} small />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-black text-ink">{button.label}</span>
-                  <span className="block truncate text-xs font-semibold text-muted">{formatPreviewUrl(button.url) || "Link to be added"}</span>
+                  <span className="block truncate text-sm font-semibold text-ink">{button.label}</span>
+                  <span className="block truncate text-[11px] text-muted">{formatPreviewUrl(button.url) || "Link to be added"}</span>
                 </span>
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-dashed border-line bg-soft p-4 text-center text-sm leading-6 text-muted">
+            <div className="rounded-lg border border-dashed border-line bg-soft p-3 text-center text-xs text-muted">
               Links can be added after checkout.
             </div>
           )}
         </div>
       </div>
-    </div>
+    </SetupPreviewFrame>
   );
 }
 

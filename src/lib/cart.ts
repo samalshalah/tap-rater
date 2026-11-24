@@ -55,6 +55,9 @@ export type CartItem = {
     monthlyPriceCents?: number;
     multiLinkButtons?: CartMultiLinkButton[];
     multiLinkLinksSkipped?: boolean;
+    multiLinkTextSet?: boolean;
+    multiLinkTitle?: string;
+    multiLinkDescription?: string;
     platformSlug?: string;
     googlePlaceId?: string;
     googlePlaceName?: string;
@@ -276,6 +279,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     setup.monthlyPriceCents === undefined ? "" : String(setup.monthlyPriceCents),
     JSON.stringify(setup.multiLinkButtons ?? []),
     setup.multiLinkLinksSkipped === true ? "multilink_skipped" : "",
+    setup.multiLinkTextSet === true ? `multilink_text:${setup.multiLinkTitle ?? ""}|${setup.multiLinkDescription ?? ""}` : "",
     setup.platformSlug ?? "",
     setup.googlePlaceId ?? "",
     setup.businessName ?? "",
@@ -344,6 +348,9 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     monthlyPriceCents: typeof row.monthlyPriceCents === "number" && Number.isInteger(row.monthlyPriceCents) ? row.monthlyPriceCents : undefined,
     multiLinkButtons: readMultiLinkButtons(row.multiLinkButtons),
     multiLinkLinksSkipped: row.multiLinkLinksSkipped === true,
+    multiLinkTextSet: row.multiLinkTextSet === true ? true : undefined,
+    multiLinkTitle: readString(row.multiLinkTitle),
+    multiLinkDescription: readString(row.multiLinkDescription),
     platformSlug: readString(row.platformSlug),
     googlePlaceId: readString(row.googlePlaceId),
     googlePlaceName: readString(row.googlePlaceName),

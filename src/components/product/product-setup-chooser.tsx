@@ -40,6 +40,10 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
     setBusinessName,
     multiLinkButtons,
     setMultiLinkButtons,
+    multiLinkTitle,
+    setMultiLinkTitle,
+    multiLinkDescription,
+    setMultiLinkDescription,
     logo,
     quantity,
     setQuantity,
@@ -330,6 +334,10 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
               configuredUnitPriceCents={configuredUnitPriceCents}
               multiLinkButtons={multiLinkButtons}
               setMultiLinkButtons={setMultiLinkButtons}
+              multiLinkTitle={multiLinkTitle}
+              setMultiLinkTitle={setMultiLinkTitle}
+              multiLinkDescription={multiLinkDescription}
+              setMultiLinkDescription={setMultiLinkDescription}
               logo={logo}
               isUploadingLogo={isUploadingLogo}
               uploadLogo={uploadLogo}

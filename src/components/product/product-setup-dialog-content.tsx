@@ -43,6 +43,10 @@ export function ProductSetupDialogContent({
   standQuote,
   configuredUnitPriceCents,
   multiLinkButtons,
+  multiLinkTitle,
+  setMultiLinkTitle,
+  multiLinkDescription,
+  setMultiLinkDescription,
   setMultiLinkButtons,
   logo,
   isUploadingLogo,
@@ -124,11 +128,6 @@ export function ProductSetupDialogContent({
             </div>
 
             <div ref={builderContentRef} className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6">
-              {step !== "destination" ? (
-                <button type="button" className="mb-3 text-sm font-semibold text-brand hover:text-ink" onClick={goToPreviousStep}>
-                  Back to previous step
-                </button>
-              ) : null}
 
               {step === "destination" ? <ProductSetupDestinationStep
                   selectedLinkExperience={selectedLinkExperience}
@@ -168,6 +167,10 @@ export function ProductSetupDialogContent({
                   logoUrl={logoBackgroundMode === "original" ? logo?.originalMediaUrl ?? logo?.mediaUrl : logo?.mediaUrl}
                   buttons={multiLinkButtons}
                   onButtonsChange={setMultiLinkButtons}
+                  title={multiLinkTitle}
+                  onTitleChange={setMultiLinkTitle}
+                  description={multiLinkDescription}
+                  onDescriptionChange={setMultiLinkDescription}
                 />
               ) : null}
 

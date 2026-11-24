@@ -163,9 +163,9 @@ export async function updateBusiness(
 
 export async function upsertHostedEditorPage(
   client: OrdersDbClient,
-  input: { customerId: string; businessId: string; code: string; lifecycleStatus: HostedPageLifecycleStatus; businessName: string; logoUrl?: string | null; initialButtons?: HostedPageEditorButton[]; headline?: string; now: Date }
+  input: { customerId: string; businessId: string; code: string; lifecycleStatus: HostedPageLifecycleStatus; businessName: string; logoUrl?: string | null; initialButtons?: HostedPageEditorButton[]; headline?: string; description?: string | null; now: Date }
 ) {
-  const draft = buildInitialDraft(input.businessName, input.logoUrl ?? undefined, input.initialButtons ?? [], input.headline);
+  const draft = buildInitialDraft(input.businessName, input.logoUrl ?? undefined, input.initialButtons ?? [], input.headline, input.description);
   const result = await client
     .from("hosted_page_editor_pages")
     .upsert(

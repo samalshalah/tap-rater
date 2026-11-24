@@ -9,7 +9,7 @@ import { sendCommerceEmail } from "@/lib/commerce-email-outbox";
 import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { type ManualCustomerAccountProvisioningInput, type ManualCustomerAccountProvisioningResult, type PaidCustomerAccountProvisioningResult, type HostedSubscriptionProvisioningDependencies } from "./hosted-provisioning-types";
 import { resolveClientDependency, upsertCustomer, createBusiness, updateBusiness, upsertHostedEditorPage, upsertHostedPageCode, upsertHostedSubscription, findHostedSubscriptionForProvisioning } from "./hosted-provisioning-repository";
-import { buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readManualOrderBusinessName, readManualOrderLogoUrl, readCustomerPhone, orderRequestsAccount, readInitialMultiLinkButtons, readHostedPageHeadline, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, resolvePublicSiteUrl, resolvePublicAssetUrl } from "./hosted-provisioning-model";
+import { buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readManualOrderBusinessName, readManualOrderLogoUrl, readCustomerPhone, orderRequestsAccount, readInitialMultiLinkButtons, readHostedPageText, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, resolvePublicSiteUrl, resolvePublicAssetUrl } from "./hosted-provisioning-model";
 
 export async function provisionManualCustomerAccountFromOrder(
   input: ManualCustomerAccountProvisioningInput,
@@ -77,7 +77,7 @@ export async function provisionManualCustomerAccountFromOrder(
     const itemBusinessName = readString(setup.businessName) ?? businessName;
     const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order) ?? undefined, publicSiteUrl);
     const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-    const headline = readHostedPageHeadline(hostedItem, itemBusinessName);
+    const { headline, description: pageDescription } = readHostedPageText(hostedItem, itemBusinessName, initialButtons.length > 0);
     const lineSessionId = hostedItemIndexes.length > 1 ? `${input.order.stripe_checkout_session_id}:line:${hostedItemIndex + 1}` : input.order.stripe_checkout_session_id;
     const existingMatch = await findHostedSubscriptionForProvisioning(client, {
       customerId: customer.customerId,
@@ -138,6 +138,7 @@ export async function provisionManualCustomerAccountFromOrder(
         logoUrl: logoUrl ?? null,
         initialButtons,
         headline,
+        description: pageDescription ?? null,
         now
       });
     if (!page.ok) return page;
@@ -172,7 +173,7 @@ export async function provisionManualCustomerAccountFromOrder(
       logoUrl: logoUrl ?? undefined,
       headline,
       buttons: buildSnapshotButtons(initialButtons),
-      description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+      description: pageDescription,
       appearance: { theme: "light", accentColor: "#6b7280" }
     }));
 

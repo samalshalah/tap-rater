@@ -41,6 +41,10 @@ export type ProductSetupDialogProps = {
   configuredUnitPriceCents: number | null;
   multiLinkButtons: MultiLinkDraftButton[];
   setMultiLinkButtons: Dispatch<SetStateAction<MultiLinkDraftButton[]>>;
+  multiLinkTitle: string;
+  setMultiLinkTitle: (value: string) => void;
+  multiLinkDescription: string;
+  setMultiLinkDescription: (value: string) => void;
   logo: UploadedLogo | null;
   isUploadingLogo: boolean;
   uploadLogo: (file: File | undefined) => Promise<void>;

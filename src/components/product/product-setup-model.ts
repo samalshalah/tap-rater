@@ -51,6 +51,8 @@ export function getOptionDisplayLabel(option: PurchaseOption) {
   return option.label;
 }
 
+export const defaultMultiLinkDescription = "Choose an option below.";
+
 export function createInitialMultiLinkButtons(): MultiLinkDraftButton[] {
   return [
     createMultiLinkButton("website", 0),

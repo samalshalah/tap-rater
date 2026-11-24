@@ -9,7 +9,7 @@ import { createEmailIdempotencyKey } from "@/lib/email-deliveries";
 import { getPaidBrandedHostedReservation } from "@/lib/branded-proof";
 import { type HostedSubscriptionProvisioningResult, type HostedSubscriptionProvisioningInput, type HostedSubscriptionProvisioningDependencies } from "./hosted-provisioning-types";
 import { repairHostedOrderTargets, resolveDependencies, upsertCustomer, createBusiness, updateBusiness, upsertHostedEditorPage, upsertHostedPageCode, upsertHostedSubscription, findHostedSubscriptionForProvisioning } from "./hosted-provisioning-repository";
-import { isHostedSubscriptionCheckout, mapStripeSubscriptionLifecycle, buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readInitialMultiLinkButtons, readHostedPageHeadline, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, readStripeId, readSubscriptionObject, resolvePublicSiteUrl, resolvePublicAssetUrl, buildProvisioningSnapshotVersion, resolveHostedPageUrl, readSubscriptionStatus, readCurrentPeriodEnd } from "./hosted-provisioning-model";
+import { isHostedSubscriptionCheckout, mapStripeSubscriptionLifecycle, buildHostedBusinessId, attachHostedTargets, buildPhysicalProductRef, readInitialMultiLinkButtons, readHostedPageText, buildSnapshotButtons, getHostedLineItemIndexes, readSetup, normalizeEmail, readString, readStripeId, readSubscriptionObject, resolvePublicSiteUrl, resolvePublicAssetUrl, buildProvisioningSnapshotVersion, resolveHostedPageUrl, readSubscriptionStatus, readCurrentPeriodEnd } from "./hosted-provisioning-model";
 
 export async function provisionHostedSubscriptionFromCheckout(
   input: HostedSubscriptionProvisioningInput,
@@ -81,7 +81,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
       const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
       const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-      const headline = readHostedPageHeadline(hostedItem, businessName);
+      const { headline, description: pageDescription } = readHostedPageText(hostedItem, businessName, initialButtons.length > 0);
       const lineSessionId = hostedItemIndexes.length > 1 ? `${checkoutSessionId}:line:${hostedItemIndex + 1}` : checkoutSessionId;
       const existingMatch = await findHostedSubscriptionForProvisioning(client, {
         customerId: customer.customerId,
@@ -149,6 +149,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           logoUrl: logoUrl ?? null,
           initialButtons,
           headline,
+          description: pageDescription ?? null,
           now
         });
       if (!page.ok) return page;
@@ -192,7 +193,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           logoUrl: logoUrl ?? undefined,
           headline,
           buttons: buildSnapshotButtons(initialButtons),
-          description: initialButtons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+          description: pageDescription,
           appearance: { theme: "light", accentColor: "#6b7280" },
           subscriptionPaidThrough: itemPaidThrough ?? undefined,
           subscriptionPastDueSince: pastDueSince ?? undefined

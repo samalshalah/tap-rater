@@ -351,6 +351,9 @@ export const checkoutCartSchema = z.object({
               .max(10)
               .optional(),
             multiLinkLinksSkipped: z.boolean().optional(),
+            multiLinkTextSet: z.boolean().optional(),
+            multiLinkTitle: z.string().trim().max(140).optional(),
+            multiLinkDescription: z.string().trim().max(300).optional(),
             platformSlug: z.string().trim().max(120).optional(),
             googlePlaceId: z.string().trim().max(180).optional(),
             googlePlaceName: z.string().trim().max(180).optional(),

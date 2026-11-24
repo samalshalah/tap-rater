@@ -4,6 +4,7 @@ import { useState, type ComponentProps, type ReactNode } from "react";
 import { Printer } from "lucide-react";
 import { BrandedProofPreview, type BrandedProofProblem } from "./branded-proof-preview";
 import { ProofControls } from "./proof-controls";
+import { SetupPreviewFrame } from "./setup-preview-frame";
 
 type EditorProps = ComponentProps<typeof BrandedProofPreview> & {
   controls: ComponentProps<typeof ProofControls>;
@@ -22,12 +23,12 @@ export function StandDesignEditor({controls, placeholder, disabled, ...preview}:
       <div className="order-2 min-w-0 lg:order-1">
         <ProofControls {...controls} problem={placeholder ? null : problem} />
       </div>
-      <div className="relative order-1 mx-auto grid w-full max-w-[280px] content-start rounded-2xl border border-line bg-soft p-2 lg:sticky lg:top-0 lg:order-2">
-        <span className="absolute left-3.5 top-3.5 z-10 inline-flex w-fit items-center gap-1.5 rounded-full border border-line bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-ink shadow-sm">
-          <Printer size={13} aria-hidden="true" />
-          Print preview
-        </span>
-        {placeholder ?? <BrandedProofPreview key={preview.productSlug} {...preview} onProblem={setProblem} />}
+      <div className="order-1 min-w-0 lg:order-2">
+        <SetupPreviewFrame label="Print preview" icon={<Printer size={13} aria-hidden="true" />}>
+          <div className="grid h-full content-center">
+            {placeholder ?? <BrandedProofPreview key={preview.productSlug} {...preview} onProblem={setProblem} />}
+          </div>
+        </SetupPreviewFrame>
       </div>
     </fieldset>
   );

@@ -15,6 +15,22 @@ export function readHostedPageHeadline(item: OrderLineItem, businessName: string
   return displayText ? displayText.slice(0, 140) : businessName;
 }
 
+// The page's title and the line under it. Orders from the current setup carry the customer's own
+// text (either may be empty); older orders keep the stand wording and the standard line.
+export function readHostedPageText(item: OrderLineItem, businessName: string, hasButtons: boolean): { headline: string; description?: string } {
+  const setup = readSetup(item);
+  if (setup.multiLinkTextSet === true) {
+    return {
+      headline: readString(setup.multiLinkTitle)?.slice(0, 140) ?? businessName,
+      description: readString(setup.multiLinkDescription)?.slice(0, 300)
+    };
+  }
+  return {
+    headline: readHostedPageHeadline(item, businessName),
+    description: hasButtons ? "Choose an option below." : "This Tap Rater page is being set up."
+  };
+}
+
 export function isHostedSubscriptionCheckout(session: StripeCheckoutSessionLike, order: Pick<OrderRecord, "line_items_json">) {
   const metadataIntent = session.metadata?.checkout_intent;
   return metadataIntent === "hosted_subscription" || order.line_items_json.some((item) => getHostedLineItem(item));
@@ -115,12 +131,13 @@ export function orderRequestsAccount(order: OrderRecord) {
   return Boolean(details && typeof details === "object" && (details as Record<string, unknown>).create_account === true);
 }
 
-export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = [], headline?: string) {
+/** description: undefined = the standard line, null = no line (the customer left it empty). */
+export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = [], headline?: string, description?: string | null) {
   return {
     businessName,
     logoUrl,
     headline: headline || businessName,
-    description: buttons.length ? "Choose an option below." : "This Tap Rater page is being set up.",
+    description: description === null ? undefined : description ?? (buttons.length ? "Choose an option below." : "This Tap Rater page is being set up."),
     appearance: { theme: "light" as const, accentColor: "#6b7280" as const },
     buttons
   };

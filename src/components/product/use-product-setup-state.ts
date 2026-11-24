@@ -1,7 +1,7 @@
 "use client";
 
 import type { LinkExperienceId, MultiLinkDraftButton, ProductSetupChooserProps, SetupStep } from "./product-setup-chooser-types";
-import { createInitialMultiLinkButtons, getSelectedOptionImage, isGoogleReviewStand } from "./product-setup-model";
+import { createInitialMultiLinkButtons, defaultMultiLinkDescription, getSelectedOptionImage, isGoogleReviewStand } from "./product-setup-model";
 import { useCart } from "@/components/cart/cart-provider";
 import type { ReadyBrandedProof } from "@/components/product/branded-proof-preview";
 import { type CartItem } from "@/lib/cart";
@@ -51,6 +51,9 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
   const [businessName, setBusinessName] = useState("");
 
   const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => createInitialMultiLinkButtons());
+  // The Multi-Link page's title and the line under it. Both may be left empty.
+  const [multiLinkTitle, setMultiLinkTitle] = useState(() => product.displayText?.trim() ?? "");
+  const [multiLinkDescription, setMultiLinkDescription] = useState(defaultMultiLinkDescription);
 
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
 
@@ -186,6 +189,10 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
     setBusinessName,
     multiLinkButtons,
     setMultiLinkButtons,
+    multiLinkTitle,
+    setMultiLinkTitle,
+    multiLinkDescription,
+    setMultiLinkDescription,
     logo,
     setLogo,
     quantity,
