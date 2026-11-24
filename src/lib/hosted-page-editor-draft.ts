@@ -1,4 +1,4 @@
-import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorAppearance, type HostedPageEditorButton, type HostedPageEditorButtonType, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
+import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorAppearance, type HostedPageEditorButton, type HostedPageEditorButtonType, type HostedPageEditorDraft, type HostedPageEditorRecord } from "@/lib/hosted-page-editor-shared";
 import { isSafePublicUrl, renderHostedPageHtml, resolveHostedPageLifecycle, validateHostedPageSnapshot, type HostedPageSnapshot } from "@/lib/hosted-pages/snapshots";
 
 const supportedButtonTypes = new Set(supportedHostedPageButtons.map((button) => button.type));
@@ -21,14 +21,16 @@ export class HostedPageEditorError extends Error {
 export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new Date(), options: { requireButtons?: boolean; publicBaseUrl?: string } = {}): HostedPageSnapshot {
   const draft = validateHostedPageEditorDraft(page.draft);
   const buttons = draft.buttons
-    .filter((button) => button.label.trim() && button.url.trim())
+    .filter((button) => button.url.trim())
     .sort((a, b) => a.position - b.position)
     .map((button) => {
       const catalog = supportedHostedPageButtons.find((item) => item.type === button.type);
       if (!catalog) throw new HostedPageEditorError("Unsupported button type.", 400);
+      // Branded links always show the brand name; only generic links use a custom name.
+      const branded = Boolean(getHostedButtonMark(button.type).logo);
       return {
         id: button.id,
-        label: button.label || catalog.label,
+        label: branded ? catalog.label : button.label.trim() || catalog.label,
         type: catalog.snapshotType,
         iconKey: button.type,
         url: button.url,
