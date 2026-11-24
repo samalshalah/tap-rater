@@ -143,7 +143,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           <div>
             <p className="tr-eyebrow">{products.length} {products.length === 1 ? "stand" : "stands"}</p>
             <h2 id={optionsId} className="tr-section-title mt-2 scroll-mt-24">
-              {isReviewCategory ? "Shop NFC review stands by platform" : "Shop all stand options"}
+              {isReviewCategory ? "Shop custom review stands by platform" : "Shop all stand options"}
             </h2>
           </div>
           <p className="tr-body-sm max-w-xl">{buyerIntent}</p>
@@ -151,7 +151,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         {copy.body ? <p className="tr-body-sm mt-4 max-w-3xl whitespace-pre-line">{copy.body}</p> : null}
         {isReviewCategory ? (
           <p className="tr-body-sm mt-4 max-w-3xl">
-            Your custom NFC stand includes your business logo and a printed QR code. Customers can tap with a compatible phone or scan the code to open the review page or business listing you choose. Approve your artwork before paying.
+            Start with a <Link href="/product/google-review-stand" className="font-semibold text-brand underline underline-offset-4">custom Google review stand</Link> or choose another platform below. Every stand includes your logo, NFC, and a printed QR code. Customers tap or scan to open your chosen review page or business listing. Preview your artwork before payment.
           </p>
         ) : null}
         {reviewPlatforms.length > 0 ? (

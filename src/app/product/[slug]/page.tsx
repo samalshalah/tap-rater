@@ -169,21 +169,21 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <SectionHeader
             align="left"
             eyebrow="Custom Google review stand"
-            title="One branded stand. Two simple ways to open your review link."
-            body="Your logo, NFC and a matching QR code are prepared for the same Google review destination you approve during setup."
+            title="Your branding, with room to stand out."
+            body="A custom Google review stand brings your logo, NFC tap, and a matching QR code together. Both tap and scan open the Google review link you approve during setup."
           />
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <article className="rounded-xl border border-line bg-white p-6">
               <h3 className="text-lg font-semibold">Designed for your business</h3>
-              <p className="tr-body-sm mt-3">Printed in the USA with your logo and optional business name, then reviewed as custom artwork before payment.</p>
+              <p className="tr-body-sm mt-3">Add your logo and optional business name to your Google review sign. Preview and approve your custom artwork before payment.</p>
             </article>
             <article className="rounded-xl border border-line bg-white p-6">
-              <h3 className="text-lg font-semibold">Tap or scan</h3>
-              <p className="tr-body-sm mt-3">NFC tap and the printed QR code open the same Google review link. No Tap Rater app is required.</p>
+              <h3 className="text-lg font-semibold">Large 6.5 × 4.25 inch display</h3>
+              <p className="tr-body-sm mt-3">The acrylic stand measures 165 × 108 mm, with a 50 mm base. Give your branding and QR code space at checkout, reception, or a pickup counter.</p>
             </article>
             <article className="rounded-xl border border-line bg-white p-6">
-              <h3 className="text-lg font-semibold">Ready for the counter</h3>
-              <p className="tr-body-sm mt-3">The passive NFC tag needs no battery, charging, or Wi-Fi. Customers use their own phone to open the review form.</p>
+              <h3 className="text-lg font-semibold">Printed in the USA</h3>
+              <p className="tr-body-sm mt-3">Your custom stand arrives ready to use, with free U.S. shipping and no minimum. Direct-link NFC and QR setup has no subscription.</p>
             </article>
           </div>
           <p className="mt-6 text-sm text-muted">Not sure whether NFC or QR is right for your counter? <Link href="/nfc-vs-qr-google-review-stand" className="font-semibold text-brand underline underline-offset-4">Compare NFC and QR code review stands</Link>.</p>
