@@ -5,6 +5,8 @@ import {liveDb} from '@/lib/google-business/live-reviews';
 import {createHostedPageCode} from '@/lib/hosted-pages/codes';
 import {validateHostedPageEditorDraft} from '@/lib/hosted-page-editor';
 import {grantedStandReference,multiLinkGrantStands} from '@/lib/multilink-granted-stand';
+import {getHostedPageStorage} from '@/lib/hosted-pages/app-storage';
+import {ensureHostedPagePlaceholder} from '@/lib/hosted-pages/placeholder';
 const inputSchema=z.object({customerId:z.string().uuid(),requestId:z.string().uuid(),businessName:z.string().trim().min(2).max(120),expiresAt:z.string().datetime().nullable(),standSlug:z.string().trim().max(120).nullable().optional()});
 const headers={'Cache-Control':'private, no-store'};
 // Multi-Link stands an admin can grant a licence for.
@@ -28,7 +30,7 @@ export async function POST(request:Request){
   const rows=await sql`WITH target AS (
    SELECT id FROM customers WHERE id=${input.customerId}::uuid AND account_status='active'
   ), existing AS (
-   SELECT id,customer_id FROM hosted_subscriptions WHERE stripe_checkout_session_id=${reference}
+   SELECT id,customer_id,hosted_page_id,permanent_code FROM hosted_subscriptions WHERE stripe_checkout_session_id=${reference}
   ), page_code AS (
    -- Every page code must be registered before a page or subscription can use it.
    INSERT INTO hosted_page_codes(code,physical_product_ref,assigned_by)
@@ -41,9 +43,16 @@ export async function POST(request:Request){
    SELECT business.customer_id,business.id,page_code.code,'ACTIVE',${JSON.stringify(draft)}::jsonb FROM business CROSS JOIN page_code RETURNING id,business_id,customer_id
   ), granted AS (
    INSERT INTO hosted_subscriptions(customer_id,business_id,hosted_page_id,stripe_checkout_session_id,stripe_subscription_id,permanent_code,hosted_page_url,status,lifecycle_status,current_period_end,cancel_at_period_end,provisioning_status)
-   SELECT customer_id,business_id,id,${reference},${reference},${code},${`https://taprater.com/p/${code}`},'active','ACTIVE',${input.expiresAt}::timestamptz,${Boolean(input.expiresAt)},'ready_for_customer_setup' FROM page RETURNING id,customer_id
-  ) SELECT id FROM granted UNION ALL SELECT id FROM existing WHERE customer_id=${input.customerId}::uuid`;
+   SELECT customer_id,business_id,id,${reference},${reference},${code},${`https://taprater.com/p/${code}`},'active','ACTIVE',${input.expiresAt}::timestamptz,${Boolean(input.expiresAt)},'ready_for_customer_setup' FROM page RETURNING id,customer_id,hosted_page_id,permanent_code
+  ) SELECT id,hosted_page_id,permanent_code FROM granted UNION ALL SELECT id,hosted_page_id,permanent_code FROM existing WHERE customer_id=${input.customerId}::uuid`;
   if(!rows.length)return NextResponse.json({error:'Account is unavailable or request belongs to another account.'},{status:409,headers});
-  return NextResponse.json({granted:true},{headers});
+  // Make the permanent link live now (a 'being set up' page) so its QR code works before publishing.
+  const granted=(rows as {hosted_page_id?:string;permanent_code?:string}[])[0];
+  let linkLive=false;
+  try{
+   const storage=await getHostedPageStorage();
+   if(storage&&granted?.hosted_page_id&&granted.permanent_code){await ensureHostedPagePlaceholder(storage,{code:granted.permanent_code,physicalProductRef:granted.hosted_page_id,assignedBy:'admin-multilink-grant',businessName:input.businessName,headline:stand?.headline});linkLive=true;}
+  }catch(error){console.error('Multi-Link grant placeholder failed',error);}
+  return NextResponse.json({granted:true,linkLive,url:granted?.permanent_code?`https://taprater.com/p/${granted.permanent_code}`:undefined},{headers});
  }catch{return NextResponse.json({error:'Could not grant the licence. Retry with the same request.'},{status:503,headers});}
 }

@@ -7,6 +7,7 @@ import { useState,type Dispatch,type SetStateAction } from "react";
 export function HostedPageLinksFields({draft, orderedButtons, showLinkChoices, setShowLinkChoices, addButton, updateButton, moveButton, removeButton}:{draft:HostedPageEditorDraft; orderedButtons:HostedPageEditorButton[]; showLinkChoices:boolean; setShowLinkChoices:Dispatch<SetStateAction<boolean>>; addButton:(type:HostedPageEditorButton["type"])=>void; updateButton:(id:string,patch:Partial<HostedPageEditorButton>)=>void; moveButton:(id:string,direction:-1|1)=>void; removeButton:(id:string)=>void;}){
 
 const [logoPickerFor,setLogoPickerFor]=useState<string|null>(null);
+const missingUrls=draft.buttons.filter((button)=>!button.url.trim()).length;
 const labelFor=(type:HostedPageEditorButton["type"])=>supportedHostedPageButtons.find((item)=>item.type===type)?.label??"Custom Link";
 const changeLogo=(button:HostedPageEditorButton,type:HostedPageEditorButton["type"])=>{
   // Keep a custom button label; replace it only when it still matches the old default.
@@ -19,6 +20,7 @@ return (<div className="tr-card grid gap-2 p-3">
             <div>
               <p className="tr-eyebrow">Buttons / links</p>
               <h2 className="tr-card-title mt-1">Your Links</h2>
+              {missingUrls>0?<p className="mt-1 text-xs text-amber-800">{missingUrls} of {draft.buttons.length} link{draft.buttons.length===1?"":"s"} need{missingUrls===1?"s":""} a web address. Links without one stay hidden on your page.</p>:null}
             </div>
             <button
               type="button"
@@ -54,7 +56,8 @@ return (<div className="tr-card grid gap-2 p-3">
                   </div>
                   <label className="min-w-0">
                     <span className="sr-only">Destination URL</span>
-                    <input className="tr-input min-h-9 px-3 py-1.5 text-sm" value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="https://example.com" />
+                    <input className={`tr-input min-h-9 px-3 py-1.5 text-sm ${button.url.trim()?"":"border-amber-400 bg-amber-50"}`} value={button.url} onChange={(event) => updateButton(button.id, { url: event.target.value })} placeholder="Add web address (https://…)" aria-describedby={button.url.trim()?undefined:`url-missing-${button.id}`} />
+                    {button.url.trim()?null:<span id={`url-missing-${button.id}`} className="mt-1 block text-xs text-amber-800">Hidden until you add a web address</span>}
                   </label>
                   <div className="flex gap-1">
                     <button type="button" aria-label="Move up" onClick={() => moveButton(button.id, -1)} disabled={index === 0} className="tr-icon-button">

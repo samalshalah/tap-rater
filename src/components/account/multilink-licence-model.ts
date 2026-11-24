@@ -56,10 +56,11 @@ export function buildMultiLinkLicences({subscriptions,stands,pages,grantedStands
       ?{label:statusText(billing),tone:badgeTone(billing)||'is-danger'}
       :page?.publishedAt?{label:'Live',tone:'is-success'}:{label:'Not published',tone:'is-warning'};
     const links=page?.draft.buttons.length??0;
+    const ready=page?.draft.buttons.filter(button=>button.url.trim()).length??0;
     const standNames=[...new Set(linkedStands.map(stand=>stand.standLabel||stand.title))];
     const units=linkedStands.reduce((total,stand)=>total+Math.max(1,stand.quantity),0);
     const steps:MultiLinkLicenceStep[]=[
-      {label:'Add your links',done:links>0,detail:links?`${links} link${links===1?'':'s'} added`:'No links yet'},
+      {label:'Add your links',done:ready>0,detail:!links?'No links yet':ready===links?`${links} link${links===1?'':'s'} added`:`${ready} of ${links} links have a web address`},
       {label:'Publish the page',done:Boolean(page?.publishedAt),detail:page?.publishedAt?`Published ${date(page.publishedAt)}`:'Customers can’t see it yet'},
       {label:'Connect a stand',done:linkedStands.length>0||Boolean(grantedStand),detail:linkedStands.length?(units>1?`${units} stands`:standNames[0]):grantedStand?grantedStand.title:'No stand opens this page yet'}
     ];

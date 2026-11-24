@@ -25,6 +25,8 @@ describe('Multi-Link licence cards',()=>{
     expect(card.status.label).toBe('Live');
     expect(card.steps.every(step=>step.done)).toBe(true);
     expect(card.steps[0].detail).toBe('1 link added');
+    const [unfinished]=buildMultiLinkLicences({subscriptions:[subscription('PAGE1')],stands:[],pages:{PAGE1:page('PAGE1',{draft:{...page('PAGE1').draft,buttons:[{id:'1',type:'google_review',label:'Google',url:'',enabled:true,position:0},{id:'2',type:'yelp',label:'Yelp',url:'https://yelp.com/x',enabled:true,position:1}]}} as Partial<HostedPageEditorRecord>)}});
+    expect(unfinished.steps[0]).toMatchObject({done:true,detail:'1 of 2 links have a web address'});
   });
   it('counts a stand granted by Tap Rater as connected',()=>{
     const granted=readGrantedStand('admin-stand:rate-your-experience-stand:req');

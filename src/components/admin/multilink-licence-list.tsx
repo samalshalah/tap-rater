@@ -1,6 +1,7 @@
 "use client";
 import {useCallback,useEffect,useState} from 'react';
 import type {AdminMultiLinkLicence} from '@/lib/admin-multilink-licences';
+import {downloadQrFiles} from '@/components/account/qr-download';
 
 const sourceLabel={admin:'Granted by admin',manual:'Set up by Tap Rater',subscription:'Paid subscription'} as const;
 
@@ -11,6 +12,14 @@ export function MultiLinkLicenceList({customerId,refreshKey=0}:{customerId:strin
   const [confirming,setConfirming]=useState<string|null>(null);
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
+  const [qrFor,setQrFor]=useState<string|null>(null);
+
+  async function downloadQr(code:string){
+    setQrFor(code);setMessage('');
+    try{const r=await fetch('/api/admin/multilink-licences/qr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customerId,code})});const body=await r.json();if(!r.ok||!body?.svg)throw Error(body?.error);await downloadQrFiles(body.svg,`taprater-qr-${code}`);setMessage(`QR downloaded for https://taprater.com/p/${code}. The link is live.`);}
+    catch(e){setMessage(e instanceof Error&&e.message?e.message:'Could not create the QR code.');}
+    finally{setQrFor(null);}
+  }
 
   const load=useCallback(async()=>{
     setError('');
@@ -35,13 +44,16 @@ export function MultiLinkLicenceList({customerId,refreshKey=0}:{customerId:strin
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-medium text-ink">{licence.businessName}</p>
-          <p className="text-xs text-muted">{licence.code} · {sourceLabel[licence.source]} · {licence.published?'Published':'Not published'} · {licence.links} link{licence.links===1?'':'s'}</p>
+          <p className="text-xs text-muted">taprater.com/p/{licence.code} · {sourceLabel[licence.source]} · {licence.published?'Published':'Not published'} · {licence.links} link{licence.links===1?'':'s'}</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="tr-button-ghost" disabled={qrFor===licence.code} onClick={()=>downloadQr(licence.code)}>{qrFor===licence.code?'Preparing…':'Download QR'}</button>
         {licence.removable
           ?confirming===licence.code
             ?null
             :<button type="button" className="tr-button-ghost text-red-700" disabled={busy} onClick={()=>{setConfirming(licence.code);setMessage('');}}>Remove</button>
           :<span className="text-xs text-muted">{licence.blockedReason}</span>}
+        </div>
       </div>
       {confirming===licence.code&&<div className="mt-3 grid gap-2 rounded-md bg-soft p-3">
         <p>Remove <strong>{licence.businessName}</strong> ({licence.code})? The page and its draft links are deleted and the client loses this licence. This can’t be undone.</p>

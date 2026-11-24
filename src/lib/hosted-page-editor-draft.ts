@@ -37,7 +37,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
     });
 
   if (options.requireButtons !== false && buttons.length === 0) {
-    throw new HostedPageEditorError("Add at least one valid link before publishing.", 400);
+    throw new HostedPageEditorError("Add a web address to at least one link to publish. Until then, your page link shows a “being set up” page, so your QR code still works.", 400);
   }
 
   return validateHostedPageSnapshot({

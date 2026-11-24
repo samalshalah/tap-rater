@@ -1,7 +1,8 @@
 "use client";
 import Link from 'next/link';
 import {useId,useState} from 'react';
-import {Check,Circle,Copy,ExternalLink,Link2,Pencil} from 'lucide-react';
+import {Check,Circle,Copy,Download,ExternalLink,Link2,Pencil} from 'lucide-react';
+import {downloadQrFiles} from './qr-download';
 import type {MultiLinkLicence} from './multilink-licence-model';
 import type {Selection} from './billing-model';
 import {BillingDetailsDialog} from './billing-details-dialog';
@@ -25,12 +26,14 @@ export function MultiLinkLicences({licences}:{licences:MultiLinkLicence[]}){
 }
 
 function LicenceCard({licence,onEdit,onBilling}:{licence:MultiLinkLicence;onEdit:()=>void;onBilling:()=>void}){
-  const [copied,setCopied]=useState(false);
+  const [copied,setCopied]=useState(false),[qrBusy,setQrBusy]=useState(false),[qrError,setQrError]=useState('');
   const stand=licence.linkedStands[0];
   const standImage=stand?.proofPreviewUrl||stand?.productImageUrl||licence.grantedStand?.imageUrl;
   const standTitle=stand?(licence.linkedStands.length>1?`${licence.linkedStands.length} stands`:stand.standLabel||stand.title):licence.grantedStand?.title;
   const next=licence.steps.find(step=>!step.done);
   const published=licence.steps[1]?.done;
+  // The QR always points at the permanent link; the server makes sure that link is live first.
+  async function downloadQr(){setQrBusy(true);setQrError('');try{const response=await fetch('/api/account/hosted-page/qr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:licence.code})});const body=await response.json().catch(()=>null);if(!response.ok||!body?.svg)throw new Error(body?.error||'The QR code couldn’t be created.');await downloadQrFiles(body.svg,`taprater-qr-${licence.code}`);}catch(error){setQrError(error instanceof Error?error.message:'The QR code couldn’t be created.');}finally{setQrBusy(false);}}
   async function copy(){try{await navigator.clipboard.writeText(licence.subscription.hostedPageUrl);setCopied(true);}catch{setCopied(false);}}
   return <article className="tr-card grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 p-4 sm:p-5" aria-label={`${licence.name} Multi-Link licence`}>
     <header className="flex flex-wrap items-start gap-3">
@@ -53,8 +56,13 @@ function LicenceCard({licence,onEdit,onBilling}:{licence:MultiLinkLicence;onEdit
         {standTitle?<p className="truncate font-medium text-ink">{standTitle}</p>:<p className="text-ink">No stand opens this page yet</p>}
         <p className="truncate text-xs text-muted">Opens {licence.subscription.hostedPageUrl.replace(/^https?:\/\//,'')}</p>
       </div>
-      {stand?<Link href="/account/stands" className="tr-button-ghost shrink-0 text-sm">View stand</Link>
-        :<button type="button" className="tr-button-ghost shrink-0 text-sm" onClick={copy}><Copy size={14} aria-hidden="true"/>{copied?'Copied':'Copy link'}</button>}
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {stand&&<Link href="/account/stands" className="tr-button-ghost text-sm">View stand</Link>}
+        <button type="button" className="tr-button-ghost text-sm" onClick={copy}><Copy size={14} aria-hidden="true"/>{copied?'Copied':'Copy link'}</button>
+        <button type="button" className="tr-button-ghost text-sm" onClick={downloadQr} disabled={qrBusy}><Download size={14} aria-hidden="true"/>{qrBusy?'Preparing…':'Download QR'}</button>
+      </div>
+      {qrError&&<p role="alert" className="basis-full text-xs text-red-700">{qrError}</p>}
+      {!published&&<p className="basis-full text-xs text-muted">This link is permanent. Print it on your stand now. It shows a “being set up” page until you publish.</p>}
     </div>
 
     <ol className="grid gap-2 text-sm sm:grid-cols-3" aria-label="Setup steps">

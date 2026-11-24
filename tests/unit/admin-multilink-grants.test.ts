@@ -1,5 +1,7 @@
 import {beforeEach,expect,it,vi} from 'vitest';
-const mocks=vi.hoisted(()=>({auth:vi.fn(),sql:vi.fn()}));
+const mocks=vi.hoisted(()=>({auth:vi.fn(),sql:vi.fn(),storage:vi.fn(),placeholder:vi.fn()}));
+vi.mock('@/lib/hosted-pages/app-storage',()=>({getHostedPageStorage:mocks.storage}));
+vi.mock('@/lib/hosted-pages/placeholder',()=>({ensureHostedPagePlaceholder:mocks.placeholder}));
 vi.mock('@/lib/admin-auth',()=>({requireAdminApi:mocks.auth}));
 vi.mock('@/lib/google-business/live-reviews',()=>({liveDb:()=>mocks.sql}));
 import {POST} from '@/app/api/admin/multilink-grants/route';
@@ -19,3 +21,15 @@ it('records the chosen stand and uses its wording as the page heading',async()=>
  expect(values.find(value=>typeof value==='string'&&value.includes('"headline"'))).toContain('Rate Your Experience');
 });
 it('rejects a stand that is not a Multi-Link stand',async()=>{expect((await POST(request({...body,standSlug:'not-a-stand'} as typeof body))).status).toBe(400);expect(mocks.sql).not.toHaveBeenCalled();});
+
+it('makes the new permanent link live straight away',async()=>{
+ mocks.storage.mockResolvedValue({});mocks.sql.mockResolvedValue([{id:'licence',hosted_page_id:'page-1',permanent_code:'6Y2XVQS9QHKM'}]);
+ const response=await POST(request({...body,standSlug:'rate-your-experience-stand'} as typeof body));
+ expect(await response.json()).toMatchObject({granted:true,linkLive:true,url:'https://taprater.com/p/6Y2XVQS9QHKM'});
+ expect(mocks.placeholder).toHaveBeenCalledWith({},expect.objectContaining({code:'6Y2XVQS9QHKM',physicalProductRef:'page-1',businessName:'Test business',headline:'Rate Your Experience'}));
+});
+it('still grants when the link cannot be made live yet',async()=>{
+ mocks.storage.mockResolvedValue({});mocks.placeholder.mockRejectedValue(new Error('r2 down'));mocks.sql.mockResolvedValue([{id:'licence',hosted_page_id:'page-1',permanent_code:'6Y2XVQS9QHKM'}]);
+ const response=await POST(request());
+ expect(response.status).toBe(200);expect((await response.json()).linkLive).toBe(false);
+});

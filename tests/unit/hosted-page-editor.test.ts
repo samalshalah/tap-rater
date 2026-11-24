@@ -125,7 +125,7 @@ describe("hosted page editor", () => {
 
     expect(html).toContain("Skipped Links Cafe");
     expect(html).toContain("This Tap Rater page is being set up");
-    expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Add at least one valid link");
+    expect(() => buildSnapshotFromDraft({ ...page, draft: nextDraft })).toThrow("Add a web address to at least one link");
   });
 
   it("renders relative uploaded logos with the preview request origin", async () => {
