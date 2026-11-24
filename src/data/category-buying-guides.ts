@@ -16,11 +16,11 @@ export type CategoryBuyingGuide = {
 
 export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGuide> = {
   reviews: {
-    heading: "Choose an NFC review stand for your platform",
-    introduction: "Start with the listing your business uses. The printed platform name helps customers recognize what they are opening. The URL you provide determines which page and location they see.",
+    heading: "Choose a custom review stand for your business",
+    introduction: "Put your branding on the counter with a custom NFC review stand. Your logo, optional business name, and printed QR code share a large 6.5 × 4.25 inch acrylic display. Each stand is printed in the USA, with free shipping on U.S. orders and no minimum. Choose your platform, then add the link for the business location customers should open.",
     decision: "A salon or dealership can also choose a stand for an industry platform such as Booksy or DealerRater. Check the destination on a phone before ordering, since some platforms require an account or completed visit to leave a review.",
     options: [
-      { slug: "google-review-stand", purpose: "Make a location's Google review form easy to reach.", consideration: "Confirm the business name and address for each branch." },
+      { slug: "google-review-stand", purpose: "Create a custom Google review stand with your logo, NFC tap, and a QR code for your location's review form.", consideration: "Approve your branded artwork before payment. Confirm the business name and address for each branch." },
       { slug: "yelp-review-stand", purpose: "Help visitors discover your Yelp business page.", consideration: "Use a profile-discovery prompt; Yelp says businesses should not ask for reviews." },
       { slug: "facebook-review-stand", purpose: "Open your business's Facebook Page.", consideration: "Check that Recommendations are enabled and visible to visitors if you want customers to find them." },
       { slug: "tripadvisor-review-stand", purpose: "Connect guests to a travel or hospitality listing.", consideration: "Check whether the hotel, restaurant, and attraction have separate pages." }
@@ -30,10 +30,10 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     placement: "Place the stand where a visit naturally ends: a checkout counter, reception desk, or collection point. Leave room to approach the NFC area with a phone. Where review requests are permitted, invite honest feedback consistently without rewards or selecting only happy customers. For Yelp, present the stand as a way to find the business page instead.",
     related: [{ href: "/nfc-vs-qr-google-review-stand", label: "Compare NFC and QR review stands" }, { href: "/solutions/restaurant-food", label: "Review stands for restaurants" }, { href: "/solutions/automotive", label: "Stands for dealerships and repair shops" }],
     faqs: [
-      { question: "Does a review stand automatically post a review?", answer: "No. It opens the destination on the customer's phone. The customer decides whether to sign in, write feedback, choose a rating, and submit it through the platform's own process." },
+      { question: "How big are the custom review stands?", answer: "The acrylic stand measures 6.5 × 4.25 inches (165 × 108 mm), with a 1.97 inch (50 mm) base. The large display gives your logo, business name, and QR code room on a reception desk or checkout counter." },
       { question: "Which review stand should I choose for several locations?", answer: "Choose the platform your business uses, then supply the correct URL for each location. Identical designs can use different destinations. Test each branch's link rather than assuming a company-wide page will direct customers to the right office." },
-      { question: "Do all review stands include a printed QR code?", answer: "Every custom stand includes NFC, your logo, business name, and a QR code generated from the destination. Review the artwork preview before payment." },
-      { question: "What is an NFC review stand?", answer: "It is a countertop sign with a built-in NFC tag. Customers hold a compatible phone near the tap area or scan the printed QR code with their camera to open the link you provide. They do not need a Tap Rater app." },
+      { question: "Can I add my logo, and where is the stand printed?", answer: "Yes. Every custom review stand includes your logo, an optional business name, NFC, and a QR code for your chosen link. Approve your artwork before payment. Your stand is printed in the USA and arrives ready to use. Shipping is free on U.S. orders, with no minimum." },
+      { question: "What is an NFC review stand?", answer: "It is a countertop sign with a built-in NFC tag. Customers tap with a compatible phone or scan the printed QR code to open your link. No Tap Rater app is needed. The stand does not automatically post a review: customers choose whether to sign in, rate, and submit feedback." },
       { question: "Should I use a public review page or a private survey?", answer: "Choose a review stand when your purpose is access to a public platform. For comments sent through your own survey, compare Feedback Stands. The destination and printed invitation should clearly explain what customers are opening." }
     ]
   },

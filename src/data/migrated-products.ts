@@ -263,9 +263,9 @@ export const catalogCategories: CatalogCategory[] = [
     slug: "reviews",
     title: "Review Stands",
     eyebrow: "Reviews",
-    description: "Shop custom NFC review stands for Google, Yelp, Facebook, Tripadvisor, and industry review sites. Add your logo and choose the page customers open when they tap the stand or scan its QR code.",
-    seoTitle: "NFC Review Stands | Tap Rater",
-    seoDescription: "Shop custom NFC review stands with your logo and QR code for Google, Yelp, Facebook, Tripadvisor, and other review platforms.",
+    description: "Custom NFC review stands with your logo and QR code for Google, Yelp, Facebook, and more. A large 6.5 × 4.25 inch acrylic display, printed in the USA with free U.S. shipping.",
+    seoTitle: "Custom NFC Review Stands | Tap Rater",
+    seoDescription: "Shop custom NFC review stands with your logo and QR code. Large 6.5 × 4.25 inch acrylic stands, printed in the USA. Free U.S. shipping.",
     buyerIntent: "Choose a platform below, then add the link for your business location during setup.",
     aliases: ["review-stands", "review-plates", "google-review-products", "review-platform-products", "google-review-stands", "review-platform-stands", "google-review-plates"],
     seoCopy:
