@@ -379,7 +379,7 @@ export const checkoutCartSchema = z.object({
             baseTemplateContentHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
             logoContentHash: z.string().regex(/^[a-f0-9]{64}$/).optional(),
             fontSizePercent: z.number().int().min(50).max(160).optional(),
-            logoSizePercent: z.number().int().min(50).max(180).optional(),
+            logoSizePercent: z.number().int().min(50).max(250).optional(),
             proofApprovedAt: z.string().trim().max(80).optional(),
             proofPreviewData: z.record(z.string(), z.unknown()).optional(),
             hasQr: z.boolean().optional(),

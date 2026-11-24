@@ -61,14 +61,19 @@ export async function renderPrintArtwork(input: {
   ].join("");
 }
 
-export function getPrintLogoRegion(region: ArtworkRegion, design: Pick<PrintArtworkDesign, "logoSizePercent" | "logoOffsetXPercent" | "logoOffsetYPercent">): ArtworkRegion {
-  const scale = Math.min(180, Math.max(50, design.logoSizePercent)) / 100;
-  const width = Math.round(region.width * scale);
-  const height = Math.round(region.height * scale);
+export const maxLogoSizePercent = 250;
+
+// The logo may grow into the business-name area when no business name is printed.
+export function getPrintLogoRegion(region: ArtworkRegion, design: Pick<PrintArtworkDesign, "logoSizePercent" | "logoOffsetXPercent" | "logoOffsetYPercent"> & { showBusinessName?: boolean }): ArtworkRegion {
+  const scale = Math.min(maxLogoSizePercent, Math.max(50, design.logoSizePercent)) / 100;
+  const nameRegion = regionToPixels(brandedStandComposition.businessNameRegion);
+  const bottomLimit = design.showBusinessName ? nameRegion.y - 24 : nameRegion.y + nameRegion.height;
+  const width = Math.min(Math.round(region.width * scale), brandedStandComposition.widthPx - brandedStandComposition.safeMarginPx * 2);
+  const height = Math.min(Math.round(region.height * scale), bottomLimit - brandedStandComposition.safeMarginPx);
   return {
     width, height,
     x: Math.max(brandedStandComposition.safeMarginPx, Math.min(brandedStandComposition.widthPx - brandedStandComposition.safeMarginPx - width, Math.round(region.x + (region.width - width) / 2 + region.width * Math.min(20, Math.max(-20, design.logoOffsetXPercent)) / 100))),
-    y: Math.max(brandedStandComposition.safeMarginPx, Math.min(regionToPixels(brandedStandComposition.businessNameRegion).y - 24 - height, Math.round(region.y + (region.height - height) / 2 + region.height * Math.min(20, Math.max(-20, design.logoOffsetYPercent)) / 100)))
+    y: Math.max(brandedStandComposition.safeMarginPx, Math.min(bottomLimit - height, Math.round(region.y + (region.height - height) / 2 + region.height * Math.min(20, Math.max(-20, design.logoOffsetYPercent)) / 100)))
   };
 }
 

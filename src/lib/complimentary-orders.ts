@@ -13,7 +13,7 @@ export const complimentaryDesignSchema = z.object({
   croppedLogoStorageKey: z.string().max(500).refine(isSafeProductMediaKey).optional(),
   logoBackgroundMode: z.enum(["original","auto_crop"]).optional(),
   fontSizePercent: z.number().int().min(50).max(160).default(100),
-  logoSizePercent: z.number().int().min(50).max(180).default(100),
+  logoSizePercent: z.number().int().min(50).max(250).default(100),
   logoOffsetXPercent: z.number().int().min(-20).max(20).default(0),
   logoOffsetYPercent: z.number().int().min(-20).max(20).default(0),
   logoFitMode: z.enum(["contain", "fill"]).default("contain"),
@@ -51,7 +51,8 @@ export function complimentaryCatalog(products: MigratedProduct[]) {
 export function complimentaryFormCatalog(products: MigratedProduct[]) {
   return complimentaryCatalog(products).map(({ product, options }) => ({
     slug: product.slug,
-    title: product.title,
+    // Show the wording printed on the stand (e.g. "Rate Your Experience"), not the shop title.
+    title: product.displayText?.trim() || product.title,
     options: options.map(({ id, label }) => {
       const photo = getProductVisual(product).src;
       return {

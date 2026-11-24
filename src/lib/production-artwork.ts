@@ -248,7 +248,7 @@ export async function composeProductionArtworkDocument(
     throw new Error("The stand template is below print resolution. Please contact Tap Rater.");
   }
   if (logoAsset.dimensions) {
-    const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent, logoOffsetYPercent });
+    const region = getPrintLogoRegion(template.logoRegion, { logoSizePercent, logoOffsetXPercent, logoOffsetYPercent, showBusinessName: Boolean(businessName.trim()) && showBusinessNameOnProof });
     const ratio = logoFitMode === "fill" ? Math.max(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height) : Math.min(region.width / logoAsset.dimensions.width, region.height / logoAsset.dimensions.height);
     if (ratio > 1.01) throw new Error("This logo file is too small to print sharply. Upload a larger version of your logo (at least 1000 pixels wide works best), or reduce the logo size.");
   }
