@@ -45,6 +45,8 @@ export type ProductSetupDialogProps = {
   setMultiLinkTitle: (value: string) => void;
   multiLinkDescription: string;
   setMultiLinkDescription: (value: string) => void;
+  multiLinkShowBusinessName: boolean;
+  setMultiLinkShowBusinessName: (value: boolean) => void;
   logo: UploadedLogo | null;
   isUploadingLogo: boolean;
   uploadLogo: (file: File | undefined) => Promise<void>;

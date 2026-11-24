@@ -77,7 +77,7 @@ export async function provisionManualCustomerAccountFromOrder(
     const itemBusinessName = readString(setup.businessName) ?? businessName;
     const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl) ?? readManualOrderLogoUrl(input.order) ?? undefined, publicSiteUrl);
     const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-    const { headline, description: pageDescription } = readHostedPageText(hostedItem, itemBusinessName, initialButtons.length > 0);
+    const { headline, description: pageDescription, showBusinessName } = readHostedPageText(hostedItem, itemBusinessName, initialButtons.length > 0);
     const lineSessionId = hostedItemIndexes.length > 1 ? `${input.order.stripe_checkout_session_id}:line:${hostedItemIndex + 1}` : input.order.stripe_checkout_session_id;
     const existingMatch = await findHostedSubscriptionForProvisioning(client, {
       customerId: customer.customerId,
@@ -139,6 +139,7 @@ export async function provisionManualCustomerAccountFromOrder(
         initialButtons,
         headline,
         description: pageDescription ?? null,
+        showBusinessName,
         now
       });
     if (!page.ok) return page;
@@ -174,6 +175,7 @@ export async function provisionManualCustomerAccountFromOrder(
       headline,
       buttons: buildSnapshotButtons(initialButtons),
       description: pageDescription,
+      showBusinessName,
       appearance: { theme: "light", accentColor: "#6b7280" }
     }));
 

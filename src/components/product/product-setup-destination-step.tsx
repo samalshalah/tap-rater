@@ -37,8 +37,6 @@ type DestinationStepProps = Pick<ProductSetupDialogProps,
   | "logo"
   | "isUploadingLogo"
   | "uploadLogo"
-  | "printBusinessName"
-  | "setShowBusinessNameOnProof"
 >;
 
 export function ProductSetupDestinationStep({
@@ -68,9 +66,7 @@ export function ProductSetupDestinationStep({
   setMultiLinkButtons,
   logo,
   isUploadingLogo,
-  uploadLogo,
-  printBusinessName,
-  setShowBusinessNameOnProof
+  uploadLogo
 }: DestinationStepProps) {
   const multiLink = selectedLinkExperience === "multilink";
   return <div className="grid gap-4">
@@ -107,10 +103,6 @@ export function ProductSetupDestinationStep({
                               />
                             </label>
                           </div>
-                          <label className="flex items-center gap-2 text-sm text-ink">
-                            <input type="checkbox" className="h-4 w-4 accent-brand" checked={printBusinessName} onChange={(event) => setShowBusinessNameOnProof(event.target.checked)} />
-                            Print the business name on the stand
-                          </label>
                         </div>
                       ) : null}
                     </>

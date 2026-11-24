@@ -266,6 +266,7 @@ function normalizeCheckoutSetup(setup: CartItem["setup"]): NonNullable<CartItem[
     multiLinkTextSet: setup?.multiLinkTextSet === true ? true : undefined,
     multiLinkTitle: setup?.multiLinkTitle?.trim() || undefined,
     multiLinkDescription: setup?.multiLinkDescription?.trim() || undefined,
+    multiLinkShowBusinessName: setup?.multiLinkShowBusinessName === false ? false : undefined,
     platformSlug: setup?.platformSlug?.trim(),
     googlePlaceId: setup?.googlePlaceId?.trim(),
     googlePlaceName: setup?.googlePlaceName?.trim(),

@@ -17,12 +17,15 @@ export function readHostedPageHeadline(item: OrderLineItem, businessName: string
 
 // The page's title and the line under it. Orders from the current setup carry the customer's own
 // text (either may be empty); older orders keep the stand wording and the standard line.
-export function readHostedPageText(item: OrderLineItem, businessName: string, hasButtons: boolean): { headline: string; description?: string } {
+export function readHostedPageText(item: OrderLineItem, businessName: string, hasButtons: boolean): { headline: string; description?: string; showBusinessName?: false } {
   const setup = readSetup(item);
+  // The customer can hide the business name on the page; it shows by default.
+  const nameHidden = setup.multiLinkShowBusinessName === false ? { showBusinessName: false as const } : {};
   if (setup.multiLinkTextSet === true) {
     return {
       headline: readString(setup.multiLinkTitle)?.slice(0, 140) ?? businessName,
-      description: readString(setup.multiLinkDescription)?.slice(0, 300)
+      description: readString(setup.multiLinkDescription)?.slice(0, 300),
+      ...nameHidden
     };
   }
   return {
@@ -132,9 +135,10 @@ export function orderRequestsAccount(order: OrderRecord) {
 }
 
 /** description: undefined = the standard line, null = no line (the customer left it empty). */
-export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = [], headline?: string, description?: string | null) {
+export function buildInitialDraft(businessName: string, logoUrl?: string, buttons: HostedPageEditorButton[] = [], headline?: string, description?: string | null, showBusinessName?: boolean) {
   return {
     businessName,
+    ...(showBusinessName === false ? { showBusinessName: false } : {}),
     logoUrl,
     headline: headline || businessName,
     description: description === null ? undefined : description ?? (buttons.length ? "Choose an option below." : "This Tap Rater page is being set up."),

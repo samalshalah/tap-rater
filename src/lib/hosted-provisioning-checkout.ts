@@ -81,7 +81,7 @@ export async function provisionHostedSubscriptionFromCheckout(
       const businessName = readString(setup.businessName) ?? input.order.customer_name ?? input.session.customer_details?.name ?? "Tap Rater Customer";
       const logoUrl = resolvePublicAssetUrl(readString(setup.logoMediaUrl), publicSiteUrl);
       const initialButtons = readInitialMultiLinkButtons(setup.multiLinkButtons);
-      const { headline, description: pageDescription } = readHostedPageText(hostedItem, businessName, initialButtons.length > 0);
+      const { headline, description: pageDescription, showBusinessName } = readHostedPageText(hostedItem, businessName, initialButtons.length > 0);
       const lineSessionId = hostedItemIndexes.length > 1 ? `${checkoutSessionId}:line:${hostedItemIndex + 1}` : checkoutSessionId;
       const existingMatch = await findHostedSubscriptionForProvisioning(client, {
         customerId: customer.customerId,
@@ -150,6 +150,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           initialButtons,
           headline,
           description: pageDescription ?? null,
+          showBusinessName,
           now
         });
       if (!page.ok) return page;
@@ -194,6 +195,7 @@ export async function provisionHostedSubscriptionFromCheckout(
           headline,
           buttons: buildSnapshotButtons(initialButtons),
           description: pageDescription,
+          showBusinessName,
           appearance: { theme: "light", accentColor: "#6b7280" },
           subscriptionPaidThrough: itemPaidThrough ?? undefined,
           subscriptionPastDueSince: pastDueSince ?? undefined

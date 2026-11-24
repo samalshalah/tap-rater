@@ -47,6 +47,8 @@ export function ProductSetupDialogContent({
   setMultiLinkTitle,
   multiLinkDescription,
   setMultiLinkDescription,
+  multiLinkShowBusinessName,
+  setMultiLinkShowBusinessName,
   setMultiLinkButtons,
   logo,
   isUploadingLogo,
@@ -157,8 +159,6 @@ export function ProductSetupDialogContent({
                   logo={logo}
                   isUploadingLogo={isUploadingLogo}
                   uploadLogo={uploadLogo}
-                  printBusinessName={printBusinessName}
-                  setShowBusinessNameOnProof={setShowBusinessNameOnProof}
                 /> : null}
 
               {step === "links" && selectedLinkExperience === "multilink" ? (
@@ -171,6 +171,8 @@ export function ProductSetupDialogContent({
                   onTitleChange={setMultiLinkTitle}
                   description={multiLinkDescription}
                   onDescriptionChange={setMultiLinkDescription}
+                  showBusinessName={multiLinkShowBusinessName}
+                  onShowBusinessNameChange={setMultiLinkShowBusinessName}
                 />
               ) : null}
 
@@ -250,6 +252,7 @@ export function ProductSetupDialogContent({
                       onLogoOffsetXPercentChange: setLogoOffsetXPercent, onLogoOffsetYPercentChange: setLogoOffsetYPercent,
                       onProofFontSizePercentChange: setProofFontSizePercent, onProofLogoSizePercentChange: setProofLogoSizePercent,
                       showBusinessNameOnProof, isUploadingLogo, onUploadLogo: uploadLogo,
+                      hasBusinessName: Boolean(businessName.trim()), onPrintBusinessNameChange: setShowBusinessNameOnProof,
                       header: <div className="mb-0.5">
                         <p className="text-sm font-semibold text-ink">Your printed stand</p>
                         <p className="mt-1 text-sm leading-6 text-muted">The artwork we print on your stand, 4.26 × 6.5 in.{selectedLinkExperience === "multilink" ? " Your Multi-Link page is separate." : ""}</p>

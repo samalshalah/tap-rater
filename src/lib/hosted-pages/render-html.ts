@@ -37,6 +37,12 @@ export function renderHostedPageHtml(resolution: HostedPageResolution, options: 
   const viewPixel = tracking ? `<img class="tr-pixel" src="${escapeAttribute(hostedPageEventUrl({ type: "view", code: snapshot.code, tracking }))}" alt="" width="1" height="1">` : "";
   // Clicks are reported with the link ping attribute, so the button still goes straight to the site.
   const ping = (button: { id: string; iconKey?: string; type: string }) => tracking ? ` ping="${escapeAttribute(hostedPageEventUrl({ type: "click", code: snapshot.code, tracking, buttonId: button.id, buttonType: button.iconKey ?? button.type }))}"` : "";
+  // The business name shows above a custom title, or as the title when there is none, unless the
+  // customer hid it. Then only a custom title shows.
+  const showName = snapshot.showBusinessName !== false;
+  const customHeading = snapshot.headline && snapshot.headline !== snapshot.businessName ? snapshot.headline : undefined;
+  const heading = customHeading ?? (showName ? snapshot.businessName : undefined);
+
   if (visibleButtons.length === 0) {
     return renderShell({
       title: escapeHtml(snapshot.businessName),
@@ -46,7 +52,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution, options: 
       logoAlign: snapshot.appearance?.logoAlign,
       textAlign: snapshot.appearance?.textAlign,
       body: `
-        <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
+        ${heading ? `<h1>${escapeHtml(heading)}</h1>` : ""}
         <p class="tr-copy">${escapeHtml(snapshot.description ?? "This Tap Rater page is being set up. The permanent URL is active and will keep working after the business publishes its links.")}</p>
         <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
         ${viewPixel}
@@ -75,8 +81,8 @@ export function renderHostedPageHtml(resolution: HostedPageResolution, options: 
     logoAlign: snapshot.appearance?.logoAlign,
     textAlign: snapshot.appearance?.textAlign,
     body: `
-      ${snapshot.headline && snapshot.headline !== snapshot.businessName ? `<p class="tr-business">${escapeHtml(snapshot.businessName)}</p>` : ""}
-      <h1>${escapeHtml(snapshot.headline ?? snapshot.businessName)}</h1>
+      ${showName && snapshot.headline && snapshot.headline !== snapshot.businessName ? `<p class="tr-business">${escapeHtml(snapshot.businessName)}</p>` : ""}
+      ${heading ? `<h1>${escapeHtml(heading)}</h1>` : ""}
       ${snapshot.description ? `<p class="tr-copy">${escapeHtml(snapshot.description)}</p>` : ""}
       <nav class="tr-buttons" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
       <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>

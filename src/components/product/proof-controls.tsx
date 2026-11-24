@@ -72,6 +72,8 @@ export function ProofControls({
   proofFontSizePercent,
   proofLogoSizePercent,
   showBusinessNameOnProof,
+  hasBusinessName = true,
+  onPrintBusinessNameChange,
   header,
   footer,
   problem = null
@@ -92,6 +94,10 @@ export function ProofControls({
   proofFontSizePercent: number;
   proofLogoSizePercent: number;
   showBusinessNameOnProof: boolean;
+  /** Whether there is a business name that could be printed. */
+  hasBusinessName?: boolean;
+  /** When set, the preview shows a switch to print or leave out the business name. */
+  onPrintBusinessNameChange?: (value: boolean) => void;
   /** A print problem from the preview, shown under the controls. */
   problem?: BrandedProofProblem | null;
   /** Shown above the controls, e.g. the step heading. */
@@ -108,6 +114,15 @@ export function ProofControls({
       <ControlRow label="Logo size">
         <SizeStepper label="Logo size" value={proofLogoSizePercent} min={50} max={250} onChange={onProofLogoSizePercentChange} />
       </ControlRow>
+
+      {onPrintBusinessNameChange && hasBusinessName ? (
+        <ControlRow label="Business name">
+          <label className="flex min-h-9 items-center gap-2 text-sm text-ink">
+            <input type="checkbox" className="h-4 w-4 accent-brand" checked={showBusinessNameOnProof} onChange={(event) => onPrintBusinessNameChange(event.target.checked)} />
+            Print it on the stand
+          </label>
+        </ControlRow>
+      ) : null}
 
       <ControlRow label="Name size" hint={showBusinessNameOnProof ? undefined : "Business name isn’t printed."}>
         <SizeStepper label="Name size" value={proofFontSizePercent} min={50} max={160} disabled={!showBusinessNameOnProof} onChange={onProofFontSizePercentChange} />

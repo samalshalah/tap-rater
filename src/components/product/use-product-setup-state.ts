@@ -54,6 +54,8 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
   // The Multi-Link page's title and the line under it. Both may be left empty.
   const [multiLinkTitle, setMultiLinkTitle] = useState(() => product.displayText?.trim() ?? "");
   const [multiLinkDescription, setMultiLinkDescription] = useState(defaultMultiLinkDescription);
+  // Whether the business name shows on the Multi-Link page (under the logo).
+  const [multiLinkShowBusinessName, setMultiLinkShowBusinessName] = useState(true);
 
   const [logo, setLogo] = useState<UploadedLogo | null>(null);
 
@@ -193,6 +195,8 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
     setMultiLinkTitle,
     multiLinkDescription,
     setMultiLinkDescription,
+    multiLinkShowBusinessName,
+    setMultiLinkShowBusinessName,
     logo,
     setLogo,
     quantity,

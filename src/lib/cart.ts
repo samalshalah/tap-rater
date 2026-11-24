@@ -58,6 +58,8 @@ export type CartItem = {
     multiLinkTextSet?: boolean;
     multiLinkTitle?: string;
     multiLinkDescription?: string;
+    /** false = hide the business name on the Multi-Link page (shown by default). */
+    multiLinkShowBusinessName?: boolean;
     platformSlug?: string;
     googlePlaceId?: string;
     googlePlaceName?: string;
@@ -280,6 +282,7 @@ export function getCartItemKey(item: Pick<CartItem, "productId" | "optionId" | "
     JSON.stringify(setup.multiLinkButtons ?? []),
     setup.multiLinkLinksSkipped === true ? "multilink_skipped" : "",
     setup.multiLinkTextSet === true ? `multilink_text:${setup.multiLinkTitle ?? ""}|${setup.multiLinkDescription ?? ""}` : "",
+    setup.multiLinkShowBusinessName === false ? "multilink_hide_name" : "",
     setup.platformSlug ?? "",
     setup.googlePlaceId ?? "",
     setup.businessName ?? "",
@@ -351,6 +354,7 @@ function normalizeSetup(value: unknown): CartItem["setup"] {
     multiLinkTextSet: row.multiLinkTextSet === true ? true : undefined,
     multiLinkTitle: readString(row.multiLinkTitle),
     multiLinkDescription: readString(row.multiLinkDescription),
+    multiLinkShowBusinessName: row.multiLinkShowBusinessName === false ? false : undefined,
     platformSlug: readString(row.platformSlug),
     googlePlaceId: readString(row.googlePlaceId),
     googlePlaceName: readString(row.googlePlaceName),

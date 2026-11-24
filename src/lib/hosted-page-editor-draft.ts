@@ -49,6 +49,7 @@ export function buildSnapshotFromDraft(page: HostedPageEditorRecord, now = new D
     publishedAt: now.toISOString(),
     lifecycleStatus: page.lifecycleStatus,
     businessName: draft.businessName,
+    showBusinessName: draft.showBusinessName === false ? false : undefined,
     logoUrl: makePublicUrl(draft.logoUrl, options.publicBaseUrl),
     headline: draft.headline || draft.businessName,
     description: draft.description,
@@ -88,6 +89,7 @@ export function validateHostedPageEditorDraft(input: unknown): HostedPageEditorD
 
   return {
     businessName,
+    ...(value.showBusinessName === false ? { showBusinessName: false } : {}),
     logoUrl,
     headline: readString(value.headline, 140),
     description: readString(value.description, 300),

@@ -22,7 +22,9 @@ export function MultiLinkSetupStep({
   title,
   onTitleChange,
   description,
-  onDescriptionChange
+  onDescriptionChange,
+  showBusinessName,
+  onShowBusinessNameChange
 }: {
   businessName: string;
   logoUrl?: string;
@@ -32,6 +34,8 @@ export function MultiLinkSetupStep({
   onTitleChange: (value: string) => void;
   description: string;
   onDescriptionChange: (value: string) => void;
+  showBusinessName: boolean;
+  onShowBusinessNameChange: (value: boolean) => void;
 }) {
   const [logoPickerFor, setLogoPickerFor] = useState<string | null>(null);
   const [finderFor, setFinderFor] = useState<string | null>(null);
@@ -105,6 +109,12 @@ export function MultiLinkSetupStep({
             Text under the title (optional)
             <input className="tr-input py-2" maxLength={300} value={description} onChange={(event) => onDescriptionChange(event.target.value)} placeholder="e.g. Choose an option below." />
           </label>
+          {businessName.trim() ? (
+            <label className="flex items-center gap-2 text-sm text-ink sm:col-span-2">
+              <input type="checkbox" className="h-4 w-4 accent-brand" checked={showBusinessName} onChange={(event) => onShowBusinessNameChange(event.target.checked)} />
+              Show the business name on the page
+            </label>
+          ) : null}
         </div>
 
         <div className="grid gap-1.5">
@@ -206,15 +216,16 @@ export function MultiLinkSetupStep({
         </button>
       </div>
 
-      <MultiLinkMobilePreview businessName={businessName} logoUrl={logoUrl} buttons={previewButtons} title={title} description={description} />
+      <MultiLinkMobilePreview businessName={businessName} logoUrl={logoUrl} buttons={previewButtons} title={title} description={description} showBusinessName={showBusinessName} />
     </div>
   );
 }
 
-export function MultiLinkMobilePreview({ businessName, logoUrl, buttons, title = "", description = "" }: { businessName: string; logoUrl?: string; buttons: MultiLinkDraftButton[]; title?: string; description?: string }) {
+export function MultiLinkMobilePreview({ businessName, logoUrl, buttons, title = "", description = "", showBusinessName = true }: { businessName: string; logoUrl?: string; buttons: MultiLinkDraftButton[]; title?: string; description?: string; showBusinessName?: boolean }) {
   // Same rules as the live page: the business name sits above a custom title; an empty title shows the name.
+  // With the name hidden, only a custom title shows.
   const name = businessName.trim() || "Your business";
-  const heading = title.trim() || name;
+  const heading = title.trim() || (showBusinessName ? name : "");
   return (
     <SetupPreviewFrame label="Page preview" icon={<Smartphone size={13} aria-hidden="true" />}>
       {/* The page scrolls inside the frame when it has many links; the popup itself never scrolls. */}
@@ -227,8 +238,8 @@ export function MultiLinkMobilePreview({ businessName, logoUrl, buttons, title =
               {(businessName.trim()[0] ?? "T").toUpperCase()}
             </span>
           )}
-          {heading !== name ? <p className="text-xs font-semibold text-muted">{name}</p> : null}
-          <p className="text-base font-semibold leading-5 text-ink [overflow-wrap:anywhere]">{heading}</p>
+          {showBusinessName && heading !== name ? <p className="text-xs font-semibold text-muted">{name}</p> : null}
+          {heading ? <p className="text-base font-semibold leading-5 text-ink [overflow-wrap:anywhere]">{heading}</p> : null}
           {description.trim() ? <p className="text-xs text-muted [overflow-wrap:anywhere]">{description.trim()}</p> : null}
         </div>
 

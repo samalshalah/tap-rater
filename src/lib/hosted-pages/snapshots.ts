@@ -37,6 +37,8 @@ export type HostedPageSnapshot = {
   subscriptionPastDueSince?: string;
   subscriptionPaidThrough?: string;
   businessName: string;
+  /** false = the page leaves out the business name (it is shown by default). */
+  showBusinessName?: boolean;
   logoUrl?: string;
   headline?: string;
   description?: string;
@@ -129,6 +131,7 @@ export function validateHostedPageSnapshot(input: HostedPageSnapshot): HostedPag
   return {
     ...input,
     businessName: input.businessName.trim(),
+    showBusinessName: input.showBusinessName === false ? false : undefined,
     headline: trimOptional(input.headline, 140),
     description: trimOptional(input.description, 300),
     logoUrl: trimOptional(input.logoUrl, 500),

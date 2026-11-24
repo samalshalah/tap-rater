@@ -61,6 +61,8 @@ export type HostedPageEditorButton = {
 };
 export type HostedPageEditorDraft = {
   businessName: string;
+  /** false = leave the business name off the page (shown by default). */
+  showBusinessName?: boolean;
   logoUrl?: string;
   headline?: string;
   description?: string;

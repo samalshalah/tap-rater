@@ -32,6 +32,7 @@ export function createProductSetupActions({
   multiLinkButtons,
   multiLinkTitle,
   multiLinkDescription,
+  multiLinkShowBusinessName,
   setMultiLinkButtons,
   logo,
   setLogo,
@@ -349,6 +350,8 @@ export function createProductSetupActions({
         multiLinkTextSet: selectedLinkExperience === "multilink" ? true : undefined,
         multiLinkTitle: selectedLinkExperience === "multilink" ? multiLinkTitle.trim() || undefined : undefined,
         multiLinkDescription: selectedLinkExperience === "multilink" ? multiLinkDescription.trim() || undefined : undefined,
+        // Only sent when the customer hides the name; the page shows it by default.
+        multiLinkShowBusinessName: selectedLinkExperience === "multilink" && !multiLinkShowBusinessName ? false : undefined,
         platformSlug: product.primaryPlatformSlug,
         googlePlaceId: googlePlaceId || undefined,
         googlePlaceName: googlePlaceName || undefined,

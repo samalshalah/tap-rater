@@ -13,6 +13,11 @@ return (<div className="tr-card grid gap-2 p-3">
           <label className="grid gap-1.5 text-sm font-medium text-ink">
             Business name
             <input className="tr-input min-h-10 px-3 py-2" value={draft.businessName} onChange={(event) => updateDraft({ ...draft, businessName: event.target.value })} />
+            <span className="flex items-center gap-2 text-xs font-normal text-muted">
+              <input type="checkbox" className="h-4 w-4 accent-brand" checked={draft.showBusinessName !== false}
+                onChange={(event) => updateDraft({ ...draft, showBusinessName: event.target.checked ? undefined : false })} />
+              Show it on the page
+            </span>
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-ink sm:col-span-2">
             Page heading
