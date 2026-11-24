@@ -5,9 +5,13 @@ import type { CartItem } from "@/lib/cart";
 import type { ProofApprovalSnapshot } from "@/lib/direct-production";
 
 export type ReadyBrandedProof = { proofReceiptId: string; snapshot: ProofApprovalSnapshot; draftKey: string };
+/** A preview problem (e.g. logo too small to print sharply) for the page to show next to its controls. */
+export type BrandedProofProblem = { message: string; retry: () => void };
 
-export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/api/setup/proof" }: {
+export function BrandedProofPreview({ productSlug, setup, onReady, onProblem, endpoint = "/api/setup/proof" }: {
   endpoint?: string;
+  /** When given, problems are handed to the page instead of being shown under the preview. */
+  onProblem?: (problem: BrandedProofProblem | null) => void;
   productSlug: string;
   setup: NonNullable<CartItem["setup"]>;
   onReady: (proof: ReadyBrandedProof | null) => void;
@@ -18,6 +22,9 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const isCurrent = image?.proof.draftKey === draftKey;
+  useEffect(() => {
+    onProblem?.(error ? { message: error, retry: () => setRetry((value) => value + 1) } : null);
+  }, [error, onProblem]);
   // Keep the last rendered proof while its replacement is being prepared.
   // Its receipt remains invalid until the current draft's image has loaded.
   useEffect(() => {
@@ -65,10 +72,10 @@ export function BrandedProofPreview({ productSlug, setup, onReady, endpoint = "/
         className="absolute inset-0 block h-full w-full object-contain"
         onLoad={() => { if (isCurrent) onReady(image.proof); }}
         onError={() => { onReady(null); setImage(null); setError("The preview image could not be displayed. Please try again."); }}
-      /> : <p className="absolute inset-0 grid place-items-center p-3 text-center text-sm text-muted" role="status">{error || "Preparing your stand preview..."}</p>}
+      /> : <p className="absolute inset-0 grid place-items-center p-3 text-center text-sm text-muted" role="status">{error ? (onProblem ? "Preview not ready. See the note beside the controls." : error) : "Preparing your stand preview..."}</p>}
       {image && !isCurrent && !error ? <p role="status" className="absolute inset-x-0 bottom-0 bg-white/95 px-1 py-2 text-center text-xs font-semibold text-brand">Updating preview…</p> : null}
     </div>
-    {error ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
+    {error && !onProblem ? <div className="grid gap-2"><p role="alert" className="text-sm text-red-700">{error}</p><button type="button" className="tr-button-outline" onClick={() => setRetry((value) => value + 1)}>Retry preview</button></div> : null}
     <p className="text-center text-[10px] leading-4 text-muted md:text-xs">Front artwork · 4.26 × 6.50 in</p>
   </div>;
 }

@@ -1,5 +1,6 @@
 "use client";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ImageUp, Minus, Plus, RotateCcw } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ImageUp, Minus, Plus, RotateCcw } from "lucide-react";
+import type { BrandedProofProblem } from "./branded-proof-preview";
 import type { ReactNode } from "react";
 import type { LogoBackgroundMode, LogoFitMode } from "./product-setup-types";
 
@@ -72,7 +73,8 @@ export function ProofControls({
   proofLogoSizePercent,
   showBusinessNameOnProof,
   header,
-  footer
+  footer,
+  problem = null
 }: {
   isUploadingLogo: boolean;
   canAutoCrop: boolean;
@@ -90,6 +92,8 @@ export function ProofControls({
   proofFontSizePercent: number;
   proofLogoSizePercent: number;
   showBusinessNameOnProof: boolean;
+  /** A print problem from the preview, shown under the controls. */
+  problem?: BrandedProofProblem | null;
   /** Shown above the controls, e.g. the step heading. */
   header?: ReactNode;
   /** Shown at the bottom of the panel, e.g. the QR destination and the approval checkbox. */
@@ -143,6 +147,13 @@ export function ProofControls({
         />
       </label>
 
+      {problem ? (
+        <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-800 sm:col-span-2">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <p className="min-w-0 flex-1">{problem.message}</p>
+          <button type="button" className="shrink-0 text-xs font-semibold text-red-800 underline" onClick={problem.retry}>Retry</button>
+        </div>
+      ) : null}
       {footer ? <div className="sm:col-span-2">{footer}</div> : null}
     </div>
   );
