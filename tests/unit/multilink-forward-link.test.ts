@@ -30,3 +30,30 @@ describe('hostedPageForwardUrl',()=>{
     expect(()=>snapshot({forwardUrl:'http://example.com'})).toThrow('https://');
   });
 });
+
+import {readHostedPageForwardUrl,saveHostedPageForwardUrl} from '@/lib/hosted-pages/forward-link';
+import {assignPermanentHostedPageCode,publishHostedPageSnapshot,readCurrentHostedPageSnapshot,type HostedPageTextStorage} from '@/lib/hosted-pages/repository';
+
+function memoryStorage():HostedPageTextStorage{
+  const files=new Map<string,string>();
+  return {getText:async key=>files.get(key)??null,putText:async(key,value)=>{files.set(key,value);},putTextIfAbsent:async(key,value)=>{if(files.has(key))return false;files.set(key,value);return true;}};
+}
+
+describe('saveHostedPageForwardUrl',()=>{
+  it('saves, reads and clears the link without changing the page',async()=>{
+    const storage=memoryStorage();
+    await assignPermanentHostedPageCode(storage,{physicalProductRef:'page-1',code:'ZGBC6FKZH7T3'});
+    await publishHostedPageSnapshot(storage,snapshot({lifecycleStatus:'CANCELLED_AT_PERIOD_END',subscriptionPaidThrough:'2026-12-25T00:00:00.000Z',headline:'Rate Your Experience'}));
+    expect(await saveHostedPageForwardUrl(storage,'ZGBC6FKZH7T3','prioritytoyota.com')).toEqual({ok:true,forwardUrl:'https://prioritytoyota.com/'});
+    expect(await readHostedPageForwardUrl(storage,'ZGBC6FKZH7T3')).toBe('https://prioritytoyota.com/');
+    const page=await readCurrentHostedPageSnapshot(storage,'ZGBC6FKZH7T3');
+    expect(page).toMatchObject({lifecycleStatus:'CANCELLED_AT_PERIOD_END',subscriptionPaidThrough:'2026-12-25T00:00:00.000Z',headline:'Rate Your Experience'});
+    expect(await saveHostedPageForwardUrl(storage,'ZGBC6FKZH7T3','')).toEqual({ok:true,forwardUrl:null});
+    expect(await readHostedPageForwardUrl(storage,'ZGBC6FKZH7T3')).toBeNull();
+  });
+  it('refuses bad links and pages that were never published',async()=>{
+    const storage=memoryStorage();
+    expect(await saveHostedPageForwardUrl(storage,'ZGBC6FKZH7T3','http://example.com')).toMatchObject({ok:false,status:400});
+    expect(await saveHostedPageForwardUrl(storage,'ZGBC6FKZH7T3','https://example.com')).toMatchObject({ok:false,status:409});
+  });
+});

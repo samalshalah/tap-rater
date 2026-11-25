@@ -2,10 +2,13 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminBadge } from "@/components/admin/admin-ui";
 import { MultiLinkSubscriptionActions } from "@/components/admin/multilink-subscription-actions";
+import { MultiLinkForwardEditor } from "@/components/admin/multilink-forward-editor";
+import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
+import { readHostedPageForwardUrl } from "@/lib/hosted-pages/forward-link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { marketingPlan } from "@/lib/marketing-plan";
 import { formatPrice } from "@/lib/products";
-import { listMultiLinkSubscriptions, listReviewsSubscriptions, multiLinkBilling } from "@/lib/reviews-subscription-admin";
+import { listMultiLinkSubscriptions, listReviewsSubscriptions, multiLinkBilling, type MultiLinkSubscriptionRow } from "@/lib/reviews-subscription-admin";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +24,7 @@ export default async function AdminSubscriptionsPage() {
     listReviewsSubscriptions().catch(() => null),
     listMultiLinkSubscriptions().catch(() => null)
   ]);
+  const forwards = await loadForwardLinks(multiLink ?? []);
   return (
     <AdminShell>
       <section className="tr-admin-section">
@@ -42,15 +46,30 @@ export default async function AdminSubscriptionsPage() {
         ]} rowKey={(row) => row.stripe_subscription_id} />
 
       <Table id="multi-link" title="Multi-Link pages" rows={multiLink} empty="No Multi-Link subscriptions yet."
-        head={["Customer", "Business", "Page", "Monthly", "Status", "Renews / ends", "Actions"]}
+        head={["Customer", "Business", "Page", "Monthly", "Status", "Renews / ends", "Actions", "After it ends"]}
         render={(row) => [
           <span className="tr-admin-person"><strong className="text-ink">{row.name || row.email || "Customer"}</strong>{row.name && row.email ? <span>{row.email}</span> : null}</span>,
           row.business_name || "—",
           <a className="text-brand underline" href={row.hosted_page_url} target="_blank" rel="noopener noreferrer">{row.permanent_code}</a>,
-          ...multiLinkCells(row)
+          ...multiLinkCells(row),
+          <MultiLinkForwardEditor key="f" code={row.permanent_code} initial={forwards[row.permanent_code]} />
         ]} rowKey={(row) => row.id} />
     </AdminShell>
   );
+}
+
+/** Pages that are ending or ended show their forwarding link straight away; live ones read it when opened. */
+function isEnding(row: MultiLinkSubscriptionRow) {
+  return row.cancel_at_period_end || row.status === "canceled" || !["ACTIVE", "REACTIVATED"].includes(row.lifecycle_status);
+}
+
+async function loadForwardLinks(rows: MultiLinkSubscriptionRow[]): Promise<Record<string, string | null>> {
+  const ending = rows.filter(isEnding);
+  if (!ending.length) return {};
+  const storage = await getHostedPageStorage().catch(() => null);
+  if (!storage) return {};
+  const entries = await Promise.all(ending.map(async (row) => [row.permanent_code, await readHostedPageForwardUrl(storage, row.permanent_code)] as const));
+  return Object.fromEntries(entries);
 }
 
 const lifecycleTone: Record<string, Tone> = { ACTIVE: "success", REACTIVATED: "success", PAST_DUE: "warning", CANCELLED_AT_PERIOD_END: "warning", EXPIRED: "neutral", RETIRED_INTERNAL: "neutral" };
