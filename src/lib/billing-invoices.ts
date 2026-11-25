@@ -316,7 +316,7 @@ function buildInvoiceItemFromOrderLine(
     option_label: item.optionLabel ?? null,
     quantity: item.quantity,
     amount_cents: item.lineSubtotalCents,
-    recurring_amount_cents: (readNumber(setup.monthlyPriceCents) ?? readNumber(setup.monthly_price_cents) ?? 0) * item.quantity,
+    recurring_amount_cents: readNumber(setup.monthlyPriceCents) ?? readNumber(setup.monthly_price_cents) ?? 0,
     hosted_page_url: hostedSubscription?.hosted_page_url ?? readString(setup.hostedPageUrl) ?? null,
     metadata_json: {
       product_id: item.productId,

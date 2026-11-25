@@ -75,10 +75,10 @@ async function loadForwardLinks(rows: MultiLinkSubscriptionRow[]): Promise<Recor
 const lifecycleTone: Record<string, Tone> = { ACTIVE: "success", REACTIVATED: "success", PAST_DUE: "warning", CANCELLED_AT_PERIOD_END: "warning", EXPIRED: "neutral", RETIRED_INTERNAL: "neutral" };
 
 /** Stripe pages show billing status; manual and complimentary pages show the page status, with no monthly charge. */
-function multiLinkCells(row: { stripe_subscription_id: string; status: string; lifecycle_status: string; cancel_at_period_end: boolean; current_period_end: string | null }) {
+function multiLinkCells(row: { stripe_subscription_id: string; permanent_code: string; status: string; lifecycle_status: string; cancel_at_period_end: boolean; current_period_end: string | null }) {
   const billing = multiLinkBilling(row.stripe_subscription_id);
   if (billing === "stripe") return [formatPrice(multiLinkMonthlyCents), <Status key="s" status={row.status} canceling={row.cancel_at_period_end} />, date(row.current_period_end),
-    <MultiLinkSubscriptionActions key="a" subscriptionId={row.stripe_subscription_id} status={row.status} cancelAtPeriodEnd={row.cancel_at_period_end} />];
+    <MultiLinkSubscriptionActions key="a" subscriptionId={row.stripe_subscription_id} code={row.permanent_code} status={row.status} cancelAtPeriodEnd={row.cancel_at_period_end} />];
   const lifecycle = row.lifecycle_status === "RETIRED_INTERNAL" ? "archived" : row.lifecycle_status.replaceAll("_", " ").toLowerCase();
   return [
     <span key="m" className="text-muted" title="Not billed through Stripe">—</span>,

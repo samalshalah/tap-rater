@@ -292,6 +292,7 @@ export function CartTable({
 function calculateRecurringTotalCents(rows: CartRow[]) {
   return rows.reduce((sum, row) => {
     const hasHostedMultiLink = row.item.setup?.serviceMode === "HOSTED" && row.item.setup?.serviceAddon === "hosted_multilink";
-    return sum + (hasHostedMultiLink ? (row.item.setup?.monthlyPriceCents ?? 0) * row.item.quantity : 0);
+    // One page per cart line, however many stands: billed per page.
+    return sum + (hasHostedMultiLink ? row.item.setup?.monthlyPriceCents ?? 0 : 0);
   }, 0);
 }

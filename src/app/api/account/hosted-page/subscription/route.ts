@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {requireCustomerApi} from '@/lib/customer-auth';
 import {liveDb} from '@/lib/google-business/live-reviews';
 import {changeMultiLinkSubscription} from '@/lib/multilink-subscription-actions';
+import {readHostedRowLine} from '@/lib/hosted-subscription-lifecycle';
 
 export const dynamic='force-dynamic';
 const headers={'Cache-Control':'private, no-store'};
@@ -18,14 +19,16 @@ export async function POST(request:Request){
   if(request.headers.get('origin')!==new URL(request.url).origin)return NextResponse.json({error:'Invalid request.'},{status:403,headers});
   const parsed=schema.safeParse(await request.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:'Choose a Multi-Link page.'},{status:400,headers});
-  let subscriptionId:string|undefined;
+  let subscriptionId:string|undefined,line:string|undefined;
   try{
-    const rows=await liveDb()`SELECT s.stripe_subscription_id FROM hosted_subscriptions s JOIN customers c ON c.id=s.customer_id
+    const rows=await liveDb()`SELECT s.stripe_subscription_id,s.stripe_checkout_session_id FROM hosted_subscriptions s JOIN customers c ON c.id=s.customer_id
       WHERE s.permanent_code=${parsed.data.code} AND lower(c.email)=${auth.session.email.trim().toLowerCase()} AND c.account_status='active' LIMIT 1`;
-    subscriptionId=(rows as {stripe_subscription_id?:string}[])[0]?.stripe_subscription_id;
+    const row=(rows as {stripe_subscription_id?:string;stripe_checkout_session_id?:string}[])[0];
+    subscriptionId=row?.stripe_subscription_id;line=readHostedRowLine(row?.stripe_checkout_session_id);
   }catch{return NextResponse.json({error:'Could not load your subscription. Try again.'},{status:503,headers});}
   if(!subscriptionId)return NextResponse.json({error:'That Multi-Link page was not found on your account.'},{status:404,headers});
-  const result=await changeMultiLinkSubscription(subscriptionId,parsed.data.action==='cancel'?'cancel_at_period_end':'keep');
+  // Only this page changes, even when one checkout bought several.
+  const result=await changeMultiLinkSubscription(subscriptionId,parsed.data.action==='cancel'?'cancel_at_period_end':'keep',undefined,line);
   if(!result.ok)return NextResponse.json({error:result.error},{status:result.status,headers});
   return NextResponse.json({ok:true},{headers});
 }

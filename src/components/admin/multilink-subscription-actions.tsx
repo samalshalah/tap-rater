@@ -20,7 +20,7 @@ const confirmText: Record<Product, Record<Action, string>> = {
 };
 
 /** Cancel / keep / end-now buttons for one Stripe-billed Multi-Link page or Google Reviews subscription. */
-export function MultiLinkSubscriptionActions({ subscriptionId, status, cancelAtPeriodEnd, product = "multilink" }: { subscriptionId: string; status: string; cancelAtPeriodEnd: boolean; product?: Product }) {
+export function MultiLinkSubscriptionActions({ subscriptionId, status, cancelAtPeriodEnd, product = "multilink", code }: { subscriptionId: string; status: string; cancelAtPeriodEnd: boolean; product?: Product; code?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState<Action | null>(null);
   const [error, setError] = useState("");
@@ -34,7 +34,7 @@ export function MultiLinkSubscriptionActions({ subscriptionId, status, cancelAtP
       const response = await fetch("/api/admin/multilink-subscriptions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscriptionId, action, product }),
+        body: JSON.stringify({ subscriptionId, action, product, ...(code ? { code } : {}) }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) throw new Error(payload?.error || "The subscription could not be changed.");

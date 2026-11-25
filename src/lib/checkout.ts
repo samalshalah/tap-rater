@@ -234,7 +234,8 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     ok: true,
     rows,
     totalCents: rows.reduce((sum, row) => sum + row.lineSubtotalCents, 0),
-    recurringTotalCents: rows.reduce((sum, row) => sum + (row.monthlyAmountCents ?? 0) * row.quantity, 0),
+    // $9.99/month per Multi-Link page (one per order line), not per stand.
+    recurringTotalCents: rows.reduce((sum, row) => sum + (row.monthlyAmountCents ?? 0), 0),
     checkoutMode: rows.some((row) => row.destinationMode === "HOSTED") ? "subscription" : "payment",
     currency: "usd"
   };

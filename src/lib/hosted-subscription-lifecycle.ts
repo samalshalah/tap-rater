@@ -45,8 +45,59 @@ type StripeSubscriptionObject = {
   canceled_at?: number | null;
   ended_at?: number | null;
   metadata?: Record<string, string>;
-  items?: { data?: Array<{ current_period_end?: number | null }> };
+  items?: { data?: Array<{ id?: string; current_period_end?: number | null; price?: { product?: string | { id?: string; metadata?: Record<string, string> | null } | null } | null }> };
 };
+
+/**
+ * One checkout can create several Multi-Link pages on one subscription, one monthly charge each
+ * (tagged order_line). A page cancelled on its own has its charge removed and a note on the
+ * subscription: tr_line_<n>_end = "period_end:<product>" (live until its paid-through date) or
+ * "now:<product>" (ended today). The product lets "keep" put the charge back.
+ */
+export type EndedHostedLine = { mode: "period_end" | "now"; productId: string };
+
+export function endedLineKey(line: string) {
+  return `tr_line_${line}_end`;
+}
+
+export function readEndedHostedLines(metadata: Record<string, string> | null | undefined): Record<string, EndedHostedLine> {
+  const result: Record<string, EndedHostedLine> = {};
+  for (const [key, value] of Object.entries(metadata ?? {})) {
+    const line = key.match(/^tr_line_(\d{1,3})_end$/)?.[1];
+    const [mode, productId] = value.split(":");
+    if (line && (mode === "period_end" || mode === "now") && productId) result[line] = { mode, productId };
+  }
+  return result;
+}
+
+/** The monthly Multi-Link charges on a subscription, with the order line each one pays for. */
+export function readHostedSubscriptionItems(subscription: StripeSubscriptionObject | null) {
+  return (subscription?.items?.data ?? []).flatMap((item) => {
+    const product = item.price?.product;
+    const metadata = product && typeof product === "object" ? product.metadata : undefined;
+    if (!item.id || metadata?.line_kind !== "hosted_subscription") return [];
+    return [{ id: item.id, line: metadata.order_line || undefined, productId: typeof product === "object" ? product?.id : undefined }];
+  });
+}
+
+/** The order line a page was bought on, when its checkout made more than one page. */
+export function readHostedRowLine(checkoutSessionId: string | null | undefined) {
+  return checkoutSessionId?.match(/:line:(\d{1,3})$/)?.[1];
+}
+
+type LifecycleUpdate = ReturnType<typeof deriveLifecycleUpdate>;
+
+/** A page cancelled on its own follows its own dates; every other page follows the subscription. */
+export function deriveRowLifecycle(base: LifecycleUpdate, row: { stripe_checkout_session_id?: string | null; current_period_end?: string | null }, metadata: Record<string, string> | null | undefined, now: Date): LifecycleUpdate {
+  const line = readHostedRowLine(row.stripe_checkout_session_id);
+  const ended = line ? readEndedHostedLines(metadata)[line] : undefined;
+  if (!ended || base.status === "canceled") return base;
+  const end = row.current_period_end ?? base.currentPeriodEnd;
+  const over = ended.mode === "now" || !end || Date.parse(end) <= now.getTime();
+  return over
+    ? { ...base, status: "canceled", lifecycleStatus: "EXPIRED", cancelAtPeriodEnd: false, currentPeriodEnd: end, pastDueSince: null }
+    : { ...base, status: "active", lifecycleStatus: "CANCELLED_AT_PERIOD_END", cancelAtPeriodEnd: true, currentPeriodEnd: end, pastDueSince: null };
+}
 
 type StripeInvoiceObject = {
   subscription?: string | { id?: string | null } | null;
@@ -71,6 +122,7 @@ type HostedSubscriptionRow = {
   current_period_end?: string | null;
   past_due_since?: string | null;
   cancel_at_period_end?: boolean;
+  stripe_checkout_session_id?: string | null;
 };
 
 /** What changed for the customer, compared with what we had saved. Only real changes send an email. */
@@ -123,16 +175,17 @@ export async function processHostedSubscriptionLifecycleEvent(
     const changes: MultiLinkChangeInput[] = [];
     for (const row of rows) {
       await assertActive();
-      const change = row.lifecycle_status === "RETIRED_INTERNAL" ? null : readMultiLinkChange(row, lifecycleInput);
-      if (change) changes.push({ change, hostedSubscriptionId: row.id, stripeSubscriptionId: subscriptionId, code: row.permanent_code, pageUrl: row.hosted_page_url, end: lifecycleInput.currentPeriodEnd ?? row.current_period_end ?? null, eventId: input.eventId });
-      const currentPeriodEnd = lifecycleInput.currentPeriodEnd ?? row.current_period_end ?? null;
-      const pastDueSince = lifecycleInput.pastDueSince ? row.past_due_since ?? lifecycleInput.pastDueSince : null;
-      const lifecycleStatus = row.lifecycle_status === "RETIRED_INTERNAL" ? row.lifecycle_status : lifecycleInput.lifecycleStatus;
+      const rowInput = deriveRowLifecycle(lifecycleInput, row, subscription.metadata, now);
+      const change = row.lifecycle_status === "RETIRED_INTERNAL" ? null : readMultiLinkChange(row, rowInput);
+      if (change) changes.push({ change, hostedSubscriptionId: row.id, stripeSubscriptionId: subscriptionId, code: row.permanent_code, pageUrl: row.hosted_page_url, end: rowInput.currentPeriodEnd ?? row.current_period_end ?? null, eventId: input.eventId });
+      const currentPeriodEnd = rowInput.currentPeriodEnd ?? row.current_period_end ?? null;
+      const pastDueSince = rowInput.pastDueSince ? row.past_due_since ?? rowInput.pastDueSince : null;
+      const lifecycleStatus = row.lifecycle_status === "RETIRED_INTERNAL" ? row.lifecycle_status : rowInput.lifecycleStatus;
       const updatePayload = {
-        status: lifecycleInput.status,
+        status: rowInput.status,
         lifecycle_status: lifecycleStatus,
         current_period_end: currentPeriodEnd,
-        cancel_at_period_end: lifecycleInput.cancelAtPeriodEnd,
+        cancel_at_period_end: rowInput.cancelAtPeriodEnd,
         past_due_since: pastDueSince,
         grace_ends_at: pastDueSince ? addDays(new Date(pastDueSince), hostedSubscriptionGracePeriodDays).toISOString() : null,
         updated_at: now.toISOString()
@@ -229,7 +282,8 @@ async function resolveDependencies(dependencies?: HostedSubscriptionLifecycleDep
   if (!storage) return { ok: false as const, error: "Hosted snapshot storage is not configured." };
   return {
     ok: true as const, client: getSupabaseAdmin() as OrdersDbClient, storage,
-    retrieveSubscription: (id: string) => getStripeClient().subscriptions.retrieve(id),
+    // Products tell which page each monthly charge pays for.
+    retrieveSubscription: (id: string) => getStripeClient().subscriptions.retrieve(id, { expand: ["items.data.price.product"] }),
     isManagedSubscription: async (id: string) => {
       const sessions = await getStripeClient().checkout.sessions.list({ subscription: id, limit: 100 });
       return sessions.data.some((session) => session.metadata?.checkout_intent === "hosted_subscription");
@@ -261,7 +315,8 @@ function normalizeHostedSubscriptionRow(row: unknown): HostedSubscriptionRow | n
     status: readString(value.status),
     current_period_end: readString(value.current_period_end),
     past_due_since: readString(value.past_due_since),
-    cancel_at_period_end: value.cancel_at_period_end === true
+    cancel_at_period_end: value.cancel_at_period_end === true,
+    stripe_checkout_session_id: readString(value.stripe_checkout_session_id) ?? null
   };
 }
 

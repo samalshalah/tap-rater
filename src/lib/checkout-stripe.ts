@@ -55,7 +55,7 @@ export type StripeRuntimeConfig =
     };
 
 export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAmountCents = 0, taxAmountCents = 0, taxLabel = "Sales tax"): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  const productLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = rows.flatMap((row) => {
+  const productLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = rows.flatMap((row, rowIndex) => {
     const productData = {
       name: row.title,
       description: `${row.optionLabel} - ${row.shortDescription}${row.offerLabel ? ` — ${row.offerLabel} applied` : ""}`,
@@ -84,8 +84,10 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
       return physicalLines;
     }
 
+    // One Multi-Link page per order line, however many stands open it: $9.99/month per page.
+    // order_line ties the monthly charge to its page, so one page can be cancelled on its own.
     const hostedLine: Stripe.Checkout.SessionCreateParams.LineItem = {
-      quantity: row.quantity,
+      quantity: 1,
       price_data: {
         currency: "usd",
         product_data: {
@@ -93,7 +95,8 @@ export function buildStripeCheckoutLineItems(rows: CheckoutCartRow[], shippingAm
           name: `${row.title} monthly hosting`,
           metadata: {
             ...productData.metadata,
-            line_kind: "hosted_subscription"
+            line_kind: "hosted_subscription",
+            order_line: String(rowIndex + 1)
           }
         },
         recurring: {

@@ -492,7 +492,7 @@ function calculateRecurringTotalCents(rows: ReturnType<typeof getCartRows>) {
     return (
       sum +
       (hasHostedMultiLink
-        ? (row.item.setup?.monthlyPriceCents ?? 0) * row.item.quantity
+        ? (row.item.setup?.monthlyPriceCents ?? 0)
         : 0)
     );
   }, 0);

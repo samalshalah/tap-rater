@@ -21,7 +21,7 @@ export function verifiedPurchase(input: unknown): PurchaseData | null {
     items.push({ item_id: item.productId, item_variant: String(item.optionId), price: Number(item.lineSubtotalCents) / Number(item.quantity) / 100, quantity: Number(item.quantity) });
     const setup = object(item.setup);
     if (setup.serviceMode === "HOSTED" && cents(setup.monthlyPriceCents) && setup.monthlyPriceCents > 0) {
-      items.push({ item_id: "multi-link-monthly", item_variant: "subscription", price: setup.monthlyPriceCents / 100, quantity: Number(item.quantity) });
+      items.push({ item_id: "multi-link-monthly", item_variant: "subscription", price: setup.monthlyPriceCents / 100, quantity: 1 });
     }
   }
   const data = ecommerceData(items);
