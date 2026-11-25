@@ -29,7 +29,32 @@ export type AdminOrderRefundDependencies = {
   createRefund: (paymentIntentId: string, orderId: string, idempotencyKey: string) => Promise<StripeRefundState>;
   saveRefunds: (order: OrderRecord, refunds: StripeRefundState[]) => Promise<RefundSummary>;
   withLock: (key: string, work: (assertActive: StripeProcessingGuard) => Promise<AdminOrderRefundResult>) => Promise<AdminOrderRefundResult>;
+  /** Finds and saves the payment for orders that were stored without one (subscription checkouts). */
+  linkPaymentIntent?: (order: OrderRecord) => Promise<string | null>;
 };
+
+/**
+ * Subscription checkouts (Multi-Link) pay through the first invoice, so Stripe does not put the
+ * payment on the Checkout Session and the order is saved without it. Look it up through the
+ * invoice and store it, so the refund (and later refund webhooks) can find the order.
+ */
+export async function linkOrderPaymentIntent(order: OrderRecord, stripe = getStripeClient(), client: OrdersDbClient = getSupabaseAdmin()) {
+  if (!order.id || !order.stripe_checkout_session_id) return null;
+  const session = await stripe.checkout.sessions.retrieve(order.stripe_checkout_session_id);
+  let paymentIntentId = typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null;
+  const invoiceId = typeof session.invoice === "string" ? session.invoice : session.invoice?.id;
+  if (!paymentIntentId && invoiceId) {
+    const payments = await stripe.invoicePayments.list({ invoice: invoiceId, limit: 10 });
+    const paid = payments.data.find(payment => payment.status === "paid" && payment.payment.type === "payment_intent") ?? payments.data.find(payment => payment.payment.type === "payment_intent");
+    const intent = paid?.payment.payment_intent;
+    paymentIntentId = typeof intent === "string" ? intent : intent?.id ?? null;
+  }
+  if (!paymentIntentId) return null;
+  const saved = await client.from("orders").update({ stripe_payment_intent_id: paymentIntentId, updated_at: new Date().toISOString() })
+    .eq("id", order.id).eq("stripe_payment_intent_id", null).select("id").maybeSingle();
+  if (saved.error || !saved.data) throw new Error(saved.error?.message ?? "The payment reference could not be saved. Refresh and try again.");
+  return paymentIntentId;
+}
 
 export function summarizeRefunds(order: Pick<OrderRecord, "total_cents">, refunds: StripeRefundState[]): RefundSummary {
   if (!refunds.length) throw new Error("Stripe has not returned the refund yet. Retry reconciliation.");
@@ -117,6 +142,7 @@ const defaultDependencies: AdminOrderRefundDependencies = {
     payment_intent: paymentIntentId, reason: "requested_by_customer", metadata: { tap_rater_order_id: orderId },
   }, { idempotencyKey }),
   saveRefunds: (order, refunds) => saveOrderRefundSummaryWithClient(getSupabaseAdmin(), order, refunds),
+  linkPaymentIntent: (order) => linkOrderPaymentIntent(order),
   withLock: async (key, work) => {
     const result = await withStripeResourceLock(getSupabaseAdmin(), key, async (assertActive) => {
       await assertActive();
@@ -130,8 +156,13 @@ export async function refundAdminOrder(orderId: string, dependencies = defaultDe
   const initial = await dependencies.getOrder(orderId);
   if (!initial.configured) return { ok: false, status: 503, error: "Database persistence is not configured." };
   if (!initial.order) return { ok: false, status: 404, error: "Order was not found." };
-  if (!initial.order.stripe_payment_intent_id) return { ok: false, status: 409, error: "This order has no Stripe payment reference." };
-  const paymentIntentId = initial.order.stripe_payment_intent_id;
+  let foundIntent = initial.order.stripe_payment_intent_id ?? null;
+  if (!foundIntent && dependencies.linkPaymentIntent) {
+    try { foundIntent = await dependencies.linkPaymentIntent(initial.order); }
+    catch (error) { return { ok: false, status: 502, error: error instanceof Error ? error.message : "The Stripe payment could not be found." }; }
+  }
+  if (!foundIntent) return { ok: false, status: 409, error: "This order has no Stripe payment reference." };
+  const paymentIntentId = foundIntent;
   return dependencies.withLock(`payment:${paymentIntentId}`, async (assertActive) => {
     try {
       const { order } = await dependencies.getOrder(orderId);

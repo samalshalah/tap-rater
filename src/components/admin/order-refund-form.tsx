@@ -26,6 +26,7 @@ export function OrderRefundForm({
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [cancelSubscription, setCancelSubscription] = useState(true);
 
   if (alreadyRefunded || refundId || refundStatus) {
     return (
@@ -35,6 +36,7 @@ export function OrderRefundForm({
           {refundId ? <span className="font-mono text-xs text-muted">{refundId}</span> : null}
         </div>
         {refundFailureReason ? <AdminAlert tone="danger" className="mt-3">{refundFailureReason}</AdminAlert> : null}
+        {error ? <AdminAlert tone="danger" className="mt-3">{error}</AdminAlert> : null}
       </AdminCard>
     );
   }
@@ -48,12 +50,13 @@ export function OrderRefundForm({
       const response = await fetch(`/api/admin/orders/${orderId}/refund`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation: "REFUND" }),
+        body: JSON.stringify({ confirmation: "REFUND", cancelSubscription: hasSubscription && cancelSubscription }),
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(payload?.error || "The refund could not be completed.");
       }
+      if (payload?.subscriptionError) setError(payload.subscriptionError);
       router.refresh();
     } catch (refundError) {
       setError(refundError instanceof Error ? refundError.message : "The refund could not be completed.");
@@ -68,9 +71,10 @@ export function OrderRefundForm({
       description="Refund the complete Stripe charge for this order. Partial refunds remain available in Stripe."
     >
       {hasSubscription ? (
-        <AdminAlert tone="warning" className="mb-4">
-          Refunding this charge does not cancel the customer&apos;s recurring Multi-Link subscription. Manage that subscription separately in Stripe.
-        </AdminAlert>
+        <label className="mb-3 flex items-start gap-3 text-sm leading-6 text-ink">
+          <input className="mt-1 h-4 w-4" type="checkbox" checked={cancelSubscription} onChange={(event) => setCancelSubscription(event.target.checked)} />
+          <span>Also cancel the $9.99/month Multi-Link subscription now. The page stops working today and nothing more is charged.</span>
+        </label>
       ) : null}
       {error ? <AdminAlert tone="danger" className="mb-4">{error}</AdminAlert> : null}
       <label className="mb-4 flex items-start gap-3 text-sm font-semibold leading-6 text-ink">

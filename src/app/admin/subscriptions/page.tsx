@@ -1,6 +1,7 @@
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { AdminBadge } from "@/components/admin/admin-ui";
+import { MultiLinkSubscriptionActions } from "@/components/admin/multilink-subscription-actions";
 import { requireAdmin } from "@/lib/admin-auth";
 import { marketingPlan } from "@/lib/marketing-plan";
 import { formatPrice } from "@/lib/products";
@@ -38,7 +39,7 @@ export default async function AdminSubscriptionsPage() {
         ]} rowKey={(row) => row.stripe_subscription_id} />
 
       <Table id="multi-link" title="Multi-Link pages" rows={multiLink} empty="No Multi-Link subscriptions yet."
-        head={["Customer", "Business", "Page", "Monthly", "Status", "Renews / ends"]}
+        head={["Customer", "Business", "Page", "Monthly", "Status", "Renews / ends", "Actions"]}
         render={(row) => [
           <span className="tr-admin-person"><strong className="text-ink">{row.name || row.email || "Customer"}</strong>{row.name && row.email ? <span>{row.email}</span> : null}</span>,
           row.business_name || "—",
@@ -54,12 +55,14 @@ const lifecycleTone: Record<string, Tone> = { ACTIVE: "success", REACTIVATED: "s
 /** Stripe pages show billing status; manual and complimentary pages show the page status, with no monthly charge. */
 function multiLinkCells(row: { stripe_subscription_id: string; status: string; lifecycle_status: string; cancel_at_period_end: boolean; current_period_end: string | null }) {
   const billing = multiLinkBilling(row.stripe_subscription_id);
-  if (billing === "stripe") return [formatPrice(multiLinkMonthlyCents), <Status key="s" status={row.status} canceling={row.cancel_at_period_end} />, date(row.current_period_end)];
+  if (billing === "stripe") return [formatPrice(multiLinkMonthlyCents), <Status key="s" status={row.status} canceling={row.cancel_at_period_end} />, date(row.current_period_end),
+    <MultiLinkSubscriptionActions key="a" subscriptionId={row.stripe_subscription_id} status={row.status} cancelAtPeriodEnd={row.cancel_at_period_end} />];
   const lifecycle = row.lifecycle_status === "RETIRED_INTERNAL" ? "archived" : row.lifecycle_status.replaceAll("_", " ").toLowerCase();
   return [
     <span key="m" className="text-muted" title="Not billed through Stripe">—</span>,
     <span key="s"><AdminBadge tone="brand">{billing === "manual" ? "Manual order" : "Complimentary"}</AdminBadge><span className="ml-2"><AdminBadge tone={lifecycleTone[row.lifecycle_status] ?? "neutral"}>{lifecycle}</AdminBadge></span></span>,
-    <span key="d" className="text-muted">No renewal</span>
+    <span key="d" className="text-muted">No renewal</span>,
+    <span key="a" className="text-muted">—</span>
   ];
 }
 
