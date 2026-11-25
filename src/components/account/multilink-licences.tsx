@@ -1,7 +1,7 @@
 "use client";
 import Link from 'next/link';
 import {useId,useState} from 'react';
-import {BarChart3,Check,Circle,Copy,Download,ExternalLink,Link2,Pencil} from 'lucide-react';
+import {BarChart3,Building2,Check,Circle,Copy,Download,ExternalLink,Link2,Pencil} from 'lucide-react';
 import {MultiLinkInsightsDialog} from './multilink-insights';
 import {downloadQrFiles} from './qr-download';
 import type {MultiLinkLicence} from './multilink-licence-model';
@@ -16,14 +16,57 @@ export function MultiLinkLicences({licences}:{licences:MultiLinkLicence[]}){
   const headingId=useId();
   if(!licences.length)return <EmptyState message="You don’t have a Multi-Link licence yet."/>;
   const live=licences.filter(licence=>licence.status.label==='Live').length;
+  const groups=groupLicencesByBusiness(licences);
+  const card=(licence:MultiLinkLicence)=><LicenceCard key={licence.code} licence={licence} onEdit={()=>setEditing(licence)} onBilling={()=>setBilling({kind:'subscription',value:licence.subscription})}/>;
   return <>
-    <p className="text-sm text-muted">{licences.length} licence{licences.length===1?'':'s'} · {live} live. Each licence is one page that your stand opens.</p>
-    <section aria-label="Multi-Link licences" className="grid grid-cols-[minmax(0,1fr)] gap-4">
-      {licences.map(licence=><LicenceCard key={licence.code} licence={licence} onEdit={()=>setEditing(licence)} onBilling={()=>setBilling({kind:'subscription',value:licence.subscription})}/>)}
+    <p className="text-sm text-muted">{licences.length} licence{licences.length===1?'':'s'} · {live} live. Each licence is one page that your stands open.</p>
+    <section aria-label="Multi-Link licences" className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      {groups.map(group=>group.licences.length>1
+        ?<BusinessGroup key={group.key} name={group.name} licences={group.licences}>{group.licences.map(card)}</BusinessGroup>
+        :card(group.licences[0]))}
     </section>
     {editing&&<StandDetailModal stand={editing.editorStand} hostedPage={editing.page} proofOpen={false} showStandPreview={false} onClose={()=>setEditing(null)}/>}
     {billing&&<BillingDetailsDialog selected={billing} setSelected={setBilling} headingId={headingId} invoices={[]}/>}
   </>;
+}
+
+/** Words every name starts with, e.g. "Priority Toyota" for "Priority Toyota Chesapeake" and "… Norfolk". */
+function sharedName(names:string[]){
+  const split=names.map(name=>name.split(/\s+/));const shared:string[]=[];
+  for(let i=0;split.every(words=>words[i]!==undefined&&words[i]===split[0][i]);i++)shared.push(split[0][i]);
+  return shared.join(' ')||names[0];
+}
+
+/** Pages with the same logo are one business with several locations; others stand alone. Order is kept. */
+export function groupLicencesByBusiness(licences:MultiLinkLicence[]){
+  const groups:{key:string;name:string;licences:MultiLinkLicence[]}[]=[];
+  for(const licence of licences){
+    const key=licence.logoUrl||`code:${licence.code}`;
+    const group=groups.find(item=>item.key===key);
+    if(group)group.licences.push(licence);else groups.push({key,name:licence.name,licences:[licence]});
+  }
+  return groups.map(group=>({...group,name:sharedName(group.licences.map(licence=>licence.name))}));
+}
+
+/** A business with several locations: one header with totals and Insights for all of them. */
+function BusinessGroup({name,licences,children}:{name:string;licences:MultiLinkLicence[];children:React.ReactNode}){
+  const [insightsOpen,setInsightsOpen]=useState(false);
+  const stands=licences.reduce((sum,licence)=>sum+licence.linkedStands.length,0);
+  const live=licences.filter(licence=>licence.status.label==='Live').length;
+  return <section aria-label={`${name}: ${licences.length} locations`} className="grid gap-3 rounded-xl border border-line bg-soft p-3 sm:p-4">
+    <header className="flex flex-wrap items-center gap-3">
+      <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-white">
+        {licences[0].logoUrl?<img src={licences[0].logoUrl} alt="" className="h-full w-full object-contain"/>:<Building2 size={18} className="text-muted" aria-hidden="true"/>}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="break-words text-lg font-semibold text-ink">{name}</h2>
+        <p className="text-xs text-muted">{licences.length} locations · {live} live{stands?` · ${stands} stand${stands===1?'':'s'}`:''}</p>
+      </div>
+      <button type="button" className="tr-button-ghost" aria-haspopup="dialog" onClick={()=>setInsightsOpen(true)}><BarChart3 size={15} aria-hidden="true"/>Insights for all locations</button>
+    </header>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3">{children}</div>
+    {insightsOpen&&<MultiLinkInsightsDialog title={`${name} — all locations`} endpoint={`/api/account/hosted-page/insights?codes=${licences.map(licence=>licence.code).join(',')}`} onClose={()=>setInsightsOpen(false)}/>}
+  </section>;
 }
 
 function LicenceCard({licence,onEdit,onBilling}:{licence:MultiLinkLicence;onEdit:()=>void;onBilling:()=>void}){

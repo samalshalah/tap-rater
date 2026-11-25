@@ -13,10 +13,12 @@ it('turns query rows into insights for one page and range',async()=>{
     [{weekday:6,opens:'9'}],
     [{hour:15,opens:'6'}],
     [{device:'ios',opens:'10'}],
-    [{stand_id:'ST-ABCD1234',label:'Service desk',location:'Demo Motors',opens:'5',clicks:'2'}]
+    [{stand_id:'ST-ABCD1234',label:'Service desk',location:'Demo Motors',opens:'5',clicks:'2'}],
+    [{code:'6Y2XVQS9QHKM',opens:'12',clicks:'5'}]
   ];
   const sql=vi.fn(async()=>answers.shift());
   const insights=await getHostedPageInsights('6Y2XVQS9QHKM',30,sql as never);
   expect(insights).toMatchObject({days:30,opens:12,clicks:5,bySource:[{source:'nfc',opens:8},{source:'qr',opens:4}],byButton:[{buttonId:'g1',buttonType:'google_review',clicks:4}],byStand:[{standId:'ST-ABCD1234',label:'Service desk',location:'Demo Motors',opens:5,clicks:2}]});
-  for(const call of sql.mock.calls as unknown as unknown[][])expect(call.slice(1)).toContain('6Y2XVQS9QHKM');
+  for(const call of sql.mock.calls as unknown as unknown[][])expect(call.slice(1)).toContainEqual(['6Y2XVQS9QHKM']);
+  expect(insights.byPage).toEqual([{code:'6Y2XVQS9QHKM',opens:12,clicks:5}]);
 });

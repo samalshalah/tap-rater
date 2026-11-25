@@ -27,7 +27,7 @@ function Section({title,children}:{title:string;children:React.ReactNode}){
 // Page opens, taps vs scans, link clicks and stand activity for one Multi-Link page.
 export function MultiLinkInsights({endpoint}:{endpoint:string}){
   const [days,setDays]=useState<InsightRange>(30);
-  const [data,setData]=useState<{insights:HostedPageInsights;labels:Record<string,string>}|null>(null);
+  const [data,setData]=useState<{insights:HostedPageInsights;labels:Record<string,string>;pageNames?:Record<string,string>}|null>(null);
   const [error,setError]=useState('');
   useEffect(()=>{
     let live=true;setError('');
@@ -65,6 +65,7 @@ export function MultiLinkInsights({endpoint}:{endpoint:string}){
           <Bars rows={weekdays.map((name,weekday)=>({label:name,value:insights.byWeekday.find(row=>row.weekday===weekday)?.opens??0}))}/>
         </Section>
         <Section title="Phones"><Bars rows={(['ios','android','other'] as const).map(device=>{const opens=insights.byDevice.find(row=>row.device===device)?.opens??0;return {label:deviceLabel[device],value:opens,note:`${pct(opens,insights.opens)}%`};})}/></Section>
+        {data?.pageNames&&insights.byPage.length?<Section title="By location"><Bars rows={Object.keys(data.pageNames).map(code=>{const row=insights.byPage.find(page=>page.code===code);return {label:data.pageNames![code],value:row?.opens??0,note:`${pct(row?.opens??0,insights.opens)}%`};})}/></Section>:null}
         <Section title="By stand">{insights.byStand.length?<ul className="grid gap-2">{insights.byStand.map(row=><li key={row.standId} className="grid gap-1 text-xs"><div className="flex items-baseline justify-between gap-2"><span className="min-w-0"><strong className="block truncate text-ink">{row.label||row.standId}</strong>{row.location&&<span className="block truncate text-muted">{row.location}</span>}</span><span className="shrink-0 tabular-nums text-muted">{row.opens} opens · {row.clicks} clicks</span></div><span className="h-2 overflow-hidden rounded-full bg-soft" aria-hidden="true"><span className="block h-full rounded-full bg-brand" style={{width:`${Math.max(2,row.opens/Math.max(1,...insights.byStand.map(stand=>stand.opens))*100)}%`}}/></span></li>)}</ul>:<p className="text-xs text-muted">Stand-by-stand numbers appear for stands whose tap and QR links carry their stand ID. Name each stand and set its location on My Stands.</p>}</Section>
       </div>}
       <p className="text-xs text-muted">Anonymous counts only: no cookies or personal details. Firefox doesn’t report link clicks.</p>
