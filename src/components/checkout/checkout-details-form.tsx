@@ -43,6 +43,21 @@ export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer,
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
+                {/* Row one: first and last name. Row two: email and phone. */}
+                <CheckoutInput
+                  label="First name"
+                  value={customer.firstName}
+                  autoComplete="given-name"
+                  onChange={(value) => updateName({ firstName: value })}
+                  required
+                />
+                <CheckoutInput
+                  label="Last name"
+                  value={customer.lastName}
+                  autoComplete="family-name"
+                  onChange={(value) => updateName({ lastName: value })}
+                  required
+                />
                 <CheckoutInput
                   label="Email"
                   type="email"
@@ -53,22 +68,6 @@ export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer,
                   }
                   required
                 />
-                <div className="grid grid-cols-2 gap-3">
-                  <CheckoutInput
-                    label="First name"
-                    value={customer.firstName}
-                    autoComplete="given-name"
-                    onChange={(value) => updateName({ firstName: value })}
-                    required
-                  />
-                  <CheckoutInput
-                    label="Last name"
-                    value={customer.lastName}
-                    autoComplete="family-name"
-                    onChange={(value) => updateName({ lastName: value })}
-                    required
-                  />
-                </div>
                 <CheckoutInput
                   label="Phone (optional)"
                   type="tel"
