@@ -13,6 +13,8 @@ import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import { ProductSetupOptions } from "./product-setup-options";
 import { useProductSetupState } from "./use-product-setup-state";
 import { createProductSetupActions } from "./product-setup-actions";
+import { MultiLinkAddedPanel } from "./multilink-added-panel";
+import { startNextMultiLinkPage } from "./multilink-next-page";
 export type { ProductSetupChooserProduct } from "./product-setup-chooser-types";
 
 const ProductSetupDialogContent = dynamic(() => import('./product-setup-dialog-content').then(m => m.ProductSetupDialogContent), {
@@ -218,7 +220,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
               {quantityEnabled
                 ? configuredUnitPriceCents === null
                   ? "Select an available size"
-                  : `${selectedPrice} each`
+                  : selectedLinkExperience === "multilink" ? `${selectedPrice} each · all open one page` : `${selectedPrice} each`
                 : "One Multi-Link page per setup"}
             </p> : null}
           </div>
@@ -296,14 +298,21 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
             <div className="flex items-start justify-between gap-4 border-b border-line px-4 py-3 sm:px-6 sm:py-4">
               <div className="min-w-0">
                 <p className="tr-eyebrow">{product.title}</p>
-                <h2 ref={builderHeadingRef} id={builderHeadingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-xl font-semibold text-ink focus:outline-none sm:text-2xl">{modalTitle}</h2>
+                <h2 ref={builderHeadingRef} id={builderHeadingId} tabIndex={-1} data-dialog-heading className="mt-1 break-words text-xl font-semibold text-ink focus:outline-none sm:text-2xl">{state.addedPage ? "Added to your cart" : modalTitle}</h2>
+                {state.copyNote && !state.addedPage ? <p className="mt-1 text-xs text-muted">{state.copyNote}</p> : null}
               </div>
               <button type="button" className="tr-icon-button shrink-0" onClick={closeBuilder} aria-label="Close builder">
                 <X size={18} />
               </button>
             </div>
 
-            <ProductSetupDialogContent
+            {state.addedPage ? <MultiLinkAddedPanel
+              added={state.addedPage}
+              items={state.cart.items}
+              onAnotherLocation={() => startNextMultiLinkPage(state, "location")}
+              onDifferentBusiness={() => startNextMultiLinkPage(state, "business")}
+              onCheckout={() => { closeBuilder(); state.router.push("/cart"); }}
+            /> : <ProductSetupDialogContent
               stepGridClassName={stepGridClassName}
               stepLabels={stepLabels}
               activeStepIndex={activeStepIndex}
@@ -377,7 +386,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
               continueFromDesign={continueFromDesign}
               addConfiguredItemToCart={addConfiguredItemToCart}
               builderHeadingRef={builderHeadingRef}
-            />
+            />}
           </div>
         </ModalDialog>
       ) : null}

@@ -109,10 +109,9 @@ function isPositiveQuantity(quantity: unknown): quantity is number {
   return typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0;
 }
 
-export function getCartItemQuantityLimit(item: Pick<CartItem, "optionId" | "setup">) {
-  return item.optionId === "branded_qr_direct" && item.setup?.serviceMode === "HOSTED" && item.setup.serviceAddon === "hosted_multilink"
-    ? 1
-    : maxCartItemQuantity;
+/** Any number of stands, including several stands opening one Multi-Link page (billed per page). */
+export function getCartItemQuantityLimit(_item: Pick<CartItem, "optionId" | "setup">) {
+  return maxCartItemQuantity;
 }
 
 function clampCartQuantity(quantity: number, maximum = maxCartItemQuantity) {

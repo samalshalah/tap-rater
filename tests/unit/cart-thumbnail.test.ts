@@ -23,8 +23,8 @@ describe("cart thumbnail delivery", () => {
     }] });
     const button = render().match(/<button[^>]*aria-label="Increase [^"]+ quantity"[^>]*>/)?.[0];
     expect(button).toBeDefined();
-    if (serviceMode === "HOSTED") expect(button).toContain('disabled=""');
-    else expect(button).not.toContain('disabled=""');
+    // Several stands can open one Multi-Link page (billed per page), so both can go up.
+    expect(button).not.toContain('disabled=""');
   });
 
   it("renders a 160px variant with stable dimensions and preserves totals and controls", () => {

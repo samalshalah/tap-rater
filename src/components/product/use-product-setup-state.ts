@@ -94,6 +94,12 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
 
+  // The Multi-Link page just added to the cart: the dialog then offers another location or business.
+  const [addedPage, setAddedPage] = useState<CartItem | null>(null);
+
+  // Shown while setting up a page that was copied from the previous one.
+  const [copyNote, setCopyNote] = useState("");
+
   const builderContentRef = useRef<HTMLDivElement>(null);
 
   const builderHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -136,9 +142,10 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const directTargets = buildDirectProductionTargets(destinationUrl);
 
-  const quantityEnabled = selectedLinkExperience === "direct";
+  // Multi-Link too: every stand of one setup opens the same page, billed once per page.
+  const quantityEnabled = true;
 
-  const selectedQuantity = quantityEnabled ? quantity : 1;
+  const selectedQuantity = quantity;
 
   const setupBusinessName = selectedLinkExperience === "multilink" || showBusinessNameOnProof ? businessName.trim() || undefined : undefined;
   const proofSetup: NonNullable<CartItem["setup"]> = {
@@ -231,6 +238,10 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
     setError,
     isBuilderOpen,
     setIsBuilderOpen,
+    addedPage,
+    setAddedPage,
+    copyNote,
+    setCopyNote,
     builderContentRef,
     builderHeadingRef,
     builderHeadingId,

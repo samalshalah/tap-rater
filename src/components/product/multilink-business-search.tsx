@@ -1,7 +1,9 @@
 "use client";
-import { Check, Search } from "lucide-react";
+import { AlertTriangle, Check, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { searchGoogleBusinesses, type GoogleBusinessSelection } from "@/lib/google-places-client";
+import { useCart } from "@/components/cart/cart-provider";
+import { findPageInCart } from "./multilink-next-page";
 
 /**
  * Business name for a Multi-Link page, with Google Business search: picking a result fills the
@@ -21,6 +23,9 @@ export function MultiLinkBusinessSearch({
   const [results, setResults] = useState<GoogleBusinessSelection[]>([]);
   const query = businessName.trim();
   const searching = !picked || picked.name !== businessName;
+  // The same Google location already has a page in the cart: more stands should go on that page.
+  const { items } = useCart();
+  const alreadyInCart = !searching && picked ? findPageInCart(items, picked.placeId) : undefined;
 
   useEffect(() => {
     if (!searching || query.length < 3) {
@@ -78,6 +83,12 @@ export function MultiLinkBusinessSearch({
             Google review link added to your page.
             {picked.formattedAddress ? <span className="block text-xs text-muted">{picked.formattedAddress}</span> : null}
           </span>
+        </p>
+      ) : null}
+      {alreadyInCart ? (
+        <p className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-ink" role="alert">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-700" aria-hidden="true" />
+          <span>This location is already in your cart with {alreadyInCart.quantity} {alreadyInCart.quantity === 1 ? "stand" : "stands"}. To add stands to the same page, change its quantity in the cart instead. Continue only if this is a separate page.</span>
         </p>
       ) : null}
       {searching && status === "idle" ? <p className="text-xs text-muted">Pick your business to add its Google review link.</p> : null}

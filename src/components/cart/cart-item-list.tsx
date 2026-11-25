@@ -93,7 +93,7 @@ export const CartItemList = memo(function CartItemList({ rows, decreaseItem, inc
                   {hasHostedMultiLink && row.item.setup?.monthlyPriceCents ? (
                     <p>
                       <span className="text-muted">Service:</span>{" "}
-                      <span className="text-ink">{formatPrice(row.item.setup.monthlyPriceCents)}/mo Multi-Link hosting</span>
+                      <span className="text-ink">{formatPrice(row.item.setup.monthlyPriceCents)}/mo for one Multi-Link page{row.item.quantity > 1 ? ` · all ${row.item.quantity} stands open it` : ""}</span>
                     </p>
                   ) : null}
                   {hasHostedMultiLink ? (

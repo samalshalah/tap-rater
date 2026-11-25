@@ -185,7 +185,7 @@ export function validateCheckoutCart(items: CartItem[], products: MigratedProduc
     const logoRequired = option.requiresLogo;
     const proofRequired = option.requiresFinalProof;
     const proofApproved = proofRequired ? isApprovedProofCurrent(option, rowSetup) : rowSetup.proofApproved === true;
-    if (option.id === "branded_qr_direct" && (!proofApproved || !rowSetup.proofReceiptId || rowSetup.rendererVersion !== brandedStandComposition.templateVersion || !rowSetup.baseTemplateContentHash || !rowSetup.logoContentHash || (hasMultiLinkAddon && (!rowSetup.hostedReservationId || item.quantity !== 1)))) {
+    if (option.id === "branded_qr_direct" && (!proofApproved || !rowSetup.proofReceiptId || rowSetup.rendererVersion !== brandedStandComposition.templateVersion || !rowSetup.baseTemplateContentHash || !rowSetup.logoContentHash || (hasMultiLinkAddon && !rowSetup.hostedReservationId))) {
       return { ok: false, reason: "empty_cart", message: "Preview and approve your Branded stand again before payment." };
     }
     const manualProductionRequired = option.id === "branded_qr_direct" ? manualDesignFlow || !proofApproved : false;

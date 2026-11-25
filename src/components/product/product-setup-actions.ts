@@ -59,6 +59,8 @@ export function createProductSetupActions({
   error,
   setError,
   setIsBuilderOpen,
+  setAddedPage,
+  setCopyNote,
   cart,
   router,
   selectedOption,
@@ -131,6 +133,8 @@ export function createProductSetupActions({
   function closeBuilder() {
     setIsBuilderOpen(false);
     setError("");
+    setAddedPage(null);
+    setCopyNote("");
   }
 
   function useGooglePlace(place: GoogleBusinessSelection) {
@@ -387,6 +391,8 @@ export function createProductSetupActions({
       }
     };
     cart.addItem(configuredItem);
+    // A Multi-Link page: offer another location or business in the same dialog before checkout.
+    if (!onAdded && selectedLinkExperience === "multilink") { setCopyNote(""); setAddedPage(configuredItem); return; }
     if (onAdded) { setIsBuilderOpen(false); onAdded(configuredItem); }
     else router.push("/cart");
   }

@@ -34,7 +34,7 @@ describe("cart utilities", () => {
     expect(updated[0]).toMatchObject({ productId: "google-review-stand",optionId: "branded_qr_direct", quantity: 99 });
   });
 
-  it("keeps a branded hosted-page reservation at one when restored, merged, or incremented", () => {
+  it("lets several stands share one Multi-Link page reservation", () => {
     const items = normalizeCartItems([{
       productId: "connect-with-us-stand",
       optionId: "branded_qr_direct",
@@ -42,9 +42,9 @@ describe("cart utilities", () => {
       setup: { serviceMode: "HOSTED", serviceAddon: "hosted_multilink", hostedReservationId: "qa-reservation" }
     }]);
     expect(items).toHaveLength(1);
-    expect(items[0].quantity).toBe(1);
-    expect(mergeCartItem(items, items[0])[0].quantity).toBe(1);
-    expect(updateCartQuantity(items, getCartItemKey(items[0]), 1)[0].quantity).toBe(1);
+    expect(items[0].quantity).toBe(2);
+    expect(mergeCartItem(items, items[0])[0].quantity).toBe(4);
+    expect(updateCartQuantity(items, getCartItemKey(items[0]), 1)[0].quantity).toBe(3);
   });
 
   it("preserves multiple quantities for branded Direct stands", () => {
