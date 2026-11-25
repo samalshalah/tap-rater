@@ -40,7 +40,7 @@ const StripePaymentPanel = dynamic(() => import('./stripe-payment-panel').then(m
 });
 
 import {CheckoutDetailsForm} from './checkout-details-form';
-import type {CustomerForm,ShippingForm} from './checkout-details-types';
+import {splitCustomerName,type CustomerForm,type ShippingForm} from './checkout-details-types';
 import { readCheckoutStorage, saveCheckoutStorage } from "@/lib/checkout-browser-storage";
 
 type EmbeddedCheckoutSession = {
@@ -51,6 +51,8 @@ type EmbeddedCheckoutSession = {
 
 const emptyCustomer: CustomerForm = {
   email: "",
+  firstName: "",
+  lastName: "",
   name: "",
   phone: "",
   createAccount: false,
@@ -166,7 +168,7 @@ export function EmbeddedCheckoutClient({
         setCustomer((current) => ({
           ...current,
           email: body.email,
-          name: current.name || name,
+          ...(current.name ? {} : { ...splitCustomerName(name), name: name.trim() }),
           createAccount: hasHostedMultiLink || current.createAccount,
         }));
         setShipping((current) => ({

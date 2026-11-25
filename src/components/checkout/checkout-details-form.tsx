@@ -4,7 +4,7 @@ import type {getCartRows} from '@/lib/cart';
 import {AddressAutocomplete} from './address-autocomplete';
 import {resolveShippingRecipientName} from './shipping-recipient';
 import {CheckoutInput,CheckoutStateSelect,revealFirstInvalidControl} from './checkout-fields';
-import type {CustomerForm,ShippingForm} from './checkout-details-types';
+import {joinCustomerName,type CustomerForm,type ShippingForm} from './checkout-details-types';
 type Props={
  startPayment:(event:FormEvent<HTMLFormElement>)=>Promise<void>;
  hasHostedMultiLink:boolean;
@@ -23,6 +23,14 @@ type Props={
  rows:ReturnType<typeof getCartRows>;
 };
 export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer, setCustomer, shipping, setShipping, differentRecipient, setDifferentRecipient, setIsFillingAddress, error, isStartingPayment, isFillingAddress, rows}:Props){
+ // The two boxes are joined into the full name the order uses; the shipping name follows it
+ // unless the customer is shipping to someone else.
+ function updateName(patch:{firstName?:string;lastName?:string}){
+  const firstName=patch.firstName??customer.firstName,lastName=patch.lastName??customer.lastName;
+  const name=joinCustomerName(firstName,lastName);
+  setCustomer(current=>({...current,firstName,lastName,name}));
+  setShipping(current=>({...current,name:resolveShippingRecipientName(current.name,customer.name,name)}));
+ }
  return (<form className="grid gap-4" onSubmit={startPayment}>
               <div>
                 <p className="tr-eyebrow">Customer</p>
@@ -45,23 +53,22 @@ export function CheckoutDetailsForm({startPayment, hasHostedMultiLink, customer,
                   }
                   required
                 />
-                <CheckoutInput
-                  label="Full name"
-                  value={customer.name}
-                  autoComplete="name"
-                  onChange={(value) => {
-                    setCustomer((current) => ({ ...current, name: value }));
-                    setShipping((current) => ({
-                      ...current,
-                      name: resolveShippingRecipientName(
-                        current.name,
-                        customer.name,
-                        value,
-                      ),
-                    }));
-                  }}
-                  required
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <CheckoutInput
+                    label="First name"
+                    value={customer.firstName}
+                    autoComplete="given-name"
+                    onChange={(value) => updateName({ firstName: value })}
+                    required
+                  />
+                  <CheckoutInput
+                    label="Last name"
+                    value={customer.lastName}
+                    autoComplete="family-name"
+                    onChange={(value) => updateName({ lastName: value })}
+                    required
+                  />
+                </div>
                 <CheckoutInput
                   label="Phone (optional)"
                   type="tel"

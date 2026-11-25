@@ -214,7 +214,7 @@ export function CartTable({
         ) : null}
         <div className="grid gap-3 border-y border-line py-4 text-sm">
           <div className="flex items-center justify-between gap-4">
-            <span className="text-muted">Stands after savings</span>
+            <span className="text-muted">{promotion.discountCents > 0 ? "Stands after savings" : "Stands"}</span>
             <span className="font-medium text-ink">{formatPrice(standTotal)}</span>
           </div>
           {recurringTotal > 0 ? (
