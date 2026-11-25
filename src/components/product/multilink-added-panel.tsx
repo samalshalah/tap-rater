@@ -86,6 +86,7 @@ export function MultiLinkAddedPanel({ added, items, onAnotherLocation, onDiffere
           </button>
         </div>
         <p className="text-xs text-muted">Each location or business gets its own page, Google review link and Insights, at {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page. All in one payment.</p>
+        <p className="text-sm text-muted">Setting up 10 or more locations? <a className="font-semibold text-brand underline" href={`/multi-link/many-locations?business=${encodeURIComponent(sharedName(pages.map(pageName)))}`} target="_blank" rel="noopener">We'll set them up for you</a></p>
       </div>
     </div>
     <div className="flex justify-end border-t border-line bg-white px-4 py-4 sm:px-6">

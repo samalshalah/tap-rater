@@ -77,6 +77,7 @@ export function ProductSetupDestinationStep({
                         setBusinessName={setBusinessName}
                         onPickGoogleReview={(reviewUrl) => setMultiLinkButtons(applyGoogleReviewUrl(multiLinkButtons, reviewUrl))}
                       />
+                      <p className="-mt-2 text-xs text-muted">Many locations? <a className="font-semibold text-brand underline" href="/multi-link/many-locations" target="_blank" rel="noopener">We'll set them up for you</a></p>
 
                       {selectedOption.id === "branded_qr_direct" ? (
                         <div className="grid gap-2">

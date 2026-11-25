@@ -45,8 +45,10 @@ export async function POST(request: Request) {
       : parsed.data.message;
 
     await saveContactRequest(getSupabaseAdmin(), { ...parsed.data, message });
+    // The many-locations form sends the same fields; only the email subject tells them apart.
+    const manyLocations = (payload.fields as { topic?: unknown } | null)?.topic === "many_locations";
     await sendRequestNotification({
-      subject: "New Tap Rater contact request",
+      subject: manyLocations ? "New request: set up Multi-Link for many locations" : "New Tap Rater contact request",
       rows: {
         Name: parsed.data.name,
         Email: parsed.data.email,
@@ -77,7 +79,8 @@ async function readContactPayload(request: Request) {
         email: form?.get("email"),
         message: form?.get("message"),
         companyWebsite: form?.get("companyWebsite"),
-        turnstileToken: form?.get("turnstileToken")
+        turnstileToken: form?.get("turnstileToken"),
+        topic: form?.get("topic")
       },
       attachment: attachment instanceof File && attachment.size > 0 ? attachment : null
     };
