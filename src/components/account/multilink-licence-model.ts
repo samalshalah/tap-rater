@@ -2,7 +2,7 @@ import type {CustomerPortalStand,CustomerPortalSubscription} from '@/lib/custome
 import type {HostedPageEditorRecord} from '@/lib/hosted-page-editor-shared';
 import {hostedMultiLinkServiceAddon} from '@/lib/service-addons';
 import type {GrantedStand} from '@/lib/multilink-granted-stand';
-import {badgeTone,date,money,statusText,subscriptionStatus} from './billing-display';
+import {badgeTone,date,money,statusText,subscriptionStatus,subscriptionStatusText} from './billing-display';
 
 export type MultiLinkLicenceStep = {label:string;detail:string;done:boolean};
 export type MultiLinkLicence = {
@@ -53,7 +53,7 @@ export function buildMultiLinkLicences({subscriptions,stands,pages,grantedStands
     const heading=headingText&&headingText!==name?headingText:undefined;
     const billing=subscriptionStatus(subscription);
     const status=inactive.has(billing)
-      ?{label:statusText(billing),tone:badgeTone(billing)||'is-danger'}
+      ?{label:subscriptionStatusText(subscription),tone:badgeTone(billing)||'is-danger'}
       :page?.publishedAt?{label:'Live',tone:'is-success'}:{label:'Not published',tone:'is-warning'};
     const links=page?.draft.buttons.length??0;
     const ready=page?.draft.buttons.filter(button=>button.url.trim()).length??0;

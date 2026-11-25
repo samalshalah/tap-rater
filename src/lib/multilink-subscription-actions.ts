@@ -69,3 +69,52 @@ export async function changeMultiLinkSubscription(
   if (!synced.ok) console.warn("Multi-Link subscription sync deferred to webhook", subscriptionId, synced.error);
   return { ok: true, synced: synced.ok };
 }
+
+export type ReviewsSubscriptionDependencies = {
+  retrieve: (id: string) => Promise<{ status?: string | null; schedule?: unknown; cancel_at?: number | null; metadata?: Record<string, string> | null } | null>;
+  update: (id: string, params: { cancel_at_period_end: boolean; cancel_at?: "" }) => Promise<unknown>;
+  cancel: (id: string) => Promise<unknown>;
+  sync: (subscriptionId: string, eventType: "customer.subscription.updated" | "customer.subscription.deleted") => Promise<unknown>;
+};
+
+const defaultReviewsDependencies = (): ReviewsSubscriptionDependencies => {
+  const subscriptions = getStripeClient().subscriptions;
+  return {
+    retrieve: (id) => subscriptions.retrieve(id),
+    update: (id, params) => subscriptions.update(id, { ...params, proration_behavior: "none" }),
+    cancel: (id) => subscriptions.cancel(id),
+    // Same sync the webhook runs; it also emails the customer once about the change.
+    sync: async (id, eventType) => {
+      const { syncMarketingSubscription } = await import("@/lib/marketing-subscriptions");
+      return syncMarketingSubscription({ id: `tap_rater:admin:${randomUUID()}`, type: eventType, data: { object: { id, metadata: { tap_rater: "marketing_growth_v1" } } } } as never);
+    },
+  };
+};
+
+/** Admin: the same three actions for a Google Reviews subscription. */
+export async function changeReviewsSubscription(
+  subscriptionId: string,
+  action: MultiLinkSubscriptionAction,
+  dependencies: ReviewsSubscriptionDependencies = defaultReviewsDependencies(),
+): Promise<MultiLinkSubscriptionActionResult> {
+  if (!isStripeSubscriptionId(subscriptionId)) return { ok: false, status: 400, error: "Choose a Google Reviews subscription." };
+  try {
+    const current = await dependencies.retrieve(subscriptionId);
+    if (current?.metadata?.tap_rater !== "marketing_growth_v1") return { ok: false, status: 409, error: "That is not a Google Reviews subscription." };
+    const ended = current.status === "canceled" || current.status === "incomplete_expired";
+    if (ended && action === "keep") return { ok: false, status: 409, error: "This subscription has already ended and can't be kept." };
+    if (!ended && action !== "cancel_now" && current.schedule) {
+      return { ok: false, status: 409, error: "This customer has a location change scheduled. Use End now, or ask them to cancel from their Subscription page." };
+    }
+    if (!ended) {
+      if (action === "cancel_now") await dependencies.cancel(subscriptionId);
+      else await dependencies.update(subscriptionId, { cancel_at_period_end: action === "cancel_at_period_end", ...(action === "keep" && current.cancel_at ? { cancel_at: "" as const } : {}) });
+    }
+  } catch (error) {
+    console.error("Reviews subscription change failed", subscriptionId, action, error);
+    return { ok: false, status: 502, error: "Stripe couldn't change the subscription. Try again." };
+  }
+  const synced = await dependencies.sync(subscriptionId, action === "cancel_now" ? "customer.subscription.deleted" : "customer.subscription.updated")
+    .then(() => true, (error) => { console.warn("Reviews subscription sync deferred to webhook", subscriptionId, error); return false; });
+  return { ok: true, synced };
+}

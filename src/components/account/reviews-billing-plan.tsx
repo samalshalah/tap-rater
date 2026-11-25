@@ -59,7 +59,7 @@ export function ReviewsBillingPlan(){
   {data?.selfServe&&<>
 
    {/* The plan card already shows the renewal; this line appears only when the next renewal differs or the plan is ending. */}
-   {(data.cancelling||data.nextQuantity!==data.quantity)&&<p className="tr-billing-next">{data.cancelling?`Your entire Reviews subscription ends on ${date(data.periodEnd!)}. It will not renew.`:`Next renewal: ${money(data.nextSubtotal!,data.currency)} per month for ${data.nextQuantity} ${data.nextQuantity===1?'location':'locations'}.`}</p>}
+   {(data.cancelling||data.nextQuantity!==data.quantity)&&<p className="tr-billing-next">{data.cancelling?`Your subscription is canceled. Google Reviews stays active until ${date(data.periodEnd!)}, then ends. You won’t be charged again.`:`Next renewal: ${money(data.nextSubtotal!,data.currency)} per month for ${data.nextQuantity} ${data.nextQuantity===1?'location':'locations'}.`}</p>}
 
    {data.retry?<div role="alert"><p>A billing change needs to finish. Retry it before making another change.</p><button className="tr-button-primary" disabled={busy} onClick={()=>confirm(data.retry!)}>Retry saved change</button></div>:<>
 

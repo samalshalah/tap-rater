@@ -7,6 +7,8 @@ export const statusText=(value:string)=>({
   active:'Active',ACTIVE:'Active',cancelled:'Cancelled',canceled:'Cancelled',past_due:'Payment needs attention',unpaid:'Payment due',
   PAST_DUE:'Payment needs attention',CANCELLED_AT_PERIOD_END:'Ends at the current period',EXPIRED:'Expired',REACTIVATED:'Active'
 } as Record<string,string>)[value]||value.replaceAll('_',' ');
+/** "Active until Dec 25, 2026" once renewal is cancelled, so the customer sees the service keeps working until then. */
+export const subscriptionStatusText=(subscription:CustomerPortalSubscription)=>{const status=subscriptionStatus(subscription);return status==='CANCELLED_AT_PERIOD_END'&&subscription.currentPeriodEnd?`Active until ${date(subscription.currentPeriodEnd)}`:statusText(status);};
 export const date=(value?:string)=>value ? new Date(value).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric',timeZone:'UTC'}) : '';
 export function money(cents:number,currency='usd'){return new Intl.NumberFormat('en-US',{style:'currency',currency:currency.toUpperCase()}).format(cents/100);}
 

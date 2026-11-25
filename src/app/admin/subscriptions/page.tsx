@@ -28,14 +28,17 @@ export default async function AdminSubscriptionsPage() {
       </section>
 
       <Table id="google-reviews" title="Google Reviews" rows={reviews} empty="No Google Reviews subscriptions yet."
-        head={["Customer", "Business", "Locations", "Monthly", "Status", "Renews / ends"]}
+        head={["Customer", "Business", "Locations", "Monthly", "Status", "Renews / ends", "Actions"]}
         render={(row) => [
           <span className="tr-admin-person"><strong className="text-ink">{row.name || row.email}</strong>{row.name ? <span>{row.email}</span> : null}</span>,
           row.businesses || <span className="text-muted">Not set up yet</span>,
           row.locations,
           formatPrice(marketingPlan.monthlyCents * row.locations),
           <Status status={row.status} test={row.stripe_mode === "test"} canceling={row.cancel_at_period_end} />,
-          date(row.current_period_end)
+          date(row.current_period_end),
+          row.stripe_subscription_id?.startsWith("sub_")
+            ? <MultiLinkSubscriptionActions subscriptionId={row.stripe_subscription_id} status={row.status} cancelAtPeriodEnd={row.cancel_at_period_end} product="reviews" />
+            : <span className="text-muted">—</span>
         ]} rowKey={(row) => row.stripe_subscription_id} />
 
       <Table id="multi-link" title="Multi-Link pages" rows={multiLink} empty="No Multi-Link subscriptions yet."
@@ -70,7 +73,7 @@ function Status({ status, test = false, canceling }: { status: string; test?: bo
   return <>
     <AdminBadge tone={tones[status] ?? "neutral"}>{status.replaceAll("_", " ")}</AdminBadge>
     {test ? <span className="ml-2"><AdminBadge>Test</AdminBadge></span> : null}
-    {canceling ? <span className="mt-1 block text-xs text-muted">Renewal canceled</span> : null}
+    {canceling ? <span className="mt-1 block text-xs text-muted">Canceled · active until the end date</span> : null}
   </>;
 }
 

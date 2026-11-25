@@ -1,5 +1,5 @@
 import {describe,expect,it,vi} from 'vitest';
-import {changeMultiLinkSubscription,type MultiLinkSubscriptionDependencies} from '@/lib/multilink-subscription-actions';
+import {changeMultiLinkSubscription,changeReviewsSubscription,type MultiLinkSubscriptionDependencies,type ReviewsSubscriptionDependencies} from '@/lib/multilink-subscription-actions';
 import {refundAdminOrder,type AdminOrderRefundDependencies} from '@/lib/order-refunds';
 import type {OrderRecord} from '@/lib/orders';
 
@@ -59,5 +59,25 @@ describe('refundAdminOrder on a subscription order',()=>{
   it('explains when no payment can be found',async()=>{
     const d={getOrder:vi.fn(async()=>({configured:true,order})),linkPaymentIntent:vi.fn().mockResolvedValue(null)} as unknown as AdminOrderRefundDependencies;
     expect(await refundAdminOrder(order.id!,d)).toMatchObject({ok:false,status:409});
+  });
+});
+
+describe('changeReviewsSubscription',()=>{
+  const reviews=(extra:Record<string,unknown>={})=>({retrieve:vi.fn().mockResolvedValue({status:'active',metadata:{tap_rater:'marketing_growth_v1'},...extra}),update:vi.fn().mockResolvedValue({}),cancel:vi.fn().mockResolvedValue({}),sync:vi.fn().mockResolvedValue({})}) as ReviewsSubscriptionDependencies&Record<string,ReturnType<typeof vi.fn>>;
+  it('cancels at period end and syncs',async()=>{
+    const d=reviews();expect(await changeReviewsSubscription('sub_9','cancel_at_period_end',d)).toEqual({ok:true,synced:true});
+    expect(d.update).toHaveBeenCalledWith('sub_9',{cancel_at_period_end:true});
+    expect(d.sync).toHaveBeenCalledWith('sub_9','customer.subscription.updated');
+  });
+  it('clears a portal cancel date when keeping',async()=>{
+    const d=reviews({cancel_at_period_end:false,cancel_at:123});await changeReviewsSubscription('sub_9','keep',d);
+    expect(d.update).toHaveBeenCalledWith('sub_9',{cancel_at_period_end:false,cancel_at:''});
+  });
+  it('refuses other subscriptions and scheduled location changes',async()=>{
+    expect(await changeReviewsSubscription('sub_9','cancel_now',reviews({metadata:{}}))).toMatchObject({ok:false,status:409});
+    const d=reviews({schedule:'sub_sched_1'});
+    expect(await changeReviewsSubscription('sub_9','cancel_at_period_end',d)).toMatchObject({ok:false,status:409});
+    expect(await changeReviewsSubscription('sub_9','cancel_now',d)).toMatchObject({ok:true});
+    expect(d.cancel).toHaveBeenCalledWith('sub_9');
   });
 });
