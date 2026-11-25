@@ -3,6 +3,7 @@ import { readCurrentHostedPageSnapshot } from "../../../src/lib/hosted-pages/rep
 import { createR2HostedPageStorage } from "../../../src/lib/hosted-pages/r2-storage";
 import { readHostedPageTracking, type HostedPageTracking } from "../../../src/lib/hosted-pages/tracking";
 import {
+  hostedPageForwardUrl,
   hostedPageResponseStatus,
   renderHostedPageHtml,
   resolveHostedPageLifecycle,
@@ -49,6 +50,14 @@ export async function handleHostedPageRequest(request: Request, env: Env, ctx: E
     const storage = createR2HostedPageStorage(env.HOSTED_PAGE_SNAPSHOTS);
     const snapshot = await readCurrentHostedPageSnapshot(storage, code);
     const resolution = snapshot ? resolveHostedPageLifecycle(snapshot) : { state: "not_found" as const };
+    // An ended page whose owner chose a forwarding link sends visitors straight there.
+    const forward = hostedPageForwardUrl(resolution);
+    if (forward) {
+      return new Response(null, {
+        status: 302,
+        headers: { ...securityHeaders, Location: forward, "Cache-Control": "public, max-age=60", "X-Tap-Rater-Hosted-Page-State": "forwarded" }
+      });
+    }
     const response = htmlResponse(resolution, request.method, undefined, readHostedPageTracking(new URL(request.url)));
 
     if (cache && request.method === "GET" && response.status === 200) {

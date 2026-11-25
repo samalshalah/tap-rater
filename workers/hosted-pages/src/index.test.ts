@@ -70,6 +70,26 @@ describe("hosted page Worker", () => {
     expect(fallback.headers.get("X-Tap-Rater-Hosted-Page-Source")).toBe("cache-last-known-good");
     await expect(fallback.text()).resolves.toContain("Cached Cafe");
   });
+
+  it("forwards an ended page to the owner's link, but keeps a live page and a taken-down page", async () => {
+    const bucket = new MemoryR2Bucket();
+    const storage = createR2HostedPageStorage(bucket);
+    await assignPermanentHostedPageCode(storage, { physicalProductRef: "physical-product-1", code: hostedCode });
+    const env = { HOSTED_PAGE_SNAPSHOTS: bucket as unknown as R2Bucket, ENVIRONMENT: "production" };
+    const open = () => handleHostedPageRequest(new Request(`https://taprater.com/p/${hostedCode}`), env, new TestExecutionContext());
+
+    await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v1", forwardUrl: "https://example.com/menu" }));
+    expect((await open()).status).toBe(200);
+
+    await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v2", lifecycleStatus: "EXPIRED", forwardUrl: "https://example.com/menu" }));
+    const forwarded = await open();
+    expect(forwarded.status).toBe(302);
+    expect(forwarded.headers.get("Location")).toBe("https://example.com/menu");
+    expect(forwarded.headers.get("X-Tap-Rater-Hosted-Page-State")).toBe("forwarded");
+
+    await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v3", lifecycleStatus: "RETIRED_INTERNAL", forwardUrl: "https://example.com/menu" }));
+    expect((await open()).status).toBe(200);
+  });
 });
 
 function sampleSnapshot(overrides: Partial<HostedPageSnapshot> = {}): HostedPageSnapshot {

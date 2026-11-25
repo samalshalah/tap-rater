@@ -12,7 +12,7 @@ import {
   type HostedPageEditorDraft,
   type HostedPageEditorRecord
 } from "@/lib/hosted-page-editor-shared";
-import { assignPermanentHostedPageCode, publishHostedPageSnapshot, readHostedPageAssignment, HostedPageRepositoryError, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
+import { assignPermanentHostedPageCode, publishHostedPageSnapshot, readCurrentHostedPageSnapshot, readHostedPageAssignment, HostedPageRepositoryError, type HostedPageTextStorage } from "@/lib/hosted-pages/repository";
 import { type HostedPageLifecycleStatus, type HostedPageSnapshot } from "@/lib/hosted-pages/snapshots";
 
 export { hostedPageButtonLimit, supportedHostedPageButtons };
@@ -82,6 +82,12 @@ export async function publishHostedPageDraft(email: string, storage: HostedPageT
     }
   }
   await ensureHostedPageCodeIsAssigned(storage, context.page);
+  // Keep what lives only on the published page: the forwarding link, and the dates that keep a
+  // cancelled or past-due page live until it really ends (without them it would go inactive early).
+  const current = await readCurrentHostedPageSnapshot(storage, context.page.code).catch(() => null);
+  if (current?.forwardUrl) snapshot.forwardUrl = current.forwardUrl;
+  if (snapshot.lifecycleStatus === "CANCELLED_AT_PERIOD_END" && !snapshot.subscriptionPaidThrough && current?.subscriptionPaidThrough) snapshot.subscriptionPaidThrough = current.subscriptionPaidThrough;
+  if (snapshot.lifecycleStatus === "PAST_DUE" && !snapshot.subscriptionPastDueSince && current?.subscriptionPastDueSince) snapshot.subscriptionPastDueSince = current.subscriptionPastDueSince;
   await publishHostedPageSnapshot(storage, snapshot);
 
   const page = await markHostedPagePublished(email, snapshot.version, snapshot.publishedAt, code);

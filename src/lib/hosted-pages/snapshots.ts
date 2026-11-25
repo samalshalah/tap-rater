@@ -44,6 +44,8 @@ export type HostedPageSnapshot = {
   description?: string;
   buttons: HostedPageButton[];
   appearance?: HostedPageAppearance;
+  /** Where to send visitors once a cancelled subscription has ended, instead of the "not active" page. */
+  forwardUrl?: string;
 };
 
 export type HostedPageCurrentPointer = {
@@ -122,6 +124,10 @@ export function validateHostedPageSnapshot(input: HostedPageSnapshot): HostedPag
     throw new HostedPageSnapshotError("Hosted page logo URL must be HTTP or HTTPS.");
   }
 
+  if (input.forwardUrl !== undefined && input.forwardUrl !== null && !normalizeHostedPageForwardUrl(input.forwardUrl)) {
+    throw new HostedPageSnapshotError("Forwarding link must be an https:// web address.");
+  }
+
   if (!Array.isArray(input.buttons) || input.buttons.length > 10) {
     throw new HostedPageSnapshotError("Hosted page snapshot must contain 0 to 10 buttons.");
   }
@@ -136,8 +142,34 @@ export function validateHostedPageSnapshot(input: HostedPageSnapshot): HostedPag
     description: trimOptional(input.description, 300),
     logoUrl: trimOptional(input.logoUrl, 500),
     buttons,
-    appearance: normalizeAppearance(input.appearance)
+    appearance: normalizeAppearance(input.appearance),
+    forwardUrl: input.forwardUrl ? normalizeHostedPageForwardUrl(input.forwardUrl) ?? undefined : undefined
   };
+}
+
+/**
+ * A customer-chosen https link (their website, a landing page). Adds https:// when left out.
+ * Tap Rater page links are refused so a page can never forward to itself or another page.
+ */
+export function normalizeHostedPageForwardUrl(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 500) return null;
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : `https://${trimmed}`);
+    if (url.protocol !== "https:" || !url.hostname.includes(".") || url.username || url.password) return null;
+    if (/(^|\.)taprater\.com$/i.test(url.hostname) && /^\/p\//i.test(url.pathname)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** The link to send visitors to, only once the page has ended (never for a page Tap Rater took down). */
+export function hostedPageForwardUrl(resolution: HostedPageResolution): string | null {
+  const snapshot = resolution.snapshot;
+  if (resolution.state !== "inactive" || !snapshot?.forwardUrl || snapshot.lifecycleStatus === "RETIRED_INTERNAL") return null;
+  return normalizeHostedPageForwardUrl(snapshot.forwardUrl);
 }
 
 export function resolveHostedPageLifecycle(snapshot: HostedPageSnapshot, now = new Date()): HostedPageResolution {
