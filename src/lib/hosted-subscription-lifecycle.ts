@@ -6,6 +6,7 @@ import type { OrdersDbClient } from "@/lib/orders";
 import { getStripeClient } from "@/lib/checkout";
 import { completeStripeReceipt, hasStripeReceipt, withStripeResourceLock } from "@/lib/stripe-processing";
 import { randomUUID } from "node:crypto";
+import { notifyMultiLinkSubscriptionChange, type MultiLinkChangeInput, type MultiLinkSubscriptionChange } from "@/lib/multilink-cancellation-emails";
 
 export const hostedSubscriptionGracePeriodDays = 7;
 
@@ -31,6 +32,8 @@ export type HostedSubscriptionLifecycleDependencies = {
   storage?: HostedPageTextStorage;
   retrieveSubscription: (id: string) => Promise<unknown>;
   isManagedSubscription?: (id: string) => Promise<boolean>;
+  /** Emails the customer and admin when renewal is cancelled, kept or the subscription ends. */
+  notify?: (input: MultiLinkChangeInput) => Promise<unknown>;
 };
 
 type StripeSubscriptionObject = {
@@ -67,7 +70,16 @@ type HostedSubscriptionRow = {
   status?: string | null;
   current_period_end?: string | null;
   past_due_since?: string | null;
+  cancel_at_period_end?: boolean;
 };
+
+/** What changed for the customer, compared with what we had saved. Only real changes send an email. */
+export function readMultiLinkChange(previous: { status?: string | null; cancel_at_period_end?: boolean }, next: { status: string; cancelAtPeriodEnd: boolean }): MultiLinkSubscriptionChange | null {
+  if (next.status === "canceled") return previous.status === "canceled" ? null : "ended";
+  if (next.cancelAtPeriodEnd && !previous.cancel_at_period_end) return "canceled";
+  if (!next.cancelAtPeriodEnd && previous.cancel_at_period_end) return "resumed";
+  return null;
+}
 
 export async function processHostedSubscriptionLifecycleEvent(
   input: HostedSubscriptionLifecycleEventInput,
@@ -108,8 +120,11 @@ export async function processHostedSubscriptionLifecycleEvent(
       return { ok: true as const, processed: false, reason: "not_hosted_subscription" as const };
     }
 
+    const changes: MultiLinkChangeInput[] = [];
     for (const row of rows) {
       await assertActive();
+      const change = row.lifecycle_status === "RETIRED_INTERNAL" ? null : readMultiLinkChange(row, lifecycleInput);
+      if (change) changes.push({ change, hostedSubscriptionId: row.id, stripeSubscriptionId: subscriptionId, code: row.permanent_code, pageUrl: row.hosted_page_url, end: lifecycleInput.currentPeriodEnd ?? row.current_period_end ?? null, eventId: input.eventId });
       const currentPeriodEnd = lifecycleInput.currentPeriodEnd ?? row.current_period_end ?? null;
       const pastDueSince = lifecycleInput.pastDueSince ? row.past_due_since ?? lifecycleInput.pastDueSince : null;
       const lifecycleStatus = row.lifecycle_status === "RETIRED_INTERNAL" ? row.lifecycle_status : lifecycleInput.lifecycleStatus;
@@ -148,6 +163,10 @@ export async function processHostedSubscriptionLifecycleEvent(
 
     await assertActive();
     await completeStripeReceipt(resolved.client, receiptId, input.eventType, now);
+    // Saved first, so a failed email never blocks or repeats the update.
+    for (const change of changes) {
+      await resolved.notify?.(change).catch((error) => console.warn("Multi-Link change email unavailable", change.code, change.change, error));
+    }
     return {
       ok: true as const,
       processed: true,
@@ -215,6 +234,7 @@ async function resolveDependencies(dependencies?: HostedSubscriptionLifecycleDep
       const sessions = await getStripeClient().checkout.sessions.list({ subscription: id, limit: 100 });
       return sessions.data.some((session) => session.metadata?.checkout_intent === "hosted_subscription");
     },
+    notify: (change: MultiLinkChangeInput) => notifyMultiLinkSubscriptionChange(change),
   };
 }
 
@@ -240,7 +260,8 @@ function normalizeHostedSubscriptionRow(row: unknown): HostedSubscriptionRow | n
     lifecycle_status: readLifecycleStatus(value.lifecycle_status),
     status: readString(value.status),
     current_period_end: readString(value.current_period_end),
-    past_due_since: readString(value.past_due_since)
+    past_due_since: readString(value.past_due_since),
+    cancel_at_period_end: value.cancel_at_period_end === true
   };
 }
 
