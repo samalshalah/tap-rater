@@ -3,6 +3,8 @@ import { publicProofHistory } from "@/lib/stand-proof-history";
 import { PrintArtworkDownload } from "@/components/admin/print-artwork-download";
 import { AdminAlert, AdminBadge, AdminCard, AdminSoftPanel } from "@/components/admin/admin-ui";
 import { OrderDesignFiles } from "@/components/admin/order-design-files";
+import { OrderStandsToMake } from "@/components/admin/order-stands-to-make";
+import type { StandToMake } from "@/lib/stand-production";
 import type { ReactNode } from "react";
 import { canAdvanceOrderFulfillment } from "@/lib/order-fulfillment-rules";
 import { getOrderLineItemProductionSummary, isOrderArtworkAvailable, type OrderLineItem, type OrderRecord } from "@/lib/orders";
@@ -62,7 +64,7 @@ export function AddressBlock({ address }: { address?: Record<string, unknown> | 
   );
 }
 
-export function LineItemDetail({ item, artworkUrl: requestedArtworkUrl, order, index, standIds }: { standIds:string[]; item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
+export function LineItemDetail({ item, artworkUrl: requestedArtworkUrl, order, index, stands = [] }: { stands?: StandToMake[]; item: OrderLineItem; artworkUrl?: string; order: OrderRecord; index: number }) {
   const summary = getOrderLineItemProductionSummary(item);
   // The artwork route refuses refunded or unpaid orders, so never show a preview or download that would fail.
   const artworkLocked = !isOrderArtworkAvailable(order);
@@ -76,7 +78,6 @@ export function LineItemDetail({ item, artworkUrl: requestedArtworkUrl, order, i
         <div className="min-w-0">
           <p className="break-words font-black text-ink">{item.quantity} x {item.title}</p>
           <p className="mt-1 break-all font-mono text-xs uppercase text-muted">SKU {item.sku}</p>
-          {!!standIds.length&&<details className="mt-2 text-xs text-muted"><summary className="cursor-pointer">Stand IDs ({standIds.length})</summary>{standIds.map(id=><p key={id} className="mt-1 break-all font-mono">{id}</p>)}</details>}
           <div className="mt-2 flex flex-wrap gap-2">
             <AdminBadge tone="neutral">{summary.optionLabel}</AdminBadge>
             <AdminBadge tone="neutral">{summary.nfcBehavior}</AdminBadge>
@@ -109,6 +110,7 @@ export function LineItemDetail({ item, artworkUrl: requestedArtworkUrl, order, i
           }
         />
       </div>
+      <OrderStandsToMake stands={stands} hasQr={summary.printedQrLabel !== "No printed QR (NFC only)"} artworkUrl={summary.productionArtwork?.status === "generated" && !artworkLocked ? requestedArtworkUrl : undefined} />
       <OrderDesignFiles
         standardDesignUrl={getOrderStandardDesignUrl(item)}
         artworkUrl={summary.productionArtwork?.status === "generated" ? artworkUrl : undefined}

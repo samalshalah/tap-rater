@@ -97,3 +97,22 @@ function outlineBusinessName(name: string, region: ArtworkRegion, percent: numbe
 function escapeXml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
+
+/**
+ * Returns the approved print file with a different QR code (the same page, tagged with one stand's ID).
+ * Nothing else in the approved design changes. The QR is the last nested <svg> in the file.
+ */
+export async function replacePrintArtworkQr(svg: string, qrTargetUrl: string) {
+  const start = svg.lastIndexOf("<svg x=\"");
+  const end = svg.lastIndexOf("</svg>", svg.lastIndexOf("</svg>") - 1);
+  if (start < 0 || end < start) throw new Error("The print file has no QR code to replace.");
+  const openEnd = svg.indexOf(">", start);
+  const qr = await createQrSvg(qrTargetUrl);
+  const qrBody = qr.replace(/^.*?<svg[^>]*>/s, "").replace(/<\/svg>\s*$/s, "");
+  const qrViewBox = qr.match(/viewBox="([^"]+)"/)?.[1];
+  if (!qrViewBox || openEnd < 0 || openEnd > end) throw new Error("QR artwork is invalid.");
+  const open = svg.slice(start, openEnd + 1).replace(/viewBox="[^"]*"/, `viewBox="${escapeXml(qrViewBox)}"`);
+  const result = svg.slice(0, start) + open + qrBody + svg.slice(end);
+  // Keep the file's own record of its QR link accurate.
+  return result.replace(/(&quot;qrTargetUrl&quot;:&quot;)(.*?)(&quot;)/, (_match, before: string, _old: string, after: string) => `${before}${escapeXml(qrTargetUrl)}${after}`);
+}

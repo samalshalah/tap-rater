@@ -1,4 +1,5 @@
 import {orderStandRegistry} from "@/lib/customer-stand-registry";
+import {standsToMake} from "@/lib/stand-production";
 import { EmailDeliveryHistory } from "@/components/admin/email-delivery-history";
 import { getAdminEmailDeliveries } from "@/lib/email-deliveries";
 import { canChangeComplimentaryStand } from "@/lib/complimentary-orders";
@@ -79,7 +80,7 @@ export default async function AdminOrderDetailPage({ params }: AdminOrderDetailP
               {canChangeComplimentaryStand(order) && <AdminLinkButton href={`/admin/orders/${id}/edit`} variant="primary" className="mb-4 min-h-11">Change stand / design</AdminLinkButton>}
               <div className="space-y-4">
                 {order.line_items_json.map((item, index) => (
-                  <LineItemDetail standIds={standRecords.filter(s=>s.line_id===item.standLineId&&Number(s.unit_number)<=item.quantity).map(s=>String(s.public_id))} key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
+                  <LineItemDetail stands={standsToMake(item, standRecords)} key={`${item.productId}-${item.optionId ?? "base"}-${index}`} item={item} order={order} index={index} artworkUrl={getAdminOrderArtworkUrl(order, index)} />
                 ))}
               </div>
             </InfoCard>

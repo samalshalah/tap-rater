@@ -1,5 +1,8 @@
 import {neon} from '@neondatabase/serverless';
 import type {CustomerPortalStand,CustomerPortalDevice} from './customer-portal';
+import {standTargetUrl} from './hosted-pages/tracking';
+/** A Multi-Link stand's QR and NFC open its page tagged with the stand's own ID; other links are unchanged. */
+function standLinks(stand:CustomerPortalStand,standId:string){return {...(stand.qrTargetUrl?{qrTargetUrl:standTargetUrl(stand.qrTargetUrl,'qr',standId)}:{}),...(stand.nfcTargetUrl?{nfcTargetUrl:standTargetUrl(stand.nfcTargetUrl,'nfc',standId)}:{})};}
 const database=()=>neon(process.env.DATABASE_URL||process.env.NEON_DATABASE_URL!);
 export async function customerStandRegistry(email:string,sql=database()){
  return sql`SELECT s.id,s.public_id,s.order_id,s.line_id,s.unit_number,s.device_id,
@@ -12,7 +15,7 @@ export async function customerStandRegistry(email:string,sql=database()){
  WHERE lower(c.email)=${email.trim().toLowerCase()} AND c.account_status='active'`;
 }
 export function attachStandRegistry(stands:CustomerPortalStand[],devices:CustomerPortalDevice[],rows:Record<string,any>[]):CustomerPortalStand[]{
- const result=stands.map(stand=>{const row=rows.find(r=>r.order_id===stand.orderId&&r.line_id===stand.standLineId&&Number(r.unit_number)===stand.unitNumber);return row?{...stand,standId:row.public_id,registryId:row.id,assignedBusinessId:row.draft_business_id||undefined,assignedBusinessName:row.assigned_business_name||undefined,standLabel:row.draft_label||undefined,assignmentVersion:Number(row.assignment_version)}:{...stand,standId:undefined};});
+ const result=stands.map(stand=>{const row=rows.find(r=>r.order_id===stand.orderId&&r.line_id===stand.standLineId&&Number(r.unit_number)===stand.unitNumber);return row?{...stand,...standLinks(stand,row.public_id),standId:row.public_id,registryId:row.id,assignedBusinessId:row.draft_business_id||undefined,assignedBusinessName:row.assigned_business_name||undefined,standLabel:row.draft_label||undefined,assignmentVersion:Number(row.assignment_version)}:{...stand,standId:undefined};});
  for(const device of devices){const row=rows.find(r=>r.device_id===device.id);if(!row)continue;result.push({id:`device-${device.id}`,orderId:'',lineItemIndex:0,orderReference:'',title:device.label||'Registered stand',quantity:1,kind:'standard',deviceCode:device.deviceCode,standId:row.public_id,registryId:row.id,assignedBusinessId:row.draft_business_id||undefined,assignedBusinessName:row.assigned_business_name||undefined,standLabel:row.draft_label||undefined,assignmentVersion:Number(row.assignment_version),destinationUrl:device.destinationUrl,proofStatus:'not_needed',productionStatus:device.status,shippingStatus:'',multiLinkSetupPending:false,primaryActionLabel:'View stand',primaryActionHref:'/account/stands'});}
  return result;
 }
@@ -25,5 +28,5 @@ export async function saveStandAssignment(email:string,id:string,businessId:stri
 }
 
 export async function orderStandRegistry(orderId:string,sql=database()){
- return sql`SELECT public_id,line_id,unit_number FROM customer_stand_registry WHERE order_id=${orderId}::uuid ORDER BY line_id,unit_number`;
+ return sql`SELECT public_id,line_id,unit_number,draft_label FROM customer_stand_registry WHERE order_id=${orderId}::uuid ORDER BY line_id,unit_number`;
 }

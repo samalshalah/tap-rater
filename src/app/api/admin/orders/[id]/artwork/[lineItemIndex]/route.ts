@@ -4,6 +4,10 @@ import { getProductMediaObject } from "@/lib/admin-media-storage";
 import { getAdminOrderById, isOrderArtworkAvailable, getOrderArtworkStorageKey } from "@/lib/orders";
 import { buildCurrentApprovalSnapshot } from "@/lib/production-artwork";
 import { isProofApprovalSnapshotCurrent } from "@/lib/direct-production";
+import { orderStandRegistry } from "@/lib/customer-stand-registry";
+import { isValidStandId } from "@/lib/hosted-pages/tracking";
+import { replacePrintArtworkQr } from "@/lib/print-artwork-renderer";
+import { standTargets } from "@/lib/stand-production";
 
 export const dynamic = "force-dynamic";
 
@@ -33,13 +37,27 @@ export async function GET(request: Request, context: RouteContext) {
     const key = getOrderArtworkStorageKey(order, index);
     if (!key) return NextResponse.json({ error: "Order artwork was not found." }, { status: 404, headers });
     const object = await getProductMediaObject(key);
-    const body = object?.body ?? await object?.arrayBuffer?.();
+    let body: BodyInit | undefined = object?.body ?? await object?.arrayBuffer?.();
     if (!body) return NextResponse.json({ error: "Order artwork was not found." }, { status: 404, headers });
-    const disposition = new URL(request.url).searchParams.get("preview") === "1" ? "inline" : "attachment";
+    const search = new URL(request.url).searchParams;
+    const disposition = search.get("preview") === "1" ? "inline" : "attachment";
+    // ?stand=ST-… gives that stand its own print file: the same approved design with the stand's own QR.
+    const standId = search.get("stand");
+    let fileName = `order-${id}-line-${index + 1}.svg`;
+    if (standId !== null) {
+      const stand = item && isValidStandId(standId)
+        ? (await orderStandRegistry(id)).find(row => row.public_id === standId && row.line_id === item.standLineId && Number(row.unit_number) <= item.quantity)
+        : undefined;
+      if (!item || !stand) return NextResponse.json({ error: "That stand is not part of this order line." }, { status: 404, headers });
+      const { qrUrl } = standTargets(item, standId);
+      if (!qrUrl) return NextResponse.json({ error: "This stand has no printed QR code." }, { status: 409, headers });
+      body = await replacePrintArtworkQr(await new Response(body).text(), qrUrl);
+      fileName = `order-${id}-line-${index + 1}-stand-${Number(stand.unit_number)}-${standId}.svg`;
+    }
     return new Response(body, { headers: {
       ...headers,
       "Content-Type": "image/svg+xml",
-      "Content-Disposition": `${disposition}; filename="order-${id}-line-${index + 1}.svg"`,
+      "Content-Disposition": `${disposition}; filename="${fileName}"`,
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox allow-downloads"
     } });
