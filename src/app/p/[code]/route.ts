@@ -2,13 +2,14 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isValidHostedPageCode } from "@/lib/hosted-pages/codes";
 import { getHostedPageStorage } from "@/lib/hosted-pages/app-storage";
 import { readCurrentHostedPageSnapshot } from "@/lib/hosted-pages/repository";
+import { hostedPageForwardStepUrl, readHostedPageTracking } from "@/lib/hosted-pages/tracking";
 import { hostedPageForwardUrl, hostedPageResponseStatus, renderHostedPageHtml, resolveHostedPageLifecycle } from "@/lib/hosted-pages/snapshots";
 
 type PublicHostedPageRouteProps = {
   params: Promise<{ code: string }>;
 };
 
-export async function GET(_request: Request, { params }: PublicHostedPageRouteProps) {
+export async function GET(request: Request, { params }: PublicHostedPageRouteProps) {
   const { code } = await params;
 
   if (!(await isProductionHostedPageRouteEnabled())) {
@@ -28,7 +29,7 @@ export async function GET(_request: Request, { params }: PublicHostedPageRoutePr
   const resolution = snapshot ? resolveHostedPageLifecycle(snapshot) : { state: "not_found" as const };
   const forward = hostedPageForwardUrl(resolution);
   if (forward) {
-    return new Response(null, { status: 302, headers: { Location: forward, "Cache-Control": "public, max-age=60", "X-Robots-Tag": "noindex", "X-Tap-Rater-Hosted-Page-State": "forwarded" } });
+    return new Response(null, { status: 302, headers: { Location: hostedPageForwardStepUrl(code, readHostedPageTracking(new URL(request.url))), "Cache-Control": "no-store", "X-Robots-Tag": "noindex", "X-Tap-Rater-Hosted-Page-State": "forwarded" } });
   }
   return hostedPageResponse(resolution);
 }

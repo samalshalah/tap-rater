@@ -1,7 +1,7 @@
 import { isValidHostedPageCode } from "../../../src/lib/hosted-pages/codes";
 import { readCurrentHostedPageSnapshot } from "../../../src/lib/hosted-pages/repository";
 import { createR2HostedPageStorage } from "../../../src/lib/hosted-pages/r2-storage";
-import { readHostedPageTracking, type HostedPageTracking } from "../../../src/lib/hosted-pages/tracking";
+import { hostedPageForwardStepUrl, readHostedPageTracking, type HostedPageTracking } from "../../../src/lib/hosted-pages/tracking";
 import {
   hostedPageForwardUrl,
   hostedPageResponseStatus,
@@ -50,12 +50,12 @@ export async function handleHostedPageRequest(request: Request, env: Env, ctx: E
     const storage = createR2HostedPageStorage(env.HOSTED_PAGE_SNAPSHOTS);
     const snapshot = await readCurrentHostedPageSnapshot(storage, code);
     const resolution = snapshot ? resolveHostedPageLifecycle(snapshot) : { state: "not_found" as const };
-    // An ended page whose owner chose a forwarding link sends visitors straight there.
-    const forward = hostedPageForwardUrl(resolution);
-    if (forward) {
+    // An ended page whose owner chose a forwarding link: count the visit on the main site, which then
+    // sends the visitor on to the link. Not cached, so every visit is counted.
+    if (hostedPageForwardUrl(resolution) && snapshot) {
       return new Response(null, {
         status: 302,
-        headers: { ...securityHeaders, Location: forward, "Cache-Control": "public, max-age=60", "X-Tap-Rater-Hosted-Page-State": "forwarded" }
+        headers: { ...securityHeaders, Location: hostedPageForwardStepUrl(snapshot.code, readHostedPageTracking(new URL(request.url))), "Cache-Control": "no-store", "X-Tap-Rater-Hosted-Page-State": "forwarded" }
       });
     }
     const response = htmlResponse(resolution, request.method, undefined, readHostedPageTracking(new URL(request.url)));

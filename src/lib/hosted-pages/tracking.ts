@@ -6,6 +6,17 @@ export type HostedPageTracking = { source: HostedPageSource; standId?: string };
 
 const standIdPattern = /^ST-[A-Za-z0-9-]{4,80}$/;
 export const hostedPageEventsPath = "/api/hosted-pages/events";
+/** Ended pages with a forwarding link go through here so the visit is counted (see the route). */
+export const hostedPageForwardPath = "/api/hosted-pages/forward";
+/** How a forwarded visit shows in Insights: as a tap on this "link". */
+export const forwardedButtonId = "forwarded";
+
+/** Where /p/CODE sends an ended page with a forwarding link, keeping the stand tags. */
+export function hostedPageForwardStepUrl(code: string, tracking: HostedPageTracking) {
+  const params = new URLSearchParams({ c: code, s: tracking.source });
+  if (tracking.standId) params.set("st", tracking.standId);
+  return `${hostedPageForwardPath}?${params.toString()}`;
+}
 
 export function isValidStandId(value: string | null | undefined): value is string {
   return Boolean(value && standIdPattern.test(value));

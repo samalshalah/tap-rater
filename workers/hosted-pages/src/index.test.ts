@@ -76,7 +76,7 @@ describe("hosted page Worker", () => {
     const storage = createR2HostedPageStorage(bucket);
     await assignPermanentHostedPageCode(storage, { physicalProductRef: "physical-product-1", code: hostedCode });
     const env = { HOSTED_PAGE_SNAPSHOTS: bucket as unknown as R2Bucket, ENVIRONMENT: "production" };
-    const open = () => handleHostedPageRequest(new Request(`https://taprater.com/p/${hostedCode}`), env, new TestExecutionContext());
+    const open = (query = "") => handleHostedPageRequest(new Request(`https://taprater.com/p/${hostedCode}${query}`), env, new TestExecutionContext());
 
     await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v1", forwardUrl: "https://example.com/menu" }));
     expect((await open()).status).toBe(200);
@@ -84,8 +84,12 @@ describe("hosted page Worker", () => {
     await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v2", lifecycleStatus: "EXPIRED", forwardUrl: "https://example.com/menu" }));
     const forwarded = await open();
     expect(forwarded.status).toBe(302);
-    expect(forwarded.headers.get("Location")).toBe("https://example.com/menu");
+    // Counted on the main site first, which then sends the visitor to the link.
+    expect(forwarded.headers.get("Location")).toBe(`/api/hosted-pages/forward?c=${hostedCode}&s=direct`);
+    expect(forwarded.headers.get("Cache-Control")).toBe("no-store");
     expect(forwarded.headers.get("X-Tap-Rater-Hosted-Page-State")).toBe("forwarded");
+
+    expect((await open("?s=qr&st=ST-ABCD-1234")).headers.get("Location")).toBe(`/api/hosted-pages/forward?c=${hostedCode}&s=qr&st=ST-ABCD-1234`);
 
     await publishHostedPageSnapshot(storage, sampleSnapshot({ version: "v3", lifecycleStatus: "RETIRED_INTERNAL", forwardUrl: "https://example.com/menu" }));
     expect((await open()).status).toBe(200);

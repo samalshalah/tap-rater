@@ -37,7 +37,7 @@ export function MultiLinkInsights({endpoint}:{endpoint:string}){
   },[endpoint,days]);
 
   const insights=data?.insights;
-  const buttonName=(id:string,type:string|null)=>data?.labels[id]||supportedHostedPageButtons.find(button=>button.type===type)?.label||'Link';
+  const buttonName=(id:string,type:string|null)=>id==='forwarded'?'Forwarding link (after the page ended)':data?.labels[id]||supportedHostedPageButtons.find(button=>button.type===type)?.label||'Link';
   const busiestDay=insights?.byWeekday.reduce((best,row)=>row.opens>(best?.opens??0)?row:best,undefined as undefined|{weekday:number;opens:number});
   const busiestHour=insights?.byHour.reduce((best,row)=>row.opens>(best?.opens??0)?row:best,undefined as undefined|{hour:number;opens:number});
 
