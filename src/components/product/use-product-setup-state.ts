@@ -1,7 +1,7 @@
 "use client";
 
 import type { LinkExperienceId, MultiLinkDraftButton, ProductSetupChooserProps, SetupStep } from "./product-setup-chooser-types";
-import { createInitialMultiLinkButtons, defaultMultiLinkDescription, getSelectedOptionImage, isGoogleReviewStand } from "./product-setup-model";
+import { createInitialMultiLinkButtons, createMultiLinkButton, defaultMultiLinkDescription, getSelectedOptionImage, isGoogleReviewStand } from "./product-setup-model";
 import { useCart } from "@/components/cart/cart-provider";
 import type { ReadyBrandedProof } from "@/components/product/branded-proof-preview";
 import { type CartItem } from "@/lib/cart";
@@ -15,6 +15,7 @@ import { readReviewLinkDraft, reviewLinkDraftKey } from "@/lib/review-link-draft
 import { hostedMultiLinkServiceAddon, productSupportsMultiLink } from "@/lib/service-addons";
 import { useProductSetupVariants } from "./use-product-setup-variants";
 import { useProductGoogleSearch } from "./use-product-google-search";
+import { applyRecommendedLinks, defaultMultiLinkIndustry, recommendedMultiLinks, type MultiLinkIndustryId } from "@/lib/multilink-industries";
 
 export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, initialLinkExperience = "direct", onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
@@ -50,7 +51,12 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
 
   const [businessName, setBusinessName] = useState("");
 
-  const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => createInitialMultiLinkButtons());
+  // Business type for Multi-Link: a stand made for one industry starts with that industry's links.
+  const [multiLinkIndustry, setMultiLinkIndustry] = useState<MultiLinkIndustryId | "">(() => defaultMultiLinkIndustry(product.businessUseSlugs));
+  const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => {
+    const industry = defaultMultiLinkIndustry(product.businessUseSlugs);
+    return industry ? applyRecommendedLinks([], recommendedMultiLinks(industry, product.slug), createMultiLinkButton) : createInitialMultiLinkButtons();
+  });
   // The Multi-Link page's title and the line under it. Both may be left empty.
   const [multiLinkTitle, setMultiLinkTitle] = useState(() => product.displayText?.trim() ?? "");
   const [multiLinkDescription, setMultiLinkDescription] = useState(defaultMultiLinkDescription);
@@ -198,6 +204,8 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
     setBusinessName,
     multiLinkButtons,
     setMultiLinkButtons,
+    multiLinkIndustry,
+    setMultiLinkIndustry,
     multiLinkTitle,
     setMultiLinkTitle,
     multiLinkDescription,

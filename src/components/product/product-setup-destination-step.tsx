@@ -6,6 +6,8 @@ import type { ProductSetupDialogProps } from "./product-setup-dialog-types";
 import { applyGoogleReviewUrl, isHttpUrl } from "./product-setup-model";
 import { BuilderSummary } from "./product-setup-summary";
 import { MultiLinkBusinessSearch } from "./multilink-business-search";
+import { createMultiLinkButton } from "./product-setup-model";
+import { applyRecommendedLinks, isMultiLinkIndustry, multiLinkIndustries, recommendedMultiLinks } from "@/lib/multilink-industries";
 
 const QrPreview = dynamic(() => import("./qr-preview").then(m => m.QrPreview));
 
@@ -34,6 +36,8 @@ type DestinationStepProps = Pick<ProductSetupDialogProps,
   | "configuredUnitPriceCents"
   | "multiLinkButtons"
   | "setMultiLinkButtons"
+  | "multiLinkIndustry"
+  | "setMultiLinkIndustry"
   | "logo"
   | "isUploadingLogo"
   | "uploadLogo"
@@ -64,6 +68,8 @@ export function ProductSetupDestinationStep({
   configuredUnitPriceCents,
   multiLinkButtons,
   setMultiLinkButtons,
+  multiLinkIndustry,
+  setMultiLinkIndustry,
   logo,
   isUploadingLogo,
   uploadLogo
@@ -72,6 +78,25 @@ export function ProductSetupDestinationStep({
   return <div className="grid gap-4">
                   {selectedLinkExperience === "multilink" ? (
                     <>
+                      <label className="grid gap-2 text-sm font-semibold text-ink">
+                        What type of business?
+                        <select
+                          className="tr-input"
+                          value={multiLinkIndustry}
+                          onChange={(event) => {
+                            const industry = event.target.value;
+                            if (!isMultiLinkIndustry(industry)) return;
+                            setMultiLinkIndustry(industry);
+                            // Start the page with this business type's links; addresses already typed are kept.
+                            setMultiLinkButtons((buttons) => applyRecommendedLinks(buttons, recommendedMultiLinks(industry, product.slug), createMultiLinkButton));
+                          }}
+                        >
+                          <option value="" disabled>Choose your business type</option>
+                          {multiLinkIndustries.map((industry) => <option key={industry.id} value={industry.id}>{industry.label}</option>)}
+                        </select>
+                        <span className="text-xs font-normal text-muted">We'll suggest the links your customers look for. You can change them on the next step.</span>
+                      </label>
+
                       <MultiLinkBusinessSearch
                         businessName={businessName}
                         setBusinessName={setBusinessName}

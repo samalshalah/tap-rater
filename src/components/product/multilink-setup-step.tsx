@@ -1,7 +1,7 @@
 "use client";
-import { getHostedButtonMark, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
-import { ArrowDown, ArrowUp, CalendarDays, Smartphone, ChevronDown, Globe, LinkIcon, Mail, Menu, Plus, Search, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { getHostedButtonMark, hostedButtonGroups, hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
+import { ArrowDown, ArrowUp, CalendarDays, Smartphone, ChevronDown, CircleDollarSign, Gift, Globe, LinkIcon, Mail, Menu, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 import { GoogleReviewLinkFinder } from "@/components/account/google-review-link-finder";
 import { SetupPreviewFrame } from "./setup-preview-frame";
 import type { MultiLinkDraftButton } from "./product-setup-chooser-types";
@@ -52,7 +52,8 @@ export function MultiLinkSetupStep({
   const previewButtons = buttons
     .map((button, index) => ({
       ...button,
-      label: hasStandardName(button.type) ? getHostedButtonLabel(button.type) : button.label.trim() || getHostedButtonLabel(button.type),
+      // A suggested name ("Book Again") shows as given; otherwise the platform's own name.
+      label: button.label.trim() || getHostedButtonLabel(button.type),
       position: index
     }))
     .filter((button) => button.label || button.url.trim());
@@ -134,7 +135,7 @@ export function MultiLinkSetupStep({
                 onClick={() => setLogoPickerFor((current) => (current === button.id ? null : button.id))}
               >
                 <MultiLinkButtonMark type={button.type} small />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{getHostedButtonLabel(button.type)}</span>
+                <span className="min-w-0 flex-1 truncate text-sm font-medium" title={getHostedButtonLabel(button.type)}>{button.label.trim() || getHostedButtonLabel(button.type)}</span>
                 <ChevronDown size={15} className="shrink-0" aria-hidden="true" />
               </button>
 
@@ -185,7 +186,9 @@ export function MultiLinkSetupStep({
               {logoPickerFor === button.id ? (
                 // Floats over the rows below, so opening it never resizes the window or moves the preview.
                 <div role="listbox" aria-label="Choose a logo" data-logo-picker className="absolute inset-x-2 top-[calc(100%-0.25rem)] z-30 grid max-h-72 grid-cols-2 gap-1 overflow-y-auto rounded-lg border border-line bg-white p-1.5 shadow-xl sm:grid-cols-3 lg:grid-cols-4">
-                  {supportedHostedPageButtons.map((option) => (
+                  {hostedButtonGroups().map((group) => <Fragment key={group.id}>
+                  <p className="col-span-full px-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted first:pt-0">{group.label}</p>
+                  {group.options.map((option) => (
                     <button
                       key={option.type}
                       type="button"
@@ -204,6 +207,7 @@ export function MultiLinkSetupStep({
                       <span className="truncate">{option.label}</span>
                     </button>
                   ))}
+                  </Fragment>)}
                 </div>
               ) : null}
             </div>
@@ -281,7 +285,7 @@ export function MultiLinkButtonMark({ type, small = false }: { type: HostedPageE
       style={{ backgroundColor: mark.background, borderColor: mark.border, color: mark.color }}
       aria-label={mark.brand}
     >
-      {mark.icon === "website" ? <Globe size={16} /> : mark.icon === "calendar" ? <CalendarDays size={16} /> : mark.icon === "menu" ? <Menu size={16} /> : mark.icon === "contact" ? <Mail size={16} /> : mark.icon === "link" ? <LinkIcon size={16} /> : mark.text}
+      {mark.icon === "website" ? <Globe size={16} /> : mark.icon === "calendar" ? <CalendarDays size={16} /> : mark.icon === "menu" ? <Menu size={16} /> : mark.icon === "contact" ? <Mail size={16} /> : mark.icon === "link" ? <LinkIcon size={16} /> : mark.icon === "order" ? <ShoppingBag size={16} /> : mark.icon === "pay" ? <CircleDollarSign size={16} /> : mark.icon === "gift" ? <Gift size={16} /> : <span className={mark.text.length > 3 ? "text-[9px] font-bold" : "font-bold"}>{mark.text}</span>}
     </span>
   );
 }

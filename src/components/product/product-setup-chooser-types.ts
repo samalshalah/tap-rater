@@ -18,6 +18,7 @@ export type ProductSetupChooserProduct = Pick<
   | "requiresLandingPage"
   | "requiresSubscription"
   | "supportsMultiLink"
+  | "businessUseSlugs"
   | "primaryPlatformSlug"
   | "destinationType"
   | "displayText"

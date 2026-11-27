@@ -8,6 +8,7 @@ import type { GoogleBusinessSelection } from '@/lib/google-places-client';
 import type { ReadyBrandedProof } from './branded-proof-preview';
 import type { LinkExperienceId,MultiLinkDraftButton,SetupStep } from './product-setup-chooser-types';
 import type { LogoBackgroundMode,LogoFitMode,UploadedLogo } from './product-setup-types';
+import type { MultiLinkIndustryId } from '@/lib/multilink-industries';
 export type ProductSetupDialogProps = {
   stepGridClassName: "grid-cols-4" | "grid-cols-3" | "grid-cols-2";
   stepLabels: string[];
@@ -41,6 +42,9 @@ export type ProductSetupDialogProps = {
   configuredUnitPriceCents: number | null;
   multiLinkButtons: MultiLinkDraftButton[];
   setMultiLinkButtons: Dispatch<SetStateAction<MultiLinkDraftButton[]>>;
+  /** The business type chosen in Multi-Link setup; it decides the recommended links. */
+  multiLinkIndustry: MultiLinkIndustryId | "";
+  setMultiLinkIndustry: Dispatch<SetStateAction<MultiLinkIndustryId | "">>;
   multiLinkTitle: string;
   setMultiLinkTitle: (value: string) => void;
   multiLinkDescription: string;

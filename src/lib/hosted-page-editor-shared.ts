@@ -23,7 +23,53 @@ export type HostedPageEditorButtonType =
   | "tiktok"
   | "x"
   | "linkedin"
+  | "order_online"
+  | "doordash"
+  | "uber_eats"
+  | "grubhub"
+  | "opentable"
+  | "resy"
+  | "fresha"
+  | "booksy"
+  | "vagaro"
+  | "styleseat"
+  | "mindbody"
+  | "zocdoc"
+  | "booking_com"
+  | "expedia"
+  | "airbnb"
+  | "tripadvisor"
+  | "healthgrades"
+  | "vitals"
+  | "avvo"
+  | "justia"
+  | "angi"
+  | "thumbtack"
+  | "homeadvisor"
+  | "nextdoor"
+  | "houzz"
+  | "zillow"
+  | "realtor_com"
+  | "tip"
+  | "pay_bill"
+  | "venmo"
+  | "cash_app"
+  | "gift_cards"
+  | "loyalty"
+  | "forms"
+  | "patient_portal"
   | "custom_link";
+
+/** How the link picker groups link types. */
+export type HostedButtonCategory = "review" | "order" | "booking" | "social" | "pay" | "info";
+export const hostedButtonCategories: { id: HostedButtonCategory; label: string }[] = [
+  { id: "review", label: "Reviews" },
+  { id: "order", label: "Order & delivery" },
+  { id: "booking", label: "Booking" },
+  { id: "social", label: "Social" },
+  { id: "pay", label: "Payments, tips & gifts" },
+  { id: "info", label: "Info & other" }
+];
 // Car-brand (OEM) colours for the button outline. Buttons are always very light gray.
 export const hostedPageBrandColors = [
   { value: "#6b7280", label: "Neutral gray" },
@@ -84,29 +130,69 @@ export type HostedPageEditorRecord = {
   updatedAt?: string;
 };
 
-export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonType; label: string; snapshotType: HostedPageButtonType }> = [
-  { type: "google_review", label: "Google Review", snapshotType: "review" },
-  { type: "yelp", label: "Yelp", snapshotType: "review" },
-  { type: "dealerrater", label: "DealerRater", snapshotType: "review" },
-  { type: "cars_com", label: "Cars.com", snapshotType: "review" },
-  { type: "cargurus", label: "CarGurus", snapshotType: "review" },
-  { type: "edmunds", label: "Edmunds", snapshotType: "review" },
-  { type: "autotrader", label: "Autotrader", snapshotType: "review" },
-  { type: "carfax", label: "Carfax", snapshotType: "review" },
-  { type: "bbb", label: "BBB", snapshotType: "review" },
-  { type: "facebook", label: "Facebook", snapshotType: "social" },
-  { type: "instagram", label: "Instagram", snapshotType: "social" },
-  { type: "youtube", label: "YouTube", snapshotType: "social" },
-  { type: "tiktok", label: "TikTok", snapshotType: "social" },
-  { type: "x", label: "X", snapshotType: "social" },
-  { type: "linkedin", label: "LinkedIn", snapshotType: "social" },
-  { type: "website", label: "Website", snapshotType: "website" },
-  { type: "appointment", label: "Appointment", snapshotType: "booking" },
-  { type: "menu", label: "Menu", snapshotType: "menu" },
-  { type: "contact", label: "Contact", snapshotType: "website" },
-  { type: "whatsapp", label: "WhatsApp", snapshotType: "social" },
-  { type: "custom_link", label: "Custom Link", snapshotType: "website" }
+export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonType; label: string; snapshotType: HostedPageButtonType; category: HostedButtonCategory }> = [
+  { type: "google_review", label: "Google Review", snapshotType: "review", category: "review" },
+  { type: "yelp", label: "Yelp", snapshotType: "review", category: "review" },
+  { type: "dealerrater", label: "DealerRater", snapshotType: "review", category: "review" },
+  { type: "cars_com", label: "Cars.com", snapshotType: "review", category: "review" },
+  { type: "cargurus", label: "CarGurus", snapshotType: "review", category: "review" },
+  { type: "edmunds", label: "Edmunds", snapshotType: "review", category: "review" },
+  { type: "autotrader", label: "Autotrader", snapshotType: "review", category: "review" },
+  { type: "carfax", label: "Carfax", snapshotType: "review", category: "review" },
+  { type: "bbb", label: "BBB", snapshotType: "review", category: "review" },
+  { type: "facebook", label: "Facebook", snapshotType: "social", category: "social" },
+  { type: "instagram", label: "Instagram", snapshotType: "social", category: "social" },
+  { type: "youtube", label: "YouTube", snapshotType: "social", category: "social" },
+  { type: "tiktok", label: "TikTok", snapshotType: "social", category: "social" },
+  { type: "x", label: "X", snapshotType: "social", category: "social" },
+  { type: "linkedin", label: "LinkedIn", snapshotType: "social", category: "social" },
+  { type: "website", label: "Website", snapshotType: "website", category: "info" },
+  { type: "appointment", label: "Appointment", snapshotType: "booking", category: "booking" },
+  { type: "menu", label: "Menu", snapshotType: "menu", category: "order" },
+  { type: "contact", label: "Contact", snapshotType: "website", category: "info" },
+  { type: "whatsapp", label: "WhatsApp", snapshotType: "social", category: "social" },
+  { type: "order_online", label: "Order Online", snapshotType: "order", category: "order" },
+  { type: "doordash", label: "DoorDash", snapshotType: "order", category: "order" },
+  { type: "uber_eats", label: "Uber Eats", snapshotType: "order", category: "order" },
+  { type: "grubhub", label: "Grubhub", snapshotType: "order", category: "order" },
+  { type: "opentable", label: "OpenTable", snapshotType: "booking", category: "booking" },
+  { type: "resy", label: "Resy", snapshotType: "booking", category: "booking" },
+  { type: "fresha", label: "Fresha", snapshotType: "booking", category: "booking" },
+  { type: "booksy", label: "Booksy", snapshotType: "booking", category: "booking" },
+  { type: "vagaro", label: "Vagaro", snapshotType: "booking", category: "booking" },
+  { type: "styleseat", label: "StyleSeat", snapshotType: "booking", category: "booking" },
+  { type: "mindbody", label: "Mindbody", snapshotType: "booking", category: "booking" },
+  { type: "zocdoc", label: "Zocdoc", snapshotType: "booking", category: "booking" },
+  { type: "booking_com", label: "Booking.com", snapshotType: "review", category: "booking" },
+  { type: "expedia", label: "Expedia", snapshotType: "review", category: "booking" },
+  { type: "airbnb", label: "Airbnb", snapshotType: "review", category: "booking" },
+  { type: "tripadvisor", label: "Tripadvisor", snapshotType: "review", category: "review" },
+  { type: "healthgrades", label: "Healthgrades", snapshotType: "review", category: "review" },
+  { type: "vitals", label: "Vitals", snapshotType: "review", category: "review" },
+  { type: "avvo", label: "Avvo", snapshotType: "review", category: "review" },
+  { type: "justia", label: "Justia", snapshotType: "review", category: "review" },
+  { type: "angi", label: "Angi", snapshotType: "review", category: "review" },
+  { type: "thumbtack", label: "Thumbtack", snapshotType: "review", category: "review" },
+  { type: "homeadvisor", label: "HomeAdvisor", snapshotType: "review", category: "review" },
+  { type: "nextdoor", label: "Nextdoor", snapshotType: "review", category: "review" },
+  { type: "houzz", label: "Houzz", snapshotType: "review", category: "review" },
+  { type: "zillow", label: "Zillow", snapshotType: "review", category: "review" },
+  { type: "realtor_com", label: "Realtor.com", snapshotType: "review", category: "review" },
+  { type: "tip", label: "Leave a Tip", snapshotType: "payment", category: "pay" },
+  { type: "pay_bill", label: "Pay Your Bill", snapshotType: "payment", category: "pay" },
+  { type: "venmo", label: "Venmo", snapshotType: "payment", category: "pay" },
+  { type: "cash_app", label: "Cash App", snapshotType: "payment", category: "pay" },
+  { type: "gift_cards", label: "Gift Cards", snapshotType: "payment", category: "pay" },
+  { type: "loyalty", label: "Rewards", snapshotType: "loyalty", category: "pay" },
+  { type: "forms", label: "Forms", snapshotType: "website", category: "info" },
+  { type: "patient_portal", label: "Patient Portal", snapshotType: "website", category: "info" },
+  { type: "custom_link", label: "Custom Link", snapshotType: "website", category: "info" }
 ];
+
+/** Link types grouped for the picker, in picker order. */
+export function hostedButtonGroups() {
+  return hostedButtonCategories.map((category) => ({ ...category, options: supportedHostedPageButtons.filter((button) => button.category === category.id) }));
+}
 
 export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
   // logo: the brand's official app icon (square, same size for every brand), served from /public/brand/multilink.
@@ -132,6 +218,41 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     x: { logo: "/brand/multilink/x.png", text: "X", icon: "text", brand: "X", background: "#000000", color: "#ffffff", border: "#000000" },
     linkedin: { logo: "/brand/multilink/linkedin.png", text: "in", icon: "text", brand: "LinkedIn", background: "#0a66c2", color: "#ffffff", border: "#0a66c2" },
     custom_link: { text: "Link", icon: "link", brand: "Custom link", background: "#ffffff", color: "#17211f", border: "#dfe7e3" },
+    order_online: { text: "Order", icon: "order", brand: "Order Online", background: "#111827", color: "#ffffff", border: "#111827" },
+    doordash: { text: "DD", icon: "text", brand: "DoorDash", background: "#ff3008", color: "#ffffff", border: "#ff3008" },
+    uber_eats: { text: "UE", icon: "text", brand: "Uber Eats", background: "#06c167", color: "#000000", border: "#06c167" },
+    grubhub: { text: "GH", icon: "text", brand: "Grubhub", background: "#f63440", color: "#ffffff", border: "#f63440" },
+    opentable: { text: "OT", icon: "text", brand: "OpenTable", background: "#da3743", color: "#ffffff", border: "#da3743" },
+    resy: { text: "Resy", icon: "text", brand: "Resy", background: "#ff462d", color: "#ffffff", border: "#ff462d" },
+    fresha: { text: "F", icon: "text", brand: "Fresha", background: "#000000", color: "#ffffff", border: "#000000" },
+    booksy: { text: "B", icon: "text", brand: "Booksy", background: "#00a3ad", color: "#ffffff", border: "#00a3ad" },
+    vagaro: { text: "V", icon: "text", brand: "Vagaro", background: "#e1251b", color: "#ffffff", border: "#e1251b" },
+    styleseat: { text: "SS", icon: "text", brand: "StyleSeat", background: "#000000", color: "#ffffff", border: "#000000" },
+    mindbody: { text: "MB", icon: "text", brand: "Mindbody", background: "#f26f21", color: "#ffffff", border: "#f26f21" },
+    zocdoc: { text: "Zd", icon: "text", brand: "Zocdoc", background: "#fff200", color: "#000000", border: "#fff200" },
+    booking_com: { text: "B.", icon: "text", brand: "Booking.com", background: "#003580", color: "#ffffff", border: "#003580" },
+    expedia: { text: "Ex", icon: "text", brand: "Expedia", background: "#191e3b", color: "#ffd500", border: "#191e3b" },
+    airbnb: { text: "Air", icon: "text", brand: "Airbnb", background: "#ff385c", color: "#ffffff", border: "#ff385c" },
+    tripadvisor: { text: "TA", icon: "text", brand: "Tripadvisor", background: "#34e0a1", color: "#000000", border: "#34e0a1" },
+    healthgrades: { text: "HG", icon: "text", brand: "Healthgrades", background: "#0d6c9e", color: "#ffffff", border: "#0d6c9e" },
+    vitals: { text: "V", icon: "text", brand: "Vitals", background: "#00a1df", color: "#ffffff", border: "#00a1df" },
+    avvo: { text: "Avvo", icon: "text", brand: "Avvo", background: "#00467f", color: "#ffffff", border: "#00467f" },
+    justia: { text: "J", icon: "text", brand: "Justia", background: "#1d4f91", color: "#ffffff", border: "#1d4f91" },
+    angi: { text: "Angi", icon: "text", brand: "Angi", background: "#ff6153", color: "#ffffff", border: "#ff6153" },
+    thumbtack: { text: "TT", icon: "text", brand: "Thumbtack", background: "#009fd9", color: "#ffffff", border: "#009fd9" },
+    homeadvisor: { text: "HA", icon: "text", brand: "HomeAdvisor", background: "#f68315", color: "#ffffff", border: "#f68315" },
+    nextdoor: { text: "N", icon: "text", brand: "Nextdoor", background: "#8ed500", color: "#000000", border: "#8ed500" },
+    houzz: { text: "H", icon: "text", brand: "Houzz", background: "#4dbc15", color: "#ffffff", border: "#4dbc15" },
+    zillow: { text: "Z", icon: "text", brand: "Zillow", background: "#006aff", color: "#ffffff", border: "#006aff" },
+    realtor_com: { text: "R", icon: "text", brand: "Realtor.com", background: "#d92228", color: "#ffffff", border: "#d92228" },
+    tip: { text: "Tip", icon: "pay", brand: "Leave a Tip", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
+    pay_bill: { text: "Pay", icon: "pay", brand: "Pay Your Bill", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
+    venmo: { text: "V", icon: "text", brand: "Venmo", background: "#008cff", color: "#ffffff", border: "#008cff" },
+    cash_app: { text: "$", icon: "text", brand: "Cash App", background: "#00d64f", color: "#ffffff", border: "#00d64f" },
+    gift_cards: { text: "Gift", icon: "gift", brand: "Gift Cards", background: "#be123c", color: "#ffffff", border: "#be123c" },
+    loyalty: { text: "Rwd", icon: "gift", brand: "Rewards", background: "#7c3aed", color: "#ffffff", border: "#7c3aed" },
+    forms: { text: "Form", icon: "contact", brand: "Forms", background: "#334155", color: "#ffffff", border: "#334155" },
+    patient_portal: { text: "Portal", icon: "website", brand: "Patient Portal", background: "#1d4ed8", color: "#ffffff", border: "#1d4ed8" },
     review: { logo: "/brand/multilink/google.png", text: "G", icon: "google", brand: "Review", background: "#ffffff", color: "#4285f4", border: "#dadce0" },
     social: { logo: "/brand/multilink/facebook.png", text: "f", icon: "facebook", brand: "Social", background: "#1877f2", color: "#ffffff", border: "#1877f2" },
     booking: { text: "Cal", icon: "calendar", brand: "Booking", background: "#0f766e", color: "#ffffff", border: "#0f766e" },

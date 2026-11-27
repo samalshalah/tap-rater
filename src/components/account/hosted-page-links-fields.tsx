@@ -1,7 +1,7 @@
 "use client";
 import type { HostedPageEditorButton,HostedPageEditorDraft } from "@/lib/hosted-page-editor-shared";
-import { getHostedButtonMark,hostedPageButtonLimit,supportedHostedPageButtons } from "@/lib/hosted-page-editor-shared";
-import { ArrowDown,ArrowUp,CalendarDays,ChevronDown,ExternalLink,Globe,LinkIcon,Mail,Menu,Plus,Search,Trash2 } from "lucide-react";
+import { getHostedButtonMark,hostedButtonGroups,hostedPageButtonLimit,supportedHostedPageButtons } from "@/lib/hosted-page-editor-shared";
+import { ArrowDown,ArrowUp,CalendarDays,ChevronDown,CircleDollarSign,ExternalLink,Gift,Globe,LinkIcon,Mail,Menu,Plus,Search,ShoppingBag,Trash2 } from "lucide-react";
 import { GoogleReviewLinkFinder } from "./google-review-link-finder";
 
 // Sites with no lookup we can call: open a Google search for the business on that site instead.
@@ -10,7 +10,7 @@ const profileSearchSites: Partial<Record<HostedPageEditorButton["type"], string>
   autotrader: "autotrader.com", carfax: "carfax.com", bbb: "bbb.org", facebook: "facebook.com", instagram: "instagram.com",
   youtube: "youtube.com", tiktok: "tiktok.com", x: "x.com", linkedin: "linkedin.com"
 };
-import { useState,type Dispatch,type SetStateAction } from "react";
+import { Fragment,useState,type Dispatch,type SetStateAction } from "react";
 
 export function HostedPageLinksFields({draft, orderedButtons, showLinkChoices, setShowLinkChoices, addButton, updateButton, moveButton, removeButton}:{draft:HostedPageEditorDraft; orderedButtons:HostedPageEditorButton[]; showLinkChoices:boolean; setShowLinkChoices:Dispatch<SetStateAction<boolean>>; addButton:(type:HostedPageEditorButton["type"])=>void; updateButton:(id:string,patch:Partial<HostedPageEditorButton>)=>void; moveButton:(id:string,direction:-1|1)=>void; removeButton:(id:string)=>void;}){
 
@@ -45,12 +45,15 @@ return (<div className="tr-card grid gap-2 p-3">
           </div>
           {showLinkChoices && draft.buttons.length < hostedPageButtonLimit ? (
             <div className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-soft p-2 sm:grid-cols-3 lg:grid-cols-5">
-              {supportedHostedPageButtons.map((button) => (
+              {hostedButtonGroups().map((group) => <Fragment key={group.id}>
+                <p className="col-span-full px-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                {group.options.map((button) => (
                 <button key={button.type} type="button" className="tr-button-ghost min-h-9 justify-start gap-2 bg-white px-2 py-1.5 text-xs" onClick={() => addButton(button.type)}>
                   <HostedButtonMark type={button.type} />
                   <span className="truncate">{button.label}</span>
                 </button>
-              ))}
+                ))}
+              </Fragment>)}
             </div>
           ) : null}
           <div className="grid gap-1.5">
@@ -91,12 +94,15 @@ return (<div className="tr-card grid gap-2 p-3">
                   {findGoogleFor===button.id ? <GoogleReviewLinkFinder initialQuery={businessQuery} onPick={(url) => updateButton(button.id, { url })} onClose={() => setFindGoogleFor(null)} /> : null}
                   {logoPickerFor===button.id ? (
                     <div role="listbox" aria-label="Choose a logo" className="grid grid-cols-2 gap-1.5 rounded-lg border border-line bg-white p-2 col-span-2 sm:grid-cols-3 md:col-span-3 lg:grid-cols-5">
-                      {supportedHostedPageButtons.map((choice) => (
+                      {hostedButtonGroups().map((group) => <Fragment key={group.id}>
+                      <p className="col-span-full px-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-muted">{group.label}</p>
+                      {group.options.map((choice) => (
                         <button key={choice.type} type="button" role="option" aria-selected={choice.type===button.type} className={`tr-button-ghost min-h-9 justify-start gap-2 px-2 py-1.5 text-xs ${choice.type===button.type ? "bg-soft ring-2 ring-ink" : "bg-white"}`} onClick={() => changeLogo(button, choice.type)}>
                           <HostedButtonMark type={choice.type} />
                           <span className="truncate">{choice.label}</span>
                         </button>
                       ))}
+                      </Fragment>)}
                     </div>
                   ) : null}
                 </div>
@@ -162,5 +168,8 @@ function HostedButtonIcon({ icon, text }: { icon: string; text: string }) {
   if (icon === "calendar") return <CalendarDays size={15} />;
   if (icon === "menu") return <Menu size={15} />;
   if (icon === "contact") return <Mail size={15} />;
+  if (icon === "order") return <ShoppingBag size={15} />;
+  if (icon === "pay") return <CircleDollarSign size={15} />;
+  if (icon === "gift") return <Gift size={15} />;
   return <LinkIcon size={15} />;
 }

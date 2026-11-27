@@ -43,6 +43,8 @@ export function ProductSetupDialogContent({
   standQuote,
   configuredUnitPriceCents,
   multiLinkButtons,
+  multiLinkIndustry,
+  setMultiLinkIndustry,
   multiLinkTitle,
   setMultiLinkTitle,
   multiLinkDescription,
@@ -156,6 +158,8 @@ export function ProductSetupDialogContent({
                   configuredUnitPriceCents={configuredUnitPriceCents}
                   multiLinkButtons={multiLinkButtons}
                   setMultiLinkButtons={setMultiLinkButtons}
+                  multiLinkIndustry={multiLinkIndustry}
+                  setMultiLinkIndustry={setMultiLinkIndustry}
                   logo={logo}
                   isUploadingLogo={isUploadingLogo}
                   uploadLogo={uploadLogo}
