@@ -101,7 +101,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
             </div>
           </article>)}
         </div>
-        <p className={styles.comparisonNote}>Your logo, business name and QR code are included. Approve your artwork preview before payment.</p>
+        <p className={styles.comparisonNote}>Your logo, business name and QR code are included. Printed in the USA, with free U.S. shipping. Approve your artwork preview before payment.</p>
       </div>
     </section> : null}
 
@@ -163,7 +163,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
       <div className={`${styles.container} ${styles.quality}`}>
         <figure><div className={styles.qualityImage}><Photo src={getProductVisual(comparisonProduct).src} alt={showcase.qualityImage.alt} /></div>{showcase.qualityImage.caption ? <figcaption>{showcase.qualityImage.caption}</figcaption> : null}</figure>
         <div><Heading id="home-quality" eyebrow="Product details" title={showcase.qualityHeadline} />
-          <p className={styles.body}>Acrylic. A compact countertop base. A clear invitation to connect.</p>
+          <p className={styles.body}>Show your logo and business name on a large acrylic display with NFC and a matching QR code. Printed in the USA, with free U.S. shipping.</p>
           <dl className={styles.specifications}>{specifications.map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}</dl>
           <p className={styles.boxNote}>In the box: one stand.</p>
           <Link href={`/product/${comparisonProduct.slug}`} className={styles.textLink}>Explore the stand<ArrowRight size={16} aria-hidden="true" /></Link>

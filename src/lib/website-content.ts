@@ -243,7 +243,10 @@ export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
     ? { items: [...faqs.items, ...defaultFaqContent.items.slice(4)] } : faqs;
 
   return {
-    showcase: storedShowcase ?? defaultHomepageShowcase,
+    showcase: {
+      ...(storedShowcase ?? defaultHomepageShowcase),
+      qualityHeadline: correctKnownWebsiteClaim("homepage.showcase.qualityHeadline", (storedShowcase ?? defaultHomepageShowcase).qualityHeadline)
+    },
     hero: {
       ...hero,
       headline: initialLayout && hero.headline === "Turn Every Tap Into Action." ? defaultHomepageContent.hero.headline : hero.headline,
@@ -350,8 +353,10 @@ const knownWebsiteClaims: Record<string, ReadonlyMap<string, string>> = {
   ].map(([from, to]) => [from.toLowerCase(), to])),
   "homepage.hero.eyebrow": new Map([["nfc + qr business stands", defaultHomepageContent.hero.eyebrow]]),
   "homepage.hero.body": new Map([
-    ["Tap Rater stands help customers review, book, follow, view menus, and visit your links with one tap or scan.".toLowerCase(), defaultHomepageContent.hero.body]
+    ["Tap Rater stands help customers review, book, follow, view menus, and visit your links with one tap or scan.".toLowerCase(), defaultHomepageContent.hero.body],
+    ["Put reviews, menus, bookings, and social follows one tap away. A small stand for the moments your customers are ready to connect.".toLowerCase(), defaultHomepageContent.hero.body]
   ]),
+  "homepage.showcase.qualityHeadline": new Map([["a small stand. a useful detail.", defaultHomepageShowcase.qualityHeadline]]),
   "homepage.hero.proofPoints": new Map([["nfc + qr ready", "NFC Ready"]]),
   "homepage.custom_branding.body": new Map([
     ["Add your business name, logo where supported, and destination. Preview your stand before ordering.", defaultHomepageContent.customBranding.body],

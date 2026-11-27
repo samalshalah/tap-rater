@@ -119,7 +119,7 @@ export const defaultHomepageContent: HomepageThemeContent = {
     enabled: true,
     eyebrow: "NFC Business Stands",
     headline: "Tap Rater NFC Business Stands.",
-    body: "Put reviews, menus, bookings, and social follows one tap away. A small stand for the moments your customers are ready to connect.",
+    body: "Put reviews, menus, bookings, and social follows one tap away. Your logo and business name on a large 6.5 × 4.25-inch acrylic stand, printed in the USA with free U.S. shipping.",
     primaryCta: { label: "Shop Stands", href: "/shop" },
     secondaryCta: { label: "Customize Yours", href: brandedStandCatalogHref },
     proofPoints: ["Direct stands: no subscription", "Branded: preview before payment"],
