@@ -157,14 +157,15 @@ const bundleCopy: Record<string, { name: string; reviewsWhere: string; socialWhe
 export function defaultMultiLinkBundle(businessTitle: string, businessSlug = ""): NonNullable<BusinessUseGuide["bundle"]> {
   const copy = bundleCopy[businessSlug] ?? { name: businessTitle, reviewsWhere: "where the visit ends", socialWhere: "where customers wait", follow: "news, offers and events" };
   return {
-    eyebrow: `${copy.name} bundle`,
-    title: "Two Stands That Cover Every Review Site and Social Page",
-    body: `Put the reviews stand ${copy.reviewsWhere} and the social stand ${copy.socialWhere}. Each one opens a page with your logo and the links you choose.`,
-    ctaLabel: `Shop the ${copy.name.toLowerCase()} bundle`,
-    note: `Each Multi-Link page holds up to ${hostedPageButtonLimit} links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.`,
+    // Two separate stands to choose from, not a package: one for reviews, one for followers.
+    eyebrow: `Choose your stand`,
+    title: "More Reviews or More Followers? Pick Your Stand.",
+    body: `Want more reviews? Put the Rate Your Experience stand ${copy.reviewsWhere}. Want more followers? Put the Follow Us stand ${copy.socialWhere}. Choose one, or get both.`,
+    ctaLabel: "Choose your stand",
+    note: `Each stand is ordered on its own. Its Multi-Link page holds up to ${hostedPageButtonLimit} links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.`,
     items: [
-      { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review"] },
-      { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: `Turn visits into followers for ${copy.follow}.`, ctaLabel: "Get the social stand", linkTypes: ["instagram"] }
+      { productSlug: "rate-your-experience-stand", label: "For more reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review"] },
+      { productSlug: "follow-us-social-media-stand", label: "For more followers", title: "Follow Us stand", body: `Turn visits into followers for ${copy.follow}.`, ctaLabel: "Get the social stand", linkTypes: ["instagram"] }
     ]
   };
 }

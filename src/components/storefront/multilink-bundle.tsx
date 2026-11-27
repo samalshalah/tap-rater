@@ -32,7 +32,7 @@ export function MultiLinkBundleSection({ bundle, products, businessTitle, busine
   return (
     <SectionShell tone="soft" spacing="compact" id="bundle" className="scroll-mt-24">
       <div className="tr-container">
-        <SectionHeader eyebrow={bundle.eyebrow || `${businessTitle} bundle`} title={bundle.title} body={bundle.body || undefined} />
+        <SectionHeader eyebrow={bundle.eyebrow || "Choose your stand"} title={bundle.title} body={bundle.body || undefined} />
         <div className={`mt-7 grid gap-5 ${items.length > 1 ? "md:grid-cols-2" : ""}`}>
           {items.map((item) => {
             // Reviews and social stands show the same links setup starts with for this business.

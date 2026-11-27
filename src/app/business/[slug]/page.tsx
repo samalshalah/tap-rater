@@ -130,7 +130,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         backLink={{ href: "/business", label: "Shop by business" }}
         eyebrow={businessUse.title}
         title={guide.headline || `NFC Stands for ${businessUse.title}`}
-        cta={{ href: "#bundle", label: bundle.ctaLabel || "Shop the bundle" }}
+        cta={{ href: "#bundle", label: bundle.ctaLabel || "Choose your stand" }}
         body={guide.heroBody || copy.intro}
         image={{
           src: heroImage,

@@ -3,20 +3,20 @@ import type { BusinessUseGuide } from "@/lib/business-use-guide";
 // Each industry owns its copy. The storefront supplies only the shared design comparison.
 export const industryBusinessGuides: Record<string, BusinessUseGuide> = {
   automotive: {
-    headline: "Every Review Site and Social Page on Two Stands",
-    heroBody: "One stand opens your Google, DealerRater, Cars.com and CarGurus reviews. The other opens Facebook, Instagram, YouTube and TikTok. Change the links anytime from your account.",
+    headline: "Every Review Site or Social Page, One Tap Away",
+    heroBody: "The Rate Your Experience stand opens your Google, DealerRater, Cars.com and CarGurus reviews. The Follow Us stand opens Facebook, Instagram, YouTube and TikTok. Choose one or both, and change the links anytime from your account.",
     seoTitle: "Multi-Link NFC Review & Social Stands for Car Dealerships",
-    seoDescription: "One stand for every dealer review site and one for every social page. Your logo, NFC and QR, and links you can edit for $9.99/month. For dealerships and auto shops.",
+    seoDescription: "A reviews stand that opens every dealer review site, or a social stand for every social page. Your logo, NFC and QR, and links you can edit for $9.99/month. For dealerships and auto shops.",
     introduction: "Dealership and auto shop stands that open every review site and social page your customers use, from one tap.",
     bundle: {
-      eyebrow: "Dealership bundle",
-      title: "Two Stands That Cover Every Review Site and Social Page",
-      body: "Put the reviews stand where keys are handed back and the social stand where customers wait. Each one opens a page with your logo and the links you choose.",
-      ctaLabel: "Shop the dealer bundle",
-      note: "Each Multi-Link page holds up to 20 links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.",
+      eyebrow: "Choose your stand",
+      title: "More Reviews or More Followers? Pick Your Stand.",
+      body: "Want more reviews? Put the Rate Your Experience stand where keys are handed back. Want more followers? Put the Follow Us stand where customers wait. Choose one, or get both.",
+      ctaLabel: "Choose your stand",
+      note: "Each stand is ordered on its own. Its Multi-Link page holds up to 20 links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.",
       items: [
-        { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review", "dealerrater", "cars_com", "cargurus", "edmunds", "yelp"] },
-        { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: "Turn visits into followers for new stock, service offers and events.", ctaLabel: "Get the social stand", linkTypes: ["facebook", "instagram", "youtube", "tiktok", "x", "linkedin"] }
+        { productSlug: "rate-your-experience-stand", label: "For more reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review", "dealerrater", "cars_com", "cargurus", "edmunds", "yelp"] },
+        { productSlug: "follow-us-social-media-stand", label: "For more followers", title: "Follow Us stand", body: "Turn visits into followers for new stock, service offers and events.", ctaLabel: "Get the social stand", linkTypes: ["facebook", "instagram", "youtube", "tiktok", "x", "linkedin"] }
       ]
     },
     challengesEyebrow: "Why Multi-Link",
