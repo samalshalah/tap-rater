@@ -10,6 +10,7 @@ import { productMatchesCategory } from "@/lib/category-products";
 import { getCanonicalProductSlug } from "@/lib/product-slug-aliases";
 import { retiredProductRedirects } from "@/lib/storefront-redirects";
 import { googleReviewStandGuides } from "@/lib/google-review-stand-guides";
+import { businessGuides, businessGuideHref } from "@/data/business-guides";
 
 const siteUrl = getPublicSiteUrl();
 const staticRoutes = [
@@ -17,6 +18,8 @@ const staticRoutes = [
   "/shop",
   "/solutions",
   "/how-it-works",
+  "/guides",
+  ...businessGuides.map(businessGuideHref),
   "/nfc-vs-qr-google-review-stand",
   ...googleReviewStandGuides.map(({ href }) => href),
   "/multi-link",
@@ -58,6 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]));
   return paths.map((path) => ({
     ...route(path),
+    ...(businessGuides.some((guide) => businessGuideHref(guide) === path) ? { lastModified: "2026-11-27" } : {}),
     ...(productImages.has(path) ? { images: [productImages.get(path)!] } : {})
   }));
 }

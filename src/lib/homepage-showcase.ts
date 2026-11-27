@@ -57,7 +57,7 @@ export const defaultHomepageShowcase: HomepageShowcaseContent = {
     { slug: "healthcare-dental", title: "Healthcare & dental", body: "Invite patients to share their experience.", image: { src: "", alt: "Google Review stand for a healthcare or dental reception", caption: "Product example" }, productSlug: "google-review-stand" }
   ],
   qualityEnabled: true,
-  qualityHeadline: "A small stand. A useful detail.",
+  qualityHeadline: "Your brand on a 6.5 × 4.25-inch stand.",
   qualityImage: { src: googleCustomImage, alt: "Google Review acrylic stand and its countertop base", caption: "Product design shown" }
 };
 

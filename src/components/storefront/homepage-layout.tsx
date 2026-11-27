@@ -30,7 +30,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
   // Future custom CMS image overrides still render normally.
   const legacyHeroImages = [defaultHomepageContent.hero.image.src, "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png"];
   const heroImage = legacyHeroImages.includes(content.hero.image.src)
-    ? { src: "/assets/custom-google-hero-cutout.png", alt: "Custom Google Review stand with your logo, business name, NFC and QR code" }
+    ? { src: "/assets/custom-google-hero-cutout.webp", alt: "Custom Google Review stand with your logo, business name, NFC and QR code" }
     : content.hero.image;
   const featured = selectFeaturedHomepageProducts(products, showcase.featuredProductSlugs);
   const customPrices = products.filter((product) => product.isActive).flatMap((product) =>
@@ -101,7 +101,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
             </div>
           </article>)}
         </div>
-        <p className={styles.comparisonNote}>Your logo, business name and QR code are included. Approve your artwork preview before payment.</p>
+        <p className={styles.comparisonNote}>Your logo, business name and QR code are included. Printed in the USA, with free U.S. shipping. Approve your artwork preview before payment.</p>
       </div>
     </section> : null}
 
@@ -120,7 +120,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           {content.howItWorks.steps.slice().sort((a, b) => a.order - b.order).map((step, index) => {
             const Icon = { shop: Smartphone, link: Bell, truck: ExternalLink }[step.icon];
             return <li key={step.title}>
-              <img className={styles.stepImage} src={["/assets/custom-google.webp", "/assets/nfc-notification-white.png", "/assets/google-review-phone.png"][index]} alt={["Custom Google Review stand", "Phone showing an NFC link notification", "Illustration of a Google review composer on a phone"][index]} loading="lazy" />
+              <img className={styles.stepImage} src={["/assets/custom-google.webp", "/assets/nfc-notification-white.webp", "/assets/google-review-phone.webp"][index]} alt={["Custom Google Review stand", "Phone showing an NFC link notification", "Illustration of a Google review composer on a phone"][index]} loading="lazy" />
               <div className={styles.stepNumber}><Icon size={25} aria-hidden="true" /><span>0{index + 1}</span></div><h3>{step.title}</h3><p>{step.description}</p>
             </li>;
           })}
@@ -163,7 +163,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
       <div className={`${styles.container} ${styles.quality}`}>
         <figure><div className={styles.qualityImage}><Photo src={getProductVisual(comparisonProduct).src} alt={showcase.qualityImage.alt} /></div>{showcase.qualityImage.caption ? <figcaption>{showcase.qualityImage.caption}</figcaption> : null}</figure>
         <div><Heading id="home-quality" eyebrow="Product details" title={showcase.qualityHeadline} />
-          <p className={styles.body}>Acrylic. A compact countertop base. A clear invitation to connect.</p>
+          <p className={styles.body}>Show your logo and business name on a large acrylic display with NFC and a matching QR code. Printed in the USA, with free U.S. shipping.</p>
           <dl className={styles.specifications}>{specifications.map((spec) => <div key={spec.label}><dt>{spec.label}</dt><dd>{spec.value}</dd></div>)}</dl>
           <p className={styles.boxNote}>In the box: one stand.</p>
           <Link href={`/product/${comparisonProduct.slug}`} className={styles.textLink}>Explore the stand<ArrowRight size={16} aria-hidden="true" /></Link>
