@@ -183,6 +183,8 @@ describe("server purchases", () => {
     expect(await flushAnalyticsPurchases(env)).toEqual({ sent: 1 });
     const body = JSON.parse(send.mock.calls[0][1].body);
     expect(body.events[0].params.value).toBe(39);
+    // Google inherits the online client consent; do not force-deny opted-in ads.
+    expect(body).not.toHaveProperty("consent");
     expect(body.events[0].params.items[0].item_name).toBeTruthy();
     expect(body.events[0].params.transaction_id).toBe(order.id);
     expect(JSON.stringify(body)).not.toMatch(/private|cs_live/);

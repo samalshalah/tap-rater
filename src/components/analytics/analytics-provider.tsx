@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { googleAdsConsent, saveGoogleAdsConsent } from "@/lib/google-ads-consent";
 import { marketingConsent, saveMarketingConsent, syncMetaPixel, trackMetaPage } from "@/lib/meta-pixel";
 import { usePathname } from "next/navigation";
 import {
@@ -40,6 +41,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     origin: "https://taprater.com",
   });
   const [choice, setChoice] = useState<ConsentChoice | null>(null);
+  const [ads, setAds] = useState<ConsentChoice | null>(null);
   const [marketing, setMarketing] = useState<ConsentChoice | null>(null);
   const [metaReady, setMetaReady] = useState(false);
   const lastMetaPage = useRef<string | null>(null);
@@ -63,6 +65,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     const refresh = () => {
       setChoice(browserConsent());
       setMarketing(marketingConsent());
+      setAds(googleAdsConsent());
       setGpc(
         Boolean(
           (navigator as Navigator & { globalPrivacyControl?: boolean })
@@ -102,7 +105,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
     setGoogleReady(false);
     setReady(syncAnalytics(config, () => setGoogleReady(true)));
     if (choice !== "granted" || !publicPage) lastPage.current = null;
-  }, [config, choice, pathname, publicPage]);
+  }, [config, choice, ads, pathname, publicPage]);
 
   useLayoutEffect(() => {
     setMetaReady(false);
@@ -118,7 +121,9 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
       lastPage.current = pathname;
   }, [pathname, ready]);
 
-  function choose(next: ConsentChoice, advertising: ConsentChoice = "denied") {
+  function choose(next: ConsentChoice, advertising: ConsentChoice = "denied", googleAds: ConsentChoice = "denied") {
+    const adsSaved = saveGoogleAdsConsent(googleAds);
+    setAds(adsSaved ? googleAds : "denied");
     const marketingSaved = saveMarketingConsent(advertising);
     setMarketing(marketingSaved ? advertising : "denied");
     if (!marketingSaved) setMetaReady(false);
@@ -156,7 +161,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
           aria-labelledby="analytics-consent-title"
           className="fixed inset-x-0 bottom-0 z-[70] max-h-[70dvh] overflow-y-auto border-t border-line bg-white p-4 shadow-lg sm:p-5"
         >
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">
               <h2
                 id="analytics-consent-title"
@@ -165,7 +170,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                 Your privacy choices
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Essential cookies keep your cart working. Optional Google Analytics measures visits; Meta receives browsing and purchase events for marketing.{" "}
+                Essential cookies keep your cart working. Optional analytics measures visits and purchases. Ad measurement lets Google connect purchases to ads; marketing also shares shopping events with Meta. You can shop without accepting either.{" "}
                 <Link href="/privacy-policy" className="underline">
                   Privacy policy
                 </Link>
@@ -186,7 +191,7 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                 </p>
               ) : null}
             </div>
-            <div className="grid grid-cols-2 gap-2 md:flex md:shrink-0 md:flex-wrap">
+            <div className="grid grid-cols-2 gap-2 lg:w-[34rem] lg:shrink-0">
               <button
                 type="button"
                 onClick={() => choose("denied")}
@@ -203,7 +208,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
                   Accept analytics
                 </button>
               ) : null}
-              {config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("granted", "granted")} className="col-span-2 min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50">Accept analytics and marketing</button> : null}
+              {configured && !gpc ? <button type="button" onClick={() => choose("granted", "denied", "granted")} className="col-span-2 min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50">Accept analytics and ad measurement</button> : null}
+              {config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("granted", "granted", "granted")} className="col-span-2 min-h-11 rounded-md border border-line px-4 text-sm font-semibold text-ink hover:bg-gray-50">Accept all optional</button> : null}
               {open && config.metaPixelId && !gpc ? <button type="button" onClick={() => choose("denied", "granted")} className="min-h-11 rounded-md border border-line px-4 text-sm font-semibold">Accept marketing only</button> : null}
               {open ? (
                 <button

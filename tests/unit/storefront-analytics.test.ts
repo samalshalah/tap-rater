@@ -204,6 +204,56 @@ describe("browser analytics consent and dispatch", () => {
     expect(commands().find((args) => args[0] === "config")?.[2]).toMatchObject({ send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false });
     for (const args of commands().filter((args) => args[0] === "consent")) expect(args[2]).toMatchObject({ ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
   });
+  it("preserves only validated Google click IDs after a separate ad-measurement opt-in", async () => {
+    const ads = await import("@/lib/google-ads-consent");
+    Object.assign(target.location, { search: "?gclid=valid-click-123&gbraid=valid-braid-123&email=private@example.com&session_id=secret" });
+    grant();
+    client.trackPageView();
+    expect(events().at(-1)?.[2].page_location).toBe("https://taprater.com/shop");
+    ads.saveGoogleAdsConsent("granted");
+    client.syncAnalytics(config);
+    client.trackCheckoutStep("payment_step");
+    expect(events().at(-1)?.[2].page_location).toBe("https://taprater.com/shop?gclid=valid-click-123&gbraid=valid-braid-123");
+    expect(commands().filter(a => a[0] === "consent").at(-1)?.[2]).toMatchObject({ ad_storage: "granted", ad_user_data: "granted", ad_personalization: "denied" });
+    expect(JSON.stringify(commands())).not.toMatch(/private@|session_id=secret/);
+    expect(JSON.stringify([...storage.values()])).not.toContain("valid-click");
+    ads.saveGoogleAdsConsent("denied");
+    client.syncAnalytics(config);
+    client.trackCheckoutStep("payment_step");
+    expect(events().at(-1)?.[2].page_location).toBe("https://taprater.com/shop");
+    expect(commands().filter(a => a[0] === "consent").at(-1)?.[2]).toMatchObject({ ad_storage: "denied", ad_user_data: "denied" });
+  });
+  it("does not expand legacy Meta consent or override GPC for Google Ads", async () => {
+    const ads = await import("@/lib/google-ads-consent");
+    storage.set("taprater:marketing-consent:v1", JSON.stringify({version: 1, choice: "granted", savedAt: Date.now()}));
+    expect(ads.googleAdsConsent()).toBeNull();
+    ads.saveGoogleAdsConsent("granted");
+    vi.stubGlobal("navigator", {globalPrivacyControl: true});
+    expect(ads.googleAdsConsent()).toBe("denied");
+    grant();
+    expect(scripts).toHaveLength(0);
+  });
+  it("scrubs queued click data when ad consent is withdrawn before Google loads", async () => {
+    const ads = await import("@/lib/google-ads-consent");
+    Object.assign(target.location, {search: "?gclid=valid-click-123"});
+    client.saveBrowserConsent("granted");
+    ads.saveGoogleAdsConsent("granted");
+    client.syncAnalytics(config);
+    client.trackPageView();
+    expect(JSON.stringify(commands())).toContain("valid-click-123");
+    ads.saveGoogleAdsConsent("denied");
+    client.syncAnalytics(config);
+    expect(JSON.stringify(commands())).not.toContain("valid-click-123");
+    for (const args of commands().filter(a => a[0] === "consent")) expect(args[2]).toMatchObject({ad_storage: "denied", ad_user_data: "denied"});
+  });
+  it("fails closed on invalid click parameters and unavailable ad consent storage", async () => {
+    const ads = await import("@/lib/google-ads-consent");
+    expect(ads.googleClickQuery("?gclid=private@example.com&wbraid=valid-braid-123")).toBe("wbraid=valid-braid-123");
+    vi.stubGlobal("localStorage", {getItem: () => null, setItem: () => {throw new Error("blocked");}});
+    expect(ads.saveGoogleAdsConsent("granted")).toBe(false);
+    expect(ads.googleAdsConsent()).toBe("denied");
+  });
+
   it("lets GA classify direct visits without a synthetic campaign", () => {
     const sessions = new Map<string, string>();
     vi.stubGlobal("sessionStorage", { getItem: (key: string) => sessions.get(key) ?? null, setItem: (key: string, value: string) => sessions.set(key, value) });
