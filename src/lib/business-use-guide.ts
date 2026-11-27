@@ -142,16 +142,29 @@ export function resolveRecommendations(guide: BusinessUseGuide, products: Migrat
  * Follow Us (social). A business whose guide has its own bundle (e.g. dealerships) keeps it; the
  * links on each card always come from that business's lists in multilink-industries.
  */
-export function defaultMultiLinkBundle(businessTitle: string): NonNullable<BusinessUseGuide["bundle"]> {
+/** Per business: what to call the bundle, where each stand goes, and what followers get. Same voice as the dealership page. */
+const bundleCopy: Record<string, { name: string; reviewsWhere: string; socialWhere: string; follow: string }> = {
+  "restaurant-food": { name: "Restaurant", reviewsWhere: "at the register or on each table", socialWhere: "by the entrance where guests wait", follow: "new dishes, specials and events" },
+  "beauty-salon-wellness": { name: "Salon and spa", reviewsWhere: "at checkout", socialWhere: "in the waiting area", follow: "new looks, openings and offers" },
+  "healthcare-dental": { name: "Practice", reviewsWhere: "at checkout as patients leave", socialWhere: "in the waiting room", follow: "health tips, news and office updates" },
+  "hotel-travel": { name: "Hotel", reviewsWhere: "at the front desk at checkout", socialWhere: "in the lobby", follow: "offers, events and local tips" },
+  "home-services": { name: "Home services", reviewsWhere: "on the counter where jobs are paid or handed over", socialWhere: "in your showroom", follow: "project photos, tips and offers" },
+  legal: { name: "Law firm", reviewsWhere: "at reception as clients leave", socialWhere: "in the waiting area", follow: "firm news, events and legal updates" },
+  "real-estate": { name: "Real estate", reviewsWhere: "at closings and open houses", socialWhere: "at your office reception", follow: "new listings and open houses" },
+  "retail-local-business": { name: "Retail", reviewsWhere: "at the register", socialWhere: "by the entrance", follow: "new arrivals, sales and events" }
+};
+
+export function defaultMultiLinkBundle(businessTitle: string, businessSlug = ""): NonNullable<BusinessUseGuide["bundle"]> {
+  const copy = bundleCopy[businessSlug] ?? { name: businessTitle, reviewsWhere: "where the visit ends", socialWhere: "where customers wait", follow: "news, offers and events" };
   return {
-    eyebrow: "Start here",
-    title: `Reviews and Social Stands for ${businessTitle}`,
-    body: "Put the reviews stand where the visit ends and the social stand where customers wait. Each one opens a page with your logo and the links you choose.",
-    ctaLabel: "",
+    eyebrow: `${copy.name} bundle`,
+    title: "Two Stands That Cover Every Review Site and Social Page",
+    body: `Put the reviews stand ${copy.reviewsWhere} and the social stand ${copy.socialWhere}. Each one opens a page with your logo and the links you choose.`,
+    ctaLabel: `Shop the ${copy.name.toLowerCase()} bundle`,
     note: `Each Multi-Link page holds up to ${hostedPageButtonLimit} links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.`,
     items: [
-      { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use. Every customer sees the same sites.", ctaLabel: "Set up the reviews stand", linkTypes: ["google_review"] },
-      { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: "Turn visits into followers on every platform you use. Fill in the ones you have; empty ones stay hidden.", ctaLabel: "Set up the social stand", linkTypes: ["instagram"] }
+      { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review"] },
+      { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: `Turn visits into followers for ${copy.follow}.`, ctaLabel: "Get the social stand", linkTypes: ["instagram"] }
     ]
   };
 }

@@ -69,6 +69,12 @@ export function MultiLinkBundleSection({ bundle, products, businessTitle, busine
                         </li>
                       );
                     })}
+                    {hostedMultiLinkServiceAddon.maxLinks > linkTypes.length ? (
+                      <li className="flex min-w-0 items-center gap-2 rounded-lg border border-dashed border-brand/40 bg-white px-2 py-1.5 text-sm font-semibold text-brand">
+                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-brand/10 text-base leading-none" aria-hidden="true">+</span>
+                        <span className="truncate">{hostedMultiLinkServiceAddon.maxLinks - linkTypes.length} more links</span>
+                      </li>
+                    ) : null}
                   </ul>
                 </div>
                 <div className="flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4">

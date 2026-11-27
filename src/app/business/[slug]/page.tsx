@@ -62,7 +62,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
 
   const guide = await getBusinessUseGuide(slug);
   // Every business page leads with the reviews and social stands; a guide's own bundle wins.
-  const bundle = guide.bundle ?? defaultMultiLinkBundle(businessUse.title);
+  const bundle = guide.bundle ?? defaultMultiLinkBundle(businessUse.title, businessUse.slug);
   const offers = await getOffersSettings().catch(() => null);
   const assignedProducts = orderBusinessUseProducts(products, slug, businessUse.productSlugs);
   const recommendations = resolveRecommendations(guide, products);
@@ -130,7 +130,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         backLink={{ href: "/business", label: "Shop by business" }}
         eyebrow={businessUse.title}
         title={guide.headline || `NFC Stands for ${businessUse.title}`}
-        cta={guide.bundle ? { href: "#bundle", label: guide.bundle.ctaLabel || "Shop the bundle" } : { href: "#bundle", label: "Find your stand" }}
+        cta={{ href: "#bundle", label: bundle.ctaLabel || "Shop the bundle" }}
         body={guide.heroBody || copy.intro}
         image={{
           src: heroImage,
