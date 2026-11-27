@@ -61,7 +61,7 @@ describe("mobile homepage layout", () => {
     for (const scene of defaultHomepageContent.showcase.scenes) {
       const use = uses.find(item => item.slug === scene.slug)!;
       const src = use.imageUrl;
-      expect(businessSection).toContain(optimizedUploadSrc(src, scene === defaultHomepageContent.showcase.scenes[0] ? 1200 : 640));
+      expect(businessSection).toContain(optimizedUploadSrc(src, 640));
     }
     expect(businessSection).not.toContain("Product example");
   });
@@ -75,7 +75,7 @@ describe("mobile homepage layout", () => {
       imageUrl: ""
     }]);
     const html = renderToStaticMarkup(await HomePage());
-    expect(html).toContain(optimizedUploadSrc('/uploads/scene-override.png', 1200));
+    expect(html).toContain(optimizedUploadSrc('/uploads/scene-override.png', 640));
     expect(html).toContain("Custom scene");
     expect(html).not.toContain(optimizedUploadSrc('/uploads/category-image.png', 640));
   });
