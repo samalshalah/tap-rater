@@ -25,9 +25,10 @@ type Focus = "general" | "reviews" | "social" | "order";
 type SocialType = "instagram" | "facebook" | "tiktok" | "youtube" | "x" | "linkedin" | "pinterest" | "snapchat";
 
 /**
- * links.reviews: what a Rate Your Experience page starts with. Researched Nov 2026: Google first; no
- * sites that only take reviews from people who booked through them (OpenTable, Booking.com, Expedia,
- * Airbnb, Zocdoc); Yelp is never a default because Yelp asks businesses not to request reviews.
+ * links.reviews: the 8 review sites a Rate Your Experience page starts with (owner-approved Nov 2026), Google
+ * first. Some only take reviews from people who booked or ordered through them (Booking.com, Expedia,
+ * Uber Eats, DoorDash, Zocdoc…) and Yelp asks businesses not to request reviews; links left empty are
+ * never published, so each business fills in only the sites it uses.
  * social: every platform, in the order that business's customers use most. Links left empty are
  * never published, so customers just fill in the ones they have.
  */
@@ -42,37 +43,37 @@ export const multiLinkIndustries: Industry[] = [
   } },
   { id: "restaurant-food", label: "Restaurant, café or bar", social: ["instagram", "tiktok", "facebook", "youtube", "snapchat", "pinterest", "x", "linkedin"], links: {
     general: [{ type: "menu" }, { type: "order_online" }, { type: "opentable", label: "Reserve a Table" }, { type: "google_review" }, { type: "instagram" }],
-    reviews: links("google_review", "tripadvisor", "facebook"),
+    reviews: links("google_review", "yelp", "tripadvisor", "uber_eats", "doordash", "grubhub", "opentable", "facebook"),
     order: [{ type: "menu" }, { type: "order_online" }, { type: "doordash" }, { type: "uber_eats" }, { type: "grubhub" }, { type: "google_review" }]
   } },
   { id: "beauty-salon-wellness", label: "Spa, salon or wellness", social: ["instagram", "tiktok", "facebook", "pinterest", "youtube", "snapchat", "x", "linkedin"], links: {
     general: [{ type: "appointment", label: "Book Again" }, { type: "google_review" }, { type: "tip" }, { type: "gift_cards" }, { type: "instagram" }],
     // The booking apps are there for salons that use one; empty ones are left off the page.
-    reviews: [...links("google_review", "facebook", "booksy", "fresha", "vagaro", "styleseat"), { type: "appointment", label: "Book Again" }]
+    reviews: links("google_review", "facebook", "yelp", "booksy", "fresha", "vagaro", "styleseat", "mindbody")
   } },
   { id: "healthcare-dental", label: "Medical or dental practice", social: ["facebook", "instagram", "youtube", "tiktok", "linkedin", "x", "pinterest", "snapchat"], links: {
     general: [{ type: "forms", label: "Patient Forms" }, { type: "appointment", label: "Book an Appointment" }, { type: "patient_portal" }, { type: "pay_bill" }, { type: "google_review" }],
-    reviews: links("google_review", "healthgrades", "vitals", "facebook")
+    reviews: links("google_review", "healthgrades", "vitals", "facebook", "ratemds", "opencare", "zocdoc", "yelp")
   } },
   { id: "hotel-travel", label: "Hotel or vacation rental", social: ["instagram", "facebook", "tiktok", "youtube", "pinterest", "x", "linkedin", "snapchat"], links: {
     general: [{ type: "website", label: "Guest Guide" }, { type: "menu", label: "Room Service" }, { type: "custom_link", label: "Things to Do Nearby" }, { type: "google_review" }, { type: "tripadvisor" }],
-    reviews: links("google_review", "tripadvisor", "facebook")
+    reviews: links("google_review", "tripadvisor", "booking_com", "expedia", "trip_com", "hotels_com", "airbnb", "vrbo")
   } },
   { id: "home-services", label: "Home services or trades", social: ["facebook", "instagram", "youtube", "tiktok", "pinterest", "linkedin", "x", "snapchat"], links: {
     general: [{ type: "google_review" }, { type: "website", label: "Request a Quote" }, { type: "angi" }, { type: "nextdoor" }, { type: "facebook" }],
-    reviews: links("google_review", "angi", "thumbtack", "nextdoor", "bbb", "facebook")
+    reviews: links("google_review", "angi", "thumbtack", "nextdoor", "bbb", "facebook", "houzz", "yelp")
   } },
   { id: "legal", label: "Law firm", social: ["linkedin", "facebook", "instagram", "youtube", "x", "tiktok", "pinterest", "snapchat"], links: {
     general: [{ type: "appointment", label: "Book a Consultation" }, { type: "google_review" }, { type: "avvo" }, { type: "website" }, { type: "contact" }],
-    reviews: links("google_review", "avvo", "martindale", "findlaw", "justia", "facebook")
+    reviews: links("google_review", "avvo", "martindale", "findlaw", "justia", "facebook", "bbb", "yelp")
   } },
   { id: "real-estate", label: "Real estate", social: ["instagram", "facebook", "youtube", "linkedin", "tiktok", "pinterest", "x", "snapchat"], links: {
     general: [{ type: "website", label: "View Listings" }, { type: "zillow" }, { type: "realtor_com" }, { type: "appointment", label: "Book a Showing" }, { type: "google_review" }],
-    reviews: links("google_review", "zillow", "realtor_com", "facebook")
+    reviews: links("google_review", "zillow", "realtor_com", "homes_com", "facebook", "nextdoor", "bbb", "yelp")
   } },
   { id: "retail-local-business", label: "Retail store or local shop", social: ["instagram", "facebook", "tiktok", "pinterest", "youtube", "snapchat", "x", "linkedin"], links: {
     general: [{ type: "website", label: "Shop Online" }, { type: "loyalty" }, { type: "gift_cards" }, { type: "google_review" }, { type: "instagram" }],
-    reviews: links("google_review", "facebook", "nextdoor", "bbb")
+    reviews: links("google_review", "facebook", "nextdoor", "bbb", "yelp", "tripadvisor", "trustpilot", "shopper_approved")
   } },
   { id: "other", label: "Other", social: ["instagram", "facebook", "tiktok", "youtube", "x", "linkedin", "pinterest", "snapchat"], links: {
     general: [{ type: "website" }, { type: "google_review" }, { type: "instagram" }],

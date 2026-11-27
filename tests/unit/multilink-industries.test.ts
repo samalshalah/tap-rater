@@ -16,7 +16,8 @@ describe('industry presets',()=>{
   });
   it('fits the stand: reviews for Rate Your Experience, ordering for Menu and Order',()=>{
     expect(recommendedMultiLinks('beauty-salon-wellness','connect-with-us-stand').map(l=>l.type)).toEqual(['appointment','google_review','tip','gift_cards','instagram']);
-    expect(recommendedMultiLinks('healthcare-dental','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','healthgrades','vitals','facebook']);
+    expect(recommendedMultiLinks('healthcare-dental','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','healthgrades','vitals','facebook','ratemds','opencare','zocdoc','yelp']);
+    expect(recommendedMultiLinks('hotel-travel','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','tripadvisor','booking_com','expedia','trip_com','hotels_com','airbnb','vrbo']);
     expect(recommendedMultiLinks('automotive','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','dealerrater','cars_com','cargurus','edmunds','autotrader','carfax','facebook']);
     expect(recommendedMultiLinks('restaurant-food','menu-and-order-stand').map(l=>l.type)).toContain('doordash');
     expect(recommendedMultiLinks('legal','follow-us-social-media-stand')[0].type).toBe('linkedin');
@@ -56,13 +57,15 @@ describe('public page',()=>{
     expect(html).toContain('Order Online');
     expect(html).toContain('aria-label="Tripadvisor"');
     expect((html.match(/<svg viewBox="0 0 24 24" aria-hidden="true">/g)??[]).length).toBeGreaterThanOrEqual(2);
-    expect(html).toContain('<span>TA</span>');
+    expect(html).toContain('src="/brand/multilink/tripadvisor.png"');
   });
-  it('never starts a reviews page with Yelp or sites that only take reviews from people who booked through them',()=>{
-    for(const industry of multiLinkIndustries){
+  it('starts every business reviews page with Google and 8 supported review sites',()=>{
+    for(const industry of multiLinkIndustries.filter(item=>item.id!=='other')){
       const types=recommendedMultiLinks(industry.id,'rate-your-experience-stand').map(l=>l.type);
       expect(types[0],industry.id).toBe('google_review');
-      for(const banned of ['yelp','opentable','resy','booking_com','expedia','airbnb','zocdoc']) expect(types,industry.id).not.toContain(banned);
+      expect(types,industry.id).toHaveLength(8);
+      expect(new Set(types).size,industry.id).toBe(8);
+      for(const type of types) expect(supportedHostedPageButtons.some(b=>b.type===type),type).toBe(true);
     }
   });
   it('offers every social platform on a Follow Us page, in that business order',()=>{

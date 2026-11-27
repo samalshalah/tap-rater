@@ -11,7 +11,11 @@ const profileSearchSites: Partial<Record<HostedPageEditorButton["type"], string>
   youtube: "youtube.com", tiktok: "tiktok.com", x: "x.com", linkedin: "linkedin.com", pinterest: "pinterest.com", snapchat: "snapchat.com",
   tripadvisor: "tripadvisor.com", healthgrades: "healthgrades.com", vitals: "vitals.com", ratemds: "ratemds.com", opencare: "opencare.com",
   angi: "angi.com", thumbtack: "thumbtack.com", houzz: "houzz.com", nextdoor: "nextdoor.com", avvo: "avvo.com", justia: "justia.com",
-  martindale: "martindale.com", findlaw: "findlaw.com", zillow: "zillow.com", realtor_com: "realtor.com", homes_com: "homes.com"
+  martindale: "martindale.com", findlaw: "findlaw.com", zillow: "zillow.com", realtor_com: "realtor.com", homes_com: "homes.com",
+  booking_com: "booking.com", expedia: "expedia.com", trip_com: "trip.com", hotels_com: "hotels.com", airbnb: "airbnb.com", vrbo: "vrbo.com",
+  uber_eats: "ubereats.com", doordash: "doordash.com", grubhub: "grubhub.com", opentable: "opentable.com", zocdoc: "zocdoc.com",
+  booksy: "booksy.com", fresha: "fresha.com", vagaro: "vagaro.com", styleseat: "styleseat.com", mindbody: "mindbodyonline.com",
+  trustpilot: "trustpilot.com", shopper_approved: "shopperapproved.com"
 };
 import { Fragment,useState,type Dispatch,type SetStateAction } from "react";
 
