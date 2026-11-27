@@ -35,6 +35,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
   {
     label: "Commerce",
     items: [
+      { label: "Product Reviews", href: "/admin/product-reviews", description: "Customer review invitations, ratings and stand photos" },
       { label: "Offers", href: "/admin/offers", description: "Automatic savings and free shipping" },
       {
         label: "Orders",

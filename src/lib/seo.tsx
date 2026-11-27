@@ -8,6 +8,7 @@ import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { usDeliveryEstimate } from "@/lib/delivery-estimates";
+import { productReviewJsonLd, type PublicProductReviews } from "@/lib/product-review-shared";
 
 const siteUrl = getPublicSiteUrl();
 
@@ -15,7 +16,7 @@ export function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();
 }
 
-export function productJsonLd(product: MigratedProduct, context?: { offers?: OffersSettings | null; shipping?: ShippingSettingsInput }) {
+export function productJsonLd(product: MigratedProduct, context?: { offers?: OffersSettings | null; shipping?: ShippingSettingsInput; reviews?: PublicProductReviews }) {
   const seo = resolveProductSeo(product);
   const url = absoluteUrl(`/product/${product.slug}`);
   const data: Record<string, unknown> = {
@@ -87,7 +88,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
     }];
   });
   if (variants.length === 0) return data;
-  if (variants.length === 1) return { "@context": "https://schema.org", ...variants[0], name: product.title, description: seo.description, url };
+  if (variants.length === 1) return { "@context": "https://schema.org", ...variants[0], name: product.title, description: seo.description, url, ...productReviewJsonLd(context?.reviews) };
 
   // Customization is not a size/color variant; do not invent a Google variesBy property.
   const { sku: _sku, ...group } = data;

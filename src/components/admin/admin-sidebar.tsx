@@ -43,6 +43,7 @@ const icons = {
   Usage: Activity,
   "Workers & Health": Activity,
   "Review Operations": MessageSquareText,
+  "Product Reviews": MessageSquareText,
   "Client Failures": Activity,
   "AI Agent": Bot,
   "Google Connection": Plug,

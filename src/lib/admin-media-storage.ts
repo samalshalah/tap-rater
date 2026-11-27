@@ -132,7 +132,7 @@ function localMediaPath(root: string, key: string) {
 }
 
 function assertLocalMediaKey(key: string) {
-  if (!isSafeProductMediaKey(key)) {
+  if (!isSafeProductMediaKey(key) && !/^product-reviews\/[a-f0-9-]{36}\/[a-f0-9-]{36}\.jpg$/.test(key)) {
     throw new ProductMediaStorageError("Invalid media key.", 400);
   }
 }

@@ -33,6 +33,7 @@ const securityHeaders = [
 ];
 
 const privateRoutePatterns = [
+  "/review/:path*",
   "/google-reviews/setup",
   "/admin/:path*",
   "/account/:path*",
@@ -93,6 +94,10 @@ const nextConfig: NextConfig = {
       {
         source: "/account/:path*",
         headers: [{ key: "Referrer-Policy", value: "no-referrer" }]
+      },
+      {
+        source: "/review/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }, { key: "Cache-Control", value: "private, no-store" }]
       },
       {
         source: "/api/admin/orders/:id/artwork/:lineItemIndex",

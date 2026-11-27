@@ -29,6 +29,7 @@ import { defaultSocialImage } from "@/lib/social-metadata";
 import { productSupportsMultiLink } from "@/lib/service-addons";
 import { getProductVisual } from "@/lib/storefront-visuals";
 import { nfcProductFaqs } from "@/lib/branded-product-description";
+import { getPublicProductReviews } from "@/lib/product-reviews";
 
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
@@ -129,10 +130,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     question !== "Which design includes a printed QR code?"
   ), ...nfcProductFaqs];
   const buyingGuide = getProductBuyingGuide(product);
+  const customerReviews = await getPublicProductReviews(product.slug);
 
   return (
     <main className="tr-public-shell text-ink">
-      <JsonLd data={productJsonLd(product, { offers, shipping })} />
+      <JsonLd data={productJsonLd(product, { offers, shipping, reviews: customerReviews })} />
       <JsonLd data={{ "@context": "https://schema.org", "@type": "WebPage", url: absoluteUrl(`/product/${product.slug}`), primaryImageOfPage: absoluteUrl(getProductVisual(product).src) }} />
       <JsonLd data={breadcrumbJsonLd([
         { name: "Shop", href: "/shop" },
@@ -194,7 +196,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       {product.slug === "google-review-stand" ? <>
         <GoogleReviewStandValue price={fromPrice} />
-        <GoogleReviewStandCustomerReviews />
+          <GoogleReviewStandCustomerReviews data={customerReviews} />
       </> : null}
 
       <SectionShell spacing="default">
