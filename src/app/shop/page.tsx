@@ -3,10 +3,11 @@ import heroStyles from "@/components/storefront/business-pages.module.css";
 import type { Metadata } from "next";
 import { PrismaticWave } from "@/components/prismatic/motion";
 import Link from "next/link";
-import { Plus, SearchX, SlidersHorizontal, X } from "lucide-react";
+import { Plus, SearchX, X } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { ShopFilterLink } from "@/components/product/shop-filter-link";
 import { ShopControls } from "@/components/product/shop-controls";
+import { ShopFilterMenu } from "@/components/product/shop-filter-menu";
 import { SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getPublicStandTypes } from "@/lib/admin-stand-types";
@@ -69,31 +70,11 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
           <p className="mt-4 text-sm leading-6 text-muted sm:text-base">Shop custom NFC and QR tabletop stands for Google reviews, social media, menus, bookings, and customer feedback. Every stand includes your logo and business name. Choose your stand and approve your design before payment.</p>
         </div>
         <div className="tr-container">
-          <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-8">
-            <div className="hidden space-y-5 lg:block lg:sticky lg:top-24 lg:self-start lg:space-y-0">
-              <aside className={`${styles.filterPanel} hidden h-fit lg:block`}>
-                <FilterPanelContent
-                  businessUses={businessUses}
-                  filteredProductCount={filteredProducts.length}
-                  products={products}
-                  selectedType={selectedType}
-                  selectedUse={selectedUse}
-                  standTypes={standTypes}
-                  query={query}
-                />
-              </aside>
-            </div>
-
-            <div className="min-w-0 self-start" id="shop-results">
-              <ShopControls query={query} filters={<div className="min-w-0 lg:hidden">
-                <details key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}`} className="group">
-                  <summary className="flex h-11 cursor-pointer list-none items-center justify-center rounded-md bg-[#090e36] text-xs font-semibold text-white [&::-webkit-details-marker]:hidden">
-                    <span className="flex items-center gap-1 px-2">
-                      <SlidersHorizontal size={17} aria-hidden="true" />
-                      Filters
-                    </span>
-                  </summary>
-                  <div className={`${styles.filterPanel} absolute inset-x-0 top-full z-30 mt-2 max-h-[65dvh] overflow-y-auto shadow-xl`}>
+          <div>
+            <div className="min-w-0" id="shop-results">
+              <ShopControls query={query} filters={
+                <ShopFilterMenu key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}:${query.design ?? ""}`} activeCount={[selectedType, selectedUse, query.design].filter(Boolean).length}>
+                  <div className={styles.filterPanel}>
                     <FilterPanelContent
                       businessUses={businessUses}
                       filteredProductCount={filteredProducts.length}
@@ -104,8 +85,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                       query={query}
                     />
                   </div>
-                </details>
-              </div>} />
+                </ShopFilterMenu>
+              } />
               <p role="status" className="my-4 break-words text-sm text-muted">
                 Showing {visibleCount} of {filteredProducts.length} products{query.q ? ` for "${query.q}"` : ""}
               </p>
@@ -152,7 +133,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 xl:gap-4">
                 {visibleProducts.length > 0 ? (
                   visibleProducts.map((product) => (
                     <ProductCard
@@ -268,6 +249,7 @@ function FilterPanelContent({
         ) : null}
       </div>
 
+      <div className={styles.filterGroups}>
       <FilterGroup title="Type">
         {standTypes.map((standType) => {
           const count = getStandTypeProductCount(standType.slug, products);
@@ -322,6 +304,7 @@ function FilterPanelContent({
           />
         ))}
       </FilterGroup>
+      </div>
     </>
   );
 }

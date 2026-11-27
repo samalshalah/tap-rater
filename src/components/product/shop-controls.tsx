@@ -17,12 +17,11 @@ export function ShopControls({ query, filters }: { query: ShopQuery; filters?: R
   }
 
   return (
-    <form action="/shop" method="get" role="search" aria-label="Shop products" onSubmit={submit} aria-busy={pending} className="relative grid min-w-0 grid-cols-[72px_minmax(0,1fr)_96px] items-end gap-2 sm:grid-cols-[90px_minmax(0,1fr)_180px] lg:grid-cols-[minmax(0,1fr)_200px]">
-      {filters}
+    <form action="/shop" method="get" role="search" aria-label="Shop products" onSubmit={submit} aria-busy={pending} className="relative grid min-w-0 grid-cols-2 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_140px_180px] lg:grid-cols-[minmax(0,1fr)_150px_200px]">
       {query.type ? <input type="hidden" name="type" value={query.type} /> : null}
       {query.use ? <input type="hidden" name="use" value={query.use} /> : null}
       {query.design ? <input type="hidden" name="design" value={query.design} /> : null}
-      <div className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
+      <div className="col-span-2 grid min-w-0 gap-2 text-sm font-semibold text-ink sm:col-span-1">
         <label htmlFor="shop-search" className="sr-only lg:not-sr-only">Search stands</label>
         <span className="flex min-w-0 overflow-hidden rounded-md border border-line bg-white focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/15">
           <input id="shop-search" key={query.q ?? ""} type="search" name="q" defaultValue={query.q ?? ""} maxLength={120} placeholder="Search" className="h-11 w-full min-w-0 bg-transparent px-2 text-base font-normal outline-none" />
@@ -31,6 +30,7 @@ export function ShopControls({ query, filters }: { query: ShopQuery; filters?: R
           </button>
         </span>
       </div>
+      {filters}
       <label className="grid min-w-0 gap-2 text-sm font-semibold text-ink">
         <span className="sr-only lg:not-sr-only">Sort by</span>
         <span className="relative block min-w-0"><span aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm font-normal lg:hidden">Sort</span><select key={query.sort} name="sort" defaultValue={query.sort ?? "featured"} onChange={(event) => event.currentTarget.form?.requestSubmit()} disabled={pending} className="h-11 w-full min-w-0 rounded-md border border-line bg-white px-2 text-xs font-normal text-transparent lg:text-ink sm:text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:opacity-50">

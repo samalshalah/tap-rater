@@ -16,3 +16,5 @@
 .filterSummary::-webkit-details-marker{display:none}
 @media(max-width:1023px){.filterHeader{padding:16px 22px;border-top:1px solid #ffffff20}.filterHeading{display:none}.filterTotal{margin:0}}
 @media(prefers-reduced-motion:reduce){.filterLink{transition:none}}
+.filterGroups>.filterGroup:last-child{border-bottom:0}
+@media(min-width:640px){.filterGroups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.filterGroups>.filterGroup{border-bottom:0}.filterGroups>.filterGroup+.filterGroup{border-left:1px solid #e6e7f0}}
