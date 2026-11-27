@@ -1,0 +1,30 @@
+/* Keep the comparison readable without horizontal scrolling on narrow phones. */
+@media (max-width: 639px) {
+  .comparison,
+  .comparison tbody {
+    display: block;
+  }
+
+  .comparison thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .comparison tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .comparison tbody th {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid #e6e7f0;
+    background: #fff;
+  }
+
+  .comparison td {
+    overflow-wrap: anywhere;
+  }
+}

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
 import { ProductCard } from "@/components/product/product-card";
 import { ProductHero } from "@/components/product/product-hero";
+import { GoogleReviewStandCustomerReviews, GoogleReviewStandValue } from "@/components/product/google-review-stand-value";
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getProductBuyingGuide, getProductBuyingFaqs, resolveProductPageSeo } from "@/lib/product-buying-guide";
 import { FaqList } from "@/components/storefront/faq-list";
@@ -140,7 +141,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       ])} />
       <JsonLd data={faqJsonLd(productFaqs)} />
 
-      <SectionShell spacing="compact" className="py-6 sm:py-8 lg:py-14">
+      <SectionShell id="stand-setup" spacing="compact" className="scroll-mt-24 py-6 sm:py-8 lg:py-14">
         <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}:${initialLinkExperience}`} initialLinkExperience={initialLinkExperience} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
@@ -190,6 +191,11 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <GoogleReviewStandGuideLinks />
         </div>
       </SectionShell> : null}
+
+      {product.slug === "google-review-stand" ? <>
+        <GoogleReviewStandValue price={fromPrice} />
+        <GoogleReviewStandCustomerReviews />
+      </> : null}
 
       <SectionShell spacing="default">
         <div className="tr-container">

@@ -10,18 +10,23 @@ export const metadata: Metadata = {
   }
 };
 
-export default function ContactPage() {
+export default async function ContactPage({ searchParams }: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const query = await searchParams;
+  const productFeedback = query?.feedback === "google-review-stand";
   return (
     <main className="tr-public-shell text-ink">
       <PageHero
-        eyebrow="Contact"
-        title="Talk to Tap Rater"
-        body="Ask about NFC and QR stands, custom setup, review link changes, hosted multi-link requests, or which Tap Rater product fits your business."
+        eyebrow={productFeedback ? "Product feedback" : "Contact"}
+        title={productFeedback ? "How is your stand working?" : "Talk to Tap Rater"}
+        body={productFeedback ? "Share your experience with your custom Google review stand. Positive and critical feedback are equally welcome. No account is required." : "Ask about NFC and QR stands, custom setup, review link changes, hosted multi-link requests, or which Tap Rater product fits your business."}
       />
       <SectionShell tone="soft" spacing="compact">
         <div className="tr-container-narrow">
           <div className="tr-card p-5 md:p-7">
-            <ContactForm />
+            {productFeedback ? <p className="tr-body-sm mb-6">Your feedback goes to our team for review. Permission to publish is optional, and there is no reward for leaving a review. We check your order before publishing and keep your email and order number private.</p> : null}
+            <ContactForm key={productFeedback ? "google-review-stand" : "contact"} productFeedback={productFeedback} defaultProductName={productFeedback ? "Custom Google Review Stand with Your Logo" : undefined} />
           </div>
         </div>
       </SectionShell>

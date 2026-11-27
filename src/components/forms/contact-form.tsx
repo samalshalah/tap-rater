@@ -3,7 +3,7 @@
 import { type FormEvent, useState } from "react";
 import { FormSecurity, useFormSecurity } from "@/components/forms/form-security";
 
-export function ContactForm({ productFeedback = false, defaultName, defaultEmail }: { productFeedback?: boolean; defaultName?: string; defaultEmail?: string }) {
+export function ContactForm({ productFeedback = false, defaultName, defaultEmail, defaultProductName }: { productFeedback?: boolean; defaultName?: string; defaultEmail?: string; defaultProductName?: string }) {
   const security = useFormSecurity();
   const [status, setStatus] = useState("");
   const [statusType, setStatusType] = useState<"success" | "error">("success");
@@ -55,7 +55,7 @@ export function ContactForm({ productFeedback = false, defaultName, defaultEmail
       </label>
       {productFeedback ? <>
         <label className="tr-field-label">Order number<input className="tr-input" name="orderNumber" maxLength={100} required /></label>
-        <label className="tr-field-label">Product name<input className="tr-input" name="productName" maxLength={120} required /></label>
+        <label className="tr-field-label">Product name<input className="tr-input" name="productName" maxLength={120} defaultValue={defaultProductName} required /></label>
       </> : null}
       <label className="tr-field-label">
         Message
