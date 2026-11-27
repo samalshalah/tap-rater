@@ -7,5 +7,7 @@ export const retiredProductRedirects = {
   "view-menu-stand": "/product/menu-and-order-stand",
   "custom-direct-stand": brandedStandCatalogHref,
   "tap-rater-business-white-bundle": "/stand-bundles",
-  "tap-rater-business-white-stands-bundle": "/stand-bundles"
+  "tap-rater-business-white-stands-bundle": "/stand-bundles",
+  // CareDash shut down, so its review stand is off sale (Nov 2026).
+  "caredash-review-stand": "/business/healthcare-dental"
 };

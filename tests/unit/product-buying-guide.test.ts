@@ -7,7 +7,7 @@ const products = staticStorefrontProducts();
 
 describe("product buying guides", () => {
   it("covers every public catalog product with distinct substantive guidance", () => {
-    expect(products.length).toBeGreaterThanOrEqual(58);
+    expect(products.length).toBeGreaterThanOrEqual(57);
     for (const product of products) {
       const guide = getProductBuyingGuide(product);
       expect(guide, product.slug).toBeDefined();
