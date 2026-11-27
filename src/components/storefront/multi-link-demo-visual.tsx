@@ -28,6 +28,6 @@ export function MultiLinkDemoVisual() {
 export function HowItWorksHeroVisual() {
   return <div className={styles.scene} role="img" aria-label="Custom Google Review stand beside a phone showing the Google review page">
     <div className={styles.stand}><Image src={optimizedUploadSrc("/uploads/products/taprater-stands/google/google-custom-angled.png",640)} alt="" fill unoptimized sizes="(max-width: 767px) 50vw, 300px" /></div>
-    <div className={styles.reviewPhone}><Image src="/assets/google-review-phone.png" alt="" fill unoptimized sizes="(max-width: 767px) 40vw, 220px" /></div>
+    <div className={styles.reviewPhone}><Image src="/assets/google-review-phone.webp" alt="" fill unoptimized sizes="(max-width: 767px) 40vw, 220px" /></div>
   </div>;
 }

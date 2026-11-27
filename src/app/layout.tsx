@@ -30,7 +30,11 @@ export const metadata: Metadata = {
     "customer feedback NFC stand"
   ],
   icons: {
-    icon: [{ url: "/uploads-optimized/brand/tap-rater-logo-w160.webp", type: "image/webp" }]
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32 48x48 64x64" },
+      { url: "/favicon.png", type: "image/png", sizes: "96x96" }
+    ],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }]
   },
   openGraph: {
     title: "Tap Rater | NFC and QR Stands for Local Businesses",

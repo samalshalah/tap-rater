@@ -30,7 +30,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
   // Future custom CMS image overrides still render normally.
   const legacyHeroImages = [defaultHomepageContent.hero.image.src, "/uploads/products/taprater-text-stands/rate-your-experience/rate-your-experience-custom-angled.png"];
   const heroImage = legacyHeroImages.includes(content.hero.image.src)
-    ? { src: "/assets/custom-google-hero-cutout.png", alt: "Custom Google Review stand with your logo, business name, NFC and QR code" }
+    ? { src: "/assets/custom-google-hero-cutout.webp", alt: "Custom Google Review stand with your logo, business name, NFC and QR code" }
     : content.hero.image;
   const featured = selectFeaturedHomepageProducts(products, showcase.featuredProductSlugs);
   const customPrices = products.filter((product) => product.isActive).flatMap((product) =>
@@ -120,7 +120,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           {content.howItWorks.steps.slice().sort((a, b) => a.order - b.order).map((step, index) => {
             const Icon = { shop: Smartphone, link: Bell, truck: ExternalLink }[step.icon];
             return <li key={step.title}>
-              <img className={styles.stepImage} src={["/assets/custom-google.webp", "/assets/nfc-notification-white.png", "/assets/google-review-phone.png"][index]} alt={["Custom Google Review stand", "Phone showing an NFC link notification", "Illustration of a Google review composer on a phone"][index]} loading="lazy" />
+              <img className={styles.stepImage} src={["/assets/custom-google.webp", "/assets/nfc-notification-white.webp", "/assets/google-review-phone.webp"][index]} alt={["Custom Google Review stand", "Phone showing an NFC link notification", "Illustration of a Google review composer on a phone"][index]} loading="lazy" />
               <div className={styles.stepNumber}><Icon size={25} aria-hidden="true" /><span>0{index + 1}</span></div><h3>{step.title}</h3><p>{step.description}</p>
             </li>;
           })}
