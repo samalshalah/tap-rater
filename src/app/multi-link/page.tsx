@@ -105,6 +105,9 @@ export default async function MultiLinkPage() {
             <Link href="#compatible-stands" className="tr-button-primary">
               Shop Compatible Stands
             </Link>
+            <Link href="/multi-link/demo" className="tr-button-outline">
+              See a Live Demo
+            </Link>
             <Link href="/shop" className="tr-button-outline">
               Browse All Stands
             </Link>

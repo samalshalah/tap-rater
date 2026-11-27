@@ -227,3 +227,20 @@
  .home .tapSteps h3{font-size:15px;line-height:1.4}
  .tapSteps p{font-size:13px;line-height:1.6}
 }
+
+/* Phones: a shorter image and tighter text keep Shop Stands on the first screen. */
+@media (max-width: 767px) {
+  .heroMedia { height: 230px; }
+  .heroInner { padding: 14px 20px 28px; }
+  .home .heroCopy .heroHeadline { font-size: 34px; margin-top: 8px; }
+  .heroBody { font-size: 16px; line-height: 1.55; margin-top: 12px !important; }
+  .heroPrice { margin-top: 14px !important; }
+  .heroProof { font-size: 12px; }
+}
+.multiLinks { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin-top: 20px; }
+@media (max-width: 767px) and (max-height: 720px) {
+  .heroMedia { height: 160px; }
+  .heroInner { padding-top: 10px; }
+  .home .heroCopy .heroHeadline { font-size: 30px; }
+  .heroBody { font-size: 15px; line-height: 1.5; }
+}

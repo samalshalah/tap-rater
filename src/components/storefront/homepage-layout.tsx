@@ -139,7 +139,10 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
           {content.multilink.bullets.length ? <ul className={`${styles.checkList} ${styles.multiBullets}`}>{content.multilink.bullets.map((bullet) => <li key={bullet}><Check size={16} aria-hidden="true" />{bullet}</li>)}</ul> : null}
           <p className={styles.multiPrice}><strong>{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}</strong><span>/month per page<br />plus the physical stand</span></p>
           <p className={styles.directNote}>Only need one destination? Choose Direct. No subscription required.</p>
-          <Link href={content.multilink.cta.href} className={styles.textLink}>{content.multilink.cta.label}<ArrowRight size={17} aria-hidden="true" /></Link>
+          <div className={styles.multiLinks}>
+            <Link href="/multi-link/demo" className="tr-button-primary">See a live demo<ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href={content.multilink.cta.href} className={styles.textLink}>{content.multilink.cta.label}<ArrowRight size={17} aria-hidden="true" /></Link>
+          </div>
         </div>
       </div>
     </section> : null}
