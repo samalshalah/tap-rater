@@ -6,6 +6,7 @@ import { formatPrice } from "@/lib/products";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { singleStandPrice, type OffersSettings } from "@/lib/offers";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
+import { isMultiLinkIndustry, multiLinkFocus, recommendedMultiLinks } from "@/lib/multilink-industries";
 import { SectionHeader, SectionShell } from "./section";
 
 type Bundle = NonNullable<BusinessUseGuide["bundle"]>;
@@ -19,7 +20,8 @@ function standPriceCents(product: MigratedProduct, offers?: OffersSettings | nul
 }
 
 // Buy-first section: each card shows the stand, the links its Multi-Link page holds, and the price.
-export function MultiLinkBundleSection({ bundle, products, businessTitle, offers }: { bundle: Bundle; products: MigratedProduct[]; businessTitle: string; offers?: OffersSettings | null }) {
+export function MultiLinkBundleSection({ bundle, products, businessTitle, businessSlug, offers }: { bundle: Bundle; products: MigratedProduct[]; businessTitle: string; businessSlug?: string; offers?: OffersSettings | null }) {
+  const industry = isMultiLinkIndustry(businessSlug) ? businessSlug : undefined;
   const items = bundle.items.flatMap((item) => {
     const product = products.find((candidate) => candidate.slug === item.productSlug);
     return product ? [{ ...item, product }] : [];
@@ -33,7 +35,12 @@ export function MultiLinkBundleSection({ bundle, products, businessTitle, offers
         <SectionHeader eyebrow={bundle.eyebrow || `${businessTitle} bundle`} title={bundle.title} body={bundle.body || undefined} />
         <div className={`mt-7 grid gap-5 ${items.length > 1 ? "md:grid-cols-2" : ""}`}>
           {items.map((item) => {
-            const linkTypes = item.linkTypes.filter((type) => supportedHostedPageButtons.some((button) => button.type === type));
+            // Reviews and social stands show the same links setup starts with for this business.
+            const focus = multiLinkFocus(item.productSlug);
+            const presetTypes = industry && (focus === "reviews" || focus === "social") ? recommendedMultiLinks(industry, item.productSlug).map((link) => link.type) : null;
+            const linkTypes = [...new Set(presetTypes ?? item.linkTypes)].filter((type) => supportedHostedPageButtons.some((button) => button.type === type));
+            const setupHref = `/product/${item.product.slug}?addon=multilink${industry ? `&business=${industry}` : ""}`;
+            const exampleHref = industry && (focus === "reviews" || focus === "social") ? `/multi-link/demo?type=${industry}&focus=${focus}` : null;
             return (
               <article key={item.productSlug} className="grid content-start gap-4 rounded-2xl border border-line bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex items-start gap-4">
@@ -70,7 +77,10 @@ export function MultiLinkBundleSection({ bundle, products, businessTitle, offers
                     <span className="text-sm text-muted"> stand, one-time</span>
                     <span className="block text-sm text-muted">+ {monthly}/month Multi-Link page</span>
                   </p>
-                  <Link href={`/product/${item.product.slug}?addon=multilink`} className="tr-button-primary min-h-11 px-5 text-sm">{item.ctaLabel || "Set up this stand"}</Link>
+                  <div className="flex flex-wrap items-center gap-3">
+                    {exampleHref ? <Link href={exampleHref} className="text-sm font-semibold text-brand underline underline-offset-4">See an example</Link> : null}
+                    <Link href={setupHref} className="tr-button-primary min-h-11 px-5 text-sm">{item.ctaLabel || "Set up this stand"}</Link>
+                  </div>
                 </div>
               </article>
             );

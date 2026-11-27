@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Check, ExternalLink } from "lucide-react";
-import { findMultiLinkDemo, multiLinkDemos, renderMultiLinkDemoHtml } from "@/lib/multilink-demo";
+import { findMultiLinkDemo, multiLinkDemos, readMultiLinkDemoFocus, renderMultiLinkDemoHtml, type MultiLinkDemoFocus } from "@/lib/multilink-demo";
+
+const focusTabs: Array<{ id: MultiLinkDemoFocus; label: string }> = [{ id: "general", label: "All links" }, { id: "reviews", label: "Reviews" }, { id: "social", label: "Social" }];
+const demoHref = (type: string, focus: MultiLinkDemoFocus) => `/multi-link/demo?type=${type}${focus === "general" ? "" : `&focus=${focus}`}`;
 import { createQrSvg } from "@/lib/qr-code";
 import { formatPrice } from "@/lib/products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
@@ -12,11 +15,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/multi-link/demo" }
 };
 
-export default async function MultiLinkDemoPage({ searchParams }: { searchParams: Promise<{ type?: string }> }) {
-  const { type } = await searchParams;
+export default async function MultiLinkDemoPage({ searchParams }: { searchParams: Promise<{ type?: string; focus?: string }> }) {
+  const { type, focus: focusParam } = await searchParams;
   const demo = findMultiLinkDemo(type);
+  const focus = readMultiLinkDemoFocus(focusParam);
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://taprater.com").replace(/\/$/, "");
-  const viewPath = `/multi-link/demo/view?type=${demo.id}`;
+  const viewPath = `/multi-link/demo/view?type=${demo.id}${focus === "general" ? "" : `&focus=${focus}`}`;
   const qrSvg = await createQrSvg(`${siteUrl}${viewPath}`).catch(() => "");
   const monthly = formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents);
 
@@ -31,15 +35,22 @@ export default async function MultiLinkDemoPage({ searchParams }: { searchParams
           <nav aria-label="Business type" className="mt-6 flex flex-wrap gap-2">
             {multiLinkDemos.map((item) => {
               const active = item.id === demo.id;
-              return <Link key={item.id} href={`/multi-link/demo?type=${item.id}`} scroll={false} aria-current={active ? "page" : undefined}
+              return <Link key={item.id} href={demoHref(item.id, focus)} scroll={false} aria-current={active ? "page" : undefined}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition ${active ? "border-ink bg-ink text-white" : "border-line bg-white text-ink hover:border-ink"}`}>{item.tab}</Link>;
+            })}
+          </nav>
+          <nav aria-label="Page type" className="mt-3 flex flex-wrap gap-2">
+            {focusTabs.map((tab) => {
+              const active = tab.id === focus;
+              return <Link key={tab.id} href={demoHref(demo.id, tab.id)} scroll={false} aria-current={active ? "page" : undefined}
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${active ? "border-brand bg-brand text-white" : "border-line bg-white text-ink hover:border-brand"}`}>{tab.label}</Link>;
             })}
           </nav>
         </div>
 
         <figure className="mx-auto w-full max-w-[320px] lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <div className="overflow-hidden rounded-[2.6rem] border-[10px] border-ink bg-ink shadow-xl">
-            <iframe key={demo.id} title={`Sample Multi-Link page for ${demo.businessName}`} sandbox="" srcDoc={renderMultiLinkDemoHtml(demo)} className="block h-[600px] w-full rounded-[1.9rem] border-0 bg-white" />
+            <iframe key={`${demo.id}:${focus}`} title={`Sample Multi-Link page for ${demo.businessName}`} sandbox="" srcDoc={renderMultiLinkDemoHtml(demo, focus)} className="block h-[600px] w-full rounded-[1.9rem] border-0 bg-white" />
           </div>
           <figcaption className="mt-3 text-center text-xs text-muted">
             {demo.businessName} is a sample business.{" "}
@@ -49,7 +60,7 @@ export default async function MultiLinkDemoPage({ searchParams }: { searchParams
 
         <div className="min-w-0 lg:col-start-1 lg:row-start-2">
           <ul className="grid max-w-xl gap-3 lg:mt-8 text-sm sm:text-base">
-            {["Up to 10 links: reviews, menu, booking, payments, social and more", "Change your links anytime. The stand never needs reprinting", "See how many people open your page and which links they tap", `${monthly}/month per page, plus the stand`].map((point) => <li key={point} className="flex gap-2"><Check size={18} className="mt-0.5 shrink-0 text-brand" aria-hidden="true" />{point}</li>)}
+            {["Up to 20 links: reviews, menu, booking, payments, social and more", "Change your links anytime. The stand never needs reprinting", "See how many people open your page and which links they tap", `${monthly}/month per page, plus the stand`].map((point) => <li key={point} className="flex gap-2"><Check size={18} className="mt-0.5 shrink-0 text-brand" aria-hidden="true" />{point}</li>)}
           </ul>
 
           <div className="mt-8 flex flex-wrap gap-3">

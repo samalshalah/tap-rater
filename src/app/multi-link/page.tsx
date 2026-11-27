@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 const benefits = [
   "NFC opens one permanent Tap Rater URL; Branded also includes printed QR",
-  "Up to 10 editable links",
+  "Up to 20 editable links",
   "Change links anytime",
   "Customer account included",
   "No need to replace the stand when links change",

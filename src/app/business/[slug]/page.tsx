@@ -12,7 +12,7 @@ import { getStorefrontProducts } from "@/lib/product-repository";
 import { withoutSiteTitleSuffix } from "@/lib/metadata-title";
 import { defaultSocialImage } from "@/lib/social-metadata";
 import { getBusinessUseGuide } from "@/lib/business-use-guide-store";
-import { groupBusinessUseProducts, orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
+import { defaultMultiLinkBundle, groupBusinessUseProducts, orderBusinessUseProducts, resolveRecommendations } from "@/lib/business-use-guide";
 import { googleReviewStandGuides } from "@/lib/google-review-stand-guides";
 import { MultiLinkBundleSection } from "@/components/storefront/multilink-bundle";
 import { getOffersSettings } from "@/lib/offer-settings";
@@ -61,12 +61,14 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
   }
 
   const guide = await getBusinessUseGuide(slug);
-  const offers = guide.bundle ? await getOffersSettings().catch(() => null) : null;
+  // Every business page leads with the reviews and social stands; a guide's own bundle wins.
+  const bundle = guide.bundle ?? defaultMultiLinkBundle(businessUse.title);
+  const offers = await getOffersSettings().catch(() => null);
   const assignedProducts = orderBusinessUseProducts(products, slug, businessUse.productSlugs);
   const recommendations = resolveRecommendations(guide, products);
   const googleReviewRecommendation = recommendations.find((item) => item.productSlug === "google-review-stand");
   const reviewStandGuide = googleReviewStandGuides.find((item) => item.solution === businessUse.slug);
-  const { groups: productGroups, ungrouped: remainingProducts } = groupBusinessUseProducts(guide, products, assignedProducts, [...recommendations.map((item) => item.product.slug), ...(guide.bundle?.items.map((item) => item.productSlug) ?? [])]);
+  const { groups: productGroups, ungrouped: remainingProducts } = groupBusinessUseProducts(guide, products, assignedProducts, [...recommendations.map((item) => item.product.slug), ...bundle.items.map((item) => item.productSlug)]);
   const hasGrowthSections = Boolean(guide.audiences?.length || guide.challenges?.length);
   const heroImage = businessUse.bannerImageUrl || businessUse.imageUrl || "/uploads/products/no-photo-available.png";
   const copy = getBusinessUsePageCopy(businessUse);
@@ -128,7 +130,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         backLink={{ href: "/business", label: "Shop by business" }}
         eyebrow={businessUse.title}
         title={guide.headline || `NFC Stands for ${businessUse.title}`}
-        cta={guide.bundle ? { href: "#bundle", label: guide.bundle.ctaLabel || "Shop the bundle" } : { href: "#recommended-stands", label: "Find your stand" }}
+        cta={guide.bundle ? { href: "#bundle", label: guide.bundle.ctaLabel || "Shop the bundle" } : { href: "#bundle", label: "Find your stand" }}
         body={guide.heroBody || copy.intro}
         image={{
           src: heroImage,
@@ -137,7 +139,7 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         }}
       />
 
-      {guide.bundle ? <MultiLinkBundleSection bundle={guide.bundle} products={products} businessTitle={businessUse.title} offers={offers} /> : null}
+      <MultiLinkBundleSection bundle={bundle} products={products} businessTitle={businessUse.title} businessSlug={businessUse.slug} offers={offers} />
       {/* The stands come right after the hero (and bundle), before the longer guidance. */}
       {recommendedSection}
       {guide.audiences?.length ? <SectionShell spacing="compact"><div className="tr-container">

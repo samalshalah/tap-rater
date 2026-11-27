@@ -36,7 +36,7 @@ const categories: Record<string, [string, string, string]> = {
   "website-links": [
     "Choose one destination or an editable link page",
     "A direct stand sends visitors to one URL, such as your website, service list or contact page. It is a one-time physical product purchase. Choose a stable, public address and test how it appears on a phone before ordering.",
-    "When customers need several choices, optional hosted Multi-Link provides an editable Tap Rater page with up to 10 links and a separate monthly charge. Custom direct stands include NFC, your logo, business name and a destination QR code.",
+    "When customers need several choices, optional hosted Multi-Link provides an editable Tap Rater page with up to 20 links and a separate monthly charge. Custom direct stands include NFC, your logo, business name and a destination QR code.",
   ],
 };
 

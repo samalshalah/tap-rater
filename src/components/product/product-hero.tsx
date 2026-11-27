@@ -1,5 +1,6 @@
 "use client";
 
+import type { MultiLinkIndustryId } from "@/lib/multilink-industries";
 import { type OffersSettings } from "@/lib/offers";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -22,9 +23,10 @@ type ProductHeroProps = {
   introduction?: string;
   shipping?: ShippingSettingsInput;
   initialLinkExperience?: "direct" | "multilink";
+  initialBusiness?: MultiLinkIndustryId;
 };
 
-export function ProductHero({ product, category, initialOptionId, offers, introduction, shipping, initialLinkExperience }: ProductHeroProps) {
+export function ProductHero({ product, category, initialOptionId, offers, introduction, shipping, initialLinkExperience, initialBusiness }: ProductHeroProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
   const initialOption = options.find((option) => option.id === initialOptionId) ?? options[0];
   const [selectedOptionId, setSelectedOptionId] = useState<PurchaseOptionId>(initialOption?.id ?? "branded_qr_direct");
@@ -69,6 +71,7 @@ export function ProductHero({ product, category, initialOptionId, offers, introd
           onSelectedOptionChange={setSelectedOptionId}
           onSelectedPriceChange={setSelectedPriceCents}
           initialLinkExperience={initialLinkExperience}
+          initialBusiness={initialBusiness}
         />
       </div>
     </div>

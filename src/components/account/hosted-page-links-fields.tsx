@@ -8,7 +8,10 @@ import { GoogleReviewLinkFinder } from "./google-review-link-finder";
 const profileSearchSites: Partial<Record<HostedPageEditorButton["type"], string>> = {
   yelp: "yelp.com", dealerrater: "dealerrater.com", cars_com: "cars.com", cargurus: "cargurus.com", edmunds: "edmunds.com",
   autotrader: "autotrader.com", carfax: "carfax.com", bbb: "bbb.org", facebook: "facebook.com", instagram: "instagram.com",
-  youtube: "youtube.com", tiktok: "tiktok.com", x: "x.com", linkedin: "linkedin.com"
+  youtube: "youtube.com", tiktok: "tiktok.com", x: "x.com", linkedin: "linkedin.com", pinterest: "pinterest.com", snapchat: "snapchat.com",
+  tripadvisor: "tripadvisor.com", healthgrades: "healthgrades.com", vitals: "vitals.com", ratemds: "ratemds.com", opencare: "opencare.com",
+  angi: "angi.com", thumbtack: "thumbtack.com", houzz: "houzz.com", nextdoor: "nextdoor.com", avvo: "avvo.com", justia: "justia.com",
+  martindale: "martindale.com", findlaw: "findlaw.com", zillow: "zillow.com", realtor_com: "realtor.com", homes_com: "homes.com"
 };
 import { Fragment,useState,type Dispatch,type SetStateAction } from "react";
 

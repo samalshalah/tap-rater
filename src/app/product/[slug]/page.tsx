@@ -1,3 +1,4 @@
+import { isMultiLinkIndustry } from "@/lib/multilink-industries";
 import { singleStandPrice } from "@/lib/offers";
 import { getShippingSettings } from "@/lib/shipping-settings";
 import { getOffersSettings } from "@/lib/offer-settings";
@@ -87,6 +88,9 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
   const initialOptionId = "branded_qr_direct";
   const addon = Array.isArray(query?.addon) ? query.addon[0] : query?.addon;
   const initialLinkExperience = addon === "multilink" ? "multilink" as const : "direct" as const;
+  // Coming from a business page: Multi-Link setup starts with that business's links.
+  const businessParam = Array.isArray(query?.business) ? query.business[0] : query?.business;
+  const initialBusiness = isMultiLinkIndustry(businessParam) ? businessParam : undefined;
 
   if (slug === "multi-link-stand") {
     permanentRedirect("/multi-link");
@@ -144,7 +148,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
       <JsonLd data={faqJsonLd(productFaqs)} />
 
       <SectionShell id="stand-setup" spacing="compact" className="scroll-mt-24 py-6 sm:py-8 lg:py-14">
-        <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}:${initialLinkExperience}`} initialLinkExperience={initialLinkExperience} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
+        <ProductHero shipping={shipping} offers={offers} key={`${product.slug}:${initialOptionId ?? "default"}:${initialLinkExperience}:${initialBusiness ?? ""}`} initialLinkExperience={initialLinkExperience} initialBusiness={initialBusiness} product={product} category={category} destination={destination} fromPrice={fromPrice} initialOptionId={initialOptionId} introduction={buyingGuide?.introduction} />
       </SectionShell>
 
       {highlights.length > 0 || specifications.length > 0 || !buyingGuide ? <SectionShell tone="soft" spacing="compact">

@@ -1,3 +1,4 @@
+import type { MultiLinkIndustryId } from "@/lib/multilink-industries";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { type CartItem } from "@/lib/cart";
 import { type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
@@ -48,4 +49,6 @@ export type ProductSetupChooserProps = {
   onSelectedMonthlyPriceChange?: (priceCents: number) => void;
   /** Opens the chooser with Multi-Link already selected, e.g. from a bundle link. */
   initialLinkExperience?: LinkExperienceId;
+  /** Business type chosen on a business page (?business=): Multi-Link starts with its links. */
+  initialBusiness?: MultiLinkIndustryId;
 };

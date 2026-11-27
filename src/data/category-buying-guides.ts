@@ -104,7 +104,7 @@ export const categoryBuyingGuides: Record<CatalogCategorySlug, CategoryBuyingGui
     introduction: "Feedback stands give customers a clear way to open your survey or feedback form after a visit. Begin with the question your business needs answered: service experience, a recent event, or a specific part of the customer journey. A short, understandable form is easier to complete than a long questionnaire unrelated to the visit.",
     decision: "Decide whether responses should go privately to your team or be submitted to a public review platform. Those are different destinations and should have different invitations. For private feedback, check who receives submissions and how your team follows up. A physical stand makes the form accessible; it does not replace your response process.",
     options: [
-      { slug: "rate-your-experience-stand", purpose: "Invite customers to an existing feedback form or survey.", consideration: "Choose a general form that works for every visitor." },
+      { slug: "rate-your-experience-stand", purpose: "Invite reviews on the sites your customers use, or open your feedback form.", consideration: "Show every visitor the same review sites or form." },
       { slug: "connect-with-us-stand", purpose: "Match a particular feedback campaign with custom wording.", consideration: "Keep the invitation consistent with the questions on your form." }
     ],
     setupHeading: "Check the form before displaying the invitation",

@@ -16,9 +16,11 @@ describe('industry presets',()=>{
   });
   it('fits the stand: reviews for Rate Your Experience, ordering for Menu and Order',()=>{
     expect(recommendedMultiLinks('beauty-salon-wellness','connect-with-us-stand').map(l=>l.type)).toEqual(['appointment','google_review','tip','gift_cards','instagram']);
-    expect(recommendedMultiLinks('healthcare-dental','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','healthgrades','zocdoc','vitals','yelp']);
+    expect(recommendedMultiLinks('healthcare-dental','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','healthgrades','vitals','facebook']);
+    expect(recommendedMultiLinks('automotive','rate-your-experience-stand').map(l=>l.type)).toEqual(['google_review','dealerrater','cars_com','cargurus','edmunds','autotrader','carfax','facebook']);
     expect(recommendedMultiLinks('restaurant-food','menu-and-order-stand').map(l=>l.type)).toContain('doordash');
-    expect(recommendedMultiLinks('legal','follow-us-social-media-stand')[0].type).toBe('instagram');
+    expect(recommendedMultiLinks('legal','follow-us-social-media-stand')[0].type).toBe('linkedin');
+    expect(recommendedMultiLinks('restaurant-food','follow-us-social-media-stand')[0].type).toBe('instagram');
   });
   it('picks the business type of a stand made for one industry',()=>{
     expect(defaultMultiLinkIndustry(['healthcare-dental'])).toBe('healthcare-dental');
@@ -55,5 +57,18 @@ describe('public page',()=>{
     expect(html).toContain('aria-label="Tripadvisor"');
     expect((html.match(/<svg viewBox="0 0 24 24" aria-hidden="true">/g)??[]).length).toBeGreaterThanOrEqual(2);
     expect(html).toContain('<span>TA</span>');
+  });
+  it('never starts a reviews page with Yelp or sites that only take reviews from people who booked through them',()=>{
+    for(const industry of multiLinkIndustries){
+      const types=recommendedMultiLinks(industry.id,'rate-your-experience-stand').map(l=>l.type);
+      expect(types[0],industry.id).toBe('google_review');
+      for(const banned of ['yelp','opentable','resy','booking_com','expedia','airbnb','zocdoc']) expect(types,industry.id).not.toContain(banned);
+    }
+  });
+  it('offers every social platform on a Follow Us page, in that business order',()=>{
+    for(const industry of multiLinkIndustries){
+      const types=recommendedMultiLinks(industry.id,'follow-us-social-media-stand').map(l=>l.type);
+      expect([...types].sort(),industry.id).toEqual(['facebook','instagram','linkedin','pinterest','snapchat','tiktok','x','youtube']);
+    }
   });
 });

@@ -332,11 +332,11 @@ const entries: Record<string, [string, string, string, string, string]> = {
     "Visitors may reach an unavailable or changed page. Choose a durable destination where possible and check it when the property's status changes; discuss destination updates before relying on an old listing URL."
   ],
   "rate-your-experience-stand": [
-    "Give customers a clear place to share feedback with the Rate Your Experience NFC Stand. Connect it to the survey or feedback destination you choose so a visit can lead to useful comments from customers.",
-    "Place it near the end of the customer journey, such as a reception exit or collection counter. Leave enough privacy for someone to respond honestly. Keep the invitation neutral and make the same feedback option available regardless of how satisfied a customer seems.",
-    "Provide a working feedback form or public destination that displays well on a phone. Test a complete response using your form's preview or test process. Check who receives submissions and what information the form requests before putting the stand into service.",
-    "Does this stand include a survey or review-filtering system?",
-    "The direct stand opens the destination you provide; it does not create a survey or route people by rating. Use a feedback flow that gives customers the same opportunity to share their experience."
+    "Invite customers to review your business on the sites they already use with the Rate Your Experience NFC Stand. With Multi-Link, one tap opens a page with your review sites: Google first, then the sites customers in your field check, such as DealerRater and Cars.com for dealerships or Tripadvisor for restaurants and hotels. As a direct stand, it opens one review link or your own feedback form.",
+    "Place it where the visit ends, such as a checkout counter, reception exit or key handover desk, so customers can tap while the experience is fresh. Keep the invitation neutral: every customer sees the same review sites, whether or not they seem satisfied.",
+    "For Multi-Link, choose your business type during setup and the review sites for that business are filled in. Add your profile links, remove any you don't use and add more, up to 20 links; links left empty are not shown. Test each link on a phone before the stand goes out. For a direct stand, provide one review link, such as your Google review link, or a feedback form you control.",
+    "Can the stand send only happy customers to review sites?",
+    "No. The stand shows every customer the same choices and never routes people by rating. Google's review policy and the FTC's consumer review rule do not allow asking only satisfied customers for reviews, so keep the invitation the same for everyone."
   ],
   "follow-us-social-media-stand": [
     "Keep your social channels within reach at checkout with the Follow Us on Social Media NFC Stand. It suits businesses that want one clear physical invitation to stay connected after a visit.",

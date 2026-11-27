@@ -1,5 +1,5 @@
 import { type HostedPageButton, type HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
-import { supportedHostedPageButtons, type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
+import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButton } from "@/lib/hosted-page-editor-shared";
 import type { OrderLineItem, OrderRecord, StripeCheckoutSessionLike } from "@/lib/orders";
 import { createHash } from "node:crypto";
 import { mapSubscriptionLifecycle } from "@/lib/hosted-subscription-lifecycle";
@@ -169,7 +169,7 @@ export function readInitialMultiLinkButtons(value: unknown): HostedPageEditorBut
         position: Number.isInteger(row.position) ? Number(row.position) : index
       }
     ];
-  }).slice(0, 10).map((button, index) => ({ ...button, position: index }));
+  }).slice(0, hostedPageButtonLimit).map((button, index) => ({ ...button, position: index }));
 }
 
 export function buildSnapshotButtons(buttons: HostedPageEditorButton[]): HostedPageButton[] {

@@ -84,7 +84,7 @@ export function renderHostedPageHtml(resolution: HostedPageResolution, options: 
       ${showName && snapshot.headline && snapshot.headline !== snapshot.businessName ? `<p class="tr-business">${escapeHtml(snapshot.businessName)}</p>` : ""}
       ${heading ? `<h1>${escapeHtml(heading)}</h1>` : ""}
       ${snapshot.description ? `<p class="tr-copy">${escapeHtml(snapshot.description)}</p>` : ""}
-      <nav class="tr-buttons" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
+      <nav class="tr-buttons${visibleButtons.length > 10 ? " tr-buttons-many" : ""}" aria-label="${escapeAttribute(snapshot.businessName)} links">${buttonHtml}</nav>
       <p class="tr-footer"><a href="https://taprater.com/" target="_blank" rel="noopener">Powered by Tap Rater</a></p>
       ${viewPixel}
     `,
@@ -137,6 +137,10 @@ function renderShell({
     .tr-buttons { display: grid; gap: 12px; margin-top: 28px; }
     .tr-button { display: flex; min-height: 52px; align-items: center; justify-content: flex-start; gap: 12px; border-radius: 10px; background: var(--button-bg); color: var(--ink); border: 1.5px solid var(--accent); padding: 12px 16px; font-weight: 600; text-align: left; text-decoration: none; overflow-wrap: anywhere; }
     .tr-button-mark { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 9px; background: rgba(255,255,255,0.96); color: var(--ink); font-size: 0.78rem; font-weight: 700; }
+    /* More than 10 links: slightly smaller buttons so the list stays easy to scroll on a phone. */
+    .tr-buttons-many { gap: 8px; margin-top: 22px; }
+    .tr-buttons-many .tr-button { min-height: 44px; padding: 8px 14px; font-size: 0.95rem; }
+    .tr-buttons-many .tr-button-mark { width: 28px; height: 28px; flex-basis: 28px; }
     .tr-pixel { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
     .tr-button-mark svg { width: 18px; height: 18px; display: block; }
     .tr-button-mark span { display: block; font-size: 0.62rem; font-weight: 700; line-height: 1; }

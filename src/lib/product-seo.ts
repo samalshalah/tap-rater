@@ -28,7 +28,7 @@ export function generateProductSeo(product: MigratedProduct): Pick<ProductSeo, "
     return {
       generatedTitle: clampSeoText(`${title} | Branded QR Landing Page Stand`, MAX_TITLE_LENGTH),
       generatedDescription: clampSeoText(
-        `Get a branded stand with QR and a hosted Tap Rater landing page for up to 10 links. Monthly hosting keeps links managed. Starts at ${price}.`,
+        `Get a branded stand with QR and a hosted Tap Rater landing page for up to 20 links. Monthly hosting keeps links managed. Starts at ${price}.`,
         MAX_DESCRIPTION_LENGTH
       )
     };

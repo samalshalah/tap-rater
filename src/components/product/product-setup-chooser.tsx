@@ -205,7 +205,7 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
                   <span className="min-w-0">
                     <span className="block text-base font-black leading-5 text-ink">Add Multi-Link hosted page</span>
                     <span className="mt-1 block text-sm font-semibold leading-5 text-ink md:whitespace-nowrap">
-                      Optional add-on. {selectedOption.hasQr ? "QR + NFC open" : "NFC opens"} an editable Tap Rater page with up to 10 links.
+                      Optional add-on. {selectedOption.hasQr ? "QR + NFC open" : "NFC opens"} an editable Tap Rater page with up to 20 links.
                     </span>
                   </span>
                   <span className="shrink-0 text-sm font-black text-ink">+{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo</span>

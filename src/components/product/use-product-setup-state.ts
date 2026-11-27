@@ -17,7 +17,7 @@ import { useProductSetupVariants } from "./use-product-setup-variants";
 import { useProductGoogleSearch } from "./use-product-google-search";
 import { applyRecommendedLinks, defaultMultiLinkIndustry, recommendedMultiLinks, type MultiLinkIndustryId } from "@/lib/multilink-industries";
 
-export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, initialLinkExperience = "direct", onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
+export function useProductSetupState({ product, offers, shipping, initialQuantity = 1, fixedSelection = false, initialLinkExperience = "direct", initialBusiness, onAdded, selectedOptionId: controlledSelectedOptionId, onSelectedOptionChange, onSelectedPriceChange, onSelectedMonthlyPriceChange }: ProductSetupChooserProps) {
   const options = useMemo(() => getProductPurchaseOptions(product), [product]);
 
   const [uncontrolledSelectedOptionId, setUncontrolledSelectedOptionId] = useState<PurchaseOptionId>(options[0]?.id ?? "branded_qr_direct");
@@ -52,9 +52,9 @@ export function useProductSetupState({ product, offers, shipping, initialQuantit
   const [businessName, setBusinessName] = useState("");
 
   // Business type for Multi-Link: a stand made for one industry starts with that industry's links.
-  const [multiLinkIndustry, setMultiLinkIndustry] = useState<MultiLinkIndustryId | "">(() => defaultMultiLinkIndustry(product.businessUseSlugs));
+  const [multiLinkIndustry, setMultiLinkIndustry] = useState<MultiLinkIndustryId | "">(() => initialBusiness || defaultMultiLinkIndustry(product.businessUseSlugs));
   const [multiLinkButtons, setMultiLinkButtons] = useState<MultiLinkDraftButton[]>(() => {
-    const industry = defaultMultiLinkIndustry(product.businessUseSlugs);
+    const industry = initialBusiness || defaultMultiLinkIndustry(product.businessUseSlugs);
     return industry ? applyRecommendedLinks([], recommendedMultiLinks(industry, product.slug), createMultiLinkButton) : createInitialMultiLinkButtons();
   });
   // The Multi-Link page's title and the line under it. Both may be left empty.

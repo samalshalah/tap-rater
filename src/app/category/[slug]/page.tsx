@@ -27,7 +27,7 @@ type CategoryPageProps = {
 const legacyMultiLinkCopy = {
   title: "Multi-Link Stand",
   intro: "Add a hosted Multi-Link page to compatible NFC and QR stands.",
-  description: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 10 customer links."
+  description: "Shop NFC and QR stands that can add a hosted Multi-Link page with up to 20 customer links."
 };
 
 const featuredReviewPlatforms = [

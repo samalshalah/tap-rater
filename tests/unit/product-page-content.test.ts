@@ -211,7 +211,7 @@ describe("product page content", () => {
     expect(answer).toContain("Direct stands are a one-time purchase with no monthly subscription.");
     expect(answer).toContain("$9.99/month per page");
     expect(answer).toContain("in addition to the physical stand price");
-    expect(answer).toContain("10 editable links");
+    expect(answer).toContain("20 editable links");
     expect(answer).toContain("Tap Rater account");
   });
 

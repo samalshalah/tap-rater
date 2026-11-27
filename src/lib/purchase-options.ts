@@ -62,7 +62,7 @@ export const hostedMultiLinkOption: PurchaseOption = {
   label: "Multi-Link",
   priceCents: 0,
   monthlyPriceCents: hostedMultiLinkServiceAddon.monthlyPriceCents,
-  summary: "Editable Tap Rater page with up to 10 links.",
+  summary: "Editable Tap Rater page with up to 20 links.",
   requiresDestinationUrl: false,
   hasQr: true,
   requiresBusinessName: true,

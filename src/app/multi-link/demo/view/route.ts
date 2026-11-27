@@ -1,9 +1,10 @@
-import { findMultiLinkDemo, renderMultiLinkDemoHtml } from "@/lib/multilink-demo";
+import { findMultiLinkDemo, readMultiLinkDemoFocus, renderMultiLinkDemoHtml } from "@/lib/multilink-demo";
 
 /** The sample page on its own, for opening on a phone (the demo's QR code points here). */
 export function GET(request: Request) {
-  const demo = findMultiLinkDemo(new URL(request.url).searchParams.get("type"));
-  return new Response(renderMultiLinkDemoHtml(demo), {
+  const params = new URL(request.url).searchParams;
+  const demo = findMultiLinkDemo(params.get("type"));
+  return new Response(renderMultiLinkDemoHtml(demo, readMultiLinkDemoFocus(params.get("focus"))), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "public, max-age=300",

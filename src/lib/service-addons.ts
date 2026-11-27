@@ -1,3 +1,4 @@
+import { hostedPageButtonLimit } from "@/lib/hosted-page-editor-shared";
 import type { MigratedProduct } from "@/data/migrated-products";
 
 export type ServiceAddonCode = "hosted_multilink";
@@ -18,7 +19,7 @@ export const hostedMultiLinkServiceAddon: ServiceAddon = {
   monthlyPriceCents: 999,
   requiresAccount: true,
   requiresHostedPage: true,
-  maxLinks: 10,
+  maxLinks: hostedPageButtonLimit,
   active: true
 };
 

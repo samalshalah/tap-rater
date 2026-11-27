@@ -17,7 +17,7 @@ export function isGoogleReviewStand(product: ProductSetupChooserProduct) {
 
 export function getOptionSummary(option: PurchaseOption) {
   if (option.id === "hosted_multilink") {
-    return "Hosted page with up to 10 links";
+    return "Hosted page with up to 20 links";
   }
 
   if (option.id === "branded_qr_direct") {

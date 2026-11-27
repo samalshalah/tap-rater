@@ -1,5 +1,5 @@
 export { renderHostedPageHtml } from "./render-html";
-import { supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
+import { hostedPageButtonLimit, supportedHostedPageButtons, type HostedPageEditorButtonType } from "@/lib/hosted-page-editor-shared";
 import { assertHostedPageCode, isValidHostedPageCode } from "./codes";
 
 export type HostedPageLifecycleStatus =
@@ -128,8 +128,8 @@ export function validateHostedPageSnapshot(input: HostedPageSnapshot): HostedPag
     throw new HostedPageSnapshotError("Forwarding link must be an https:// web address.");
   }
 
-  if (!Array.isArray(input.buttons) || input.buttons.length > 10) {
-    throw new HostedPageSnapshotError("Hosted page snapshot must contain 0 to 10 buttons.");
+  if (!Array.isArray(input.buttons) || input.buttons.length > hostedPageButtonLimit) {
+    throw new HostedPageSnapshotError(`Hosted page snapshot must contain 0 to ${hostedPageButtonLimit} buttons.`);
   }
 
   const buttons = input.buttons.map(validateHostedPageButton);

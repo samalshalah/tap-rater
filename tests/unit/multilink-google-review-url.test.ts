@@ -1,3 +1,4 @@
+import {hostedPageButtonLimit} from '@/lib/hosted-page-editor-shared';
 import {describe,expect,it} from 'vitest';
 import {applyGoogleReviewUrl,createInitialMultiLinkButtons,createMultiLinkButton} from '@/components/product/product-setup-model';
 
@@ -15,7 +16,7 @@ describe('applyGoogleReviewUrl',()=>{
     expect(result.map(button=>[button.type,button.position,button.url])).toEqual([['google_review',0,review],['website',1,'']]);
   });
   it('leaves a full page alone',()=>{
-    const full=Array.from({length:10},(_,i)=>createMultiLinkButton('website',i));
+    const full=Array.from({length:hostedPageButtonLimit},(_,i)=>createMultiLinkButton('website',i));
     expect(applyGoogleReviewUrl(full,review)).toBe(full);
   });
 });

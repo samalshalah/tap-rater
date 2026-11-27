@@ -1,6 +1,7 @@
 import type { HostedPageButtonType, HostedPageLifecycleStatus } from "@/lib/hosted-pages/snapshots";
 
-export const hostedPageButtonLimit = 10;
+/** Links a Multi-Link page can have; the customer chooses how many (Nov 2026: raised from 10). */
+export const hostedPageButtonLimit = 20;
 
 export type HostedPageEditorButtonType =
   | "google_review"
@@ -23,6 +24,13 @@ export type HostedPageEditorButtonType =
   | "tiktok"
   | "x"
   | "linkedin"
+  | "pinterest"
+  | "snapchat"
+  | "martindale"
+  | "findlaw"
+  | "ratemds"
+  | "opencare"
+  | "homes_com"
   | "order_online"
   | "doordash"
   | "uber_eats"
@@ -146,6 +154,8 @@ export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonTyp
   { type: "tiktok", label: "TikTok", snapshotType: "social", category: "social" },
   { type: "x", label: "X", snapshotType: "social", category: "social" },
   { type: "linkedin", label: "LinkedIn", snapshotType: "social", category: "social" },
+  { type: "pinterest", label: "Pinterest", snapshotType: "social", category: "social" },
+  { type: "snapchat", label: "Snapchat", snapshotType: "social", category: "social" },
   { type: "website", label: "Website", snapshotType: "website", category: "info" },
   { type: "appointment", label: "Appointment", snapshotType: "booking", category: "booking" },
   { type: "menu", label: "Menu", snapshotType: "menu", category: "order" },
@@ -169,8 +179,12 @@ export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonTyp
   { type: "tripadvisor", label: "Tripadvisor", snapshotType: "review", category: "review" },
   { type: "healthgrades", label: "Healthgrades", snapshotType: "review", category: "review" },
   { type: "vitals", label: "Vitals", snapshotType: "review", category: "review" },
+  { type: "ratemds", label: "RateMDs", snapshotType: "review", category: "review" },
+  { type: "opencare", label: "Opencare", snapshotType: "review", category: "review" },
   { type: "avvo", label: "Avvo", snapshotType: "review", category: "review" },
   { type: "justia", label: "Justia", snapshotType: "review", category: "review" },
+  { type: "martindale", label: "Martindale / Lawyers.com", snapshotType: "review", category: "review" },
+  { type: "findlaw", label: "FindLaw", snapshotType: "review", category: "review" },
   { type: "angi", label: "Angi", snapshotType: "review", category: "review" },
   { type: "thumbtack", label: "Thumbtack", snapshotType: "review", category: "review" },
   { type: "homeadvisor", label: "HomeAdvisor", snapshotType: "review", category: "review" },
@@ -178,6 +192,7 @@ export const supportedHostedPageButtons: Array<{ type: HostedPageEditorButtonTyp
   { type: "houzz", label: "Houzz", snapshotType: "review", category: "review" },
   { type: "zillow", label: "Zillow", snapshotType: "review", category: "review" },
   { type: "realtor_com", label: "Realtor.com", snapshotType: "review", category: "review" },
+  { type: "homes_com", label: "Homes.com", snapshotType: "review", category: "review" },
   { type: "tip", label: "Leave a Tip", snapshotType: "payment", category: "pay" },
   { type: "pay_bill", label: "Pay Your Bill", snapshotType: "payment", category: "pay" },
   { type: "venmo", label: "Venmo", snapshotType: "payment", category: "pay" },
@@ -217,6 +232,8 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     tiktok: { logo: "/brand/multilink/tiktok.png", text: "TikTok", icon: "tiktok", brand: "TikTok", background: "#000000", color: "#ffffff", border: "#000000" },
     x: { logo: "/brand/multilink/x.png", text: "X", icon: "text", brand: "X", background: "#000000", color: "#ffffff", border: "#000000" },
     linkedin: { logo: "/brand/multilink/linkedin.png", text: "in", icon: "text", brand: "LinkedIn", background: "#0a66c2", color: "#ffffff", border: "#0a66c2" },
+    pinterest: { text: "P", icon: "text", brand: "Pinterest", background: "#e60023", color: "#ffffff", border: "#e60023" },
+    snapchat: { text: "S", icon: "text", brand: "Snapchat", background: "#fffc00", color: "#111111", border: "#e2df00" },
     custom_link: { text: "Link", icon: "link", brand: "Custom link", background: "#ffffff", color: "#17211f", border: "#dfe7e3" },
     order_online: { text: "Order", icon: "order", brand: "Order Online", background: "#111827", color: "#ffffff", border: "#111827" },
     doordash: { text: "DD", icon: "text", brand: "DoorDash", background: "#ff3008", color: "#ffffff", border: "#ff3008" },
@@ -236,8 +253,12 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     tripadvisor: { text: "TA", icon: "text", brand: "Tripadvisor", background: "#34e0a1", color: "#000000", border: "#34e0a1" },
     healthgrades: { text: "HG", icon: "text", brand: "Healthgrades", background: "#0d6c9e", color: "#ffffff", border: "#0d6c9e" },
     vitals: { text: "V", icon: "text", brand: "Vitals", background: "#00a1df", color: "#ffffff", border: "#00a1df" },
+    ratemds: { text: "RM", icon: "text", brand: "RateMDs", background: "#0a7cc2", color: "#ffffff", border: "#0a7cc2" },
+    opencare: { text: "O", icon: "text", brand: "Opencare", background: "#1e9e8f", color: "#ffffff", border: "#1e9e8f" },
     avvo: { text: "Avvo", icon: "text", brand: "Avvo", background: "#00467f", color: "#ffffff", border: "#00467f" },
     justia: { text: "J", icon: "text", brand: "Justia", background: "#1d4f91", color: "#ffffff", border: "#1d4f91" },
+    martindale: { text: "M", icon: "text", brand: "Martindale / Lawyers.com", background: "#1b365d", color: "#ffffff", border: "#1b365d" },
+    findlaw: { text: "FL", icon: "text", brand: "FindLaw", background: "#00467f", color: "#ffffff", border: "#00467f" },
     angi: { text: "Angi", icon: "text", brand: "Angi", background: "#ff6153", color: "#ffffff", border: "#ff6153" },
     thumbtack: { text: "TT", icon: "text", brand: "Thumbtack", background: "#009fd9", color: "#ffffff", border: "#009fd9" },
     homeadvisor: { text: "HA", icon: "text", brand: "HomeAdvisor", background: "#f68315", color: "#ffffff", border: "#f68315" },
@@ -245,6 +266,7 @@ export function getHostedButtonMark(type: HostedPageEditorButtonType | string) {
     houzz: { text: "H", icon: "text", brand: "Houzz", background: "#4dbc15", color: "#ffffff", border: "#4dbc15" },
     zillow: { text: "Z", icon: "text", brand: "Zillow", background: "#006aff", color: "#ffffff", border: "#006aff" },
     realtor_com: { text: "R", icon: "text", brand: "Realtor.com", background: "#d92228", color: "#ffffff", border: "#d92228" },
+    homes_com: { text: "H", icon: "text", brand: "Homes.com", background: "#e8562a", color: "#ffffff", border: "#e8562a" },
     tip: { text: "Tip", icon: "pay", brand: "Leave a Tip", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
     pay_bill: { text: "Pay", icon: "pay", brand: "Pay Your Bill", background: "#0f766e", color: "#ffffff", border: "#0f766e" },
     venmo: { text: "V", icon: "text", brand: "Venmo", background: "#008cff", color: "#ffffff", border: "#008cff" },

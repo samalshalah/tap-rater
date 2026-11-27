@@ -81,7 +81,7 @@ describe("purchase option readiness", () => {
       code: "hosted_multilink",
       title: "Multi-Link",
       monthlyPriceCents: 999,
-      maxLinks: 10,
+      maxLinks: 20,
       requiresAccount: true,
       requiresHostedPage: true,
       active: true

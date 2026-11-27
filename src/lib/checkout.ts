@@ -1,3 +1,4 @@
+import { hostedPageButtonLimit } from "@/lib/hosted-page-editor-shared";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { maxCartItemQuantity, type CartItem, type CartMultiLinkButton } from "@/lib/cart";
 import {
@@ -377,7 +378,7 @@ function normalizeMultiLinkCheckoutButtons(buttons: CartMultiLinkButton[] | unde
     ];
   });
 
-  return normalized.length ? normalized.slice(0, 10).map((button, index) => ({ ...button, position: index })) : undefined;
+  return normalized.length ? normalized.slice(0, hostedPageButtonLimit).map((button, index) => ({ ...button, position: index })) : undefined;
 }
 
 function isValidMultiLinkCheckoutButtons(buttons: NonNullable<CartItem["setup"]>["multiLinkButtons"]) {

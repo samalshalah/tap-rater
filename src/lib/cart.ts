@@ -1,3 +1,4 @@
+import { hostedPageButtonLimit } from "@/lib/hosted-page-editor-shared";
 import { getActiveProducts, getProductBySlug } from "@/lib/products";
 import {
   getProductPurchaseOptions,
@@ -428,7 +429,7 @@ function readMultiLinkButtons(value: unknown): CartMultiLinkButton[] | undefined
     ];
   });
 
-  return buttons.length ? buttons.slice(0, 10).map((button, index) => ({ ...button, position: index })) : undefined;
+  return buttons.length ? buttons.slice(0, hostedPageButtonLimit).map((button, index) => ({ ...button, position: index })) : undefined;
 }
 
 function readPurchaseOptionId(value: unknown): PurchaseOptionId | undefined {

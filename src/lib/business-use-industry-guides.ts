@@ -13,7 +13,7 @@ export const industryBusinessGuides: Record<string, BusinessUseGuide> = {
       title: "Two Stands That Cover Every Review Site and Social Page",
       body: "Put the reviews stand where keys are handed back and the social stand where customers wait. Each one opens a page with your logo and the links you choose.",
       ctaLabel: "Shop the dealer bundle",
-      note: "Each Multi-Link page holds up to 10 links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.",
+      note: "Each Multi-Link page holds up to 20 links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.",
       items: [
         { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use.", ctaLabel: "Get the reviews stand", linkTypes: ["google_review", "dealerrater", "cars_com", "cargurus", "edmunds", "yelp"] },
         { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: "Turn visits into followers for new stock, service offers and events.", ctaLabel: "Get the social stand", linkTypes: ["facebook", "instagram", "youtube", "tiktok", "x", "linkedin"] }
@@ -53,7 +53,7 @@ export const industryBusinessGuides: Record<string, BusinessUseGuide> = {
     ],
     faqs: [
       { question: "What is a Multi-Link stand?", answer: "A stand with your logo, NFC and a printed QR code that opens your own Tap Rater page. That page lists the links you choose, like Google, DealerRater and Cars.com, so customers pick the one they use." },
-      { question: "How much does it cost?", answer: "The stand is a one-time purchase shown on its product page. Each Multi-Link page is $9.99 per month and holds up to 10 links." },
+      { question: "How much does it cost?", answer: "The stand is a one-time purchase shown on its product page. Each Multi-Link page is $9.99 per month and holds up to 20 links." },
       { question: "Can I change the links later?", answer: "Yes. Add, remove, rename or reorder links from your Tap Rater account and press Publish. The stand stays the same." },
       { question: "Will it get my dealership more reviews?", answer: "We can’t promise that. The stand makes your review sites easy to reach at the right moment. Customers decide whether to leave a review and what to write." },
       { question: "Can each location have its own page?", answer: "Yes. Each Multi-Link stand has its own page, so every branch or department can list its own links." }

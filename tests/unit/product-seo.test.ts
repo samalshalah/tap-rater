@@ -152,7 +152,7 @@ describe("product SEO generation", () => {
 
     expect(seo.generatedTitle).toBe("Hosted Multi-Link Stand | Branded QR Landing Page Stand");
     expect(seo.generatedDescription).toBe(
-      "Get a branded stand with QR and a hosted Tap Rater landing page for up to 10 links. Monthly hosting keeps links managed. Starts at $49."
+      "Get a branded stand with QR and a hosted Tap Rater landing page for up to 20 links. Monthly hosting keeps links managed. Starts at $49."
     );
   });
 

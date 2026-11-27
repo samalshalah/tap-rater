@@ -1,3 +1,4 @@
+import { hostedPageButtonLimit } from "@/lib/hosted-page-editor-shared";
 import { z } from "zod";
 import type { MigratedProduct } from "@/data/migrated-products";
 import { industryBusinessGuides } from "@/lib/business-use-industry-guides";
@@ -20,7 +21,7 @@ export const businessUseGuideSchema = z.object({
       title: z.string().trim().min(2).max(100),
       body: z.string().trim().min(2).max(300),
       ctaLabel: z.string().trim().max(60).default(""),
-      linkTypes: z.array(z.string().trim().min(1).max(40)).min(1).max(10)
+      linkTypes: z.array(z.string().trim().min(1).max(40)).min(1).max(hostedPageButtonLimit)
     })).min(1).max(3)
   }).optional(),
   audiencesTitle: z.string().trim().max(160).optional(),
@@ -134,4 +135,23 @@ export function resolveRecommendations(guide: BusinessUseGuide, products: Migrat
     const product = products.find((candidate) => candidate.slug === item.productSlug);
     return product ? [{ ...item, product }] : [];
   });
+}
+
+/**
+ * Every business page leads with the two Multi-Link stands: Rate Your Experience (reviews) and
+ * Follow Us (social). A business whose guide has its own bundle (e.g. dealerships) keeps it; the
+ * links on each card always come from that business's lists in multilink-industries.
+ */
+export function defaultMultiLinkBundle(businessTitle: string): NonNullable<BusinessUseGuide["bundle"]> {
+  return {
+    eyebrow: "Start here",
+    title: `Reviews and Social Stands for ${businessTitle}`,
+    body: "Put the reviews stand where the visit ends and the social stand where customers wait. Each one opens a page with your logo and the links you choose.",
+    ctaLabel: "",
+    note: `Each Multi-Link page holds up to ${hostedPageButtonLimit} links and is billed monthly per page. Add, remove or reorder links from your account anytime without reprinting the stand. Stands make your pages easy to reach; they don’t guarantee reviews, ratings or sales.`,
+    items: [
+      { productSlug: "rate-your-experience-stand", label: "Reviews", title: "Rate Your Experience stand", body: "Customers tap once and pick the review site they already use. Every customer sees the same sites.", ctaLabel: "Set up the reviews stand", linkTypes: ["google_review"] },
+      { productSlug: "follow-us-social-media-stand", label: "Social", title: "Follow Us stand", body: "Turn visits into followers on every platform you use. Fill in the ones you have; empty ones stay hidden.", ctaLabel: "Set up the social stand", linkTypes: ["instagram"] }
+    ]
+  };
 }
