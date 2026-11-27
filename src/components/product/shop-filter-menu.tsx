@@ -29,7 +29,7 @@ export function ShopFilterMenu({ activeCount, children }: { activeCount: number;
       Filters
       {activeCount ? <span className="grid h-5 min-w-5 place-items-center rounded-full bg-white px-1 text-xs text-[#090e36]" aria-label={`${activeCount} active`}>{activeCount}</span> : null}
     </button>
-    <div id={panelId} hidden={!open} className="absolute inset-x-0 top-full z-30 mt-2 max-h-[70dvh] overflow-y-auto rounded-2xl shadow-xl">
+    <div id={panelId} hidden={!open} className="absolute inset-x-0 top-full z-30 mt-2 max-h-[70dvh] overflow-y-auto rounded-2xl shadow-xl sm:left-auto sm:w-[520px]">
       {children}
     </div>
   </div>;

@@ -18,3 +18,13 @@
 @media(prefers-reduced-motion:reduce){.filterLink{transition:none}}
 .filterGroups>.filterGroup:last-child{border-bottom:0}
 @media(min-width:640px){.filterGroups{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.filterGroups>.filterGroup{border-bottom:0}.filterGroups>.filterGroup+.filterGroup{border-left:1px solid #e6e7f0}}
+/* Shop filter dropdown: pill buttons */
+.pillPanel{display:grid;gap:18px;padding:18px;border:1px solid #e6e7f0;border-radius:16px;background:#fff}
+.pillLabel{margin:0 0 10px;color:#4b536f;font-size:13px;font-weight:650}
+.pill{display:inline-flex;align-items:center;min-height:38px;padding:8px 14px;border:1px solid #dfe2ee;border-radius:999px;background:#fff;color:#2c3350;font-size:13px;font-weight:550;line-height:1.2;transition:border-color .15s,background .15s,color .15s}
+.pill:hover{border-color:#090e36;color:#090e36}
+.pill[aria-current=true]{background:#6035ff;border-color:#6035ff;color:#fff}
+.pill:focus-visible,.pillClear:focus-visible{outline:2px solid #6035ff;outline-offset:2px}
+.pillFooter{display:flex;justify-content:flex-end;border-top:1px solid #eef0f5;padding-top:12px}
+.pillClear{font-size:13px;font-weight:600;color:#6035ff;text-decoration:underline;text-underline-offset:4px}
+@media(prefers-reduced-motion:reduce){.pill{transition:none}}

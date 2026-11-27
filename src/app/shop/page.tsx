@@ -74,17 +74,14 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
             <div className="min-w-0" id="shop-results">
               <ShopControls query={query} filters={
                 <ShopFilterMenu key={`${selectedType?.slug ?? ""}:${selectedUse?.slug ?? ""}:${query.design ?? ""}`} activeCount={[selectedType, selectedUse, query.design].filter(Boolean).length}>
-                  <div className={styles.filterPanel}>
-                    <FilterPanelContent
-                      businessUses={businessUses}
-                      filteredProductCount={filteredProducts.length}
-                      products={products}
-                      selectedType={selectedType}
-                      selectedUse={selectedUse}
-                      standTypes={standTypes}
-                      query={query}
-                    />
-                  </div>
+                  <FilterPanelContent
+                    businessUses={businessUses}
+                    products={products}
+                    selectedType={selectedType}
+                    selectedUse={selectedUse}
+                    standTypes={standTypes}
+                    query={query}
+                  />
                 </ShopFilterMenu>
               } />
               <p role="status" className="my-4 break-words text-sm text-muted">
@@ -212,13 +209,39 @@ function getStandTypeProductCount(slug: string, products: ProductForFilter[]) {
   return products.filter((product) => productMatchesCategory(product, categorySlug)).length;
 }
 
+/** Short names for the filter pills; anything new falls back to its admin title. */
+const shortStandTypeLabels: Record<string, string> = {
+  "review-stands": "Reviews",
+  "social-media-stands": "Social media",
+  "appointment-reservation-stands": "Booking",
+  "feedback-survey-stands": "Feedback",
+  "menu-info-stands": "Menu & ordering",
+  "website-link-stands": "Multi-Link",
+  "custom-stands": "Custom",
+};
+const shortBusinessUseLabels: Record<string, string> = {
+  "restaurant-food": "Restaurants",
+  "hotel-travel": "Hotels & travel",
+  "healthcare-dental": "Healthcare & dental",
+  "beauty-salon-wellness": "Salons & spas",
+  "retail-local-business": "Retail",
+  "home-services": "Home services",
+  "real-estate": "Real estate",
+};
+
 function getPublicStandTypeLabel(standType: StandTypeForFilter) {
-  return standType.title;
+  return shortStandTypeLabels[standType.slug] ?? standType.title;
+}
+
+function businessUseProductCount(businessUse: BusinessUseForFilter, products: ProductForFilter[]) {
+  return products.filter((product) =>
+    businessUse.productSlugs.includes(product.slug) ||
+    (!product.catalogManaged && product.businessUseSlugs?.includes(businessUse.slug)),
+  ).length;
 }
 
 function FilterPanelContent({
   businessUses,
-  filteredProductCount,
   products,
   selectedType,
   selectedUse,
@@ -226,125 +249,71 @@ function FilterPanelContent({
   query,
 }: {
   businessUses: BusinessUseForFilter[];
-  filteredProductCount: number;
   products: ProductForFilter[];
   selectedType?: StandTypeForFilter;
   selectedUse?: BusinessUseForFilter;
   standTypes: StandTypeForFilter[];
   query: ShopQuery;
 }) {
+  // Options with no stands are left out, unless they are the one selected.
+  const types = standTypes.filter((standType) => selectedType?.slug === standType.slug || getStandTypeProductCount(standType.slug, products) > 0);
+  const uses = businessUses.filter((businessUse) => selectedUse?.slug === businessUse.slug || businessUseProductCount(businessUse, products) > 0);
   return (
-    <>
-      <div className={styles.filterHeader}>
-        <div>
-          <p className={styles.filterHeading}>Filters</p>
-          <p className={styles.filterTotal}>
-            {filteredProductCount} of {products.length} products
-          </p>
-        </div>
-        {selectedType || selectedUse || query.design ? (
-          <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className={styles.filterClear}>
-            Clear all
-          </Link>
-        ) : null}
-      </div>
-
-      <div className={styles.filterGroups}>
-      <FilterGroup title="Type">
-        {standTypes.map((standType) => {
-          const count = getStandTypeProductCount(standType.slug, products);
-          if (count === 0 && selectedType?.slug !== standType.slug) {
-            return null;
-          }
-
-          return (
-            <FilterLink
-              key={standType.slug}
-              active={selectedType?.slug === standType.slug}
-              count={count}
-              href={buildShopHref({
-                design: query.design,
-                q: query.q,
-                sort: query.sort,
-                type:
-                  selectedType?.slug === standType.slug
-                    ? undefined
-                    : standType.slug,
-                use: selectedUse?.slug,
-              })}
-              label={getPublicStandTypeLabel(standType)}
-            />
-          );
-        })}
+    <div className={styles.pillPanel}>
+      <FilterGroup title="What it does">
+        {types.map((standType) => (
+          <FilterLink
+            key={standType.slug}
+            active={selectedType?.slug === standType.slug}
+            href={buildShopHref({
+              design: query.design,
+              q: query.q,
+              sort: query.sort,
+              type: selectedType?.slug === standType.slug ? undefined : standType.slug,
+              use: selectedUse?.slug,
+            })}
+            label={getPublicStandTypeLabel(standType)}
+          />
+        ))}
       </FilterGroup>
 
-      <FilterGroup title="Use">
-        {businessUses.map((businessUse) => (
+      <FilterGroup title="Your business">
+        {uses.map((businessUse) => (
           <FilterLink
             key={businessUse.slug}
             active={selectedUse?.slug === businessUse.slug}
-            count={
-              products.filter(
-                (product) =>
-                  businessUse.productSlugs.includes(product.slug) ||
-                  (!product.catalogManaged && product.businessUseSlugs?.includes(businessUse.slug)),
-              ).length
-            }
             href={buildShopHref({
               design: query.design,
               q: query.q,
               sort: query.sort,
               type: selectedType?.slug,
-              use:
-                selectedUse?.slug === businessUse.slug
-                  ? undefined
-                  : businessUse.slug,
+              use: selectedUse?.slug === businessUse.slug ? undefined : businessUse.slug,
             })}
-            label={businessUse.title}
+            label={shortBusinessUseLabels[businessUse.slug] ?? businessUse.title}
           />
         ))}
       </FilterGroup>
-      </div>
-    </>
-  );
-}
 
-function FilterGroup({
-  children,
-  title,
-}: {
-  children: React.ReactNode;
-  title: string;
-}) {
-  return (
-    <div className={styles.filterGroup}>
-      <p className={styles.filterLabel}>
-        {title}
-      </p>
-      <div className="grid gap-1">{children}</div>
+      {selectedType || selectedUse || query.design ? (
+        <div className={styles.pillFooter}>
+          <Link href={buildShopHref({ q: query.q, sort: query.sort })} prefetch={false} scroll={false} className={styles.pillClear}>
+            Clear all
+          </Link>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function FilterLink({
-  active,
-  count,
-  href,
-  label,
-}: {
-  active: boolean;
-  count: number;
-  href: string;
-  label: string;
-}) {
+function FilterGroup({ children, title }: { children: React.ReactNode; title: string }) {
   return (
-    <ShopFilterLink
-      active={active}
-      count={count}
-      href={href}
-      label={label}
-      className={styles.filterLink}
-      countClassName={styles.filterCount}
-    />
+    <div role="group" aria-label={title}>
+      <p className={styles.pillLabel}>{title}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
   );
+}
+
+function FilterLink({ active, href, label }: { active: boolean; href: string; label: string }) {
+  return <ShopFilterLink active={active} href={href} label={label} className={styles.pill} />;
 }

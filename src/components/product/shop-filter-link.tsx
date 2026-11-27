@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 
 type ShopFilterLinkProps = {
   active: boolean;
-  count: number;
+  /** Shown as a badge only when countClassName is given. */
+  count?: number;
   href: string;
   label: string;
   className: string;
-  countClassName: string;
+  countClassName?: string;
 };
 
 /**
@@ -42,7 +43,7 @@ export function ShopFilterLink({
       onTouchStart={prefetch}
     >
       <span className="min-w-0">{label}</span>
-      <span className={countClassName}>{count}</span>
+      {countClassName && count !== undefined ? <span className={countClassName}>{count}</span> : null}
     </Link>
   );
 }
