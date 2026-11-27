@@ -1,4 +1,4 @@
-export const SHOP_PAGE_SIZE = 12;
+export const SHOP_PAGE_SIZE = 20;
 export const SHOP_SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
   { value: "price-asc", label: "Price: low to high" },

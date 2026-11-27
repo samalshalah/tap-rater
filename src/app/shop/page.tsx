@@ -133,7 +133,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
                 </div>
               ) : null}
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4 xl:gap-4">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 xl:gap-4">
                 {visibleProducts.length > 0 ? (
                   visibleProducts.map((product) => (
                     <ProductCard

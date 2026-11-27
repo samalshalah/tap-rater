@@ -80,8 +80,8 @@ describe("shop discovery", () => {
   });
 
   it("loads cumulative batches and handles empty results, final batches, and oversized page requests", () => {
-    expect(getShopResultWindow(58)).toEqual({ visibleCount: 12, nextPage: 2 });
-    expect(getShopResultWindow(58, 2)).toEqual({ visibleCount: 24, nextPage: 3 });
+    expect(getShopResultWindow(58)).toEqual({ visibleCount: 20, nextPage: 2 });
+    expect(getShopResultWindow(58, 2)).toEqual({ visibleCount: 40, nextPage: 3 });
     expect(getShopResultWindow(58, 5)).toEqual({ visibleCount: 58, nextPage: undefined });
     expect(getShopResultWindow(5, 999)).toEqual({ visibleCount: 5, nextPage: undefined });
     expect(getShopResultWindow(0)).toEqual({ visibleCount: 0, nextPage: undefined });
