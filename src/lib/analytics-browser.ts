@@ -1,3 +1,4 @@
+import { googleAdsConsent, saveGoogleAdsConsent, googleClickQuery } from "@/lib/google-ads-consent";
 import { trackMetaEcommerce } from "@/lib/meta-pixel";
 import {
   captureAttribution,
@@ -195,6 +196,7 @@ export function saveBrowserConsent(choice: ConsentChoice) {
     choice +
     "; Path=/; Max-Age=15552000; SameSite=Lax; Secure";
   if (choice === "denied") {
+    saveGoogleAdsConsent("denied");
     try { localStorage.removeItem(campaignStorageKey); } catch {}
     try {
       const session = JSON.parse(
@@ -259,7 +261,7 @@ function context() {
             : {}),
         }
       : {}),
-    page_location: `${activeConfig.origin}${page.path}`,
+    page_location: `${activeConfig.origin}${page.path}${googleAdsConsent() === "granted" && googleClickQuery(window.location.search) ? "?" + googleClickQuery(window.location.search) : ""}`,
     page_title: page.title,
     page_referrer: analyticsReferrer(document.referrer),
   };
@@ -274,10 +276,10 @@ export function analyticsAvailable() {
   );
 }
 
-function clearAnalyticsCookies() {
+function clearAnalyticsCookies(adsOnly = false) {
   for (const cookie of document.cookie.split(";")) {
     const name = cookie.trim().split("=")[0];
-    if (!/^_ga(?:_|$)/.test(name)) continue;
+    if (!/^_gcl_/.test(name) && (adsOnly || !/^_ga(?:_|$)/.test(name))) continue;
     for (const domain of ["", window.location.hostname, ".taprater.com"]) {
       document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax${domain ? `; Domain=${domain}` : ""}`;
     }
@@ -315,12 +317,29 @@ export function syncAnalytics(config: AnalyticsConfig, onTagReady: () => void = 
     return false;
   }
   const page = context();
+  const ads = googleAdsConsent() === "granted" ? "granted" : "denied";
+  if (ads === "denied") {
+    clearAnalyticsCookies(true);
+    // A visitor may withdraw while the Google script is still loading.
+    // Scrub previously queued click data and grants before it can execute.
+    if (!tagReady) for (const args of target.tapRaterDataLayer ?? []) {
+      const values = Array.from(args as IArguments);
+      for (const value of values) {
+        if (!value || typeof value !== "object") continue;
+        const payload = value as Record<string, unknown>;
+        if (typeof payload.page_location === "string") payload.page_location = payload.page_location.split("?")[0];
+        if ("ad_storage" in payload) payload.ad_storage = "denied";
+        if ("ad_user_data" in payload) payload.ad_user_data = "denied";
+      }
+    }
+  }
+  command("set", "ads_data_redaction", ads !== "granted");
   command("set", page);
   if (loadedId === id) {
     command("consent", "update", {
       analytics_storage: "granted",
-      ad_storage: "denied",
-      ad_user_data: "denied",
+      ad_storage: ads,
+      ad_user_data: ads,
       ad_personalization: "denied",
     });
     if (tagReady) onTagReady();
@@ -336,11 +355,10 @@ export function syncAnalytics(config: AnalyticsConfig, onTagReady: () => void = 
   });
   command("consent", "update", {
     analytics_storage: "granted",
-    ad_storage: "denied",
-    ad_user_data: "denied",
+    ad_storage: ads,
+    ad_user_data: ads,
     ad_personalization: "denied",
   });
-  command("set", "ads_data_redaction", true);
   command("set", "url_passthrough", false);
   command("js", new Date());
   command("config", id, {

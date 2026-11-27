@@ -227,7 +227,9 @@ export async function flushAnalyticsPurchases(
             client_id: row.ga_client_id,
             timestamp_micros:
               new Date(row.purchase_at as string).getTime() * 1000,
-            consent: { ad_user_data: "DENIED", ad_personalization: "DENIED" },
+            // Inherit the client's online consent instead of overriding a valid
+            // Google Ads measurement opt-in. Google also observes withdrawals.
+            // https://developers.google.com/analytics/devguides/collection/protocol/ga4/reference#consent
             events: [
               {
                 name: "purchase",
