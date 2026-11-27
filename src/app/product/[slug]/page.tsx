@@ -196,6 +196,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           <SectionHeader align="left" title="Questions & answers" />
           <FaqList faqs={productFaqs} className="mt-7 grid max-w-4xl gap-3" />
           {product.slug === "google-review-stand" ? <p className="tr-body-sm mt-5">During stand setup, search for your business by name and city or paste your existing Google review link.</p> : null}
+          {product.slug === "instagram-follow-stand" ? <p className="tr-body-sm mt-5">Need help with the destination? <Link href="/guides/instagram-qr-code-for-business" className="font-semibold text-brand underline underline-offset-4">Find your Instagram QR code and set up your follow invitation</Link>.</p> : null}
         </div>
       </SectionShell>
 

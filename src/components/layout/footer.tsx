@@ -117,6 +117,7 @@ export function Footer() {
           <p className="tr-body-sm mt-3 max-w-sm">
             {content.intro}
           </p>
+          <Link href="/guides" prefetch={false} className="mt-2 flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4">Business guides</Link>
           <a
             href="https://www.google.com/preferences/source?q=taprater.com"
             className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline underline-offset-4"

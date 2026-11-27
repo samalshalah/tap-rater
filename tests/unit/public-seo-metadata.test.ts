@@ -66,7 +66,18 @@ describe("canonical public category URLs", () => {
     expect(paths).toContain("/product/google-review-stand");
     expect(paths).toContain("/solutions/restaurants");
     expect(paths).toContain("/multi-link");
-    expect(entries.every((entry) => entry.lastModified === undefined)).toBe(true);
+    const articlePaths = [
+      "/guides/google-review-link-qr-code", "/guides/how-to-ask-for-google-reviews",
+      "/guides/get-more-google-reviews", "/guides/instagram-qr-code-for-business"
+    ];
+    expect(paths).toContain("/guides");
+    for (const path of articlePaths) {
+      expect(paths.filter((candidate) => candidate === path)).toHaveLength(1);
+      expect(entries.find((entry) => new URL(entry.url).pathname === path)?.lastModified).toBe("2026-11-27");
+    }
+    // Undated catalog pages must not acquire a fabricated build-time modified date.
+    expect(entries.filter((entry) => !articlePaths.includes(new URL(entry.url).pathname))
+      .every((entry) => entry.lastModified === undefined)).toBe(true);
     expect(entries.find((entry) => entry.url.endsWith("/product/google-review-stand"))?.images).toEqual([new URL(getProductVisual(googleStand).src, "https://taprater.com").toString()]);
   });
 
