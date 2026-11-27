@@ -68,6 +68,8 @@ const nextConfig: NextConfig = {
       { source: "/contact", destination: "/contact-us", permanent: true },
       { source: "/review-links-generator", destination: "/product/google-review-stand", permanent: true },
       { source: "/shop-by-use", destination: "/solutions", permanent: true },
+      // Ecommerce / Online Brand is no longer offered: online-only brands have no counter for a stand.
+      { source: "/solutions/ecommerce-online-brand", destination: "/solutions", permanent: true },
       { source: "/custom-stands", destination: brandedStandCatalogHref, permanent: true },
       { source: "/custom-branding", destination: brandedStandCatalogHref, permanent: true },
       { source: "/product-category/:slug*", destination: "/shop", permanent: true },
