@@ -49,7 +49,7 @@ describe("content phase 3 presentation standard", () => {
     expect(renderToStaticMarkup(createElement(ProductCard, { product: merchantPhoto, design: "branded" }))).not.toContain("Standard design shown");
   });
 
-  it.each(["category/[slug]", "solutions/[slug]", "multi-link"])("uses shared listing tracks on %s", route => {
+  it.each(["category/[slug]", "business/[slug]", "multi-link"])("uses shared listing tracks on %s", route => {
     const source = readFileSync(`src/app/${route}/page.tsx`, "utf8");
     expect(source).toContain("tr-product-grid");
     expect(source).not.toContain("[&_>_a>div:first-child]");

@@ -7,6 +7,7 @@ import { publicDataCache, websiteCacheTag } from "@/lib/public-data-cache";
 import { z } from "zod";
 import { getSupabaseAdmin, hasSupabaseAdminConfig } from "@/lib/db";
 import { defaultHomepageShowcase, homepageShowcaseSchema, type HomepageShowcaseContent } from "@/lib/homepage-showcase";
+import { toBusinessHref } from "@/lib/business-routes";
 
 const urlSchema = z
   .string()
@@ -277,7 +278,7 @@ export async function getHomepageThemeContent(): Promise<HomepageThemeContent> {
       ...finalCta,
       headline: initialLayout && finalCta.headline === "Ready to Put Tap Rater to Work?" ? defaultHomepageContent.finalCta.headline : finalCta.headline,
       primaryCta: initialLayout && finalCta.primaryCta.label === "Shop All Stands" && finalCta.primaryCta.href === "/shop" ? defaultHomepageContent.finalCta.primaryCta : finalCta.primaryCta,
-      secondaryCta: initialLayout && finalCta.secondaryCta?.label === "Shop by Use" && finalCta.secondaryCta.href === "/solutions" ? defaultHomepageContent.finalCta.secondaryCta : finalCta.secondaryCta
+      secondaryCta: initialLayout && finalCta.secondaryCta?.label === "Shop by Use" && finalCta.secondaryCta.href === "/solutions" ? defaultHomepageContent.finalCta.secondaryCta : finalCta.secondaryCta && { ...finalCta.secondaryCta, href: toBusinessHref(finalCta.secondaryCta.href) }
     }, faqs: homepageFaqs
   };
 }

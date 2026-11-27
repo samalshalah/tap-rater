@@ -10,7 +10,7 @@ export const defaultHeaderNavigation: HeaderNavigationContent = {
     { label: "Home", href: "/", order: 5, enabled: true },
     { label: "Shop", href: "/shop", order: 10, enabled: true },
     { label: "Shop by Type", href: "/shop#stand-categories", order: 15, enabled: true },
-    { label: "By Use", href: "/solutions", order: 20, enabled: true },
+    { label: "By Use", href: "/business", order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     { label: "Multi-Link", href: "/multi-link", order: 40, enabled: true },
     { label: "Resources", href: "/support", order: 60, enabled: true },
@@ -36,10 +36,10 @@ export const defaultFooterContent: FooterContent = {
       label: "Solutions",
       order: 20,
       links: [
-        { label: "Automotive", href: "/solutions/automotive", order: 10, enabled: true },
-        { label: "Restaurants", href: "/solutions/restaurant-food", order: 20, enabled: true },
-        { label: "Healthcare", href: "/solutions/healthcare-dental", order: 30, enabled: true },
-        { label: "Beauty & Wellness", href: "/solutions/beauty-salon-wellness", order: 40, enabled: true }
+        { label: "Automotive", href: "/business/automotive", order: 10, enabled: true },
+        { label: "Restaurants", href: "/business/restaurant-food", order: 20, enabled: true },
+        { label: "Healthcare", href: "/business/healthcare-dental", order: 30, enabled: true },
+        { label: "Beauty & Wellness", href: "/business/beauty-salon-wellness", order: 40, enabled: true }
       ]
     },
     {

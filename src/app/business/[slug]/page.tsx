@@ -5,7 +5,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getBusinessUsePageCopy } from "@/lib/business-use-content";
-import { ArrowLeft } from "lucide-react";
 import { ProductCard } from "@/components/product/product-card";
 import { PageHero, SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getPublicBusinessUseBySlug, getPublicBusinessUses } from "@/lib/admin-business-uses";
@@ -36,11 +35,11 @@ export async function generateMetadata({ params }: BusinessUsePageProps): Promis
   return {
     title,
     description,
-    alternates: { canonical: `/solutions/${businessUse.slug}` },
+    alternates: { canonical: `/business/${businessUse.slug}` },
     openGraph: {
       title,
       description,
-      url: `/solutions/${businessUse.slug}`,
+      url: `/business/${businessUse.slug}`,
       images: socialImage
         ? [{ url: socialImage, alt: businessUse.title }]
         : [defaultSocialImage]
@@ -117,20 +116,16 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
                 Need help with placement or setup? Read our guide to <Link href={reviewStandGuide.href} className="font-semibold text-brand underline underline-offset-4">{reviewStandGuide.label}</Link>.
               </p>
             ) : null}
-            <Link href="/solutions" className="tr-editorial-link mt-8">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Back to businesses
-            </Link>
           </div>
         </SectionShell>
   );
 
   return (
     <main className="tr-public-shell text-ink">
-      <JsonLd data={breadcrumbJsonLd([{ name: "Solutions", href: "/solutions" }, { name: businessUse.title, href: `/solutions/${businessUse.slug}` }])} />
+      <JsonLd data={breadcrumbJsonLd([{ name: "Shop by business", href: "/business" }, { name: businessUse.title, href: `/business/${businessUse.slug}` }])} />
       <PageHero
         spacing="compact"
-        backLink={{ href: "/solutions", label: "Shop by business" }}
+        backLink={{ href: "/business", label: "Shop by business" }}
         eyebrow={businessUse.title}
         title={guide.headline || `NFC Stands for ${businessUse.title}`}
         cta={guide.bundle ? { href: "#bundle", label: guide.bundle.ctaLabel || "Shop the bundle" } : { href: "#recommended-stands", label: "Find your stand" }}
@@ -143,6 +138,8 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
       />
 
       {guide.bundle ? <MultiLinkBundleSection bundle={guide.bundle} products={products} businessTitle={businessUse.title} offers={offers} /> : null}
+      {/* The stands come right after the hero (and bundle), before the longer guidance. */}
+      {recommendedSection}
       {guide.audiences?.length ? <SectionShell spacing="compact"><div className="tr-container">
         <SectionHeader eyebrow="Who it’s for" title={guide.audiencesTitle || `Stands for every kind of ${businessUse.title.toLowerCase()} business`} />
         <div className="mt-7 tr-mobile-card-grid grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{guide.audiences.map((item, index) => {
@@ -163,7 +160,6 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         </article>)}</div>
       </div></SectionShell> : null}
 
-      {guide.bundle ? null : recommendedSection}
       {guide.placements?.length ? <SectionShell tone={hasGrowthSections ? "soft" : "white"} spacing="compact"><div className="tr-container">
         <SectionHeader title={guide.placementTitle || "Where to Place Your Stands"} />
         <div className="mt-7 tr-mobile-card-grid grid gap-6 md:grid-cols-3">{guide.placements.map((item, index) => {
@@ -189,7 +185,6 @@ export default async function BusinessUsePage({ params }: BusinessUsePageProps) 
         <nav aria-label="More buying guidance" className="mt-6 flex flex-wrap gap-5 text-brand underline"><Link href="/how-it-works">How NFC stands work</Link><Link href="/pricing">Compare pricing</Link><Link href="/stand-bundles">Stands for multiple counters</Link></nav>
         {googleReviewRecommendation ? <p className="tr-body-sm mt-5">During Google review stand setup, search for your business by name and city or paste its review link. Check that the link opens the correct location before ordering.</p> : null}
       </div></SectionShell> : null}
-      {guide.bundle ? recommendedSection : null}
       {guide.faqs.length ? <SectionShell tone="soft" spacing="compact"><div className="tr-container-narrow"><h2 className="tr-section-title">{guide.faqTitle || `${businessUse.title} Stand FAQs`}</h2><div className="mt-6 divide-y divide-line">{guide.faqs.map((faq, index) => <details key={index} className="py-5"><summary className="cursor-pointer text-lg font-semibold text-ink">{faq.question}</summary><p className="tr-body mt-3">{faq.answer}</p></details>)}</div></div></SectionShell> : null}
       {!guide.steps?.length && !guide.placements?.length ? <BuyingGuide slug={businessUse.slug} kind="solution" /> : null}
     </main>

@@ -16,7 +16,7 @@ const siteUrl = getPublicSiteUrl();
 const staticRoutes = [
   "",
   "/shop",
-  "/solutions",
+  "/business",
   "/how-it-works",
   "/guides",
   ...businessGuides.map(businessGuideHref),
@@ -53,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       && standTypes.some((type) => type.slug === categoryToStandTypeSlug(category.slug))
       && canonicalProducts.some((product) => productMatchesCategory(product, category.slug)))
     .map((category) => getCategoryHref(category.slug));
-  const businessUseRoutes = businessUses.map((businessUse) => `/solutions/${businessUse.slug}`);
+  const businessUseRoutes = businessUses.map((businessUse) => `/business/${businessUse.slug}`);
   const paths = Array.from(new Set([...staticRoutes, ...categoryRoutes, ...businessUseRoutes, ...productRoutes]));
 
   const productImages = new Map(canonicalProducts.map((product) => [

@@ -32,10 +32,10 @@ describe("analytics configuration and consent", () => {
   });
   it("preserves known category and business landing pages and admits public products", () => {
     expect(analyticsPage("/category/reviews")?.path).toBe("/category/reviews");
-    expect(analyticsPage("/solutions/restaurant-food")?.path).toBe("/solutions/restaurant-food");
-    expect(analyticsPage("/solutions/healthcare-dental")?.path).toBe("/solutions/healthcare-dental");
+    expect(analyticsPage("/business/restaurant-food")?.path).toBe("/business/restaurant-food");
+    expect(analyticsPage("/business/healthcare-dental")?.path).toBe("/business/healthcare-dental");
     expect(analyticsPage("/category")?.path).toBe("/category");
-    expect(analyticsPage("/solutions/private-client")?.path).toBe("/solutions");
+    expect(analyticsPage("/business/private-client")?.path).toBe("/business");
     expect(analyticsPage("/product/google-review-stand")?.path).toBe("/product/google-review-stand");
   });
   it("preserves known search attribution without search queries or arbitrary private referring URLs", () => {

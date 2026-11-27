@@ -64,7 +64,7 @@ describe("attribution and exclusions", () => {
     }
     expect(readCampaign("bad", now)).toBeNull();
   });
-  it.each(["/category/reviews", "/category/website-link-stands", "/solutions/restaurant-food", "/solutions/healthcare-dental", "/category/new-category"])("accepts browser-generated landing attribution for %s", (url) => {
+  it.each(["/category/reviews", "/category/website-link-stands", "/business/restaurant-food", "/business/healthcare-dental", "/category/new-category"])("accepts browser-generated landing attribution for %s", (url) => {
     const page = analyticsPage(url)!;
     expect(analyticsEventSchema.safeParse({
       id: "4cca14ff-8016-49c8-8c3b-b61a88b3a8e0",

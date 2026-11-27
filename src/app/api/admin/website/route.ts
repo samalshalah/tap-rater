@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     }
 
     invalidatePublicData(websiteCacheTag);
-    ["/", "/shop", "/solutions", "/faqs"].forEach((path) => revalidatePath(path));
+    ["/", "/shop", "/business", "/faqs"].forEach((path) => revalidatePath(path));
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Website content could not be saved." }, { status: 500 });

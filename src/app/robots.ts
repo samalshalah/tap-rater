@@ -17,7 +17,7 @@ export default function robots(): MetadataRoute.Robots {
         // Google merges matching groups and prefers more specific paths. Cloudflare
         // prepends Disallow: /; these exceptions cover public storefront content.
         allow: [
-          "/$", "/shop$", "/category/", "/product/", "/solutions$", "/solutions/",
+          "/$", "/shop$", "/category/", "/product/", "/business$", "/business/",
           "/google-review-stand-for/", "/nfc-vs-qr-google-review-stand$",
           "/how-it-works$", "/pricing$", "/shipping$",
           "/stand-bundles$", "/multi-link$", "/faqs$"

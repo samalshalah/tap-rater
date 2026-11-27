@@ -149,7 +149,7 @@ export function HomepageLayout({ content, products, businessUses = [], offers }:
 
     {content.featuredUses.enabled && showcase.scenes.length ? <section className={`${styles.section} ${styles.soft}`} id="shop-by-use" aria-labelledby="home-business" data-home-section="business">
       <div className={styles.container}>
-        <Heading id="home-business" eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} href="/solutions" link="Shop by business" />
+        <Heading id="home-business" eyebrow={content.featuredUses.eyebrow} title={content.featuredUses.headline} href="/business" link="Shop by business" />
         <BusinessShowcase scenes={showcase.scenes.flatMap((scene): BusinessScene[] => {
           const businessUse = businessUses.find((item) => item.slug === scene.slug);
           if (businessUse && !businessUse.isActive) return [];

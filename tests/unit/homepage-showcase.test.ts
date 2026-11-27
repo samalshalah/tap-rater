@@ -40,7 +40,7 @@ describe("homepage shopping flow", () => {
       })));
     }
     for (const scene of defaultHomepageShowcase.scenes) {
-      expect(html).toContain(`href="/solutions/${scene.slug}"`);
+      expect(html).toContain(`href="/business/${scene.slug}"`);
       expect(html).toContain(scene.title.replaceAll("&", "&amp;"));
     }
     for (const product of selectFeaturedHomepageProducts(migratedProducts, defaultHomepageShowcase.featuredProductSlugs)) {

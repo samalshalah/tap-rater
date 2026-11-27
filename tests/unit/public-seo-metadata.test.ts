@@ -8,7 +8,7 @@ import sitemap from "@/app/sitemap";
 import { metadata as rootMetadata } from "@/app/layout";
 import { metadata as homeMetadata } from "@/app/page";
 import CategoryPage, { generateMetadata as categoryMetadata } from "@/app/category/[slug]/page";
-import { generateMetadata as solutionMetadata } from "@/app/solutions/[slug]/page";
+import { generateMetadata as solutionMetadata } from "@/app/business/[slug]/page";
 import ProductPage, { generateMetadata as productMetadata } from "@/app/product/[slug]/page";
 
 const mocks = vi.hoisted(() => ({
@@ -64,7 +64,7 @@ describe("canonical public category URLs", () => {
     expect(paths.filter((path) => path === "/category/website-link-stands")).toHaveLength(1);
     expect(paths).not.toContain("/category/website-links");
     expect(paths).toContain("/product/google-review-stand");
-    expect(paths).toContain("/solutions/restaurants");
+    expect(paths).toContain("/business/restaurants");
     expect(paths).toContain("/multi-link");
     const articlePaths = [
       "/guides/google-review-link-qr-code", "/guides/how-to-ask-for-google-reviews",

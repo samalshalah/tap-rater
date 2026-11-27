@@ -14,6 +14,7 @@ import { isNavigationActive } from "@/lib/customer-navigation";
 import { PrismaticShopMenu } from "@/components/prismatic/shop-menu";
 import { shopByTypeHref } from "@/components/layout/stand-type-links";
 import { getCategoryHref } from "@/lib/category-routes";
+import { businessIndexPath, toBusinessHref } from "@/lib/business-routes";
 
 type HeaderNavigationContent = {
   items: Array<{
@@ -41,7 +42,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
       order: 15,
       enabled: true,
     },
-    { label: "Shop by Business", href: "/solutions", order: 20, enabled: true },
+    { label: "Shop by Business", href: businessIndexPath, order: 20, enabled: true },
     { label: "How It Works", href: "/how-it-works", order: 30, enabled: true },
     {
       label: "Multi-Link",
@@ -55,7 +56,7 @@ const defaultHeaderNavigation: HeaderNavigationContent = {
 };
 
 function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
-  const enabledItems = items.map(item=>item.href === "/google-reviews/packages" ? {...item,href:"/google-reviews"} : item).filter(
+  const enabledItems = items.map(item=>item.href === "/google-reviews/packages" ? {...item,href:"/google-reviews"} : {...item,href:toBusinessHref(item.href)}).filter(
     (item) => item.enabled && item.label.toLowerCase() !== "custom branding" && item.href !== getCategoryHref("website-links"),
   );
   if (!enabledItems.some(item => item.href === "/google-reviews")) enabledItems.push({label:"Google Reviews",href:"/google-reviews",order:45,enabled:true});
@@ -94,7 +95,7 @@ function orderedEnabledLinks(items: HeaderNavigationContent["items"]) {
 
   return withContact
     .map((item) =>
-      item.href === "/solutions" && ["by use", "shop by use", "business uses"].includes(item.label.toLowerCase())
+      item.href === businessIndexPath && ["by use", "shop by use", "business uses"].includes(item.label.toLowerCase())
         ? { ...item, label: "Shop by Business" }
         : item.label.toLowerCase() === "shop by type"
         ? { ...item, href: shopByTypeHref }

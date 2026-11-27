@@ -163,7 +163,7 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
           {product.additionalUses?.map(slug => getCategoryBySlug(slug)).filter(use => use && use.slug !== category?.slug).map(use => use &&
             <Link key={use.slug} href={getCategoryHref(use.slug)}>{use.title}</Link>)}
           {linkedBusinesses.map((item) =>
-            <Link key={item.slug} href={`/solutions/${item.slug}`}>{item.title}</Link>)}
+            <Link key={item.slug} href={`/business/${item.slug}`}>{item.title}</Link>)}
         </nav>
       </div></SectionShell>
 

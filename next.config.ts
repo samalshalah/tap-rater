@@ -67,9 +67,13 @@ const nextConfig: NextConfig = {
       { source: "/faq", destination: "/faqs", permanent: true },
       { source: "/contact", destination: "/contact-us", permanent: true },
       { source: "/review-links-generator", destination: "/product/google-review-stand", permanent: true },
-      { source: "/shop-by-use", destination: "/solutions", permanent: true },
+      { source: "/shop-by-use", destination: "/business", permanent: true },
       // Ecommerce / Online Brand is no longer offered: online-only brands have no counter for a stand.
-      { source: "/solutions/ecommerce-online-brand", destination: "/solutions", permanent: true },
+      { source: "/solutions/ecommerce-online-brand", destination: "/business", permanent: true },
+      { source: "/business/ecommerce-online-brand", destination: "/business", permanent: true },
+      // Shop-by-business pages moved from /solutions to /business (Nov 2026). One hop, so search engines move the ranking.
+      { source: "/solutions", destination: "/business", permanent: true },
+      { source: "/solutions/:slug", destination: "/business/:slug", permanent: true },
       { source: "/custom-stands", destination: brandedStandCatalogHref, permanent: true },
       { source: "/custom-branding", destination: brandedStandCatalogHref, permanent: true },
       { source: "/product-category/:slug*", destination: "/shop", permanent: true },

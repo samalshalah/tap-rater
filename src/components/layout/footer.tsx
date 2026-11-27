@@ -5,6 +5,7 @@ import { loadWebsiteNavigation } from "@/lib/website-content-client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AnalyticsPreferencesButton } from "@/components/analytics/analytics-provider";
+import { toBusinessHref } from "@/lib/business-routes";
 
 type FooterContent = {
   intro: string;
@@ -21,14 +22,15 @@ const footerLinkOverrides: Record<string, { label?: string; href?: string }> = {
   "/category/website-link-stands|Website Links": { label: "Multi-Link Stand" },
   "/category/website-link-stands|Multi-Link": { label: "Multi-Link Stand" },
   "/category/website-link-stands|Multi-Link Stands": { label: "Multi-Link Stand" },
-  "/solutions/auto-dealerships|Automotive": { href: "/solutions/automotive" },
-  "/solutions/restaurants-cafes|Restaurants": { href: "/solutions/restaurant-food" },
-  "/solutions/beauty-wellness|Beauty & Wellness": { href: "/solutions/beauty-salon-wellness" }
+  "/solutions/auto-dealerships|Automotive": { href: "/business/automotive" },
+  "/solutions/restaurants-cafes|Restaurants": { href: "/business/restaurant-food" },
+  "/solutions/beauty-wellness|Beauty & Wellness": { href: "/business/beauty-salon-wellness" }
 };
 
 function normalizeFooterLink(link: FooterContent["columns"][number]["links"][number]) {
   const override = footerLinkOverrides[`${link.href}|${link.label}`];
-  return override ? { ...link, ...override } : link;
+  const next = override ? { ...link, ...override } : link;
+  return { ...next, href: toBusinessHref(next.href) };
 }
 
 const defaultFooterContent: FooterContent = {
@@ -49,10 +51,10 @@ const defaultFooterContent: FooterContent = {
       label: "Solutions",
       order: 20,
       links: [
-        { label: "Automotive", href: "/solutions/automotive", order: 10, enabled: true },
-        { label: "Restaurants", href: "/solutions/restaurant-food", order: 20, enabled: true },
-        { label: "Healthcare", href: "/solutions/healthcare-dental", order: 30, enabled: true },
-        { label: "Beauty & Wellness", href: "/solutions/beauty-salon-wellness", order: 40, enabled: true }
+        { label: "Automotive", href: "/business/automotive", order: 10, enabled: true },
+        { label: "Restaurants", href: "/business/restaurant-food", order: 20, enabled: true },
+        { label: "Healthcare", href: "/business/healthcare-dental", order: 30, enabled: true },
+        { label: "Beauty & Wellness", href: "/business/beauty-salon-wellness", order: 40, enabled: true }
       ]
     },
     {

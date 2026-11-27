@@ -16,7 +16,7 @@ describe("owner-supplied business-use image framing", () => {
   });
 
   it("uses the same crop focus in desktop and mobile business cards", () => {
-    const html = renderToStaticMarkup(createElement(HomepageBrowseCard, { href: "/solutions/restaurant-food", title: "Restaurants", description: "Menus and orders", image, variant: "use-case" }));
+    const html = renderToStaticMarkup(createElement(HomepageBrowseCard, { href: "/business/restaurant-food", title: "Restaurants", description: "Menus and orders", image, variant: "use-case" }));
     expect(html.match(/object-position:right center/g)).toHaveLength(2);
     expect(html).toContain("aspect-[4/5]");
   });

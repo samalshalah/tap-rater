@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "Shop NFC Stands by Business",
   description:
     "Shop Tap Rater NFC and QR tabletop stands by business use: restaurants, dealerships, healthcare, beauty, hospitality, retail, real estate, events, and more.",
-  alternates: { canonical: "/solutions" }
+  alternates: { canonical: "/business" }
 };
 
 export default async function SolutionsPage() {
@@ -42,7 +42,7 @@ export default async function SolutionsPage() {
           <div className={styles.collection}>
             {visibleBusinessUses.map((useCase) => {
               const src = useCase.bannerImageUrl || useCase.imageUrl || "/uploads/products/no-photo-available.png";
-              return <Link key={useCase.slug} href={`/solutions/${useCase.slug}`} className={styles.card}>
+              return <Link key={useCase.slug} href={`/business/${useCase.slug}`} className={styles.card}>
                 <ResponsiveUpload src={src} alt={useCase.title} sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 60vw" fallbackWidth={1200} style={{ objectPosition: getBusinessUseImagePosition(src) }} />
                 <div className={styles.cardCopy}><h2 className={styles.cardTitle}>{useCase.title}<ArrowUpRight size={20} aria-hidden="true" /></h2><p>{useCase.shortDescription || useCase.description}</p></div>
               </Link>;

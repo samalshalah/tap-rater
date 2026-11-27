@@ -13,7 +13,9 @@ describe("next config redirects", () => {
       expect.arrayContaining([
         { source: "/faq", destination: "/faqs", permanent: true },
         { source: "/contact", destination: "/contact-us", permanent: true },
-        { source: "/shop-by-use", destination: "/solutions", permanent: true },
+        { source: "/shop-by-use", destination: "/business", permanent: true },
+        { source: "/solutions", destination: "/business", permanent: true },
+        { source: "/solutions/:slug", destination: "/business/:slug", permanent: true },
         { source: "/custom-stands", destination: "/shop?design=branded", permanent: true },
         { source: "/custom-branding", destination: "/shop?design=branded", permanent: true },
         { source: "/product/custom-direct-stand", destination: "/shop?design=branded", permanent: true },

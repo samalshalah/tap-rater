@@ -114,7 +114,7 @@ const publicPages = new Set([
   "/checkout/cancel",
   "/multi-link",
   "/custom-stands",
-  "/solutions",
+  "/business",
   "/how-it-works",
   "/faqs",
   "/support",
@@ -131,7 +131,7 @@ const publicPages = new Set([
 
 const landingPages = new Map([
   ...getCatalogCategories().map((category) => [getCategoryHref(category.slug), `Tap Rater | ${category.title}`] as const),
-  ...lockedBusinessUses.filter((business) => business.isActive).map((business) => [`/solutions/${business.slug}`, `Tap Rater | ${business.title}`] as const),
+  ...lockedBusinessUses.filter((business) => business.isActive).map((business) => [`/business/${business.slug}`, `Tap Rater | ${business.title}`] as const),
 ]);
 
 export function analyticsPage(pathname: string) {
@@ -152,7 +152,7 @@ export function analyticsPage(pathname: string) {
     };
   }
   // Group non-product landing pages instead of sending user-controlled path text.
-  if (/^\/(category|solutions)\/[a-z0-9-]+$/.test(pathname)) {
+  if (/^\/(category|business)\/[a-z0-9-]+$/.test(pathname)) {
     const group = pathname.split("/")[1];
     return { path: `/${group}`, title: `Tap Rater ${group}` };
   }
