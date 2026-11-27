@@ -209,18 +209,16 @@
 }
 .collection{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:32px}
 .card{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:340px;border-radius:14px;overflow:hidden;background:#090e36;color:white}
-.card:first-child{grid-column:span 2;min-height:390px}
 .card img{object-fit:cover;transition:transform .65s cubic-bezier(.2,.7,.3,1)}
 .card::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(0deg,#090e36f5, #090e36b0 35%,transparent 85%);pointer-events:none}
 .cardCopy{position:relative;z-index:1;padding:26px;width:100%}
 .card .cardTitle{display:flex;align-items:center;justify-content:space-between;gap:18px;color:white;font-size:24px;font-weight:650;letter-spacing:-.035em;line-height:1.2}
-.card:first-child .cardTitle{font-size:32px}
 .cardCopy p{color:#f1f0fb;font-size:13px;line-height:1.65;margin-top:12px;max-width:460px}
 .cardTitle svg{flex:none;transition:transform .2s}
 .card:focus-visible{outline:3px solid #a994ff;outline-offset:-4px}
 .recommendations>article{border-top:3px solid #6035ff!important;border-radius:12px!important;box-shadow:0 8px 28px #090e3605}
 @media(hover:hover){.card:hover img{transform:scale(1.045)}.card:hover svg{transform:translate(2px,-2px)}}
-@media(max-width:1023px){.collection{grid-template-columns:repeat(2,minmax(0,1fr))}.card:first-child{grid-column:span 2}}
+@media(max-width:1023px){.collection{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.card img,.cardTitle svg{transition:none!important;transform:none!important}}
 
 @media(max-width:767px){
