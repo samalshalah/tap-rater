@@ -244,3 +244,40 @@
   .home .heroCopy .heroHeadline { font-size: 30px; }
   .heroBody { font-size: 15px; line-height: 1.5; }
 }
+
+/* Phones: a shorter homepage. Compact rows and one swipeable row per section; nothing is removed on larger screens. */
+@media (max-width: 767px) {
+ .section { padding-block: 32px; }
+ .heading { margin-bottom: 18px; }
+ /* "What would you like customers to do?": the compact list rows instead of tall cards. */
+ .categoryCards { display: grid !important; grid-template-columns: 1fr !important; gap: 0 !important; }
+ .categoryCards > div { border-top: 1px solid #e6e7f0 !important; }
+ .categoryCards > div:first-child { border-top: 0 !important; }
+ .categoryCards > div > a { display: flex !important; min-height: 68px; }
+ .categoryCards > div > div { display: none !important; }
+ /* Featured stands, How it works and Made for your business: swipe sideways. */
+ .products, .tapSteps, .home [data-home-business-cards] {
+  display: grid !important; grid-auto-flow: column; grid-template-columns: none !important;
+  overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+  margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; gap: 12px !important;
+ }
+ .products::-webkit-scrollbar, .tapSteps::-webkit-scrollbar, .home [data-home-business-cards]::-webkit-scrollbar { display: none; }
+ .products { grid-auto-columns: 46%; }
+ .tapSteps { grid-auto-columns: 72%; }
+ .home [data-home-business-cards] { grid-auto-columns: 46%; }
+ .products > *, .tapSteps > li, .home [data-home-business-cards] > * { scroll-snap-align: start; min-width: 0; }
+ .tapSteps .stepImage { height: 130px; margin-bottom: 12px; }
+ .stepNumber { margin-bottom: 8px; }
+ /* Custom design card: a smaller photo. */
+ .designImage { max-width: 170px; margin-inline: auto; }
+ /* Multi-Link and questions: tighter spacing. */
+ .mediaRow { gap: 16px; }
+ .mediaRow > div { padding: 20px; }
+ .multiPrice { margin-top: 16px !important; }
+ .directNote { margin: 14px 0 10px !important; }
+ .faqs details { padding: 14px 0; }
+ .final { padding-top: 24px; margin-top: 24px; }
+ .design { padding: 18px; gap: 16px; }
+ /* Stand specs are on every product page. */
+ .home [data-home-section=quality] { display: none; }
+}
