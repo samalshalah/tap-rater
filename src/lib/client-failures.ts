@@ -44,6 +44,8 @@ export async function collectBackgroundFailures(sql=db()){
  (l.draft_error LIKE 'Draft generation is queued%' OR l.draft_error LIKE 'Monthly AI allowance exhausted.%') AS waiting
  FROM google_review_links l JOIN businesses b ON b.id=l.business_id LEFT JOIN customer_marketing_access a ON a.customer_id=b.customer_id WHERE l.enabled AND l.ai_consent
  ) SELECT b.customer_id,b.id AS business_id,'review_import' AS code FROM google_review_links l JOIN businesses b ON b.id=l.business_id WHERE l.enabled AND nullif(l.last_error,'') IS NOT NULL
+   -- A single failed refresh usually recovers on the next run; alert only when no refresh has worked for an hour.
+   AND (l.synced_at IS NULL OR l.synced_at<now()-interval '1 hour')
  UNION SELECT customer_id,business_id,CASE WHEN NOT allowed THEN 'review_access_unavailable' ELSE 'review_ai_allowance' END
  FROM draft_state WHERE nullif(draft_error,'') IS NOT NULL AND (NOT allowed OR exhausted)
  UNION SELECT b.customer_id,a.business_id,'review_'||a.stage FROM review_worker_alerts a JOIN businesses b ON b.id=a.business_id WHERE a.resolved_at IS NULL AND a.stage IN ('import','draft') AND a.failures>=CASE WHEN a.stage='draft' THEN 10 ELSE 3 END AND (b.status IS DISTINCT FROM 'marketing_removed' AND EXISTS(SELECT 1 FROM google_review_links running WHERE running.business_id=b.id AND running.enabled AND (a.stage<>'draft' OR running.ai_consent))) AND (a.stage<>'draft' OR NOT EXISTS(SELECT 1 FROM draft_state d WHERE d.business_id=a.business_id AND (NOT d.allowed OR d.exhausted OR d.waiting)))
@@ -52,7 +54,11 @@ export async function collectBackgroundFailures(sql=db()){
  UNION SELECT NULL::uuid,NULL::uuid,'worker_'||name FROM system_worker_health WHERE status='failed'
  UNION SELECT NULL::uuid,NULL::uuid,'heatmap_provider_hold' FROM local_rank_provider WHERE halt_reason IS NOT NULL
  UNION SELECT NULL::uuid,NULL::uuid,'email_delivery' FROM email_deliveries WHERE status IN ('failed','bounced') AND created_at>now()-interval '24 hours' AND message_type IS DISTINCT FROM 'client_failure_alert'`;
- for(const row of rows)await recordClientFailure({customerId:row.customer_id,businessId:row.business_id,source:'background',code:row.code,path:'/admin/workers'},sql);
+ // Review refresh failures keep Google's HTTP status (saved in the link's error text) so the alert shows the cause.
+ const importIds=rows.filter(row=>row.code==='review_import').map(row=>row.business_id);
+ const statuses=new Map<string,number>();
+ if(importIds.length)for(const link of await sql`SELECT business_id,substring(last_error from '\\(Google [a-z_]+ ([0-9]{3})\\)')::int AS status FROM google_review_links WHERE business_id=ANY(${importIds}::uuid[])`)if(link.status)statuses.set(String(link.business_id),Number(link.status));
+ for(const row of rows)await recordClientFailure({customerId:row.customer_id,businessId:row.business_id,source:'background',code:row.code,path:'/admin/workers',status:row.code==='review_import'?statuses.get(String(row.business_id)):undefined},sql);
  // Only background health has an authoritative recovery signal. Request failures remain in history.
  await sql`UPDATE client_failures SET resolved_at=now() WHERE source='background' AND resolved_at IS NULL AND last_seen<now()-interval '6 minutes'`;
  return {observed:rows.length};

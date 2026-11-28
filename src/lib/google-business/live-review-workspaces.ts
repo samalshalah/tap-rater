@@ -1,11 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { ReviewActor } from "../review-workspaces";
+import { GoogleBusinessError } from "./client";
 import { livePublishingEnabled, liveDb, LiveReviewError, ReviewAiWaitError, actorEmail, reviewStars, clientFor, authorizedLink } from "./live-review-core";
 
 const reviewFilterKeys=['all','tasks','unanswered','processing','queued','drafts','approved','attention','replied','spam'] as const;
 type ReviewFilterKey=typeof reviewFilterKeys[number];
 function safeReviewFilter(value:string|undefined):ReviewFilterKey{if(value==='queued')return 'processing';return reviewFilterKeys.includes(value as ReviewFilterKey)?value as ReviewFilterKey:'all';}
+
+/** Customer-friendly sync error that keeps the cause, e.g. "... (Google quota 429)." Admin alerts read the status from it. */
+export function reviewSyncErrorMessage(error: unknown) {
+  if (!(error instanceof GoogleBusinessError)) return "Sync failed. Reconnect Google or check API access and quota.";
+  const reason = {
+    quota: "Google is limiting requests for now. Tap Rater retries automatically.",
+    reconnect: "Google sign-in expired. Reconnect Google.",
+    access_denied: "Google denied access. Check that this Google account still manages the location.",
+    not_found: "Google could not find this location. Reconnect Google.",
+    unavailable: "Google was temporarily unavailable. Tap Rater retries automatically.",
+    invalid_response: "Google returned an unexpected response. Tap Rater retries automatically."
+  }[error.code];
+  return `Sync failed. ${reason} (Google ${error.code} ${error.status})`;
+}
 
 export async function listLiveWorkspaces(actor:ReviewActor,sql=liveDb(),locationIds:string[]|null=null,filterValue='all') {
  const filter=safeReviewFilter(filterValue);
@@ -144,7 +159,7 @@ export async function syncLiveReviews(actor:ReviewActor,businessId:string,sql=li
    maintenance_due_at=now()+CASE WHEN ${Boolean(page.nextPageToken)} THEN interval '1 minute' ELSE interval '15 minutes' END
    WHERE business_id=${businessId} AND sync_lock=${lock}`;
   return {imported:page.reviews.length,more:Boolean(page.nextPageToken)};
- }catch(error){await sql`UPDATE google_review_links SET last_error='Sync failed. Reconnect Google or check API access and quota.' WHERE business_id=${businessId} AND sync_lock=${lock}`;throw error;}
+ }catch(error){await sql`UPDATE google_review_links SET last_error=${reviewSyncErrorMessage(error)} WHERE business_id=${businessId} AND sync_lock=${lock}`;throw error;}
  finally{await sql`UPDATE google_review_links SET sync_lock=NULL,sync_lock_until=NULL WHERE business_id=${businessId} AND sync_lock=${lock}`;}
 }
 

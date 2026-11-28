@@ -31,6 +31,15 @@ export function failureAlertTitle(kind: FailureAlertKind) {
 
 export function failureAlertSubject(kind: FailureAlertKind, rows: Failure[]) {
   const location = rows.length === 1 ? rows[0].business_name?.trim() : '';
+  if (kind === 'review') {
+    // Review refresh problems are not replies to write; say what actually happened.
+    const imports = rows.filter((row) => row.code === 'review_import').length;
+    if (imports === rows.length) return rows.length === 1
+      ? `Tap Rater: ${location ? `${location} — ` : ''}Google reviews couldn't refresh`
+      : `Tap Rater: Google reviews couldn't refresh at ${rows.length} locations`;
+    if (imports) return `Tap Rater: ${rows.length} Google review alerts need review`;
+    if (rows.length > 1) return `Tap Rater: ${rows.length} Google replies need review`;
+  }
   const prefix = location ? `${location} — ` : rows.length === 1 ? '' : `${rows.length} `;
   const label = {
     review: 'Google reply needs review',
@@ -48,7 +57,7 @@ export function describeClientFailure(row: Failure) {
     : row.path?.includes('/landing-pages') ? 'Multi-Link page'
     : 'Customer account';
   const background: Record<string, [string, string]> = {
-    review_import: ['Google Reviews could not refresh.', 'Check the Google connection and retry the review refresh.'],
+    review_import: [`Google Reviews have not refreshed for over an hour.${row.http_status ? ` Google status: ${row.http_status}${{ 401: ' (sign-in expired)', 403: ' (access denied)', 404: ' (location not found)', 429: ' (request limit)' }[row.http_status] ?? ''}.` : ''}`, row.http_status === 401 || row.http_status === 403 || row.http_status === 404 ? 'Reconnect Google for this location, then retry the review refresh.' : 'Tap Rater keeps retrying. If it continues, check the Google connection and API quota.'],
     review_draft: ['A Google review reply draft could not be prepared.', 'Open the review and retry preparing its reply.'],
     review_ai_allowance: ['The monthly review reply allowance has been reached.', 'Review the account allowance. Replies can still be written manually.'],
     review_access_unavailable: ['Google review reply access is unavailable.', 'Check the account access and Google connection.'],
