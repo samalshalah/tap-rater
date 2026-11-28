@@ -9,7 +9,6 @@ export function shortProductTitle(title: string): string {
   name = name.replace(/^(Review|Follow|Channel|Message|Connect) (Stand|Plate) for (.+)$/i,
     (_, action: string, format: string, platform: string) => `${platform.replace(/\s+Reviews$/i, "")} ${action} ${format}`);
   const names: Record<string, string> = {
-    "Rate Your Experience Stand": "Customer Feedback Stand",
     "Follow Us on Social Media Stand": "Social Media Follow Stand",
     "Check Our Information Stand": "Business Information Stand",
     "Explore Our Services Stand": "Business Services Stand",
