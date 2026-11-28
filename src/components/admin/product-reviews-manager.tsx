@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { AdminButton, AdminInput } from "@/components/admin/admin-ui";
+import { ReviewInviteUpload } from "@/components/admin/review-invite-upload";
 import { invitationCopy, invitationSubject } from "@/lib/product-review-shared";
 import type { ReviewInvitation } from "@/lib/product-reviews";
 
@@ -44,6 +45,7 @@ export function ProductReviewsManager() {
       </form>
       <div className="rounded-xl border border-line bg-[#f6f8ff] p-5 sm:p-6"><h2 className="text-lg font-semibold">Email preview</h2><p className="mt-3 text-sm font-semibold">Subject: {invitationSubject}</p><div className="mt-4 space-y-3 text-sm leading-6">{invitationCopy(name.trim() || "[Customer name]").map((line, index) => <p key={index}>{line}</p>)}</div><span className="mt-4 inline-block rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white">Share your experience</span><p className="mt-3 text-xs text-muted">The button will contain the customer's private form link.</p></div>
     </div>
+    <ReviewInviteUpload onSent={() => { setPage(1); setRefresh(v => v + 1); }} />
     {message ? <p role="status" className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">{message}</p> : null}
     {error ? <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p> : null}
     <section><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">Invitations & customer feedback</h2><Link className="text-sm font-semibold text-brand underline" href="/admin/settings/emails">Emails & Notifications</Link></div><p className="mt-2 text-sm text-muted">Moderate for authenticity, relevance, and privacy—not for a positive rating. Sending an invitation alone does not verify a purchase.</p>
