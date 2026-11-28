@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { calculateCartTotalCents, getCartItemKey, mergeCartItem, normalizeCartItems, parseStoredCart, updateCartQuantity } from "@/lib/cart";
+import { calculateCartTotalCents, getCartItemKey, getCartRows, mergeCartItem, normalizeCartItems, parseStoredCart, updateCartQuantity } from "@/lib/cart";
 
 describe("cart utilities", () => {
   afterEach(() => {
@@ -157,5 +157,12 @@ describe("cart utilities", () => {
     ]);
 
     expect(total).toBe(9800);
+  });
+
+  it("shows the product name saved from the product page, falling back to the built-in name", () => {
+    const saved = getCartRows([{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 1, productSnapshot: { title: "Custom Google Review Stand with Your Logo", sku: "TR-1", shortDescription: "Stand" } }]);
+    expect(saved[0].product.title).toBe("Custom Google Review Stand with Your Logo");
+    const legacy = getCartRows([{ productId: "google-review-stand", optionId: "branded_qr_direct", quantity: 1 }]);
+    expect(legacy[0].product.title).toBeTruthy();
   });
 });

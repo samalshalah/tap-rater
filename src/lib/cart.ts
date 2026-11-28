@@ -229,7 +229,8 @@ export function getCartRows(items: CartItem[]): CartRow[] {
     return [
       {
         item,
-        product: productToSnapshot(product),
+        // Show the name the shopper saw on the product page (the live catalog title saved when it was added).
+        product: { ...productToSnapshot(product), ...(item.productSnapshot?.title ? { title: item.productSnapshot.title } : {}) },
         option,
         unitPriceCents,
         lineSubtotalCents: unitPriceCents * item.quantity
