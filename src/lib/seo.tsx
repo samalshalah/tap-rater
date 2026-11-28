@@ -6,6 +6,7 @@ import { generateProductVariantSku, getConfiguredUnitPriceCents, getDefaultProdu
 import { resolveProductSeo } from "@/lib/product-seo";
 import { getProductPurchaseOptions } from "@/lib/purchase-options";
 import { getProductVisual } from "@/lib/storefront-visuals";
+import { getGalleryImages } from "@/lib/product-gallery";
 import { getPublicSiteUrl } from "@/lib/public-site-url";
 import { usDeliveryEstimate } from "@/lib/delivery-estimates";
 import { productReviewJsonLd, type PublicProductReviews } from "@/lib/product-review-shared";
@@ -14,6 +15,12 @@ const siteUrl = getPublicSiteUrl();
 
 export function absoluteUrl(path: string) {
   return new URL(path, siteUrl).toString();
+}
+
+/** Main photo first, then the rest of the product page gallery (no placeholders or data URLs). */
+function productImageUrls(product: MigratedProduct) {
+  const sources = [getProductVisual(product).src, ...getGalleryImages(product).map((image) => image.src)];
+  return [...new Set(sources.filter((src): src is string => Boolean(src) && !src.startsWith("data:") && !src.includes("no-photo-available")))].slice(0, 10).map((src) => absoluteUrl(src));
 }
 
 export function productJsonLd(product: MigratedProduct, context?: { offers?: OffersSettings | null; shipping?: ShippingSettingsInput; reviews?: PublicProductReviews }) {
@@ -30,7 +37,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
       "@type": "Brand",
       name: "Tap Rater"
     },
-    image: [absoluteUrl(getProductVisual(product).src)]
+    image: productImageUrls(product)
   };
 
   if (product.checkoutMode !== "buy_now") return data;
@@ -59,7 +66,7 @@ export function productJsonLd(product: MigratedProduct, context?: { offers?: Off
       description: option.summary,
       sku: generateProductVariantSku(product, { ...selection, purchaseOptionId: option.id }),
       url: variantUrl,
-      image: image ? [absoluteUrl(image)] : product.images.map((item) => absoluteUrl(item.src)),
+      image: image ? productImageUrls(product) : product.images.map((item) => absoluteUrl(item.src)),
       brand: data.brand,
       additionalProperty: [{ "@type": "PropertyValue", name: "Design", value: "Custom Logo + QR" }],
       offers: {

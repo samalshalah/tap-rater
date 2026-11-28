@@ -5,7 +5,7 @@ import { ModalDialog } from "@/components/ui/modal-dialog";
 import { maxCartItemQuantity } from "@/lib/cart";
 import { freeShippingCountries,quoteOffers } from "@/lib/offers";
 import { formatPrice } from "@/lib/products";
-import { Minus, Plus, X } from "lucide-react";
+import { BadgeCheck, CircleDollarSign, Flag, Minus, PencilLine, Plus, Truck, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usDeliveryEstimate } from "@/lib/delivery-estimates";
@@ -273,23 +273,17 @@ export function ProductSetupChooser(props: ProductSetupChooserProps) {
         {shipping?.shippingMode !== "manual" && <p className="mt-2 text-center text-xs text-muted"><Link href="/shipping" className="underline underline-offset-2">{usDeliveryEstimate.purchaseText}</Link></p>}
         {standQuote && standQuote.discountCents > 0 ? <p className="mt-2 text-center text-xs text-muted">Price includes {formatPrice(standQuote.discountCents)} in savings on your selected stands.</p> : null}
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-muted">
-          {selectedLinkExperience === "multilink" ? (
-            <>
-              <span>Hosted Multi-Link</span>
-              <span>{formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents).replace(".00", "")}/mo hosting</span>
-            </>
-          ) : (
-            <>
-              <span>No subscription</span>
-              <span>Arrives ready to use</span>
-            </>
-          )}
-        {shipping ? <span>
-          {freeShippingCountries(offers).includes("US") ? "Free shipping on US orders. No minimum." : shipping.shippingMode === "free" ? "Free shipping on supported orders." : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order." : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}.`}
-          {!freeShippingCountries(offers).includes("US") && shipping.shippingMode === "flat" && offers?.shipping.enabled ? ` Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")}).` : ""}
-        </span> : null}
-        </div>
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-2.5 text-[13px] font-medium leading-5 text-ink" aria-label="Included with your stand">
+          <li className="flex items-start gap-2"><BadgeCheck size={17} className="mt-px shrink-0 text-brand" aria-hidden="true" />Approve your design before payment</li>
+          <li className="flex items-start gap-2"><Flag size={17} className="mt-px shrink-0 text-brand" aria-hidden="true" />Printed in the USA</li>
+          {shipping ? <li className="flex items-start gap-2"><Truck size={17} className="mt-px shrink-0 text-brand" aria-hidden="true" /><span>
+            {freeShippingCountries(offers).includes("US") ? "Free U.S. shipping, no minimum" : shipping.shippingMode === "free" ? "Free shipping on supported orders" : shipping.shippingMode === "manual" ? "Shipping is reviewed after the order" : `Shipping: ${formatPrice(shipping.flatShippingAmountCents)}`}
+            {!freeShippingCountries(offers).includes("US") && shipping.shippingMode === "flat" && offers?.shipping.enabled ? `. Free at ${formatPrice(offers.shipping.thresholdCents)} in merchandise after discounts (${offers.shipping.countryCodes.join(", ")})` : ""}
+          </span></li> : null}
+          {selectedLinkExperience === "multilink"
+            ? <li className="flex items-start gap-2"><PencilLine size={17} className="mt-px shrink-0 text-brand" aria-hidden="true" />Edit your links anytime</li>
+            : <li className="flex items-start gap-2"><CircleDollarSign size={17} className="mt-px shrink-0 text-brand" aria-hidden="true" />No subscription</li>}
+        </ul>
 
         {error && !isBuilderOpen ? <p className="tr-status-error mt-4" role="alert">{error}</p> : null}
       </section>

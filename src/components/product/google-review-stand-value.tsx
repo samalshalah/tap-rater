@@ -3,6 +3,7 @@ import { SectionHeader, SectionShell } from "@/components/storefront/section";
 import { formatPrice } from "@/lib/products";
 import { hostedMultiLinkServiceAddon } from "@/lib/service-addons";
 import styles from "./google-review-stand-value.module.css";
+import { PhoneCollapse } from "./phone-collapse";
 
 const comparison = [
   {
@@ -46,7 +47,8 @@ export function GoogleReviewStandValue({ price }: { price: string }) {
         title={`What your ${price} custom stand includes`}
         body="Compare a ready-to-use custom stand with making your own paper QR sign. Both can open your Google review link; the difference is the display, NFC tapping, and the setup included."
       />
-      <div className="mt-8 overflow-hidden rounded-xl border border-line">
+      <div className="mt-8"><PhoneCollapse label="Show the full comparison" height={420}>
+      <div className="overflow-hidden rounded-xl border border-line">
         <table role="table" className={`${styles.comparison} w-full table-fixed border-collapse text-left text-sm leading-6 sm:text-base`}>
           <caption className="sr-only">Tap Rater custom Google review stand compared with a DIY paper QR sign</caption>
           <thead role="rowgroup">
@@ -68,6 +70,7 @@ export function GoogleReviewStandValue({ price }: { price: string }) {
           </tbody>
         </table>
       </div>
+      </PhoneCollapse></div>
       <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <p className="tr-body-sm max-w-3xl">Price is for one custom stand with a direct Google review link; applicable tax is calculated at checkout. An optional <Link href="/multi-link" className="font-semibold text-brand underline underline-offset-4">editable Multi-Link page</Link> is separate at {formatPrice(hostedMultiLinkServiceAddon.monthlyPriceCents)}/month per page. Neither a stand nor a QR code guarantees reviews or a particular rating.</p>
         <a href="#stand-setup" className="tr-button-primary shrink-0">Customize your stand</a>
@@ -77,10 +80,12 @@ export function GoogleReviewStandValue({ price }: { price: string }) {
 }
 
 export function GoogleReviewStandCustomerReviews({ data = { reviews: [], count: 0, average: null } }: { data?: import("@/lib/product-review-shared").PublicProductReviews }) {
+  // Shown only once a real customer review is published; invited buyers get their own review link by email.
+  if (!data.count) return null;
   return <SectionShell id="customer-reviews" tone="soft" spacing="compact" className="scroll-mt-24">
     <div className="tr-container">
       <SectionHeader align="left" title="Customer reviews" body="Experiences with the custom Google review stand." />
-      {data.count > 0 ? <div className="mt-7">
+      <div className="mt-7">
         <p className="text-lg font-semibold">{data.average}/5 · {data.count} customer review{data.count === 1 ? "" : "s"}</p>
         <p className="mt-2 text-sm text-muted">Reviews from invited customers, published with their permission. Positive and critical feedback are equally welcome.{data.count > data.reviews.length ? ` Showing the ${data.reviews.length} most recent reviews.` : ""}</p>
         <div className="mt-5 grid items-start gap-5 md:grid-cols-2">{data.reviews.map(review => <article key={review.id} className="min-w-0 rounded-xl border border-line bg-white p-6">
@@ -90,10 +95,10 @@ export function GoogleReviewStandCustomerReviews({ data = { reviews: [], count: 
           <p className="mt-4 text-sm font-semibold">{review.display_name}{review.business_name ? ` · ${review.business_name}` : ""}</p>
           <time dateTime={review.submitted_at} className="mt-1 block text-xs text-muted">{new Date(review.submitted_at).toLocaleDateString("en-US", { timeZone: "America/New_York", year: "numeric", month: "short", day: "numeric" })}</time>
         </article>)}</div>
-      </div> : null}
+      </div>
       <div className="mt-7 flex flex-col gap-6 rounded-xl border border-line bg-white p-6 sm:p-8 md:flex-row md:items-center md:justify-between">
         <div className="max-w-2xl">
-          <h3 className="text-lg font-semibold">{data.count ? "Already using this stand?" : "No customer reviews published here yet"}</h3>
+          <h3 className="text-lg font-semibold">Already using this stand?</h3>
           <p className="tr-body-sm mt-3">Tell us about the print, setup, and everyday use. Positive and critical feedback are equally welcome.</p>
           <p className="mt-3 text-sm leading-6 text-muted">We check your order and ask permission before publishing your feedback. Your email and order number stay private.</p>
         </div>

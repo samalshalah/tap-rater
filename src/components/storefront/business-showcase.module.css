@@ -10,3 +10,8 @@
 @media(max-width:1023px){.businessGrid{grid-template-columns:repeat(3,minmax(0,1fr))}.businessCard{min-height:240px}.businessCard .cardTitle{font-size:14px;padding:15px}}
 @media(max-width:767px){.businessGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.businessCard{min-height:185px}.businessCard .cardTitle{font-size:13px;padding:14px;gap:6px}}
 @media(prefers-reduced-motion:reduce){.businessGrid *{transition:none!important;transform:none!important}}
+
+/* Compact (product pages): shorter cards; one swipeable row on phones. */
+.compact .businessCard{min-height:190px}
+@media(max-width:1023px){.compact .businessCard{min-height:170px}}
+@media(max-width:767px){.compact{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:44%;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px}.compact::-webkit-scrollbar{display:none}.compact .businessCard{min-height:150px;scroll-snap-align:start}}

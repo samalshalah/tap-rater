@@ -19,10 +19,7 @@ type Props = {
  setSelectedColorCode: (code: string) => void;
 };
 export function ProductSetupOptions({product, setupOptions, selectedOptionId, chooseOption, offers, activeSizes, selectedSize, setSelectedSizeCode, activeColors, selectedColor, setSelectedColorCode}: Props) {
- return <><div className="text-sm leading-6 text-muted">
-          <p>Approve your design before payment.</p>
-        </div>
-        {activeSizes.length ? (
+ return <>{activeSizes.length ? (
           <div className="grid gap-2">
             <p className="text-sm font-semibold text-ink">Size</p>
             <div className="grid grid-cols-2 gap-2">

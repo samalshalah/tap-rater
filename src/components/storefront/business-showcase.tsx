@@ -12,11 +12,11 @@ export type BusinessScene = {
   image: { src: string; alt: string };
 };
 
-/** Homepage "Shop by business": one row of same-size cards (up to 5 across on desktop). */
-export function BusinessShowcase({ scenes }: { scenes: BusinessScene[] }) {
+/** Same-size business cards (up to 5 across on desktop). Compact: shorter cards that swipe sideways on phones. */
+export function BusinessShowcase({ scenes, compact = false }: { scenes: BusinessScene[]; compact?: boolean }) {
   if (!scenes.length) return null;
 
-  return <div className={styles.businessGrid} style={{ "--cols": Math.min(scenes.length, 5) } as CSSProperties} data-home-business-cards>
+  return <div className={compact ? `${styles.businessGrid} ${styles.compact}` : styles.businessGrid} style={{ "--cols": Math.min(scenes.length, 5) } as CSSProperties} data-home-business-cards={compact ? undefined : true}>
     {scenes.map(scene => <Link key={scene.slug} href={`/business/${scene.slug}`} className={styles.businessCard}>
       <ResponsiveUpload src={scene.image.src} alt={scene.image.alt}
         sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 20vw" fallbackWidth={640}

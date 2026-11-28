@@ -12,6 +12,8 @@ import { GoogleReviewStandCustomerReviews, GoogleReviewStandValue } from "@/comp
 import { getPublicBusinessUses } from "@/lib/admin-business-uses";
 import { getProductBuyingGuide, getProductBuyingFaqs, resolveProductPageSeo } from "@/lib/product-buying-guide";
 import { FaqList } from "@/components/storefront/faq-list";
+import { BusinessShowcase, type BusinessScene } from "@/components/storefront/business-showcase";
+import { PhoneCollapse } from "@/components/product/phone-collapse";
 import { SectionHeader, SectionShell } from "@/components/storefront/section";
 import { getRelatedStorefrontProductsForProduct, getStorefrontProductBySlug } from "@/lib/product-repository";
 import { formatPrice, getCategoryBySlug } from "@/lib/products";
@@ -117,6 +119,10 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
     getOffersSettings().catch(() => null), getShippingSettings(), getPublicBusinessUses()
   ]);
   const linkedBusinesses = businesses.filter((item) => item.productSlugs.includes(product.slug));
+  const businessScenes: BusinessScene[] = linkedBusinesses.flatMap((item) => {
+    const src = item.bannerImageUrl || item.imageUrl;
+    return src ? [{ slug: item.slug, title: item.title, body: "", image: { src, alt: `Tap Rater stand in ${item.title.toLowerCase()}` } }] : [];
+  });
   const relatedProducts = await getRelatedStorefrontProductsForProduct(product, 5, linkedBusinesses.map((item) => item.productSlugs));
   const category = getCategoryBySlug(product.categorySlug);
   // Keep merchant-authored details; the generic feature cards repeat the hero and setup guide.
@@ -161,40 +167,19 @@ export default async function ProductPage({ params, searchParams }: ProductPageP
 
       <SectionShell spacing="compact"><div className="tr-container-narrow">
         <h2 className="tr-section-title">About this stand</h2>
-        <p className="tr-body mt-4 whitespace-pre-line">{product.description}</p>
-        <nav aria-label="Shop by use and business" className="mt-6 flex flex-wrap gap-4 font-semibold text-brand underline">
-          {category && <Link href={getCategoryHref(category.slug)}>{category.title}</Link>}
-          {product.additionalUses?.map(slug => getCategoryBySlug(slug)).filter(use => use && use.slug !== category?.slug).map(use => use &&
-            <Link key={use.slug} href={getCategoryHref(use.slug)}>{use.title}</Link>)}
-          {linkedBusinesses.map((item) =>
-            <Link key={item.slug} href={`/business/${item.slug}`}>{item.title}</Link>)}
-        </nav>
-      </div></SectionShell>
-
-      {product.slug === "google-review-stand" ? <SectionShell tone="soft" spacing="compact">
-        <div className="tr-container">
-          <SectionHeader
-            align="left"
-            eyebrow="Custom Google review stand"
-            title="Your branding, with room to stand out."
-            body="A custom Google review stand brings your logo, NFC tap, and a matching QR code together. Both tap and scan open the Google review link you approve during setup."
-          />
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-line bg-white p-6">
-              <h3 className="text-lg font-semibold">Designed for your business</h3>
-              <p className="tr-body-sm mt-3">Add your logo and optional business name to your Google review sign. Preview and approve your custom artwork before payment.</p>
-            </article>
-            <article className="rounded-xl border border-line bg-white p-6">
-              <h3 className="text-lg font-semibold">Large 6.5 × 4.25 inch display</h3>
-              <p className="tr-body-sm mt-3">The acrylic stand measures 165 × 108 mm, with a 50 mm base. Give your branding and QR code space at checkout, reception, or a pickup counter.</p>
-            </article>
-            <article className="rounded-xl border border-line bg-white p-6">
-              <h3 className="text-lg font-semibold">Printed in the USA</h3>
-              <p className="tr-body-sm mt-3">Your custom stand arrives ready to use, with free U.S. shipping and no minimum. Direct-link NFC and QR setup has no subscription.</p>
-            </article>
-          </div>
+        <PhoneCollapse label="Read more about this stand">
+          <p className="tr-body mt-4 whitespace-pre-line">{product.description}</p>
+        </PhoneCollapse>
+        {product.slug === "google-review-stand" ? <>
           <p className="mt-6 text-sm text-muted">Not sure whether NFC or QR is right for your counter? <Link href="/nfc-vs-qr-google-review-stand" className="font-semibold text-brand underline underline-offset-4">Compare NFC and QR code review stands</Link>.</p>
           <GoogleReviewStandGuideLinks />
+        </> : null}
+      </div></SectionShell>
+
+      {businessScenes.length ? <SectionShell tone="soft" spacing="compact">
+        <div className="tr-container">
+          <SectionHeader align="left" eyebrow="Shop by business" title="Made for your business" cta={{ href: "/business", label: "All businesses" }} />
+          <div className="mt-6"><BusinessShowcase scenes={businessScenes} compact /></div>
         </div>
       </SectionShell> : null}
 
