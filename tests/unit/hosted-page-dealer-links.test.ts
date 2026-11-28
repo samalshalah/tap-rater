@@ -40,7 +40,7 @@ describe("dealer and social Multi-Link buttons", () => {
       expect(existsSync(join(process.cwd(), "public", logo))).toBe(true);
     }
     expect(getHostedButtonMark("bbb").logo).toBe("/brand/multilink/bbb.png");
-    expect(getHostedButtonMark("justia").logo).toBeUndefined();
+    expect(getHostedButtonMark("resy").logo).toBeUndefined();
   });
 
   it("publishes a dealer page with the brand label, icon key and logo kept", () => {
@@ -54,10 +54,10 @@ describe("dealer and social Multi-Link buttons", () => {
   });
 });
 
-describe("logos cropped from the stand artwork", () => {
+describe("logos for every site the business pages show", () => {
   it("has a logo file for every review and social site the business pages show", async () => {
     const { multiLinkIndustries, recommendedMultiLinks } = await import("@/lib/multilink-industries");
-    const noStandYet = new Set(["opentable", "doordash", "grubhub", "booking_com", "expedia", "trip_com", "mindbody", "justia", "trustpilot", "shopper_approved"]);
+    const noStandYet = new Set<string>();
     for (const industry of multiLinkIndustries) {
       for (const product of ["rate-your-experience-stand", "follow-us-social-media-stand"]) {
         for (const { type } of recommendedMultiLinks(industry.id, product)) {
